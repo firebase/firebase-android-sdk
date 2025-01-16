@@ -4,12 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 
-public class ImagenInlineImage(public val data: ByteArray, public val mimeType: String) :
-  ImagenImageRepresentible {
-
-  override fun asImagenImage(): ImagenImage {
-    return ImagenImage(data, null, mimeType)
-  }
+public class ImagenInlineImage(public val data: ByteArray, public val mimeType: String) {
 
   public fun asBitmap(): Bitmap {
     val data = Base64.decode(data, Base64.NO_WRAP)

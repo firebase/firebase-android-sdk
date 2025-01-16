@@ -205,7 +205,7 @@ internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
     items?.toInternal(),
   )
 
-internal fun com.google.firebase.vertexai.type.ImageFormat.toInternal(): ImageOutputOptions =
+internal fun com.google.firebase.vertexai.type.ImagenImageFormat.toInternal(): ImageOutputOptions =
   ImageOutputOptions(mimeType, compressionQuality)
 
 internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())

@@ -12,11 +12,10 @@ import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublicGCS
 import com.google.firebase.vertexai.internal.util.toPublicInline
 import com.google.firebase.vertexai.type.FirebaseVertexAIException
-import com.google.firebase.vertexai.type.ImageSafetySettings
+import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
-import com.google.firebase.vertexai.type.ImagenImageRepresentible
 import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenModelConfig
 import com.google.firebase.vertexai.type.PromptBlockedException
@@ -28,16 +27,16 @@ import kotlin.time.Duration.Companion.seconds
 public class ImageModel
 internal constructor(
   private val modelName: String,
-  private val generationConfig: ImagenModelConfig? = null,
-  private val safetySettings: ImageSafetySettings? = null,
+  private val generationConfig: ImagenGenerationConfig? = null,
+  private val safetySettings: ImagenSafetySettings? = null,
   private val controller: APIController,
 ) {
   @JvmOverloads
   internal constructor(
     modelName: String,
     apiKey: String,
-    generationConfig: ImagenModelConfig? = null,
-    safetySettings: ImageSafetySettings? = null,
+    generationConfig: ImagenGenerationConfig? = null,
+    safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
@@ -90,10 +89,9 @@ internal constructor(
 
   public suspend fun generateImage(
     prompt: String,
-    config: ImagenGenerationConfig?,
   ): ImagenGenerationResponse<ImagenInlineImage> =
     try {
-      controller.generateImage(constructRequest(prompt, null, config)).toPublicInline().validate()
+      controller.generateImage(constructRequest(prompt, null, generationConfig)).toPublicInline().validate()
     } catch (e: Throwable) {
       throw FirebaseVertexAIException.from(e)
     }
@@ -101,10 +99,9 @@ internal constructor(
   public suspend fun generateImage(
     prompt: String,
     gcsUri: String,
-    config: ImagenGenerationConfig?,
   ): ImagenGenerationResponse<ImagenGCSImage> =
     try {
-      controller.generateImage(constructRequest(prompt, gcsUri, config)).toPublicGCS().validate()
+      controller.generateImage(constructRequest(prompt, gcsUri, generationConfig)).toPublicGCS().validate()
     } catch (e: Throwable) {
       throw FirebaseVertexAIException.from(e)
     }
@@ -136,7 +133,7 @@ internal constructor(
   }
 }
 
-private fun <T : ImagenImageRepresentible> ImagenGenerationResponse<T>.validate():
+private fun <T> ImagenGenerationResponse<T>.validate():
   ImagenGenerationResponse<T> {
   if (images.isEmpty()) {
     throw PromptBlockedException(message = filteredReason ?: ImageModel.DEFAULT_FILTERED_ERROR)
