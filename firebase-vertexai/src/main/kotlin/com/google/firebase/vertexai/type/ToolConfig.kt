@@ -16,10 +16,39 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Contains configuration for the function calling tools of the model. This can be used to change
  * when the model can predict function calls.
  *
  * @param functionCallingConfig The config for function calling
  */
-public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig?)
+public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig?) {
+
+  internal fun toInternal() =
+    InternalToolConfig(
+      functionCallingConfig?.let {
+        FunctionCallingConfig.InternalFunctionCallingConfig(
+          when (it.mode) {
+            FunctionCallingConfig.Mode.ANY ->
+              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.ANY
+
+            FunctionCallingConfig.Mode.AUTO ->
+              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.AUTO
+
+            FunctionCallingConfig.Mode.NONE ->
+              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.NONE
+          },
+          it.allowedFunctionNames
+        )
+      }
+    )
+
+  @Serializable
+  internal data class InternalToolConfig(
+    @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig.InternalFunctionCallingConfig?
+  )
+}
+

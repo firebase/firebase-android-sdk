@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * A configuration for a [HarmBlockThreshold] of some [HarmCategory] allowed and blocked in
  * responses.
@@ -29,4 +31,18 @@ public class SafetySetting(
   internal val harmCategory: HarmCategory,
   internal val threshold: HarmBlockThreshold,
   internal val method: HarmBlockMethod? = null,
-)
+) {
+  internal fun toInternal() =
+    InternalSafetySetting(
+      harmCategory.toInternal(),
+      threshold.toInternal(),
+      method?.toInternal()
+    )
+
+  @Serializable
+  internal data class InternalSafetySetting(
+    val category: HarmCategory.InternalHarmCategory,
+    val threshold: HarmBlockThreshold.InternalHarmBlockThreshold,
+    val method: HarmBlockMethod.InternalHarmBlockMethod? = null,
+  )
+}

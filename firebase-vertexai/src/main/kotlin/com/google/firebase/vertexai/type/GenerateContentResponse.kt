@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * A response from the model.
  *
@@ -40,5 +42,20 @@ public class GenerateContentResponse(
   /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
   public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+  }
+
+  @Serializable
+  internal data class InternalGenerateContentResponse(
+    val candidates: List<Candidate.InternalCandidate>? = null,
+    val promptFeedback: PromptFeedback.InternalPromptFeedback? = null,
+    val usageMetadata: UsageMetadata.InternalUsageMetadata? = null,
+  ) : Response {
+    internal fun toPublic(): GenerateContentResponse {
+      return GenerateContentResponse(
+        candidates?.map { it.toPublic() }.orEmpty(),
+        promptFeedback?.toPublic(),
+        usageMetadata?.toPublic()
+      )
+    }
   }
 }

@@ -24,7 +24,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
 
-internal class SchemaTests {
+internal class InternalSchemaTests {
   @Test
   fun `basic schema declaration`() {
     val schemaDeclaration =

@@ -16,8 +16,34 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Represents the probability that some [HarmCategory] is applicable in a [SafetyRating]. */
 public class HarmProbability private constructor(public val ordinal: Int) {
+  @Serializable(InternalHarmProbability.InternalHarmProbabilitySerializer::class)
+  internal enum class InternalHarmProbability {
+    UNKNOWN,
+    @SerialName("HARM_PROBABILITY_UNSPECIFIED") UNSPECIFIED,
+    NEGLIGIBLE,
+    LOW,
+    MEDIUM,
+    HIGH;
+
+    internal object InternalHarmProbabilitySerializer :
+      KSerializer<InternalHarmProbability> by FirstOrdinalSerializer(InternalHarmProbability::class)
+
+    internal fun toPublic() =
+      when (this) {
+        HIGH -> HarmProbability.HIGH
+        MEDIUM -> HarmProbability.MEDIUM
+        LOW -> HarmProbability.LOW
+        NEGLIGIBLE -> HarmProbability.NEGLIGIBLE
+        else -> HarmProbability.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: HarmProbability = HarmProbability(0)

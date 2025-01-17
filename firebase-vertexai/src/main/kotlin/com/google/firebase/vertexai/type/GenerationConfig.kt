@@ -16,6 +16,9 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Configuration parameters to use for content generation.
  *
@@ -141,6 +144,34 @@ private constructor(
         responseSchema = responseSchema,
       )
   }
+
+  internal fun toInternal() =
+    InternalGenerationConfig(
+      temperature = temperature,
+      topP = topP,
+      topK = topK,
+      candidateCount = candidateCount,
+      maxOutputTokens = maxOutputTokens,
+      stopSequences = stopSequences,
+      frequencyPenalty = frequencyPenalty,
+      presencePenalty = presencePenalty,
+      responseMimeType = responseMimeType,
+      responseSchema = responseSchema?.toInternal()
+    )
+
+  @Serializable
+  internal data class InternalGenerationConfig(
+    val temperature: Float?,
+    @SerialName("top_p") val topP: Float?,
+    @SerialName("top_k") val topK: Int?,
+    @SerialName("candidate_count") val candidateCount: Int?,
+    @SerialName("max_output_tokens") val maxOutputTokens: Int?,
+    @SerialName("stop_sequences") val stopSequences: List<String>?,
+    @SerialName("response_mime_type") val responseMimeType: String? = null,
+    @SerialName("presence_penalty") val presencePenalty: Float? = null,
+    @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
+    @SerialName("response_schema") val responseSchema: Schema.InternalSchema? = null,
+  )
 
   public companion object {
 

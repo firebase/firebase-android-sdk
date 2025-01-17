@@ -16,8 +16,46 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import com.google.firebase.vertexai.internal.util.makeMissingCaseException
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Category for a given harm rating. */
 public class HarmCategory private constructor(public val ordinal: Int) {
+  internal fun toInternal() =
+    when (this) {
+      HARASSMENT -> InternalHarmCategory.HARASSMENT
+      HATE_SPEECH -> InternalHarmCategory.HATE_SPEECH
+      SEXUALLY_EXPLICIT -> InternalHarmCategory.SEXUALLY_EXPLICIT
+      DANGEROUS_CONTENT -> InternalHarmCategory.DANGEROUS_CONTENT
+      CIVIC_INTEGRITY -> InternalHarmCategory.CIVIC_INTEGRITY
+      UNKNOWN -> InternalHarmCategory.UNKNOWN
+      else -> throw makeMissingCaseException("HarmCategory", ordinal)
+    }
+  @Serializable(InternalHarmCategory.HarmCategorySerializer::class)
+  internal enum class InternalHarmCategory {
+    UNKNOWN,
+    @SerialName("HARM_CATEGORY_HARASSMENT") HARASSMENT,
+    @SerialName("HARM_CATEGORY_HATE_SPEECH") HATE_SPEECH,
+    @SerialName("HARM_CATEGORY_SEXUALLY_EXPLICIT") SEXUALLY_EXPLICIT,
+    @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT,
+    @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY;
+
+    internal object HarmCategorySerializer :
+      KSerializer<InternalHarmCategory> by FirstOrdinalSerializer(InternalHarmCategory::class)
+
+    internal fun toPublic() =
+      when (this) {
+        HARASSMENT -> HarmCategory.HARASSMENT
+        HATE_SPEECH -> HarmCategory.HATE_SPEECH
+        SEXUALLY_EXPLICIT -> HarmCategory.SEXUALLY_EXPLICIT
+        DANGEROUS_CONTENT -> HarmCategory.DANGEROUS_CONTENT
+        CIVIC_INTEGRITY -> HarmCategory.CIVIC_INTEGRITY
+        else -> HarmCategory.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: HarmCategory = HarmCategory(0)

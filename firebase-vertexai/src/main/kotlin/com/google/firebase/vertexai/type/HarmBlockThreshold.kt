@@ -16,8 +16,31 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.internal.util.makeMissingCaseException
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Represents the threshold for a [HarmCategory] to be allowed by [SafetySetting]. */
 public class HarmBlockThreshold private constructor(public val ordinal: Int) {
+
+  internal fun toInternal() =
+    when (this) {
+      NONE -> InternalHarmBlockThreshold.BLOCK_NONE
+      ONLY_HIGH -> InternalHarmBlockThreshold.BLOCK_ONLY_HIGH
+      MEDIUM_AND_ABOVE -> InternalHarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+      LOW_AND_ABOVE -> InternalHarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+      else -> throw makeMissingCaseException("HarmBlockThreshold", ordinal)
+    }
+
+  @Serializable
+  internal enum class InternalHarmBlockThreshold {
+    @SerialName("HARM_BLOCK_THRESHOLD_UNSPECIFIED") UNSPECIFIED,
+    BLOCK_LOW_AND_ABOVE,
+    BLOCK_MEDIUM_AND_ABOVE,
+    BLOCK_ONLY_HIGH,
+    BLOCK_NONE,
+  }
+
   public companion object {
     /** Content with negligible harm is allowed. */
     @JvmField public val LOW_AND_ABOVE: HarmBlockThreshold = HarmBlockThreshold(0)

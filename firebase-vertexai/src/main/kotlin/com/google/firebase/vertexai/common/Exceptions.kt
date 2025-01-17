@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.common
 
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import io.ktor.serialization.JsonConvertException
 import kotlinx.coroutines.TimeoutCancellationException
 
@@ -66,7 +67,7 @@ internal class InvalidAPIKeyException(message: String, cause: Throwable? = null)
  * @property response the full server response for the request.
  */
 internal class PromptBlockedException(
-  val response: GenerateContentResponse,
+  val response: GenerateContentResponse.InternalGenerateContentResponse,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(
@@ -98,7 +99,7 @@ internal class InvalidStateException(message: String, cause: Throwable? = null) 
  * @property response the full server response for the request
  */
 internal class ResponseStoppedException(
-  val response: GenerateContentResponse,
+  val response: GenerateContentResponse.InternalGenerateContentResponse,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(

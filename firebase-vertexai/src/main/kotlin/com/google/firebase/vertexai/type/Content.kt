@@ -17,6 +17,9 @@
 package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 
 /**
  * Represents content sent to and received from the model.
@@ -75,6 +78,20 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
 
     /** Returns a new [Content] using the defined [role] and [parts]. */
     public fun build(): Content = Content(role, parts)
+  }
+
+  internal fun toInternal() =
+    InternalContent(
+      this.role ?: "user",
+      this.parts.map { it.toInternal() }
+    )
+
+  @ExperimentalSerializationApi
+  @Serializable
+  internal data class InternalContent(@EncodeDefault val role: String? = "user", val parts: List<InternalPart>) {
+
+    internal fun toPublic(): Content =
+      Content(role, parts.map { it.toPublic() })
   }
 }
 

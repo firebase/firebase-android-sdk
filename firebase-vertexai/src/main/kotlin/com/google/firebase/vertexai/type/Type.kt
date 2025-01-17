@@ -15,3 +15,26 @@
  */
 
 package com.google.firebase.vertexai.type
+
+import kotlinx.serialization.Serializable
+
+internal sealed interface Response
+
+@Serializable
+internal data class GRpcErrorResponse(val error: GRpcError) : Response {
+
+  @Serializable
+  internal data class GRpcError(
+    val code: Int,
+    val message: String,
+    val details: List<GRpcErrorDetails>? = null
+  ) {
+
+    @Serializable
+    internal data class GRpcErrorDetails(
+      val reason: String? = null,
+      val domain: String? = null,
+      val metadata: Map<String, String>? = null
+    )
+  }
+}

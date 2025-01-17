@@ -16,11 +16,28 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.internal.util.makeMissingCaseException
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Specifies how the block method computes the score that will be compared against the
  * [HarmBlockThreshold] in [SafetySetting].
  */
 public class HarmBlockMethod private constructor(public val ordinal: Int) {
+  internal fun toInternal() =
+    when (this) {
+      SEVERITY -> InternalHarmBlockMethod.SEVERITY
+      PROBABILITY -> InternalHarmBlockMethod.PROBABILITY
+      else -> throw makeMissingCaseException("HarmBlockMethod", ordinal)
+    }
+
+  @Serializable
+  internal enum class InternalHarmBlockMethod {
+    @SerialName("HARM_BLOCK_METHOD_UNSPECIFIED") UNSPECIFIED,
+    SEVERITY,
+    PROBABILITY,
+  }
   public companion object {
     /**
      * The harm block method uses both probability and severity scores. See [HarmSeverity] and

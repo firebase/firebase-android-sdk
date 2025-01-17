@@ -20,11 +20,11 @@ package com.google.firebase.vertexai.common.util
 
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.GenerateContentRequest
-import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.server.Candidate
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.InternalTextPart
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -43,15 +43,15 @@ import kotlinx.serialization.encodeToString
 
 private val TEST_CLIENT_ID = "genai-android/test"
 
-internal fun prepareStreamingResponse(response: List<GenerateContentResponse>): List<ByteArray> =
+internal fun prepareStreamingResponse(response: List<GenerateContentResponse.InternalGenerateContentResponse>): List<ByteArray> =
   response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
-internal fun prepareResponse(response: GenerateContentResponse) =
+internal fun prepareResponse(response: GenerateContentResponse.InternalGenerateContentResponse) =
   JSON.encodeToString(response).toByteArray()
 
 @OptIn(ExperimentalSerializationApi::class)
 internal fun createRequest(vararg text: String): GenerateContentRequest {
-  val contents = text.map { Content(parts = listOf(TextPart(it))) }
+  val contents = text.map { Content.InternalContent(parts = listOf(InternalTextPart(it))) }
 
   return GenerateContentRequest("gemini", contents)
 }
@@ -59,10 +59,24 @@ internal fun createRequest(vararg text: String): GenerateContentRequest {
 internal fun createResponse(text: String) = createResponses(text).single()
 
 @OptIn(ExperimentalSerializationApi::class)
-internal fun createResponses(vararg text: String): List<GenerateContentResponse> {
-  val candidates = text.map { Candidate(Content(parts = listOf(TextPart(it)))) }
+internal fun createResponses(vararg text: String): List<GenerateContentResponse.InternalGenerateContentResponse> {
+  val candidates = text.map {
+    Candidate.InternalCandidate(
+      Content.InternalContent(
+        parts = listOf(
+          InternalTextPart(it)
+        )
+      )
+    )
+  }
 
-  return candidates.map { GenerateContentResponse(candidates = listOf(it)) }
+  return candidates.map {
+    GenerateContentResponse.InternalGenerateContentResponse(
+      candidates = listOf(
+        it
+      )
+    )
+  }
 }
 
 /**

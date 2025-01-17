@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Defines a function that the model can use as a tool.
  *
@@ -58,4 +60,14 @@ public class FunctionDeclaration(
 ) {
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
+
+  internal fun toInternal() =
+    InternalFunctionDeclaration(name, "", schema.toInternal())
+
+  @Serializable
+  internal data class InternalFunctionDeclaration(
+    val name: String,
+    val description: String,
+    val parameters: Schema.InternalSchema
+  )
 }

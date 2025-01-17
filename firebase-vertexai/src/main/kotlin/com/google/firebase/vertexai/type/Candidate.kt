@@ -16,6 +16,12 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 import java.util.Calendar
 
 /**
@@ -32,7 +38,58 @@ internal constructor(
   public val safetyRatings: List<SafetyRating>,
   public val citationMetadata: CitationMetadata?,
   public val finishReason: FinishReason?
-)
+) {
+
+  @Serializable
+  internal data class InternalCandidate(
+    val content: Content.InternalContent? = null,
+    val finishReason: FinishReason.InternalFinishReason? = null,
+    val safetyRatings: List<SafetyRating.InternalSafetyRating>? = null,
+    val citationMetadata: CitationMetadata.InternalCitationMetadata? = null,
+    val groundingMetadata: InternalGroundingMetadata? = null,
+  ) {
+    internal fun toPublic(): Candidate {
+      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      val citations = citationMetadata?.toPublic()
+      val finishReason = finishReason?.toPublic()
+
+      return Candidate(
+        this.content?.toPublic() ?: content("model") {},
+        safetyRatings,
+        citations,
+        finishReason
+      )
+    }
+
+    @Serializable
+    internal data class InternalGroundingMetadata(
+      @SerialName("web_search_queries") val webSearchQueries: List<String>?,
+      @SerialName("search_entry_point") val searchEntryPoint: InternalSearchEntryPoint?,
+      @SerialName("retrieval_queries") val retrievalQueries: List<String>?,
+      @SerialName("grounding_attribution") val groundingAttribution: List<InternalGroundingAttribution>?,
+    ) {
+
+      @Serializable
+      internal data class InternalSearchEntryPoint(
+        @SerialName("rendered_content") val renderedContent: String?,
+        @SerialName("sdk_blob") val sdkBlob: String?,
+      )
+
+      @Serializable
+      internal data class InternalGroundingAttribution(
+        val segment: InternalSegment,
+        @SerialName("confidence_score") val confidenceScore: Float?,
+      ) {
+
+        @Serializable
+        internal data class InternalSegment(
+          @SerialName("start_index") val startIndex: Int,
+          @SerialName("end_index") val endIndex: Int,
+        )
+      }
+    }
+  }
+}
 
 /**
  * An assessment of the potential harm of some generated content.
@@ -55,7 +112,30 @@ internal constructor(
   public val blocked: Boolean? = null,
   public val severity: HarmSeverity? = null,
   public val severityScore: Float? = null
-)
+) {
+
+  @Serializable
+  internal data class InternalSafetyRating @JvmOverloads constructor(
+    val category: HarmCategory.InternalHarmCategory,
+    val probability: HarmProbability.InternalHarmProbability,
+    val blocked: Boolean? = null, // TODO(): any reason not to default to false?
+    val probabilityScore: Float? = null,
+    val severity: HarmSeverity.InternalHarmSeverity? = null,
+    val severityScore: Float? = null,
+  ) {
+
+    internal fun toPublic() =
+      SafetyRating(
+        category = category.toPublic(),
+        probability = probability.toPublic(),
+        probabilityScore = probabilityScore ?: 0f,
+        blocked = blocked,
+        severity = severity?.toPublic(),
+        severityScore = severityScore
+      )
+  }
+
+}
 
 /**
  * A collection of source attributions for a piece of content.
@@ -63,7 +143,17 @@ internal constructor(
  * @property citations A list of individual cited sources and the parts of the content to which they
  * apply.
  */
-public class CitationMetadata internal constructor(public val citations: List<Citation>)
+public class CitationMetadata internal constructor(public val citations: List<Citation>) {
+
+  @Serializable
+  internal data class InternalCitationMetadata
+  @OptIn(ExperimentalSerializationApi::class)
+  internal constructor(@JsonNames("citations") val citationSources: List<Citation.InternalCitationSources>) {
+
+    internal fun toPublic() =
+      CitationMetadata(citationSources.map { it.toPublic() })
+  }
+}
 
 /**
  * Represents a citation of content from an external source within the model's output.
@@ -89,7 +179,56 @@ internal constructor(
   public val uri: String? = null,
   public val license: String? = null,
   public val publicationDate: Calendar? = null
-)
+) {
+
+  @Serializable
+  internal data class InternalCitationSources(
+    val title: String? = null,
+    val startIndex: Int = 0,
+    val endIndex: Int,
+    val uri: String? = null,
+    val license: String? = null,
+    val publicationDate: InternalDate? = null,
+  ) {
+
+    internal fun toPublic(): Citation {
+      val publicationDateAsCalendar =
+        publicationDate?.let {
+          val calendar = Calendar.getInstance()
+          // Internal `Date.year` uses 0 to represent not specified. We use 1 as default.
+          val year = if (it.year == null || it.year < 1) 1 else it.year
+          // Internal `Date.month` uses 0 to represent not specified, or is 1-12 as months. The month as
+          // expected by [Calendar] is 0-based, so we subtract 1 or use 0 as default.
+          val month = if (it.month == null || it.month < 1) 0 else it.month - 1
+          // Internal `Date.day` uses 0 to represent not specified. We use 1 as default.
+          val day = if (it.day == null || it.day < 1) 1 else it.day
+          calendar.set(year, month, day)
+          calendar
+        }
+      return Citation(
+        title = title,
+        startIndex = startIndex,
+        endIndex = endIndex,
+        uri = uri,
+        license = license,
+        publicationDate = publicationDateAsCalendar
+      )
+    }
+
+    @Serializable
+    internal data class InternalDate(
+      /** Year of the date. Must be between 1 and 9999, or 0 for no year. */
+      val year: Int? = null,
+      /** 1-based index for month. Must be from 1 to 12, or 0 to specify a year without a month. */
+      val month: Int? = null,
+      /**
+       * Day of a month. Must be from 1 to 31 and valid for the year and month, or 0 to specify a year
+       * by itself or a year and month where the day isn't significant.
+       */
+      val day: Int? = null,
+    )
+  }
+}
 
 /**
  * Represents the reason why the model stopped generating content.
@@ -98,6 +237,30 @@ internal constructor(
  * @property ordinal The ordinal value of the finish reason.
  */
 public class FinishReason private constructor(public val name: String, public val ordinal: Int) {
+
+  @Serializable(InternalFinishReason.InternalFinishReasonSerializer::class)
+  internal enum class InternalFinishReason {
+    UNKNOWN,
+    @SerialName("FINISH_REASON_UNSPECIFIED") UNSPECIFIED,
+    STOP,
+    MAX_TOKENS,
+    SAFETY,
+    RECITATION,
+    OTHER;
+
+    internal object InternalFinishReasonSerializer :
+      KSerializer<InternalFinishReason> by FirstOrdinalSerializer(InternalFinishReason::class)
+
+    internal fun toPublic() =
+      when (this) {
+        MAX_TOKENS -> FinishReason.MAX_TOKENS
+        RECITATION -> FinishReason.RECITATION
+        SAFETY -> FinishReason.SAFETY
+        STOP -> FinishReason.STOP
+        OTHER -> FinishReason.OTHER
+        else -> FinishReason.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: FinishReason = FinishReason("UNKNOWN", 0)

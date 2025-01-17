@@ -17,12 +17,12 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.server.Candidate
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
+import com.google.firebase.vertexai.type.InternalTextPart
 import com.google.firebase.vertexai.common.util.doBlocking
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ServerException
 import com.google.firebase.vertexai.type.content
@@ -129,7 +129,17 @@ internal class GenerativeModelTesting {
 
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
-      GenerateContentResponse(listOf(Candidate(Content(parts = listOf(TextPart(text))))))
+      GenerateContentResponse.InternalGenerateContentResponse(
+        listOf(
+          Candidate.InternalCandidate(
+            Content.InternalContent(
+              parts = listOf(
+                InternalTextPart(text)
+              )
+            )
+          )
+        )
+      )
     )
   }
 }

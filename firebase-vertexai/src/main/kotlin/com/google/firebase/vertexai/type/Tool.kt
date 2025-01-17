@@ -16,6 +16,9 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+
 /**
  * Contains a set of function declarations that the model has access to. These can be used to gather
  * information, or complete tasks
@@ -24,6 +27,16 @@ package com.google.firebase.vertexai.type
  */
 public class Tool
 internal constructor(internal val functionDeclarations: List<FunctionDeclaration>?) {
+  internal fun toInternal() =
+    InternalTool(
+      functionDeclarations?.map { it.toInternal() } ?: emptyList()
+    )
+  @Serializable
+  internal data class InternalTool(
+    val functionDeclarations: List<FunctionDeclaration.InternalFunctionDeclaration>? = null,
+    // This is a json object because it is not possible to make a data class with no parameters.
+    val codeExecution: JsonObject? = null,
+  )
   public companion object {
 
     /**
