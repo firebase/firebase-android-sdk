@@ -1,17 +1,13 @@
 package com.google.firebase.gradle
 
-import io.kotest.assertions.assertionCounter
-import io.kotest.assertions.failure
-import io.kotest.assertions.print.StringPrint
-import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.string.shouldContain
 import io.mockk.MockKMatcherScope
 import java.io.File
+import kotlin.test.assertEquals
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import kotlin.test.assertEquals
 
 /**
  * Create a [GradleRunner] and run it.
@@ -57,11 +53,9 @@ fun MockKMatcherScope.endsWith(str: String) = match<String> { it.endsWith(str) }
  * @param block The callback that should throw the exception.
  */
 inline fun shouldThrowSubstring(vararg substrings: String, block: () -> Unit) {
-  val exception = shouldThrowAny {
-    block()
-  }
+  val exception = shouldThrowAny { block() }
 
-  for(str in substrings) {
+  for (str in substrings) {
     exception.message.shouldContain(str)
   }
 }

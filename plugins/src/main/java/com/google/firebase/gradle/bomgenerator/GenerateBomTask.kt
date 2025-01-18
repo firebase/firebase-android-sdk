@@ -4,10 +4,10 @@ import com.google.firebase.gradle.plugins.ModuleVersion
 import com.google.firebase.gradle.plugins.VersionType
 import com.google.firebase.gradle.plugins.createIfAbsent
 import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
-import com.google.firebase.gradle.plugins.datamodels.PomElement
-import com.google.firebase.gradle.plugins.datamodels.LicenseElement
-import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
 import com.google.firebase.gradle.plugins.datamodels.DependencyManagementElement
+import com.google.firebase.gradle.plugins.datamodels.LicenseElement
+import com.google.firebase.gradle.plugins.datamodels.PomElement
+import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
 import com.google.firebase.gradle.plugins.datamodels.moduleVersion
 import com.google.firebase.gradle.plugins.diff
 import com.google.firebase.gradle.plugins.orEmpty
@@ -71,9 +71,7 @@ abstract class GenerateBomTask : DefaultTask() {
    */
   @get:Input abstract val versionOverrides: MapProperty<String, String>
 
-  /**
-   * Directory to save the bom under.
-   */
+  /** Directory to save the bom under. */
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   /**
@@ -92,14 +90,13 @@ abstract class GenerateBomTask : DefaultTask() {
     val versionOverrides = versionOverrides.getOrElse(emptyMap())
 
     val validatedArtifactsToPublish = validateArtifacts()
-    val artifactsToPublish = validatedArtifactsToPublish.map {
-      val version = versionOverrides[it.fullArtifactName] ?: it.version
-      logger.debug("Using ${it.fullArtifactName} with version $version")
+    val artifactsToPublish =
+      validatedArtifactsToPublish.map {
+        val version = versionOverrides[it.fullArtifactName] ?: it.version
+        logger.debug("Using ${it.fullArtifactName} with version $version")
 
-      it.copy(
-        version = version
-      )
-    }
+        it.copy(version = version)
+      }
 
     val newVersion = determineNewBomVersion(artifactsToPublish)
 
@@ -122,8 +119,7 @@ abstract class GenerateBomTask : DefaultTask() {
               distribution = "repo",
             )
           ),
-        dependencyManagement =
-          DependencyManagementElement(artifactsToPublish),
+        dependencyManagement = DependencyManagementElement(artifactsToPublish),
       )
 
     bomFile.set(
@@ -135,29 +131,31 @@ abstract class GenerateBomTask : DefaultTask() {
     pom.toFile(bomFile.get().asFile.createIfAbsent())
   }
 
-  private fun determineNewBomVersion(releasingDependencies: List<ArtifactDependency>): ModuleVersion {
+  private fun determineNewBomVersion(
+    releasingDependencies: List<ArtifactDependency>
+  ): ModuleVersion {
     logger.info("Determining the new bom version")
 
     val oldBom = gmaven.get().latestPom("com.google.firebase", "firebase-bom")
-    val oldBomVersion =
-      ModuleVersion.fromString(oldBom.artifactId, oldBom.version)
+    val oldBomVersion = ModuleVersion.fromString(oldBom.artifactId, oldBom.version)
 
     val oldBomDependencies = oldBom.dependencyManagement?.dependencies.orEmpty()
     val changedDependencies = oldBomDependencies.diff(releasingDependencies)
 
-    val versionBumps = changedDependencies.mapNotNull { (old, new) ->
-      if(old == null) {
-        logger.warn("Dependency was added: ${new?.fullArtifactName}")
+    val versionBumps =
+      changedDependencies.mapNotNull { (old, new) ->
+        if (old == null) {
+          logger.warn("Dependency was added: ${new?.fullArtifactName}")
 
-        VersionType.MINOR
-      } else if(new === null) {
-        logger.warn("Dependency was removed: ${old.fullArtifactName}")
+          VersionType.MINOR
+        } else if (new === null) {
+          logger.warn("Dependency was removed: ${old.fullArtifactName}")
 
-        VersionType.MAJOR
-      } else {
-        old.moduleVersion.bumpFrom(new.moduleVersion)
+          VersionType.MAJOR
+        } else {
+          old.moduleVersion.bumpFrom(new.moduleVersion)
+        }
       }
-    }
 
     val finalBump = versionBumps.minOrNull()
     return oldBomVersion.bump(finalBump)

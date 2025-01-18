@@ -17,8 +17,8 @@ import io.kotest.matchers.file.shouldExist
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import org.gradle.api.tasks.TaskProvider
 import java.io.File
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.register
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
@@ -36,55 +36,62 @@ class GenerateBomTests : FunSpec() {
     clearMocks(service)
   }
 
-  @Test fun `ignores the configured ignored dependencies`() {
-    val ignoredDependency = GroupIndexArtifact(
-      groupId = "com.google.firebase",
-      artifactId = "firebase-functions",
-      versions = listOf("1.0.0"),
-    )
-
-    val dependencies = listOf(
+  @Test
+  fun `ignores the configured ignored dependencies`() {
+    val ignoredDependency =
       GroupIndexArtifact(
         groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
+        artifactId = "firebase-functions",
+        versions = listOf("1.0.0"),
       )
-    )
+
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        )
+      )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies + ignoredDependency)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common"),
-      ignoredArtifacts = listOf("com.google.firebase:firebase-functions")
-    )
+    val file =
+      makeNewBom(
+        bomArtifacts = listOf("com.google.firebase:firebase-common"),
+        ignoredArtifacts = listOf("com.google.firebase:firebase-functions"),
+      )
 
     val newPom = PomElement.fromFile(file)
     val deps = newPom.dependencyManagement?.dependencies.shouldNotBeEmpty()
     deps.shouldNotContain(ignoredDependency.toArtifactDependency())
   }
 
-  @Test fun `major bumps the bom version when artifacts are removed`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
-      ),
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-functions",
-        versions = listOf("1.0.0", "1.0.1"),
+  @Test
+  fun `major bumps the bom version when artifacts are removed`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        ),
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-functions",
+          versions = listOf("1.0.0", "1.0.1"),
+        ),
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common"),
-      ignoredArtifacts = listOf("com.google.firebase:firebase-functions")
-    )
+    val file =
+      makeNewBom(
+        bomArtifacts = listOf("com.google.firebase:firebase-common"),
+        ignoredArtifacts = listOf("com.google.firebase:firebase-functions"),
+      )
 
     val newPom = PomElement.fromFile(file)
     val deps = newPom.dependencyManagement?.dependencies.shouldNotBeEmpty().map { it.artifactId }
@@ -93,27 +100,32 @@ class GenerateBomTests : FunSpec() {
     newPom.version shouldBeEqual "2.0.0"
   }
 
-  @Test fun `minor bumps the bom version when artifacts are added`() {
-    val dependencies = listOf(
+  @Test
+  fun `minor bumps the bom version when artifacts are added`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        )
+      )
+
+    val newArtifact =
       GroupIndexArtifact(
         groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
+        artifactId = "firebase-functions",
+        versions = listOf("1.0.0"),
       )
-    )
-
-    val newArtifact = GroupIndexArtifact(
-      groupId = "com.google.firebase",
-      artifactId = "firebase-functions",
-      versions = listOf("1.0.0"),
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies + newArtifact)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
-    )
+    val file =
+      makeNewBom(
+        bomArtifacts =
+          listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      )
 
     val newPom = PomElement.fromFile(file)
     val deps = newPom.dependencyManagement?.dependencies.shouldNotBeEmpty().map { it.artifactId }
@@ -122,50 +134,53 @@ class GenerateBomTests : FunSpec() {
     newPom.version shouldBeEqual "1.1.0"
   }
 
-  @Test fun `bumps the bom version per the biggest artifact bump`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
-      ),
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-functions",
-        versions = listOf("10.1.2", "11.0.0"),
+  @Test
+  fun `bumps the bom version per the biggest artifact bump`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        ),
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-functions",
+          versions = listOf("10.1.2", "11.0.0"),
+        ),
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
-    )
+    val file =
+      makeNewBom(
+        bomArtifacts =
+          listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      )
 
     val newPom = PomElement.fromFile(file)
     newPom.version shouldBeEqual "2.0.0"
   }
 
-  @Test fun `allows versions to be overridden`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
+  @Test
+  fun `allows versions to be overridden`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        )
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common")
-    ) {
-      versionOverrides.set(mapOf(
-        "com.google.firebase:firebase-common" to "22.0.0"
-      ))
-    }
+    val file =
+      makeNewBom(bomArtifacts = listOf("com.google.firebase:firebase-common")) {
+        versionOverrides.set(mapOf("com.google.firebase:firebase-common" to "22.0.0"))
+      }
 
     val newPom = PomElement.fromFile(file)
     val deps = newPom.dependencyManagement?.dependencies.shouldNotBeEmpty()
@@ -180,27 +195,31 @@ class GenerateBomTests : FunSpec() {
 
   @Test
   fun `generates in the expected format`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
-      ),
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-functions",
-        versions = listOf("1.0.0", "1.0.1"),
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        ),
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-functions",
+          versions = listOf("1.0.0", "1.0.1"),
+        ),
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
-    val file = makeNewBom(
-      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
-    )
+    val file =
+      makeNewBom(
+        bomArtifacts =
+          listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      )
 
-    file.readText().trim() shouldBeDiff """
+    file.readText().trim() shouldBeDiff
+      """
       <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <modelVersion>4.0.0</modelVersion>
         <groupId>com.google.firebase</groupId>
@@ -229,50 +248,53 @@ class GenerateBomTests : FunSpec() {
           </dependencies>
         </dependencyManagement>
       </project>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
-  @Test fun `throws an error if artifacts are not live on gmaven yet`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
+  @Test
+  fun `throws an error if artifacts are not live on gmaven yet`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        )
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
-
     shouldThrowSubstring("not live on gmaven yet", "com.google.firebase:firebase-functions") {
       makeNewBom(
-        bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+        bomArtifacts =
+          listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
       )
     }
   }
 
-  @Test fun `throws an error if there are firebase artifacts missing`() {
-    val dependencies = listOf(
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-common",
-        versions = listOf("21.0.0", "21.0.1"),
-      ),
-      GroupIndexArtifact(
-        groupId = "com.google.firebase",
-        artifactId = "firebase-functions",
-        versions = listOf("1.0.0", "1.0.1"),
+  @Test
+  fun `throws an error if there are firebase artifacts missing`() {
+    val dependencies =
+      listOf(
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-common",
+          versions = listOf("21.0.0", "21.0.1"),
+        ),
+        GroupIndexArtifact(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-functions",
+          versions = listOf("1.0.0", "1.0.1"),
+        ),
       )
-    )
 
     makeOldBom(dependencies)
     linkGroupIndex(dependencies)
 
     shouldThrowSubstring("artifacts missing", "com.google.firebase:firebase-functions") {
-      makeNewBom(
-        bomArtifacts = listOf("com.google.firebase:firebase-common")
-      )
+      makeNewBom(bomArtifacts = listOf("com.google.firebase:firebase-common"))
     }
   }
 
@@ -290,7 +312,7 @@ class GenerateBomTests : FunSpec() {
   private fun makeNewBom(
     bomArtifacts: List<String> = emptyList(),
     ignoredArtifacts: List<String> = emptyList(),
-    configure: GenerateBomTask.() -> Unit = {}
+    configure: GenerateBomTask.() -> Unit = {},
   ): File {
     val task = makeTask {
       this.bomArtifacts.set(bomArtifacts)
@@ -299,10 +321,11 @@ class GenerateBomTests : FunSpec() {
       configure()
     }
 
-    val file = task.get().let {
-      it.generate()
-      it.bomFile.asFile.get()
-    }
+    val file =
+      task.get().let {
+        it.generate()
+        it.bomFile.asFile.get()
+      }
 
     file.shouldExist()
 
@@ -313,19 +336,19 @@ class GenerateBomTests : FunSpec() {
     every { service.groupIndex("com.google.firebase") } answers { dependencies }
     every { service.groupIndexArtifactOrNull(any()) } answers { null }
 
-    for(artifact in dependencies) {
-      every { service.groupIndexArtifactOrNull("${artifact.groupId}:${artifact.artifactId}") } answers { artifact }
+    for (artifact in dependencies) {
+      every {
+        service.groupIndexArtifactOrNull("${artifact.groupId}:${artifact.artifactId}")
+      } answers { artifact }
     }
   }
 
   private fun makeOldBom(dependencies: List<GroupIndexArtifact>): PomElement {
-    val artifacts = dependencies.map {
-      it.toArtifactDependency().copy(version = it.versions.first())
-    }
-    val bom = PomElement.fromFile(emptyBom).copy(
-      dependencyManagement =
-        DependencyManagementElement(artifacts)
-    )
+    val artifacts =
+      dependencies.map { it.toArtifactDependency().copy(version = it.versions.first()) }
+    val bom =
+      PomElement.fromFile(emptyBom)
+        .copy(dependencyManagement = DependencyManagementElement(artifacts))
 
     every { service.latestPom("com.google.firebase", "firebase-bom") } answers { bom }
 

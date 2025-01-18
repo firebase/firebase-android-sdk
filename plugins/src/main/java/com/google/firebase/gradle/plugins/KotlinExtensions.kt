@@ -327,7 +327,8 @@ val File.absoluteUnixPath: String
   get() = absolutePath.replace("\\", "/")
 
 /**
- * Partitions a map with nullable values into a map of non null values and a list of keys with null values.
+ * Partitions a map with nullable values into a map of non null values and a list of keys with null
+ * values.
  *
  * For example:
  * ```
@@ -349,8 +350,8 @@ val File.absoluteUnixPath: String
  * invalidDays shouldContainExactly listOf("Wednesday", "Friday")
  * ```
  *
- * @return A pair where the first component is a map of all the non null values and the second component
- * is a list of the keys with null values.
+ * @return A pair where the first component is a map of all the non null values and the second
+ *   component is a list of the keys with null values.
  */
 fun <K, V> Map<K, V?>.partitionNotNull(): Pair<Map<K, V>, List<K>> {
   val nonNullEntries = mutableMapOf<K, V>()

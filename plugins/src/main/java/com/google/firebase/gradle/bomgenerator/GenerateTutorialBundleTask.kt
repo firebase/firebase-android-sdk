@@ -17,8 +17,8 @@ import org.gradle.api.tasks.TaskAction
 /**
  * Generates the tutorial bundle recipe for a release.
  *
- * This task uses gmaven as a source of truth, and as such, should be ran _after_ the artifacts
- * are live on gmaven.
+ * This task uses gmaven as a source of truth, and as such, should be ran _after_ the artifacts are
+ * live on gmaven.
  *
  * @see GenerateBomTask
  */
@@ -94,9 +94,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
    */
   @get:Input abstract val versionOverrides: MapProperty<String, String>
 
-  /**
-   * The file to save the generated tutorial to.
-   */
+  /** The file to save the generated tutorial to. */
   @get:OutputFile abstract val tutorialFile: RegularFileProperty
 
   @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
@@ -112,30 +110,40 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     val allArtifacts = firebaseArtifacts + commonArtifacts + gradlePlugins + perfArtifacts
 
     val missingArtifacts = requiredArtifacts - allArtifacts.toSet()
-    if(missingArtifacts.isNotEmpty()) {
-      throw RuntimeException(multiLine(
-        "Artifacts required for the tutorial bundle are missing from the provided input:",
-        *missingArtifacts.toTypedArray()
-      ))
+    if (missingArtifacts.isNotEmpty()) {
+      throw RuntimeException(
+        multiLine(
+          "Artifacts required for the tutorial bundle are missing from the provided input:",
+          *missingArtifacts.toTypedArray(),
+        )
+      )
     }
 
-    val sections = listOfNotNull(
+    val sections =
+      listOfNotNull(
         generateSection("Common Firebase dependencies", commonArtifacts),
         generateSection("Firebase SDK libraries", firebaseArtifacts),
         generateSection("Firebase Gradle plugins", gradlePlugins),
         generateSection("Performance Monitoring", perfArtifacts),
-    )
+      )
 
-    tutorialFile.get().asFile.createIfAbsent().writeText("""
+    tutorialFile
+      .get()
+      .asFile
+      .createIfAbsent()
+      .writeText(
+        """
       |<!DOCTYPE root [
       |${sections.joinToString("\n\n").removeSuffix("\n")}
       |]>
       |
-    """.trimMargin())
+    """
+          .trimMargin()
+      )
   }
 
   private fun generateSection(name: String, artifacts: List<String>): String? {
-    if(artifacts.isEmpty()) {
+    if (artifacts.isEmpty()) {
       logger.warn("Skipping section, since no data was provided: $name")
       return null
     } else {
@@ -145,37 +153,38 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     val mappingKeys = mappings.keys
 
     val unsupportedArtifacts = artifacts.filter { !mappingKeys.contains(it) }
-    if(unsupportedArtifacts.isNotEmpty()) {
+    if (unsupportedArtifacts.isNotEmpty()) {
       throw RuntimeException(
         multiLine(
           "Artifacts required for the tutorial bundle are missing ArtifactTutorialMapping(s)",
           "Please update the GenerateTutorialBundleTask.mappings variable accordingly for:",
-          *unsupportedArtifacts.toTypedArray()
+          *unsupportedArtifacts.toTypedArray(),
         )
       )
     }
 
     val sortedArtifacts = artifacts.sortedBy { mappingKeys.indexOf(it) }
-    val artifactSection = sortedArtifacts.map {
-      artifactVariableString(it)
-    }
+    val artifactSection = sortedArtifacts.map { artifactVariableString(it) }
 
-    return listOf("<!-- $name -->", *artifactSection.toTypedArray()).joinToString("\n").prependIndent("  ")
+    return listOf("<!-- $name -->", *artifactSection.toTypedArray())
+      .joinToString("\n")
+      .prependIndent("  ")
   }
 
   private fun versionString(fullArtifactName: String): String {
     val overrideVersion = versionOverrides.orEmpty()[fullArtifactName]
 
-    if(overrideVersion != null) {
+    if (overrideVersion != null) {
       logger.info("Using a version override for an artifact ($fullArtifactName): $overrideVersion")
 
       return overrideVersion
     } else {
       logger.info("Fetching the latest version for an artifact: $fullArtifactName")
 
-      return gmaven.get().latestVersionOrNull(fullArtifactName) ?: throw RuntimeException(
-        "An artifact required for the tutorial bundle is missing from gmaven: $fullArtifactName"
-      )
+      return gmaven.get().latestVersionOrNull(fullArtifactName)
+        ?: throw RuntimeException(
+          "An artifact required for the tutorial bundle is missing from gmaven: $fullArtifactName"
+        )
     }
   }
 
@@ -185,7 +194,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     return multiLine(
       "<!-- $name -->",
       "<!ENTITY $alias \"${versionString(fullArtifactName)}\">",
-      *extra.toTypedArray()
+      *extra.toTypedArray(),
     )
   }
 
@@ -195,87 +204,64 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
      *
      * Since this is a _linked_ map, the order is preserved in the tutorial output.
      */
-    private val mappings = linkedMapOf(
-      "com.google.gms:google-services" to ArtifactTutorialMapping(
-        "Google Services Plugin",
-        "google-services-plugin-class",
-        listOf(
-          "<!ENTITY google-services-plugin \"com.google.gms.google-services\">",
-          "<!ENTITY gradle-plugin-class \"com.android.tools.build:gradle:8.1.0\">"
-        )
-      ),
-      "com.google.firebase:firebase-analytics" to ArtifactTutorialMapping(
-        "Analytics",
-        "analytics-dependency"
-      ),
-      "com.google.firebase:firebase-crashlytics" to ArtifactTutorialMapping(
-        "Crashlytics",
-        "crashlytics-dependency"
-      ),
-      "com.google.firebase:firebase-perf" to ArtifactTutorialMapping(
-        "Performance Monitoring",
-        "perf-dependency"
-      ),
-      "com.google.firebase:firebase-vertexai" to ArtifactTutorialMapping(
-        "Vertex AI in Firebase",
-        "vertex-dependency"
-      ),
-      "com.google.firebase:firebase-messaging" to ArtifactTutorialMapping(
-        "Cloud Messaging",
-        "messaging-dependency"
-      ),
-      "com.google.firebase:firebase-auth" to ArtifactTutorialMapping(
-        "Authentication",
-        "auth-dependency"
-      ),
-      "com.google.firebase:firebase-database" to ArtifactTutorialMapping(
-        "Realtime Database",
-        "database-dependency"
-      ),
-      "com.google.firebase:firebase-storage" to ArtifactTutorialMapping(
-        "Cloud Storage",
-        "storage-dependency"
-      ),
-      "com.google.firebase:firebase-config" to ArtifactTutorialMapping(
-        "Remote Config",
-        "remote-config-dependency"
-      ),
-      "com.google.android.gms:play-services-ads" to ArtifactTutorialMapping(
-        "Admob",
-        "ads-dependency"
-      ),
-      "com.google.firebase:firebase-firestore" to ArtifactTutorialMapping(
-        "Cloud Firestore",
-        "firestore-dependency"
-      ),
-      "com.google.firebase:firebase-functions" to ArtifactTutorialMapping(
-        "Firebase Functions",
-        "functions-dependency"
-      ),
-      "com.google.firebase:firebase-inappmessaging-display" to ArtifactTutorialMapping(
-        "FIAM Display",
-        "fiamd-dependency"
-      ),
-      "com.google.firebase:firebase-ml-vision" to ArtifactTutorialMapping(
-        "Firebase MLKit Vision",
-        "ml-vision-dependency"
-      ),
-      "com.google.firebase:firebase-appdistribution-gradle" to ArtifactTutorialMapping(
-        "App Distribution",
-        "appdistribution-plugin-class",
-        listOf("<!ENTITY appdistribution-plugin \"com.google.firebase.appdistribution\">")
-      ),
-      "com.google.firebase:firebase-crashlytics-gradle" to ArtifactTutorialMapping(
-        "Crashlytics",
-        "crashlytics-plugin-class",
-        listOf("<!ENTITY crashlytics-plugin \"com.google.firebase.crashlytics\">")
-      ),
-      "com.google.firebase:perf-plugin" to ArtifactTutorialMapping(
-        "Perf Plugin",
-        "perf-plugin-class",
-        listOf("<!ENTITY perf-plugin \"com.google.firebase.firebase-perf\">")
+    private val mappings =
+      linkedMapOf(
+        "com.google.gms:google-services" to
+          ArtifactTutorialMapping(
+            "Google Services Plugin",
+            "google-services-plugin-class",
+            listOf(
+              "<!ENTITY google-services-plugin \"com.google.gms.google-services\">",
+              "<!ENTITY gradle-plugin-class \"com.android.tools.build:gradle:8.1.0\">",
+            ),
+          ),
+        "com.google.firebase:firebase-analytics" to
+          ArtifactTutorialMapping("Analytics", "analytics-dependency"),
+        "com.google.firebase:firebase-crashlytics" to
+          ArtifactTutorialMapping("Crashlytics", "crashlytics-dependency"),
+        "com.google.firebase:firebase-perf" to
+          ArtifactTutorialMapping("Performance Monitoring", "perf-dependency"),
+        "com.google.firebase:firebase-vertexai" to
+          ArtifactTutorialMapping("Vertex AI in Firebase", "vertex-dependency"),
+        "com.google.firebase:firebase-messaging" to
+          ArtifactTutorialMapping("Cloud Messaging", "messaging-dependency"),
+        "com.google.firebase:firebase-auth" to
+          ArtifactTutorialMapping("Authentication", "auth-dependency"),
+        "com.google.firebase:firebase-database" to
+          ArtifactTutorialMapping("Realtime Database", "database-dependency"),
+        "com.google.firebase:firebase-storage" to
+          ArtifactTutorialMapping("Cloud Storage", "storage-dependency"),
+        "com.google.firebase:firebase-config" to
+          ArtifactTutorialMapping("Remote Config", "remote-config-dependency"),
+        "com.google.android.gms:play-services-ads" to
+          ArtifactTutorialMapping("Admob", "ads-dependency"),
+        "com.google.firebase:firebase-firestore" to
+          ArtifactTutorialMapping("Cloud Firestore", "firestore-dependency"),
+        "com.google.firebase:firebase-functions" to
+          ArtifactTutorialMapping("Firebase Functions", "functions-dependency"),
+        "com.google.firebase:firebase-inappmessaging-display" to
+          ArtifactTutorialMapping("FIAM Display", "fiamd-dependency"),
+        "com.google.firebase:firebase-ml-vision" to
+          ArtifactTutorialMapping("Firebase MLKit Vision", "ml-vision-dependency"),
+        "com.google.firebase:firebase-appdistribution-gradle" to
+          ArtifactTutorialMapping(
+            "App Distribution",
+            "appdistribution-plugin-class",
+            listOf("<!ENTITY appdistribution-plugin \"com.google.firebase.appdistribution\">"),
+          ),
+        "com.google.firebase:firebase-crashlytics-gradle" to
+          ArtifactTutorialMapping(
+            "Crashlytics",
+            "crashlytics-plugin-class",
+            listOf("<!ENTITY crashlytics-plugin \"com.google.firebase.crashlytics\">"),
+          ),
+        "com.google.firebase:perf-plugin" to
+          ArtifactTutorialMapping(
+            "Perf Plugin",
+            "perf-plugin-class",
+            listOf("<!ENTITY perf-plugin \"com.google.firebase.firebase-perf\">"),
+          ),
       )
-    )
   }
 }
 
@@ -290,22 +276,23 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
  *   listOf("<!ENTITY perf-plugin \"com.google.firebase.firebase-perf\">")
  * )
  * ```
+ *
  * The tutorial will generate the following output:
  * ```html
  * <!-- Perf Plugin -->
  * <!ENTITY perf-plugin-class "1.2.3">
  * <!ENTITY perf-plugin "com.google.firebase.firebase-perf">
  * ```
+ *
  * _Assuming the latest version on gmaven is `1.2.3`._
  *
  * @property name The space separated, capitalized, full name of the artifact.
  * @property alias The internal alias of the artifact.
  * @property extra Optional additional data to add after the metadata entry in the tutorial.
- *
  * @see GenerateTutorialBundleTask.mappings
  */
 private data class ArtifactTutorialMapping(
   val name: String,
   val alias: String,
-  val extra: List<String> = emptyList()
+  val extra: List<String> = emptyList(),
 )

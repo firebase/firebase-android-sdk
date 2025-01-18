@@ -1,12 +1,12 @@
 package com.google.firebase.gradle.plugins.services
 
 import com.google.firebase.gradle.plugins.writeStream
-import org.w3c.dom.Document
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.InputStream
 import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Document
 
 /**
  * Wrapper around [Documents][Document].
@@ -15,35 +15,35 @@ import javax.xml.parsers.DocumentBuilderFactory
  * behavior to be more easily mocked and tested.
  */
 class DocumentService {
-    /**
-     * Opens an [InputStream] at the specified [url].
-     *
-     * It's the caller's responsibility to _close_ the stream when done.
-     */
-    fun openStream(url: String): InputStream = URL(url).openStream()
+  /**
+   * Opens an [InputStream] at the specified [url].
+   *
+   * It's the caller's responsibility to _close_ the stream when done.
+   */
+  fun openStream(url: String): InputStream = URL(url).openStream()
 
-    /**
-     * Downloads the [Document] from the specified [url], and saves it to a [file].
-     *
-     * @return The same [file] instance when the document is downloaded, or null if the document
-     *   wasn't found.
-     */
-    fun downloadToFile(url: String, file: File): File? =
-        try {
-            openStream(url).use { file.writeStream(it) }
-        } catch (e: FileNotFoundException) {
-            null
-        }
+  /**
+   * Downloads the [Document] from the specified [url], and saves it to a [file].
+   *
+   * @return The same [file] instance when the document is downloaded, or null if the document
+   *   wasn't found.
+   */
+  fun downloadToFile(url: String, file: File): File? =
+    try {
+      openStream(url).use { file.writeStream(it) }
+    } catch (e: FileNotFoundException) {
+      null
+    }
 
-    /**
-     * Downloads the [Document] from the specified [url].
-     *
-     * @return The downloaded [Document] instance, or null if the document wasn't found.
-     */
-    fun downloadDocument(url: String): Document? =
-        try {
-            DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(openStream(url))
-        } catch (e: FileNotFoundException) {
-            null
-        }
+  /**
+   * Downloads the [Document] from the specified [url].
+   *
+   * @return The downloaded [Document] instance, or null if the document wasn't found.
+   */
+  fun downloadDocument(url: String): Document? =
+    try {
+      DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(openStream(url))
+    } catch (e: FileNotFoundException) {
+      null
+    }
 }

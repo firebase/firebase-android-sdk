@@ -6,10 +6,7 @@ import com.google.firebase.gradle.plugins.datamodels.DependencyManagementElement
 import com.google.firebase.gradle.plugins.datamodels.PomElement
 import com.google.firebase.gradle.shouldBeDiff
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.file.shouldExist
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldInclude
 import java.io.File
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.register
@@ -39,9 +36,8 @@ class GenerateBomReleaseNotesTests : FunSpec() {
     val bom = makeBom("1.0.0", dependencies)
     val file = makeReleaseNotes(bom, bom)
 
-    file
-      .readText().trim() shouldBeDiff
-        """
+    file.readText().trim() shouldBeDiff
+      """
             ### {{firebase_bom_long}} ({{bill_of_materials}}) version 1.0.0 {: #bom_v1-0-0}
             {% comment %}
             These library versions must be flat-typed, do not use variables.
@@ -77,8 +73,7 @@ class GenerateBomReleaseNotesTests : FunSpec() {
               </table>
             </section>
         """
-          .trimIndent()
-
+        .trimIndent()
   }
 
   @Test
@@ -123,10 +118,8 @@ class GenerateBomReleaseNotesTests : FunSpec() {
     val newBom = makeBom("2.0.0", newDependencies)
     val file = makeReleaseNotes(oldBom, newBom)
 
-    file
-      .readText().trim() shouldBeDiff
-
-        """
+    file.readText().trim() shouldBeDiff
+      """
           ### {{firebase_bom_long}} ({{bill_of_materials}}) version 2.0.0 {: #bom_v2-0-0}
           {% comment %}
           These library versions must be flat-typed, do not use variables.
@@ -167,8 +160,7 @@ class GenerateBomReleaseNotesTests : FunSpec() {
             </table>
           </section>
       """
-          .trimIndent()
-
+        .trimIndent()
   }
 
   private fun makeTask(

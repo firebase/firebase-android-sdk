@@ -1,40 +1,23 @@
 package com.google.firebase.gradle.plugins.services
 
 import com.google.common.annotations.VisibleForTesting
-import com.google.firebase.gradle.plugins.ModuleVersion
 import com.google.firebase.gradle.plugins.children
 import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
 import com.google.firebase.gradle.plugins.datamodels.PomElement
 import com.google.firebase.gradle.plugins.multiLine
 import com.google.firebase.gradle.plugins.registerIfAbsent
 import com.google.firebase.gradle.plugins.textByAttributeOrNull
-import com.google.firebase.gradle.plugins.writeStream
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.InputStream
-import java.net.URL
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
-import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.createTempFile
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import nl.adaptivity.xmlutil.XmlDeclMode
-import nl.adaptivity.xmlutil.newReader
-import nl.adaptivity.xmlutil.serialization.XML
-import nl.adaptivity.xmlutil.serialization.XmlChildrenName
-import nl.adaptivity.xmlutil.serialization.XmlElement
-import nl.adaptivity.xmlutil.serialization.XmlSerialName
-import nl.adaptivity.xmlutil.xmlStreaming
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import org.w3c.dom.Document
-import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
@@ -112,7 +95,8 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
    *
    * @param groupId The group to search under.
    * @param artifactId The artifact to search for.
-   * @return An [GroupIndexArtifact] representing the artifact, or null if the artifact couldn't be found.
+   * @return An [GroupIndexArtifact] representing the artifact, or null if the artifact couldn't be
+   *   found.
    * @see groupIndex
    */
   fun groupIndexArtifactOrNull(groupId: String, artifactId: String): GroupIndexArtifact? =
@@ -126,7 +110,8 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
    * ```
    *
    * @param fullArtifactName The artifact to search for, represented as "groupId:artifactId".
-   * @return An [GroupIndexArtifact] representing the artifact, or null if the artifact couldn't be found.
+   * @return An [GroupIndexArtifact] representing the artifact, or null if the artifact couldn't be
+   *   found.
    * @see groupIndex
    */
   fun groupIndexArtifactOrNull(fullArtifactName: String): GroupIndexArtifact? {
@@ -557,12 +542,11 @@ data class GroupIndexArtifact(
 ) {
 
   /**
-   * Converts this artifact into a [ArtifactDependency], using the [latestVersion]
-   * as the corresponding version.
+   * Converts this artifact into a [ArtifactDependency], using the [latestVersion] as the
+   * corresponding version.
    */
   fun toArtifactDependency() =
     ArtifactDependency(groupId = groupId, artifactId = artifactId, version = latestVersion)
-
 
   /**
    * Returns this artifact as a fully qualified dependency string.
@@ -581,9 +565,7 @@ data class GroupIndexArtifact(
      *
      * @param groupId The group that this artifact belongs to.
      * @param node The HTML node that contains the data for this artifact.
-     *
      * @return An instance of [GroupIndexArtifact] representing the provided [node].
-     *
      * @throws RuntimeException If the node couldn't be parsed for whatever reason.
      */
     fun fromNode(groupId: String, node: Node): GroupIndexArtifact {
@@ -595,8 +577,10 @@ data class GroupIndexArtifact(
 
       if (versions.isEmpty())
         throw RuntimeException(
-          multiLine("GroupIndex node has a versions attribute without any content: ${node.nodeName}",
-            "This shouldn't happen. If this is happening, and is expected behavior, then this check should be removed.")
+          multiLine(
+            "GroupIndex node has a versions attribute without any content: ${node.nodeName}",
+            "This shouldn't happen. If this is happening, and is expected behavior, then this check should be removed.",
+          )
         )
 
       return GroupIndexArtifact(groupId, node.nodeName, versions)

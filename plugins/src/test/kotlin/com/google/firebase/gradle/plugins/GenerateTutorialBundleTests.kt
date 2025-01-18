@@ -1,22 +1,16 @@
 package com.google.firebase.gradle.plugins
 
-import com.google.firebase.gradle.bomgenerator.GenerateBomTask
 import com.google.firebase.gradle.bomgenerator.GenerateTutorialBundleTask
 import com.google.firebase.gradle.plugins.services.GMavenService
 import com.google.firebase.gradle.shouldBeDiff
 import com.google.firebase.gradle.shouldThrowSubstring
-import io.kotest.assertions.throwables.shouldThrowMessage
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.file.shouldExist
-import io.kotest.matchers.string.shouldContain
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.TaskProvider
 import java.io.File
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.register
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
@@ -36,26 +30,28 @@ class GenerateTutorialBundleTests : FunSpec() {
 
   @Test
   fun `generates the tutorial bundle`() {
-    val tutorialFile = makeTutorial(
-      commonArtifacts = listOf(
-        "com.google.gms:google-services:1.2.3"
-      ),
-      firebaseArtifacts = listOf(
-        "com.google.firebase:firebase-analytics:1.2.4",
-        "com.google.firebase:firebase-crashlytics:12.0.0",
-        "com.google.firebase:firebase-perf:10.2.3",
-        "com.google.firebase:firebase-vertexai:9.2.3"
-      ),
-      gradlePlugins = listOf(
-        "com.google.firebase:firebase-appdistribution-gradle:1.21.3",
-        "com.google.firebase:firebase-crashlytics-gradle:15.1.0",
-        "com.google.firebase:perf-plugin:20.5.6"
-      )
-    ) {
-      requiredArtifacts.set(listOf("com.google.firebase:firebase-crashlytics"))
-    }
+    val tutorialFile =
+      makeTutorial(
+        commonArtifacts = listOf("com.google.gms:google-services:1.2.3"),
+        firebaseArtifacts =
+          listOf(
+            "com.google.firebase:firebase-analytics:1.2.4",
+            "com.google.firebase:firebase-crashlytics:12.0.0",
+            "com.google.firebase:firebase-perf:10.2.3",
+            "com.google.firebase:firebase-vertexai:9.2.3",
+          ),
+        gradlePlugins =
+          listOf(
+            "com.google.firebase:firebase-appdistribution-gradle:1.21.3",
+            "com.google.firebase:firebase-crashlytics-gradle:15.1.0",
+            "com.google.firebase:perf-plugin:20.5.6",
+          ),
+      ) {
+        requiredArtifacts.set(listOf("com.google.firebase:firebase-crashlytics"))
+      }
 
-    tutorialFile.readText().trim() shouldBeDiff """
+    tutorialFile.readText().trim() shouldBeDiff
+      """
       <!DOCTYPE root [
         <!-- Common Firebase dependencies -->
         <!-- Google Services Plugin -->
@@ -84,43 +80,54 @@ class GenerateTutorialBundleTests : FunSpec() {
         <!ENTITY perf-plugin-class "20.5.6">
         <!ENTITY perf-plugin "com.google.firebase.firebase-perf">
       ]>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
-  @Test fun `does not include empty sections`() {
+  @Test
+  fun `does not include empty sections`() {
     val tutorialFile = makeTutorial()
 
-    tutorialFile.readText().trim() shouldBeDiff """
+    tutorialFile.readText().trim() shouldBeDiff
+      """
       <!DOCTYPE root [
 
       ]>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
+  @Test
+  fun `allows versions to be overridden`() {
+    val tutorialFile =
+      makeTutorial(
+        commonArtifacts =
+          listOf(
+            "com.google.gms:google-services:1.2.3",
+            "com.google.firebase:firebase-perf:10.2.3",
+          ),
+        firebaseArtifacts =
+          listOf(
+            "com.google.firebase:firebase-analytics:1.2.4",
+            "com.google.firebase:firebase-crashlytics:12.0.0",
+          ),
+        gradlePlugins =
+          listOf(
+            "com.google.firebase:firebase-appdistribution-gradle:1.21.3",
+            "com.google.firebase:firebase-crashlytics-gradle:15.1.0",
+          ),
+      ) {
+        versionOverrides.set(
+          mapOf(
+            "com.google.gms:google-services" to "3.2.1",
+            "com.google.firebase:firebase-crashlytics" to "1.2.12",
+            "com.google.firebase:firebase-crashlytics-gradle" to "1.15.0",
+          )
+        )
+      }
 
-  @Test fun `allows versions to be overridden`() {
-    val tutorialFile = makeTutorial(
-      commonArtifacts = listOf(
-        "com.google.gms:google-services:1.2.3",
-        "com.google.firebase:firebase-perf:10.2.3"
-      ),
-      firebaseArtifacts = listOf(
-        "com.google.firebase:firebase-analytics:1.2.4",
-        "com.google.firebase:firebase-crashlytics:12.0.0"
-      ),
-      gradlePlugins = listOf(
-        "com.google.firebase:firebase-appdistribution-gradle:1.21.3",
-        "com.google.firebase:firebase-crashlytics-gradle:15.1.0"
-      )
-    ) {
-      versionOverrides.set(mapOf(
-        "com.google.gms:google-services" to "3.2.1",
-        "com.google.firebase:firebase-crashlytics" to "1.2.12",
-        "com.google.firebase:firebase-crashlytics-gradle" to "1.15.0"
-      ))
-    }
-
-    tutorialFile.readText().trim() shouldBeDiff """
+    tutorialFile.readText().trim() shouldBeDiff
+      """
       <!DOCTYPE root [
         <!-- Common Firebase dependencies -->
         <!-- Google Services Plugin -->
@@ -144,26 +151,33 @@ class GenerateTutorialBundleTests : FunSpec() {
         <!ENTITY crashlytics-plugin-class "1.15.0">
         <!ENTITY crashlytics-plugin "com.google.firebase.crashlytics">
       ]>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
-  @Test fun `enforces the predefined order of artifacts`() {
-    val tutorialFile = makeTutorial(
-      commonArtifacts = listOf(
-        "com.google.firebase:firebase-perf:10.2.3",
-        "com.google.gms:google-services:1.2.3"
-      ),
-      firebaseArtifacts = listOf(
-        "com.google.firebase:firebase-crashlytics:12.0.0",
-        "com.google.firebase:firebase-analytics:1.2.4"
-      ),
-      gradlePlugins = listOf(
-        "com.google.firebase:firebase-crashlytics-gradle:15.1.0",
-        "com.google.firebase:firebase-appdistribution-gradle:1.21.3"
+  @Test
+  fun `enforces the predefined order of artifacts`() {
+    val tutorialFile =
+      makeTutorial(
+        commonArtifacts =
+          listOf(
+            "com.google.firebase:firebase-perf:10.2.3",
+            "com.google.gms:google-services:1.2.3",
+          ),
+        firebaseArtifacts =
+          listOf(
+            "com.google.firebase:firebase-crashlytics:12.0.0",
+            "com.google.firebase:firebase-analytics:1.2.4",
+          ),
+        gradlePlugins =
+          listOf(
+            "com.google.firebase:firebase-crashlytics-gradle:15.1.0",
+            "com.google.firebase:firebase-appdistribution-gradle:1.21.3",
+          ),
       )
-    )
 
-    tutorialFile.readText().trim() shouldBeDiff """
+    tutorialFile.readText().trim() shouldBeDiff
+      """
       <!DOCTYPE root [
         <!-- Common Firebase dependencies -->
         <!-- Google Services Plugin -->
@@ -187,78 +201,78 @@ class GenerateTutorialBundleTests : FunSpec() {
         <!ENTITY crashlytics-plugin-class "15.1.0">
         <!ENTITY crashlytics-plugin "com.google.firebase.crashlytics">
       ]>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
-  @Test fun `throws an error if required artifacts are missing`() {
+  @Test
+  fun `throws an error if required artifacts are missing`() {
     shouldThrowSubstring(
       "Artifacts required for the tutorial bundle are missing from the provided input",
-      "com.google.firebase:firebase-auth"
+      "com.google.firebase:firebase-auth",
     ) {
       makeTutorial(
-        firebaseArtifacts = listOf(
-          "com.google.firebase:firebase-crashlytics:12.0.0",
-          "com.google.firebase:firebase-analytics:1.2.4"
-        )
+        firebaseArtifacts =
+          listOf(
+            "com.google.firebase:firebase-crashlytics:12.0.0",
+            "com.google.firebase:firebase-analytics:1.2.4",
+          )
       ) {
         requiredArtifacts.add("com.google.firebase:firebase-auth")
       }
     }
   }
 
-  @Test fun `throws an error if an unreleased artifact is used`() {
-    shouldThrowSubstring(
-      "missing from gmaven",
-      "com.google.firebase:firebase-auth"
-    ) {
+  @Test
+  fun `throws an error if an unreleased artifact is used`() {
+    shouldThrowSubstring("missing from gmaven", "com.google.firebase:firebase-auth") {
       every { service.latestVersionOrNull(any()) } answers { null }
 
-      val task = makeTask {
-        firebaseArtifacts.set(listOf("com.google.firebase:firebase-auth"))
-      }
+      val task = makeTask { firebaseArtifacts.set(listOf("com.google.firebase:firebase-auth")) }
 
       task.get().generate()
     }
   }
 
-  @Test fun `throws an error if an artifact hasn't been added to the local map`() {
+  @Test
+  fun `throws an error if an artifact hasn't been added to the local map`() {
     shouldThrowSubstring(
       "Artifacts required for the tutorial bundle are missing",
       "Please update the",
-      "com.google.firebase:firebase-common"
+      "com.google.firebase:firebase-common",
     ) {
-      makeTutorial(
-        firebaseArtifacts = listOf(
-          "com.google.firebase:firebase-common:1.2.4"
-        )
-      )
+      makeTutorial(firebaseArtifacts = listOf("com.google.firebase:firebase-common:1.2.4"))
     }
   }
 
-  @Test fun `allows unreleased artifacts to be used if the version is provided`() {
+  @Test
+  fun `allows unreleased artifacts to be used if the version is provided`() {
     val task = makeTask {
       firebaseArtifacts.set(listOf("com.google.firebase:firebase-auth"))
-      versionOverrides.set(mapOf(
-        "com.google.firebase:firebase-auth" to "10.0.0"
-      ))
+      versionOverrides.set(mapOf("com.google.firebase:firebase-auth" to "10.0.0"))
     }
 
-    val file = task.get().let {
-      it.generate()
-      it.tutorialFile.get().asFile
-    }
+    val file =
+      task.get().let {
+        it.generate()
+        it.tutorialFile.get().asFile
+      }
 
     file.shouldExist()
-    file.readText().trim() shouldBeDiff """
+    file.readText().trim() shouldBeDiff
+      """
       <!DOCTYPE root [
         <!-- Firebase SDK libraries -->
         <!-- Authentication -->
         <!ENTITY auth-dependency "10.0.0">
       ]>
-    """.trimIndent()
+    """
+        .trimIndent()
   }
 
-  private fun makeTask(configure: GenerateTutorialBundleTask.() -> Unit): TaskProvider<GenerateTutorialBundleTask> {
+  private fun makeTask(
+    configure: GenerateTutorialBundleTask.() -> Unit
+  ): TaskProvider<GenerateTutorialBundleTask> {
     val project = ProjectBuilder.builder().withProjectDir(testProjectDir.root).build()
     return project.tasks.register<GenerateTutorialBundleTask>("generateTutorialBundle") {
       tutorialFile.set(project.layout.buildDirectory.file("tutorial.txt"))
@@ -269,12 +283,12 @@ class GenerateTutorialBundleTests : FunSpec() {
   }
 
   private fun artifactsToVersionMap(artifacts: List<String>): Map<String, String> {
-    return artifacts.associate {
-      val (groupId, artifactId, version) = it.split(":")
-      "$groupId:$artifactId" to version
-    }.onEach { entry ->
-      every { service.latestVersionOrNull(entry.key) } answers { entry.value }
-    }
+    return artifacts
+      .associate {
+        val (groupId, artifactId, version) = it.split(":")
+        "$groupId:$artifactId" to version
+      }
+      .onEach { entry -> every { service.latestVersionOrNull(entry.key) } answers { entry.value } }
   }
 
   private fun makeTutorial(
@@ -282,7 +296,7 @@ class GenerateTutorialBundleTests : FunSpec() {
     commonArtifacts: List<String> = emptyList(),
     gradlePlugins: List<String> = emptyList(),
     perfArtifacts: List<String> = emptyList(),
-    configure: GenerateTutorialBundleTask.() -> Unit = {}
+    configure: GenerateTutorialBundleTask.() -> Unit = {},
   ): File {
 
     val mappedFirebaseArtifacts = artifactsToVersionMap(firebaseArtifacts)
@@ -298,10 +312,11 @@ class GenerateTutorialBundleTests : FunSpec() {
       configure()
     }
 
-    val file = task.get().let {
-      it.generate()
-      it.tutorialFile.get().asFile
-    }
+    val file =
+      task.get().let {
+        it.generate()
+        it.tutorialFile.get().asFile
+      }
 
     file.shouldExist()
 
