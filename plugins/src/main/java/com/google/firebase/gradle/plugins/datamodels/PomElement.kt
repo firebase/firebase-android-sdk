@@ -17,8 +17,18 @@ import org.w3c.dom.Element
 /**
  * TODO: What's left
  * - Make bugs for git client stuff
- * - Push to git to see diff (if there's no other way), and create a separate PR (and maybe branch)
- *   incrementally for all these changes ive made
+ *
+ * I'll probably break my PRs up accordingly:
+ *  - kts migrations (.gradle -> .gradle.kts)
+ *  - Bump okhttp (fixed some tests I believe?)
+ *  - Rename *utils to *extensions to avoid weird edge-case conflict during compilation of tests
+ *  - Migrate VendorPlugin to a more config avoidance and cache compliant manner
+ *  - Add `kotlin.incremental.usePreciseJavaTracking=true` (improve perf when modifying java files)
+ *  - Enable kotlinGradle spotless on plugins and spotlessFormat for misc files (java, kts, toml, etc). Also set the group.
+ *  - Implement GMavenService => Just the implementation of Gmaven service, not the migration
+ *  - Migrate to new Bom related tasks
+ *  - Migrate apiInfoTask, semver, and related tasks to use new AGP api
+ *  - Make copyRootGoogleServices more cache/task avoidance compliant
  */
 
 /**
