@@ -24,7 +24,7 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * Util class for providing a common ground for tests that need to dynamically create their own
- * [projects] [FirebaseTestProject].
+ * [projects][FirebaseTestProject].
  *
  * This class effectively acts as the root controller during multi module testing. The general
  * workflow can be defined as such:

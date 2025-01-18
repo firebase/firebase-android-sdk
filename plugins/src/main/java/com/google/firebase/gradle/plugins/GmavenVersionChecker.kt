@@ -28,33 +28,39 @@ import org.gradle.api.tasks.TaskAction
  * Validate that the current `version` and `latestReleasedVersion` set in the library's
  * `gradle.properties` file are properly set.
  *
+ * @property artifactId The library's group id (eg; `com.google.firebase`)
  * @property artifactId The library's artifact id (eg; `firebase-common`)
  * @property latestReleasedVersion The `latestReleasedVersion` set in `gradle.properties`
  * @property version The `version` set in `gradle.properties`
  */
 abstract class GmavenVersionChecker : DefaultTask() {
+  @get:Input abstract val groupId: Property<String>
+
   @get:Input abstract val artifactId: Property<String>
 
   @get:Input @get:Optional abstract val latestReleasedVersion: Property<String>
 
   @get:Input abstract val version: Property<String>
 
-  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
 
   @TaskAction
   fun run() {
     val version = version.get()
     val gmaven = gmaven.get()
+    val groupId = groupId.get()
     val artifactId = artifactId.get()
     val latestReleasedVersion = latestReleasedVersion.getOrNull()
 
     val latestMavenVersion =
-      gmaven.latestVersionOrNull(artifactId) ?: skipGradleTask("Library hasn't been published")
+      gmaven.latestVersionOrNull(groupId, artifactId)
+        ?: skipGradleTask("Library hasn't been published")
 
     logger.info(
       """
       |Validating GMaven versions for:
       |  version: $version
+      |  groupId: $groupId
       |  artifactId: $artifactId
       |  latestReleasedVersion: $latestReleasedVersion
       |  latestMavenVersion: $latestMavenVersion
@@ -88,7 +94,7 @@ abstract class GmavenVersionChecker : DefaultTask() {
       )
     }
 
-    if (gmaven.hasReleasedVersion(artifactId, version)) {
+    if (gmaven.hasReleasedVersion(groupId, artifactId, version)) {
       throwError("version from gradle.properties ($version) has already been released on GMaven")
     }
 
@@ -97,7 +103,7 @@ abstract class GmavenVersionChecker : DefaultTask() {
         throwError("latestReleasedVersion from gradle.properties has not been set yet")
       }
 
-      if (gmaven.hasReleasedVersion(artifactId, latestReleasedVersion)) {
+      if (gmaven.hasReleasedVersion(groupId, artifactId, latestReleasedVersion)) {
         throwError(
           "latestReleasedVersion from gradle.properties ($latestReleasedVersion) has been released but is not the latest release on GMaven ($latestMavenVersion)"
         )

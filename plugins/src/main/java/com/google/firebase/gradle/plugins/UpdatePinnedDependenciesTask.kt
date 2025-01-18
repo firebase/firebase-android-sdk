@@ -62,7 +62,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   @get:[OutputFile]
   abstract val outputFile: RegularFileProperty
 
-  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
 
   @TaskAction
   fun updateBuildFileDependencies() {
@@ -143,7 +143,8 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue
       val projectToChange = libraries.find { it.path == projectName }
-      val latestVersion = projectToChange?.let { gmaven.get().latestVersion(it.artifactId.get()) }
+      val latestVersion =
+        projectToChange?.let { gmaven.get().latestVersion(it.groupId.get(), it.artifactId.get()) }
 
       latestVersion?.let { "\"${projectToChange.mavenName.get()}:$latestVersion\"" }
     }

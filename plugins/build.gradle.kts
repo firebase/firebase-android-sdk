@@ -24,7 +24,10 @@ repositories {
   mavenCentral()
   maven(url = "https://storage.googleapis.com/android-ci/mvn/")
   maven(url = "https://plugins.gradle.org/m2/")
+  maven(url = "https://s01.oss.sonatype.org/content/repositories/releases/")
 }
+
+group = "com.google.firebase"
 
 spotless {
   java {
@@ -75,6 +78,10 @@ dependencies {
   implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.2")
   implementation("org.apache.maven:maven-resolver-provider:3.9.5")
   implementation("org.apache.maven:maven-model:3.9.5")
+  implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.90.3") {
+    exclude("org.jetbrains.kotlinx", "kotlinx-serialization-json")
+    exclude("org.jetbrains.kotlinx", "kotlinx-serialization-core")
+  }
 
   testImplementation(gradleTestKit())
   testImplementation(libs.bundles.kotest)
@@ -82,6 +89,7 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.truth)
   testImplementation("commons-io:commons-io:2.15.1")
+  testImplementation(kotlin("test"))
 }
 
 gradlePlugin {

@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.runGradle
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain

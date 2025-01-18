@@ -1,0 +1,97 @@
+package com.google.firebase.gradle.bomgenerator
+
+import com.google.firebase.gradle.plugins.createIfAbsent
+import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
+import com.google.firebase.gradle.plugins.datamodels.PomElement
+import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
+
+/** TODO: document */
+abstract class GenerateBomReleaseNotesTask : DefaultTask() {
+  @get:Input abstract val currentBom: RegularFileProperty
+
+  @get:Input abstract val previousBom: Property<PomElement>
+
+  @get:OutputFile abstract val releaseNotesFile: RegularFileProperty
+
+  @get:Internal abstract val previousBomVersions: MapProperty<String, String?>
+
+  @TaskAction
+  fun generate() {
+    val bom = PomElement.fromFile(currentBom.asFile.get())
+    val currentDeps = bom.dependencyManagement?.dependencies.orEmpty()
+    val previousDeps = previousBom.get().dependencyManagement?.dependencies.orEmpty()
+    previousBomVersions.set(previousDeps.associate { it.fullArtifactName to it.version })
+
+    val sortedDependencies = currentDeps.sortedBy { it.version }
+
+    val headingId = "{: #bom_v${bom.version.replace(".", "-")}}"
+
+    releaseNotesFile.asFile
+      .get()
+      .createIfAbsent()
+      .writeText(
+        """
+         |### {{firebase_bom_long}} ({{bill_of_materials}}) version ${bom.version} $headingId
+         |{% comment %}
+         |These library versions must be flat-typed, do not use variables.
+         |The release note for this BoM version is a library-version snapshot.
+         |{% endcomment %}
+         |
+         |<section class="expandable">
+         |  <p class="showalways">
+         |    Firebase Android SDKs mapped to this {{bom}} version
+         |  </p>
+         |  <p>
+         |    Libraries that were versioned with this release are in highlighted rows.<br>
+         |    Refer to a library's release notes (on this page) for details about its changes.
+         |  </p>
+         |  <table>
+         |    <thead>
+         |      <th>Artifact name</th>
+         |      <th>Version mapped<br>to previous {{bom}} v${previousBom.get().version}</th>
+         |      <th>Version mapped<br>to this {{bom}} v${bom.version}</th>
+         |    </thead>
+         |    <tbody>
+         |${sortedDependencies.joinToString("\n") { artifactToListEntry(it) }.prependIndent("      ")}
+         |    </tbody>
+         |  </table>
+         |</section>
+         |
+        """
+          .trimMargin()
+      )
+  }
+
+  private fun artifactToListEntry(artifact: ArtifactDependency): String {
+    val previousVersion = previousBomVersions.get()[artifact.fullArtifactName] ?: "N/A"
+    val artifactName = "${artifact.groupId}:${artifact.artifactId}"
+
+    return if (artifact.version != previousVersion) {
+      """
+       |<tr class="alt">
+       |  <td><b>${artifactName}</b></td>
+       |  <td><b>$previousVersion</b></td>
+       |  <td><b>${artifact.version}</b></td>
+       |</tr>
+      """
+        .trimMargin()
+    } else {
+      """
+       |<tr>
+       |  <td>${artifactName}</td>
+       |  <td>$previousVersion</td>
+       |  <td>${artifact.version}</td>
+       |</tr>
+      """
+        .trimMargin()
+    }
+  }
+}

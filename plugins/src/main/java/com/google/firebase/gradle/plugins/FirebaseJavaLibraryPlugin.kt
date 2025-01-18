@@ -79,6 +79,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   private fun setupSemverTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     val copyPrevious =
       project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+        groupId.set(firebaseLibrary.groupId)
         version.set(firebaseLibrary.latestGMavenVersion)
         artifactId.set(firebaseLibrary.artifactId)
         outputFile.set(project.layout.buildDirectory.file("semver/previous.jar"))

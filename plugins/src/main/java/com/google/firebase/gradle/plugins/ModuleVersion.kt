@@ -209,6 +209,21 @@ data class ModuleVersion(
           }
         }
         .getOrNull()
+
+    // TODO()
+    fun fromString(artifactId: String, version: String): ModuleVersion =
+      fromStringOrNull(version)
+        ?: throw RuntimeException("Invalid module version found for '${artifactId}': $version")
+  }
+
+  // TODO()
+  fun bumpFrom(other: ModuleVersion): VersionType? {
+    if (other.major != this.major) return VersionType.MAJOR
+    if (other.minor != this.minor) return VersionType.MINOR
+    if (other.patch != this.patch) return VersionType.PATCH
+    if (other.pre != this.pre) return VersionType.PRE
+
+    return null
   }
 
   /**

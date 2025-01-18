@@ -17,6 +17,7 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.ChangeType.FIXED
+import com.google.firebase.gradle.runGradle
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly

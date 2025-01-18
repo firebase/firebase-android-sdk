@@ -41,14 +41,14 @@ abstract class PomValidator : DefaultTask() {
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
 
-  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
 
   @TaskAction
   fun run() {
-    if (!gmaven.get().hasReleasedArtifact(artifactId.get()))
+    if (!gmaven.get().hasReleasedArtifact(groupId.get(), artifactId.get()))
       skipGradleTask("Library hasn't been released")
 
-    val oldPom = gmaven.get().latestPom(artifactId.get())
+    val oldPom = gmaven.get().latestPom(groupId.get(), artifactId.get())
     val currentPom = PomElement.fromFile(pomFile.get().asFile)
 
     val oldDependencies = getMapOfDependencies(oldPom)
@@ -69,6 +69,7 @@ abstract class PomValidator : DefaultTask() {
 
   private fun getMapOfDependencies(pom: PomElement) =
     pom.dependencies
+      .orEmpty()
       .filter { it.artifactId !in IGNORED_DEPENDENCIES }
       .associate {
         if (it.version === null)

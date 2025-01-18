@@ -16,6 +16,10 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
+import com.google.firebase.gradle.plugins.datamodels.LicenseElement
+import com.google.firebase.gradle.plugins.datamodels.PomElement
+import com.google.firebase.gradle.plugins.datamodels.simpleDepString
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -43,6 +47,8 @@ open class TestProject(
   /** Generates the `build.gradle.kts` that would represent this project. */
   open fun generateBuildFile(): String {
     return """
+      import com.google.firebase.gradle.bomgenerator.GenerateBomTask
+      
       ${generatePluginBlock()}
       group = "$group"
       ${version?.let { "version = \"$it\"" } ?: ""}
@@ -162,8 +168,8 @@ data class Pom(
       val artifactId = pomElement.artifactId
       val version = pomElement.version
       val type = pomElement.packaging?.let { LibraryType.fromFormat(it) } ?: LibraryType.JAVA
-      val license = pomElement.licenses.firstOrNull() ?: defaultLicense
-      val dependencies = pomElement.dependencies
+      val license = pomElement.licenses?.firstOrNull() ?: defaultLicense
+      val dependencies = pomElement.dependencies.orEmpty()
 
       return Pom(testArtifact(groupId, artifactId, version, type), license, dependencies)
     }

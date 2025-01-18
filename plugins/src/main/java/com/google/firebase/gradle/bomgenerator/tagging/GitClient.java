@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.function.Consumer;
 
+/**
+ * TODO: add bugs for the below todos. This is future work, since it's broken rn anyways.
+ * TODO: Replace with a service that allows certain commands to be batched, and allows us to test it
+ * TODO: also implement a tag bom release task
+ */
 public class GitClient {
 
   private final String mRelease;

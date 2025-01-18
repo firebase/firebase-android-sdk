@@ -19,6 +19,8 @@ package com.google.firebase.gradle.plugins
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.firebase.gradle.plugins.ci.Coverage
+import com.google.firebase.gradle.plugins.services.GMavenService
+import com.google.firebase.gradle.plugins.services.gmavenService
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
@@ -50,7 +52,7 @@ import org.w3c.dom.Element
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
     with(library) {
-      project.gradle.sharedServices.registerIfAbsent<GMavenServiceGradle, _>("gmaven")
+      project.gradle.sharedServices.registerIfAbsent<GMavenService, _>("gmaven")
       previewMode.convention("")
       publishJavadoc.convention(true)
       artifactId.convention(project.name)
@@ -148,6 +150,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     firebaseLibrary: FirebaseLibraryExtension,
   ) {
     project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.set(firebaseLibrary.groupId)
       artifactId.set(firebaseLibrary.artifactId)
       version.set(firebaseLibrary.version)
       latestReleasedVersion.set(firebaseLibrary.latestReleasedVersion)
@@ -353,7 +356,7 @@ val FirebaseLibraryExtension.artifactName: String
 /**
  * Fetches the latest version for this SDK from GMaven.
  *
- * Uses [GMavenServiceGradle] to make the request.
+ * Uses [GMavenService] to make the request.
  *
  * To get the latest released version per the local `gradle.properties`, use [latestReleasedVersion]
  * .
@@ -361,15 +364,18 @@ val FirebaseLibraryExtension.artifactName: String
  * @see [ModuleVersion]
  */
 val FirebaseLibraryExtension.latestGMavenVersion: Provider<ModuleVersion>
-  get() =
-    project.gmavenService.zip(artifactId) { gmaven, artifactId ->
-      gmaven.latestVersionOrNull(artifactId)?.let {
+  get() {
+    val groupAndArtifact = groupId.zip(artifactId) { groupId, artifactId -> groupId to artifactId }
+
+    return project.gmavenService.zip(groupAndArtifact) { gmaven, groupAndArtifactIds ->
+      gmaven.latestVersionOrNull(groupAndArtifactIds.first, groupAndArtifactIds.second)?.let {
         ModuleVersion.fromStringOrNull(it)
           ?: throw RuntimeException(
             "Invalid format for ModuleVersion for module '$artifactName':\n $it"
           )
       }
     }
+  }
 
 /**
  * The latest version released, per the `gradle.properties` file.

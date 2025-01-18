@@ -252,7 +252,7 @@ fun LibraryAndroidComponentsExtension.onReleaseVariants(
  * Register a build service under the specified [name], if it hasn't been registered already.
  *
  * ```
- * project.gradle.sharedServices.registerIfAbsent<GMavenServiceGradle, _>("gmaven")
+ * project.gradle.sharedServices.registerIfAbsent<GMavenService, _>("gmaven")
  * ```
  *
  * @param T The build service class to register
@@ -274,3 +274,9 @@ inline fun <reified T : BuildService<P>, reified P : BuildServiceParameters> Bui
 fun skipGradleTask(reason: String): Nothing {
   throw StopExecutionException(reason)
 }
+
+/** TODO() */
+fun <V, T : List<V>> Provider<T>.orEmpty() = orNull.orEmpty()
+
+/** TODO() */
+fun <K, V, T : Map<K, V>> Provider<T>.orEmpty() = orNull.orEmpty()

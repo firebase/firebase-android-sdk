@@ -23,6 +23,8 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 
+// TODO: organize like-terms (extensions on the same class should be near each other)
+
 /** Replaces all matching substrings with an empty string (nothing) */
 fun String.remove(regex: Regex) = replace(regex, "")
 
@@ -126,6 +128,10 @@ fun Element.findOrCreate(tag: String): Element =
  */
 fun Element.findElementsByTag(tag: String) =
   getElementsByTagName(tag).children().mapNotNull { it as? Element }
+
+// TODO: document (gets children instead of descendants)
+fun Element.childrenByTag(tag: String) =
+  childNodes.children().mapNotNull { it as? Element }.filter { it.nodeName === tag }
 
 /**
  * Returns the text of an attribute, if it exists.
@@ -278,9 +284,6 @@ fun <T> List<T>.coerceToSize(targetSize: Int) = List(targetSize) { getOrNull(it)
 /** Generates a [Sequence] of all the entries in this input stream. */
 fun ZipInputStream.entries() = generateSequence { nextEntry }
 
-// Callers responsibility to close the provided input stream
-// but we close the output stream
-
 /**
  * Writes the [InputStream] to this file.
  *
@@ -292,4 +295,27 @@ fun ZipInputStream.entries() = generateSequence { nextEntry }
 fun File.writeStream(stream: InputStream): File {
   outputStream().use { stream.copyTo(it) }
   return this
+}
+
+// TODO: document
+fun File.createIfAbsent(): File {
+  parentFile?.mkdirs()
+  createNewFile()
+  return this
+}
+
+// TODO: document
+fun <K, V> Map<K, V?>.partitionNotNull(): Pair<Map<K, V>, List<K>> {
+  val nonNullEntries = mutableMapOf<K, V>()
+  val nullEntries = mutableListOf<K>()
+
+  for ((key, value) in this) {
+    if (value !== null) {
+      nonNullEntries[key] = value
+    } else {
+      nullEntries.add(key)
+    }
+  }
+
+  return nonNullEntries to nullEntries
 }

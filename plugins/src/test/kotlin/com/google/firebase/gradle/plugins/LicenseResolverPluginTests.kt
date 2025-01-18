@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.runGradle
 import io.kotest.assertions.json.shouldBeValidJson
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrowAny

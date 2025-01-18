@@ -16,6 +16,9 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.createGradleRunner
+import com.google.firebase.gradle.plugins.datamodels.LicenseElement
+import com.google.firebase.gradle.plugins.datamodels.typeOrDefault
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -252,7 +255,7 @@ class PublishingPluginTests {
       withProjects(project1, project2)
       publish(project1, project2)
 
-      project2.pom.dependencies.first().type shouldBe LibraryType.ANDROID.format
+      project2.pom.dependencies.first().typeOrDefault shouldBe LibraryType.ANDROID.format
     }
   }
 

@@ -16,7 +16,7 @@
 
 package com.google.firebase.gradle.plugins.semver
 
-import com.google.firebase.gradle.plugins.GMavenServiceGradle
+import com.google.firebase.gradle.plugins.GMavenService
 import com.google.firebase.gradle.plugins.ModuleVersion
 import com.google.firebase.gradle.plugins.skipGradleTask
 import org.gradle.api.DefaultTask
@@ -31,27 +31,29 @@ import org.gradle.api.tasks.TaskAction
 /**
  * Fetch the published artifact for a library from GMaven.
  *
- * You can use this instead of [GMavenServiceGradle] when you want to cache the artifact between
- * builds.
+ * You can use this instead of [GMavenService] when you want to cache the artifact between builds.
  *
+ * @property groupId The library's group id
  * @property artifactId The library's artifact id
  * @property version The version of the artifact to fetch
  * @property outputFile Where to save the downloaded artifact to
  */
 abstract class GmavenCopier : DefaultTask() {
+  @get:Input abstract val groupId: Property<String>
+
   @get:Input abstract val artifactId: Property<String>
 
   @get:Input @get:Optional abstract val version: Property<ModuleVersion>
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
-  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
 
   @TaskAction
   fun run() {
     if (!version.isPresent) skipGradleTask("Library hasn't been published")
 
-    val artifact = gmaven.get().artifact(artifactId.get(), version.get().toString())
+    val artifact = gmaven.get().artifact(groupId.get(), artifactId.get(), version.get().toString())
 
     artifact.copyTo(outputFile.get().asFile)
   }
