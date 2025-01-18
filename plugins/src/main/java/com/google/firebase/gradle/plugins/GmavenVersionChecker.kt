@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.plugins.services.GMavenService
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property

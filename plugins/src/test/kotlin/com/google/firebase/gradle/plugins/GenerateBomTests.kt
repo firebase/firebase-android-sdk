@@ -1,7 +1,6 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.bomgenerator.GenerateBomTask
-import com.google.firebase.gradle.bomgenerator.GenerateTutorialBundleTask
 import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
 import com.google.firebase.gradle.plugins.datamodels.DependencyManagementElement
 import com.google.firebase.gradle.plugins.datamodels.PomElement
@@ -15,8 +14,6 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.file.shouldExist
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.string.shouldContain
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -58,7 +55,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies + ignoredDependency)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common"),
+      bomArtifacts = listOf("com.google.firebase:firebase-common"),
       ignoredArtifacts = listOf("com.google.firebase:firebase-functions")
     )
 
@@ -85,7 +82,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common"),
+      bomArtifacts = listOf("com.google.firebase:firebase-common"),
       ignoredArtifacts = listOf("com.google.firebase:firebase-functions")
     )
 
@@ -115,7 +112,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies + newArtifact)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
     )
 
     val newPom = PomElement.fromFile(file)
@@ -143,7 +140,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
     )
 
     val newPom = PomElement.fromFile(file)
@@ -163,7 +160,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common")
+      bomArtifacts = listOf("com.google.firebase:firebase-common")
     ) {
       versionOverrides.set(mapOf(
         "com.google.firebase:firebase-common" to "22.0.0"
@@ -200,7 +197,7 @@ class GenerateBomTests : FunSpec() {
     linkGroupIndex(dependencies)
 
     val file = makeNewBom(
-      firebaseArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+      bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
     )
 
     file.readText().trim() shouldBeDiff """
@@ -250,7 +247,7 @@ class GenerateBomTests : FunSpec() {
 
     shouldThrowSubstring("not live on gmaven yet", "com.google.firebase:firebase-functions") {
       makeNewBom(
-        firebaseArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
+        bomArtifacts = listOf("com.google.firebase:firebase-common", "com.google.firebase:firebase-functions")
       )
     }
   }
@@ -274,7 +271,7 @@ class GenerateBomTests : FunSpec() {
 
     shouldThrowSubstring("artifacts missing", "com.google.firebase:firebase-functions") {
       makeNewBom(
-        firebaseArtifacts = listOf("com.google.firebase:firebase-common")
+        bomArtifacts = listOf("com.google.firebase:firebase-common")
       )
     }
   }
@@ -291,12 +288,12 @@ class GenerateBomTests : FunSpec() {
   }
 
   private fun makeNewBom(
-    firebaseArtifacts: List<String> = emptyList(),
+    bomArtifacts: List<String> = emptyList(),
     ignoredArtifacts: List<String> = emptyList(),
     configure: GenerateBomTask.() -> Unit = {}
   ): File {
     val task = makeTask {
-      this.firebaseArtifacts.set(firebaseArtifacts)
+      this.bomArtifacts.set(bomArtifacts)
       this.ignoredArtifacts.set(ignoredArtifacts)
 
       configure()

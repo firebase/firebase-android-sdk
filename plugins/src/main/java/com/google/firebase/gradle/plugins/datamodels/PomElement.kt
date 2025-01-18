@@ -16,14 +16,9 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * TODO: What's left
- * - Finish up left over TODOs regarding documentation
- * - Organize like-terms in util package (I have a TODO for it)
  * - Make bugs for git client stuff
- * - Remove old bom stuff and migrate tasks to the new one
- * - Leave a TODO for organization of bom stuff
  * - Push to git to see diff (if there's no other way), and create a separate PR (and maybe branch) incrementally for all these changes ive made
  */
-
 
 /**
  * Representation of a `<license />` element in a a pom file.
@@ -66,25 +61,42 @@ data class ArtifactDependency(
     @XmlElement val scope: String? = null,
 ) {
     /**
-     * TODO: document
+     * Returns the artifact dependency as a a gradle dependency string.
+     *
+     * ```
+     * implementation("com.google.firebase:firebase-firestore:1.0.0")
+     * ```
+     *
+     * @see configuration
+     * @see simpleDepString
      */
     override fun toString() = "$configuration(\"$simpleDepString\")"
 }
 
 /**
- * TODO: document
+ * The artifact type of this dependency, or the default inferred by gradle.
+ *
+ * We use a separate variable instead of inferring the default in the constructor so we can
+ * serialize instances of [ArtifactDependency] that should specifically _not_ have a type
+ * in the output (like in [DependencyManagementElement] instances).
  */
 val ArtifactDependency.typeOrDefault: String
     get() = type ?: "jar"
 
 /**
- * TODO: document
+ * The artifact scope of this dependency, or the default inferred by gradle.
+ *
+ * We use a separate variable instead of inferring the default in the constructor so we can
+ * serialize instances of [ArtifactDependency] that should specifically _not_ have a scope
+ * in the output (like in [DependencyManagementElement] instances).
  */
 val ArtifactDependency.scopeOrDefault: String
     get() = scope ?: "compile"
 
 /**
- * TODO: document
+ * The [version][ArtifactDependency.version] represented as a [ModuleVersion].
+ *
+ * @throws RuntimeException if the version isn't valid semver, or it's missing.
  */
 val ArtifactDependency.moduleVersion: ModuleVersion
     get() =
@@ -94,7 +106,12 @@ val ArtifactDependency.moduleVersion: ModuleVersion
             )
 
 /**
- * TODO: document
+ * The fully qualified name of the artifact.
+ *
+ * Shorthand for:
+ * ```
+ * "${artifact.groupId}:${artifact.artifactId}"
+ * ```
  */
 val ArtifactDependency.fullArtifactName: String
     get() = "$groupId:$artifactId"
@@ -119,7 +136,9 @@ data class DependencyManagementElement(
     @XmlChildrenName("dependency") val dependencies: List<ArtifactDependency>? = null
 )
 
-/** Representation of a `pom.xml`. */
+/**
+ * Representation of a `<project />` element within a `pom.xml` file.
+ */
 @Serializable
 @XmlSerialName("project")
 data class PomElement(
@@ -137,7 +156,11 @@ data class PomElement(
     @XmlChildrenName("dependency") val dependencies: List<ArtifactDependency>? = null,
 ) {
     /**
-     * TODO: document
+     * Serializes this pom element into a valid XML element and saves it to the specified [file].
+     *
+     * @param file Where to save the serialized pom to
+     * @return The provided file, for chaining purposes.
+     * @see fromFile
      */
     fun toFile(file: File): File {
         val xmlWriter = XML {
@@ -150,7 +173,12 @@ data class PomElement(
 
     companion object {
         /**
-         * TODO: document
+         * Deserializes a [PomElement] from a `pom.xml` file.
+         *
+         * @param file The file that contains the pom element.
+         * @return The deserialized [PomElement]
+         * @see toFile
+         * @see fromElement
          */
         fun fromFile(file: File): PomElement =
             fromElement(
@@ -158,7 +186,11 @@ data class PomElement(
             )
 
         /**
-         * TODO: document
+         * Deserializes a [PomElement] from a document [Element].
+         *
+         * @param element The HTML element representing the pom element.
+         * @return The deserialized [PomElement]
+         * @see fromFile
          */
         fun fromElement(element: Element): PomElement =
             XML.decodeFromReader(xmlStreaming.newReader(element))

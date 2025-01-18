@@ -275,8 +275,16 @@ fun skipGradleTask(reason: String): Nothing {
   throw StopExecutionException(reason)
 }
 
-/** TODO() */
+/**
+ * The value of this provider if present, or an empty list if it's not present.
+ *
+ * @return The value of this provider or an empty list.
+ */
 fun <V, T : List<V>> Provider<T>.orEmpty() = orNull.orEmpty()
 
-/** TODO() */
+/**
+ * The value of this provider if present, or an empty map if it's not present.
+ *
+ * @return The value of this provider or an map list.
+ */
 fun <K, V, T : Map<K, V>> Provider<T>.orEmpty() = orNull.orEmpty()

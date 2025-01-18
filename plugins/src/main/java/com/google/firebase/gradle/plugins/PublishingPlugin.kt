@@ -16,8 +16,9 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
+import com.google.firebase.gradle.bomgenerator.GenerateBomReleaseNotesTask
 import com.google.firebase.gradle.bomgenerator.GenerateBomTask
+import com.google.firebase.gradle.bomgenerator.GenerateTutorialBundleTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_MAVEN_ZIP_TASK
@@ -26,6 +27,7 @@ import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.FIREBASE_PU
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_BOM_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_KOTLINDOC_FOR_RELEASE_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.PUBLISH_RELEASING_LIBS_TO_BUILD_TASK
+import com.google.firebase.gradle.plugins.services.gmavenService
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -40,7 +42,7 @@ import org.gradle.kotlin.dsl.register
 /**
  * Plugin for providing tasks to release [FirebaseLibrary][FirebaseAndroidLibraryPlugin] projects.
  *
- * Projects to release are computed via [computeReleasingLibraries]. A multitude of tasks are then
+ * Projects to release are computed via [computeReleaseMetadata]. A multitude of tasks are then
  * registered at the root project.
  *
  * The following pertain specifically to a release:
@@ -59,7 +61,8 @@ import org.gradle.kotlin.dsl.register
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
- *   [registerGenerateBomTask]
+ *   [registerGenerateBomTask], [GENERATE_BOM_RELEASE_NOTES_TASK][registerGenerateBomReleaseNotesTask] and
+ *   [GENERATE_TUTORIAL_BUNDLE_TASK][registerGenerateTutorialBundleTask]
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [RELEASE_REPORT_GENERATOR_TASK][registerGenerateReleaseReportFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
@@ -83,6 +86,8 @@ abstract class PublishingPlugin : Plugin<Project> {
       val releasingProjects = releasingFirebaseLibraries.map { it.project }
 
       val generateBom = registerGenerateBomTask(project)
+      val generateBomReleaseNotes = registerGenerateBomReleaseNotesTask(project, generateBom)
+      val generateTutorialBundle = registerGenerateTutorialBundleTask(project)
       val validatePomForRelease = registerValidatePomForReleaseTask(project, releasingProjects)
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
@@ -135,7 +140,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         }
 
       project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
-        from(generateBom)
+        from(generateBom, generateBomReleaseNotes, generateTutorialBundle)
         archiveFileName.set("bom.zip")
         destinationDirectory.set(project.layout.projectDirectory)
       }
@@ -286,150 +291,162 @@ abstract class PublishingPlugin : Plugin<Project> {
    * Generates a BOM for a release, although it relies on gmaven to be updated- so it should be
    * invoked manually later on in the release process.
    *
-   * @see BomGeneratorTask
+   * @see GenerateBomTask
    */
   private fun registerGenerateBomTask(project: Project) =
-    project.tasks.register<BomGeneratorTask>(GENERATE_BOM_TASK) {
-      bomDirectory.convention(project.layout.projectDirectory.dir(BOM_DIR_NAME))
-    }
+    project.tasks.register<GenerateBomTask>("generateBom") {
+      bomArtifacts.set(BOM_ARTIFACTS)
 
-  private fun registerGenerateBomTaskNew(project: Project) =
-    project.tasks.register<GenerateBomTask>("generateBomNew") {
-      firebaseArtifacts.set(
-        listOf(
-          "com.google.firebase:firebase-analytics",
-          "com.google.firebase:firebase-analytics-ktx",
-          "com.google.firebase:firebase-appcheck-debug",
-          "com.google.firebase:firebase-appcheck-debug-testing",
-          "com.google.firebase:firebase-appcheck-ktx",
-          "com.google.firebase:firebase-appcheck-playintegrity",
-          "com.google.firebase:firebase-appcheck",
-          "com.google.firebase:firebase-auth",
-          "com.google.firebase:firebase-auth-ktx",
-          "com.google.firebase:firebase-common",
-          "com.google.firebase:firebase-common-ktx",
-          "com.google.firebase:firebase-config",
-          "com.google.firebase:firebase-config-ktx",
-          "com.google.firebase:firebase-crashlytics",
-          "com.google.firebase:firebase-crashlytics-ktx",
-          "com.google.firebase:firebase-crashlytics-ndk",
-          "com.google.firebase:firebase-database",
-          "com.google.firebase:firebase-database-ktx",
-          "com.google.firebase:firebase-dynamic-links",
-          "com.google.firebase:firebase-dynamic-links-ktx",
-          "com.google.firebase:firebase-encoders",
-          "com.google.firebase:firebase-firestore",
-          "com.google.firebase:firebase-firestore-ktx",
-          "com.google.firebase:firebase-functions",
-          "com.google.firebase:firebase-functions-ktx",
-          "com.google.firebase:firebase-inappmessaging",
-          "com.google.firebase:firebase-inappmessaging-display",
-          "com.google.firebase:firebase-inappmessaging-display-ktx",
-          "com.google.firebase:firebase-inappmessaging-ktx",
-          "com.google.firebase:firebase-installations",
-          "com.google.firebase:firebase-installations-ktx",
-          "com.google.firebase:firebase-messaging",
-          "com.google.firebase:firebase-messaging-directboot",
-          "com.google.firebase:firebase-messaging-ktx",
-          "com.google.firebase:firebase-ml-modeldownloader",
-          "com.google.firebase:firebase-ml-modeldownloader-ktx",
-          "com.google.firebase:firebase-perf",
-          "com.google.firebase:firebase-perf-ktx",
-          "com.google.firebase:firebase-storage",
-          "com.google.firebase:firebase-storage-ktx",
-          "com.google.firebase:firebase-vertexai",
-        )
-      )
       ignoredArtifacts.set(
         listOf(
-          "crash-plugin",
-          "firebase-ml-vision",
-          "crashlytics",
-          "firebase-ads",
-          "firebase-ads-lite",
-          "firebase-abt",
-          "firebase-analytics-impl",
-          "firebase-analytics-impl-license",
-          "firebase-analytics-license",
-          "firebase-annotations",
-          "firebase-appcheck-interop",
-          "firebase-appcheck-safetynet",
-          "firebase-appdistribution-gradle",
-          "firebase-appindexing-license",
-          "firebase-appindexing",
-          "firebase-iid",
-          "firebase-core",
-          "firebase-auth-common",
-          "firebase-auth-impl",
-          "firebase-auth-interop",
-          "firebase-auth-license",
-          "firebase-encoders-json",
-          "firebase-encoders-proto",
-          "firebase-auth-module",
-          "firebase-bom",
-          "firebase-common-license",
-          "firebase-components",
-          "firebase-config-license",
-          "firebase-config-interop",
-          "firebase-crash",
-          "firebase-crash-license",
-          "firebase-crashlytics-buildtools",
-          "firebase-crashlytics-gradle",
-          "firebase-database-collection",
-          "firebase-database-connection",
-          "firebase-database-connection-license",
-          "firebase-database-license",
-          "firebase-dataconnect",
-          "firebase-datatransport",
-          "firebase-appdistribution-ktx",
-          "firebase-appdistribution",
-          "firebase-appdistribution-api",
-          "firebase-appdistribution-api-ktx",
-          "firebase-dynamic-module-support",
-          "firebase-dynamic-links-license",
-          "firebase-functions-license",
-          "firebase-iid-interop",
-          "firebase-iid-license",
-          "firebase-invites",
-          "firebase-measurement-connector",
-          "firebase-measurement-connector-impl",
-          "firebase-messaging-license",
-          "firebase-ml-common",
-          "firebase-ml-vision-internal-vkp",
-          "firebase-ml-model-interpreter",
-          "firebase-perf-license",
-          "firebase-plugins",
-          "firebase-sessions",
-          "firebase-storage-common",
-          "firebase-storage-common-license",
-          "firebase-storage-license",
-          "perf-plugin",
-          "play-services-ads",
-          "protolite-well-known-types",
-          "testlab-instr-lib",
-          "firebase-installations-interop",
-          "google-services",
-          "gradle",
-          "firebase-ml-vision-automl",
-          "firebase-ml-vision-barcode-model",
-          "firebase-ml-vision-face-model",
-          "firebase-ml-vision-image-label-model",
-          "firebase-ml-vision-object-detection-model",
-          "firebase-ml-natural-language",
-          "firebase-ml-natural-language-language-id-model",
-          "firebase-ml-natural-language-smart-reply",
-          "firebase-ml-natural-language-smart-reply-model",
-          "firebase-ml-natural-language-translate",
-          "firebase-ml-natural-language-translate-model",
+          "com.google.firebase:crash-plugin",
+          "com.google.firebase:firebase-ml-vision",
+          "com.google.firebase:firebase-ads",
+          "com.google.firebase:firebase-ads-lite",
+          "com.google.firebase:firebase-abt",
+          "com.google.firebase:firebase-analytics-impl",
+          "com.google.firebase:firebase-analytics-impl-license",
+          "com.google.firebase:firebase-analytics-license",
+          "com.google.firebase:firebase-annotations",
+          "com.google.firebase:firebase-appcheck-interop",
+          "com.google.firebase:firebase-appcheck-safetynet",
+          "com.google.firebase:firebase-appdistribution-gradle",
+          "com.google.firebase:firebase-appindexing-license",
+          "com.google.firebase:firebase-appindexing",
+          "com.google.firebase:firebase-iid",
+          "com.google.firebase:firebase-core",
+          "com.google.firebase:firebase-auth-common",
+          "com.google.firebase:firebase-auth-impl",
+          "com.google.firebase:firebase-auth-interop",
+          "com.google.firebase:firebase-auth-license",
+          "com.google.firebase:firebase-encoders-json",
+          "com.google.firebase:firebase-encoders-proto",
+          "com.google.firebase:firebase-auth-module",
+          "com.google.firebase:firebase-bom",
+          "com.google.firebase:firebase-common-license",
+          "com.google.firebase:firebase-components",
+          "com.google.firebase:firebase-config-license",
+          "com.google.firebase:firebase-config-interop",
+          "com.google.firebase:firebase-crash",
+          "com.google.firebase:firebase-crash-license",
+          "com.google.firebase:firebase-crashlytics-buildtools",
+          "com.google.firebase:firebase-crashlytics-gradle",
+          "com.google.firebase:firebase-database-collection",
+          "com.google.firebase:firebase-database-connection",
+          "com.google.firebase:firebase-database-connection-license",
+          "com.google.firebase:firebase-database-license",
+          "com.google.firebase:firebase-dataconnect",
+          "com.google.firebase:firebase-datatransport",
+          "com.google.firebase:firebase-appdistribution-ktx",
+          "com.google.firebase:firebase-appdistribution",
+          "com.google.firebase:firebase-appdistribution-api",
+          "com.google.firebase:firebase-appdistribution-api-ktx",
+          "com.google.firebase:firebase-dynamic-module-support",
+          "com.google.firebase:firebase-dynamic-links-license",
+          "com.google.firebase:firebase-functions-license",
+          "com.google.firebase:firebase-iid-interop",
+          "com.google.firebase:firebase-iid-license",
+          "com.google.firebase:firebase-invites",
+          "com.google.firebase:firebase-measurement-connector",
+          "com.google.firebase:firebase-measurement-connector-impl",
+          "com.google.firebase:firebase-messaging-license",
+          "com.google.firebase:firebase-ml-common",
+          "com.google.firebase:firebase-ml-vision-internal-vkp",
+          "com.google.firebase:firebase-ml-model-interpreter",
+          "com.google.firebase:firebase-perf-license",
+          "com.google.firebase:firebase-plugins",
+          "com.google.firebase:firebase-sessions",
+          "com.google.firebase:firebase-storage-common",
+          "com.google.firebase:firebase-storage-common-license",
+          "com.google.firebase:firebase-storage-license",
+          "com.google.firebase:perf-plugin",
+          "com.google.firebase:protolite-well-known-types",
+          "com.google.firebase:testlab-instr-lib",
+          "com.google.firebase:firebase-installations-interop",
+          "com.google.firebase:firebase-ml-vision-automl",
+          "com.google.firebase:firebase-ml-vision-barcode-model",
+          "com.google.firebase:firebase-ml-vision-face-model",
+          "com.google.firebase:firebase-ml-vision-image-label-model",
+          "com.google.firebase:firebase-ml-vision-object-detection-model",
+          "com.google.firebase:firebase-ml-natural-language",
+          "com.google.firebase:firebase-ml-natural-language-language-id-model",
+          "com.google.firebase:firebase-ml-natural-language-smart-reply",
+          "com.google.firebase:firebase-ml-natural-language-smart-reply-model",
+          "com.google.firebase:firebase-ml-natural-language-translate",
+          "com.google.firebase:firebase-ml-natural-language-translate-model",
+          "com.crashlytics.sdk.android:crashlytics:crashlytics",
           "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
           "com.android.tools.build:gradle",
-          "com.google.firebase:perf-plugin",
-          "com.google.firebase:firebase-crashlytics-gradle",
-          "com.google.firebase:firebase-appdistribution-gradle",
         )
       )
-      outputDirectory.set(project.layout.projectDirectory.dir(BOM_DIR_NAME))
+
+      outputDirectory.set(project.layout.buildDirectory.dir(BOM_DIR_NAME))
+    }
+
+  /**
+   * Registers the [GENERATE_TUTORIAL_BUNDLE_TASK] task.
+   *
+   * Generates a tutorial bundle for a release.
+   *
+   * @see GenerateTutorialBundleTask
+   */
+  private fun registerGenerateTutorialBundleTask(
+    project: Project,
+  ) =
+    project.tasks.register<GenerateTutorialBundleTask>(GENERATE_TUTORIAL_BUNDLE_TASK) {
+      commonArtifacts.set(listOf(
+        "com.google.gms:google-services"
+      ))
+      gradlePlugins.set(listOf(
+        "com.google.firebase:firebase-appdistribution-gradle",
+        "com.google.firebase:firebase-crashlytics-gradle"
+      ))
+      perfArtifacts.set(listOf(
+        "com.google.firebase:perf-plugin"
+      ))
+      requiredArtifacts.set(listOf(
+        "com.google.gms:google-services",
+        "com.google.firebase:firebase-analytics",
+        "com.google.firebase:firebase-crashlytics",
+        "com.google.firebase:firebase-perf",
+        "com.google.firebase:firebase-vertexai",
+        "com.google.firebase:firebase-messaging",
+        "com.google.firebase:firebase-auth",
+        "com.google.firebase:firebase-database",
+        "com.google.firebase:firebase-storage",
+        "com.google.firebase:firebase-config",
+        "com.google.android.gms:play-services-ads",
+        "com.google.firebase:firebase-firestore",
+        "com.google.firebase:firebase-functions",
+        "com.google.firebase:firebase-inappmessaging-display",
+        "com.google.firebase:firebase-ml-vision",
+        "com.google.firebase:firebase-appdistribution-gradle",
+        "com.google.firebase:firebase-crashlytics-gradle",
+        "com.google.firebase:perf-plugin"
+      ))
+      firebaseArtifacts.set(BOM_ARTIFACTS)
+
+      tutorialFile.set(project.layout.buildDirectory.file("recipeVersionUpdate.txt"))
+    }
+
+  /**
+   * Registers the [GENERATE_BOM_RELEASE_NOTES_TASK] task.
+   *
+   * Generates the release notes for a bom during a release.
+   *
+   * @see GenerateBomReleaseNotesTask
+   */
+  private fun registerGenerateBomReleaseNotesTask(
+    project: Project,
+    generateBomTask: TaskProvider<GenerateBomTask>
+  ) =
+    project.tasks.register<GenerateBomReleaseNotesTask>(GENERATE_BOM_RELEASE_NOTES_TASK) {
+      currentBom.set(generateBomTask.flatMap { it.bomFile })
+      previousBom.set(project.gmavenService.map {
+        it.latestPom("com.google.firebase", "firebase-bom")
+      })
+      releaseNotesFile.set(project.layout.buildDirectory.file("bomReleaseNotes.md"))
     }
 
   /**
@@ -719,6 +736,8 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BOM_DIR_NAME = "bom"
 
     const val GENERATE_BOM_TASK = "generateBom"
+    const val GENERATE_BOM_RELEASE_NOTES_TASK = "generateBomReleaseNotes"
+    const val GENERATE_TUTORIAL_BUNDLE_TASK = "generateTutorialBundle"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
     const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLibraryGroupsToPublish"
     const val SEMVER_CHECK_TASK = "semverCheckForRelease"
@@ -739,6 +758,50 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
 
     const val BUILD_DIR_REPOSITORY_DIR = "m2repository"
+
+    val BOM_ARTIFACTS = listOf(
+      "com.google.firebase:firebase-analytics",
+      "com.google.firebase:firebase-analytics-ktx",
+      "com.google.firebase:firebase-appcheck-debug",
+      "com.google.firebase:firebase-appcheck-debug-testing",
+      "com.google.firebase:firebase-appcheck-ktx",
+      "com.google.firebase:firebase-appcheck-playintegrity",
+      "com.google.firebase:firebase-appcheck",
+      "com.google.firebase:firebase-auth",
+      "com.google.firebase:firebase-auth-ktx",
+      "com.google.firebase:firebase-common",
+      "com.google.firebase:firebase-common-ktx",
+      "com.google.firebase:firebase-config",
+      "com.google.firebase:firebase-config-ktx",
+      "com.google.firebase:firebase-crashlytics",
+      "com.google.firebase:firebase-crashlytics-ktx",
+      "com.google.firebase:firebase-crashlytics-ndk",
+      "com.google.firebase:firebase-database",
+      "com.google.firebase:firebase-database-ktx",
+      "com.google.firebase:firebase-dynamic-links",
+      "com.google.firebase:firebase-dynamic-links-ktx",
+      "com.google.firebase:firebase-encoders",
+      "com.google.firebase:firebase-firestore",
+      "com.google.firebase:firebase-firestore-ktx",
+      "com.google.firebase:firebase-functions",
+      "com.google.firebase:firebase-functions-ktx",
+      "com.google.firebase:firebase-inappmessaging",
+      "com.google.firebase:firebase-inappmessaging-display",
+      "com.google.firebase:firebase-inappmessaging-display-ktx",
+      "com.google.firebase:firebase-inappmessaging-ktx",
+      "com.google.firebase:firebase-installations",
+      "com.google.firebase:firebase-installations-ktx",
+      "com.google.firebase:firebase-messaging",
+      "com.google.firebase:firebase-messaging-directboot",
+      "com.google.firebase:firebase-messaging-ktx",
+      "com.google.firebase:firebase-ml-modeldownloader",
+      "com.google.firebase:firebase-ml-modeldownloader-ktx",
+      "com.google.firebase:firebase-perf",
+      "com.google.firebase:firebase-perf-ktx",
+      "com.google.firebase:firebase-storage",
+      "com.google.firebase:firebase-storage-ktx",
+      "com.google.firebase:firebase-vertexai",
+    )
   }
 }
 

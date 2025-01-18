@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.plugins.services.GMavenService
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty

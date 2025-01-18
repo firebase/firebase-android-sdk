@@ -23,8 +23,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 
-// TODO: organize like-terms (extensions on the same class should be near each other)
-
 /** Replaces all matching substrings with an empty string (nothing) */
 fun String.remove(regex: Regex) = replace(regex, "")
 
@@ -32,16 +30,14 @@ fun String.remove(regex: Regex) = replace(regex, "")
 fun String.remove(str: String) = replace(str, "")
 
 /**
- * Returns a sequence containing all elements.
+ * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
  *
- * The operation is _terminal_.
- *
- * Syntax sugar for:
- * ```
- * take(count())
+ * For example:
+ * ```kotlin
+ * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
  * ```
  */
-public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
+fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
 
 /**
  * Converts an [Element] to an Artifact string.
@@ -83,28 +79,30 @@ fun Element.toArtifactString() =
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- *   that match the components of an Artifact string; groupId, artifactId, version.
+ *   that match the components of an Artifact string; groupId and artifactId.
  */
 fun Element.toMavenName() = "${textByTag("groupId")}:${textByTag("artifactId")}"
 
 /**
- * Finds a descendant [Element] by a given [tag], and returns the [textContent]
- * [Element.getTextContent] of it.
+ * Finds a descendant [Element] by a [tag], and returns the [textContent][Element.getTextContent] of
+ * it.
  *
  * @param tag the XML tag to filter for (the special value "*" matches all tags)
  * @throws NoSuchElementException if an [Element] with the given [tag] does not exist
  * @see findElementsByTag
+ * @see textByTagOrNull
  */
 fun Element.textByTag(tag: String) =
   textByTagOrNull(tag) ?: throw RuntimeException("Element tag was missing: $tag")
 
+/**
+ * Finds a descendant [Element] by a [tag], and returns the [textContent][Element.getTextContent] of
+ * it, or null if it couldn't be found.
+ *
+ * @param tag the XML tag to filter for (the special value "*" matches all tags)
+ * @see textByTag
+ */
 fun Element.textByTagOrNull(tag: String) = findElementsByTag(tag).firstOrNull()?.textContent
-
-val File.unixPath: String
-  get() = path.replace(File.separator, "/")
-
-val File.absoluteUnixPath: String
-  get() = absolutePath.replace("\\", "/")
 
 /**
  * Finds a descendant [Element] by a given [tag], or creates a new one.
@@ -128,10 +126,6 @@ fun Element.findOrCreate(tag: String): Element =
  */
 fun Element.findElementsByTag(tag: String) =
   getElementsByTagName(tag).children().mapNotNull { it as? Element }
-
-// TODO: document (gets children instead of descendants)
-fun Element.childrenByTag(tag: String) =
-  childNodes.children().mapNotNull { it as? Element }.filter { it.nodeName === tag }
 
 /**
  * Returns the text of an attribute, if it exists.
@@ -160,16 +154,6 @@ fun NodeList.children(removeDOMSections: Boolean = true) = sequence {
 }
 
 /**
- * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
- *
- * For example:
- * ```kotlin
- * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
- * ```
- */
-fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
-
-/**
  * Returns the first match of a regular expression in the [input], beginning at the specified
  * [startIndex].
  *
@@ -181,6 +165,26 @@ fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
 fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =
   find(input, startIndex)
     ?: throw RuntimeException(multiLine("No match found for the given input:", input.toString()))
+
+/**
+ * Returns the value of the first capture group.
+ *
+ * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
+ */
+val MatchResult.firstCapturedValue: String
+  get() = groupValues[1]
+
+/**
+ * Returns a sequence containing all elements.
+ *
+ * The operation is _terminal_.
+ *
+ * Syntax sugar for:
+ * ```
+ * take(count())
+ * ```
+ */
+fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
 
 /**
  * Creates a [Pair] out of an [Iterable] with only two elements.
@@ -243,14 +247,6 @@ fun List<String>.replaceMatches(regex: Regex, transform: (MatchResult) -> String
 }
 
 /**
- * Returns the value of the first capture group.
- *
- * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
- */
-val MatchResult.firstCapturedValue: String
-  get() = groupValues[1]
-
-/**
  * Creates a diff between two lists.
  *
  * For example:
@@ -290,21 +286,72 @@ fun ZipInputStream.entries() = generateSequence { nextEntry }
  * While this method _does_ close the generated output stream, it's the callers responsibility to
  * close the passed [stream].
  *
- * @return This [File] instance for chaining
+ * @return This [File] instance for chaining.
  */
 fun File.writeStream(stream: InputStream): File {
   outputStream().use { stream.copyTo(it) }
   return this
 }
 
-// TODO: document
+/**
+ * Creates the the path to a file if it doesn't already exist.
+ *
+ * This includes creating the directories for this file.
+ *
+ * @return This [File] instance for chaining.
+ */
 fun File.createIfAbsent(): File {
   parentFile?.mkdirs()
   createNewFile()
   return this
 }
 
-// TODO: document
+/**
+ * The [path][File.path] represented as a qualified unix path.
+ *
+ * Useful when a system expects a unix path, but you need to be able to run it on non unix systems.
+ *
+ * @see absoluteUnixPath
+ */
+val File.unixPath: String
+  get() = path.replace("\\", "/")
+
+/**
+ * The [absolutePath][File.getAbsolutePath] represented as a qualified unix path.
+ *
+ * Useful when a system expects a unix path, but you need to be able to run it on non unix systems.
+ *
+ * @see unixPath
+ */
+val File.absoluteUnixPath: String
+  get() = absolutePath.replace("\\", "/")
+
+/**
+ * Partitions a map with nullable values into a map of non null values and a list of keys with null values.
+ *
+ * For example:
+ * ```
+ * val weekdays = mapOf(
+ *   "Monday" to 0,
+ *   "Tuesday" to 1,
+ *   "Wednesday" to null,
+ *   "Thursday" to 3,
+ *   "Friday" to null,
+ * )
+ *
+ * val (validDays, invalidDays) = weekdays.partitionNotNull()
+ *
+ * validDays shouldEqual mapOf(
+ *   "Monday" to 0,
+ *   "Tuesday" to 1,
+ *   "Thursday" to 3,
+ * )
+ * invalidDays shouldContainExactly listOf("Wednesday", "Friday")
+ * ```
+ *
+ * @return A pair where the first component is a map of all the non null values and the second component
+ * is a list of the keys with null values.
+ */
 fun <K, V> Map<K, V?>.partitionNotNull(): Pair<Map<K, V>, List<K>> {
   val nonNullEntries = mutableMapOf<K, V>()
   val nullEntries = mutableListOf<K>()

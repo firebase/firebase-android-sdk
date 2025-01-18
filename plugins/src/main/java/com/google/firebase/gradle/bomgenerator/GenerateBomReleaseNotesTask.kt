@@ -13,7 +13,11 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
-/** TODO: document */
+/**
+ * Generates the release notes for a bom.
+ *
+ * @see GenerateBomTask
+ */
 abstract class GenerateBomReleaseNotesTask : DefaultTask() {
   @get:Input abstract val currentBom: RegularFileProperty
 

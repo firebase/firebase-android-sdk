@@ -210,13 +210,43 @@ data class ModuleVersion(
         }
         .getOrNull()
 
-    // TODO()
+    /**
+     * Parse a [ModuleVersion] from a string.
+     *
+     * You should use [fromStringOrNull] when you don't know the `artifactId` of the corresponding
+     * artifact, if you don't need to throw on failure, or if you need to throw a more specific
+     * message.
+     *
+     * This method exists to cover the common ground of getting [ModuleVersion] representations
+     * of artifacts.
+     *
+     * @param artifactId The artifact that this version belongs to. Will be used in the error message on failure.
+     * @param version The version to parse into a [ModuleVersion].
+     * @return A [ModuleVersion] created from the string.
+     *
+     * @throws IllegalArgumentException If the string doesn't represent a valid semver version.
+     * @see fromStringOrNull
+     */
     fun fromString(artifactId: String, version: String): ModuleVersion =
       fromStringOrNull(version)
-        ?: throw RuntimeException("Invalid module version found for '${artifactId}': $version")
+        ?: throw IllegalArgumentException("Invalid module version found for '${artifactId}': $version")
   }
 
-  // TODO()
+  /**
+   * Determine the [VersionType] representing the bump that would be required to reach [other], if any.
+   *
+   * ```
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(2,1,3)).shouldBeEqual(VersionType.MAJOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,1,3)).shouldBeEqual(VersionType.MINOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,3)).shouldBeEqual(VersionType.PATCH)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,0)).shouldBeNull()
+   * ```
+   *
+   * @param other The target version to get the bump for.
+   *
+   * @return A [VersionType] representing the bump that this version would need to reach [other], or null
+   * if they're the same version.
+   */
   fun bumpFrom(other: ModuleVersion): VersionType? {
     if (other.major != this.major) return VersionType.MAJOR
     if (other.minor != this.minor) return VersionType.MINOR

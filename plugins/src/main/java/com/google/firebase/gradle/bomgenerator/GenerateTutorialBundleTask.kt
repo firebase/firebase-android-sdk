@@ -15,18 +15,88 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * TODO: document
+ * Generates the tutorial bundle recipe for a release.
+ *
+ * This task uses gmaven as a source of truth, and as such, should be ran _after_ the artifacts
+ * are live on gmaven.
+ *
+ * @see GenerateBomTask
  */
 abstract class GenerateTutorialBundleTask : DefaultTask() {
+  /**
+   * Firebase library artifacts.
+   *
+   * ```
+   * firebaseArtifacts.set(listOf(
+   *   "com.google.firebase:firebase-analytics",
+   *   "com.google.firebase:firebase-crashlytics"
+   * ))
+   * ```
+   */
   @get:Input abstract val firebaseArtifacts: ListProperty<String>
+
+  /**
+   * Common artifacts and dependencies whose versions also need to be tracked during releases.
+   *
+   * ```
+   * commonArtifacts.set(listOf(
+   *   "com.google.gms:google-services",
+   * ))
+   * ```
+   */
   @get:Input abstract val commonArtifacts: ListProperty<String>
+
+  /**
+   * Firebase gradle plugins.
+   *
+   * ```
+   * gradlePlugins.set(listOf(
+   *   "com.google.firebase:firebase-appdistribution-gradle",
+   *   "com.google.firebase:firebase-crashlytics-gradle"
+   * ))
+   * ```
+   */
   @get:Input abstract val gradlePlugins: ListProperty<String>
+
+  /**
+   * Performance monitoring related artifacts.
+   *
+   * ```
+   * firebaseArtifacts.set(listOf(
+   *   "com.google.firebase:perf-plugin"
+   * ))
+   * ```
+   */
   @get:Input abstract val perfArtifacts: ListProperty<String>
 
-  @get:Input abstract val versionOverrides: MapProperty<String, String>
-
+  /**
+   * All artifacts that are expected to be present.
+   *
+   * You can use this to verify that the input doesn't exclude any artifacts.
+   *
+   * ```
+   * requiredArtifacts.set(listOf(
+   *   "com.google.firebase:firebase-analytics",
+   *   "com.google.firebase:perf-plugin"
+   * ))
+   * ```
+   */
   @get:Input abstract val requiredArtifacts: ListProperty<String>
 
+  /**
+   * Optional map of versions to use instead of the versions on gmaven.
+   *
+   * ```
+   * versionOverrides.set(mapOf(
+   *   "com.google.firebase:firebase-firestore" to "10.0.0"
+   * ))
+   * ```
+   */
+  @get:Input abstract val versionOverrides: MapProperty<String, String>
+
+  /**
+   * The file to save the generated tutorial to.
+   */
   @get:OutputFile abstract val tutorialFile: RegularFileProperty
 
   @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
@@ -120,6 +190,11 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
   }
 
   companion object {
+    /**
+     * A linked mapping for artifact ids to their respective [ArtifactTutorialMapping] metadata.
+     *
+     * Since this is a _linked_ map, the order is preserved in the tutorial output.
+     */
     private val mappings = linkedMapOf(
       "com.google.gms:google-services" to ArtifactTutorialMapping(
         "Google Services Plugin",
@@ -205,7 +280,29 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
 }
 
 /**
- * TODO(): document
+ * Metadata for an artifact to use in generation of the tutorial.
+ *
+ * For example, given the following:
+ * ```
+ * ArtifactTutorialMapping(
+ *   "Perf Plugin",
+ *   "perf-plugin-class",
+ *   listOf("<!ENTITY perf-plugin \"com.google.firebase.firebase-perf\">")
+ * )
+ * ```
+ * The tutorial will generate the following output:
+ * ```html
+ * <!-- Perf Plugin -->
+ * <!ENTITY perf-plugin-class "1.2.3">
+ * <!ENTITY perf-plugin "com.google.firebase.firebase-perf">
+ * ```
+ * _Assuming the latest version on gmaven is `1.2.3`._
+ *
+ * @property name The space separated, capitalized, full name of the artifact.
+ * @property alias The internal alias of the artifact.
+ * @property extra Optional additional data to add after the metadata entry in the tutorial.
+ *
+ * @see GenerateTutorialBundleTask.mappings
  */
 private data class ArtifactTutorialMapping(
   val name: String,

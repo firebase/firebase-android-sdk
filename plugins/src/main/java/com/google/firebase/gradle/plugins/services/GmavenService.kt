@@ -5,6 +5,7 @@ import com.google.firebase.gradle.plugins.ModuleVersion
 import com.google.firebase.gradle.plugins.children
 import com.google.firebase.gradle.plugins.datamodels.ArtifactDependency
 import com.google.firebase.gradle.plugins.datamodels.PomElement
+import com.google.firebase.gradle.plugins.multiLine
 import com.google.firebase.gradle.plugins.registerIfAbsent
 import com.google.firebase.gradle.plugins.textByAttributeOrNull
 import com.google.firebase.gradle.plugins.writeStream
@@ -556,13 +557,19 @@ data class GroupIndexArtifact(
 ) {
 
   /**
-   * TODO: document
+   * Converts this artifact into a [ArtifactDependency], using the [latestVersion]
+   * as the corresponding version.
    */
   fun toArtifactDependency() =
     ArtifactDependency(groupId = groupId, artifactId = artifactId, version = latestVersion)
 
+
   /**
-   * TODO: document
+   * Returns this artifact as a fully qualified dependency string.
+   *
+   * ```
+   * "com.google.firebase:firebase-firestore:1.0.0"
+   * ```
    */
   override fun toString(): String {
     return "$groupId:$artifactId:$latestVersion"
@@ -570,7 +577,14 @@ data class GroupIndexArtifact(
 
   companion object {
     /**
-     * TODO: document
+     * Create a [GroupIndexArtifact] from an html [Node].
+     *
+     * @param groupId The group that this artifact belongs to.
+     * @param node The HTML node that contains the data for this artifact.
+     *
+     * @return An instance of [GroupIndexArtifact] representing the provided [node].
+     *
+     * @throws RuntimeException If the node couldn't be parsed for whatever reason.
      */
     fun fromNode(groupId: String, node: Node): GroupIndexArtifact {
       val versions =
@@ -579,11 +593,10 @@ data class GroupIndexArtifact(
             "GroupIndex node is missing a versions attribute: ${node.nodeName}"
           )
 
-      // This shouldn't happen... if it does (for some reason), then we can remove this check in the
-      // future.
       if (versions.isEmpty())
         throw RuntimeException(
-          "GroupIndex node has a versions attribute without any content: ${node.nodeName}"
+          multiLine("GroupIndex node has a versions attribute without any content: ${node.nodeName}",
+            "This shouldn't happen. If this is happening, and is expected behavior, then this check should be removed.")
         )
 
       return GroupIndexArtifact(groupId, node.nodeName, versions)

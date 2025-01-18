@@ -10,7 +10,6 @@ import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
 import com.google.firebase.gradle.plugins.datamodels.DependencyManagementElement
 import com.google.firebase.gradle.plugins.datamodels.moduleVersion
 import com.google.firebase.gradle.plugins.diff
-import com.google.firebase.gradle.plugins.moduleVersion
 import com.google.firebase.gradle.plugins.orEmpty
 import com.google.firebase.gradle.plugins.partitionNotNull
 import com.google.firebase.gradle.plugins.services.GMavenService
@@ -27,22 +26,63 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * TODO: document
+ * Generates the firebase bom, using gmaven as a source of truth for artifacts and versions.
+ *
+ * @see validateArtifacts
+ * @see GenerateBomReleaseNotesTask
+ * @see GenerateTutorialBundleTask
  */
 abstract class GenerateBomTask : DefaultTask() {
   /**
-   * TODO: document
+   * Artifacts to include in the bom.
+   *
+   * ```
+   * bomArtifacts.set(listOf(
+   *   "com.google.firebase:firebase-firestore",
+   *   "com.google.firebase:firebase-storage"
+   * ))
+   * ```
+   */
+  @get:Input abstract val bomArtifacts: ListProperty<String>
+
+  /**
+   * Artifacts to exclude from the bom.
+   *
+   * These are artifacts that are under the `com.google.firebase` namespace, but are intentionally
+   * not included in the bom.
+   *
+   * ```
+   * bomArtifacts.set(listOf(
+   *   "com.google.firebase:crashlytics",
+   *   "com.google.firebase:crash-plugin"
+   * ))
+   * ```
+   */
+  @get:Input abstract val ignoredArtifacts: ListProperty<String>
+
+  /**
+   * Optional map of versions to use instead of the versions on gmaven.
+   *
+   * ```
+   * versionOverrides.set(mapOf(
+   *   "com.google.firebase:firebase-firestore" to "10.0.0"
+   * ))
+   * ```
    */
   @get:Input abstract val versionOverrides: MapProperty<String, String>
 
-  /** Firebase artifacts to include in the bom. */
-  @get:Input abstract val firebaseArtifacts: ListProperty<String>
-
-  /** Firebase artifacts to exclude from the bom. */
-  @get:Input abstract val ignoredArtifacts: ListProperty<String>
-
+  /**
+   * Directory to save the bom under.
+   */
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
+  /**
+   * The actual file representing the bom.
+   *
+   * **Note:** This is set by the task itself, and can safely be used as input to another task. It
+   * should _not_ be explicitly set.
+   */
+  // TODO: test if this works as I expect it to
   @get:OutputFile abstract val bomFile: RegularFileProperty
 
   @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
@@ -135,7 +175,7 @@ abstract class GenerateBomTask : DefaultTask() {
   private fun validateArtifacts(): List<ArtifactDependency> {
     logger.info("Validating bom artifacts")
 
-    val firebaseArtifacts = firebaseArtifacts.get().toSet()
+    val firebaseArtifacts = bomArtifacts.get().toSet()
     val ignoredArtifacts = ignoredArtifacts.orEmpty().toSet()
 
     val allFirebaseArtifacts =

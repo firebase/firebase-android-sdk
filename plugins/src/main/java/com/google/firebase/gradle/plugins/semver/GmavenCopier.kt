@@ -16,8 +16,8 @@
 
 package com.google.firebase.gradle.plugins.semver
 
-import com.google.firebase.gradle.plugins.GMavenService
 import com.google.firebase.gradle.plugins.ModuleVersion
+import com.google.firebase.gradle.plugins.services.GMavenService
 import com.google.firebase.gradle.plugins.skipGradleTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
