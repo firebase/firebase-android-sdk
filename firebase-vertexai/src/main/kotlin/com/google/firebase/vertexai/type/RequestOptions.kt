@@ -26,17 +26,23 @@ public class RequestOptions
 internal constructor(
   internal val timeout: Duration,
   internal val endpoint: String = "https://firebasevertexai.googleapis.com",
-  internal val apiVersion: String = "v1beta",
+  internal val apiVersion: String,
 ) {
 
   /**
    * Constructor for RequestOptions.
    *
    * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
-   * the first request to first response.
+   *   the first request to first response.
+   * @param apiVersion the version of the Vertex AI in Firebase API; defaults to [ApiVersion.V1BETA]
+   *   if not specified.
    */
   @JvmOverloads
   public constructor(
-    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
-  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
+    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
+    apiVersion: ApiVersion = ApiVersion.V1BETA,
+  ) : this(
+    timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
+    apiVersion = apiVersion.value,
+  )
 }

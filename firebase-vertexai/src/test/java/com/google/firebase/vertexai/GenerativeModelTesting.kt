@@ -60,7 +60,7 @@ internal class GenerativeModelTesting {
       APIController(
         "super_cool_test_key",
         "gemini-1.5-flash",
-        RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
+        RequestOptions(5.seconds.inWholeMilliseconds),
         mockEngine,
         TEST_CLIENT_ID,
         null,

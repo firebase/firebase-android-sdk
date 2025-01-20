@@ -26,11 +26,14 @@ import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
 import com.google.firebase.vertexai.common.util.doBlocking
 import com.google.firebase.vertexai.common.util.prepareStreamingResponse
+import com.google.firebase.vertexai.type.ApiVersion
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.content.TextContent
@@ -74,7 +77,7 @@ internal class APIControllerTests {
 
   @Test
   fun `(generateContent) respects a custom timeout`() =
-    commonTest(requestOptions = RequestOptions(2.seconds)) {
+    commonTest(requestOptions = RequestOptions(2.seconds.inWholeMilliseconds)) {
       shouldThrow<RequestTimeoutException> {
         withTimeout(testTimeout) {
           apiController.generateContent(textGenerateContentRequest("test"))
@@ -122,7 +125,11 @@ internal class RequestFormatTests {
       APIController(
         "super_cool_test_key",
         "gemini-pro-1.5",
-        RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
+        RequestOptions(
+          timeout = 5.seconds,
+          endpoint = "https://my.custom.endpoint",
+          apiVersion = "v1beta"
+        ),
         mockEngine,
         TEST_CLIENT_ID,
         null,
@@ -136,6 +143,39 @@ internal class RequestFormatTests {
     }
 
     mockEngine.requestHistory.first().url.host shouldBe "my.custom.endpoint"
+  }
+
+  @Test
+  fun `using custom API version`() = doBlocking {
+    val channel = ByteChannel(autoFlush = true)
+    val mockEngine = MockEngine {
+      respond(channel, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    prepareStreamingResponse(createResponses("Random")).forEach { channel.writeFully(it) }
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-1.5",
+        RequestOptions(
+          timeoutInMillis = 5.seconds.inWholeMilliseconds,
+          apiVersion = ApiVersion.V1
+        ),
+        mockEngine,
+        TEST_CLIENT_ID,
+        null,
+      )
+
+    withTimeout(5.seconds) {
+      controller.generateContentStream(textGenerateContentRequest("cats")).collect {
+        it.candidates?.isEmpty() shouldBe false
+        channel.close()
+      }
+    }
+
+    mockEngine.requestHistory.first().url.encodedPath shouldStartWith "/${ApiVersion.V1.value}"
+    // TODO: Update test to set ApiVersion.V1BETA when ApiVersion.V1 becomes the default and delete
+    // the following check.
+    RequestOptions().apiVersion shouldNotBe ApiVersion.V1.value
   }
 
   @Test
