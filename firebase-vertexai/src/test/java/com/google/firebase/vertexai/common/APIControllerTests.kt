@@ -156,10 +156,7 @@ internal class RequestFormatTests {
       APIController(
         "super_cool_test_key",
         "gemini-pro-1.5",
-        RequestOptions(
-          timeoutInMillis = 5.seconds.inWholeMilliseconds,
-          apiVersion = ApiVersion.V1
-        ),
+        RequestOptions(timeoutInMillis = 5.seconds.inWholeMilliseconds, apiVersion = ApiVersion.V1),
         mockEngine,
         TEST_CLIENT_ID,
         null,

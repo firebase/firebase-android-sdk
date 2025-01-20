@@ -33,9 +33,9 @@ internal constructor(
    * Constructor for RequestOptions.
    *
    * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
-   *   the first request to first response.
+   * the first request to first response.
    * @param apiVersion the version of the Vertex AI in Firebase API; defaults to [ApiVersion.V1BETA]
-   *   if not specified.
+   * if not specified.
    */
   @JvmOverloads
   public constructor(
