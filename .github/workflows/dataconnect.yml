@@ -82,7 +82,7 @@ jobs:
           ./gradlew --version
           which node
           node --version
-          ${{ env.FST_FIREBASE_COMMAND }} --version
+          ${{ env.FDC_FIREBASE_COMMAND }} --version
           ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
@@ -141,7 +141,7 @@ jobs:
         run: |
           set -x
           cd firebase-dataconnect/emulator
-          ${{ env.FST_FIREBASE_COMMAND }} emulators:start --only=auth &
+          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth &
 
       - name: Gradle connectedCheck
         uses: reactivecircus/android-emulator-runner@v2
