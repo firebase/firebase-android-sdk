@@ -16,7 +16,14 @@
 
 package com.google.firebase.vertexai.type
 
-/** Interface representing images which can be passed into Imagen (for upscaling, editing, etc.) */
-public interface ImagenImageRepresentible {
-  public fun asImagenImage(): ImagenImage
-}
+/**
+ * A configuration for filtering unsafe content or images containing people.
+ *
+ * @param safetyFilterLevel Used to filter unsafe content.
+ * @param personFilterLevel Used to filter images containing people.
+ */
+public class ImagenSafetySettings
+internal constructor(
+  internal val safetyFilterLevel: ImagenSafetyFilter,
+  internal val personFilterLevel: ImagenPersonFilter,
+) {}

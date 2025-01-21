@@ -22,10 +22,4 @@ package com.google.firebase.vertexai.type
  * @param gcsUri Contains the gs:// uri for the image.
  * @param mimeType Contains the mime type of the image eg. "image/png"
  */
-public class ImagenGCSImage(public val gcsUri: String, public val mimeType: String) :
-  ImagenImageRepresentible {
-
-  override fun asImagenImage(): ImagenImage {
-    return ImagenImage(null, gcsUri, mimeType)
-  }
-}
+public class ImagenGCSImage(public val gcsUri: String, public val mimeType: String) {}

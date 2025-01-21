@@ -23,7 +23,7 @@ package com.google.firebase.vertexai.type
  * @param filteredReason if fewer images were generated than were requested, this field will contain
  * the reason they were filtered out.
  */
-public class ImagenGenerationResponse<T : ImagenImageRepresentible>(
+public class ImagenGenerationResponse<T>(
   public val images: List<T>,
   public val filteredReason: String?,
 ) {}

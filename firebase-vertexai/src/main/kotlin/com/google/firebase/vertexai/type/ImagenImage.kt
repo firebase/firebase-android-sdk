@@ -24,12 +24,7 @@ package com.google.firebase.vertexai.type
  * @param mimeType Contains the mime type of the image eg. "image/png"
  */
 public class ImagenImage(
-  public val data: ByteArray?,
-  public val gcsUri: String?,
-  public val mimeType: String,
-) : ImagenImageRepresentible {
-
-  override fun asImagenImage(): ImagenImage {
-    return this
-  }
-}
+  internal val data: ByteArray?,
+  internal val gcsUri: String?,
+  internal val mimeType: String,
+) {}

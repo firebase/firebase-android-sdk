@@ -23,22 +23,22 @@ package com.google.firebase.vertexai.type
  * number meaning the image is permitted to be lower quality to reduce size. This parameter is not
  * relevant for every mimetype
  */
-public class ImageFormat
+public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
 
   public companion object {
     /**
-     * An [ImageFormat] representing a JPEG image.
+     * An [ImagenImageFormat] representing a JPEG image.
      * @param compressionQuality an int (1-100) representing how the quality of the image, a lower
      * number meaning the image is permitted to be lower quality to reduce size.
      */
-    public fun jpeg(compressionQuality: Int?): ImageFormat {
-      return ImageFormat("image/jpeg", compressionQuality)
+    public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
+      return ImagenImageFormat("image/jpeg", compressionQuality)
     }
 
-    /** An [ImageFormat] representing a PNG image */
-    public fun png(): ImageFormat {
-      return ImageFormat("image/png", null)
+    /** An [ImagenFormat] representing a PNG image */
+    public fun png(): ImagenImageFormat {
+      return ImagenImageFormat("image/png", null)
     }
   }
 }

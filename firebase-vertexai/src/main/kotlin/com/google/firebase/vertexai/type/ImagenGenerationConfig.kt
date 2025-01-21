@@ -22,9 +22,13 @@ package com.google.firebase.vertexai.type
  * generated images.
  * @param numberOfImages How many images should be generated.
  * @param aspectRatio The aspect ratio of the generated images.
+ * @param imageFormat The file format/compression of the generated images.
+ * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
  */
 public class ImagenGenerationConfig(
-  public val negativePrompt: String? = null,
-  public val numberOfImages: Int = 1,
-  public val aspectRatio: ImagenAspectRatio? = null,
+    public val negativePrompt: String? = null,
+    public val numberOfImages: Int? = 1,
+    public val aspectRatio: ImagenAspectRatio? = null,
+    public val imageFormat: ImagenImageFormat? = null,
+    public val addWatermark: Boolean? = null
 ) {}
