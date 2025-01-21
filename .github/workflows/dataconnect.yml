@@ -1,0 +1,124 @@
+name: Data Connect Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      javaVersion:
+      androidEmulatorApiLevel:
+      gradleInfoLog:
+        type: boolean
+  pull_request:
+    paths:
+      - buildSrc/**
+      - firebase-common/**
+      - firebase-dataconnect/**
+      - .github/workflows/dataconnect.yml
+  schedule:
+    - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
+
+env:
+  FST_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FST_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-test:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.FST_JAVA_VERSION }}
+          distribution: temurin
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          set +e -v
+          uname -a
+          which java
+          java -version
+          which javac
+          javac -version
+          ./gradlew --version
+
+      - name: Enable KVM group permissions for Android Emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
+          restore-keys: |
+            avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
+            avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Data Connect Emulator
+        run: |
+          set -x
+
+          echo "emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable" > firebase-dataconnect/dataconnect.local.properties
+
+          ./gradlew \
+            --no-daemon \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
+            2>&1 >dataconnect.emulator.log &
+
+          sleep 5s
+
+      - name: Gradle connectedCheck
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -x && ./gradlew --no-daemon ${{ (inputs.gradleInfoLog && '--info') || '' }} --profile :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: **/*.log
+          if-no-files-found: warn
+          compression-level: 9
