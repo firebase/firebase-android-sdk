@@ -44,7 +44,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        show-progress: false
+        with:
+          show-progress: false
 
       - uses: actions/setup-java@v4
         with:
