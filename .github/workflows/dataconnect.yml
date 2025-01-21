@@ -60,7 +60,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.FST_NODEJS_VERSION }}
+          node-version: ${{ env.FDC_NODEJS_VERSION }}
 
       - name: install firebase-tools
         run: |
@@ -68,7 +68,7 @@ jobs:
           mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           echo '{}' > package.json
-          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FST_FIREBASE_TOOLS_VERSION }}
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
       - name: tool versions
         continue-on-error: true
