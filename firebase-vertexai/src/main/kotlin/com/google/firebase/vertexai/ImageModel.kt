@@ -28,11 +28,11 @@ import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublicGCS
 import com.google.firebase.vertexai.internal.util.toPublicInline
 import com.google.firebase.vertexai.type.FirebaseVertexAIException
-import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
+import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
 import kotlin.time.Duration
@@ -115,7 +115,10 @@ internal constructor(
     prompt: String,
   ): ImagenGenerationResponse<ImagenInlineImage> =
     try {
-      controller.generateImage(constructRequest(prompt, null, generationConfig)).toPublicInline().validate()
+      controller
+        .generateImage(constructRequest(prompt, null, generationConfig))
+        .toPublicInline()
+        .validate()
     } catch (e: Throwable) {
       throw FirebaseVertexAIException.from(e)
     }
@@ -131,7 +134,10 @@ internal constructor(
     gcsUri: String,
   ): ImagenGenerationResponse<ImagenGCSImage> =
     try {
-      controller.generateImage(constructRequest(prompt, gcsUri, generationConfig)).toPublicGCS().validate()
+      controller
+        .generateImage(constructRequest(prompt, gcsUri, generationConfig))
+        .toPublicGCS()
+        .validate()
     } catch (e: Throwable) {
       throw FirebaseVertexAIException.from(e)
     }
@@ -164,8 +170,7 @@ internal constructor(
   }
 }
 
-private fun <T> ImagenGenerationResponse<T>.validate():
-  ImagenGenerationResponse<T> {
+private fun <T> ImagenGenerationResponse<T>.validate(): ImagenGenerationResponse<T> {
   if (images.isEmpty()) {
     throw PromptBlockedException(message = filteredReason ?: ImageModel.DEFAULT_FILTERED_ERROR)
   }

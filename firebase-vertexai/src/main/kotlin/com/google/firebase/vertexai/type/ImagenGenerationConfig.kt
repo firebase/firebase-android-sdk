@@ -26,9 +26,9 @@ package com.google.firebase.vertexai.type
  * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
  */
 public class ImagenGenerationConfig(
-    public val negativePrompt: String? = null,
-    public val numberOfImages: Int? = 1,
-    public val aspectRatio: ImagenAspectRatio? = null,
-    public val imageFormat: ImagenImageFormat? = null,
-    public val addWatermark: Boolean? = null
+  public val negativePrompt: String? = null,
+  public val numberOfImages: Int? = 1,
+  public val aspectRatio: ImagenAspectRatio? = null,
+  public val imageFormat: ImagenImageFormat? = null,
+  public val addWatermark: Boolean? = null
 ) {}
