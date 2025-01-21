@@ -63,7 +63,13 @@ jobs:
           ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
+        run: |
           set -v
+
+          # Disable firebase-crashlytics-ndk because it requires setting up an NDK,
+          # which isn't needed for anything else.
+          sed -i -e '/firebase-crashlytics-ndk/d' subprojects.cfg
+           
           ./gradlew \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
