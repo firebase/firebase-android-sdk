@@ -36,7 +36,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
       return ImagenImageFormat("image/jpeg", compressionQuality)
     }
 
-    /** An [ImagenFormat] representing a PNG image */
+    /** An [ImagenImageFormat] representing a PNG image */
     public fun png(): ImagenImageFormat {
       return ImagenImageFormat("image/png", null)
     }
