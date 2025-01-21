@@ -28,6 +28,8 @@ repositories {
   maven(url = "https://plugins.gradle.org/m2/")
 }
 
+group = "com.google.firebase"
+
 spotless {
   java {
     target("src/**/*.java")
