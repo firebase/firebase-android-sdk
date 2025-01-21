@@ -89,10 +89,10 @@ jobs:
         run: |
           set -v
 
-          # Disable firebase-crashlytics-ndk because it requires setting up an NDK,
-          # which isn't needed for anything else.
-          sed -i -e '/firebase-crashlytics-ndk/d' subprojects.cfg
-           
+          # Speed up build times and also avoid configuring firebase-crashlytics-ndk
+          # which is finicky integrating with the Android NDK.
+          echo "org.gradle.configureondemand=true" >> gradle.properties
+
           ./gradlew \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
