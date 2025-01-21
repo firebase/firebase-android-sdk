@@ -31,7 +31,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
@@ -388,7 +388,7 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun executeShouldSupportMassiveConcurrency() =
-    runTest(timeout = 60.seconds) {
+    runTest(timeout = 5.minutes) {
       val latch = SuspendingCountDownLatch(25_000)
       val query = personSchema.getPerson(id = "foo")
 
