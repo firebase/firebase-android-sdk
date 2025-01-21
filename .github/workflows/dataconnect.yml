@@ -44,6 +44,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        show-progress: false
 
       - uses: actions/setup-java@v4
         with:
@@ -60,6 +61,12 @@ jobs:
           which javac
           javac -version
           ./gradlew --version
+
+      - name: Gradle assembleDebugAndroidTest
+          set -v
+          ./gradlew \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -98,7 +105,6 @@ jobs:
           echo "emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable" > firebase-dataconnect/dataconnect.local.properties
 
           ./gradlew \
-            --no-daemon \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             2>&1 >dataconnect.emulator.log &
