@@ -5,6 +5,8 @@ on:
     inputs:
       javaVersion:
       androidEmulatorApiLevel:
+      nodeJsVersion:
+      firebaseToolsVersion:
       gradleInfoLog:
         type: boolean
   pull_request:
@@ -17,8 +19,12 @@ on:
     - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
 
 env:
-  FST_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
-  FST_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
+  FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
+  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -49,8 +55,20 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          java-version: ${{ env.FST_JAVA_VERSION }}
+          java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.FST_NODEJS_VERSION }}
+
+      - name: install firebase-tools
+        run: |
+          set -v
+          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          echo '{}' > package.json
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FST_FIREBASE_TOOLS_VERSION }}
 
       - name: tool versions
         continue-on-error: true
@@ -61,6 +79,10 @@ jobs:
           java -version
           which javac
           javac -version
+          ./gradlew --version
+          which node
+          node --version
+          ${{ env.FST_FIREBASE_COMMAND }} --version
           ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
@@ -89,15 +111,15 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
           restore-keys: |
-            avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-
+            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -115,12 +137,16 @@ jobs:
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             2>&1 >dataconnect.emulator.log &
 
-          sleep 5s
+      - name: Firebase Auth Emulator
+        run: |
+          set -x
+          cd firebase-dataconnect/emulator
+          ${{ env.FST_FIREBASE_COMMAND }} emulators:start --only=auth &
 
       - name: Gradle connectedCheck
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
