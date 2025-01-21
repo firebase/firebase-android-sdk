@@ -91,7 +91,6 @@ jobs:
             ~/.android/adb*
           key: avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
           restore-keys: |
-            avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
             avd-cache-zhdsn586je-api${{ env.FST_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD and generate snapshot for caching
