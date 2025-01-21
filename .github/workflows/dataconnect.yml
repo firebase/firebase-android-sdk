@@ -113,12 +113,11 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            set -x && ./gradlew --no-daemon ${{ (inputs.gradleInfoLog && '--info') || '' }} --profile :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck'
+          script: set -x && ./gradlew --no-daemon ${{ (inputs.gradleInfoLog && '--info') || '' }} --profile :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - uses: actions/upload-artifact@v4
         with:
           name: logs
-          path: **/*.log
+          path: "**/*.log"
           if-no-files-found: warn
           compression-level: 9
