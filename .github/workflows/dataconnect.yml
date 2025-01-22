@@ -60,7 +60,7 @@ jobs:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
@@ -165,13 +165,13 @@ jobs:
           ./gradlew \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
-            2>&1 >firebase.emulator.dataconnect.log &
+            >firebase.emulator.dataconnect.log 2>&1 &
 
       - name: Firebase Auth Emulator
         run: |
           set -x
           cd firebase-dataconnect/emulator
-          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth 2>&1 >firebase.emulator.auth.log &
+          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
 
       - name: Gradle connectedCheck
         uses: reactivecircus/android-emulator-runner@v2
@@ -196,3 +196,10 @@ jobs:
           path: "**/*.log"
           if-no-files-found: warn
           compression-level: 9
+
+  actionlint_dataconnect_yml:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - run: brew install actionlint
+      - run: actionlint .github/workflows/dataconnect.yml
