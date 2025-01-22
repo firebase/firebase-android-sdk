@@ -1,0 +1,50 @@
+name: Create release
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Release name'
+        required: true
+        type: string
+      past-name:
+        description: 'Past release name'
+        required: true
+        type: string
+
+jobs:
+  create-branches:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Create base branch
+        uses: peterjgrainger/action-create-branch@08259812c8ebdbf1973747f9297e332fa078d3c1
+        with:
+          branch: 'releases/${{ inputs.name }}'
+
+  create-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.1.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: Create release configuration template
+        run: |
+          ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          base: 'releases/${{ inputs.name }}'
+          branch: 'releases/${{ inputs.name }}.release'
+          add-paths: release.json,release_report.md,release_report.json
+          title: '${{ inputs.name}} release'
+          body: 'Auto-generated PR for release ${{ inputs.name}}'
+          commit-message: 'Create release config for ${{ inputs.name }}'
