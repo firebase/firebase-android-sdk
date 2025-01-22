@@ -17,7 +17,6 @@
 package com.google.firebase.vertexai.type
 
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
