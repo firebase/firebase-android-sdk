@@ -196,6 +196,9 @@ jobs:
           if-no-files-found: warn
           compression-level: 9
 
+  # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
+  # To run actionlint yourself, run `brew install actionlint` followed by
+  # `actionlint .github/workflows/dataconnect.yml`
   actionlint-dataconnect-yml:
     continue-on-error: false
     runs-on: ubuntu-latest
