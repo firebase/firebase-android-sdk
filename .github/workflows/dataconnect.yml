@@ -85,19 +85,14 @@ jobs:
         continue-on-error: true
         run: |
           set +e -v
-          echo '-----------------'
           uname -a
-          echo '-----------------'
           which java
           java -version
           which javac
           javac -version
-          echo '-----------------'
           which node
           node --version
-          echo '-----------------'
           ${{ env.FDC_FIREBASE_COMMAND }} --version
-          echo '-----------------'
           ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
