@@ -25,7 +25,7 @@ import kotlin.time.toDuration
 public class RequestOptions
 internal constructor(
   internal val timeout: Duration,
-  internal val endpoint: String = "https://firebasevertexai.googleapis.com",
+  internal val endpoint: String = DEFAULT_ENDPOINT,
   internal val apiVersion: String = DEFAULT_API_VERSION.value,
 ) {
 
@@ -59,9 +59,10 @@ internal constructor(
     apiVersion = apiVersion,
   )
 
-  private companion object {
-    private const val DEFAULT_TIMEOUT_IN_MILLIS: Long = 180_000L
+  internal companion object {
+    internal const val DEFAULT_TIMEOUT_IN_MILLIS: Long = 180_000L
+    internal const val DEFAULT_ENDPOINT: String = "https://firebasevertexai.googleapis.com"
 
-    private val DEFAULT_API_VERSION: ApiVersion = ApiVersion.V1BETA
+    internal val DEFAULT_API_VERSION: ApiVersion = ApiVersion.V1BETA
   }
 }
