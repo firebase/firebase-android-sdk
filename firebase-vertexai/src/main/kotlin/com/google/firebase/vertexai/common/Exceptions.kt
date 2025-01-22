@@ -67,7 +67,7 @@ internal class InvalidAPIKeyException(message: String, cause: Throwable? = null)
  * @property response the full server response for the request.
  */
 internal class PromptBlockedException(
-  val response: GenerateContentResponse.InternalGenerateContentResponse,
+  val response: GenerateContentResponse.Internal,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(
@@ -99,7 +99,7 @@ internal class InvalidStateException(message: String, cause: Throwable? = null) 
  * @property response the full server response for the request
  */
 internal class ResponseStoppedException(
-  val response: GenerateContentResponse.InternalGenerateContentResponse,
+  val response: GenerateContentResponse.Internal,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(

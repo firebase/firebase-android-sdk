@@ -18,13 +18,13 @@ package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.type.InternalTextPart
 import com.google.firebase.vertexai.common.util.doBlocking
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ServerException
+import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.content
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
@@ -129,12 +129,12 @@ internal class GenerativeModelTesting {
 
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
-      GenerateContentResponse.InternalGenerateContentResponse(
+      GenerateContentResponse.Internal(
         listOf(
-          Candidate.InternalCandidate(
-            Content.InternalContent(
+          Candidate.Internal(
+            Content.Internal(
               parts = listOf(
-                InternalTextPart(text)
+                TextPart.Internal(text)
               )
             )
           )

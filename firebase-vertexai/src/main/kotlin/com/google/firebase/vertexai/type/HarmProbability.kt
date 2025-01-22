@@ -23,8 +23,8 @@ import kotlinx.serialization.Serializable
 
 /** Represents the probability that some [HarmCategory] is applicable in a [SafetyRating]. */
 public class HarmProbability private constructor(public val ordinal: Int) {
-  @Serializable(InternalHarmProbability.InternalHarmProbabilitySerializer::class)
-  internal enum class InternalHarmProbability {
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
     UNKNOWN,
     @SerialName("HARM_PROBABILITY_UNSPECIFIED") UNSPECIFIED,
     NEGLIGIBLE,
@@ -32,8 +32,8 @@ public class HarmProbability private constructor(public val ordinal: Int) {
     MEDIUM,
     HIGH;
 
-    internal object InternalHarmProbabilitySerializer :
-      KSerializer<InternalHarmProbability> by FirstOrdinalSerializer(InternalHarmProbability::class)
+    internal object Serializer :
+      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

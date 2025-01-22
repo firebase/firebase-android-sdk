@@ -27,13 +27,13 @@ import kotlinx.serialization.Serializable
 public class HarmBlockMethod private constructor(public val ordinal: Int) {
   internal fun toInternal() =
     when (this) {
-      SEVERITY -> InternalHarmBlockMethod.SEVERITY
-      PROBABILITY -> InternalHarmBlockMethod.PROBABILITY
+      SEVERITY -> Internal.SEVERITY
+      PROBABILITY -> Internal.PROBABILITY
       else -> throw makeMissingCaseException("HarmBlockMethod", ordinal)
     }
 
   @Serializable
-  internal enum class InternalHarmBlockMethod {
+  internal enum class Internal {
     @SerialName("HARM_BLOCK_METHOD_UNSPECIFIED") UNSPECIFIED,
     SEVERITY,
     PROBABILITY,

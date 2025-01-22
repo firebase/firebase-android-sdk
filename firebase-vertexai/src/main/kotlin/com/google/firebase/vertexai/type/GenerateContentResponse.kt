@@ -45,10 +45,10 @@ public class GenerateContentResponse(
   }
 
   @Serializable
-  internal data class InternalGenerateContentResponse(
-    val candidates: List<Candidate.InternalCandidate>? = null,
-    val promptFeedback: PromptFeedback.InternalPromptFeedback? = null,
-    val usageMetadata: UsageMetadata.InternalUsageMetadata? = null,
+  internal data class Internal(
+    val candidates: List<Candidate.Internal>? = null,
+    val promptFeedback: PromptFeedback.Internal? = null,
+    val usageMetadata: UsageMetadata.Internal? = null,
   ) : Response {
     internal fun toPublic(): GenerateContentResponse {
       return GenerateContentResponse(

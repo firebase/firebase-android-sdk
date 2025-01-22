@@ -17,7 +17,6 @@
 package com.google.firebase.vertexai.common
 
 import com.google.firebase.vertexai.BuildConfig
-import com.google.firebase.vertexai.type.InternalTextPart
 import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
 import com.google.firebase.vertexai.common.util.doBlocking
@@ -26,6 +25,7 @@ import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import io.kotest.assertions.json.shouldContainJsonKey
@@ -141,7 +141,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `client id header is set correctly in the request`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse.InternalCountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -184,11 +184,11 @@ internal class RequestFormatTests {
         .generateContentStream(
           GenerateContentRequest(
             model = "unused",
-            contents = listOf(Content.InternalContent(parts = listOf(InternalTextPart("Arbitrary")))),
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
             toolConfig =
-            ToolConfig.InternalToolConfig(
-              FunctionCallingConfig.InternalFunctionCallingConfig(
-                mode = FunctionCallingConfig.InternalFunctionCallingConfig.Mode.ANY,
+            ToolConfig.Internal(
+              FunctionCallingConfig.Internal(
+                mode = FunctionCallingConfig.Internal.Mode.ANY,
                 allowedFunctionNames = listOf("allowedFunctionName")
               )
             )
@@ -206,7 +206,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `headers from HeaderProvider are added to the request`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse.InternalCountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -238,7 +238,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `headers from HeaderProvider are ignored if timeout`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse.InternalCountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -292,8 +292,8 @@ internal class RequestFormatTests {
         .generateContentStream(
           GenerateContentRequest(
             model = "unused",
-            contents = listOf(Content.InternalContent(parts = listOf(InternalTextPart("Arbitrary")))),
-            tools = listOf(Tool.InternalTool(codeExecution = JsonObject(emptyMap()))),
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
+            tools = listOf(Tool.Internal(codeExecution = JsonObject(emptyMap()))),
           )
         )
         .collect { channel.close() }
@@ -352,7 +352,7 @@ internal class ModelNamingTests(private val modelName: String, private val actua
 internal fun textGenerateContentRequest(prompt: String) =
   GenerateContentRequest(
     model = "unused",
-    contents = listOf(Content.InternalContent(parts = listOf(InternalTextPart(prompt)))),
+    contents = listOf(Content.Internal(parts = listOf(TextPart.Internal(prompt)))),
   )
 
 internal fun textCountTokenRequest(prompt: String) =

@@ -30,21 +30,21 @@ internal sealed interface Request
 @Serializable
 internal data class GenerateContentRequest(
   val model: String? = null,
-  val contents: List<Content.InternalContent>,
-  @SerialName("safety_settings") val safetySettings: List<SafetySetting.InternalSafetySetting>? = null,
-  @SerialName("generation_config") val generationConfig: GenerationConfig.InternalGenerationConfig? = null,
-  val tools: List<Tool.InternalTool>? = null,
-  @SerialName("tool_config") var toolConfig: ToolConfig.InternalToolConfig? = null,
-  @SerialName("system_instruction") val systemInstruction: Content.InternalContent? = null,
+  val contents: List<Content.Internal>,
+  @SerialName("safety_settings") val safetySettings: List<SafetySetting.Internal>? = null,
+  @SerialName("generation_config") val generationConfig: GenerationConfig.Internal? = null,
+  val tools: List<Tool.Internal>? = null,
+  @SerialName("tool_config") var toolConfig: ToolConfig.Internal? = null,
+  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request
 
 @Serializable
 internal data class CountTokensRequest(
   val generateContentRequest: GenerateContentRequest? = null,
   val model: String? = null,
-  val contents: List<Content.InternalContent>? = null,
-  val tools: List<Tool.InternalTool>? = null,
-  @SerialName("system_instruction") val systemInstruction: Content.InternalContent? = null,
+  val contents: List<Content.Internal>? = null,
+  val tools: List<Tool.Internal>? = null,
+  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request {
   companion object {
     fun forGenAI(generateContentRequest: GenerateContentRequest) =

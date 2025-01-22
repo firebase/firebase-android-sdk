@@ -39,7 +39,7 @@ public interface Part {
 public class TextPart(public val text: String) : Part {
 
   @Serializable
-  internal data class InternalTextPart(val text: String) : InternalPart
+  internal data class Internal(val text: String) : InternalPart
 }
 
 /**
@@ -60,11 +60,11 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class InternalInlineDataPart(@SerialName("inline_data") val inlineData: InternalInlineData) :
+  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InternalInlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
+    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
   }
 }
 
@@ -78,10 +78,10 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
   Part {
 
   @Serializable
-  internal data class InternalFunctionCallPart(val functionCall: InternalFunctionCall) : InternalPart {
+  internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
     @Serializable
-    internal data class InternalFunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
+    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
   }
 }
 
@@ -94,11 +94,11 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
-  internal data class InternalFunctionResponsePart(val functionResponse: InternalFunctionResponse) :
+  internal data class Internal(val functionResponse: FunctionResponse) :
     InternalPart {
 
     @Serializable
-    internal data class InternalFunctionResponse(val name: String, val response: JsonObject)
+    internal data class FunctionResponse(val name: String, val response: JsonObject)
   }
 }
 
@@ -113,11 +113,11 @@ public class FunctionResponsePart(public val name: String, public val response: 
 public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class InternalFileDataPart(@SerialName("file_data") val fileData: InternalFileData) :
+  internal data class Internal(@SerialName("file_data") val fileData: FileData) :
     InternalPart {
 
     @Serializable
-    internal data class InternalFileData(
+    internal data class FileData(
       @SerialName("mime_type") val mimeType: String,
       @SerialName("file_uri") val fileUri: String,
     )
@@ -144,11 +144,11 @@ internal object PartSerializer : JsonContentPolymorphicSerializer<InternalPart>(
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
     return when {
-      "text" in jsonObject -> TextPart.InternalTextPart.serializer()
-      "functionCall" in jsonObject -> FunctionCallPart.InternalFunctionCallPart.serializer()
-      "functionResponse" in jsonObject -> FunctionResponsePart.InternalFunctionResponsePart.serializer()
-      "inlineData" in jsonObject -> InlineDataPart.InternalInlineDataPart.serializer()
-      "fileData" in jsonObject -> FileDataPart.InternalFileDataPart.serializer()
+      "text" in jsonObject -> TextPart.Internal.serializer()
+      "functionCall" in jsonObject -> FunctionCallPart.Internal.serializer()
+      "functionResponse" in jsonObject -> FunctionResponsePart.Internal.serializer()
+      "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
+      "fileData" in jsonObject -> FileDataPart.Internal.serializer()
       else -> throw SerializationException("Unknown Part type")
     }
   }
@@ -156,38 +156,38 @@ internal object PartSerializer : JsonContentPolymorphicSerializer<InternalPart>(
 
 internal fun Part.toInternal(): InternalPart {
   return when (this) {
-    is TextPart -> TextPart.InternalTextPart(text)
+    is TextPart -> TextPart.Internal(text)
     is ImagePart ->
-      InlineDataPart.InternalInlineDataPart(
-        InlineDataPart.InternalInlineDataPart.InternalInlineData(
+      InlineDataPart.Internal(
+        InlineDataPart.Internal.InlineData(
           "image/jpeg",
           encodeBitmapToBase64Png(image)
         )
       )
     is InlineDataPart ->
-      InlineDataPart.InternalInlineDataPart(
-        InlineDataPart.InternalInlineDataPart.InternalInlineData(
+      InlineDataPart.Internal(
+        InlineDataPart.Internal.InlineData(
           mimeType,
           android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
         )
       )
     is FunctionCallPart ->
-      FunctionCallPart.InternalFunctionCallPart(
-        FunctionCallPart.InternalFunctionCallPart.InternalFunctionCall(
+      FunctionCallPart.Internal(
+        FunctionCallPart.Internal.FunctionCall(
           name,
           args
         )
       )
     is FunctionResponsePart ->
-      FunctionResponsePart.InternalFunctionResponsePart(
-        FunctionResponsePart.InternalFunctionResponsePart.InternalFunctionResponse(
+      FunctionResponsePart.Internal(
+        FunctionResponsePart.Internal.FunctionResponse(
           name,
           response
         )
       )
     is FileDataPart ->
-      FileDataPart.InternalFileDataPart(
-        FileDataPart.InternalFileDataPart.InternalFileData(mimeType = mimeType, fileUri = uri)
+      FileDataPart.Internal(
+        FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri)
       )
     else ->
       throw com.google.firebase.vertexai.type.SerializationException(
@@ -205,8 +205,8 @@ private fun encodeBitmapToBase64Png(input: Bitmap): String {
 
 internal fun InternalPart.toPublic(): Part {
   return when (this) {
-    is TextPart.InternalTextPart -> TextPart(text)
-    is InlineDataPart.InternalInlineDataPart -> {
+    is TextPart.Internal -> TextPart(text)
+    is InlineDataPart.Internal -> {
       val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
@@ -214,17 +214,17 @@ internal fun InternalPart.toPublic(): Part {
         InlineDataPart(data, inlineData.mimeType)
       }
     }
-    is FunctionCallPart.InternalFunctionCallPart ->
+    is FunctionCallPart.Internal ->
       FunctionCallPart(
         functionCall.name,
         functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
       )
-    is FunctionResponsePart.InternalFunctionResponsePart ->
+    is FunctionResponsePart.Internal ->
       FunctionResponsePart(
         functionResponse.name,
         functionResponse.response,
       )
-    is FileDataPart.InternalFileDataPart ->
+    is FileDataPart.Internal ->
       FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw com.google.firebase.vertexai.type.SerializationException(

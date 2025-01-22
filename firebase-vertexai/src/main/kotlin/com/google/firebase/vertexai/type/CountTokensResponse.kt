@@ -40,7 +40,7 @@ public class CountTokensResponse(
   public operator fun component2(): Int? = totalBillableCharacters
 
   @Serializable
-  internal data class InternalCountTokensResponse(
+  internal data class Internal(
     val totalTokens: Int,
     val totalBillableCharacters: Int? = null
   ) : Response {

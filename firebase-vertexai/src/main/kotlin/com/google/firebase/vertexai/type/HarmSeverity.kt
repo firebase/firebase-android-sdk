@@ -23,8 +23,8 @@ import kotlinx.serialization.Serializable
 
 /** Represents the severity of a [HarmCategory] being applicable in a [SafetyRating]. */
 public class HarmSeverity private constructor(public val ordinal: Int) {
-  @Serializable(InternalHarmSeverity.InternalHarmSeveritySerializer::class)
-  internal enum class InternalHarmSeverity {
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
     UNKNOWN,
     @SerialName("HARM_SEVERITY_UNSPECIFIED") UNSPECIFIED,
     @SerialName("HARM_SEVERITY_NEGLIGIBLE") NEGLIGIBLE,
@@ -32,8 +32,8 @@ public class HarmSeverity private constructor(public val ordinal: Int) {
     @SerialName("HARM_SEVERITY_MEDIUM") MEDIUM,
     @SerialName("HARM_SEVERITY_HIGH") HIGH;
 
-    internal object InternalHarmSeveritySerializer :
-      KSerializer<InternalHarmSeverity> by FirstOrdinalSerializer(InternalHarmSeverity::class)
+    internal object Serializer :
+      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

@@ -50,7 +50,7 @@ internal constructor(
 
 
   @Serializable
-  internal data class InternalFunctionCallingConfig(
+  internal data class Internal(
     val mode: Mode,
     @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
   ) {

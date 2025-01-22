@@ -24,8 +24,8 @@ import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
-import com.google.firebase.vertexai.type.InternalTextPart
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.TextPart
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.client.engine.mock.MockEngine
@@ -43,15 +43,15 @@ import kotlinx.serialization.encodeToString
 
 private val TEST_CLIENT_ID = "genai-android/test"
 
-internal fun prepareStreamingResponse(response: List<GenerateContentResponse.InternalGenerateContentResponse>): List<ByteArray> =
+internal fun prepareStreamingResponse(response: List<GenerateContentResponse.Internal>): List<ByteArray> =
   response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
-internal fun prepareResponse(response: GenerateContentResponse.InternalGenerateContentResponse) =
+internal fun prepareResponse(response: GenerateContentResponse.Internal) =
   JSON.encodeToString(response).toByteArray()
 
 @OptIn(ExperimentalSerializationApi::class)
 internal fun createRequest(vararg text: String): GenerateContentRequest {
-  val contents = text.map { Content.InternalContent(parts = listOf(InternalTextPart(it))) }
+  val contents = text.map { Content.Internal(parts = listOf(TextPart.Internal(it))) }
 
   return GenerateContentRequest("gemini", contents)
 }
@@ -59,19 +59,19 @@ internal fun createRequest(vararg text: String): GenerateContentRequest {
 internal fun createResponse(text: String) = createResponses(text).single()
 
 @OptIn(ExperimentalSerializationApi::class)
-internal fun createResponses(vararg text: String): List<GenerateContentResponse.InternalGenerateContentResponse> {
+internal fun createResponses(vararg text: String): List<GenerateContentResponse.Internal> {
   val candidates = text.map {
-    Candidate.InternalCandidate(
-      Content.InternalContent(
+    Candidate.Internal(
+      Content.Internal(
         parts = listOf(
-          InternalTextPart(it)
+          TextPart.Internal(it)
         )
       )
     )
   }
 
   return candidates.map {
-    GenerateContentResponse.InternalGenerateContentResponse(
+    GenerateContentResponse.Internal(
       candidates = listOf(
         it
       )

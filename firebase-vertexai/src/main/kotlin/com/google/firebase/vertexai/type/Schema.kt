@@ -241,8 +241,8 @@ internal constructor(
       )
   }
 
-  internal fun toInternal(): InternalSchema =
-    InternalSchema(
+  internal fun toInternal(): Internal =
+    Internal(
       type,
       description,
       format,
@@ -253,15 +253,15 @@ internal constructor(
       items?.toInternal(),
     )
   @Serializable
-  internal data class InternalSchema(
+  internal data class Internal(
     val type: String,
     val description: String? = null,
     val format: String? = null,
     val nullable: Boolean? = false,
     val enum: List<String>? = null,
-    val properties: Map<String, InternalSchema>? = null,
+    val properties: Map<String, Internal>? = null,
     val required: List<String>? = null,
-    val items: InternalSchema? = null,
+    val items: Internal? = null,
   )
 }
 

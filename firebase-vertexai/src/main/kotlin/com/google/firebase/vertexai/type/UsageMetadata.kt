@@ -32,7 +32,7 @@ public class UsageMetadata(
 ) {
 
   @Serializable
-  internal data class InternalUsageMetadata(
+  internal data class Internal(
     val promptTokenCount: Int? = null,
     val candidatesTokenCount: Int? = null,
     val totalTokenCount: Int? = null,

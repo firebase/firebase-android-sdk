@@ -26,16 +26,16 @@ import kotlinx.serialization.Serializable
 public class HarmCategory private constructor(public val ordinal: Int) {
   internal fun toInternal() =
     when (this) {
-      HARASSMENT -> InternalHarmCategory.HARASSMENT
-      HATE_SPEECH -> InternalHarmCategory.HATE_SPEECH
-      SEXUALLY_EXPLICIT -> InternalHarmCategory.SEXUALLY_EXPLICIT
-      DANGEROUS_CONTENT -> InternalHarmCategory.DANGEROUS_CONTENT
-      CIVIC_INTEGRITY -> InternalHarmCategory.CIVIC_INTEGRITY
-      UNKNOWN -> InternalHarmCategory.UNKNOWN
+      HARASSMENT -> Internal.HARASSMENT
+      HATE_SPEECH -> Internal.HATE_SPEECH
+      SEXUALLY_EXPLICIT -> Internal.SEXUALLY_EXPLICIT
+      DANGEROUS_CONTENT -> Internal.DANGEROUS_CONTENT
+      CIVIC_INTEGRITY -> Internal.CIVIC_INTEGRITY
+      UNKNOWN -> Internal.UNKNOWN
       else -> throw makeMissingCaseException("HarmCategory", ordinal)
     }
-  @Serializable(InternalHarmCategory.HarmCategorySerializer::class)
-  internal enum class InternalHarmCategory {
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
     UNKNOWN,
     @SerialName("HARM_CATEGORY_HARASSMENT") HARASSMENT,
     @SerialName("HARM_CATEGORY_HATE_SPEECH") HATE_SPEECH,
@@ -43,8 +43,8 @@ public class HarmCategory private constructor(public val ordinal: Int) {
     @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT,
     @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY;
 
-    internal object HarmCategorySerializer :
-      KSerializer<InternalHarmCategory> by FirstOrdinalSerializer(InternalHarmCategory::class)
+    internal object Serializer :
+      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

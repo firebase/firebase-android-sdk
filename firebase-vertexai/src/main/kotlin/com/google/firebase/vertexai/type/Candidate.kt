@@ -41,12 +41,12 @@ internal constructor(
 ) {
 
   @Serializable
-  internal data class InternalCandidate(
-    val content: Content.InternalContent? = null,
-    val finishReason: FinishReason.InternalFinishReason? = null,
-    val safetyRatings: List<SafetyRating.InternalSafetyRating>? = null,
-    val citationMetadata: CitationMetadata.InternalCitationMetadata? = null,
-    val groundingMetadata: InternalGroundingMetadata? = null,
+  internal data class Internal(
+    val content: Content.Internal? = null,
+    val finishReason: FinishReason.Internal? = null,
+    val safetyRatings: List<SafetyRating.Internal>? = null,
+    val citationMetadata: CitationMetadata.Internal? = null,
+    val groundingMetadata: GroundingMetadata? = null,
   ) {
     internal fun toPublic(): Candidate {
       val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
@@ -62,27 +62,27 @@ internal constructor(
     }
 
     @Serializable
-    internal data class InternalGroundingMetadata(
+    internal data class GroundingMetadata(
       @SerialName("web_search_queries") val webSearchQueries: List<String>?,
-      @SerialName("search_entry_point") val searchEntryPoint: InternalSearchEntryPoint?,
+      @SerialName("search_entry_point") val searchEntryPoint: SearchEntryPoint?,
       @SerialName("retrieval_queries") val retrievalQueries: List<String>?,
-      @SerialName("grounding_attribution") val groundingAttribution: List<InternalGroundingAttribution>?,
+      @SerialName("grounding_attribution") val groundingAttribution: List<GroundingAttribution>?,
     ) {
 
       @Serializable
-      internal data class InternalSearchEntryPoint(
+      internal data class SearchEntryPoint(
         @SerialName("rendered_content") val renderedContent: String?,
         @SerialName("sdk_blob") val sdkBlob: String?,
       )
 
       @Serializable
-      internal data class InternalGroundingAttribution(
-        val segment: InternalSegment,
+      internal data class GroundingAttribution(
+        val segment: Segment,
         @SerialName("confidence_score") val confidenceScore: Float?,
       ) {
 
         @Serializable
-        internal data class InternalSegment(
+        internal data class Segment(
           @SerialName("start_index") val startIndex: Int,
           @SerialName("end_index") val endIndex: Int,
         )
@@ -115,12 +115,12 @@ internal constructor(
 ) {
 
   @Serializable
-  internal data class InternalSafetyRating @JvmOverloads constructor(
-    val category: HarmCategory.InternalHarmCategory,
-    val probability: HarmProbability.InternalHarmProbability,
+  internal data class Internal @JvmOverloads constructor(
+    val category: HarmCategory.Internal,
+    val probability: HarmProbability.Internal,
     val blocked: Boolean? = null, // TODO(): any reason not to default to false?
     val probabilityScore: Float? = null,
-    val severity: HarmSeverity.InternalHarmSeverity? = null,
+    val severity: HarmSeverity.Internal? = null,
     val severityScore: Float? = null,
   ) {
 
@@ -146,9 +146,9 @@ internal constructor(
 public class CitationMetadata internal constructor(public val citations: List<Citation>) {
 
   @Serializable
-  internal data class InternalCitationMetadata
+  internal data class Internal
   @OptIn(ExperimentalSerializationApi::class)
-  internal constructor(@JsonNames("citations") val citationSources: List<Citation.InternalCitationSources>) {
+  internal constructor(@JsonNames("citations") val citationSources: List<Citation.Internal>) {
 
     internal fun toPublic() =
       CitationMetadata(citationSources.map { it.toPublic() })
@@ -182,13 +182,13 @@ internal constructor(
 ) {
 
   @Serializable
-  internal data class InternalCitationSources(
+  internal data class Internal(
     val title: String? = null,
     val startIndex: Int = 0,
     val endIndex: Int,
     val uri: String? = null,
     val license: String? = null,
-    val publicationDate: InternalDate? = null,
+    val publicationDate: Date? = null,
   ) {
 
     internal fun toPublic(): Citation {
@@ -216,7 +216,7 @@ internal constructor(
     }
 
     @Serializable
-    internal data class InternalDate(
+    internal data class Date(
       /** Year of the date. Must be between 1 and 9999, or 0 for no year. */
       val year: Int? = null,
       /** 1-based index for month. Must be from 1 to 12, or 0 to specify a year without a month. */
@@ -238,8 +238,8 @@ internal constructor(
  */
 public class FinishReason private constructor(public val name: String, public val ordinal: Int) {
 
-  @Serializable(InternalFinishReason.InternalFinishReasonSerializer::class)
-  internal enum class InternalFinishReason {
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
     UNKNOWN,
     @SerialName("FINISH_REASON_UNSPECIFIED") UNSPECIFIED,
     STOP,
@@ -248,8 +248,8 @@ public class FinishReason private constructor(public val name: String, public va
     RECITATION,
     OTHER;
 
-    internal object InternalFinishReasonSerializer :
-      KSerializer<InternalFinishReason> by FirstOrdinalSerializer(InternalFinishReason::class)
+    internal object Serializer :
+      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

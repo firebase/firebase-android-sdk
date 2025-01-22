@@ -28,18 +28,18 @@ import kotlinx.serialization.Serializable
 public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig?) {
 
   internal fun toInternal() =
-    InternalToolConfig(
+    Internal(
       functionCallingConfig?.let {
-        FunctionCallingConfig.InternalFunctionCallingConfig(
+        FunctionCallingConfig.Internal(
           when (it.mode) {
             FunctionCallingConfig.Mode.ANY ->
-              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.ANY
+              FunctionCallingConfig.Internal.Mode.ANY
 
             FunctionCallingConfig.Mode.AUTO ->
-              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.AUTO
+              FunctionCallingConfig.Internal.Mode.AUTO
 
             FunctionCallingConfig.Mode.NONE ->
-              FunctionCallingConfig.InternalFunctionCallingConfig.Mode.NONE
+              FunctionCallingConfig.Internal.Mode.NONE
           },
           it.allowedFunctionNames
         )
@@ -47,8 +47,8 @@ public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfi
     )
 
   @Serializable
-  internal data class InternalToolConfig(
-    @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig.InternalFunctionCallingConfig?
+  internal data class Internal(
+    @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig.Internal?
   )
 }
 

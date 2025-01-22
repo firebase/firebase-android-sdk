@@ -146,7 +146,7 @@ private constructor(
   }
 
   internal fun toInternal() =
-    InternalGenerationConfig(
+    Internal(
       temperature = temperature,
       topP = topP,
       topK = topK,
@@ -160,7 +160,7 @@ private constructor(
     )
 
   @Serializable
-  internal data class InternalGenerationConfig(
+  internal data class Internal(
     val temperature: Float?,
     @SerialName("top_p") val topP: Float?,
     @SerialName("top_k") val topK: Int?,
@@ -170,7 +170,7 @@ private constructor(
     @SerialName("response_mime_type") val responseMimeType: String? = null,
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-    @SerialName("response_schema") val responseSchema: Schema.InternalSchema? = null,
+    @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
   )
 
   public companion object {

@@ -25,15 +25,15 @@ public class HarmBlockThreshold private constructor(public val ordinal: Int) {
 
   internal fun toInternal() =
     when (this) {
-      NONE -> InternalHarmBlockThreshold.BLOCK_NONE
-      ONLY_HIGH -> InternalHarmBlockThreshold.BLOCK_ONLY_HIGH
-      MEDIUM_AND_ABOVE -> InternalHarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-      LOW_AND_ABOVE -> InternalHarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+      NONE -> Internal.BLOCK_NONE
+      ONLY_HIGH -> Internal.BLOCK_ONLY_HIGH
+      MEDIUM_AND_ABOVE -> Internal.BLOCK_MEDIUM_AND_ABOVE
+      LOW_AND_ABOVE -> Internal.BLOCK_LOW_AND_ABOVE
       else -> throw makeMissingCaseException("HarmBlockThreshold", ordinal)
     }
 
   @Serializable
-  internal enum class InternalHarmBlockThreshold {
+  internal enum class Internal {
     @SerialName("HARM_BLOCK_THRESHOLD_UNSPECIFIED") UNSPECIFIED,
     BLOCK_LOW_AND_ABOVE,
     BLOCK_MEDIUM_AND_ABOVE,
