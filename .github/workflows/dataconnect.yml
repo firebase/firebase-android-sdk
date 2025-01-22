@@ -11,10 +11,12 @@ on:
         type: boolean
   pull_request:
     paths:
-      - buildSrc/**
-      - firebase-common/**
-      - firebase-dataconnect/**
       - .github/workflows/dataconnect.yml
+      - 'firebase-dataconnect/**'
+      - '!firebase-dataconnect/demo/**'
+      - '!firebase-dataconnect/scripts/**'
+      - '!firebase-dataconnect/**/*.md'
+      - '!firebase-dataconnect/**/*.txt'
   schedule:
     - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
 
@@ -23,8 +25,8 @@ env:
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
-  FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
-  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
+  FDC_FIREBASE_TOOLS_DIR: ${{ runner.temp }}/firebase-tools
+  FDC_FIREBASE_COMMAND: ${{ runner.temp }}/firebase-tools/node_modules/.bin/firebase
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -85,6 +87,15 @@ jobs:
           ${{ env.FDC_FIREBASE_COMMAND }} --version
           ./gradlew --version
 
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        if: github.event_name != 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7
+
       - name: Gradle assembleDebugAndroidTest
         run: |
           set -v
@@ -98,6 +109,15 @@ jobs:
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
+      - name: Save Gradle cache
+        uses: actions/cache/save@v4
+        if: github.event_name == 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7
+
       - name: Enable KVM group permissions for Android Emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -105,19 +125,18 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: AVD cache
-        uses: actions/cache@v4
+      - name: Restore AVD cache
+        uses: actions/cache/restore@v4
+        if: github.event_name != 'schedule'
         id: avd-cache
         with:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-ref${{ github.ref_name }}
-          restore-keys: |
-            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
 
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
+      - name: Create AVD
+        if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
@@ -127,22 +146,32 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
+      - name: Save AVD cache
+        uses: actions/cache/save@v4
+        if: github.event_name == 'schedule'
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+
       - name: Data Connect Emulator
         run: |
           set -x
 
-          echo "emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable" > firebase-dataconnect/dataconnect.local.properties
+          echo 'emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable' > firebase-dataconnect/dataconnect.local.properties
 
           ./gradlew \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
-            2>&1 >dataconnect.emulator.log &
+            2>&1 >firebase.emulator.dataconnect.log &
 
       - name: Firebase Auth Emulator
         run: |
           set -x
           cd firebase-dataconnect/emulator
-          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth &
+          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth 2>&1 >firebase.emulator.auth.log &
 
       - name: Gradle connectedCheck
         uses: reactivecircus/android-emulator-runner@v2
@@ -152,9 +181,16 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: set -x && ./gradlew --no-daemon ${{ (inputs.gradleInfoLog && '--info') || '' }} --profile :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+          script: |
+            set -euox pipefail
+            ./gradlew \
+              ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+              --profile \
+              :firebase-dataconnect:connectedCheck \
+              :firebase-dataconnect:connectors:connectedCheck
 
       - uses: actions/upload-artifact@v4
+        if: true
         with:
           name: logs
           path: "**/*.log"
