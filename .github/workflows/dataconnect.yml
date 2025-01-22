@@ -91,6 +91,7 @@ jobs:
 
           # Speed up build times and also avoid configuring firebase-crashlytics-ndk
           # which is finicky integrating with the Android NDK.
+          echo >> gradle.properties
           echo "org.gradle.configureondemand=true" >> gradle.properties
 
           ./gradlew \
