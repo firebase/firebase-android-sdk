@@ -196,7 +196,7 @@ jobs:
           if-no-files-found: warn
           compression-level: 9
 
-  actionlint_dataconnect_yml:
+  actionlint-dataconnect-yml:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
