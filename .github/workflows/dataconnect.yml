@@ -105,6 +105,7 @@ jobs:
           echo "org.gradle.configureondemand=true" >> gradle.properties
 
           ./gradlew \
+            --profile \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
@@ -180,10 +181,9 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -euox pipefail
+            set -eux
             ./gradlew \
               ${{ (inputs.gradleInfoLog && '--info') || '' }} \
-              --profile \
               :firebase-dataconnect:connectedCheck \
               :firebase-dataconnect:connectors:connectedCheck
 
@@ -192,6 +192,13 @@ jobs:
         with:
           name: logs
           path: "**/*.log"
+          if-no-files-found: warn
+          compression-level: 9
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gradle_build_reports
+          path: firebase-dataconnect/**/build/reports/
           if-no-files-found: warn
           compression-level: 9
 
