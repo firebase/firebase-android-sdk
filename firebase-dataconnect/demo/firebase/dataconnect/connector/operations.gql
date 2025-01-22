@@ -48,3 +48,37 @@ query GetItemByKey(
     any
   }
 }
+
+query GetAllItems @auth(level: PUBLIC) {
+  items: zwda6x9zyys {
+    id
+    string
+    int
+    int64
+    float
+    boolean
+    date
+    timestamp
+    any
+  }
+}
+
+mutation DeleteItemByKey(
+  $key: zwda6x9zyy_Key!
+) @auth(level: PUBLIC) {
+  zwda6x9zyy_delete(key: $key)
+}
+
+# This mutation exists only as a workaround for b/382688278 where the following
+# compiler error will otherwise result when compiling the generated code:
+#   Serializer has not been found for type 'java.util.UUID'. To use context
+#   serializer as fallback, explicitly annotate type or property with @Contextual
+# This bug first appeared in v1.7.1 of the Data Connect Toolkit CLI, which
+# started to be used in firebase-tools v13.26.0
+# (https://github.com/firebase/firebase-tools/releases/tag/v13.26.0).
+# This mutation can be removed from this file once the fix is released, which will
+# likely be version 1.7.4 of the Data Connect Toolkit CLI (v13.28.1 of firebase-
+# tools).
+mutation WorkaroundForBug382688278( $id: UUID!) {
+  zwda6x9zyy_insert(data: { id: $id })
+}
