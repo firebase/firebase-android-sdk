@@ -164,7 +164,7 @@ jobs:
           ./gradlew \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
-            2>&1 >firebase.emulator.dataconnect.log &
+            >firebase.emulator.dataconnect.log 2>&1 &
 
       - name: Firebase Auth Emulator
         run: |
