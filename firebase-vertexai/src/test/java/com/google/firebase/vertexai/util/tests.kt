@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.util
 
 import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.ImageModel
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -57,7 +58,11 @@ internal suspend fun ByteChannel.send(bytes: ByteArray) {
  * @see commonTest
  * @see send
  */
-internal data class CommonTestScope(val channel: ByteChannel, val model: GenerativeModel)
+internal data class CommonTestScope(
+  val channel: ByteChannel,
+  val model: GenerativeModel,
+  val imageModel: ImageModel,
+)
 
 /** A test that runs under a [CommonTestScope]. */
 internal typealias CommonTest = suspend CommonTestScope.() -> Unit
@@ -104,7 +109,8 @@ internal fun commonTest(
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
-  CommonTestScope(channel, model).block()
+  val imageModel = ImageModel("cooler-model-name", controller = apiController)
+  CommonTestScope(channel, model, imageModel).block()
 }
 
 /**

@@ -275,6 +275,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
   }
+  if (message.contains("The prompt could not be submitted")) {
+    throw PromptBlockedException(message)
+  }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
@@ -315,6 +318,4 @@ private fun GenerateContentResponse.Internal.validate() = apply {
     ?.let { throw ResponseStoppedException(this) }
 }
 
-private fun GenerateImageResponse.validate() = apply {
-
-}
+private fun GenerateImageResponse.validate() = apply {}

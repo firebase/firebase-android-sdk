@@ -26,7 +26,6 @@ import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
-import com.google.firebase.vertexai.type.ImagenModelConfig
 import com.google.firebase.vertexai.type.InvalidLocationException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting

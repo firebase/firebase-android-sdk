@@ -44,7 +44,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
             is com.google.firebase.vertexai.common.InvalidAPIKeyException ->
               InvalidAPIKeyException(cause.message ?: "")
             is com.google.firebase.vertexai.common.PromptBlockedException ->
-              PromptBlockedException(cause.response.toPublic(), cause.cause)
+              PromptBlockedException(cause.response?.toPublic(), cause.cause)
             is com.google.firebase.vertexai.common.UnsupportedUserLocationException ->
               UnsupportedUserLocationException(cause.cause)
             is com.google.firebase.vertexai.common.InvalidStateException ->
