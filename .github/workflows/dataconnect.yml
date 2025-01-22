@@ -199,6 +199,7 @@ jobs:
   actionlint_dataconnect_yml:
     continue-on-error: false
     runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v4
         with:
           show-progress: false
