@@ -135,6 +135,8 @@ jobs:
             ~/.android/adb*
           key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
 
+      - run: echo "github.event_name == '${{ github.event_name }}' steps.avd-cache.outputs.cache-hit == '${{ steps.avd-cache.outputs.cache-hit }}'"
+
       - name: Create AVD
         if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -181,11 +183,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -eux
-            ./gradlew \
-              ${{ (inputs.gradleInfoLog && '--info') || '' }} \
-              :firebase-dataconnect:connectedCheck \
-              :firebase-dataconnect:connectors:connectedCheck
+            set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - uses: actions/upload-artifact@v4
         if: true
