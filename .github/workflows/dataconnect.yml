@@ -205,4 +205,4 @@ jobs:
           show-progress: false
       - uses: docker://rhysd/actionlint:1.7.7
         with:
-          args: -color
+          args: -color /github/workspace/.github/workflows/dataconnect.yml
