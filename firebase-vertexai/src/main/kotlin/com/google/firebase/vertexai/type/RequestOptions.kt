@@ -39,7 +39,7 @@ internal constructor(
    */
   @JvmOverloads
   public constructor(
-    timeoutInMillis: Long = DEFAULT_TIMEOUT_IN_MILLIS.seconds.inWholeMilliseconds,
+    timeoutInMillis: Long = DEFAULT_TIMEOUT_IN_MILLIS,
     apiVersion: ApiVersion = DEFAULT_API_VERSION,
   ) : this(
     timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
