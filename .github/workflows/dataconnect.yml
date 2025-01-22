@@ -25,8 +25,8 @@ env:
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
-  FDC_FIREBASE_TOOLS_DIR: ${{ runner.temp }}/firebase-tools
-  FDC_FIREBASE_COMMAND: ${{ runner.temp }}/firebase-tools/node_modules/.bin/firebase
+  FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
+  FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
