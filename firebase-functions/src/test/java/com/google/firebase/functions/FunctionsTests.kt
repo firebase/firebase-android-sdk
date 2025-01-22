@@ -24,6 +24,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.app
 import com.google.firebase.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
+import kotlinx.coroutines.flow.catch
 import java.net.URL
 import org.junit.After
 import org.junit.Before
@@ -146,5 +147,36 @@ class AppCheckLimitedUseTest : BaseTestCase() {
         limitedUseAppCheckTokens = false
       }
     assertThat(callable.usesLimitedUseFacTokens()).isFalse()
+  }
+
+  @Test
+  fun `Demo stream usage from Java`() {
+    val input = mapOf("data" to "Hello, World!")
+
+    Firebase.functions.getHttpsCallable("genStream").stream(input)
+      .addOnStreamListener { chunk ->
+        println("Received: $chunk")
+      }
+      .addOnFailureListener { error ->
+        println("Error: $error")
+      }
+      .addOnSuccessListener { result ->
+        println("Stream complete: ${result.data}")
+      }
+  }
+
+  @Test
+  suspend fun `Demo stream usage from Kotlin`() {
+    val input = mapOf("data" to "Hello, World!")
+
+    Firebase.functions.getHttpsCallable("genStream").streamFlow(input)
+      .catch {
+        println("Error: $it")
+      }
+      .collect { chunk ->
+        println("Received: $chunk")
+      }
+
+    // This is consistent with the Vertex AI in Firebase SDK
   }
 }
