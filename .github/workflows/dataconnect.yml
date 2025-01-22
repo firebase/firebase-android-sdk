@@ -200,5 +200,6 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
-      - run: brew install actionlint
-      - run: actionlint .github/workflows/dataconnect.yml
+      - uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color
