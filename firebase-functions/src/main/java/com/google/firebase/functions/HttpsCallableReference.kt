@@ -185,4 +185,16 @@ public class HttpsCallableReference {
     headers[name] = value
     return this
   }
+
+  /**
+   * Adds all HTTP headers of passed map for calls from this instance of Functions.
+   *
+   * Note that an existing header with the same name will be overwritten.
+   *
+   * @param headers Map of HTTP headers (name to value)
+   */
+  public fun addHeaders(headers: Map<String, String>): HttpsCallableReference {
+    this.headers.putAll(headers)
+    return this
+  }
 }
