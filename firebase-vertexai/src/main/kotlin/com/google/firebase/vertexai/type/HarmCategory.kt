@@ -43,8 +43,7 @@ public class HarmCategory private constructor(public val ordinal: Int) {
     @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT,
     @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY;
 
-    internal object Serializer :
-      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

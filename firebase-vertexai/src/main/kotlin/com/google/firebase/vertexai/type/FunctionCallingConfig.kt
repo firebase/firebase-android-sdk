@@ -48,7 +48,6 @@ internal constructor(
     NONE,
   }
 
-
   @Serializable
   internal data class Internal(
     val mode: Mode,

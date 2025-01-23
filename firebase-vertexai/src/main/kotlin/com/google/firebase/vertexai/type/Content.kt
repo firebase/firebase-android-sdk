@@ -80,18 +80,16 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
     public fun build(): Content = Content(role, parts)
   }
 
-  internal fun toInternal() =
-    Internal(
-      this.role ?: "user",
-      this.parts.map { it.toInternal() }
-    )
+  internal fun toInternal() = Internal(this.role ?: "user", this.parts.map { it.toInternal() })
 
   @ExperimentalSerializationApi
   @Serializable
-  internal data class Internal(@EncodeDefault val role: String? = "user", val parts: List<InternalPart>) {
+  internal data class Internal(
+    @EncodeDefault val role: String? = "user",
+    val parts: List<InternalPart>
+  ) {
 
-    internal fun toPublic(): Content =
-      Content(role, parts.map { it.toPublic() })
+    internal fun toPublic(): Content = Content(role, parts.map { it.toPublic() })
   }
 }
 

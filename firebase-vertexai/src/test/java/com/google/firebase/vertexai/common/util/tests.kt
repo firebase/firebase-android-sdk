@@ -43,8 +43,9 @@ import kotlinx.serialization.encodeToString
 
 private val TEST_CLIENT_ID = "genai-android/test"
 
-internal fun prepareStreamingResponse(response: List<GenerateContentResponse.Internal>): List<ByteArray> =
-  response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
+internal fun prepareStreamingResponse(
+  response: List<GenerateContentResponse.Internal>
+): List<ByteArray> = response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
 internal fun prepareResponse(response: GenerateContentResponse.Internal) =
   JSON.encodeToString(response).toByteArray()
@@ -60,23 +61,10 @@ internal fun createResponse(text: String) = createResponses(text).single()
 
 @OptIn(ExperimentalSerializationApi::class)
 internal fun createResponses(vararg text: String): List<GenerateContentResponse.Internal> {
-  val candidates = text.map {
-    Candidate.Internal(
-      Content.Internal(
-        parts = listOf(
-          TextPart.Internal(it)
-        )
-      )
-    )
-  }
+  val candidates =
+    text.map { Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(it)))) }
 
-  return candidates.map {
-    GenerateContentResponse.Internal(
-      candidates = listOf(
-        it
-      )
-    )
-  }
+  return candidates.map { GenerateContentResponse.Internal(candidates = listOf(it)) }
 }
 
 /**

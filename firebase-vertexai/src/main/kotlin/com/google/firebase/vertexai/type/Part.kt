@@ -19,6 +19,7 @@ package com.google.firebase.vertexai.type
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.firebase.vertexai.internal.util.BASE_64_FLAGS
+import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -29,17 +30,14 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 
 /** Interface representing data sent to and received from requests. */
-public interface Part {
-}
+public interface Part {}
 
 /** Represents text or string based data sent to and received from requests. */
 public class TextPart(public val text: String) : Part {
 
-  @Serializable
-  internal data class Internal(val text: String) : InternalPart
+  @Serializable internal data class Internal(val text: String) : InternalPart
 }
 
 /**
@@ -94,11 +92,9 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
-  internal data class Internal(val functionResponse: FunctionResponse) :
-    InternalPart {
+  internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable
-    internal data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
   }
 }
 
@@ -113,8 +109,7 @@ public class FunctionResponsePart(public val name: String, public val response: 
 public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("file_data") val fileData: FileData) :
-    InternalPart {
+  internal data class Internal(@SerialName("file_data") val fileData: FileData) : InternalPart {
 
     @Serializable
     internal data class FileData(
@@ -140,7 +135,8 @@ internal typealias Base64 = String
 
 @Serializable(PartSerializer::class) internal sealed interface InternalPart
 
-internal object PartSerializer : JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
+internal object PartSerializer :
+  JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
     return when {
@@ -159,10 +155,7 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData(
-          "image/jpeg",
-          encodeBitmapToBase64Png(image)
-        )
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Png(image))
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
@@ -172,23 +165,11 @@ internal fun Part.toInternal(): InternalPart {
         )
       )
     is FunctionCallPart ->
-      FunctionCallPart.Internal(
-        FunctionCallPart.Internal.FunctionCall(
-          name,
-          args
-        )
-      )
+      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args))
     is FunctionResponsePart ->
-      FunctionResponsePart.Internal(
-        FunctionResponsePart.Internal.FunctionResponse(
-          name,
-          response
-        )
-      )
+      FunctionResponsePart.Internal(FunctionResponsePart.Internal.FunctionResponse(name, response))
     is FileDataPart ->
-      FileDataPart.Internal(
-        FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri)
-      )
+      FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
     else ->
       throw com.google.firebase.vertexai.type.SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
@@ -224,8 +205,7 @@ internal fun InternalPart.toPublic(): Part {
         functionResponse.name,
         functionResponse.response,
       )
-    is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri)
+    is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw com.google.firebase.vertexai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

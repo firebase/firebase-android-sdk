@@ -42,4 +42,3 @@ public class UsageMetadata(
       UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
   }
 }
-

@@ -231,7 +231,12 @@ internal class UnarySnapshotTests {
 
         response.candidates?.isEmpty() shouldBe false
         with(
-          response.candidates?.first()?.content?.parts?.first()?.shouldBeInstanceOf<TextPart.Internal>()
+          response.candidates
+            ?.first()
+            ?.content
+            ?.parts
+            ?.first()
+            ?.shouldBeInstanceOf<TextPart.Internal>()
         ) {
           shouldNotBeNull()
           JSON.decodeFromString<List<MountainColors>>(text).shouldNotBeEmpty()
@@ -315,7 +320,8 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("success-function-call-null.json") {
       withTimeout(testTimeout) {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
-        val callPart = (response.candidates!!.first().content!!.parts.first() as FunctionCallPart.Internal)
+        val callPart =
+          (response.candidates!!.first().content!!.parts.first() as FunctionCallPart.Internal)
 
         callPart.functionCall.args shouldNotBe null
         callPart.functionCall.args?.get("season") shouldBe null

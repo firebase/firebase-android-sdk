@@ -122,7 +122,9 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
-  fun generateContentStream(request: GenerateContentRequest): Flow<GenerateContentResponse.Internal> =
+  fun generateContentStream(
+    request: GenerateContentRequest
+  ): Flow<GenerateContentResponse.Internal> =
     client
       .postStream<GenerateContentResponse.Internal>(
         "${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:streamGenerateContent?alt=sse"
@@ -277,7 +279,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   throw ServerException(message)
 }
 
-private fun getServiceDisabledErrorDetailsOrNull(error: GRpcErrorResponse.GRpcError): GRpcErrorResponse.GRpcError.GRpcErrorDetails? {
+private fun getServiceDisabledErrorDetailsOrNull(
+  error: GRpcErrorResponse.GRpcError
+): GRpcErrorResponse.GRpcError.GRpcErrorDetails? {
   return error.details?.firstOrNull {
     it.reason == "SERVICE_DISABLED" && it.domain == "googleapis.com"
   }

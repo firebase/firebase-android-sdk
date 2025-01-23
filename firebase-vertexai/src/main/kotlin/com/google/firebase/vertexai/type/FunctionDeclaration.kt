@@ -61,8 +61,7 @@ public class FunctionDeclaration(
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
 
-  internal fun toInternal() =
-    Internal(name, "", schema.toInternal())
+  internal fun toInternal() = Internal(name, "", schema.toInternal())
 
   @Serializable
   internal data class Internal(

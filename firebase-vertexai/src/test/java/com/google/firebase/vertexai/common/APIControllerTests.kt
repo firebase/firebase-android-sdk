@@ -186,12 +186,12 @@ internal class RequestFormatTests {
             model = "unused",
             contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
             toolConfig =
-            ToolConfig.Internal(
-              FunctionCallingConfig.Internal(
-                mode = FunctionCallingConfig.Internal.Mode.ANY,
-                allowedFunctionNames = listOf("allowedFunctionName")
+              ToolConfig.Internal(
+                FunctionCallingConfig.Internal(
+                  mode = FunctionCallingConfig.Internal.Mode.ANY,
+                  allowedFunctionNames = listOf("allowedFunctionName")
+                )
               )
-            )
           ),
         )
         .collect { channel.close() }

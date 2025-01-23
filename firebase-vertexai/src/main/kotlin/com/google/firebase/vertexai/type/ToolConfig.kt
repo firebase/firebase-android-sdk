@@ -32,14 +32,9 @@ public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfi
       functionCallingConfig?.let {
         FunctionCallingConfig.Internal(
           when (it.mode) {
-            FunctionCallingConfig.Mode.ANY ->
-              FunctionCallingConfig.Internal.Mode.ANY
-
-            FunctionCallingConfig.Mode.AUTO ->
-              FunctionCallingConfig.Internal.Mode.AUTO
-
-            FunctionCallingConfig.Mode.NONE ->
-              FunctionCallingConfig.Internal.Mode.NONE
+            FunctionCallingConfig.Mode.ANY -> FunctionCallingConfig.Internal.Mode.ANY
+            FunctionCallingConfig.Mode.AUTO -> FunctionCallingConfig.Internal.Mode.AUTO
+            FunctionCallingConfig.Mode.NONE -> FunctionCallingConfig.Internal.Mode.NONE
           },
           it.allowedFunctionNames
         )
@@ -48,7 +43,7 @@ public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfi
 
   @Serializable
   internal data class Internal(
-    @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig.Internal?
+    @SerialName("function_calling_config")
+    val functionCallingConfig: FunctionCallingConfig.Internal?
   )
 }
-

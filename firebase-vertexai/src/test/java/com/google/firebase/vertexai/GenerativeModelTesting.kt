@@ -130,15 +130,7 @@ internal class GenerativeModelTesting {
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
       GenerateContentResponse.Internal(
-        listOf(
-          Candidate.Internal(
-            Content.Internal(
-              parts = listOf(
-                TextPart.Internal(text)
-              )
-            )
-          )
-        )
+        listOf(Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(text)))))
       )
     )
   }

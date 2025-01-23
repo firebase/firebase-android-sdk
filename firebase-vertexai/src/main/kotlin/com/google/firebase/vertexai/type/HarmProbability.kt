@@ -32,8 +32,7 @@ public class HarmProbability private constructor(public val ordinal: Int) {
     MEDIUM,
     HIGH;
 
-    internal object Serializer :
-      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

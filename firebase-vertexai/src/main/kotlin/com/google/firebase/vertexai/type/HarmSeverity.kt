@@ -32,8 +32,7 @@ public class HarmSeverity private constructor(public val ordinal: Int) {
     @SerialName("HARM_SEVERITY_MEDIUM") MEDIUM,
     @SerialName("HARM_SEVERITY_HIGH") HIGH;
 
-    internal object Serializer :
-      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

@@ -27,10 +27,7 @@ import kotlinx.serialization.json.JsonObject
  */
 public class Tool
 internal constructor(internal val functionDeclarations: List<FunctionDeclaration>?) {
-  internal fun toInternal() =
-    Internal(
-      functionDeclarations?.map { it.toInternal() } ?: emptyList()
-    )
+  internal fun toInternal() = Internal(functionDeclarations?.map { it.toInternal() } ?: emptyList())
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,

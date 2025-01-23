@@ -43,11 +43,7 @@ public class PromptFeedback(
 
     internal fun toPublic(): PromptFeedback {
       val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
-      return PromptFeedback(
-        blockReason?.toPublic(),
-        safetyRatings,
-        blockReasonMessage
-      )
+      return PromptFeedback(blockReason?.toPublic(), safetyRatings, blockReasonMessage)
     }
   }
 }
@@ -62,8 +58,7 @@ public class BlockReason private constructor(public val name: String, public val
     SAFETY,
     OTHER;
 
-    internal object Serializer :
-      KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {

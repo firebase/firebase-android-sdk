@@ -33,11 +33,7 @@ public class SafetySetting(
   internal val method: HarmBlockMethod? = null,
 ) {
   internal fun toInternal() =
-    Internal(
-      harmCategory.toInternal(),
-      threshold.toInternal(),
-      method?.toInternal()
-    )
+    Internal(harmCategory.toInternal(), threshold.toInternal(), method?.toInternal())
 
   @Serializable
   internal data class Internal(

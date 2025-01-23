@@ -91,7 +91,8 @@ internal class StreamingSnapshotTests {
         val responseList = responses.toList()
 
         responseList.isEmpty() shouldBe false
-        val part = responseList.first().candidates?.first()?.content?.parts?.first() as? TextPart.Internal
+        val part =
+          responseList.first().candidates?.first()?.content?.parts?.first() as? TextPart.Internal
         part.shouldNotBeNull()
         part.text shouldContain "\""
       }
@@ -170,7 +171,8 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.RECITATION
+        exception.response.candidates?.first()?.finishReason shouldBe
+          FinishReason.Internal.RECITATION
       }
     }
 
