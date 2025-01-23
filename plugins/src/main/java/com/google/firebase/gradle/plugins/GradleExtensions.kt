@@ -31,6 +31,7 @@ import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.plugins.PluginManager
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
@@ -197,11 +198,12 @@ val Dependency.artifactName: String
 /**
  * Creates an archive of this directory at the [dest] file.
  *
- * Can only be ran within the context of a [Task], as outside of a [Task] so you should likely be
+ * Should only be ran within the context of a [Task], as outside of a [Task] so you should likely be
  * using the `copy` or `sync` tasks instead.
  */
-context(Task)
-fun File.zipFilesTo(dest: File): File {
+fun File.zipFilesTo(task: Task, dest: File): File {
+  val logger = task.logger
+
   logger.info("Zipping '$absolutePath' to '${dest.absolutePath}'")
 
   logger.debug("Ensuring parent directories are present for zip file")

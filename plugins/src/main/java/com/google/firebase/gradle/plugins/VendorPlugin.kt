@@ -199,7 +199,7 @@ constructor(
     }
 
     val inputJar = temporaryDir.childFile("intermediate.jar")
-    unzippedDir.zipFilesTo(inputJar)
+    unzippedDir.zipFilesTo(this, inputJar)
 
     transform(inputJar, ownPackageNames, externalPackageNames)
   }

@@ -42,8 +42,6 @@ spotless {
   }
 }
 
-kotlin { compilerOptions { freeCompilerArgs.add("-Xcontext-receivers") } }
-
 // Refer latest "perf-plugin" released version on
 // https://maven.google.com/web/index.html?q=perf-plugin#com.google.firebase:perf-plugin
 // The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
