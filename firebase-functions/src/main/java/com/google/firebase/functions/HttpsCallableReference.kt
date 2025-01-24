@@ -35,33 +35,16 @@ public class HttpsCallableReference {
   // Options for how to do the HTTPS call.
   @VisibleForTesting internal val options: HttpsCallOptions
 
-  private val headers: MutableMap<String, String>
-
   /** Creates a new reference with the given options. */
   internal constructor(
     functionsClient: FirebaseFunctions,
     name: String?,
-    options: HttpsCallOptions,
-    headers: MutableMap<String, String>,
+    options: HttpsCallOptions
   ) {
     this.functionsClient = functionsClient
     this.name = name
     url = null
     this.options = options
-    this.headers = headers
-  }
-
-  /** Creates a new reference with the given options. */
-  internal constructor(
-    functionsClient: FirebaseFunctions,
-    name: String?,
-    options: HttpsCallOptions,
-  ) {
-    this.functionsClient = functionsClient
-    this.name = name
-    url = null
-    this.options = options
-    this.headers = mutableMapOf()
   }
 
   /** Creates a new reference with the given options. */
@@ -70,7 +53,6 @@ public class HttpsCallableReference {
     name = null
     this.url = url
     this.options = options
-    this.headers = mutableMapOf()
   }
 
   /**
@@ -114,9 +96,9 @@ public class HttpsCallableReference {
    */
   public fun call(data: Any?): Task<HttpsCallableResult> {
     return if (name != null) {
-      functionsClient.call(name, data, options, headers)
+      functionsClient.call(name, data, options)
     } else {
-      functionsClient.call(url!!, data, options, headers)
+      functionsClient.call(url!!, data, options)
     }
   }
 
@@ -136,9 +118,9 @@ public class HttpsCallableReference {
    */
   public fun call(): Task<HttpsCallableResult> {
     return if (name != null) {
-      functionsClient.call(name, null, options, headers)
+      functionsClient.call(name, null, options)
     } else {
-      functionsClient.call(url!!, null, options, headers)
+      functionsClient.call(url!!, null, options)
     }
   }
 
@@ -216,7 +198,7 @@ public class HttpsCallableReference {
    * @param units The units for the specified timeout.
    */
   public fun withTimeout(timeout: Long, units: TimeUnit): HttpsCallableReference {
-    val other = HttpsCallableReference(functionsClient, name, options, headers)
+    val other = HttpsCallableReference(functionsClient, name, options)
     other.setTimeout(timeout, units)
     return other
   }
@@ -230,7 +212,7 @@ public class HttpsCallableReference {
    * @param value Value of HTTP header
    */
   public fun addHeader(name: String, value: String): HttpsCallableReference {
-    headers[name] = value
+    options.addHeader(name, value)
     return this
   }
 
@@ -242,7 +224,7 @@ public class HttpsCallableReference {
    * @param headers Map of HTTP headers (name to value)
    */
   public fun addHeaders(headers: Map<String, String>): HttpsCallableReference {
-    this.headers.putAll(headers)
+    options.addHeaders(headers)
     return this
   }
 }
