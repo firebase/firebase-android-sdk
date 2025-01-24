@@ -16,14 +16,22 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.LibraryVariant
+import java.io.BufferedOutputStream
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.plugins.PluginManager
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
@@ -165,7 +173,7 @@ inline fun <reified T> attributeFrom(name: String) = Attribute.of(name, T::class
  * attribute(Attribute.of(name, T::class.java), value)
  * ```
  */
-inline fun <reified T> AttributeContainer.attribute(name: String, value: T) =
+inline fun <reified T : Any> AttributeContainer.attribute(name: String, value: T) =
   attribute(attributeFrom(name), value)
 
 /**
@@ -174,8 +182,7 @@ inline fun <reified T> AttributeContainer.attribute(name: String, value: T) =
  * pluginManager.apply(T::class)
  * ```
  */
-inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Unit =
-  `apply`(T::class)
+inline fun <reified T : Any> PluginManager.apply(): Unit = apply(T::class)
 
 /**
  * The name provided to this artifact when published.
@@ -186,4 +193,54 @@ inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Uni
  * ```
  */
 val Dependency.artifactName: String
-  get() = listOf(group, name, version).filterNotNull().joinToString(":")
+  get() = listOfNotNull(group, name, version).joinToString(":")
+
+/**
+ * Creates an archive of this directory at the [dest] file.
+ *
+ * Should only be ran within the context of a [Task], as outside of a [Task] so you should likely be
+ * using the `copy` or `sync` tasks instead.
+ */
+fun File.zipFilesTo(task: Task, dest: File): File {
+  val logger = task.logger
+
+  logger.info("Zipping '$absolutePath' to '${dest.absolutePath}'")
+
+  logger.debug("Ensuring parent directories are present for zip file")
+  dest.parentFile?.mkdirs()
+
+  logger.debug("Creating empty zip file to write to")
+  dest.createNewFile()
+
+  logger.debug("Packing file contents into zip")
+  ZipOutputStream(BufferedOutputStream(dest.outputStream())).use { zipFile ->
+    for (file in walk().filter { it.isFile }) {
+      val relativePath = file.relativeTo(this).unixPath
+      logger.debug("Adding file to zip: $relativePath")
+
+      zipFile.putNextEntry(ZipEntry(relativePath))
+      file.inputStream().use { it.copyTo(zipFile) }
+      zipFile.closeEntry()
+    }
+  }
+
+  return dest
+}
+
+/**
+ * Bind a callback to run whenever there are release variants for this android build.
+ *
+ * Syntax sugar for:
+ * ```
+ * components.onVariants(components.selector().withBuildType("release")) {
+ *  // ...
+ * }
+ * ```
+ *
+ * @see LibraryAndroidComponentsExtension.onVariants
+ */
+fun LibraryAndroidComponentsExtension.onReleaseVariants(
+  callback: (variant: LibraryVariant) -> Unit
+) {
+  onVariants(selector().withBuildType("release"), callback)
+}
