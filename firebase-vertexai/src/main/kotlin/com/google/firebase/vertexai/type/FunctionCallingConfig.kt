@@ -51,7 +51,7 @@ internal constructor(
   @Serializable
   internal data class Internal(
     val mode: Mode,
-    @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
+    val allowedFunctionNames: List<String>? = null
   ) {
     @Serializable
     enum class Mode {
