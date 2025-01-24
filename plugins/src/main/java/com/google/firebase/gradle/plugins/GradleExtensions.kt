@@ -30,8 +30,11 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.plugins.PluginManager
 import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.services.BuildServiceRegistry
+import org.gradle.api.services.BuildServiceSpec
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
@@ -244,3 +247,19 @@ fun LibraryAndroidComponentsExtension.onReleaseVariants(
 ) {
   onVariants(selector().withBuildType("release"), callback)
 }
+
+/**
+ * Register a build service under the specified [name], if it hasn't been registered already.
+ *
+ * ```
+ * project.gradle.sharedServices.registerIfAbsent<GMavenService, _>("gmaven")
+ * ```
+ *
+ * @param T The build service class to register
+ * @param P The parameters class for the build service to register
+ * @param name The name to register the build service under
+ * @param config An optional configuration block to setup the build service with
+ */
+inline fun <reified T : BuildService<P>, reified P : BuildServiceParameters> BuildServiceRegistry
+  .registerIfAbsent(name: String, noinline config: BuildServiceSpec<P>.() -> Unit = {}) =
+  registerIfAbsent(name, T::class.java, config)
