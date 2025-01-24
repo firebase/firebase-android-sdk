@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import java.io.File
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 
@@ -26,16 +27,14 @@ fun String.remove(regex: Regex) = replace(regex, "")
 fun String.remove(str: String) = replace(str, "")
 
 /**
- * Returns a sequence containing all elements.
+ * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
  *
- * The operation is _terminal_.
- *
- * Syntax sugar for:
- * ```
- * take(count())
+ * For example:
+ * ```kotlin
+ * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
  * ```
  */
-public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
+fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
 
 /**
  * Converts an [Element] to an Artifact string.
@@ -77,19 +76,30 @@ fun Element.toArtifactString() =
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- *   that match the components of an Artifact string; groupId, artifactId, version.
+ *   that match the components of an Artifact string; groupId and artifactId.
  */
 fun Element.toMavenName() = "${textByTag("groupId")}:${textByTag("artifactId")}"
 
 /**
- * Finds a descendant [Element] by a given [tag], and returns the [textContent]
- * [Element.getTextContent] of it.
+ * Finds a descendant [Element] by a [tag], and returns the [textContent][Element.getTextContent] of
+ * it.
  *
  * @param tag the XML tag to filter for (the special value "*" matches all tags)
  * @throws NoSuchElementException if an [Element] with the given [tag] does not exist
  * @see findElementsByTag
+ * @see textByTagOrNull
  */
-fun Element.textByTag(tag: String) = findElementsByTag(tag).first().textContent
+fun Element.textByTag(tag: String) =
+  textByTagOrNull(tag) ?: throw RuntimeException("Element tag was missing: $tag")
+
+/**
+ * Finds a descendant [Element] by a [tag], and returns the [textContent][Element.getTextContent] of
+ * it, or null if it couldn't be found.
+ *
+ * @param tag the XML tag to filter for (the special value "*" matches all tags)
+ * @see textByTag
+ */
+fun Element.textByTagOrNull(tag: String) = findElementsByTag(tag).firstOrNull()?.textContent
 
 /**
  * Finds a descendant [Element] by a given [tag], or creates a new one.
@@ -99,7 +109,7 @@ fun Element.textByTag(tag: String) = findElementsByTag(tag).first().textContent
  * @param tag the XML tag to filter for (the special value "*" matches all tags)
  * @see findElementsByTag
  */
-fun Element.findOrCreate(tag: String) =
+fun Element.findOrCreate(tag: String): Element =
   findElementsByTag(tag).firstOrNull() ?: ownerDocument.createElement(tag).also { appendChild(it) }
 
 /**
@@ -118,26 +128,20 @@ fun Element.findElementsByTag(tag: String) =
  * Yields the items of this [NodeList] as a [Sequence].
  *
  * [NodeList] does not typically offer an iterator. This extension method offers a means to loop
- * through a NodeList's [item][NodeList.item] method, while also taking into account its [length]
- * [NodeList.getLength] property to avoid an [IndexOutOfBoundsException].
+ * through a NodeList's [item][NodeList.item] method, while also taking into account the element's
+ * [length][NodeList.getLength] property to avoid an [IndexOutOfBoundsException].
  *
  * Additionally, this operation is _intermediate_ and _stateless_.
  */
-fun NodeList.children() = sequence {
-  for (index in 0..length) {
-    yield(item(index))
+fun NodeList.children(removeDOMSections: Boolean = true) = sequence {
+  for (index in 0 until length) {
+    val child = item(index)
+
+    if (!removeDOMSections || !child.nodeName.startsWith("#")) {
+      yield(child)
+    }
   }
 }
-
-/**
- * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
- *
- * For example:
- * ```kotlin
- * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
- * ```
- */
-fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
 
 /**
  * Returns the first match of a regular expression in the [input], beginning at the specified
@@ -151,6 +155,26 @@ fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
 fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =
   find(input, startIndex)
     ?: throw RuntimeException(multiLine("No match found for the given input:", input.toString()))
+
+/**
+ * Returns the value of the first capture group.
+ *
+ * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
+ */
+val MatchResult.firstCapturedValue: String
+  get() = groupValues[1]
+
+/**
+ * Returns a sequence containing all elements.
+ *
+ * The operation is _terminal_.
+ *
+ * Syntax sugar for:
+ * ```
+ * take(count())
+ * ```
+ */
+fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
 
 /**
  * Creates a [Pair] out of an [Iterable] with only two elements.
@@ -213,14 +237,6 @@ fun List<String>.replaceMatches(regex: Regex, transform: (MatchResult) -> String
 }
 
 /**
- * Returns the value of the first capture group.
- *
- * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
- */
-val MatchResult.firstCapturedValue: String
-  get() = groupValues[1]
-
-/**
  * Creates a diff between two lists.
  *
  * For example:
@@ -250,3 +266,23 @@ infix fun <T> List<T>.diff(other: List<T>): List<Pair<T?, T?>> {
  * ```
  */
 fun <T> List<T>.coerceToSize(targetSize: Int) = List(targetSize) { getOrNull(it) }
+
+/**
+ * The [path][File.path] represented as a qualified unix path.
+ *
+ * Useful when a system expects a unix path, but you need to be able to run it on non unix systems.
+ *
+ * @see absoluteUnixPath
+ */
+val File.unixPath: String
+  get() = path.replace("\\", "/")
+
+/**
+ * The [absolutePath][File.getAbsolutePath] represented as a qualified unix path.
+ *
+ * Useful when a system expects a unix path, but you need to be able to run it on non unix systems.
+ *
+ * @see unixPath
+ */
+val File.absoluteUnixPath: String
+  get() = absolutePath.replace("\\", "/")

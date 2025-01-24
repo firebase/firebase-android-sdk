@@ -20,21 +20,18 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.LibraryPlugin
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
+import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.Directory
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -46,43 +43,66 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.gradle.process.ExecOperations
+import org.jetbrains.kotlin.gradle.utils.extendsFrom
 
+/**
+ * Gradle plugin for vendoring dependencies in an android library.
+ *
+ * We vendor dependencies by moving the dependency into the published package, and renaming all
+ * imports to reference the vendored package.
+ *
+ * Registers the `vendor` configuration to be used for specifying vendored dependencies.
+ *
+ * Note that you should exclude any `java` or `javax` transitive dependencies, as `jarjar` (what we
+ * use to do the actual vendoring) unconditionally skips them.
+ *
+ * ```
+ * vendor("com.google.dagger:dagger:2.27") {
+ *   exclude(group = "javax.inject", module = "javax.inject")
+ * }
+ * ```
+ *
+ * @see VendorTask
+ */
 class VendorPlugin : Plugin<Project> {
   override fun apply(project: Project) {
-    project.plugins.all {
-      when (this) {
-        is LibraryPlugin -> configureAndroid(project)
-      }
-    }
+    project.apply<LicenseResolverPlugin>()
+    project.plugins.withType<LibraryPlugin>().configureEach { configureAndroid(project) }
   }
 
-  fun configureAndroid(project: Project) {
-    project.apply(plugin = "LicenseResolverPlugin")
-
-    val vendor = project.configurations.create("vendor")
-    project.configurations.all {
-      when (name) {
+  private fun configureAndroid(project: Project) {
+    val vendor = project.configurations.register("vendor")
+    val configurations =
+      listOf(
         "releaseCompileOnly",
         "debugImplementation",
         "testImplementation",
-        "androidTestImplementation" -> extendsFrom(vendor)
-      }
+        "androidTestImplementation",
+      )
+
+    for (configuration in configurations) {
+      project.configurations.named(configuration).extendsFrom(vendor)
     }
 
-    val jarJar = project.configurations.create("firebaseJarJarArtifact")
-    project.dependencies.add("firebaseJarJarArtifact", "org.pantsbuild:jarjar:1.7.2")
+    val jarJarArtifact =
+      project.configurations.register("firebaseJarJarArtifact") {
+        dependencies.add(project.dependencies.create("org.pantsbuild:jarjar:1.7.2"))
+      }
 
     val androidComponents = project.extensions.getByType<LibraryAndroidComponentsExtension>()
 
-    androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
+    androidComponents.onReleaseVariants {
       val vendorTask =
-        project.tasks.register("${variant.name}VendorTransform", VendorTask::class.java) {
+        project.tasks.register<VendorTask>("${it.name}VendorTransform") {
           vendorDependencies.set(vendor)
-          packageName.set(variant.namespace)
-          this.jarJar.set(jarJar)
+          packageName.set(it.namespace)
+          jarJar.set(jarJarArtifact)
         }
-      variant.artifacts
+
+      it.artifacts
         .forScope(ScopedArtifacts.Scope.PROJECT)
         .use(vendorTask)
         .toTransform(
@@ -95,67 +115,99 @@ class VendorPlugin : Plugin<Project> {
   }
 }
 
-abstract class VendorTask @Inject constructor(private val execOperations: ExecOperations) :
-  DefaultTask() {
+/**
+ * Executes the actual vendoring of a library.
+ *
+ * @see VendorPlugin
+ */
+abstract class VendorTask
+@Inject
+constructor(
+  private val exec: ExecOperations,
+  private val archive: ArchiveOperations,
+  private val fs: FileSystemOperations,
+  private val layout: ProjectLayout,
+) : DefaultTask() {
+  /** Dependencies that should be vendored. */
   @get:[InputFiles Classpath]
   abstract val vendorDependencies: Property<Configuration>
 
+  /** Configuration pointing to the `.jar` file for JarJar. */
   @get:[InputFiles Classpath]
   abstract val jarJar: Property<Configuration>
 
+  /**
+   * The name of the package (or namespace) that we're vendoring for.
+   *
+   * We use this to rename the [vendorDependencies].
+   */
   @get:Input abstract val packageName: Property<String>
 
+  /** The jars generated for this package during a release. */
   @get:InputFiles abstract val inputJars: ListProperty<RegularFile>
 
+  /** The directories generated for this package during a release. */
   @get:InputFiles abstract val inputDirs: ListProperty<Directory>
 
+  /** The jar file to save the vendored artifact. */
   @get:OutputFile abstract val outputJar: RegularFileProperty
 
   @TaskAction
   fun taskAction() {
-    val workDir = File.createTempFile("vendorTmp", null)
-    workDir.mkdirs()
-    workDir.deleteRecursively()
+    val unzippedDir = temporaryDir.childFile("unzipped")
 
-    val unzippedDir = File(workDir, "unzipped")
-    val externalCodeDir = unzippedDir
-
-    for (directory in inputDirs.get()) {
-      directory.asFile.copyRecursively(unzippedDir)
-    }
-    for (jar in inputJars.get()) {
-      unzipJar(jar.asFile, unzippedDir)
+    logger.info("Unpacking input directories")
+    fs.sync {
+      from(inputDirs)
+      into(unzippedDir)
     }
 
-    val ownPackageNames = inferPackages(unzippedDir)
-
-    for (jar in vendorDependencies.get()) {
-      unzipJar(jar, externalCodeDir)
+    logger.info("Unpacking input jars")
+    fs.copy {
+      for (jar in inputJars.get()) {
+        from(archive.zipTree(jar))
+      }
+      into(unzippedDir)
+      exclude { it.path.contains("META-INF") }
     }
-    val externalPackageNames = inferPackages(externalCodeDir) subtract ownPackageNames
-    val java = File(externalCodeDir, "java")
-    val javax = File(externalCodeDir, "javax")
+
+    val ownPackageNames = inferPackageNames(unzippedDir)
+
+    logger.info("Unpacking vendored files")
+    fs.copy {
+      for (jar in vendorDependencies.get()) {
+        from(archive.zipTree(jar))
+      }
+      into(unzippedDir)
+      exclude { it.path.contains("META-INF") }
+    }
+
+    val externalPackageNames = inferPackageNames(unzippedDir) subtract ownPackageNames
+    val java = unzippedDir.childFile("java")
+    val javax = unzippedDir.childFile("javax")
     if (java.exists() || javax.exists()) {
       // JarJar unconditionally skips any classes whose package name starts with "java" or "javax".
+      val dependencies = vendorDependencies.get().resolvedConfiguration.resolvedArtifacts
       throw GradleException(
-        "Vendoring java or javax packages is not supported. " +
-          "Please exclude one of the direct or transitive dependencies: \n" +
-          vendorDependencies
-            .get()
-            .resolvedConfiguration
-            .resolvedArtifacts
-            .joinToString(separator = "\n")
+        """
+          |Vendoring java or javax packages is not supported.
+          |Please exclude one of the direct or transitive dependencies:
+          |${dependencies.joinToString("\n")}
+        """
+          .trimMargin()
       )
     }
 
-    val jar = File(workDir, "intermediate.jar")
-    zipAll(unzippedDir, jar)
-    transform(jar, ownPackageNames, externalPackageNames)
+    val inputJar = temporaryDir.childFile("intermediate.jar")
+    unzippedDir.zipFilesTo(this, inputJar)
+
+    transform(inputJar, ownPackageNames, externalPackageNames)
   }
 
-  fun transform(inputJar: File, ownPackages: Set<String>, packagesToVendor: Set<String>) {
+  private fun transform(inputJar: File, ownPackages: Set<String>, packagesToVendor: Set<String>) {
     val parentPackage = packageName.get()
-    val rulesFile = File.createTempFile(parentPackage, ".jarjar")
+    val rulesFile = temporaryDir.childFile("$parentPackage.jarjar")
+
     rulesFile.printWriter().use {
       for (packageName in ownPackages) {
         it.println("keep $packageName.**")
@@ -164,12 +216,13 @@ abstract class VendorTask @Inject constructor(private val execOperations: ExecOp
         it.println("rule $externalPackageName.** $parentPackage.@0")
       }
     }
+
     logger.info("The following JarJar configuration will be used:\n ${rulesFile.readText()}")
 
-    execOperations
+    exec
       .javaexec {
         mainClass.set("org.pantsbuild.jarjar.Main")
-        classpath = project.files(jarJar.get())
+        classpath = layout.files(jarJar)
         args =
           listOf(
             "process",
@@ -181,69 +234,13 @@ abstract class VendorTask @Inject constructor(private val execOperations: ExecOp
       }
       .assertNormalExitValue()
   }
-}
 
-fun inferPackages(dir: File): Set<String> {
-  return dir
-    .walk()
-    .filter { it.name.endsWith(".class") }
-    .map { it.parentFile.toRelativeString(dir).replace('/', '.') }
-    .toSet()
-}
-
-fun unzipJar(jar: File, directory: File) {
-  ZipFile(jar).use { zip ->
-    zip
-      .entries()
-      .asSequence()
-      .filter { !it.isDirectory && !it.name.startsWith("META-INF") }
-      .forEach { entry ->
-        zip.getInputStream(entry).use { input ->
-          val entryFile = File(directory, entry.name)
-          entryFile.parentFile.mkdirs()
-          entryFile.outputStream().use { output -> input.copyTo(output) }
-        }
-      }
-  }
-}
-
-fun zipAll(directory: File, zipFile: File) {
-
-  ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use {
-    zipFiles(it, directory, "")
-  }
-}
-
-private fun zipFiles(zipOut: ZipOutputStream, sourceFile: File, parentDirPath: String) {
-  val data = ByteArray(2048)
-  sourceFile.listFiles()?.forEach { f ->
-    if (f.isDirectory) {
-      val path =
-        if (parentDirPath == "") {
-          f.name
-        } else {
-          parentDirPath + File.separator + f.name
-        }
-      // Call recursively to add files within this directory
-      zipFiles(zipOut, f, path)
-    } else {
-      FileInputStream(f).use { fi ->
-        BufferedInputStream(fi).use { origin ->
-          val path = parentDirPath + File.separator + f.name
-          val entry = ZipEntry(path)
-          entry.time = f.lastModified()
-          entry.isDirectory
-          entry.size = f.length()
-          zipOut.putNextEntry(entry)
-          while (true) {
-            val readBytes = origin.read(data)
-            if (readBytes == -1) {
-              break
-            }
-            zipOut.write(data, 0, readBytes)
-          }
-        }
-      }
-    }
+  /** Given a directory of class files, constructs a list of all the class files. */
+  private fun inferPackageNames(dir: File): Set<String> {
+    return dir
+      .walk()
+      .filter { it.name.endsWith(".class") }
+      .map { it.parentFile.toRelativeString(dir).replace(File.separator, ".") }
+      .toSet()
   }
 }
