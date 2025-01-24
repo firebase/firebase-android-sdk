@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +36,8 @@ public final class FieldPath extends BasePath<FieldPath> {
   }
 
   /** Creates a {@code FieldPath} from a list of parsed field path segments. */
-  public static FieldPath fromSegments(List<String> segments) {
+  @NonNull
+  public static FieldPath fromSegments(@NonNull List<String> segments) {
     return segments.isEmpty() ? FieldPath.EMPTY_PATH : new FieldPath(segments);
   }
 
