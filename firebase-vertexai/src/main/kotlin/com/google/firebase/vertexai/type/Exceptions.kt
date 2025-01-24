@@ -58,6 +58,8 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
               ServiceDisabledException(cause.message ?: "", cause.cause)
             is com.google.firebase.vertexai.common.UnknownException ->
               UnknownException(cause.message ?: "", cause.cause)
+            is com.google.firebase.vertexai.common.ContentBlockedException ->
+              ContentBlockedException(cause.message ?: "", cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
           }
         is TimeoutCancellationException ->
@@ -101,6 +103,10 @@ internal constructor(
   ) {
   internal constructor(message: String, cause: Throwable? = null) : this(null, cause, message)
 }
+
+public class ContentBlockedException
+internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
 
 /**
  * The user's location (region) is not supported by the API.

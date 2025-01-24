@@ -3,6 +3,7 @@ package com.google.firebase.vertexai
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.ContentBlockedException
 import com.google.firebase.vertexai.common.PromptBlockedException
 import com.google.firebase.vertexai.internal.GenerateImageRequest
 import com.google.firebase.vertexai.internal.GenerateImageResponse
@@ -101,7 +102,7 @@ internal constructor(
 
 private fun GenerateImageResponse.validate(): GenerateImageResponse {
   if (predictions.none { it.mimeType != null }) {
-    throw PromptBlockedException(
+    throw ContentBlockedException(
       message = predictions.first { it.raiFilteredReason != null }.raiFilteredReason
           ?: ImageModel.DEFAULT_FILTERED_ERROR
     )

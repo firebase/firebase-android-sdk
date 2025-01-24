@@ -103,7 +103,7 @@ internal class InvalidStateException(message: String, cause: Throwable? = null) 
  */
 internal class ResponseStoppedException(
   val response: GenerateContentResponse,
-  cause: Throwable? = null
+  cause: Throwable? = null,
 ) :
   FirebaseCommonAIException(
     "Content generation stopped. Reason: ${response.candidates?.first()?.finishReason?.name}",
@@ -128,4 +128,7 @@ internal class ServiceDisabledException(message: String, cause: Throwable? = nul
 
 /** Catch all case for exceptions not explicitly expected. */
 internal class UnknownException(message: String, cause: Throwable? = null) :
+  FirebaseCommonAIException(message, cause)
+
+internal class ContentBlockedException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
