@@ -1,7 +1,9 @@
 package com.google.firebase.vertexai.type
 
-public enum class ImagenPersonFilter(internal val internalVal: String) {
-  ALLOW_ALL("allow_all"),
-  ALLOW_ADULT("allow_adult"),
-  BLOCK_ALL("dont_allow"),
+public class ImagenPersonFilter private constructor(internal val internalVal: String) {
+  public companion object {
+    @JvmField public val ALLOW_ALL: ImagenPersonFilter = ImagenPersonFilter("allow_all")
+    @JvmField public val ALLOW_ADULT: ImagenPersonFilter = ImagenPersonFilter("allow_adult")
+    @JvmField public val BLOCK_ALL: ImagenPersonFilter = ImagenPersonFilter("dont_allow")
+  }
 }
