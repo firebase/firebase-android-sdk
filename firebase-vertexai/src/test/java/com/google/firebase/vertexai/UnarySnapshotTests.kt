@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentBlockedException
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
@@ -490,7 +491,7 @@ internal class UnarySnapshotTests {
   fun `generateImages should throw when all images filtered`() =
     goldenUnaryFile("unary-failure-generate-images-all-filtered.json") {
       withTimeout(testTimeout) {
-        shouldThrow<PromptBlockedException> { imageModel.generateImage("prompt") }
+        shouldThrow<ContentBlockedException> { imageModel.generateImage("prompt") }
       }
     }
 

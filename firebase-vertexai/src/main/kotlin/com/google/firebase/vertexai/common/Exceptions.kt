@@ -131,6 +131,9 @@ internal class ServiceDisabledException(message: String, cause: Throwable? = nul
 internal class UnknownException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
 
+internal class ContentBlockedException(message: String, cause: Throwable? = null) :
+  FirebaseCommonAIException(message, cause)
+
 internal fun makeMissingCaseException(
   source: String,
   ordinal: Int
