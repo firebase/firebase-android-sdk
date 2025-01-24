@@ -1,15 +1,14 @@
 package com.google.firebase.vertexai
 
-import android.util.Log
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.HeaderProvider
 import com.google.firebase.vertexai.common.PromptBlockedException
 import com.google.firebase.vertexai.internal.GenerateImageRequest
 import com.google.firebase.vertexai.internal.GenerateImageResponse
 import com.google.firebase.vertexai.internal.ImagenParameters
 import com.google.firebase.vertexai.internal.ImagenPromptInstance
+import com.google.firebase.vertexai.internal.util.AppCheckHeaderProvider
 import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublicGCS
 import com.google.firebase.vertexai.internal.util.toPublicInline
@@ -20,9 +19,6 @@ import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.RequestOptions
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.tasks.await
 
 public class ImageModel
 internal constructor(
@@ -31,7 +27,6 @@ internal constructor(
   private val safetySettings: ImagenSafetySettings? = null,
   private val controller: APIController,
 ) {
-  @JvmOverloads
   internal constructor(
     modelName: String,
     apiKey: String,
@@ -49,41 +44,7 @@ internal constructor(
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
-      object : HeaderProvider {
-        override val timeout: Duration
-          get() = 10.seconds
-
-        override suspend fun generateHeaders(): Map<String, String> {
-          val headers = mutableMapOf<String, String>()
-          if (appCheckTokenProvider == null) {
-            Log.w(TAG, "AppCheck not registered, skipping")
-          } else {
-            val token = appCheckTokenProvider.getToken(false).await()
-
-            if (token.error != null) {
-              Log.w(TAG, "Error obtaining AppCheck token", token.error)
-            }
-            // The Firebase App Check backend can differentiate between apps without App Check, and
-            // wrongly configured apps by verifying the value of the token, so it always needs to be
-            // included.
-            headers["X-Firebase-AppCheck"] = token.token
-          }
-
-          if (internalAuthProvider == null) {
-            Log.w(TAG, "Auth not registered, skipping")
-          } else {
-            try {
-              val token = internalAuthProvider.getAccessToken(false).await()
-
-              headers["Authorization"] = "Firebase ${token.token!!}"
-            } catch (e: Exception) {
-              Log.w(TAG, "Error getting Auth token ", e)
-            }
-          }
-
-          return headers
-        }
-      },
+      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
   )
 
