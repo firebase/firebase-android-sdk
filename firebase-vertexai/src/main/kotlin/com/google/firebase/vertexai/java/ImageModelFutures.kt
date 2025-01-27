@@ -36,7 +36,7 @@ public abstract class ImageModelFutures internal constructor() {
    * @param prompt The main text prompt from which the image is generated.
    * @param config contains secondary image generation parameters.
    */
-  public abstract fun generateImage(
+  public abstract fun generateImages(
     prompt: String,
     config: ImagenGenerationConfig?,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
@@ -48,7 +48,7 @@ public abstract class ImageModelFutures internal constructor() {
    * @param gcsUri Specifies the GCS bucket in which to store the image.
    * @param config contains secondary image generation parameters.
    */
-  public abstract fun generateImage(
+  public abstract fun generateImages(
     prompt: String,
     gcsUri: String,
     config: ImagenGenerationConfig?,
@@ -58,13 +58,13 @@ public abstract class ImageModelFutures internal constructor() {
   public abstract fun getImageModel(): ImageModel
 
   private class FuturesImpl(private val model: ImageModel) : ImageModelFutures() {
-    override fun generateImage(
+    override fun generateImages(
       prompt: String,
       config: ImagenGenerationConfig?,
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
       SuspendToFutureAdapter.launchFuture { model.generateImage(prompt, config) }
 
-    override fun generateImage(
+    override fun generateImages(
       prompt: String,
       gcsUri: String,
       config: ImagenGenerationConfig?,
