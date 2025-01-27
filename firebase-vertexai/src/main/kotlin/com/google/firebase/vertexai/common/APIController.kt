@@ -131,7 +131,6 @@ internal constructor(
         }
         .also { validateResponse(it) }
         .body<GenerateImageResponse>()
-        .validate()
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }
@@ -311,5 +310,3 @@ private fun GenerateContentResponse.validate() = apply {
     ?.firstOrNull { it != FinishReason.STOP }
     ?.let { throw ResponseStoppedException(this) }
 }
-
-private fun GenerateImageResponse.validate() = apply {}
