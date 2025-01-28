@@ -22,8 +22,7 @@ package com.google.firebase.vertexai.type
  * @param safetyFilterLevel Used to filter unsafe content.
  * @param personFilterLevel Used to filter images containing people.
  */
-public class ImagenSafetySettings
-internal constructor(
-  internal val safetyFilterLevel: ImagenSafetyFilter,
-  internal val personFilterLevel: ImagenPersonFilter,
+public class ImagenSafetySettings(
+  internal val safetyFilterLevel: ImagenSafetyFilterLevel,
+  internal val personFilterLevel: ImagenPersonFilterLevel,
 ) {}

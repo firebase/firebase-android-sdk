@@ -25,5 +25,6 @@ internal data class GenerateImageResponse(val predictions: List<ImagenImageRespo
 internal data class ImagenImageResponse(
   val bytesBase64Encoded: String? = null,
   val gcsUri: String? = null,
-  val mimeType: String,
+  val mimeType: String? = null,
+  val raiFilteredReason: String? = null,
 )

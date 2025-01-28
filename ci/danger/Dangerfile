@@ -45,7 +45,7 @@ has_changelog_changes = hasChangesIn(["CHANGELOG"])
 # Ignore changes in these directories
 $exclude_directories = [
   '.github/',
-  'buildSrc/',
+  'plugins/',
   'ci/',
   'encoders/',
   'firebase-annotations/',

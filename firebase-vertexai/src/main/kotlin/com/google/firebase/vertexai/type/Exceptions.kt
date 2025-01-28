@@ -45,7 +45,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
             is com.google.firebase.vertexai.common.InvalidAPIKeyException ->
               InvalidAPIKeyException(cause.message ?: "")
             is com.google.firebase.vertexai.common.PromptBlockedException ->
-              PromptBlockedException(cause.response.toPublic(), cause.cause)
+              PromptBlockedException(cause.response?.toPublic(), cause.cause)
             is com.google.firebase.vertexai.common.UnsupportedUserLocationException ->
               UnsupportedUserLocationException(cause.cause)
             is com.google.firebase.vertexai.common.InvalidStateException ->
@@ -58,6 +58,8 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
               ServiceDisabledException(cause.message ?: "", cause.cause)
             is com.google.firebase.vertexai.common.UnknownException ->
               UnknownException(cause.message ?: "", cause.cause)
+            is com.google.firebase.vertexai.common.ContentBlockedException ->
+              ContentBlockedException(cause.message ?: "", cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
           }
         is TimeoutCancellationException ->
@@ -88,7 +90,6 @@ internal constructor(message: String, cause: Throwable? = null) :
  *
  * @property response The full server response.
  */
-// TODO(rlazo): Add secondary constructor to pass through the message?
 public class PromptBlockedException
 internal constructor(
   public val response: GenerateContentResponse?,
@@ -101,6 +102,10 @@ internal constructor(
   ) {
   internal constructor(message: String, cause: Throwable? = null) : this(null, cause, message)
 }
+
+public class ContentBlockedException
+internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
 
 /**
  * The user's location (region) is not supported by the API.

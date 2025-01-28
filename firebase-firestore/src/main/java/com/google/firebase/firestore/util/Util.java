@@ -85,6 +85,13 @@ public class Util {
     }
   }
 
+  /** Compare strings in UTF-8 encoded byte order */
+  public static int compareUtf8Strings(String left, String right) {
+    ByteString leftBytes = ByteString.copyFromUtf8(left);
+    ByteString rightBytes = ByteString.copyFromUtf8(right);
+    return compareByteStrings(leftBytes, rightBytes);
+  }
+
   /**
    * Utility function to compare longs. Note that we can't use Long.compare because it's only
    * available after Android 19.

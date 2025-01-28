@@ -17,20 +17,17 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the aspect ratio that the generated image should conform to. */
-@Suppress("EnumEntryName")
-public enum class ImagenAspectRatio(internal val internalVal: String) {
-  /** A square image, useful for icons, profile pictures, etc. */
-  SQUARE_1x1("1:1"),
-
-  /** A portrait image in 3:4, the aspect ratio of older TVs. */
-  PORTRAIT_3x4("3:4"),
-
-  /** A landscape image in 4:3, the aspect ratio of older TVs. */
-  LANDSCAPE_4x3("4:3"),
-
-  /** A portrait image in 9:16, the aspect ratio of modern monitors and phone screens. */
-  PORTRAIT_9x16("9:16"),
-
-  /** A landscape image in 16:9, the aspect ratio of modern monitors and phone screens. */
-  LANDSCAPE_16x9("16:9")
+public class ImagenAspectRatio private constructor(internal val internalVal: String) {
+  public companion object {
+    /** A square image, useful for icons, profile pictures, etc. */
+    @JvmField public val SQUARE_1x1: ImagenAspectRatio = ImagenAspectRatio("1:1")
+    /** A portrait image in 3:4, the aspect ratio of older TVs. */
+    @JvmField public val PORTRAIT_3x4: ImagenAspectRatio = ImagenAspectRatio("3:4")
+    /** A landscape image in 4:3, the aspect ratio of older TVs. */
+    @JvmField public val LANDSCAPE_4x3: ImagenAspectRatio = ImagenAspectRatio("4:3")
+    /** A portrait image in 9:16, the aspect ratio of modern monitors and phone screens. */
+    @JvmField public val PORTRAIT_9x16: ImagenAspectRatio = ImagenAspectRatio("9:16")
+    /** A landscape image in 16:9, the aspect ratio of modern monitors and phone screens. */
+    @JvmField public val LANDSCAPE_16x9: ImagenAspectRatio = ImagenAspectRatio("16:9")
+  }
 }

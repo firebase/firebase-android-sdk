@@ -368,16 +368,22 @@ internal fun com.google.firebase.vertexai.common.CountTokensResponse.toPublic() 
   CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
 
 internal fun com.google.firebase.vertexai.internal.GenerateImageResponse.toPublicInline() =
-  ImagenGenerationResponse(images = predictions.map { it.toPublicInline() }, null)
+  ImagenGenerationResponse(
+    images = predictions.filter { it.mimeType != null }.map { it.toPublicInline() },
+    null,
+  )
 
 internal fun com.google.firebase.vertexai.internal.ImagenImageResponse.toPublicInline() =
-  ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType)
+  ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType!!)
 
 internal fun com.google.firebase.vertexai.internal.GenerateImageResponse.toPublicGCS() =
-  ImagenGenerationResponse(images = predictions.map { it.toPublicGCS() }, null)
+  ImagenGenerationResponse(
+    images = predictions.filter { it.mimeType != null }.map { it.toPublicGCS() },
+    null,
+  )
 
 internal fun com.google.firebase.vertexai.internal.ImagenImageResponse.toPublicGCS() =
-  ImagenGCSImage(gcsUri!!, mimeType)
+  ImagenGCSImage(gcsUri!!, mimeType!!)
 
 internal fun JsonObject.toPublic() = JSONObject(toString())
 

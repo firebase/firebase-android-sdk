@@ -26,7 +26,8 @@ import android.util.Base64
  * @param data Contains the raw bytes of the image
  * @param mimeType Contains the mime type of the image eg. "image/png"
  */
-public class ImagenInlineImage(public val data: ByteArray, public val mimeType: String) {
+public class ImagenInlineImage
+internal constructor(public val data: ByteArray, public val mimeType: String) {
 
   /**
    * Returns the image as an android OS native [Bitmap] so that it can be saved or sent to the UI.
