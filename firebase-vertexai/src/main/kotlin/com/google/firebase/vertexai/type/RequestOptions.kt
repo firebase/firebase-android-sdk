@@ -33,10 +33,12 @@ internal constructor(
    * Constructor for RequestOptions.
    *
    * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
-   * the first request to first response.
+   *   the first request to first response.
+   * @param apiVersion changes the vertex API version the request is made to
    */
   @JvmOverloads
   public constructor(
-    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
-  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
+    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
+    apiVersion: String = "v1beta",
+  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS), apiVersion = apiVersion)
 }
