@@ -66,11 +66,18 @@ dependencies {
   implementation("com.google.code.gson:gson:2.8.9")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
+  implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.90.3") {
+    exclude("org.jetbrains.kotlinx", "kotlinx-serialization-json")
+    exclude("org.jetbrains.kotlinx", "kotlinx-serialization-core")
+  }
 
+  testImplementation(gradleTestKit())
   testImplementation(libs.bundles.kotest)
+  testImplementation(libs.mockk)
   testImplementation(libs.junit)
   testImplementation(libs.truth)
   testImplementation("commons-io:commons-io:2.15.1")
+  testImplementation(kotlin("test"))
 }
 
 gradlePlugin {
