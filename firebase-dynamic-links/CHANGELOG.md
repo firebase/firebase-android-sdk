@@ -2,7 +2,7 @@
 
 
 # 22.1.0
-* [changed] Added deprecation annotations to the public API. See https://firebase.google.com/support/dynamic-links-faq for further context.
+* [deprecated] Added deprecation annotations to the public API. See https://firebase.google.com/support/dynamic-links-faq for further context.
 
 
 ## Kotlin
