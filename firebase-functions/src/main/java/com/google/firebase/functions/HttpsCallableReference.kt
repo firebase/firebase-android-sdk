@@ -32,7 +32,7 @@ public class HttpsCallableReference {
   private val url: URL?
 
   // Options for how to do the HTTPS call.
-  @VisibleForTesting public val options: HttpsCallOptions
+  @VisibleForTesting internal val options: HttpsCallOptions
 
   /** Creates a new reference with the given options. */
   internal constructor(
@@ -81,7 +81,7 @@ public class HttpsCallableReference {
    * Auth, an auth token for the user will also be automatically included.
    *
    * Firebase Instance ID sends data to the Firebase backend periodically to collect information
-   * regarding the app instance. To stop this, see [ ]
+   * regarding the app instance. To stop this, see
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
@@ -111,7 +111,7 @@ public class HttpsCallableReference {
    * Auth, an auth token for the user will also be automatically included.
    *
    * Firebase Instance ID sends data to the Firebase backend periodically to collect information
-   * regarding the app instance. To stop this, see [ ]
+   * regarding the app instance. To stop this, see
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
