@@ -71,8 +71,8 @@ internal constructor(
 
   /**
    * Generates an image, returning the result directly to the caller.
-   * @param prompt The main text prompt from which the image is generated.
-   * @param config contains secondary image generation parameters.
+   *
+   * @param prompt The input(s) given to the model as a prompt.
    */
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
@@ -87,9 +87,9 @@ internal constructor(
 
   /**
    * Generates an image, storing the result in Google Cloud Storage and returning a URL
-   * @param prompt The main text prompt from which the image is generated.
+   *
+   * @param prompt The input(s) given to the model as a prompt.
    * @param gcsUri Specifies the GCS bucket in which to store the image.
-   * @param config contains secondary image generation parameters.
    */
   public suspend fun generateImages(
     prompt: String,

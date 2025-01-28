@@ -29,6 +29,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
   public companion object {
     /**
      * An [ImagenImageFormat] representing a JPEG image.
+     *
      * @param compressionQuality an int (1-100) representing how the quality of the image, a lower
      * number meaning the image is permitted to be lower quality to reduce size.
      */
