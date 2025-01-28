@@ -89,7 +89,6 @@ internal constructor(message: String, cause: Throwable? = null) :
  *
  * @property response The full server response.
  */
-// TODO(rlazo): Add secondary constructor to pass through the message?
 public class PromptBlockedException
 internal constructor(
   public val response: GenerateContentResponse?,

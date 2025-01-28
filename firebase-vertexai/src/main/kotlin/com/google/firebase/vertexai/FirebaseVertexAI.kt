@@ -82,16 +82,16 @@ internal constructor(
   }
 
   @JvmOverloads
-  public fun imageModel(
+  public fun imagenModel(
     modelName: String,
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
-  ): ImageModel {
+  ): ImagenModel {
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
-    return ImageModel(
+    return ImagenModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       generationConfig,

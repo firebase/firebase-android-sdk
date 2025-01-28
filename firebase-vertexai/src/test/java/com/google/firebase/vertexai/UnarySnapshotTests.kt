@@ -491,7 +491,7 @@ internal class UnarySnapshotTests {
   fun `generateImages should throw when all images filtered`() =
     goldenUnaryFile("unary-failure-generate-images-all-filtered.json") {
       withTimeout(testTimeout) {
-        shouldThrow<ContentBlockedException> { imageModel.generateImage("prompt") }
+        shouldThrow<ContentBlockedException> { imagenModel.generateImages("prompt") }
       }
     }
 
@@ -499,7 +499,7 @@ internal class UnarySnapshotTests {
   fun `generateImages should return when some images are filtered -- gcs`() =
     goldenUnaryFile("unary-failure-generate-images-gcs-some-filtered.json") {
       withTimeout(testTimeout) {
-        imageModel.generateImage("prompt", "gcsBucket").images.isEmpty() shouldBe false
+        imagenModel.generateImages("prompt", "gcsBucket").images.isEmpty() shouldBe false
       }
     }
 
@@ -510,7 +510,7 @@ internal class UnarySnapshotTests {
       HttpStatusCode.BadRequest,
     ) {
       withTimeout(testTimeout) {
-        shouldThrow<PromptBlockedException> { imageModel.generateImage("prompt") }
+        shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
       }
     }
 
@@ -518,7 +518,7 @@ internal class UnarySnapshotTests {
   fun `generateImages gcs should succeed`() =
     goldenUnaryFile("unary-success-generate-images-gcs.json") {
       withTimeout(testTimeout) {
-        imageModel.generateImage("prompt", "gcsBucket").images.isEmpty() shouldBe false
+        imagenModel.generateImages("prompt", "gcsBucket").images.isEmpty() shouldBe false
       }
     }
 }
