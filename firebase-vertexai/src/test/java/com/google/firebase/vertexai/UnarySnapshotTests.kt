@@ -44,7 +44,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
-import io.ktor.util.date.toDate
+import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
@@ -52,8 +52,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
-import java.util.Calendar
-import java.util.Date
 
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
