@@ -34,12 +34,7 @@ import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenSafetySettings
-import com.google.firebase.vertexai.type.ImagenSafetySettings
-import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.tasks.await
 
 /**
  * Represents an image model (like Imagen), capable of generating images based on various input
@@ -74,16 +69,14 @@ internal constructor(
     ),
   )
 
-    /**
-     * Generates an image, returning the result directly to the caller.
-     * @param prompt The main text prompt from which the image is generated.
-     * @param config contains secondary image generation parameters.
-     */
+  /**
+   * Generates an image, returning the result directly to the caller.
+   * @param prompt The main text prompt from which the image is generated.
+   * @param config contains secondary image generation parameters.
+   */
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
-      controller
-        .generateImage(constructRequest(prompt, null, generationConfig))
-        .toPublicInline()
+      controller.generateImage(constructRequest(prompt, null, generationConfig)).toPublicInline()
       controller
         .generateImage(constructRequest(prompt, null, generationConfig))
         .validate()
@@ -92,12 +85,12 @@ internal constructor(
       throw FirebaseVertexAIException.from(e)
     }
 
-    /**
-     * Generates an image, storing the result in Google Cloud Storage and returning a URL
-     * @param prompt The main text prompt from which the image is generated.
-     * @param gcsUri Specifies the GCS bucket in which to store the image.
-     * @param config contains secondary image generation parameters.
-     */
+  /**
+   * Generates an image, storing the result in Google Cloud Storage and returning a URL
+   * @param prompt The main text prompt from which the image is generated.
+   * @param gcsUri Specifies the GCS bucket in which to store the image.
+   * @param config contains secondary image generation parameters.
+   */
   public suspend fun generateImages(
     prompt: String,
     gcsUri: String,
