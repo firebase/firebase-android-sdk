@@ -64,12 +64,22 @@ limitations under the License.
                 app:layout_constraintRight_toRightOf="parent"
                 />
 
+            <Button
+                android:id="@+id/deleteItemButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Delete Item"
+                app:layout_constraintTop_toBottomOf="@id/getItemButton"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                />
+
             <TextView
                 android:id="@+id/progressText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                app:layout_constraintTop_toBottomOf="@id/getItemButton"
+                app:layout_constraintTop_toBottomOf="@id/deleteItemButton"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 />

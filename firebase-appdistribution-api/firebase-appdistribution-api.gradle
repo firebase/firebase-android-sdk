@@ -52,29 +52,29 @@ android {
 }
 
 dependencies {
-    api 'com.google.android.gms:play-services-tasks:18.0.1'
+    api libs.playservices.tasks
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")
 
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
     implementation libs.kotlin.stdlib
 
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
+    compileOnly libs.autovalue.annotations
 
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+    annotationProcessor libs.autovalue
 
     testImplementation project(':firebase-appdistribution-api')
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
     testImplementation libs.junit
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:3.4.0'
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.mockito.inline
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core
-    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.truth
-    androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation "org.mockito:mockito-android:3.4.0"
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.mockito.android
 }

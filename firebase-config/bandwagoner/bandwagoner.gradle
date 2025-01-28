@@ -68,7 +68,7 @@ firebaseTestLab {
 }
 
 dependencies {
-    api 'com.google.auto.value:auto-value-annotations:1.6.5'
+    api libs.autovalue.annotations
 
     // Depend on development artifacts for Remote Config.
     implementation(project(":firebase-config")) {
@@ -83,14 +83,14 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'androidx.core:core:1.0.2'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.test.espresso:espresso-idling-resource:3.2.0'
-    implementation 'com.google.android.gms:play-services-basement:18.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation libs.androidx.annotation
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.core
+    implementation libs.androidx.legacy.support.v4
+    implementation libs.androidx.espresso.idling.resource
+    implementation libs.playservices.basement
+    implementation libs.playservices.tasks
+    implementation libs.material
     // This is required since a `project` dependency on frc does not expose the APIs of its
     // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
     // Released artifacts don't need these dependencies since they don't use `project` to refer
@@ -104,12 +104,12 @@ dependencies {
     }
     // Support Libraries
     implementation 'com.google.guava:guava:28.1-android'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4"
+    implementation libs.kotlinx.coroutines.core
 
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    annotationProcessor libs.autovalue
 
-    androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-idling-resource:3.2.0'
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.espresso.core
+    androidTestImplementation libs.androidx.espresso.idling.resource
 }

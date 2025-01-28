@@ -21,6 +21,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
@@ -183,7 +184,8 @@ public class ConfigFetchHttpClient {
       String lastFetchETag,
       Map<String, String> customHeaders,
       Long firstOpenTime,
-      Date currentTime)
+      Date currentTime,
+      Map<String, String> customSignalsMap)
       throws FirebaseRemoteConfigException {
     setUpUrlConnection(urlConnection, lastFetchETag, installationAuthToken, customHeaders);
 
@@ -192,7 +194,11 @@ public class ConfigFetchHttpClient {
     try {
       byte[] requestBody =
           createFetchRequestBody(
-                  installationId, installationAuthToken, analyticsUserProperties, firstOpenTime)
+                  installationId,
+                  installationAuthToken,
+                  analyticsUserProperties,
+                  firstOpenTime,
+                  customSignalsMap)
               .toString()
               .getBytes("utf-8");
       setFetchRequestBody(urlConnection, requestBody);
@@ -303,7 +309,8 @@ public class ConfigFetchHttpClient {
       String installationId,
       String installationAuthToken,
       Map<String, String> analyticsUserProperties,
-      Long firstOpenTime)
+      Long firstOpenTime,
+      Map<String, String> customSignalsMap)
       throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 
@@ -346,6 +353,13 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(SDK_VERSION, BuildConfig.VERSION_NAME);
 
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
+
+    if (!customSignalsMap.isEmpty()) {
+      requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalsMap));
+
+      // Log the keys of the custom signals sent during fetch.
+      Log.d(TAG, "Keys of custom signals during fetch: " + customSignalsMap.keySet());
+    }
 
     if (firstOpenTime != null) {
       requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));

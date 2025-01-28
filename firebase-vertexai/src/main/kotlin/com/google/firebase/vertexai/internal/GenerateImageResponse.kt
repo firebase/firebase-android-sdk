@@ -7,7 +7,8 @@ internal data class GenerateImageResponse(val predictions: List<ImagenImageRespo
 
 @Serializable
 internal data class ImagenImageResponse(
-  val bytesBase64Encoded: String?,
-  val gcsUri: String?,
-  val mimeType: String,
+  val bytesBase64Encoded: String? = null,
+  val gcsUri: String? = null,
+  val mimeType: String? = null,
+  val raiFilteredReason: String? = null,
 )

@@ -131,7 +131,6 @@ internal constructor(
         }
         .also { validateResponse(it) }
         .body<GenerateImageResponse>()
-        .validate()
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }
@@ -271,6 +270,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
   }
+  if (message.contains("The prompt could not be submitted")) {
+    throw PromptBlockedException(message)
+  }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
@@ -307,8 +309,4 @@ private fun GenerateContentResponse.validate() = apply {
     ?.mapNotNull { it.finishReason }
     ?.firstOrNull { it != FinishReason.STOP }
     ?.let { throw ResponseStoppedException(this) }
-}
-
-private fun GenerateImageResponse.validate() = apply {
-
 }

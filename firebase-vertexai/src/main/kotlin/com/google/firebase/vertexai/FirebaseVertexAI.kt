@@ -24,8 +24,8 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
-import com.google.firebase.vertexai.type.ImageSafetySettings
-import com.google.firebase.vertexai.type.ImagenModelConfig
+import com.google.firebase.vertexai.type.ImagenGenerationConfig
+import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.InvalidLocationException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
@@ -82,16 +82,16 @@ internal constructor(
   }
 
   @JvmOverloads
-  public fun imageModel(
+  public fun imagenModel(
     modelName: String,
-    generationConfig: ImagenModelConfig? = null,
-    safetySettings: ImageSafetySettings? = null,
+    generationConfig: ImagenGenerationConfig? = null,
+    safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
-  ): ImageModel {
+  ): ImagenModel {
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
-    return ImageModel(
+    return ImagenModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       generationConfig,

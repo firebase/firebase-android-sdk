@@ -344,7 +344,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        /* currentTime= */ new Date(mockClock.currentTimeMillis()));
+        /* currentTime= */ new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
@@ -357,7 +358,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         firstOpenTime,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
@@ -369,7 +371,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         customHeaders,
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetchWithoutInstallationId() throws Exception {
@@ -381,7 +384,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetchWithoutInstallationAuthToken() throws Exception {
@@ -393,7 +397,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private void setServerResponseTo(JSONObject requestBody, String eTag) {

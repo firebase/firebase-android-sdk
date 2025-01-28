@@ -48,6 +48,9 @@ fun remoteConfigSettings(
   return builder.build()
 }
 
+fun customSignals(builder: CustomSignals.Builder.() -> Unit) =
+  CustomSignals.Builder().apply(builder).build()
+
 /**
  * Starts listening for config updates from the Remote Config backend and emits [ConfigUpdate]s via
  * a [Flow]. See [FirebaseRemoteConfig.addOnConfigUpdateListener] for more information.

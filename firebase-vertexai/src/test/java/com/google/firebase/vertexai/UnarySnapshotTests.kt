@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentBlockedException
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
@@ -110,7 +111,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.UNKNOWN
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.UNKNOWN
           }
       }
     }
@@ -165,7 +166,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
           }
       }
     }
@@ -176,8 +177,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
-            it.response.promptFeedback?.blockReasonMessage shouldContain "Reasons"
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+            it.response?.promptFeedback?.blockReasonMessage shouldContain "Reasons"
           }
       }
     }
@@ -200,7 +201,7 @@ internal class UnarySnapshotTests {
   fun `user location error`() =
     goldenUnaryFile(
       "unary-failure-unsupported-user-location.json",
-      HttpStatusCode.PreconditionFailed
+      HttpStatusCode.PreconditionFailed,
     ) {
       withTimeout(testTimeout) {
         shouldThrow<UnsupportedUserLocationException> { model.generateContent("prompt") }
@@ -472,5 +473,40 @@ internal class UnarySnapshotTests {
   fun `countTokens fails with model not found`() =
     goldenUnaryFile("unary-failure-model-not-found.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.countTokens("prompt") } }
+    }
+
+  @Test
+  fun `generateImages should throw when all images filtered`() =
+    goldenUnaryFile("unary-failure-generate-images-all-filtered.json") {
+      withTimeout(testTimeout) {
+        shouldThrow<ContentBlockedException> { imagenModel.generateImages("prompt") }
+      }
+    }
+
+  @Test
+  fun `generateImages should return when some images are filtered -- gcs`() =
+    goldenUnaryFile("unary-failure-generate-images-gcs-some-filtered.json") {
+      withTimeout(testTimeout) {
+        imagenModel.generateImages("prompt", "gcsBucket").images.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `generateImages should throw when prompt blocked`() =
+    goldenUnaryFile(
+      "unary-failure-generate-images-prompt-blocked.json",
+      HttpStatusCode.BadRequest,
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
+      }
+    }
+
+  @Test
+  fun `generateImages gcs should succeed`() =
+    goldenUnaryFile("unary-success-generate-images-gcs.json") {
+      withTimeout(testTimeout) {
+        imagenModel.generateImages("prompt", "gcsBucket").images.isEmpty() shouldBe false
+      }
     }
 }
