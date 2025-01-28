@@ -17,7 +17,6 @@
 package com.google.firebase.vertexai.type
 
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -25,8 +24,8 @@ import kotlin.time.toDuration
 public class RequestOptions
 internal constructor(
   internal val timeout: Duration,
-  internal val endpoint: String = "https://firebasevertexai.googleapis.com",
-  internal val apiVersion: String = "v1beta",
+  internal val endpoint: String = DEFAULT_ENDPOINT,
+  internal val apiVersion: String = DEFAULT_API_VERSION.value,
 ) {
 
   /**
@@ -34,9 +33,35 @@ internal constructor(
    *
    * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
    * the first request to first response.
+   * @param apiVersion the version of the Vertex AI in Firebase API; defaults to [ApiVersion.V1BETA]
+   * if not specified.
    */
   @JvmOverloads
   public constructor(
-    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
-  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
+    timeoutInMillis: Long = DEFAULT_TIMEOUT_IN_MILLIS,
+    apiVersion: ApiVersion = DEFAULT_API_VERSION,
+  ) : this(
+    timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
+    apiVersion = apiVersion.value,
+  )
+
+  /**
+   * Constructor for RequestOptions.
+   *
+   * @param apiVersion the version of the Vertex AI in Firebase API; defaults to [ApiVersion.V1BETA]
+   * if not specified.
+   */
+  public constructor(
+    apiVersion: ApiVersion
+  ) : this(
+    timeoutInMillis = DEFAULT_TIMEOUT_IN_MILLIS,
+    apiVersion = apiVersion,
+  )
+
+  internal companion object {
+    internal const val DEFAULT_TIMEOUT_IN_MILLIS: Long = 180_000L
+    internal const val DEFAULT_ENDPOINT: String = "https://firebasevertexai.googleapis.com"
+
+    internal val DEFAULT_API_VERSION: ApiVersion = ApiVersion.V1BETA
+  }
 }
