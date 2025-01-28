@@ -18,27 +18,24 @@ package com.google.firebase.vertexai.java
 
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.firebase.vertexai.ImageModel
+import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.type.ImagenGCSImage
-import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
 
 /**
- * Wrapper class providing Java compatible methods for [ImageModel].
+ * Wrapper class providing Java compatible methods for [ImagenModel].
  *
- * @see [ImageModel]
+ * @see [ImagenModel]
  */
-public abstract class ImageModelFutures internal constructor() {
+public abstract class ImagenModelFutures internal constructor() {
   /**
    * Generates an image, returning the result directly to the caller.
    *
    * @param prompt The main text prompt from which the image is generated.
-   * @param config contains secondary image generation parameters.
    */
   public abstract fun generateImages(
     prompt: String,
-    config: ImagenGenerationConfig?,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
   /**
@@ -46,37 +43,33 @@ public abstract class ImageModelFutures internal constructor() {
    *
    * @param prompt The main text prompt from which the image is generated.
    * @param gcsUri Specifies the GCS bucket in which to store the image.
-   * @param config contains secondary image generation parameters.
    */
   public abstract fun generateImages(
     prompt: String,
     gcsUri: String,
-    config: ImagenGenerationConfig?,
   ): ListenableFuture<ImagenGenerationResponse<ImagenGCSImage>>
 
-  /** Returns the [ImageModel] object wrapped by this object. */
-  public abstract fun getImageModel(): ImageModel
+  /** Returns the [ImagenModel] object wrapped by this object. */
+  public abstract fun getImageModel(): ImagenModel
 
-  private class FuturesImpl(private val model: ImageModel) : ImageModelFutures() {
+  private class FuturesImpl(private val model: ImagenModel) : ImagenModelFutures() {
     override fun generateImages(
       prompt: String,
-      config: ImagenGenerationConfig?,
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
-      SuspendToFutureAdapter.launchFuture { model.generateImage(prompt, config) }
+      SuspendToFutureAdapter.launchFuture { model.generateImages(prompt) }
 
     override fun generateImages(
       prompt: String,
       gcsUri: String,
-      config: ImagenGenerationConfig?,
     ): ListenableFuture<ImagenGenerationResponse<ImagenGCSImage>> =
-      SuspendToFutureAdapter.launchFuture { model.generateImage(prompt, gcsUri, config) }
+      SuspendToFutureAdapter.launchFuture { model.generateImages(prompt, gcsUri) }
 
-    override fun getImageModel(): ImageModel = model
+    override fun getImageModel(): ImagenModel = model
   }
 
   public companion object {
 
-    /** @return a [ImageModelFutures] created around the provided [ImageModel] */
-    @JvmStatic public fun from(model: ImageModel): ImageModelFutures = FuturesImpl(model)
+    /** @return a [ImagenModelFutures] created around the provided [ImagenModel] */
+    @JvmStatic public fun from(model: ImagenModel): ImagenModelFutures = FuturesImpl(model)
   }
 }
