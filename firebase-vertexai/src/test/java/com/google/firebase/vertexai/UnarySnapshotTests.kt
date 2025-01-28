@@ -33,6 +33,8 @@ import com.google.firebase.vertexai.type.UnsupportedUserLocationException
 import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.inspectors.forAtLeastOne
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -42,6 +44,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
+import io.ktor.util.date.toDate
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
@@ -49,6 +52,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
+import java.util.Calendar
+import java.util.Date
 
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
@@ -213,6 +218,11 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
         exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
+        exception.response.candidates.first().safetyRatings.forAtLeastOne {
+          it.category shouldBe HarmCategory.HARASSMENT
+          it.probability shouldBe HarmProbability.LOW
+          it.severity shouldBe HarmSeverity.LOW
+        }
       }
     }
 
@@ -233,6 +243,10 @@ internal class UnarySnapshotTests {
 
         response.candidates.isEmpty() shouldBe false
         response.candidates.first().citationMetadata?.citations?.size shouldBe 3
+        response.candidates.first().citationMetadata?.citations?.forAtLeastOne {
+          it.publicationDate?.get(Calendar.YEAR) shouldBe 2019
+          it.publicationDate?.get(Calendar.DAY_OF_MONTH) shouldBe 10
+        }
       }
     }
 
