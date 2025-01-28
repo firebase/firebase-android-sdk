@@ -26,7 +26,6 @@ repositories {
   mavenCentral()
   maven(url = "https://storage.googleapis.com/android-ci/mvn/")
   maven(url = "https://plugins.gradle.org/m2/")
-  maven(url = "https://s01.oss.sonatype.org/content/repositories/releases/")
 }
 
 group = "com.google.firebase"
