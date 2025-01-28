@@ -20,7 +20,7 @@ import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.RequestOptions
 
-public class ImageModel
+public class ImagenModel
 internal constructor(
   private val modelName: String,
   private val generationConfig: ImagenGenerationConfig? = null,
@@ -48,7 +48,7 @@ internal constructor(
     ),
   )
 
-  public suspend fun generateImage(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
+  public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
       controller
         .generateImage(constructRequest(prompt, null, generationConfig))
@@ -58,7 +58,7 @@ internal constructor(
       throw FirebaseVertexAIException.from(e)
     }
 
-  public suspend fun generateImage(
+  public suspend fun generateImages(
     prompt: String,
     gcsUri: String,
   ): ImagenGenerationResponse<ImagenGCSImage> =
@@ -93,7 +93,7 @@ internal constructor(
   }
 
   internal companion object {
-    private val TAG = ImageModel::class.java.simpleName
+    private val TAG = ImagenModel::class.java.simpleName
     internal const val DEFAULT_FILTERED_ERROR =
       "Unable to show generated images. All images were filtered out because they violated Vertex AI's usage guidelines. You will not be charged for blocked images. Try rephrasing the prompt. If you think this was an error, send feedback."
   }
@@ -103,7 +103,7 @@ private fun GenerateImageResponse.validate(): GenerateImageResponse {
   if (predictions.none { it.mimeType != null }) {
     throw ContentBlockedException(
       message = predictions.first { it.raiFilteredReason != null }.raiFilteredReason
-          ?: ImageModel.DEFAULT_FILTERED_ERROR
+          ?: ImagenModel.DEFAULT_FILTERED_ERROR
     )
   }
   return this
