@@ -219,8 +219,12 @@ internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Ca
 internal fun com.google.firebase.vertexai.common.UsageMetadata.toPublic(): UsageMetadata =
   UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
 
-internal fun com.google.firebase.vertexai.common.shared.Content.toPublic(): Content =
-  Content(role, parts.map { it.toPublic() })
+internal fun com.google.firebase.vertexai.common.shared.Content.toPublic(): Content {
+  val returnedParts = parts.map { it.toPublic() }.filterNot { it is TextPart && it.text.isEmpty() }
+  // If all returned parts were text and empty, we coalesce them into a single one-character string
+  // part so the backend doesn't fail if we send this back as part of a multi-turn interaction.
+  return Content(role, returnedParts.ifEmpty { listOf(TextPart(" ")) })
+}
 
 internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   return when (this) {
