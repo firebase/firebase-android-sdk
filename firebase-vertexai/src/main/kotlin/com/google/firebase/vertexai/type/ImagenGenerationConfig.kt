@@ -36,7 +36,7 @@ public class ImagenGenerationConfig(
   /**
    * Builder for creating a [ImagenGenerationConfig].
    *
-   * Mainly intended for Java interop. Kotlin consumers should use [imagenGenerationConfig] for a
+   * This is mainly intended for Java interop. For Kotlin, use [imagenGenerationConfig] for a
    * more idiomatic experience.
    *
    * @property negativePrompt See [ImagenGenerationConfig.negativePrompt].
