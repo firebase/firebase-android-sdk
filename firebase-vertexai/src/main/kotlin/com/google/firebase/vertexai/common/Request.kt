@@ -16,12 +16,12 @@
 
 package com.google.firebase.vertexai.common
 
-import com.google.firebase.vertexai.common.client.GenerationConfig
-import com.google.firebase.vertexai.common.client.Tool
-import com.google.firebase.vertexai.common.client.ToolConfig
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.SafetySetting
 import com.google.firebase.vertexai.common.util.fullModelName
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.SafetySetting
+import com.google.firebase.vertexai.type.Tool
+import com.google.firebase.vertexai.type.ToolConfig
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -30,21 +30,21 @@ internal sealed interface Request
 @Serializable
 internal data class GenerateContentRequest(
   val model: String? = null,
-  val contents: List<Content>,
-  @SerialName("safety_settings") val safetySettings: List<SafetySetting>? = null,
-  @SerialName("generation_config") val generationConfig: GenerationConfig? = null,
-  val tools: List<Tool>? = null,
-  @SerialName("tool_config") var toolConfig: ToolConfig? = null,
-  @SerialName("system_instruction") val systemInstruction: Content? = null,
+  val contents: List<Content.Internal>,
+  @SerialName("safety_settings") val safetySettings: List<SafetySetting.Internal>? = null,
+  @SerialName("generation_config") val generationConfig: GenerationConfig.Internal? = null,
+  val tools: List<Tool.Internal>? = null,
+  @SerialName("tool_config") var toolConfig: ToolConfig.Internal? = null,
+  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request
 
 @Serializable
 internal data class CountTokensRequest(
   val generateContentRequest: GenerateContentRequest? = null,
   val model: String? = null,
-  val contents: List<Content>? = null,
-  val tools: List<Tool>? = null,
-  @SerialName("system_instruction") val systemInstruction: Content? = null,
+  val contents: List<Content.Internal>? = null,
+  val tools: List<Tool.Internal>? = null,
+  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request {
   companion object {
     fun forGenAI(generateContentRequest: GenerateContentRequest) =
