@@ -18,7 +18,6 @@ package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.google.firebase.vertexai.internal.util.BASE_64_FLAGS
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -132,6 +131,8 @@ public fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataP
 public fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart
 
 internal typealias Base64 = String
+
+internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
 @Serializable(PartSerializer::class) internal sealed interface InternalPart
 

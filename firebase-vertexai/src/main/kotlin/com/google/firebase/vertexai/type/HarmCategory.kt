@@ -16,8 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.makeMissingCaseException
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
-import com.google.firebase.vertexai.internal.util.makeMissingCaseException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

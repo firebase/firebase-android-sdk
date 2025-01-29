@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai.common
 
-import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.type.HarmBlockMethod
 import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory

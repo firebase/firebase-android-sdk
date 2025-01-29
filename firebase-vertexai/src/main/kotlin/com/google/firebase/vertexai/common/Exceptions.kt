@@ -126,3 +126,18 @@ internal class ServiceDisabledException(message: String, cause: Throwable? = nul
 /** Catch all case for exceptions not explicitly expected. */
 internal class UnknownException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
+
+internal fun makeMissingCaseException(
+  source: String,
+  ordinal: Int
+): com.google.firebase.vertexai.type.SerializationException {
+  return com.google.firebase.vertexai.type.SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}

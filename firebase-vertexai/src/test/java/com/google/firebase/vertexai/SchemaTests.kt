@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.type.Schema
 import com.google.firebase.vertexai.type.StringFormat
 import io.kotest.assertions.json.shouldEqualJson
@@ -24,7 +23,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
 
-internal class InternalTests {
+internal class SchemaTests {
   @Test
   fun `basic schema declaration`() {
     val schemaDeclaration =

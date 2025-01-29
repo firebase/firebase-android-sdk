@@ -17,6 +17,9 @@
 package com.google.firebase.vertexai.type
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import org.json.JSONObject
 
 internal sealed interface Response
 
@@ -38,3 +41,7 @@ internal data class GRpcErrorResponse(val error: GRpcError) : Response {
     )
   }
 }
+
+internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
+
+internal fun JsonObject.toPublic() = JSONObject(toString())
