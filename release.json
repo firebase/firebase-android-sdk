@@ -1,8 +1,6 @@
 {
     "name": "m159",
     "libraries": [
-        ":firebase-dynamic-links",
-        ":firebase-dynamic-links:ktx",
         ":firebase-firestore",
         ":firebase-firestore:ktx"
     ]
