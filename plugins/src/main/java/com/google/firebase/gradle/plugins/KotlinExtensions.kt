@@ -17,7 +17,9 @@
 package com.google.firebase.gradle.plugins
 
 import java.io.File
+import java.io.InputStream
 import org.w3c.dom.Element
+import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 
 /** Replaces all matching substrings with an empty string (nothing) */
@@ -123,6 +125,13 @@ fun Element.findOrCreate(tag: String): Element =
  */
 fun Element.findElementsByTag(tag: String) =
   getElementsByTagName(tag).children().mapNotNull { it as? Element }
+
+/**
+ * Returns the text of an attribute, if it exists.
+ *
+ * @param name The name of the attribute to get the text for
+ */
+fun Node.textByAttributeOrNull(name: String) = attributes?.getNamedItem(name)?.textContent
 
 /**
  * Yields the items of this [NodeList] as a [Sequence].
@@ -266,6 +275,19 @@ infix fun <T> List<T>.diff(other: List<T>): List<Pair<T?, T?>> {
  * ```
  */
 fun <T> List<T>.coerceToSize(targetSize: Int) = List(targetSize) { getOrNull(it) }
+
+/**
+ * Writes the [InputStream] to this file.
+ *
+ * While this method _does_ close the generated output stream, it's the callers responsibility to
+ * close the passed [stream].
+ *
+ * @return This [File] instance for chaining.
+ */
+fun File.writeStream(stream: InputStream): File {
+  outputStream().use { stream.copyTo(it) }
+  return this
+}
 
 /**
  * The [path][File.path] represented as a qualified unix path.
