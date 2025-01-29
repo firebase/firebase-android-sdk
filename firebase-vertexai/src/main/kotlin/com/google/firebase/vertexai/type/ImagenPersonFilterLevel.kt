@@ -24,7 +24,7 @@ public class ImagenPersonFilterLevel private constructor(internal val internalVa
     /** Filters out any images containing depictions of children. */
     @JvmField
     public val ALLOW_ADULT: ImagenPersonFilterLevel = ImagenPersonFilterLevel("allow_adult")
-    /** Filters out any images with depictions of people. */
+    /** Filters out any images containing depictions of people. */
     @JvmField public val BLOCK_ALL: ImagenPersonFilterLevel = ImagenPersonFilterLevel("dont_allow")
   }
 }
