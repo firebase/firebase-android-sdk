@@ -30,7 +30,7 @@ public class ImagenInlineImage
 internal constructor(public val data: ByteArray, public val mimeType: String) {
 
   /**
-   * Returns the image as an android OS native [Bitmap] so that it can be saved or sent to the UI.
+   * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.
    */
   public fun asBitmap(): Bitmap {
     val data = Base64.decode(data, Base64.NO_WRAP)
