@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -41,5 +42,8 @@ public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfi
     )
 
   @Serializable
-  internal data class Internal(val functionCallingConfig: FunctionCallingConfig.Internal?)
+  internal data class Internal(
+    @SerialName("function_calling_config")
+    val functionCallingConfig: FunctionCallingConfig.Internal?
+  )
 }
