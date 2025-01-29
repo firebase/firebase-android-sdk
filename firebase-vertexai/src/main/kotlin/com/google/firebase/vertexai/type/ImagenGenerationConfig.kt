@@ -33,6 +33,19 @@ public class ImagenGenerationConfig(
   public val imageFormat: ImagenImageFormat? = null,
   public val addWatermark: Boolean? = null,
 ) {
+  /**
+   * Builder for creating a [ImagenGenerationConfig].
+   *
+   * Mainly intended for Java interop. Kotlin consumers should use [imagenGenerationConfig] for a
+   * more idiomatic experience.
+   *
+   * @property negativePrompt See [ImagenGenerationConfig.negativePrompt].
+   * @property numberOfImages See [ImagenGenerationConfig.numberOfImages].
+   * @property aspectRatio See [ImagenGenerationConfig.aspectRatio].
+   * @property imageFormat See [ImagenGenerationConfig.imageFormat]
+   * @property addWatermark See [ImagenGenerationConfig.addWatermark]
+   * @see [imagenGenerationConfig]
+   */
   public class Builder {
     @JvmField public var negativePrompt: String? = null
     @JvmField public var numberOfImages: Int? = 1
@@ -40,6 +53,12 @@ public class ImagenGenerationConfig(
     @JvmField public var imageFormat: ImagenImageFormat? = null
     @JvmField public var addWatermark: Boolean? = null
 
+    /**
+     * Alternative casing for [ImagenGenerationConfig.Builder]:
+     * ```
+     * val config = GenerationConfig.builder()
+     * ```
+     */
     public fun build(): ImagenGenerationConfig =
       ImagenGenerationConfig(
         negativePrompt = negativePrompt,
@@ -55,6 +74,20 @@ public class ImagenGenerationConfig(
   }
 }
 
+/**
+ * Helper method to construct a [ImagenGenerationConfig] in a DSL-like manner.
+ *
+ * Example Usage:
+ * ```
+ * imagenGenerationConfig {
+ *   negativePrompt = "People, black and white, painting"
+ *   numberOfImages = 1
+ *   aspectRatio = ImagenAspecRatio.SQUARE_1x1
+ *   imageFormat = ImagenImageFormat.png()
+ *   addWatermark = false
+ * }
+ * ```
+ */
 public fun imagenGenerationConfig(
   init: ImagenGenerationConfig.Builder.() -> Unit
 ): ImagenGenerationConfig {
