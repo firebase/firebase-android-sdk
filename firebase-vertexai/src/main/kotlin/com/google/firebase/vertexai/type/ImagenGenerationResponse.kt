@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Represents a response from Imagen call to [ImageModel#generateImages]
+ * Represents a response from a call to [ImagenModel#generateImages]
  *
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
