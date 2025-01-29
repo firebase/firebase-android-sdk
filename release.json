@@ -1,0 +1,9 @@
+{
+    "name": "m158",
+    "libraries": [
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx"
+    ]
+}
