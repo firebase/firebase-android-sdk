@@ -37,7 +37,7 @@ import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.RequestOptions
 
 /**
- * Represents an image model (like Imagen), capable of generating images based on various input
+ * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
  */
 public class ImagenModel
