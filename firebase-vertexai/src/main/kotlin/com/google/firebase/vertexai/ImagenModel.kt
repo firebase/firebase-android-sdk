@@ -89,7 +89,7 @@ internal constructor(
    * Generates an image, storing the result in Google Cloud Storage and returning a URL
    *
    * @param prompt The input(s) given to the model as a prompt.
-   * @param gcsUri Specifies the GCS bucket in which to store the image.
+   * @param gcsUri Specifies the Google Cloud Storage bucket in which to store the image.
    */
   public suspend fun generateImages(
     prompt: String,
