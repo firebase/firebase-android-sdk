@@ -21,7 +21,7 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 
 /**
- * Represents an Imagen Image that is contained inline
+ * Represents an Imagen-generated image that is contained inline
  *
  * @param data Contains the raw bytes of the image
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`)
