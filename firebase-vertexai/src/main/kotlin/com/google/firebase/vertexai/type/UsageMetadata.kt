@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Usage metadata about response(s).
  *
@@ -27,4 +29,16 @@ public class UsageMetadata(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
   public val totalTokenCount: Int
-)
+) {
+
+  @Serializable
+  internal data class Internal(
+    val promptTokenCount: Int? = null,
+    val candidatesTokenCount: Int? = null,
+    val totalTokenCount: Int? = null,
+  ) {
+
+    internal fun toPublic(): UsageMetadata =
+      UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
+  }
+}

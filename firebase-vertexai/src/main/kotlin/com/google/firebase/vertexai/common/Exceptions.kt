@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.common
 
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import io.ktor.serialization.JsonConvertException
 import kotlinx.coroutines.TimeoutCancellationException
 
@@ -66,7 +67,7 @@ internal class InvalidAPIKeyException(message: String, cause: Throwable? = null)
  * @property response the full server response for the request.
  */
 internal class PromptBlockedException(
-  val response: GenerateContentResponse,
+  val response: GenerateContentResponse.Internal,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(
@@ -98,7 +99,7 @@ internal class InvalidStateException(message: String, cause: Throwable? = null) 
  * @property response the full server response for the request
  */
 internal class ResponseStoppedException(
-  val response: GenerateContentResponse,
+  val response: GenerateContentResponse.Internal,
   cause: Throwable? = null
 ) :
   FirebaseCommonAIException(
@@ -125,3 +126,18 @@ internal class ServiceDisabledException(message: String, cause: Throwable? = nul
 /** Catch all case for exceptions not explicitly expected. */
 internal class UnknownException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
+
+internal fun makeMissingCaseException(
+  source: String,
+  ordinal: Int
+): com.google.firebase.vertexai.type.SerializationException {
+  return com.google.firebase.vertexai.type.SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}

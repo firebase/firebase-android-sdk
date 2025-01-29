@@ -19,12 +19,14 @@ package com.google.firebase.vertexai.common
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.options
-import com.google.firebase.vertexai.common.server.FinishReason
-import com.google.firebase.vertexai.common.server.GRpcError
-import com.google.firebase.vertexai.common.server.GRpcErrorDetails
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
+import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.GRpcErrorResponse
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -106,7 +108,7 @@ internal constructor(
       install(ContentNegotiation) { json(JSON) }
     }
 
-  suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
+  suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:generateContent") {
@@ -114,15 +116,17 @@ internal constructor(
           applyHeaderProvider()
         }
         .also { validateResponse(it) }
-        .body<GenerateContentResponse>()
+        .body<GenerateContentResponse.Internal>()
         .validate()
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }
 
-  fun generateContentStream(request: GenerateContentRequest): Flow<GenerateContentResponse> =
+  fun generateContentStream(
+    request: GenerateContentRequest
+  ): Flow<GenerateContentResponse.Internal> =
     client
-      .postStream<GenerateContentResponse>(
+      .postStream<GenerateContentResponse.Internal>(
         "${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:streamGenerateContent?alt=sse"
       ) {
         applyCommonConfiguration(request)
@@ -130,7 +134,7 @@ internal constructor(
       .map { it.validate() }
       .catch { throw FirebaseCommonAIException.from(it) }
 
-  suspend fun countTokens(request: CountTokensRequest): CountTokensResponse =
+  suspend fun countTokens(request: CountTokensRequest): CountTokensResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:countTokens") {
@@ -275,19 +279,21 @@ private suspend fun validateResponse(response: HttpResponse) {
   throw ServerException(message)
 }
 
-private fun getServiceDisabledErrorDetailsOrNull(error: GRpcError): GRpcErrorDetails? {
+private fun getServiceDisabledErrorDetailsOrNull(
+  error: GRpcErrorResponse.GRpcError
+): GRpcErrorResponse.GRpcError.GRpcErrorDetails? {
   return error.details?.firstOrNull {
     it.reason == "SERVICE_DISABLED" && it.domain == "googleapis.com"
   }
 }
 
-private fun GenerateContentResponse.validate() = apply {
+private fun GenerateContentResponse.Internal.validate() = apply {
   if ((candidates?.isEmpty() != false) && promptFeedback == null) {
     throw SerializationException("Error deserializing response, found no valid fields")
   }
   promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
   candidates
     ?.mapNotNull { it.finishReason }
-    ?.firstOrNull { it != FinishReason.STOP }
+    ?.firstOrNull { it != FinishReason.Internal.STOP }
     ?.let { throw ResponseStoppedException(this) }
 }

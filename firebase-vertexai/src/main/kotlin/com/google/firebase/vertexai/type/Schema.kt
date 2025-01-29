@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 public abstract class StringFormat private constructor(internal val value: String) {
   public class Custom(value: String) : StringFormat(value)
 }
@@ -238,4 +240,27 @@ internal constructor(
         type = "STRING",
       )
   }
+
+  internal fun toInternal(): Internal =
+    Internal(
+      type,
+      description,
+      format,
+      nullable,
+      enum,
+      properties?.mapValues { it.value.toInternal() },
+      required,
+      items?.toInternal(),
+    )
+  @Serializable
+  internal data class Internal(
+    val type: String,
+    val description: String? = null,
+    val format: String? = null,
+    val nullable: Boolean? = false,
+    val enum: List<String>? = null,
+    val properties: Map<String, Internal>? = null,
+    val required: List<String>? = null,
+    val items: Internal? = null,
+  )
 }
