@@ -19,7 +19,7 @@ package com.google.firebase.vertexai.type
 /**
  * Represents an Imagen Image that is contained in Google Cloud Storage.
  *
- * @param gcsUri Contains the gs:// uri for the image.
+ * @param gcsUri Contains the `gs://` URI for the image.
  * @param mimeType Contains the mime type of the image eg. "image/png"
  */
 public class ImagenGCSImage
