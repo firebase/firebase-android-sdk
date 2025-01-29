@@ -1,0 +1,32 @@
+{
+    "changesByLibraryName": {
+        "firebase-dynamic-links": [
+            {
+                "commitId": "3f23c5f0e21530d058a2711049f55f4ccf10196b",
+                "prId": "6649",
+                "author": "Rodrigo Lazo",
+                "message": "Update fdl readme (#6649)\n\nReplace the changed tag with deprecated for the last FDL release",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3f23c5f0e21530d058a2711049f55f4ccf10196b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6649"
+            }
+        ],
+        "firebase-dynamic-links/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "a1cbf93b8958e3746c0314859f770aecfce4a852",
+                "prId": "6615",
+                "author": "Mila",
+                "message": "FIX: sort strings in UTF-8 encoded byte order (#6615)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a1cbf93b8958e3746c0314859f770aecfce4a852",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6615"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-dataconnect",
+        ":firebase-vertexai"
+    ]
+}
