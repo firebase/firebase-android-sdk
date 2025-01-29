@@ -86,7 +86,7 @@ internal constructor(
    *
    * @param modelName The name of the model to use, for example `"imagen-3.0-generate-001"`.
    * @param generationConfig The configuration parameters to use for image generation.
-   * @param safetySettings The safety bounds the model will abide to during image generation.
+   * @param safetySettings The safety bounds the model will abide by during image generation.
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [ImagenModel] instance.
    */
