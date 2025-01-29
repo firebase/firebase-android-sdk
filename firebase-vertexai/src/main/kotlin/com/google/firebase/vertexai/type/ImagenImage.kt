@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Represents an abstract Imagen Image that is either contained inline or in Google Cloud Storage
+ * Represents an abstract Imagen Image that is either contained inline or in a Google Cloud Storage bucket
  *
  * @param data Contains the raw bytes of the image, mutually exclusive with [gcsUri]
  * @param gcsUri Contains the gs:// uri for the image , mutually exclusive with [data]
