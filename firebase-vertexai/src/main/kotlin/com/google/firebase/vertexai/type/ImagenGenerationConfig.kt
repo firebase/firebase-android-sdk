@@ -19,7 +19,7 @@ package com.google.firebase.vertexai.type
 /**
  * Contains extra settings to configure image generation.
  *
- * @param negativePrompt This string contains things that should be explicitly be excluded from
+ * @param negativePrompt This string contains things that should be explicitly excluded from
  * generated images.
  * @param numberOfImages How many images should be generated.
  * @param aspectRatio The aspect ratio of the generated images.
