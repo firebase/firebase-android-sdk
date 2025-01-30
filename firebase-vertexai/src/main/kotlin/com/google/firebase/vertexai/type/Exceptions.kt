@@ -18,7 +18,6 @@ package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.FirebaseVertexAI
 import com.google.firebase.vertexai.common.FirebaseCommonAIException
-import com.google.firebase.vertexai.internal.util.toPublic
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseVertexAI] SDK. */

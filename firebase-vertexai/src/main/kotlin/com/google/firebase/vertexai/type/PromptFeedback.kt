@@ -16,6 +16,11 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Feedback on the prompt provided in the request.
  *
@@ -27,10 +32,41 @@ public class PromptFeedback(
   public val blockReason: BlockReason?,
   public val safetyRatings: List<SafetyRating>,
   public val blockReasonMessage: String?
-)
+) {
+
+  @Serializable
+  internal data class Internal(
+    val blockReason: BlockReason.Internal? = null,
+    val safetyRatings: List<SafetyRating.Internal>? = null,
+    val blockReasonMessage: String? = null,
+  ) {
+
+    internal fun toPublic(): PromptFeedback {
+      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      return PromptFeedback(blockReason?.toPublic(), safetyRatings, blockReasonMessage)
+    }
+  }
+}
 
 /** Describes why content was blocked. */
 public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
+
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
+    UNKNOWN,
+    @SerialName("BLOCKED_REASON_UNSPECIFIED") UNSPECIFIED,
+    SAFETY,
+    OTHER;
+
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+
+    internal fun toPublic() =
+      when (this) {
+        SAFETY -> BlockReason.SAFETY
+        OTHER -> BlockReason.OTHER
+        else -> BlockReason.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: BlockReason = BlockReason("UNKNOWN", 0)
