@@ -25,8 +25,7 @@ import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GRpcErrorResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
-import com.google.firebase.vertexai.internal.GenerateImageRequest
-import com.google.firebase.vertexai.internal.GenerateImageResponse
+import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
@@ -59,6 +58,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 
@@ -124,7 +124,7 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
-  suspend fun generateImage(request: GenerateImageRequest): GenerateImageResponse =
+  suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
@@ -132,7 +132,7 @@ internal constructor(
           applyHeaderProvider()
         }
         .also { validateResponse(it) }
-        .body<GenerateImageResponse>()
+        .body<ImagenGenerationResponse.Internal>()
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }

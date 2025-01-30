@@ -16,12 +16,43 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Represents a response from a call to [ImagenModel#generateImages]
  *
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
- * the reason they were filtered out.
+ *   the reason they were filtered out.
  */
 public class ImagenGenerationResponse<T>
-internal constructor(public val images: List<T>, public val filteredReason: String?) {}
+internal constructor(public val images: List<T>, public val filteredReason: String?) {
+
+  @Serializable
+  internal data class Internal(val predictions: List<ImagenImageResponse>) {
+    internal fun toPublicGCS() =
+      ImagenGenerationResponse(
+        images = predictions.filter { it.mimeType != null }.map { it.toPublicGCS() },
+        null,
+      )
+
+    internal fun toPublicInline() =
+      ImagenGenerationResponse(
+        images = predictions.filter { it.mimeType != null }.map { it.toPublicInline() },
+        null,
+      )
+  }
+
+  @Serializable
+  internal data class ImagenImageResponse(
+    val bytesBase64Encoded: String? = null,
+    val gcsUri: String? = null,
+    val mimeType: String? = null,
+    val raiFilteredReason: String? = null,
+  ) {
+    internal fun toPublicInline() =
+      ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType!!)
+
+    internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
+  }
+}

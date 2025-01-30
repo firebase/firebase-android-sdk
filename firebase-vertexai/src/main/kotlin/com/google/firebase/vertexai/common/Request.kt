@@ -19,6 +19,7 @@ package com.google.firebase.vertexai.common
 import com.google.firebase.vertexai.common.util.fullModelName
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.ImagenImageFormat
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
@@ -65,3 +66,24 @@ internal data class CountTokensRequest(
       )
   }
 }
+
+@Serializable
+internal data class GenerateImageRequest(
+  val instances: List<ImagenPromptInstance>,
+  val parameters: ImagenParameters,
+) : Request {}
+
+@Serializable internal data class ImagenPromptInstance(val prompt: String)
+
+@Serializable
+internal data class ImagenParameters(
+  val sampleCount: Int = 1,
+  val includeRaiReason: Boolean = true,
+  val storageUri: String?,
+  val negativePrompt: String?,
+  val aspectRatio: String?,
+  val safetySetting: String?,
+  val personGeneration: String?,
+  val addWatermark: Boolean?,
+  val imageOutputOptions: ImagenImageFormat.Internal?,
+)
