@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.0.0-beta04
 * [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
   `MutableStateFlow<LogLevel>`. This enables apps to "collect" the flow to,
   for example, update a UI component when the log level changes.
