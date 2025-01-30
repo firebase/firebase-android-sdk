@@ -1,16 +1,15 @@
 package com.google.firebase.functions.ktx
 
-import androidx.test.InstrumentationRegistry
-import androidx.test.runner.AndroidJUnit4
-import com.google.android.gms.tasks.Tasks
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.FirebaseApp
+import com.google.firebase.Firebase
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.FirebaseFunctionsException
-import com.google.firebase.functions.SSETaskListener
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
-import java.util.concurrent.ExecutionException
+import com.google.firebase.functions.StreamFunctionsTask
+import com.google.firebase.functions.StreamListener
+import com.google.firebase.functions.functions
+import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
@@ -20,30 +19,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class StreamTests {
 
-  private lateinit var app: FirebaseApp
-  private lateinit var listener: SSETaskListener
-
+  private lateinit var listener: StreamListener
   private lateinit var functions: FirebaseFunctions
   var onNext = mutableListOf<Any>()
-  var onError: Any? = null
-  var onComplete: Any? = null
 
   @Before
   fun setup() {
-    app = Firebase.initialize(InstrumentationRegistry.getContext())!!
-    functions = FirebaseFunctions.getInstance()
+    Firebase.initialize(ApplicationProvider.getApplicationContext())
+    functions = Firebase.functions
     listener =
-      object : SSETaskListener {
+      object : StreamListener {
         override fun onNext(message: Any) {
           onNext.add(message)
-        }
-
-        override fun onError(exception: FirebaseFunctionsException) {
-          onError = exception
-        }
-
-        override fun onComplete(result: Any) {
-          onComplete = result
         }
       }
   }
@@ -51,17 +38,16 @@ class StreamTests {
   @After
   fun clear() {
     onNext.clear()
-    onError = null
-    onComplete = null
   }
 
   @Test
   fun testGenStream() {
     val input = hashMapOf("data" to "Why is the sky blue")
-
     val function = functions.getHttpsCallable("genStream")
-    val httpsCallableResult = Tasks.await(function.stream(input, listener))
 
+    val task = function.stream(input).addOnStreamListener(listener)
+
+    Thread.sleep(6000)
     val onNextStringList = onNext.map { it.toString() }
     assertThat(onNextStringList)
       .containsExactly(
@@ -71,21 +57,19 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(onError).isNull()
-    assertThat(onComplete).isEqualTo("hello world this is cool")
-    assertThat(httpsCallableResult.data).isEqualTo("hello world this is cool")
+    assertThat(task.result.data).isEqualTo("hello world this is cool")
   }
 
   @Test
   fun testGenStreamError() {
     val input = hashMapOf("data" to "Why is the sky blue")
-    val function = functions.getHttpsCallable("genStreamError").withTimeout(7, TimeUnit.SECONDS)
+    val function = functions.getHttpsCallable("genStreamError").withTimeout(6, TimeUnit.SECONDS)
+    var task: StreamFunctionsTask? = null
 
     try {
-      Tasks.await(function.stream(input, listener))
-    } catch (exception: Exception) {
-      onError = exception
-    }
+      task = function.stream(input).addOnStreamListener(listener)
+    } catch (_: Throwable) {}
+    Thread.sleep(7000)
 
     val onNextStringList = onNext.map { it.toString() }
     assertThat(onNextStringList)
@@ -96,21 +80,18 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(onError).isInstanceOf(ExecutionException::class.java)
-    val cause = (onError as ExecutionException).cause
-    assertThat(cause).isInstanceOf(FirebaseFunctionsException::class.java)
-    assertThat((cause as FirebaseFunctionsException).message).contains("stream was reset: CANCEL")
-    assertThat(onComplete).isNull()
+    assertThat(requireNotNull(task).isSuccessful).isFalse()
+    assertThat(task.exception).isInstanceOf(FirebaseFunctionsException::class.java)
+    assertThat(requireNotNull(task.exception).message).contains("stream was reset: CANCEL")
   }
 
   @Test
   fun testGenStreamNoReturn() {
     val input = hashMapOf("data" to "Why is the sky blue")
-
     val function = functions.getHttpsCallable("genStreamNoReturn")
-    try {
-      Tasks.await(function.stream(input, listener), 7, TimeUnit.SECONDS)
-    } catch (_: Exception) {}
+
+    val task = function.stream(input).addOnStreamListener(listener)
+    Thread.sleep(7000)
 
     val onNextStringList = onNext.map { it.toString() }
     assertThat(onNextStringList)
@@ -121,7 +102,37 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(onError).isNull()
-    assertThat(onComplete).isNull()
+    try {
+      task.result
+    } catch (e: Throwable) {
+      assertThat(e).isInstanceOf(IllegalStateException::class.java)
+      assertThat(e.message).isEqualTo("No result available.")
+    }
+  }
+
+  @Test
+  fun testGenStream_cancelStream() {
+    val input = hashMapOf("data" to "Why is the sky blue")
+    val function = functions.getHttpsCallable("genStreamNoReturn")
+    val task = function.stream(input).addOnStreamListener(listener)
+    Thread.sleep(2000)
+
+    task.cancel()
+
+    val onNextStringList = onNext.map { it.toString() }
+    assertThat(onNextStringList)
+      .containsExactly(
+        "{chunk=hello}",
+        "{chunk=world}",
+      )
+    try {
+      task.result
+    } catch (e: Throwable) {
+      assertThat(e).isInstanceOf(IllegalStateException::class.java)
+      assertThat(e.message).isEqualTo("No result available.")
+    }
+    assertThat(task.isCanceled).isTrue()
+    assertThat(task.isComplete).isFalse()
+    assertThat(task.isSuccessful).isFalse()
   }
 }

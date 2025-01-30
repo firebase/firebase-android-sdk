@@ -154,22 +154,18 @@ public class HttpsCallableReference {
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
-   * Streaming events are handled by the provided [SSETaskListener], which will receive events and
-   * handle errors and completion notifications.
-   *
    * @param data Parameters to pass to the endpoint.
-   * @param listener A listener to handle streaming events, errors, and completion notifications.
-   * @return A Task that will be completed when the streaming operation has finished.
+   * @return [StreamFunctionsTask] that will be completed when the streaming operation has finished.
    * @see org.json.JSONArray
    * @see org.json.JSONObject
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
-  public fun stream(data: Any?, listener: SSETaskListener): Task<HttpsCallableResult> {
+  public fun stream(data: Any?): StreamFunctionsTask {
     return if (name != null) {
-      functionsClient.stream(name, data, options, listener)
+      functionsClient.stream(name, data, options)
     } else {
-      functionsClient.stream(url!!, data, options, listener)
+      functionsClient.stream(requireNotNull(url), data, options)
     }
   }
 
@@ -185,26 +181,13 @@ public class HttpsCallableReference {
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
-   * Streaming events are handled by the provided [SSETaskListener], which will receive events and
-   * handle errors and completion notifications.
-   *
-   * If the returned task fails, the exception will be one of the following types:
-   *
-   * * [java.io.IOException]
-   * - if the HTTPS request failed to connect.
-   * * [FirebaseFunctionsException]
-   * - if the request connected, but the function returned an error.
-   *
-   * @param listener A listener to handle streaming events, errors, and completion notifications.
-   * @return A Task that will be completed when the streaming operation has finished.
-   * @see java.io.IOException
-   * @see FirebaseFunctionsException
+   * @return [StreamFunctionsTask] that will be completed when the streaming operation has finished.
    */
-  public fun stream(listener: SSETaskListener): Task<HttpsCallableResult> {
+  public fun stream(): StreamFunctionsTask {
     return if (name != null) {
-      functionsClient.stream(name, null, options, listener)
+      functionsClient.stream(name, null, options)
     } else {
-      functionsClient.stream(url!!, null, options, listener)
+      functionsClient.stream(requireNotNull(url), null, options)
     }
   }
 

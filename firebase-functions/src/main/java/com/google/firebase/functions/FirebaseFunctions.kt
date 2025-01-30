@@ -314,39 +314,51 @@ internal constructor(
     return tcs.task
   }
 
-  internal fun stream(
-    name: String,
-    data: Any?,
-    options: HttpsCallOptions,
-    listener: SSETaskListener
-  ): Task<HttpsCallableResult> {
-    return providerInstalled.task
+  internal fun stream(name: String, data: Any?, options: HttpsCallOptions): StreamFunctionsTask {
+    val task = StreamFunctionsTask()
+    providerInstalled.task
       .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
-      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
-        if (!task.isSuccessful) {
-          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+      .addOnCompleteListener(executor) { contextTask ->
+        if (!contextTask.isSuccessful) {
+          task.fail(
+            FirebaseFunctionsException(
+              "Error retrieving context",
+              FirebaseFunctionsException.Code.INTERNAL,
+              null,
+              contextTask.exception
+            )
+          )
+          return@addOnCompleteListener
         }
-        val context = task.result
         val url = getURL(name)
-        stream(url, data, options, context, listener)
+        stream(url, data, options, contextTask.result, task)
       }
+
+    return task
   }
 
-  internal fun stream(
-    url: URL,
-    data: Any?,
-    options: HttpsCallOptions,
-    listener: SSETaskListener
-  ): Task<HttpsCallableResult> {
-    return providerInstalled.task
+  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): StreamFunctionsTask {
+    val task = StreamFunctionsTask()
+    providerInstalled.task
       .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
-      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
-        if (!task.isSuccessful) {
-          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+      .addOnCompleteListener(executor) { contextTask ->
+        if (!contextTask.isSuccessful) {
+          task.fail(
+            FirebaseFunctionsException(
+              "Error retrieving context",
+              FirebaseFunctionsException.Code.INTERNAL,
+              null,
+              contextTask.exception
+            )
+          )
+
+          return@addOnCompleteListener
         }
-        val context = task.result
-        stream(url, data, options, context, listener)
+
+        stream(url, data, options, contextTask.result, task)
       }
+
+    return task
   }
 
   private fun stream(
@@ -354,20 +366,16 @@ internal constructor(
     data: Any?,
     options: HttpsCallOptions,
     context: HttpsCallableContext?,
-    listener: SSETaskListener
-  ): Task<HttpsCallableResult> {
+    task: StreamFunctionsTask
+  ) {
     Preconditions.checkNotNull(url, "url cannot be null")
-    val tcs = TaskCompletionSource<HttpsCallableResult>()
     val callClient = options.apply(client)
-    callClient.postStream(url, tcs, listener) { applyCommonConfiguration(data, context) }
-
-    return tcs.task
+    callClient.postStream(url, task) { applyCommonConfiguration(data, context) }
   }
 
   private inline fun OkHttpClient.postStream(
     url: URL,
-    tcs: TaskCompletionSource<HttpsCallableResult>,
-    listener: SSETaskListener,
+    task: StreamFunctionsTask,
     crossinline config: Request.Builder.() -> Unit = {}
   ) {
     val requestBuilder = Request.Builder().url(url)
@@ -394,8 +402,7 @@ internal constructor(
                 e
               )
             }
-          listener.onError(exception)
-          tcs.setException(exception)
+          task.fail(exception)
         }
 
         @Throws(IOException::class)
@@ -404,7 +411,7 @@ internal constructor(
             validateResponse(response)
             val bodyStream = response.body()?.byteStream()
             if (bodyStream != null) {
-              processSSEStream(bodyStream, serializer, listener, tcs)
+              processSSEStream(bodyStream, serializer, task)
             } else {
               val exception =
                 FirebaseFunctionsException(
@@ -412,12 +419,10 @@ internal constructor(
                   FirebaseFunctionsException.Code.INTERNAL,
                   null
                 )
-              listener.onError(exception)
-              tcs.setException(exception)
+              task.fail(exception)
             }
           } catch (exception: FirebaseFunctionsException) {
-            listener.onError(exception)
-            tcs.setException(exception)
+            task.fail(exception)
           }
         }
       }
@@ -480,8 +485,7 @@ internal constructor(
   private fun processSSEStream(
     inputStream: InputStream,
     serializer: Serializer,
-    listener: SSETaskListener,
-    tcs: TaskCompletionSource<HttpsCallableResult>
+    task: StreamFunctionsTask
   ) {
     BufferedReader(InputStreamReader(inputStream)).use { reader ->
       try {
@@ -496,7 +500,7 @@ internal constructor(
             val json = JSONObject(dataChunk)
             when {
               json.has("message") ->
-                serializer.decode(json.opt("message"))?.let { listener.onNext(it) }
+                serializer.decode(json.opt("message"))?.let { task.notifyListeners(it) }
               json.has("error") -> {
                 serializer.decode(json.opt("error"))?.let {
                   throw FirebaseFunctionsException(
@@ -508,8 +512,7 @@ internal constructor(
               }
               json.has("result") -> {
                 serializer.decode(json.opt("result"))?.let {
-                  listener.onComplete(it)
-                  tcs.setResult(HttpsCallableResult(it))
+                  task.complete(HttpsCallableResult(it))
                 }
                 return
               }
