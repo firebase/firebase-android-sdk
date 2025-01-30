@@ -86,6 +86,8 @@ package com.google.firebase.functions {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
     method public long getTimeout();
     method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
+    method @NonNull public com.google.firebase.functions.StreamFunctionsTask stream(@Nullable Object data = null);
+    method @NonNull public kotlinx.coroutines.flow.Flow<com.google.firebase.functions.HttpsCallableResult> streamFlow(@Nullable Object data = null);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
     property public final long timeout;
   }
@@ -93,6 +95,28 @@ package com.google.firebase.functions {
   public final class HttpsCallableResult {
     method @Nullable public Object getData();
     field @Nullable public final Object data;
+  }
+
+  public final class StreamFunctionsTask extends com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> {
+    ctor public StreamFunctionsTask();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnFailureListener(@NonNull com.google.android.gms.tasks.OnFailureListener p0);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnFailureListener(@NonNull android.app.Activity p0, @NonNull com.google.android.gms.tasks.OnFailureListener p1);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnFailureListener(@NonNull java.util.concurrent.Executor p0, @NonNull com.google.android.gms.tasks.OnFailureListener p1);
+    method @NonNull public com.google.firebase.functions.StreamFunctionsTask addOnStreamListener(@NonNull com.google.firebase.functions.StreamListener listener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnSuccessListener(@NonNull java.util.concurrent.Executor p0, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.functions.HttpsCallableResult> p1);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnSuccessListener(@NonNull android.app.Activity p0, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.functions.HttpsCallableResult> p1);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> addOnSuccessListener(@NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.functions.HttpsCallableResult> p0);
+    method @Nullable public Exception getException();
+    method @NonNull public com.google.firebase.functions.HttpsCallableResult getResult();
+    method @NonNull public <X extends java.lang.Throwable> com.google.firebase.functions.HttpsCallableResult getResult(@NonNull Class<X> p0);
+    method public boolean isCanceled();
+    method public boolean isComplete();
+    method public boolean isSuccessful();
+    method public void removeOnStreamListener(@NonNull com.google.firebase.functions.StreamListener listener);
+  }
+
+  public fun interface StreamListener {
+    method public void onNext(@NonNull Object message);
   }
 
 }

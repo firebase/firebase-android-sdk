@@ -15,6 +15,7 @@ package com.google.firebase.functions
 
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.flow.Flow
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
@@ -123,6 +124,16 @@ public class HttpsCallableReference {
     } else {
       functionsClient.call(url!!, null, options)
     }
+  }
+
+  // if you prefer to use Tasks (eg. from Java)
+  public fun stream(data: Any? = null): StreamFunctionsTask {
+    TODO("Not yet implemented")
+  }
+
+  // if you use Kotlin Coroutines (not supported in Java)
+  public fun streamFlow(data: Any? = null): Flow<HttpsCallableResult> {
+    TODO("Not yet implemented")
   }
 
   /**
