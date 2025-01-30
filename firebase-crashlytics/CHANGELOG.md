@@ -1,7 +1,7 @@
 # Unreleased
 
 
-# 19.3.1
+# 19.4.0
 * [feature] Added an overload for `recordException` that allows logging additional custom
   keys to the non fatal event [#3551]
 

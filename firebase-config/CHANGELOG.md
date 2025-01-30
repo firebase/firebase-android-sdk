@@ -1,7 +1,7 @@
 # Unreleased
 
 
-# 22.0.2
+# 22.1.0
 * [feature] Added support for custom signal targeting in Remote Config. Use `setCustomSignals` API for setting custom signals and use them to build custom targeting conditions in Remote Config.
 
 
