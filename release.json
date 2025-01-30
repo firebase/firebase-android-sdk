@@ -2,6 +2,7 @@
     "name": "m159",
     "libraries": [
         ":firebase-firestore",
-        ":firebase-firestore:ktx"
+        ":firebase-firestore:ktx",
+        ":firebase-vertexai"
     ]
 }

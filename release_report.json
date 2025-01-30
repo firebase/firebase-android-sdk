@@ -11,10 +11,59 @@
             }
         ],
         "firebase-firestore/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "0fac9bf0b28099e8a1f525f6b75f12d2567de97c",
+                "prId": "6654",
+                "author": "Daymon",
+                "message": "Add missing changelog (#6654)\n\nAdds the changelog entry for #6652",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0fac9bf0b28099e8a1f525f6b75f12d2567de97c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6654"
+            },
+            {
+                "commitId": "31e0d061c4f8e86bac001baace7a998b945334a4",
+                "prId": "6631",
+                "author": "emilypgoogle",
+                "message": "Migrate VertexAI serialization to be localized (#6631)\n\nThere are some considerations to how this should be finalized. Current\r\nimplementation details that I've decided on which we can change:\r\n* Based on the example doc, all classes `Foo` have been renamed\r\n`InternalFoo`\r\n* All internal serialization classes, where relevant, are moved to inner\r\nclasses of their API counterparts\r\n* All classes only used as child fields for serialization classes have\r\nbeen moved to inner classes of those classes\r\n* All `toPublic` and `toInternal` methods on API and serialization\r\nclasses have been moved inside of those classes and `conversions.kt` has\r\nbeen mostly emptied.\r\n* A few serialization classes do not have API equivalents and are left\r\nin a `Types.kt` file\r\n\r\nPossible changes:\r\n* Change all `InternalFoo` classes to have the same name, referenced as\r\n`Foo.Internal` rather than `Foo.InternalFoo`. This will probably make\r\nthe codebase feel cleaner, but I'll wait for opinions on it\r\n* Move serialization only classes out of the internal serialization\r\nclasses, either to inner classes of the API classes or top level classes\r\nthemselves.\r\n* For classes that have serializers, rename serializers from\r\n`InternalFooSerializer` to `Serializer` for example\r\n`Foo.InternalFoo.Serializer` or `Foo.Internal.Serializer` instead of\r\n`Foo.InternalFoo.InternalFooSerializer` or\r\n`Foo.Internal.InternalFooSerializer`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/31e0d061c4f8e86bac001baace7a998b945334a4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6631"
+            },
+            {
+                "commitId": "f2d05d6710a902944fbb75a8e861c78740d7dc84",
+                "prId": "6651",
+                "author": "Rodrigo Lazo",
+                "message": "Update the vertex golden file version being pulled (#6651)\n\nWe've updated from version 3.* to 5.*. Test were added were necessary to\nmatch the coverage in the iOS repo.\n\nA few changes (v5.1 and v5.2) don't have tests covering the new files\nyet",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2d05d6710a902944fbb75a8e861c78740d7dc84",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6651"
+            },
+            {
+                "commitId": "65b23aaad4cac5aeb6df4845f21d07f748c5b022",
+                "prId": "6652",
+                "author": "Rodrigo Lazo",
+                "message": "Drop empty text parts when parsing the model's response (#6652)\n\nEmpty text parts go from a nuance when processed, to an exception when\nsend to the backend. To prevent this issue, we are dropping them when\nparsing the response from the server.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/65b23aaad4cac5aeb6df4845f21d07f748c5b022",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6652"
+            },
+            {
+                "commitId": "8567a384ac26bf940ee7a896e674ccf207f40948",
+                "prId": "6646",
+                "author": "Rodrigo Lazo",
+                "message": "Remove preview notice from vertexai readme (#6646)\n\nThe SDK was released as GA last year.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8567a384ac26bf940ee7a896e674ccf207f40948",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6646"
+            },
+            {
+                "commitId": "cf5fe2e8e7b12a53bba085a4ceda0d4c6fd87012",
+                "prId": "6637",
+                "author": "Rodrigo Lazo",
+                "message": "Update code formatting command in vertex's README (#6637)\n\nWe have been using the spotless plugin for a while already.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cf5fe2e8e7b12a53bba085a4ceda0d4c6fd87012",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6637"
+            }
         ]
     },
     "changedLibrariesWithNoChangelog": [
-        ":firebase-dataconnect",
-        ":firebase-vertexai"
+        ":firebase-dataconnect"
     ]
 }
