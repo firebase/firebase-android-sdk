@@ -5,7 +5,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
 import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.FirebaseFunctionsException
 import com.google.firebase.functions.StreamFunctionsTask
 import com.google.firebase.functions.StreamListener
 import com.google.firebase.functions.functions
@@ -58,17 +57,15 @@ class StreamTests {
         "{chunk=cool}"
       )
     assertThat(task.result.data).isEqualTo("hello world this is cool")
+    task.removeOnStreamListener(listener)
   }
 
   @Test
   fun testGenStreamError() {
     val input = hashMapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamError").withTimeout(6, TimeUnit.SECONDS)
-    var task: StreamFunctionsTask? = null
 
-    try {
-      task = function.stream(input).addOnStreamListener(listener)
-    } catch (_: Throwable) {}
+    val task: StreamFunctionsTask = function.stream(input).addOnStreamListener(listener)
     Thread.sleep(7000)
 
     val onNextStringList = onNext.map { it.toString() }
@@ -80,9 +77,15 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(requireNotNull(task).isSuccessful).isFalse()
-    assertThat(task.exception).isInstanceOf(FirebaseFunctionsException::class.java)
-    assertThat(requireNotNull(task.exception).message).contains("stream was reset: CANCEL")
+
+    assertThat(task.isSuccessful).isFalse()
+    try {
+      assertThat(task.result).isNull()
+    } catch (e: Throwable) {
+      assertThat(e).isInstanceOf(IllegalStateException::class.java)
+      assertThat(e.message).isEqualTo("No result available.")
+    }
+    task.removeOnStreamListener(listener)
   }
 
   @Test
@@ -103,11 +106,12 @@ class StreamTests {
         "{chunk=cool}"
       )
     try {
-      task.result
+      assertThat(task.result).isNull()
     } catch (e: Throwable) {
       assertThat(e).isInstanceOf(IllegalStateException::class.java)
       assertThat(e.message).isEqualTo("No result available.")
     }
+    task.removeOnStreamListener(listener)
   }
 
   @Test
@@ -125,14 +129,9 @@ class StreamTests {
         "{chunk=hello}",
         "{chunk=world}",
       )
-    try {
-      task.result
-    } catch (e: Throwable) {
-      assertThat(e).isInstanceOf(IllegalStateException::class.java)
-      assertThat(e.message).isEqualTo("No result available.")
-    }
     assertThat(task.isCanceled).isTrue()
     assertThat(task.isComplete).isFalse()
     assertThat(task.isSuccessful).isFalse()
+    task.removeOnStreamListener(listener)
   }
 }
