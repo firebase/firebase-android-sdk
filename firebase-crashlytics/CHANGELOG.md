@@ -1,6 +1,15 @@
 # Unreleased
+
+
+# 19.3.1
 * [feature] Added an overload for `recordException` that allows logging additional custom
   keys to the non fatal event [#3551]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.3.0
 * [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
