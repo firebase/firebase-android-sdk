@@ -1,9 +1,14 @@
 {
     "name": "m158",
     "libraries": [
-        ":firebase-dynamic-links",
-        ":firebase-dynamic-links:ktx",
-        ":firebase-firestore",
-        ":firebase-firestore:ktx"
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-dataconnect",
+        ":firebase-perf",
+        ":firebase-perf:ktx"
     ]
 }
