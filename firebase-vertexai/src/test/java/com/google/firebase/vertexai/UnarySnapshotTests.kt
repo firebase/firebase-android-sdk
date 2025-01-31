@@ -17,13 +17,13 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
-import com.google.firebase.vertexai.type.Modality
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
@@ -83,11 +83,11 @@ internal class UnarySnapshotTests {
           totalTokenCount shouldBe 1913
           candidatesTokenCount shouldBe 76
           promptTokensDetails?.forAtLeastOne {
-            it.modality shouldBe Modality.IMAGE
+            it.modality shouldBe ContentModality.IMAGE
             it.tokenCount shouldBe 1806
           }
           candidatesTokensDetails?.forAtLeastOne {
-            it.modality shouldBe Modality.TEXT
+            it.modality shouldBe ContentModality.TEXT
             it.tokenCount shouldBe 76
           }
         }
@@ -491,7 +491,7 @@ internal class UnarySnapshotTests {
         response.totalBillableCharacters shouldBe 117
         response.promptTokensDetails shouldNotBe null
         response.promptTokensDetails?.forAtLeastOne {
-          it.modality shouldBe Modality.IMAGE
+          it.modality shouldBe ContentModality.IMAGE
           it.tokenCount shouldBe 1806
         }
       }

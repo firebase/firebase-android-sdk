@@ -19,10 +19,13 @@ package com.google.firebase.vertexai.type
 import kotlinx.serialization.Serializable
 
 public class ModalityTokenCount
-private constructor(public val modality: Modality, public val tokenCount: Int) {
+private constructor(public val modality: ContentModality, public val tokenCount: Int) {
 
   @Serializable
-  internal data class Internal(val modality: Modality.Internal, val tokenCount: Int? = null) {
+  internal data class Internal(
+    val modality: ContentModality.Internal,
+    val tokenCount: Int? = null
+  ) {
     internal fun toPublic() = ModalityTokenCount(modality.toPublic(), tokenCount ?: 0)
   }
 }

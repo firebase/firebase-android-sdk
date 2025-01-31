@@ -21,7 +21,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-public class Modality private constructor(public val ordinal: Int) {
+public class ContentModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
@@ -36,31 +36,31 @@ public class Modality private constructor(public val ordinal: Int) {
 
     internal fun toPublic() =
       when (this) {
-        TEXT -> Modality.TEXT
-        IMAGE -> Modality.IMAGE
-        VIDEO -> Modality.VIDEO
-        AUDIO -> Modality.AUDIO
-        DOCUMENT -> Modality.DOCUMENT
-        else -> Modality.UNSPECIFIED
+        TEXT -> ContentModality.TEXT
+        IMAGE -> ContentModality.IMAGE
+        VIDEO -> ContentModality.VIDEO
+        AUDIO -> ContentModality.AUDIO
+        DOCUMENT -> ContentModality.DOCUMENT
+        else -> ContentModality.UNSPECIFIED
       }
   }
 
   public companion object {
-    @JvmField public val UNSPECIFIED: Modality = Modality(0)
+    @JvmField public val UNSPECIFIED: ContentModality = ContentModality(0)
 
     /** Plain text. */
-    @JvmField public val TEXT: Modality = Modality(1)
+    @JvmField public val TEXT: ContentModality = ContentModality(1)
 
     /** Image. */
-    @JvmField public val IMAGE: Modality = Modality(2)
+    @JvmField public val IMAGE: ContentModality = ContentModality(2)
 
     /** Video. */
-    @JvmField public val VIDEO: Modality = Modality(3)
+    @JvmField public val VIDEO: ContentModality = ContentModality(3)
 
     /** Audio. */
-    @JvmField public val AUDIO: Modality = Modality(4)
+    @JvmField public val AUDIO: ContentModality = ContentModality(4)
 
     /** Document, e.g. PDF. */
-    @JvmField public val DOCUMENT: Modality = Modality(5)
+    @JvmField public val DOCUMENT: ContentModality = ContentModality(5)
   }
 }
