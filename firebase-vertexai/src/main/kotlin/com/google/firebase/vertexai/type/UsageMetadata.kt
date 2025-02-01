@@ -36,7 +36,6 @@ public class UsageMetadata(
   public val candidatesTokenCount: Int?,
   public val totalTokenCount: Int,
   public val promptTokensDetails: List<ModalityTokenCount>?,
-  public val cacheTokensDetails: List<ModalityTokenCount>?,
   public val candidatesTokensDetails: List<ModalityTokenCount>?,
 ) {
 
@@ -46,7 +45,6 @@ public class UsageMetadata(
     val candidatesTokenCount: Int? = null,
     val totalTokenCount: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
-    val cacheTokensDetails: List<ModalityTokenCount.Internal>? = null,
     val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
   ) {
 
@@ -56,7 +54,6 @@ public class UsageMetadata(
         candidatesTokenCount ?: 0,
         totalTokenCount ?: 0,
         promptTokensDetails = promptTokensDetails?.map { it.toPublic() },
-        cacheTokensDetails = cacheTokensDetails?.map { it.toPublic() },
         candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() }
       )
   }

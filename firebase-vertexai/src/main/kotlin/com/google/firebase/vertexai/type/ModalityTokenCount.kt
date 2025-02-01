@@ -21,6 +21,10 @@ import kotlinx.serialization.Serializable
 public class ModalityTokenCount
 private constructor(public val modality: ContentModality, public val tokenCount: Int) {
 
+  public operator fun component1(): ContentModality = modality
+
+  public operator fun component2(): Int = tokenCount
+
   @Serializable
   internal data class Internal(
     val modality: ContentModality.Internal,
