@@ -45,10 +45,12 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.Keep;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -96,6 +98,7 @@ public class ConfigFetchHttpClient {
   private final String namespace;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
+  @Nullable private EmulatedServiceSettings emulatedServiceSettings;
 
   /** ISO-8601 UTC timestamp format. */
   private static final String ISO_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
@@ -127,6 +130,10 @@ public class ConfigFetchHttpClient {
   @VisibleForTesting
   public long getReadTimeoutInSeconds() {
     return readTimeoutInSeconds;
+  }
+
+  void setEmulatedServiceSettings(EmulatedServiceSettings emulatedServiceSettings) {
+    this.emulatedServiceSettings = emulatedServiceSettings;
   }
 
   /**
@@ -250,6 +257,17 @@ public class ConfigFetchHttpClient {
   }
 
   private String getFetchUrl(String projectNumber, String namespace) {
+    if (emulatedServiceSettings != null) {
+      return "http://"
+          + emulatedServiceSettings.getHost()
+          + ":"
+          + emulatedServiceSettings.getPort()
+          + "/v1/projects/"
+          + projectNumber
+          + "/namespaces/"
+          + namespace
+          + ":fetch";
+    }
     return String.format(FETCH_REGEX_URL, projectNumber, namespace);
   }
 
