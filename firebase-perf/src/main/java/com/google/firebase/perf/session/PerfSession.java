@@ -20,9 +20,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
+import com.google.firebase.sessions.SessionDetails;
+import com.google.firebase.sessions.api.SessionSubscriber;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -69,7 +73,9 @@ public class PerfSession implements Parcelable {
   /** Returns the sessionId of the object. */
   public String sessionId() {
     // TODO(b/394127311): Verify edge cases.
-    return Objects.requireNonNull(SessionManagerKt.Companion.getPerfSessionToAqs().get(internalSessionId)).getSessionId();
+    SessionSubscriber.SessionDetails sessionDetails = SessionManagerKt.Companion.getPerfSessionToAqs().get(internalSessionId);
+    AndroidLogger.getInstance().debug("AQS for " + this.internalSessionId + " is " + sessionDetails);
+    return Objects.requireNonNull(sessionDetails).getSessionId();
   }
 
   protected String getInternalSessionId() {
