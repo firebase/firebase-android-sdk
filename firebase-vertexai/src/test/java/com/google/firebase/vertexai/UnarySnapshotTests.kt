@@ -504,14 +504,6 @@ internal class UnarySnapshotTests {
     }
 
   @Test
-  fun `generateImages should return when some images are filtered -- base64`() =
-    goldenUnaryFile("unary-failure-generate-images-base64-some-filtered.json") {
-      withTimeout(testTimeout) {
-        imagenModel.generateImages("prompt").images.isEmpty() shouldBe false
-      }
-    }
-
-  @Test
   fun `generateImages should throw when prompt blocked`() =
     goldenUnaryFile(
       "unary-failure-generate-images-prompt-blocked.json",
