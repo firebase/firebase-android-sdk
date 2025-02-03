@@ -370,7 +370,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    // TODO(b/394127311): Defer this to SessionManagerKt
     this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(
