@@ -12,7 +12,7 @@ class SessionManagerKt(val dataCollectionEnabled: Boolean): SessionSubscriber {
         get() = SessionSubscriber.Name.PERFORMANCE
 
     override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
-        AndroidLogger.getInstance().debug("Session Changed: $sessionDetails")
+        AndroidLogger.getInstance().debug("AQS Session Changed: $sessionDetails")
         val currentInternalSessionId = SessionManager.getInstance().perfSession().internalSessionId
 
         // There can be situations where a new [PerfSession] was created, but an AQS wasn't

@@ -20,6 +20,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -150,6 +151,8 @@ public class SessionManager extends AppStateUpdateHandler {
     if (Objects.equals(perfSession.getInternalSessionId(), this.perfSession.getInternalSessionId())) {
       return;
     }
+
+    AndroidLogger.getInstance().debug("Perf Session Changed: " + perfSession);
 
     this.perfSession = perfSession;
 
