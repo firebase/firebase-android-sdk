@@ -22,8 +22,6 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.common.ContentBlockedException
 import com.google.firebase.vertexai.common.GenerateImageRequest
-import com.google.firebase.vertexai.common.ImagenParameters
-import com.google.firebase.vertexai.common.ImagenPromptInstance
 import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
@@ -106,8 +104,8 @@ internal constructor(
     config: ImagenGenerationConfig?,
   ): GenerateImageRequest {
     return GenerateImageRequest(
-      listOf(ImagenPromptInstance(prompt)),
-      ImagenParameters(
+      listOf(GenerateImageRequest.ImagenPrompt(prompt)),
+      GenerateImageRequest.ImagenParameters(
         sampleCount = config?.numberOfImages ?: 1,
         includeRaiReason = true,
         addWatermark = generationConfig?.addWatermark,
