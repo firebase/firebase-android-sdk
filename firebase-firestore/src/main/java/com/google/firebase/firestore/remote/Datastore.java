@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -34,6 +35,8 @@ import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
+import com.google.firestore.v1.ExecutePipelineRequest;
+import com.google.firestore.v1.ExecutePipelineResponse;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.RunAggregationQueryRequest;
 import com.google.firestore.v1.RunAggregationQueryResponse;
@@ -235,6 +238,47 @@ public class Datastore {
               }
               return result;
             });
+  }
+
+  public void executePipeline(
+      ExecutePipelineRequest request,
+      PipelineResultObserver observer
+  ) {
+    channel
+        .runStreamingResponseRpc(FirestoreGrpc.getExecutePipelineMethod(), request, new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
+
+          private SnapshotVersion executionTime = SnapshotVersion.NONE;
+
+          @Override
+          public void onMessage(ExecutePipelineResponse message) {
+            setExecutionTime(serializer.decodeVersion(message.getExecutionTime()));
+            message.getResultsList().forEach(document -> observer.onDocument(
+                document.getName() == null ? null : serializer.decodeKey(document.getName()),
+                document.getFieldsMap(),
+                serializer.decodeVersion(document.getUpdateTime())
+            ));
+          }
+
+          @Override
+          public void onClose(Status status) {
+            if (status.isOk()) {
+              observer.onComplete(executionTime);
+            } else {
+              FirebaseFirestoreException exception = exceptionFromStatus(status);
+              if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                channel.invalidateToken();
+              }
+              observer.onError(exception);
+            }
+          }
+
+          private void setExecutionTime(SnapshotVersion executionTime) {
+            if (executionTime.equals(SnapshotVersion.NONE)) {
+              return;
+            }
+            this.executionTime = executionTime;
+          }
+        });
   }
 
   /**

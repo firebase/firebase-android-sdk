@@ -881,4 +881,9 @@ public class FirebaseFirestore {
   static void setClientLanguage(@NonNull String languageToken) {
     FirestoreChannel.setClientLanguage(languageToken);
   }
+
+  @NonNull
+  public PipelineSource pipeline() {
+    return new PipelineSource(this);
+  }
 }
