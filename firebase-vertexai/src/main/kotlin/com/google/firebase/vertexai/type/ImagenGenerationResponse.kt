@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
  *
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
- *   the reason they were filtered out.
+ * the reason they were filtered out.
  */
 public class ImagenGenerationResponse<T>
 internal constructor(public val images: List<T>, public val filteredReason: String?) {

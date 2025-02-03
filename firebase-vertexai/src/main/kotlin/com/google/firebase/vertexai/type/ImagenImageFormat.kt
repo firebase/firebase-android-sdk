@@ -23,8 +23,8 @@ import kotlinx.serialization.Serializable
  *
  * @param mimeType A string (like `"image/jpeg"`) specifying the encoding MIME type of the image.
  * @param compressionQuality an int (1-100) representing the quality of the image; a lower number
- *   means the image is permitted to be lower quality to reduce size. This parameter is not relevant
- *   for every MIME type.
+ * means the image is permitted to be lower quality to reduce size. This parameter is not relevant
+ * for every MIME type.
  */
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
@@ -38,7 +38,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      * An [ImagenImageFormat] representing a JPEG image.
      *
      * @param compressionQuality an int (1-100) representing the quality of the image; a lower
-     *   number means the image is permitted to be lower quality to reduce size.
+     * number means the image is permitted to be lower quality to reduce size.
      */
     public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
       return ImagenImageFormat("image/jpeg", compressionQuality)

@@ -19,8 +19,8 @@ package com.google.firebase.vertexai
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.ContentBlockedException
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
+import com.google.firebase.vertexai.common.ContentBlockedException
 import com.google.firebase.vertexai.common.GenerateImageRequest
 import com.google.firebase.vertexai.common.ImagenParameters
 import com.google.firebase.vertexai.common.ImagenPromptInstance

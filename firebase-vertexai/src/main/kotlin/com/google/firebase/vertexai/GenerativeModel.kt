@@ -20,9 +20,9 @@ import android.graphics.Bitmap
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.common.CountTokensRequest
 import com.google.firebase.vertexai.common.GenerateContentRequest
-import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
