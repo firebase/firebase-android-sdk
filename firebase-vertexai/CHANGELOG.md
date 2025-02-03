@@ -1,5 +1,6 @@
 # Unreleased
 - [changed] Internal improvements to correctly handle empty model responses.
+- [feature] Added support for generating images with Imagen models.
 
 
 # 16.0.2
