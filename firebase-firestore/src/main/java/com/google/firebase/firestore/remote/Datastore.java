@@ -35,6 +35,7 @@ import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
+import com.google.firestore.v1.Document;
 import com.google.firestore.v1.ExecutePipelineRequest;
 import com.google.firestore.v1.ExecutePipelineResponse;
 import com.google.firestore.v1.FirestoreGrpc;
@@ -251,16 +252,13 @@ public class Datastore {
           @Override
           public void onMessage(ExecutePipelineResponse message) {
             setExecutionTime(serializer.decodeVersion(message.getExecutionTime()));
-            message
-                .getResultsList()
-                .forEach(
-                    document ->
-                        observer.onDocument(
-                            document.getName() == null
-                                ? null
-                                : serializer.decodeKey(document.getName()),
-                            document.getFieldsMap(),
-                            serializer.decodeVersion(document.getUpdateTime())));
+            for (Document document : message.getResultsList()) {
+              String documentName = document.getName();
+              observer.onDocument(
+                  documentName == null ? null : serializer.decodeKey(documentName),
+                  document.getFieldsMap(),
+                  serializer.decodeVersion(document.getUpdateTime()));
+            }
           }
 
           @Override
