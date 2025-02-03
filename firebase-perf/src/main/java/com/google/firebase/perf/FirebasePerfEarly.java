@@ -54,9 +54,7 @@ public class FirebasePerfEarly {
 
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.
-    // There is code in SessionManager that prevents us from resetting the session twice in case
-    // of app cold start.
-    AndroidLogger.getInstance().debug("Initializing Gauge Collection");
+    // The session is mapped to an AQS once AQS is initialized.
     SessionManager.getInstance().initializeGaugeCollection();
   }
 }
