@@ -39,7 +39,7 @@ public class SessionManager {
 
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
-  
+
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();

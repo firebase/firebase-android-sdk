@@ -79,7 +79,8 @@ public class PerfSession implements Parcelable {
     return Objects.requireNonNull(sessionDetails).getSessionId();
   }
 
-  protected String getInternalSessionId() {
+  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+  public String getInternalSessionId() {
     return internalSessionId;
   }
 
