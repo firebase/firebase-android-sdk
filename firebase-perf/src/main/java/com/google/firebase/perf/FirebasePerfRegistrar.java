@@ -30,8 +30,10 @@ import com.google.firebase.perf.injection.components.FirebasePerformanceComponen
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -50,7 +52,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
 
   static {
-    // Add Firebase Performance as a dependency of Sessions when this class is loaded into memory.
     FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.PERFORMANCE);
   }
 

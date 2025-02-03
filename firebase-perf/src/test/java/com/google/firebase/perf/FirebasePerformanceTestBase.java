@@ -23,10 +23,9 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.ImmutableBundle;
-import com.google.firebase.sessions.api.SessionSubscriber;
-import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -53,8 +52,6 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
-  protected static final String FAKE_AQS_SESSION_PREFIX = "AQS";
-
   protected Context appContext;
 
   @Before
@@ -75,13 +72,11 @@ public class FirebasePerformanceTestBase {
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
     FirebaseApp.initializeApp(appContext, options);
-    triggerAqsSession();
   }
 
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
-    FirebasePerformanceSessionSubscriber.Companion.getInstance().clearSessionForTest();
   }
 
   protected static void forceSessionsFeatureDisabled() {
@@ -98,16 +93,11 @@ public class FirebasePerformanceTestBase {
     forceVerboseSessionWithSamplingPercentage(0);
   }
 
-  protected static void triggerAqsSession() {
-    FirebasePerformanceSessionSubscriber.Companion.getInstance()
-        .onSessionChanged(
-            new SessionSubscriber.SessionDetails(FAKE_AQS_SESSION_PREFIX + UUID.randomUUID()));
-  }
-
   private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
-    triggerAqsSession();
+
+    SessionManager.getInstance().setPerfSession(PerfSession.createNewSession());
   }
 }
