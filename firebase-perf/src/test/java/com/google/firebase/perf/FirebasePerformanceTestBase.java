@@ -98,6 +98,6 @@ public class FirebasePerformanceTestBase {
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
-    SessionManager.getInstance().setPerfSession(PerfSession.createWithId("sessionId"));
+    SessionManager.getInstance().setPerfSession(PerfSession.createNewSession());
   }
 }

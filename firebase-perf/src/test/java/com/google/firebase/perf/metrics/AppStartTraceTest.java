@@ -96,7 +96,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @After
   public void reset() {
-    SessionManager.getInstance().updatePerfSession(PerfSession.createWithId("randomSessionId"));
+    SessionManager.getInstance().updatePerfSession(PerfSession.createNewSession());
   }
 
   /** Test activity sequentially goes through onCreate()->onStart()->onResume() state change. */

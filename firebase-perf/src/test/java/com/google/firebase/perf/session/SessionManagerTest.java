@@ -215,7 +215,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(mockGaugeManager).stopCollectingGauges();
   }
@@ -226,8 +226,8 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(
-            mockGaugeManager, PerfSession.createWithId("testSessionId"), mockAppStateMonitor);
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
+            mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(mockGaugeManager).stopCollectingGauges();
   }
@@ -240,7 +240,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     forceNonVerboseSession();
     SessionManager testSessionManager =
         new SessionManager(
-            mockGaugeManager, PerfSession.createWithId("testSessionId1"), mockAppStateMonitor);
+            mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
 
     verify(mockGaugeManager, times(0))
         .logGaugeMetadata(
@@ -249,12 +249,12 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     // Forcing a verbose session will enable Gauge collection
     forceVerboseSession();
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
     verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId2"), any());
 
     // Force a non-verbose session and verify if we are not logging metadata
     forceVerboseSession();
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId3"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
     verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId3"), any());
   }
 
@@ -303,7 +303,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
 
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(spySessionAwareObjectOne, never())
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));
@@ -322,8 +322,8 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.registerForSessionUpdates(new WeakReference<>(spySessionAwareObjectOne));
     testSessionManager.registerForSessionUpdates(new WeakReference<>(spySessionAwareObjectTwo));
 
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(spySessionAwareObjectOne, times(2))
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));
@@ -347,11 +347,11 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.registerForSessionUpdates(weakSpySessionAwareObjectOne);
     testSessionManager.registerForSessionUpdates(weakSpySessionAwareObjectTwo);
 
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     testSessionManager.unregisterForSessionUpdates(weakSpySessionAwareObjectOne);
     testSessionManager.unregisterForSessionUpdates(weakSpySessionAwareObjectTwo);
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
+    testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(spySessionAwareObjectOne, times(1))
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));

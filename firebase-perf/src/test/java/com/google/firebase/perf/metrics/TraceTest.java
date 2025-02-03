@@ -1016,7 +1016,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    PerfSession perfSession = PerfSession.createWithId("test_session_id");
+    PerfSession perfSession = PerfSession.createNewSession();
     SessionManager.getInstance().updatePerfSession(perfSession);
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds + 1);
 
@@ -1071,7 +1071,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     trace.start();
 
     assertThat(trace.getSessions()).hasSize(1);
-    trace.updateSession(PerfSession.createWithId("test_session_id"));
+    trace.updateSession(PerfSession.createNewSession());
     assertThat(trace.getSessions()).hasSize(2);
 
     trace.stop();

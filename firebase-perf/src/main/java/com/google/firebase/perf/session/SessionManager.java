@@ -27,8 +27,8 @@ import com.google.firebase.perf.v1.GaugeMetric;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -39,6 +39,8 @@ public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
+
+  private static final String COLD_START_GAUGE_NAME = "coldstart";
 
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
@@ -61,7 +63,7 @@ public class SessionManager extends AppStateUpdateHandler {
     // Generate a new sessionID for every cold start.
     this(
         GaugeManager.getInstance(),
-        PerfSession.createWithId(UUID.randomUUID().toString()),
+        PerfSession.createNewSession(),
         AppStateMonitor.getInstance());
   }
 
@@ -96,33 +98,33 @@ public class SessionManager extends AppStateUpdateHandler {
             });
   }
 
-  @Override
-  public void onUpdateAppState(ApplicationProcessState newAppState) {
-    super.onUpdateAppState(newAppState);
-
-    if (appStateMonitor.isColdStart()) {
-      // We want the Session to remain unchanged if this is a cold start of the app since we already
-      // update the PerfSession in FirebasePerfProvider#onAttachInfo().
-      return;
-    }
-
-    if (newAppState == ApplicationProcessState.FOREGROUND) {
-      // A new foregrounding of app will force a new sessionID generation.
-      PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
-      updatePerfSession(session);
-    } else {
-      // If the session is running for too long, generate a new session and collect gauges as
-      // necessary.
-      if (perfSession.isSessionRunningTooLong()) {
-        PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
-        updatePerfSession(session);
-      } else {
-        // For any other state change of the application, modify gauge collection state as
-        // necessary.
-        startOrStopCollectingGauges(newAppState);
-      }
-    }
-  }
+//  @Override
+//  public void onUpdateAppState(ApplicationProcessState newAppState) {
+//    super.onUpdateAppState(newAppState);
+//
+//    if (appStateMonitor.isColdStart()) {
+//      // We want the Session to remain unchanged if this is a cold start of the app since we already
+//      // update the PerfSession in FirebasePerfProvider#onAttachInfo().
+//      return;
+//    }
+//
+//    if (newAppState == ApplicationProcessState.FOREGROUND) {
+//      // A new foregrounding of app will force a new sessionID generation.
+//      PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+//      updatePerfSession(session);
+//    } else {
+//      // If the session is running for too long, generate a new session and collect gauges as
+//      // necessary.
+//      if (perfSession.isSessionRunningTooLong()) {
+//        PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+//        updatePerfSession(session);
+//      } else {
+//        // For any other state change of the application, modify gauge collection state as
+//        // necessary.
+//        startOrStopCollectingGauges(newAppState);
+//      }
+//    }
+//  }
 
   /**
    * Checks if the current {@link PerfSession} is expired/timed out. If so, stop collecting gauges.
@@ -145,7 +147,7 @@ public class SessionManager extends AppStateUpdateHandler {
    */
   public void updatePerfSession(PerfSession perfSession) {
     // Do not update the perf session if it is the exact same sessionId.
-    if (perfSession.sessionId() == this.perfSession.sessionId()) {
+    if (Objects.equals(perfSession.getInternalSessionId(), this.perfSession.getInternalSessionId())) {
       return;
     }
 
