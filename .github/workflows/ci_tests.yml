@@ -119,6 +119,7 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
         exclude:
           - module: :firebase-firestore
+          - module: :firebase-functions:ktx
 
     steps:
       - uses: actions/checkout@v4.1.1

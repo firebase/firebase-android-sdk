@@ -16,11 +16,11 @@
 
 package com.google.firebase.vertexai.common
 
-import com.google.firebase.vertexai.common.server.BlockReason
-import com.google.firebase.vertexai.common.server.FinishReason
-import com.google.firebase.vertexai.common.shared.HarmCategory
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.goldenStreamingFile
+import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.HarmCategory
+import com.google.firebase.vertexai.type.TextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -43,7 +43,7 @@ internal class StreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.first().candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        responseList.first().candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         responseList.first().candidates?.first()?.content?.parts?.isEmpty() shouldBe false
         responseList.first().candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
       }
@@ -58,7 +58,7 @@ internal class StreamingSnapshotTests {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
         responseList.forEach {
-          it.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+          it.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
           it.candidates?.first()?.content?.parts?.isEmpty() shouldBe false
           it.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
         }
@@ -75,7 +75,7 @@ internal class StreamingSnapshotTests {
         responseList.isEmpty() shouldBe false
         responseList.any {
           it.candidates?.any {
-            it.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } ?: false
+            it.safetyRatings?.any { it.category == HarmCategory.Internal.UNKNOWN } ?: false
           }
             ?: false
         } shouldBe true
@@ -91,7 +91,8 @@ internal class StreamingSnapshotTests {
         val responseList = responses.toList()
 
         responseList.isEmpty() shouldBe false
-        val part = responseList.first().candidates?.first()?.content?.parts?.first() as? TextPart
+        val part =
+          responseList.first().candidates?.first()?.content?.parts?.first() as? TextPart.Internal
         part.shouldNotBeNull()
         part.text shouldContain "\""
       }
@@ -104,7 +105,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<PromptBlockedException> { responses.collect() }
-        exception.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+        exception.response.promptFeedback?.blockReason shouldBe BlockReason.Internal.SAFETY
       }
     }
 
@@ -131,7 +132,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.SAFETY
+        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.SAFETY
       }
     }
 
@@ -170,7 +171,8 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.RECITATION
+        exception.response.candidates?.first()?.finishReason shouldBe
+          FinishReason.Internal.RECITATION
       }
     }
 

@@ -24,8 +24,6 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.CountTokensRequest
 import com.google.firebase.vertexai.common.GenerateContentRequest
 import com.google.firebase.vertexai.common.HeaderProvider
-import com.google.firebase.vertexai.internal.util.toInternal
-import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason

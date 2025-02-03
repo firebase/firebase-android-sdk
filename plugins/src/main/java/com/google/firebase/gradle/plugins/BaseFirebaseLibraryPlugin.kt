@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
 import com.google.firebase.gradle.plugins.ci.Coverage
+import com.google.firebase.gradle.plugins.services.GMavenService
 import java.io.File
 import java.nio.file.Paths
 import org.gradle.api.Plugin
@@ -52,6 +53,7 @@ import org.w3c.dom.Element
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
     with(library) {
+      project.gradle.sharedServices.registerIfAbsent<GMavenService, _>("gmaven")
       previewMode.convention("")
       publishJavadoc.convention(true)
       artifactId.convention(project.name)
