@@ -72,7 +72,6 @@ internal constructor(
    */
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
-      controller.generateImage(constructRequest(prompt, null, generationConfig)).toPublicInline()
       controller
         .generateImage(constructRequest(prompt, null, generationConfig))
         .validate()

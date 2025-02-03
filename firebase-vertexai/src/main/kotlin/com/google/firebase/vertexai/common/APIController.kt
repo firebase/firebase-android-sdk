@@ -60,12 +60,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 internal val JSON = Json {
   ignoreUnknownKeys = true
   prettyPrint = false
   isLenient = true
+  explicitNulls = false
 }
 
 /**
