@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
 import java.util.concurrent.Executor;
