@@ -225,8 +225,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     forceSessionsFeatureDisabled();
 
     SessionManager testSessionManager =
-        new SessionManager(
-            mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
+        new SessionManager(mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
     testSessionManager.updatePerfSession(PerfSession.createNewSession());
 
     verify(mockGaugeManager).stopCollectingGauges();
@@ -239,8 +238,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     // Start with a non verbose session
     forceNonVerboseSession();
     SessionManager testSessionManager =
-        new SessionManager(
-            mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
+        new SessionManager(mockGaugeManager, PerfSession.createNewSession(), mockAppStateMonitor);
 
     verify(mockGaugeManager, times(0))
         .logGaugeMetadata(

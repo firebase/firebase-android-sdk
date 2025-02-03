@@ -44,7 +44,6 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
