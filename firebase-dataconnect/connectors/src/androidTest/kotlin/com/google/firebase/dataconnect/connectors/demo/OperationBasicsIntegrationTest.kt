@@ -14,126 +14,88 @@
  * limitations under the License.
  */
 
+@file:Suppress("ReplaceCallWithBinaryOperator")
+
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import kotlinx.coroutines.test.*
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.next
 import org.junit.Test
 
 class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun ref_Variables_ShouldReturnAMutationRefWithTheCorrectProperties() {
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val ref = connector.getFooById.ref(variables)
 
-    assertThat(ref.dataConnect).isSameInstanceAs(connector.dataConnect)
-    assertThat(ref.variables).isSameInstanceAs(variables)
-    assertThat(ref.operationName).isEqualTo(GetFooByIdQuery.operationName)
-    assertThat(ref.dataDeserializer).isSameInstanceAs(GetFooByIdQuery.dataDeserializer)
-    assertThat(ref.variablesSerializer).isSameInstanceAs(GetFooByIdQuery.variablesSerializer)
+    assertSoftly {
+      withClue("dataConnect") { ref.dataConnect shouldBeSameInstanceAs connector.dataConnect }
+      withClue("variables") { ref.variables shouldBeSameInstanceAs variables }
+      withClue("operationName") { ref.operationName shouldBe GetFooByIdQuery.operationName }
+      withClue("dataDeserializer") {
+        ref.dataDeserializer shouldBeSameInstanceAs GetFooByIdQuery.dataDeserializer
+      }
+      withClue("variablesSerializer") {
+        ref.variablesSerializer shouldBeSameInstanceAs GetFooByIdQuery.variablesSerializer
+      }
+    }
   }
 
   @Test
   fun ref_Variables_ShouldReturnsADistinctButEqualObjectOnEachInvocation() {
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val ref1 = connector.getFooById.ref(variables)
     val ref2 = connector.getFooById.ref(variables)
     val ref3 = connector.getFooById.ref(variables)
 
-    assertThat(ref1).isNotSameInstanceAs(ref2)
-    assertThat(ref1).isNotSameInstanceAs(ref3)
-    assertThat(ref1).isEqualTo(ref2)
-    assertThat(ref1).isEqualTo(ref3)
+    assertSoftly {
+      withClue("ref1!==ref2") { ref1 shouldNotBeSameInstanceAs ref2 }
+      withClue("ref1!==ref3") { ref1 shouldNotBeSameInstanceAs ref3 }
+      withClue("ref1==ref2") { ref1 shouldBe ref2 }
+      withClue("ref1==ref3") { ref1 shouldBe ref3 }
+    }
   }
 
   @Test
   fun ref_Variables_AlwaysUsesTheExactSameSerializerAndDeserializerInstances() {
     // Note: This test is very important because the [QueryManager] uses object identity of the
     // variables serializer when fanning out results.
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val connector1 = demoConnectorFactory.newInstance()
     val connector2 = demoConnectorFactory.newInstance()
-    assertThat(connector1).isNotSameInstanceAs(connector2)
+    connector1 shouldNotBeSameInstanceAs connector2
 
     val ref1 = demoConnectorFactory.newInstance().getFooById.ref(variables)
     val ref2 = demoConnectorFactory.newInstance().getFooById.ref(variables)
 
-    assertThat(ref1.dataDeserializer).isSameInstanceAs(ref2.dataDeserializer)
-    assertThat(ref1.variablesSerializer).isSameInstanceAs(ref2.variablesSerializer)
+    assertSoftly {
+      withClue("dataDeserializer") {
+        ref1.dataDeserializer shouldBeSameInstanceAs ref2.dataDeserializer
+      }
+      withClue("variablesSerializer") {
+        ref1.variablesSerializer shouldBeSameInstanceAs ref2.variablesSerializer
+      }
+    }
   }
 
   @Test
   fun ref_String_ShouldReturnAMutationRefThatIsEqualToRefVariables() {
-    val variables = GetFooByIdQuery.Variables("42")
-    val refFromString = connector.getFooById.ref("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
+    val refFromString = connector.getFooById.ref(variables.id)
 
     val refFromVariables = connector.getFooById.ref(variables)
-    assertThat(refFromString).isEqualTo(refFromVariables)
+    refFromString shouldBe refFromVariables
   }
 
-  @Test
-  fun equals_ShouldReturnFalseWhenArgumentIsNull() {
-    assertThat(connector.getFooById.equals(null)).isFalse()
-  }
-
-  @Test
-  fun equals_ShouldReturnFalseWhenArgumentIsAnInstanceOfADifferentClass() {
-    assertThat(connector.getFooById.equals("foo")).isFalse()
-  }
-
-  @Test
-  fun equals_ShouldReturnFalseWhenInvokedOnADistinctObject() {
-    val instance1 = demoConnectorFactory.newInstance().getFooById
-    val instance2 = demoConnectorFactory.newInstance().getFooById
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-
-    assertThat(instance1.equals(instance2)).isFalse()
-  }
-
-  @Test
-  @Suppress("USELESS_IS_CHECK")
-  fun equals_ShouldReturnFalseWhenInvokedOnAnApparentlyEqualButDifferentImplementation() {
-    val instance = connector.getFooById
-    val instanceAlternateImpl = GetFooByIdQueryAlternateImpl(instance)
-    assertThat(instance is GetFooByIdQuery).isTrue()
-    assertThat(instanceAlternateImpl is GetFooByIdQuery).isTrue()
-
-    assertThat(instance.equals(instanceAlternateImpl)).isFalse()
-  }
-
-  @Test
-  fun hashCode_ShouldReturnSameValueOnEachInvocation() {
-    val hashCode1 = connector.getFooById.hashCode()
-    val hashCode2 = connector.getFooById.hashCode()
-
-    assertThat(hashCode1).isEqualTo(hashCode2)
-  }
-
-  @Test
-  fun hashCode_ShouldReturnDistinctValuesOnDistinctInstances() {
-    val hashCode1 = demoConnectorFactory.newInstance().getFooById.hashCode()
-    val hashCode2 = demoConnectorFactory.newInstance().getFooById.hashCode()
-
-    assertThat(hashCode1).isNotEqualTo(hashCode2)
-  }
-
-  @Test
-  fun toString_ShouldReturnAStringThatStartsWithClassName() {
-    val toStringResult = connector.getFooById.toString()
-
-    assertThat(toStringResult).startsWith("GetFooByIdQueryImpl(")
-    assertThat(toStringResult).endsWith(")")
-  }
-
-  @Test
-  fun toString_ShouldReturnAStringThatContainsTheToStringOfTheConnectorInstance() {
-    val toStringResult = connector.getFooById.toString()
-
-    assertThat(toStringResult).containsWithNonAdjacentText("connector=${connector}")
-  }
-
-  class GetFooByIdQueryAlternateImpl(delegate: GetFooByIdQuery) : GetFooByIdQuery by delegate
+  private fun Arb.Companion.getFooByIdVariables(
+    string: Arb<String> = alphanumericString(prefix = "getFooByIdVariables_")
+  ): Arb<GetFooByIdQuery.Variables> = arbitrary { GetFooByIdQuery.Variables(string.bind()) }
 }

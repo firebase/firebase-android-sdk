@@ -25,23 +25,21 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup("dataconnect")
+  libraryGroup = "dataconnect"
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = false
   previewMode = "beta"
   releaseNotes {
-    name.set("{{firebase_data_connect}}")
-    versionName.set("dataconnect")
+    name.set("{{data_connect_short}}")
+    versionName.set("data-connect")
     hasKTX.set(false)
   }
-
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect"
   compileSdk = compileSdkVersion
@@ -59,11 +57,14 @@ android {
 
   @Suppress("UnstableApiUsage")
   testOptions {
+    targetSdk = targetSdkVersion
     unitTests {
       isIncludeAndroidResources = true
       isReturnDefaultValues = true
     }
   }
+
+  lint { targetSdk = targetSdkVersion }
 
   packaging {
     resources {
@@ -74,37 +75,19 @@ android {
 }
 
 protobuf {
-  protoc {
-    artifact = "${libs.protoc.get()}"
-  }
+  protoc { artifact = "${libs.protoc.get()}" }
   plugins {
-    create("java") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpc") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpckt") {
-      artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar"
-    }
+    create("java") { artifact = "${libs.grpc.protoc.gen.java.get()}" }
+    create("grpc") { artifact = "${libs.grpc.protoc.gen.java.get()}" }
+    create("grpckt") { artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar" }
   }
   generateProtoTasks {
     all().forEach { task ->
-      task.builtins {
-        create("kotlin") {
-          option("lite")
-        }
-      }
+      task.builtins { create("kotlin") { option("lite") } }
       task.plugins {
-        create("java") {
-          option("lite")
-        }
-        create("grpc") {
-          option("lite")
-        }
-        create("grpckt") {
-          option("lite")
-        }
+        create("java") { option("lite") }
+        create("grpc") { option("lite") }
+        create("grpckt") { option("lite") }
       }
     }
   }
@@ -119,6 +102,7 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0")
 
   compileOnly(libs.javax.annotation.jsr250)
+  compileOnly(libs.kotlinx.datetime)
   implementation(libs.grpc.android)
   implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.okhttp)
@@ -136,11 +120,11 @@ dependencies {
   testImplementation(libs.kotest.property)
   testImplementation(libs.kotest.property.arbs)
   testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.kotlinx.datetime)
   testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
+  testImplementation(libs.testonly.three.ten.abp)
   testImplementation(libs.robolectric)
-  testImplementation(libs.truth)
-  testImplementation(libs.truth.liteproto.extension)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
@@ -155,17 +139,15 @@ dependencies {
   androidTestImplementation(libs.kotest.property)
   androidTestImplementation(libs.kotest.property.arbs)
   androidTestImplementation(libs.kotlin.coroutines.test)
+  androidTestImplementation(libs.kotlinx.datetime)
   androidTestImplementation(libs.mockk)
   androidTestImplementation(libs.mockk.android)
-  androidTestImplementation(libs.truth)
-  androidTestImplementation(libs.truth.liteproto.extension)
+  androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any

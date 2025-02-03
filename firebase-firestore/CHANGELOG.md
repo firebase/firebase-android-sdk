@@ -1,5 +1,16 @@
 # Unreleased
+* [fixed] Fixed a server and sdk mismatch in unicode string sorting. [#6615](//github.com/firebase/firebase-android-sdk/pull/6615)
 
+# 25.1.1
+* [changed] Update Firestore proto definitions. [#6369](//github.com/firebase/firebase-android-sdk/pull/6369)
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 25.1.0
 * [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)

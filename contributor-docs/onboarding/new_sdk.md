@@ -23,7 +23,7 @@ subdirectory with its respective build file(s).
 
 ```bash
 firebase-android-sdk
-├── buildSrc
+├── plugins
 ├── appcheck
 │   └── firebase-appcheck
 │   └── firebase-appcheck-playintegrity
@@ -45,7 +45,7 @@ Note that the build file name for any given SDK is not `build.gradle` or `build.
 but rather mirrors the name of the sdk, e.g.
 `firebase-common/firebase-common.gradle` or `firebase-common/firebase-common.gradle.kts`.
 
-All of the core Gradle build logic lives in `buildSrc` and is used by all
+All of the core Gradle build logic lives in `plugins` and is used by all
 SDKs.
 
 SDKs can be grouped together for convenience by placing them in a directory of
@@ -75,7 +75,6 @@ plugins {
 firebaseLibrary {
     // enable this only if you have tests in `androidTest`.
     testLab.enabled = true
-    publishSources = true
     publishJavadoc = true
 }
 

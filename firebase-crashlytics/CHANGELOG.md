@@ -1,5 +1,36 @@
 # Unreleased
 
+
+# 19.4.0
+* [feature] Added an overload for `recordException` that allows logging additional custom
+  keys to the non fatal event [#3551]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.3.0
+* [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
+* [fixed] Execute failure listener outside the main thread  [#6535]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.2.1
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 19.2.0
 * [fixed] Improved data consistency for rapid user actions.
 * [fixed] Fixed exception propagation in the case of no default uncaught exception handler.

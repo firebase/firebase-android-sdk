@@ -16,13 +16,17 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.withVariables
-import kotlinx.coroutines.test.*
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBase() {
@@ -36,15 +40,17 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val result = query.execute()
 
-    assertThat(result.ref).isSameInstanceAs(query)
-    assertThat(result.data.people).containsExactlyElementsIn(hardcodedPeople)
+    assertSoftly {
+      result.ref shouldBeSameInstanceAs query
+      result.data.people.shouldContainExactlyInAnyOrder(hardcodedPeople)
+    }
   }
 
   @Test
   fun nonEmptyMapWorksWithQuery() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     personSchema.createPerson(id = person1Id, name = "Person1Name", age = 42).execute()
     personSchema.createPerson(id = person2Id, name = "Person2Name", age = 43).execute()
     personSchema.createPerson(id = person3Id, name = "Person3Name", age = null).execute()
@@ -53,13 +59,13 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val result = query.execute()
 
-    assertThat(result.ref).isSameInstanceAs(query)
-    assertThat(result.data)
-      .isEqualTo(
+    assertSoftly {
+      result.ref shouldBeSameInstanceAs query
+      result.data shouldBe
         PersonSchema.GetPersonQuery.Data(
           person = PersonSchema.GetPersonQuery.Data.Person(name = "Person2Name", age = 43)
         )
-      )
+    }
   }
 
   @Test
@@ -70,39 +76,33 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val personId = mutationResult.data.person_insert.id
     val result = personSchema.getPerson(id = personId).execute()
-    assertThat(result.data)
-      .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
-        )
+    result.data shouldBe
+      PersonSchema.GetPersonQuery.Data(
+        PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
       )
   }
 
   @Test
   fun nonEmptyMapWorksWithMutation() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
 
     val mutation =
       personSchema
         .createPerson("", "", null)
         .withVariables(
-          variables =
-            DataConnectUntypedVariables(
-              "id" to personId,
-              "name" to "TestPersonName",
-              "age" to 42.0
-            ),
-          serializer = DataConnectUntypedVariables
+          DataConnectUntypedVariables(
+            "id" to personId,
+            "name" to "TestPersonName",
+            "age" to 42.0,
+          ),
         )
 
     mutation.execute()
 
     val result = personSchema.getPerson(id = personId).execute()
-    assertThat(result.data)
-      .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
-        )
+    result.data shouldBe
+      PersonSchema.GetPersonQuery.Data(
+        PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
       )
   }
 }

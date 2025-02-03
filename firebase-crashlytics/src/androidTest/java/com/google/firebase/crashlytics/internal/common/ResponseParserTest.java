@@ -14,10 +14,14 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import org.junit.Test;
 
 public class ResponseParserTest extends CrashlyticsTestCase {
   /** Tests the parse method, ResponsParse contains a comment with the logic. */
+  @Test
   public void testParse() {
     assertEquals(ResponseParser.ResponseActionDiscard, ResponseParser.parse(201));
     assertEquals(ResponseParser.ResponseActionDiscard, ResponseParser.parse(202));

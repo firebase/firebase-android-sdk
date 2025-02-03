@@ -17,8 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
-    publishSources = true
+    libraryGroup = "appcheck"
     releaseNotes {
         name.set("{{app_check}} Play integrity")
         versionName.set("appcheck-playintegrity")
@@ -48,7 +47,7 @@ android {
 }
 
 dependencies {
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath libs.autovalue.annotations
 
     api project(':appcheck:firebase-appcheck')
     api 'com.google.firebase:firebase-annotations:16.2.0'
@@ -56,17 +55,17 @@ dependencies {
     api 'com.google.firebase:firebase-common-ktx:21.0.0'
     api 'com.google.firebase:firebase-components:18.0.0'
 
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.android.play:integrity:1.2.0'
+    implementation libs.playservices.base
+    implementation libs.playservices.tasks
+    implementation libs.integrity
 
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:3.4.6'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 }

@@ -17,17 +17,20 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.server.Candidate
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.doBlocking
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.ServerException
+import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.content
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -44,7 +47,7 @@ internal class GenerativeModelTesting {
   private val TEST_CLIENT_ID = "test"
 
   @Test
-  fun addition() = doBlocking {
+  fun `system calling in request`() = doBlocking {
     val mockEngine = MockEngine {
       respond(
         generateContentResponseAsJsonString("text response"),
@@ -84,9 +87,51 @@ internal class GenerativeModelTesting {
     }
   }
 
+  @Test
+  fun `exception thrown when using invalid location`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        """<!DOCTYPE html>
+           <html lang=en>
+            <title>Error 404 (Not Found)!!1</title>
+        """
+          .trimIndent(),
+        HttpStatusCode.NotFound,
+        headersOf(HttpHeaders.ContentType, "text/html; charset=utf-8")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-1.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        null,
+      )
+
+    // Creating the
+    val generativeModel =
+      GenerativeModel(
+        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-1.5-flash",
+        controller = apiController
+      )
+
+    val exception =
+      shouldThrow<ServerException> {
+        withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+      }
+
+    // Let's not be too strict on the wording to avoid breaking the test unnecessarily.
+    exception.message shouldContain "location"
+  }
+
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
-      GenerateContentResponse(listOf(Candidate(Content(parts = listOf(TextPart(text))))))
+      GenerateContentResponse.Internal(
+        listOf(Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(text)))))
+      )
     )
   }
 }

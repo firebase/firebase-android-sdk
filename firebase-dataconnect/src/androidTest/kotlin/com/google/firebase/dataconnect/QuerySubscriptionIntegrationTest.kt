@@ -14,25 +14,44 @@
  * limitations under the License.
  */
 
-@file:OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@file:OptIn(FlowPreview::class, ExperimentalFirebaseDataConnect::class)
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.SuspendingFlag
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import com.google.firebase.dataconnect.testutil.skipItemsWhere
-import com.google.firebase.dataconnect.testutil.withDataDeserializer
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -51,252 +70,218 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     val querySubscription =
       schema.getPerson(id = "42").subscribe()
         as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-    assertThat(querySubscription.lastResult).isNull()
+    querySubscription.lastResult.shouldBeNull()
   }
 
   @Test
   fun lastResult_should_be_equal_to_the_last_collected_result() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val querySubscription =
       schema.getPerson(id = personId).subscribe()
         as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
 
-    querySubscription.flow.test {
-      val result1A = awaitItem()
-      assertWithMessage("result1A.name")
-        .that(result1A.result.getOrThrow().data.person?.name)
-        .isEqualTo("Name1")
-      assertWithMessage("lastResult1").that(querySubscription.lastResult).isEqualTo(result1A)
-    }
+    querySubscription.flow.test { withClue("result1A") { awaitPersonWithName("Name1") } }
 
     schema.updatePerson(id = personId, name = "Name2", age = 2).execute()
 
-    querySubscription.flow.test {
+    querySubscription.flow.distinctUntilChanged().test {
       val result1B = awaitItem()
-      assertWithMessage("result1B").that(result1B).isEqualTo(querySubscription.lastResult)
-      val result2 = awaitItem()
-      assertWithMessage("result2.name")
-        .that(result2.result.getOrThrow().data.person?.name)
-        .isEqualTo("Name2")
-      assertWithMessage("lastResult2").that(querySubscription.lastResult).isEqualTo(result2)
+      withClue("result1B") { result1B shouldBe querySubscription.lastResult }
+      withClue("result2") { awaitPersonWithName("Name2") }
     }
   }
 
   @Test
   fun reload_should_notify_collecting_flows() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val queryRef = schema.getPerson(id = personId)
     val querySubscription = schema.getPerson(id = personId).subscribe()
 
-    querySubscription.flow.test {
-      assertWithMessage("result1")
-        .that(awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("Name1")
+    querySubscription.flow.distinctUntilChanged().test {
+      withClue("result1") { awaitPersonWithName("Name1") }
 
       schema.updatePerson(id = personId, name = "Name2").execute()
       queryRef.execute()
 
-      assertWithMessage("result2")
-        .that(awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("Name2")
+      withClue("result2") { awaitPersonWithName("Name2") }
     }
   }
 
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName").execute()
     val querySubscription = schema.getPerson(id = personId).subscribe()
 
-    val result1 = querySubscription.flow.first()
-    assertWithMessage("result1")
-      .that(result1.result.getOrThrow().data.person?.name)
-      .isEqualTo("TestName")
+    withClue("result1") { querySubscription.flow.first().shouldHavePersonWithName("TestName") }
 
-    val result2 = querySubscription.flow.first()
-    assertWithMessage("result2")
-      .that(result2.result.getOrThrow().data.person?.name)
-      .isEqualTo("TestName")
+    schema.updatePerson(id = personId, name = "Name2").execute()
+
+    withClue("result2") { querySubscription.flow.first().shouldHavePersonWithName("TestName") }
   }
 
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result_from_other_subscribers() =
     runTest {
-      val personId = randomPersonId()
+      val personId = Arb.alphanumericString(prefix = "personId").next()
       schema.createPerson(id = personId, name = "TestName").execute()
       val querySubscription1 = schema.getPerson(id = personId).subscribe()
       val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
       // Start collecting on `querySubscription1` and wait for it to get its first event.
-      val subscription1ResultReceived = MutableStateFlow(false)
+      val subscription1ResultReceived = SuspendingFlag()
       backgroundScope.launch {
-        querySubscription1.flow.onEach { subscription1ResultReceived.value = true }.collect()
+        querySubscription1.flow.collect { subscription1ResultReceived.set() }
       }
-      subscription1ResultReceived.filter { it }.first()
+      subscription1ResultReceived.await()
 
       // With `querySubscription1` still alive, start collecting on `querySubscription2`. Expect it
       // to initially get the cached result from `querySubscription1`, followed by an updated
       // result.
       schema.updatePerson(id = personId, name = "NewTestName").execute()
-      querySubscription2.flow.test {
-        assertWithMessage("result1")
-          .that(awaitItem().result.getOrThrow().data.person?.name)
-          .isEqualTo("TestName")
-        assertWithMessage("result1")
-          .that(awaitItem().result.getOrThrow().data.person?.name)
-          .isEqualTo("NewTestName")
+
+      querySubscription2.flow.distinctUntilChanged().test {
+        withClue("result1") { awaitPersonWithName("TestName") }
+        withClue("result2") { awaitPersonWithName("NewTestName") }
       }
     }
 
   @Test
   fun slow_flows_do_not_block_fast_flows() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name0").execute()
     val queryRef = schema.getPerson(id = personId)
     val querySubscription = queryRef.subscribe()
 
     turbineScope {
-      val fastFlow = querySubscription.flow.testIn(backgroundScope)
-      assertWithMessage("fastFlow")
-        .that(fastFlow.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("Name0")
+      val fastFlow = querySubscription.flow.distinctUntilChanged().testIn(backgroundScope)
+      withClue("fastFlowResult1") { fastFlow.awaitPersonWithName("Name0") }
 
-      val slowFlowStarted = MutableStateFlow(false)
-      val slowFlowEnabled = MutableStateFlow(false)
+      val slowFlowStarted = SuspendingFlag()
+      val slowFlowEnabled = SuspendingFlag()
       val slowFlow =
         querySubscription.flow
+          .distinctUntilChanged()
           .onEach {
-            slowFlowStarted.value = true
-            slowFlowEnabled.awaitTrue()
+            slowFlowStarted.set()
+            slowFlowEnabled.await()
           }
           .testIn(backgroundScope)
-      slowFlowStarted.awaitTrue()
+      slowFlowStarted.await()
 
       repeat(3) {
         schema.updatePerson(id = personId, name = "NewName$it").execute()
         queryRef.execute()
       }
 
-      fastFlow.run {
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name0" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName0")
-          }
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "NewName0" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName1")
-          }
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "NewName1" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName2")
-          }
-      }
+      withClue("fastFlowResult2") { fastFlow.awaitPersonWithName("NewName0") }
+      withClue("fastFlowResult3") { fastFlow.awaitPersonWithName("NewName1") }
+      withClue("fastFlowResult4") { fastFlow.awaitPersonWithName("NewName2") }
 
-      slowFlowEnabled.value = true
-      slowFlow.run {
-        assertWithMessage("slowFlow")
-          .that(awaitItem().result.getOrThrow().data.person?.name)
-          .isEqualTo("Name0")
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name0" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName0")
-          }
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "NewName0" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName1")
-          }
-        skipItemsWhere { it.result.getOrThrow().data.person?.name == "NewName1" }
-          .let {
-            assertWithMessage("fastFlow")
-              .that(it.result.getOrThrow().data.person?.name)
-              .isEqualTo("NewName2")
-          }
-      }
+      slowFlowEnabled.set()
+      withClue("slowFlowResult1") { slowFlow.awaitPersonWithName("Name0") }
+      withClue("slowFlowResult2") { slowFlow.awaitPersonWithName("NewName0") }
+      withClue("slowFlowResult3") { slowFlow.awaitPersonWithName("NewName1") }
+      withClue("slowFlowResult4") { slowFlow.awaitPersonWithName("NewName2") }
     }
   }
 
   @Test
   fun reload_delivers_result_to_all_registered_flows_on_all_QuerySubscriptions() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     val querySubscription1 = schema.getPerson(id = personId).subscribe()
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
+      val flow1aStarted = SuspendingFlag()
       val flow1a =
-        querySubscription1.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription1.flow
+          .onEach { flow1aStarted.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      val flow1bStarted = SuspendingFlag()
       val flow1b =
-        querySubscription1.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription1.flow
+          .onEach { flow1bStarted.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      val flow2Started = SuspendingFlag()
       val flow2 =
-        querySubscription2.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription2.flow
+          .onEach { flow2Started.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      flow1aStarted.await()
+      flow1bStarted.await()
+      flow2Started.await()
 
       schema.updatePerson(id = personId, name = "NewName").execute()
-      schema.getPerson(id = personId).execute()
+      (querySubscription1 as QuerySubscriptionInternal<*, *>).reload()
 
-      assertWithMessage("flow1a")
-        .that(flow1a.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
-      assertWithMessage("flow1b")
-        .that(flow1b.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
-      assertWithMessage("flow2")
-        .that(flow2.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
+      withClue("flow1a-1") { flow1a.awaitPersonWithName("OriginalName") }
+      withClue("flow1a-2") { flow1a.awaitPersonWithName("NewName") }
+      withClue("flow1b-1") { flow1b.awaitPersonWithName("OriginalName") }
+      withClue("flow1b-2") { flow1b.awaitPersonWithName("NewName") }
+      withClue("flow2-1") { flow2.awaitPersonWithName("OriginalName") }
+      withClue("flow2-2") { flow2.awaitPersonWithName("NewName") }
     }
   }
 
   @Test
   fun queryref_execute_delivers_result_to_QuerySubscriptions() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     val querySubscription1 = schema.getPerson(id = personId).subscribe()
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
+      val flow1aStarted = SuspendingFlag()
       val flow1a =
-        querySubscription1.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription1.flow
+          .onEach { flow1aStarted.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      val flow1bStarted = SuspendingFlag()
       val flow1b =
-        querySubscription1.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription1.flow
+          .onEach { flow1bStarted.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      val flow2Started = SuspendingFlag()
       val flow2 =
-        querySubscription2.flow.filterNotPersonName("OriginalName").testIn(backgroundScope)
+        querySubscription2.flow
+          .onEach { flow2Started.set() }
+          .distinctUntilChanged()
+          .testIn(backgroundScope)
+      flow1aStarted.await()
+      flow1bStarted.await()
+      flow2Started.await()
 
       schema.updatePerson(id = personId, name = "NewName").execute()
       schema.getPerson(id = personId).execute()
 
-      assertWithMessage("flow1a")
-        .that(flow1a.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
-      assertWithMessage("flow1b")
-        .that(flow1b.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
-      assertWithMessage("flow2")
-        .that(flow2.awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("NewName")
+      withClue("flow1a-1") { flow1a.awaitPersonWithName("OriginalName") }
+      withClue("flow1a-2") { flow1a.awaitPersonWithName("NewName") }
+      withClue("flow1b-1") { flow1b.awaitPersonWithName("OriginalName") }
+      withClue("flow1b-2") { flow1b.awaitPersonWithName("NewName") }
+      withClue("flow2-1") { flow2.awaitPersonWithName("OriginalName") }
+      withClue("flow2-2") { flow2.awaitPersonWithName("NewName") }
     }
   }
 
   @Test
   fun reload_concurrent_invocations_get_conflated() =
     runTest(timeout = 60.seconds) {
-      val personId = randomPersonId()
+      val personId = Arb.alphanumericString(prefix = "personId").next()
       schema.createPerson(id = personId, name = "OriginalName").execute()
       val query = schema.getPerson(id = personId)
       val querySubscription = query.subscribe()
 
       querySubscription.flow.test {
-        assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("OriginalName")
+        awaitPersonWithName("OriginalName")
         schema.updatePerson(id = personId, name = "NewName").execute()
 
         buildList {
@@ -316,21 +301,21 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
             .flowOn(Dispatchers.Default)
             .catch { if (it !is TimeoutCancellationException) throw it }
             .toList()
-        assertWithMessage("results.size").that(results.size).isGreaterThan(0)
-        assertWithMessage("results.size").that(results.size).isLessThan(2000)
-        results.forEachIndexed { i, result ->
-          assertWithMessage("results[$i]")
-            .that(result.result.getOrThrow().data.person?.name)
-            .isEqualTo("NewName")
+
+        assertSoftly {
+          withClue("results.size") { results.size shouldBeInRange 1..5000 }
+          results.forEachIndexed { i, result ->
+            withClue("results[$i]") { result.shouldHavePersonWithName("NewName") }
+          }
         }
       }
     }
 
   @Test
   fun update_changes_variables_and_triggers_reload() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     schema.createPerson(id = person1Id, name = "Name1").execute()
     schema.createPerson(id = person2Id, name = "Name2").execute()
     schema.createPerson(id = person3Id, name = "Name3").execute()
@@ -338,31 +323,36 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     val querySubscription =
       query.subscribe() as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
 
-    querySubscription.flow.test {
-      Pair(assertWithMessage("result1"), awaitItem()).let { (assert, result) ->
-        assert.that(result.result.getOrThrow().ref).isSameInstanceAs(query)
-        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name1")
+    querySubscription.flow.distinctUntilChanged().test {
+      withClue("result1") {
+        val result1 = awaitPersonWithName("Name1")
+        result1.query shouldBeSameInstanceAs query
+        result1.result.getOrThrow().ref shouldBeSameInstanceAs query
       }
-      querySubscription.update(GetPersonQuery.Variables(person2Id))
-      Pair(assertWithMessage("result2"), awaitItem()).let { (assert, result) ->
-        assert
-          .that(result.result.getOrThrow().ref.variables)
-          .isEqualTo(GetPersonQuery.Variables(person2Id))
-        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name2")
+
+      val variables2 = GetPersonQuery.Variables(person2Id)
+      querySubscription.update(variables2)
+
+      withClue("result2") {
+        val result2 = awaitPersonWithName("Name2")
+        result2.query.variables shouldBe variables2
+        result2.result.getOrThrow().ref shouldBeSameInstanceAs result2.query
       }
-      querySubscription.update(GetPersonQuery.Variables(person3Id))
-      Pair(assertWithMessage("result3"), awaitItem()).let { (assert, result) ->
-        assert
-          .that(result.result.getOrThrow().ref.variables)
-          .isEqualTo(GetPersonQuery.Variables(person3Id))
-        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name3")
+
+      val variables3 = GetPersonQuery.Variables(person3Id)
+      querySubscription.update(variables3)
+
+      withClue("result3") {
+        val result3 = awaitPersonWithName("Name3")
+        result3.query.variables shouldBe variables3
+        result3.result.getOrThrow().ref shouldBeSameInstanceAs result3.query
       }
     }
   }
 
   @Test
   fun reload_updates_last_result_even_if_no_active_collectors() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val query = schema.getPerson(id = personId)
     val querySubscription =
@@ -370,72 +360,84 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
     querySubscription.reload()
 
-    Pair(assertWithMessage("lastResult"), querySubscription.lastResult).let { (assert, lastResult)
-      ->
-      assert.that(lastResult!!.result.getOrThrow().data.person?.name).isEqualTo("Name1")
+    withClue("lastResult") {
+      querySubscription.lastResult.shouldNotBeNull().shouldHavePersonWithName("Name1")
     }
 
     schema.updatePerson(id = personId, name = "Name2").execute()
-    querySubscription.flow.test {
+
+    querySubscription.flow.distinctUntilChanged().test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
-      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name1")
-      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name2")
+      awaitPersonWithName("Name1")
+      awaitPersonWithName("Name2")
     }
   }
 
   @Test
   fun update_updates_last_result_even_if_no_active_collectors() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
     schema.createPerson(id = person1Id, name = "Name1").execute()
     schema.createPerson(id = person2Id, name = "Name2").execute()
     val querySubscription =
       schema.getPerson(id = person1Id).subscribe()
         as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
 
-    querySubscription.update(GetPersonQuery.Variables(person2Id))
+    val newVariables = GetPersonQuery.Variables(person2Id)
+    querySubscription.update(newVariables)
 
-    Pair(assertWithMessage("lastResult"), querySubscription.lastResult).let { (assert, lastResult)
-      ->
-      assert.that(lastResult!!.result.getOrThrow().data.person?.name).isEqualTo("Name2")
+    withClue("lastResult") {
+      val lastResult = querySubscription.lastResult.shouldNotBeNull()
+      lastResult.shouldHavePersonWithName("Name2")
+      lastResult.query.variables shouldBe newVariables
+      lastResult.result.getOrThrow().ref shouldBeSameInstanceAs lastResult.query
     }
 
     schema.updatePerson(id = person2Id, name = "NewName2").execute()
-    querySubscription.flow.test {
+
+    querySubscription.flow.distinctUntilChanged().test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
-      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name2")
-      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("NewName2")
+      awaitPersonWithName("Name2")
+      awaitPersonWithName("NewName2")
     }
   }
 
   @Test
   fun collect_gets_an_update_on_error() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
-    val query = schema.getPerson(personId)
-    val noName2Query = query.withDataDeserializer(serializer<GetPersonDataNoName2>())
+
+    val noName2Query =
+      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
+    val querySubscription = noName2Query.subscribe()
 
     turbineScope {
-      val querySubscription = noName2Query.subscribe()
-      val flow = querySubscription.flow.testIn(backgroundScope)
-      assertThat(flow.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name1")
+      val flow = querySubscription.flow.distinctUntilChanged().testIn(backgroundScope)
+      withClue("result1") { flow.awaitPersonWithName("Name1") }
 
       schema.updatePerson(id = personId, name = "Name2").execute()
-      val result2 = runCatching { noName2Query.execute() }
-      assertWithMessage("result2.isSuccess").that(result2.isSuccess).isFalse()
-      assertThat(flow.awaitItem().result.exceptionOrNull()).isNotNull()
+      val execute2Result = runCatching { noName2Query.execute() }
+      withClue("execute2Result") {
+        withClue("execute2Result.getOrNull()") { execute2Result.getOrNull().shouldBeNull() }
+        withClue("execute2Result.isFailure") { execute2Result.isFailure shouldBe true }
+      }
+      withClue("result2") {
+        val result2 = flow.awaitItem().result
+        withClue("result2.getOrNull()") { result2.getOrNull().shouldBeNull() }
+        withClue("result2.isFailure") { result2.isFailure shouldBe true }
+      }
 
       schema.updatePerson(id = personId, name = "Name3").execute()
       noName2Query.execute()
-      assertThat(flow.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name3")
+      withClue("result3") { flow.awaitPersonWithName("Name3") }
     }
   }
 
   @Test
   fun collect_gets_notified_of_per_data_deserializer_successes() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name0").execute()
 
     val noName1Query =
@@ -444,41 +446,38 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
-      val noName1Flow = noName1Query.subscribe().flow.testIn(backgroundScope)
-      val noName2Flow = noName2Query.subscribe().flow.testIn(backgroundScope)
+      val noName1Flow = noName1Query.subscribe().flow.distinctUntilChanged().testIn(backgroundScope)
+      val noName2Flow = noName2Query.subscribe().flow.distinctUntilChanged().testIn(backgroundScope)
+      withClue("noName1Flow-0") { noName1Flow.awaitPersonWithName("Name0") }
+      withClue("noName2Flow-0") { noName2Flow.awaitPersonWithName("Name0") }
 
       schema.updatePerson(id = personId, name = "Name1").execute()
       schema.getPerson(personId).execute()
-      noName1Flow
-        .skipItemsWhere { it.result.getOrNull()?.data?.person?.name == "Name0" }
-        .let { assertThat(it.result.exceptionOrNull()).isNotNull() }
-      noName2Flow
-        .skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name0" }
-        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name1") }
+
+      withClue("noName1Flow-1") {
+        noName1Flow.awaitItem().result.exceptionOrNull().shouldNotBeNull()
+      }
+      withClue("noName2Flow-1") { noName2Flow.awaitPersonWithName("Name1") }
 
       schema.updatePerson(id = personId, name = "Name2").execute()
       schema.getPerson(personId).execute()
-      noName1Flow
-        .skipItemsWhere { it.result.isFailure }
-        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name2") }
-      noName2Flow
-        .skipItemsWhere { it.result.getOrNull()?.data?.person?.name == "Name1" }
-        .let { assertThat(it.result.exceptionOrNull()).isNotNull() }
+
+      withClue("noName1Flow-2") { noName1Flow.awaitPersonWithName("Name2") }
+      withClue("noName2Flow-2") {
+        noName2Flow.awaitItem().result.exceptionOrNull().shouldNotBeNull()
+      }
 
       schema.updatePerson(id = personId, name = "Name3").execute()
       schema.getPerson(personId).execute()
-      noName1Flow
-        .skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name2" }
-        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name3") }
-      noName2Flow
-        .skipItemsWhere { it.result.isFailure }
-        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name3") }
+
+      withClue("noName1Flow-3") { noName1Flow.awaitPersonWithName("Name3") }
+      withClue("noName2Flow-3") { noName2Flow.awaitPersonWithName("Name3") }
     }
   }
 
   @Test
   fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
 
     val noName1Query =
@@ -490,41 +489,28 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
     schema.updatePerson(id = personId, name = "Name1").execute()
 
-    noName1Query.subscribe().flow.test {
-      assertWithMessage("cached result")
-        .that(awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("OriginalName")
-
-      skipItemsWhere { it.result.getOrNull()?.data?.person?.name == "OriginalName" }
-        .let { assertWithMessage("error result").that(it.result.exceptionOrNull()).isNotNull() }
+    noName1Query.subscribe().flow.distinctUntilChanged().test {
+      withClue("result1") { awaitPersonWithName("OriginalName") }
+      withClue("result2") { awaitItem().result.exceptionOrNull().shouldNotBeNull() }
 
       schema.updatePerson(id = personId, name = "UltimateName").execute()
       schema.getPerson(personId).execute()
 
-      skipItemsWhere { it.result.isFailure }
-        .let {
-          assertWithMessage("ultimate result")
-            .that(it.result.getOrThrow().data.person?.name)
-            .isEqualTo("UltimateName")
-        }
+      withClue("result3") { awaitPersonWithName("UltimateName") }
     }
   }
 
   @Test
   fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     keepCacheAlive(schema.getPerson(personId).withDataDeserializer(DataConnectUntypedData))
 
     schema.updatePerson(id = personId, name = "UltimateName").execute()
 
-    schema.getPerson(personId).subscribe().flow.test {
-      assertWithMessage("result1")
-        .that(awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("OriginalName")
-      assertWithMessage("result2")
-        .that(awaitItem().result.getOrThrow().data.person?.name)
-        .isEqualTo("UltimateName")
+    schema.getPerson(personId).subscribe().flow.distinctUntilChanged().test {
+      awaitPersonWithName("OriginalName")
+      awaitPersonWithName("UltimateName")
     }
   }
 
@@ -584,18 +570,73 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
    * the cache for the query with the given variables never gets garbage collected.
    */
   private suspend fun TestScope.keepCacheAlive(query: QueryRef<*, *>) {
-    val cachePrimed = MutableStateFlow(false)
-    backgroundScope.launch { query.subscribe().flow.onEach { cachePrimed.value = true }.collect() }
-    cachePrimed.awaitTrue()
+    val cachePrimed = SuspendingFlag()
+    backgroundScope.launch { query.subscribe().flow.onEach { cachePrimed.set() }.collect() }
+    cachePrimed.await()
   }
 
   private companion object {
-    fun Flow<QuerySubscriptionResult<GetPersonQuery.Data, *>>.filterNotPersonName(
-      nameToFilterOut: String
-    ) = filter { it.result.map { it.data.person?.name != nameToFilterOut }.getOrDefault(true) }
+    @JvmName("awaitPersonWithNameGetPersonQueryData")
+    suspend fun ReceiveTurbine<
+      QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables>
+    >
+      .awaitPersonWithName(
+      name: String
+    ): QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables> {
+      val item = awaitItem()
+      item.shouldHavePersonWithName(name)
+      return item
+    }
 
-    suspend fun MutableStateFlow<Boolean>.awaitTrue() {
-      filter { it }.first()
+    @JvmName("shouldHavePersonWithNameGetPersonQueryData")
+    fun QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables>
+      .shouldHavePersonWithName(name: String) {
+      withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
+      val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
+      val person = withClue("data.person") { data.person.shouldNotBeNull() }
+      withClue("person.name") { person.name shouldBe name }
+    }
+
+    @JvmName("awaitPersonWithNameGetPersonDataNoName1")
+    suspend fun ReceiveTurbine<
+      QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables>
+    >
+      .awaitPersonWithName(
+      name: String
+    ): QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables> {
+      val item = awaitItem()
+      item.shouldHavePersonWithName(name)
+      return item
+    }
+
+    @JvmName("shouldHavePersonWithNameGetPersonDataNoName1")
+    fun QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables>
+      .shouldHavePersonWithName(name: String) {
+      withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
+      val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
+      val person = withClue("data.person") { data.person.shouldNotBeNull() }
+      withClue("person.name") { person.name shouldBe name }
+    }
+
+    @JvmName("awaitPersonWithNameGetPersonDataNoName2")
+    suspend fun ReceiveTurbine<
+      QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables>
+    >
+      .awaitPersonWithName(
+      name: String
+    ): QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables> {
+      val item = awaitItem()
+      item.shouldHavePersonWithName(name)
+      return item
+    }
+
+    @JvmName("shouldHavePersonWithNameGetPersonDataNoName2")
+    fun QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables>
+      .shouldHavePersonWithName(name: String) {
+      withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
+      val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
+      val person = withClue("data.person") { data.person.shouldNotBeNull() }
+      withClue("person.name") { person.name shouldBe name }
     }
   }
 }

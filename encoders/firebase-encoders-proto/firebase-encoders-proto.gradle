@@ -18,7 +18,6 @@ plugins {
 }
 
 firebaseLibrary {
-    publishSources = true
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
@@ -32,7 +31,7 @@ java {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
 }
 
@@ -47,8 +46,8 @@ dependencies {
     testAnnotationProcessor project(':encoders:firebase-encoders-processor')
 
     testImplementation 'com.google.guava:guava:31.0-jre'
-    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.protobuf.java.util
+    testImplementation libs.truth
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'junit:junit:4.13.1'
 }

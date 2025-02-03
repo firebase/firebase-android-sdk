@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.type.Schema
 import com.google.firebase.vertexai.type.StringFormat
 import io.kotest.assertions.json.shouldEqualJson
@@ -69,8 +68,8 @@ internal class SchemaTests {
               "coordinates": {
                 "type": "OBJECT",
                 "properties": {
-                  "latitude": {"type": "NUMBER", "format": "double"},
-                  "longitude": {"type": "NUMBER","format": "double"}
+                  "latitude": {"type": "NUMBER"},
+                  "longitude": {"type": "NUMBER"}
                 },
                 "required": ["latitude","longitude"]
               },
@@ -82,7 +81,7 @@ internal class SchemaTests {
                 },
                 "required": ["latitudinal","longitudinal"]
               },
-              "elevation": {"type": "NUMBER","format": "double"},
+              "elevation": {"type": "NUMBER"},
               "isCapital": {"type": "BOOLEAN"},
               "foundingDate": {"type": "STRING","format": "date","nullable": true}
             },
@@ -177,8 +176,8 @@ internal class SchemaTests {
                   "description": "coordinates",
                   "nullable": true,
                   "properties": {
-                    "latitude": {"type": "NUMBER", "description": "latitude", "format": "double"},
-                    "longitude": {"type": "NUMBER", "description": "longitude", "format": "double"}
+                    "latitude": {"type": "NUMBER", "description": "latitude"},
+                    "longitude": {"type": "NUMBER", "description": "longitude"}
                   },
                   "required": ["latitude","longitude"]
                 },

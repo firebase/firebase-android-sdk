@@ -23,12 +23,10 @@ package com.google.firebase.functions {
   }
 
   public final class FirebaseFunctionsException extends com.google.firebase.FirebaseException {
-    method @Nullable public static com.google.firebase.functions.FirebaseFunctionsException fromResponse(@NonNull com.google.firebase.functions.FirebaseFunctionsException.Code code, @Nullable String body, @NonNull com.google.firebase.functions.Serializer serializer);
     method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code getCode();
     method @Nullable public Object getDetails();
     property @NonNull public final com.google.firebase.functions.FirebaseFunctionsException.Code code;
     property @Nullable public final Object details;
-    field @NonNull public static final com.google.firebase.functions.FirebaseFunctionsException.Companion Companion;
   }
 
   public enum FirebaseFunctionsException.Code {
@@ -61,10 +59,6 @@ package com.google.firebase.functions {
     method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code fromValue(int value);
   }
 
-  public static final class FirebaseFunctionsException.Companion {
-    method @Nullable public com.google.firebase.functions.FirebaseFunctionsException fromResponse(@NonNull com.google.firebase.functions.FirebaseFunctionsException.Code code, @Nullable String body, @NonNull com.google.firebase.functions.Serializer serializer);
-  }
-
   public final class FunctionsKt {
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.Firebase, @NonNull String regionOrCustomDomain);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
@@ -72,20 +66,6 @@ package com.google.firebase.functions {
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getFunctions(@NonNull com.google.firebase.Firebase);
     method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
     method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull java.net.URL url, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-  }
-
-  public final class HttpsCallOptions {
-    ctor public HttpsCallOptions(@NonNull com.google.firebase.functions.HttpsCallableOptions publicCallableOptions);
-    ctor public HttpsCallOptions();
-    method @NonNull public okhttp3.OkHttpClient apply(@NonNull okhttp3.OkHttpClient client);
-    method public boolean getLimitedUseAppCheckTokens();
-    method public long getTimeout();
-    method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
-    field @NonNull public static final com.google.firebase.functions.HttpsCallOptions.Companion Companion;
-    field public final boolean limitedUseAppCheckTokens;
-  }
-
-  public static final class HttpsCallOptions.Companion {
   }
 
   public final class HttpsCallableOptions {
@@ -104,28 +84,15 @@ package com.google.firebase.functions {
   public final class HttpsCallableReference {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@Nullable Object data);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
-    method @NonNull public com.google.firebase.functions.HttpsCallOptions getOptions();
     method public long getTimeout();
     method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
-    property @NonNull public final com.google.firebase.functions.HttpsCallOptions options;
     property public final long timeout;
   }
 
   public final class HttpsCallableResult {
     method @Nullable public Object getData();
-  }
-
-  public final class Serializer {
-    ctor public Serializer();
-    method @Nullable public Object decode(@NonNull Object obj);
-    method @NonNull public Object encode(@Nullable Object obj);
-    field @NonNull public static final com.google.firebase.functions.Serializer.Companion Companion;
-    field @NonNull @VisibleForTesting public static final String LONG_TYPE = "type.googleapis.com/google.protobuf.Int64Value";
-    field @NonNull @VisibleForTesting public static final String UNSIGNED_LONG_TYPE = "type.googleapis.com/google.protobuf.UInt64Value";
-  }
-
-  public static final class Serializer.Companion {
+    field @Nullable public final Object data;
   }
 
 }

@@ -2,7 +2,7 @@
 # *another* workflow on the Firebase C++ SDK, which will check for the Android
 # version update and create a PR updating its dependencies if any version
 # numbers changed.
-name: update-cpp-sdk-on-release
+name: Update C++ SDKs on release
 on:
   push:
     branches:
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3
         with:
           python-version: 3.7
 

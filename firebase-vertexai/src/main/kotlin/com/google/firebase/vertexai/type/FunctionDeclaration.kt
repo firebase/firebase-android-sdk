@@ -16,8 +16,17 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
- * A declared function that a model can be given access to in order to gain info or complete tasks.
+ * Defines a function that the model can use as a tool.
+ *
+ * When generating responses, the model might need external information or require the application
+ * to perform an action. `FunctionDeclaration` provides the necessary information for the model to
+ * create a [FunctionCallPart], which instructs the client to execute the corresponding function.
+ * The client then sends the result back to the model as a [FunctionResponsePart].
+ *
+ * For example
  *
  * ```
  * val getExchangeRate = FunctionDeclaration(
@@ -30,10 +39,17 @@ package com.google.firebase.vertexai.type
  * )
  * ```
  *
- * @param name The name of the function call, this should be clear and descriptive for the model.
- * @param description A description of what the function does and its output.
- * @param parameters A list of parameters that the function accepts.
- * @param optionalParameters A list of parameters that can be omitted.
+ * See the
+ * [Use the Gemini API for function calling](https://firebase.google.com/docs/vertex-ai/function-calling?platform=android)
+ * guide for more information on function calling.
+ *
+ * @param name The name of the function.
+ * @param description The description of what the function does and its output. To improve the
+ * effectiveness of the model, the description should be clear and detailed.
+ * @param parameters The map of parameters names to their [Schema] the function accepts as
+ * arguments.
+ * @param optionalParameters The list of parameter names that the model can omit when invoking this
+ * function.
  * @see Schema
  */
 public class FunctionDeclaration(
@@ -44,4 +60,13 @@ public class FunctionDeclaration(
 ) {
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
+
+  internal fun toInternal() = Internal(name, "", schema.toInternal())
+
+  @Serializable
+  internal data class Internal(
+    val name: String,
+    val description: String,
+    val parameters: Schema.Internal
+  )
 }

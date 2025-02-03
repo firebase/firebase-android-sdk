@@ -185,6 +185,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           }
           connectors.set(dataConnectProviders.connectors)
           buildDirectory.set(baseBuildDirectory.map { it.dir("generateCode") })
+          ktfmtJarFile.set(dataConnectProviders.ktfmtJarFile)
         }
 
       variant.sources.java!!.addGeneratedSourceDirectory(

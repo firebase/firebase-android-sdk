@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -74,11 +75,17 @@ public class CrashlyticsRemoteConfigListenerTest {
   @Captor private ArgumentCaptor<ArrayList<RolloutAssignment>> captor;
 
   private CrashlyticsRemoteConfigListener listener;
+  private AutoCloseable mocks;
 
   @Before
   public void setup() throws Exception {
-    MockitoAnnotations.openMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     listener = new CrashlyticsRemoteConfigListener(userMetadata);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test

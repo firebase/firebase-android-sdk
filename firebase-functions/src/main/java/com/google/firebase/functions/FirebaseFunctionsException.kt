@@ -21,16 +21,16 @@ import org.json.JSONObject
 // TODO: This is a copy of FirebaseFirestoreException.
 // We should investigate whether we can at least share the Code enum.
 /** The class for all Exceptions thrown by FirebaseFunctions. */
-class FirebaseFunctionsException : FirebaseException {
+public class FirebaseFunctionsException : FirebaseException {
   /**
    * The set of error status codes that can be returned from a Callable HTTPS tigger. These are the
    * canonical error codes for Google APIs, as documented here:
    * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto#L26
    */
-  enum class Code(private val value: Int) {
+  public enum class Code(@Suppress("unused") private val value: Int) {
     /**
-     * The operation completed successfully. FirebaseFunctionsException will never have a status of
-     * OK.
+     * The operation completed successfully. `FirebaseFunctionsException` will never have a status
+     * of `OK`.
      */
     OK(0),
 
@@ -41,9 +41,9 @@ class FirebaseFunctionsException : FirebaseException {
     UNKNOWN(2),
 
     /**
-     * Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
-     * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the
-     * system (e.g., an invalid field name).
+     * Client specified an invalid argument. Note that this differs from `FAILED_PRECONDITION`.
+     * `INVALID_ARGUMENT` indicates arguments that are problematic regardless of the state of the
+     * system (For example, an invalid field name).
      */
     INVALID_ARGUMENT(3),
 
@@ -105,7 +105,7 @@ class FirebaseFunctionsException : FirebaseException {
     /** The request does not have valid authentication credentials for the operation. */
     UNAUTHENTICATED(16);
 
-    companion object {
+    public companion object {
       // Create the canonical list of Status instances indexed by their code values.
       private val STATUS_LIST = buildStatusList()
       private fun buildStatusList(): SparseArray<Code> {
@@ -121,20 +121,20 @@ class FirebaseFunctionsException : FirebaseException {
       }
 
       @JvmStatic
-      fun fromValue(value: Int): Code {
+      public fun fromValue(value: Int): Code {
         return STATUS_LIST[value, UNKNOWN]
       }
 
       /**
-       * Takes an HTTP status code and returns the corresponding FUNErrorCode error code. This is
-       * the standard HTTP status code -> error mapping defined in:
+       * Takes an HTTP status code and returns the corresponding [Code] error code. This is the
+       * standard HTTP status code -> error mapping defined in:
        * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
        *
        * @param status An HTTP status code.
-       * @return The corresponding Code, or Code.UNKNOWN if none.
+       * @return The corresponding `Code`, or `Code.UNKNOWN` if none.
        */
       @JvmStatic
-      fun fromHttpStatus(status: Int): Code {
+      public fun fromHttpStatus(status: Int): Code {
         when (status) {
           200 -> return OK
           400 -> return INVALID_ARGUMENT
@@ -157,16 +157,16 @@ class FirebaseFunctionsException : FirebaseException {
   /**
    * Gets the error code for the operation that failed.
    *
-   * @return the code for the FirebaseFunctionsException
+   * @return the code for the `FirebaseFunctionsException`
    */
-  val code: Code
+  public val code: Code
 
   /**
    * Gets the details object, if one was included in the error response.
    *
    * @return the object included in the "details" field of the response.
    */
-  val details: Any?
+  public val details: Any?
 
   internal constructor(message: String, code: Code, details: Any?) : super(message) {
     this.code = code
@@ -183,7 +183,7 @@ class FirebaseFunctionsException : FirebaseException {
     this.details = details
   }
 
-  companion object {
+  internal companion object {
     /**
      * Takes an HTTP response and returns the corresponding Exception if any.
      *
@@ -193,27 +193,27 @@ class FirebaseFunctionsException : FirebaseException {
      * @return The corresponding Exception, or null if none.
      */
     @JvmStatic
-    fun fromResponse(
+    internal fun fromResponse(
       code: Code,
       body: String?,
       serializer: Serializer
     ): FirebaseFunctionsException? {
       // Start with reasonable defaults from the status code.
-      var code = code
-      var description = code.name
+      var actualCode = code
+      var description = actualCode.name
       var details: Any? = null
 
       // Then look through the body for explicit details.
       try {
-        val json = JSONObject(body)
+        val json = JSONObject(body ?: "")
         val error = json.getJSONObject("error")
         if (error.opt("status") is String) {
-          code = Code.valueOf(error.getString("status"))
+          actualCode = Code.valueOf(error.getString("status"))
           // TODO: Add better default descriptions for error enums.
           // The default description needs to be updated for the new code.
-          description = code.name
+          description = actualCode.name
         }
-        if (error.opt("message") is String && !error.getString("message").isEmpty()) {
+        if (error.opt("message") is String && error.getString("message").isNotEmpty()) {
           description = error.getString("message")
         }
         details = error.opt("details")
@@ -222,16 +222,16 @@ class FirebaseFunctionsException : FirebaseException {
         }
       } catch (iae: IllegalArgumentException) {
         // This most likely means the status string was invalid, so consider this malformed.
-        code = Code.INTERNAL
-        description = code.name
+        actualCode = Code.INTERNAL
+        description = actualCode.name
       } catch (ioe: JSONException) {
         // If we couldn't parse explicit error data, that's fine.
       }
-      return if (code == Code.OK) {
+      return if (actualCode == Code.OK) {
         // Technically, there's an edge case where a developer could explicitly return an error code
         // of OK, and we will treat it as success, but that seems reasonable.
         null
-      } else FirebaseFunctionsException(description, code, details)
+      } else FirebaseFunctionsException(description, actualCode, details)
     }
   }
 }

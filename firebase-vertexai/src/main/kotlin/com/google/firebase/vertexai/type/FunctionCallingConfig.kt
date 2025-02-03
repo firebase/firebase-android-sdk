@@ -16,14 +16,13 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
- * Contains configuration for function calling from the model. This can be used to force function
- * calling predictions or disable them.
+ * The configuration that specifies the function calling behavior.
  *
- * @param mode The function calling mode of the model
- * @param allowedFunctionNames Function names to call. Only set when the [Mode.ANY]. Function names
- * should match [FunctionDeclaration.name]. With [Mode.ANY], model will predict a function call from
- * the set of function names provided.
+ * See the static methods in the `companion object` for the list of available behaviors.
  */
 public class FunctionCallingConfig
 internal constructor(
@@ -46,13 +45,27 @@ internal constructor(
      * The model will never predict a function call to answer a query. This can also be achieved by
      * not passing any tools to the model.
      */
-    NONE
+    NONE,
+  }
+
+  @Serializable
+  internal data class Internal(
+    val mode: Mode,
+    @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
+  ) {
+    @Serializable
+    enum class Mode {
+      @SerialName("MODE_UNSPECIFIED") UNSPECIFIED,
+      AUTO,
+      ANY,
+      NONE,
+    }
   }
 
   public companion object {
     /**
      * The default behavior for function calling. The model calls functions to answer queries at its
-     * discretion
+     * discretion.
      */
     @JvmStatic public fun auto(): FunctionCallingConfig = FunctionCallingConfig(Mode.AUTO)
 

@@ -14,23 +14,50 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalKotest::class, ExperimentalFirebaseDataConnect::class)
+
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
+import com.google.firebase.dataconnect.LocalDate
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-import com.google.firebase.dataconnect.testutil.MAX_DATE
-import com.google.firebase.dataconnect.testutil.MIN_DATE
-import com.google.firebase.dataconnect.testutil.ZERO_DATE
-import com.google.firebase.dataconnect.testutil.assertThrows
-import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
-import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
-import com.google.firebase.dataconnect.testutil.randomDate
-import com.google.firebase.dataconnect.testutil.withDataDeserializer
-import com.google.firebase.dataconnect.testutil.withVariablesSerializer
-import java.util.Date
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DateTestData
+import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ThreeDateTestDatas
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ThreeDateTestDatas.ItemNumber
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dateTestData
+import com.google.firebase.dataconnect.testutil.property.arbitrary.invalidDateScalarString
+import com.google.firebase.dataconnect.testutil.property.arbitrary.localDate
+import com.google.firebase.dataconnect.testutil.property.arbitrary.orNullableReference
+import com.google.firebase.dataconnect.testutil.property.arbitrary.threeNonNullDatesTestData
+import com.google.firebase.dataconnect.testutil.property.arbitrary.threePossiblyNullDatesTestData
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.testutil.toTheeTenAbpJavaLocalDate
+import io.kotest.assertions.asClue
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.withEdgecases
+import io.kotest.property.checkAll
+import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -38,413 +65,903 @@ import org.junit.Test
 
 class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
-  @Test
-  fun insertTypicalValueForNonNullField() = runTest {
-    val date = dateFromYearMonthDayUTC(1944, 1, 1)
-    val key = connector.insertNonNullDate.execute(date).data.key
-    assertNonNullDateByKeyEquals(key, "1944-01-01")
-  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for CRUD operations on this table:
+  // type DateNonNullable @table { value: Date!, tag: String }
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  fun insertMaxValueForNonNullDateField() = runTest {
-    val key = connector.insertNonNullDate.execute(MIN_DATE).data.key
-    assertNonNullDateByKeyEquals(key, "1583-01-01")
-  }
-
-  @Test
-  fun insertMinValueForNonNullDateField() = runTest {
-    val key = connector.insertNonNullDate.execute(MAX_DATE).data.key
-    assertNonNullDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun insertValueWithTimeForNonNullDateField() = runTest {
-    // Use a date that, when converted to UTC, in on a different date to verify that the server does
-    // the expected thing; that is, that it _drops_ the time zone information (rather than
-    // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
-    // "2024-03-27" if it did the erroneous conversion to UTC before taking the YYYY-MM-DD.
-    val date = "2024-03-26T19:48:00.144-07:00"
-    val key = connector.insertNonNullDate.executeWithStringVariables(date).data.key
-    assertNonNullDateByKeyEquals(key, dateFromYearMonthDayUTC(2024, 3, 26))
-  }
-
-  @Test
-  fun insertDateNotOnExactDateBoundaryForNonNullDateField() = runTest {
-    val dateOnDateBoundary = dateFromYearMonthDayUTC(2000, 9, 14)
-    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
-
-    val key = connector.insertNonNullDate.execute(dateOffDateBoundary).data.key
-    assertNonNullDateByKeyEquals(key, dateOnDateBoundary)
-  }
-
-  @Test
-  fun insertNoVariablesForNonNullDateFieldsWithSchemaDefaults() = runTest {
-    val key = connector.insertNonNullDatesWithDefaults.execute {}.data.key
-    val queryResult = connector.getNonNullDatesWithDefaultsByKey.execute(key)
-
-    // Since we can't know the exact value of `request.time` just make sure that the exact same
-    // value is used for both fields to which it is set.
-    val expectedRequestTime = queryResult.data.nonNullDatesWithDefaults!!.requestTime1
-
-    assertThat(
-      queryResult.equals(
-        GetNonNullDatesWithDefaultsByKeyQuery.Data(
-          GetNonNullDatesWithDefaultsByKeyQuery.Data.NonNullDatesWithDefaults(
-            valueWithVariableDefault = dateFromYearMonthDayUTC(6904, 11, 30),
-            valueWithSchemaDefault = dateFromYearMonthDayUTC(2112, 1, 31),
-            epoch = ZERO_DATE,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
-          )
-        )
-      )
-    )
-  }
-
-  @Test
-  fun insertNullForNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNonNullDate.executeWithStringVariables(null).data.key
-    }
-  }
-
-  @Test
-  fun insertIntForNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNonNullDate.executeWithIntVariables(999_888).data.key
-    }
-  }
-
-  @Test
-  fun insertWithMissingValueNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNonNullDate.executeWithEmptyVariables().data.key
-    }
-  }
-
-  @Test
-  fun insertInvalidDatesValuesForNonNullDateFieldShouldFail() = runTest {
-    for (invalidDate in invalidDates) {
-      assertThrows(DataConnectException::class) {
-        connector.insertNonNullDate.executeWithStringVariables(invalidDate).data.key
+  fun dateNonNullable_MutationLocalDateVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig, Arb.dataConnect.dateTestData()) { testData ->
+        val insertResult = connector.dateNonNullableInsert.execute(testData.date)
+        val returnedString =
+          connector.dateNonNullableGetByKey.executeWithStringData(insertResult.data.key)
+        returnedString shouldBe testData.string
       }
     }
-  }
 
   @Test
-  fun updateNonNullDateFieldToAnotherValidValue() = runTest {
-    val date1 = randomDate()
-    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
-    val key = connector.insertNonNullDate.execute(date1).data.key
-    connector.updateNonNullDate.execute(key) { value = date2 }
-    assertNonNullDateByKeyEquals(key, "5654-12-01")
-  }
-
-  @Test
-  fun updateNonNullDateFieldToMinValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
-    connector.updateNonNullDate.execute(key) { value = MIN_DATE }
-    assertNonNullDateByKeyEquals(key, "1583-01-01")
-  }
-
-  @Test
-  fun updateNonNullDateFieldToMaxValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
-    connector.updateNonNullDate.execute(key) { value = MAX_DATE }
-    assertNonNullDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun updateNonNullDateFieldToAnUndefinedValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
-    connector.updateNonNullDate.execute(key) {}
-    assertNonNullDateByKeyEquals(key, date)
-  }
-
-  @Test
-  fun insertTypicalValueForNullableField() = runTest {
-    val date = dateFromYearMonthDayUTC(7611, 12, 1)
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    assertNullableDateByKeyEquals(key, "7611-12-01")
-  }
-
-  @Test
-  fun insertMaxValueForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = MIN_DATE }.data.key
-    assertNullableDateByKeyEquals(key, "1583-01-01")
-  }
-
-  @Test
-  fun insertMinValueForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = MAX_DATE }.data.key
-    assertNullableDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun insertNullForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = null }.data.key
-    assertNullableDateByKeyEquals(key, null)
-  }
-
-  @Test
-  fun insertUndefinedForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute {}.data.key
-    assertNullableDateByKeyEquals(key, null)
-  }
-
-  @Test
-  fun insertValueWithTimeForNullableDateField() = runTest {
-    // Use a date that, when converted to UTC, in on a different date to verify that the server does
-    // the expected thing; that is, that it _drops_ the time zone information (rather than
-    // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
-    // "2024-03-27" if it did the erroneous conversion to UTC before taking the YYYY-MM-DD.
-    val date = "2024-03-26T19:48:00.144-07:00"
-    val key = connector.insertNullableDate.executeWithStringVariables(date).data.key
-    assertNullableDateByKeyEquals(key, dateFromYearMonthDayUTC(2024, 3, 26))
-  }
-
-  @Test
-  fun insertDateNotOnExactDateBoundaryForNullableDateField() = runTest {
-    val dateOnDateBoundary = dateFromYearMonthDayUTC(1812, 12, 22)
-    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
-
-    val key = connector.insertNullableDate.execute { value = dateOffDateBoundary }.data.key
-    assertNullableDateByKeyEquals(key, dateOnDateBoundary)
-  }
-
-  @Test
-  fun insertIntForNullableDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNullableDate.executeWithIntVariables(999_888).data.key
-    }
-  }
-
-  @Test
-  fun insertInvalidDatesValuesForNullableDateFieldShouldFail() = runTest {
-    for (invalidDate in invalidDates) {
-      assertThrows(DataConnectException::class) {
-        connector.insertNullableDate.executeWithStringVariables(invalidDate).data.key
+  fun dateNonNullable_MutationStringVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig, Arb.dataConnect.dateTestData()) { testData ->
+        val insertResult = connector.dateNonNullableInsert.execute(testData.string)
+        val queryResult = connector.dateNonNullableGetByKey.execute(insertResult.data.key)
+        queryResult.data.item?.value shouldBe testData.date
       }
     }
+
+  @Test
+  fun dateNonNullable_QueryLocalDateVariable() =
+    dateNonNullable_QueryVariable { tag, dateTestData ->
+      connector.dateNonNullableGetAllByTagAndValue.execute(tag = tag, dateTestData.date)
+    }
+
+  @Test
+  fun dateNonNullable_QueryStringVariable() = dateNonNullable_QueryVariable { tag, dateTestData ->
+    connector.dateNonNullableGetAllByTagAndValue.execute(tag = tag, value = dateTestData.string)
+  }
+
+  private fun dateNonNullable_QueryVariable(
+    executeQuery:
+      suspend (tag: String, date: DateTestData) -> QueryResult<
+          DateNonNullableGetAllByTagAndValueQuery.Data, *
+        >
+  ) =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val queryResult = executeQuery(tag, testDatas.selected!!)
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNonNullable_MutationNullVariableShouldThrow() = runTest {
+    val exception =
+      shouldThrow<DataConnectException> { connector.dateNonNullableInsert.execute(null) }
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "\$value"
+      exception.message shouldContainWithNonAbuttingText "is null"
+    }
   }
 
   @Test
-  fun insertNoVariablesForNullableDateFieldsWithSchemaDefaults() = runTest {
-    val key = connector.insertNullableDatesWithDefaults.execute {}.data.key
-    val queryResult = connector.getNullableDatesWithDefaultsByKey.execute(key)
+  fun dateNonNullable_QueryNullVariableShouldThrow() = runTest {
+    val tag = Arb.dataConnect.tag().next(rs)
+    val exception =
+      shouldThrow<DataConnectException> {
+        connector.dateNonNullableGetAllByTagAndValue.execute(tag = tag, value = null)
+      }
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "\$value"
+      exception.message shouldContainWithNonAbuttingText "is null"
+    }
+  }
 
-    // Since we can't know the exact value of `request.time` just make sure that the exact same
-    // value is used for both fields to which it is set.
-    val expectedRequestTime = queryResult.data.nullableDatesWithDefaults!!.requestTime1
-
-    assertThat(
-      queryResult.equals(
-        GetNullableDatesWithDefaultsByKeyQuery.Data(
-          GetNullableDatesWithDefaultsByKeyQuery.Data.NullableDatesWithDefaults(
-            valueWithVariableDefault = dateFromYearMonthDayUTC(8113, 2, 9),
-            valueWithSchemaDefault = dateFromYearMonthDayUTC(1921, 12, 2),
-            epoch = ZERO_DATE,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
-          )
-        )
+  @Test
+  fun dateNonNullable_QueryOmittedVariableShouldMatchAll() = runTest {
+    val tag = Arb.dataConnect.tag().next(rs)
+    val testDatas = Arb.dataConnect.threeNonNullDatesTestData().next(rs)
+    val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+    val queryResult = connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) {}
+    queryResult.data.items
+      .map { it.id }
+      .shouldContainExactlyInAnyOrder(
+        insertResult.data.key1.id,
+        insertResult.data.key2.id,
+        insertResult.data.key3.id
       )
-    )
   }
 
   @Test
-  fun updateNullableDateFieldToAnotherValidValue() = runTest {
-    val date1 = randomDate()
-    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
-    val key = connector.insertNullableDate.execute { value = date1 }.data.key
-    connector.updateNullableDate.execute(key) { value = date2 }
-    assertNullableDateByKeyEquals(key, "5654-12-01")
-  }
-
-  @Test
-  fun updateNullableDateFieldToMinValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) { value = MIN_DATE }
-    assertNullableDateByKeyEquals(key, "1583-01-01")
-  }
-
-  @Test
-  fun updateNullableDateFieldToMaxValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) { value = MAX_DATE }
-    assertNullableDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun updateNullableDateFieldToNull() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) { value = null }
-    assertNullableDateByKeyEquals(key, null)
-  }
-
-  @Test
-  fun updateNullableDateFieldToNonNull() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = null }.data.key
-    connector.updateNullableDate.execute(key) { value = date }
-    assertNullableDateByKeyEquals(key, date)
-  }
-
-  @Test
-  fun updateNullableDateFieldToAnUndefinedValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) {}
-    assertNullableDateByKeyEquals(key, date)
-  }
-
-  private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: String) {
+  fun dateNonNullable_QueryNullVariableShouldMatchNone() = runTest {
+    val tag = Arb.dataConnect.tag().next(rs)
+    val testDatas = Arb.dataConnect.threeNonNullDatesTestData().next(rs)
+    connector.dateNonNullableInsert3.execute(tag, testDatas)
     val queryResult =
-      connector.getNonNullDateByKey
-        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
-        .execute(key)
-    assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+      connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) { value = null }
+    queryResult.data.items.shouldBeEmpty()
   }
 
-  private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: Date) {
-    val queryResult = connector.getNonNullDateByKey.execute(key)
-    assertThat(queryResult.data)
-      .isEqualTo(GetNonNullDateByKeyQuery.Data(GetNonNullDateByKeyQuery.Data.Value(expected)))
+  @Test
+  fun dateNonNullable_Update() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig, Arb.dataConnect.localDate(), Arb.dataConnect.localDate()) {
+        date1,
+        date2 ->
+        val insertResult = connector.dateNonNullableInsert.execute(date1)
+        val updateResult =
+          connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) { value = date2 }
+        updateResult.asClue { it.data.key shouldBe insertResult.data.key }
+        val queryResult = connector.dateNonNullableGetByKey.execute(insertResult.data.key)
+        val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+        item.value shouldBe date2
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateToNullShouldFail() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig, Arb.dataConnect.localDate()) { date ->
+        val insertResult = connector.dateNonNullableInsert.execute(date)
+        shouldThrow<DataConnectException> {
+          connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) { value = null }
+        }
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateToOmittedShouldLeaveValueUnchanged() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig, Arb.dataConnect.localDate()) { date ->
+        val insertResult = connector.dateNonNullableInsert.execute(date)
+        val updateResult = connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) {}
+        updateResult.asClue { it.data.key shouldBe insertResult.data.key }
+        val queryResult = connector.dateNonNullableGetByKey.execute(insertResult.data.key)
+        val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+        item.value shouldBe date
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateMany() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData(),
+        Arb.dataConnect.localDate()
+      ) { tag, testDatas, date2 ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected!!
+        val updateResult =
+          connector.dateNonNullableUpdateByTagAndValue.execute(tag) {
+            value = selectedDate.date
+            newValue = date2
+          }
+        withClue("updateResult.data.count") {
+          updateResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult = connector.dateNonNullableGetAllByTagAndValue.execute(tag, date2)
+        val matchingIds1 = testDatas.idsMatchingSelected(insertResult)
+        val matchingIds2 = testDatas.idsMatching(insertResult, date2)
+        val matchingIds = (matchingIds1 + matchingIds2).distinct()
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateManyNullValueShouldUpdateNone() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData(),
+        Arb.dataConnect.localDate()
+      ) { tag, testDatas, date2 ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val updateResult =
+          connector.dateNonNullableUpdateByTagAndValue.execute(tag) {
+            value = null
+            newValue = date2
+          }
+        withClue("updateResult.data.count") { updateResult.data.count shouldBe 0 }
+        val queryResult = connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) {}
+        queryResult.data.items
+          .map { it.id }
+          .shouldContainExactlyInAnyOrder(
+            insertResult.data.key1.id,
+            insertResult.data.key2.id,
+            insertResult.data.key3.id,
+          )
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateManyNullNewValueShouldThrow() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData(),
+      ) { tag, testDatas ->
+        connector.dateNonNullableInsert3.execute(tag, testDatas)
+        shouldThrow<DataConnectException> {
+          connector.dateNonNullableUpdateByTagAndValue.execute(tag) { newValue = null }
+        }
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateManyOmittedValueShouldUpdateAll() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData(),
+        Arb.dataConnect.localDate()
+      ) { tag, testDatas, date2 ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val updateResult =
+          connector.dateNonNullableUpdateByTagAndValue.execute(tag) { newValue = date2 }
+        withClue("updateResult.data.count") { updateResult.data.count shouldBe 3 }
+        val queryResult = connector.dateNonNullableGetAllByTagAndValue.execute(tag, date2)
+        queryResult.data.items
+          .map { it.id }
+          .shouldContainExactlyInAnyOrder(
+            insertResult.data.key1.id,
+            insertResult.data.key2.id,
+            insertResult.data.key3.id,
+          )
+      }
+    }
+
+  @Test
+  fun dateNonNullable_UpdateManyOmittedNewValueShouldNotChangeAny() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected!!.date
+        val updateResult =
+          connector.dateNonNullableUpdateByTagAndValue.execute(tag) { value = selectedDate }
+        withClue("updateResult.data.count") {
+          updateResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult = connector.dateNonNullableGetAllByTagAndValue.execute(tag, selectedDate)
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNonNullable_DeleteMany() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected!!.date
+        val deleteResult =
+          connector.dateNonNullableDeleteByTagAndValue.execute(tag) { value = selectedDate }
+        withClue("deleteResult.data.count") {
+          deleteResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult = connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) {}
+        val insertedIds = insertResult.data.run { listOf(key1, key2, key3).map { it.id } }
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        val remainingIds = insertedIds.filterNot { it in matchingIds }
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder remainingIds
+      }
+    }
+
+  @Test
+  fun dateNonNullable_DeleteManyNullValueShouldDeleteNone() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val deleteResult =
+          connector.dateNonNullableDeleteByTagAndValue.execute(tag) { value = null }
+        withClue("deleteResult.data.count") { deleteResult.data.count shouldBe 0 }
+        val queryResult = connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) {}
+        queryResult.data.items
+          .map { it.id }
+          .shouldContainExactlyInAnyOrder(
+            insertResult.data.key1.id,
+            insertResult.data.key2.id,
+            insertResult.data.key3.id,
+          )
+      }
+    }
+
+  @Test
+  fun dateNonNullable_DeleteManyOmittedValueShouldDeleteAll() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threeNonNullDatesTestData(),
+      ) { tag, testDatas ->
+        connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val deleteResult = connector.dateNonNullableDeleteByTagAndValue.execute(tag) {}
+        withClue("deleteResult.data.count") { deleteResult.data.count shouldBe 3 }
+        val queryResult = connector.dateNonNullableGetAllByTagAndMaybeValue.execute(tag) {}
+        queryResult.data.items.shouldBeEmpty()
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for inserting into and querying this table:
+  // type DateNullable @table { value: Date, tag: String }
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun dateNullable_MutationLocalDateVariable() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.dateTestData().orNullableReference(nullProbability = 0.2)
+      checkAll(propTestConfig, localDates) { testData ->
+        val insertResult = connector.dateNullableInsert.execute { value = testData.ref?.date }
+        val returnedString =
+          connector.dateNullableGetByKey.executeWithStringData(insertResult.data.key)
+        returnedString shouldBe testData.ref?.string
+      }
+    }
+
+  @Test
+  fun dateNullable_MutationStringVariable() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.dateTestData().orNullableReference(nullProbability = 0.2)
+      checkAll(propTestConfig, localDates) { testData ->
+        val insertResult = connector.dateNullableInsert.execute(testData.ref?.string)
+        val queryResult = connector.dateNullableGetByKey.execute(insertResult.data.key)
+        queryResult.data.item?.value shouldBe testData.ref?.date
+      }
+    }
+
+  @Test
+  fun dateNullable_QueryLocalDateVariable() = dateNullable_QueryVariable { tag, dateTestData ->
+    connector.dateNullableGetAllByTagAndValue.execute(tag = tag) { value = dateTestData?.date }
   }
 
-  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: String) {
-    val queryResult =
-      connector.getNullableDateByKey
-        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
-        .execute(key)
-    assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+  @Test
+  fun dateNullable_QueryStringVariable() = dateNullable_QueryVariable { tag, dateTestData ->
+    connector.dateNullableGetAllByTagAndValue.execute(tag = tag, value = dateTestData?.string)
   }
 
-  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: Date?) {
-    val queryResult = connector.getNullableDateByKey.execute(key)
-    assertThat(queryResult.data)
-      .isEqualTo(GetNullableDateByKeyQuery.Data(GetNullableDateByKeyQuery.Data.Value(expected)))
+  private fun dateNullable_QueryVariable(
+    executeQuery:
+      suspend (tag: String, date: DateTestData?) -> QueryResult<
+          DateNullableGetAllByTagAndValueQuery.Data, *
+        >
+  ) =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val queryResult = executeQuery(tag, testDatas.selected)
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNullable_QueryOmittedVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val queryResult = connector.dateNullableGetAllByTagAndValue.execute(tag) {}
+        queryResult.data.items
+          .map { it.id }
+          .shouldContainExactlyInAnyOrder(
+            insertResult.data.key1.id,
+            insertResult.data.key2.id,
+            insertResult.data.key3.id
+          )
+      }
+    }
+
+  @Test
+  fun dateNullable_Update() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      checkAll(propTestConfig, localDates, localDates) { date1, date2 ->
+        val insertResult = connector.dateNullableInsert.execute { value = date1.ref }
+        val updateResult =
+          connector.dateNullableUpdateByKey.execute(insertResult.data.key) { value = date2.ref }
+        updateResult.asClue { it.data.key shouldBe insertResult.data.key }
+        val queryResult = connector.dateNullableGetByKey.execute(insertResult.data.key)
+        val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+        item.value shouldBe date2.ref
+      }
+    }
+
+  @Test
+  fun dateNullable_UpdateToOmittedShouldLeaveValueUnchanged() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      checkAll(propTestConfig, localDates) { date ->
+        val insertResult = connector.dateNullableInsert.execute { value = date.ref }
+        val updateResult = connector.dateNullableUpdateByKey.execute(insertResult.data.key) {}
+        updateResult.asClue { it.data.key shouldBe insertResult.data.key }
+        val queryResult = connector.dateNullableGetByKey.execute(insertResult.data.key)
+        val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+        item.value shouldBe date.ref
+      }
+    }
+
+  @Test
+  fun dateNullable_UpdateMany() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData(),
+        localDates
+      ) { tag, testDatas, date2 ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected?.date
+        val updateResult =
+          connector.dateNullableUpdateByTagAndValue.execute(tag) {
+            value = selectedDate
+            newValue = date2.ref
+          }
+        withClue("updateResult.data.count") {
+          updateResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult =
+          connector.dateNullableGetAllByTagAndValue.execute(tag) { value = date2.ref }
+        val matchingIds1 = testDatas.idsMatchingSelected(insertResult)
+        val matchingIds2 = testDatas.idsMatching(insertResult, date2.ref)
+        val matchingIds = (matchingIds1 + matchingIds2).distinct()
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNullable_UpdateManyOmittedValueShouldUpdateAll() =
+    runTest(timeout = 1.minutes) {
+      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData(),
+        localDates
+      ) { tag, testDatas, date2 ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val updateResult =
+          connector.dateNullableUpdateByTagAndValue.execute(tag) { newValue = date2.ref }
+        withClue("updateResult.data.count") { updateResult.data.count shouldBe 3 }
+        val queryResult =
+          connector.dateNullableGetAllByTagAndValue.execute(tag) { value = date2.ref }
+        queryResult.data.items
+          .map { it.id }
+          .shouldContainExactlyInAnyOrder(
+            insertResult.data.key1.id,
+            insertResult.data.key2.id,
+            insertResult.data.key3.id,
+          )
+      }
+    }
+
+  @Test
+  fun dateNullable_UpdateManyOmittedNewValueShouldNotChangeAny() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData()
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected?.date
+        val updateResult =
+          connector.dateNullableUpdateByTagAndValue.execute(tag) { value = selectedDate }
+        withClue("updateResult.data.count") {
+          updateResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult =
+          connector.dateNullableGetAllByTagAndValue.execute(tag) { value = selectedDate }
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNullable_DeleteMany() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData(),
+      ) { tag, testDatas ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val selectedDate = testDatas.selected?.date
+        val deleteResult =
+          connector.dateNullableDeleteByTagAndValue.execute(tag) { value = selectedDate }
+        withClue("deleteResult.data.count") {
+          deleteResult.data.count shouldBe testDatas.numMatchingSelected
+        }
+        val queryResult = connector.dateNullableGetAllByTagAndValue.execute(tag) {}
+        val insertedIds = insertResult.data.run { listOf(key1, key2, key3).map { it.id } }
+        val matchingIds = testDatas.idsMatchingSelected(insertResult)
+        val remainingIds = insertedIds.filterNot { it in matchingIds }
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder remainingIds
+      }
+    }
+
+  @Test
+  fun dateNullable_DeleteManyOmittedValueShouldDeleteAll() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.threePossiblyNullDatesTestData(),
+      ) { tag, testDatas ->
+        connector.dateNullableInsert3.execute(tag, testDatas)
+        val deleteResult = connector.dateNullableDeleteByTagAndValue.execute(tag) {}
+        withClue("deleteResult.data.count") { deleteResult.data.count shouldBe 3 }
+        val queryResult = connector.dateNullableGetAllByTagAndValue.execute(tag) {}
+        queryResult.data.items.shouldBeEmpty()
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for default `Date` variable values.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun dateNonNullable_MutationVariableDefaults() = runTest {
+    val insertResult = connector.dateNonNullableWithDefaultsInsert.execute {}
+    val queryResult = connector.dateNonNullableWithDefaultsGetByKey.execute(insertResult.data.key)
+    val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+
+    assertSoftly {
+      withClue(item) {
+        withClue("valueWithVariableDefault") {
+          item.valueWithVariableDefault shouldBe LocalDate(6904, 11, 30)
+        }
+        withClue("valueWithSchemaDefault") {
+          item.valueWithSchemaDefault shouldBe LocalDate(2112, 1, 31)
+        }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
+      }
+    }
+
+    withClue("requestTime validation") {
+      val today = connector.requestTime().toTheeTenAbpJavaLocalDate()
+      val yesterday = today.minusDays(1)
+      val tomorrow = today.plusDays(1)
+      val requestTime = item.requestTime1.toTheeTenAbpJavaLocalDate()
+      requestTime.shouldBeIn(yesterday, today, tomorrow)
+    }
   }
 
-  /**
-   * A `Data` type that can be used in place of [GetNonNullDateByKeyQuery.Data] that types the value
-   * as a [String] instead of a [Date], allowing verification of the data sent over the wire without
-   * possible confounding from date deserialization.
-   */
+  @Test
+  fun dateNonNullable_QueryVariableDefaults() =
+    runTest(timeout = 1.minutes) {
+      val defaultTestData = DateTestData(LocalDate(2692, 5, 21), "2692-05-21")
+      val localDateArb = Arb.dataConnect.dateTestData().withEdgecases(defaultTestData)
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.threeNonNullDatesTestData(localDateArb),
+        Arb.dataConnect.tag()
+      ) { testDatas, tag ->
+        val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
+        val queryResult = connector.dateNonNullableGetAllByTagAndDefaultValue.execute(tag) {}
+        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  @Test
+  fun dateNullable_MutationVariableDefaults() = runTest {
+    val insertResult = connector.dateNullableWithDefaultsInsert.execute {}
+    val queryResult = connector.dateNullableWithDefaultsGetByKey.execute(insertResult.data.key)
+    val item = withClue("queryResult.data.item") { queryResult.data.item.shouldNotBeNull() }
+
+    assertSoftly {
+      withClue(item) {
+        withClue("valueWithVariableDefault") {
+          item.valueWithVariableDefault shouldBe LocalDate(8113, 2, 9)
+        }
+        withClue("valueWithVariableNullDefault") {
+          item.valueWithVariableNullDefault.shouldBeNull()
+        }
+        withClue("valueWithSchemaDefault") {
+          item.valueWithSchemaDefault shouldBe LocalDate(1921, 12, 2)
+        }
+        withClue("valueWithSchemaNullDefault") { item.valueWithSchemaNullDefault.shouldBeNull() }
+        withClue("valueWithNoDefault") { item.valueWithNoDefault.shouldBeNull() }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("requestTime1") { item.requestTime1.shouldNotBeNull() }
+        withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
+      }
+    }
+
+    withClue("requestTime validation") {
+      val today = connector.requestTime().toTheeTenAbpJavaLocalDate()
+      val yesterday = today.minusDays(1)
+      val tomorrow = today.plusDays(1)
+      val requestTime = item.requestTime1!!.toTheeTenAbpJavaLocalDate()
+      requestTime.shouldBeIn(yesterday, today, tomorrow)
+    }
+  }
+
+  @Test
+  fun dateNullable_QueryVariableDefaults() =
+    runTest(timeout = 1.minutes) {
+      val defaultTestData = DateTestData(LocalDate(1771, 10, 28), "1771-10-28")
+      val dateTestDataArb =
+        Arb.dataConnect
+          .dateTestData()
+          .withEdgecases(defaultTestData)
+          .orNullableReference(nullProbability = 0.333)
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.threePossiblyNullDatesTestData(dateTestDataArb),
+        Arb.dataConnect.tag()
+      ) { testDatas, tag ->
+        val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
+        val queryResult = connector.dateNullableGetAllByTagAndDefaultValue.execute(tag) {}
+        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Invalid Date String Tests
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun dateNonNullable_MutationInvalidDateVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig.copy(iterations = 500), Arb.dataConnect.invalidDateScalarString()) {
+        testData ->
+        val exception =
+          shouldThrow<DataConnectException> {
+            connector.dateNonNullableInsert.execute(testData.toDateScalarString())
+          }
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "\$value"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+        }
+      }
+    }
+
+  @Test
+  fun dateNonNullable_QueryInvalidDateVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig.copy(iterations = 500),
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.invalidDateScalarString()
+      ) { tag, testData ->
+        val exception =
+          shouldThrow<DataConnectException> {
+            connector.dateNonNullableGetAllByTagAndValue.execute(
+              tag = tag,
+              value = testData.toDateScalarString()
+            )
+          }
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "\$value"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+        }
+      }
+    }
+
+  @Test
+  fun dateNullable_MutationInvalidDateVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(propTestConfig.copy(iterations = 500), Arb.dataConnect.invalidDateScalarString()) {
+        testData ->
+        val exception =
+          shouldThrow<DataConnectException> {
+            connector.dateNullableInsert.execute(testData.toDateScalarString())
+          }
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "\$value"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+        }
+      }
+    }
+
+  @Test
+  fun dateNullable_QueryInvalidDateVariable() =
+    runTest(timeout = 1.minutes) {
+      checkAll(
+        propTestConfig.copy(iterations = 500),
+        Arb.dataConnect.tag(),
+        Arb.dataConnect.invalidDateScalarString()
+      ) { tag, testData ->
+        val exception =
+          shouldThrow<DataConnectException> {
+            connector.dateNullableGetAllByTagAndValue.execute(
+              tag = tag,
+              value = testData.toDateScalarString()
+            )
+          }
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "\$value"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+        }
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper methods and classes.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
   @Serializable
-  private data class GetDateByKeyQueryStringData(val value: DateStringValue?) {
-    constructor(value: String) : this(DateStringValue(value))
-    @Serializable data class DateStringValue(val value: String)
+  private data class StringItemData(val item: Item?) {
+    @Serializable data class Item(val value: String?)
   }
 
-  /**
-   * A `Variables` type that can be used in place of [InsertNonNullDateMutation.Variables] that
-   * types the value as a [String] instead of a [Date], allowing verification of the data sent over
-   * the wire without possible confounding from date serialization.
-   */
-  @Serializable private data class InsertDateStringVariables(val value: String?)
+  @Serializable private data class NullValueVariables(val value: Nothing?)
 
-  /**
-   * A `Variables` type that can be used in place of [InsertNonNullDateMutation.Variables] that
-   * types the value as a [Int] instead of a [Date], allowing verification that the server fails
-   * with an expected error (rather than crashing, for example).
-   */
-  @Serializable private data class InsertDateIntVariables(val value: Int)
+  @Serializable private data class StringValueVariables(val value: String?)
+
+  @Serializable private data class TagAndStringValueVariables(val tag: String, val value: String?)
+
+  @Serializable private data class TagAndNullValueVariables(val tag: String, val value: Nothing?)
+
+  private suspend fun DemoConnector.requestTime(): LocalDate {
+    val insertResult = exprValuesInsert.execute()
+    val queryResult = exprValuesGetByKey.execute(insertResult.data.key)
+    return withClue("exprValuesGetByKey queryResult.data.item") {
+        queryResult.data.item.shouldNotBeNull()
+      }
+      .requestTimeAsDate
+  }
 
   private companion object {
 
-    suspend fun <Data> GeneratedMutation<*, Data, *>.executeWithStringVariables(value: String?) =
-      withVariablesSerializer(serializer<InsertDateStringVariables>())
-        .ref(InsertDateStringVariables(value))
-        .execute()
+    val propTestConfig =
+      PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5))
 
-    suspend fun <Data> GeneratedMutation<*, Data, *>.executeWithIntVariables(value: Int) =
-      withVariablesSerializer(serializer<InsertDateIntVariables>())
-        .ref(InsertDateIntVariables(value))
-        .execute()
+    suspend fun DateNullableInsert3Mutation.execute(
+      tag: String,
+      testDatas: ThreeDateTestDatas,
+    ): MutationResult<DateNullableInsert3Mutation.Data, DateNullableInsert3Mutation.Variables> =
+      execute(tag = tag) {
+        value1 = testDatas.testData1?.date
+        value2 = testDatas.testData2?.date
+        value3 = testDatas.testData3?.date
+      }
 
-    suspend fun <Data> GeneratedQuery<*, Data, GetNonNullDateByKeyQuery.Variables>.execute(
-      key: NonNullDateKey
-    ) = ref(GetNonNullDateByKeyQuery.Variables(key)).execute()
-
-    suspend fun <Data> GeneratedQuery<*, Data, GetNullableDateByKeyQuery.Variables>.execute(
-      key: NullableDateKey
-    ) = ref(GetNullableDateByKeyQuery.Variables(key)).execute()
-
-    val invalidDates =
-      listOf(
-        // Partial dates
-        "2",
-        "20",
-        "202",
-        "2024",
-        "2024-",
-        "2024-0",
-        "2024-01",
-        "2024-01-",
-        "2024-01-0",
-        "2024-01-04T",
-
-        // Missing components
-        "",
-        "2024-",
-        "-05-17",
-        "2024-05",
-        "2024--17",
-        "-05-",
-
-        // Invalid year
-        "2-05-17",
-        "20-05-17",
-        "202-05-17",
-        "20245-05-17",
-        "02024-05-17",
-        "ABCD-05-17",
-        "-123-05-17",
-
-        // Invalid month
-        "2024-1-17",
-        "2024-012-17",
-        "2024-123-17",
-        "2024-00-17",
-        "2024-13-17",
-        "2024-M-17",
-        "2024-MA-17",
-
-        // Invalid day
-        "2024-05-1",
-        "2024-05-123",
-        "2024-05-012",
-        "2024-05-00",
-        "2024-05-32",
-        "2024-05-A",
-        "2024-05-AB",
-        "2024-05-ABC",
-
-        // Out-of-range Values
-        "0000-01-01",
-        "2024-00-22",
-        "2024-13-22",
-        "2024-11-00",
-        "2024-01-32",
-        "2025-02-29",
-        "2024-02-30",
-        "2024-03-32",
-        "2024-04-31",
-        "2024-05-32",
-        "2024-06-31",
-        "2024-07-32",
-        "2024-08-32",
-        "2024-09-31",
-        "2024-10-32",
-        "2024-11-31",
-        "2024-12-32",
+    suspend fun DateNonNullableInsert3Mutation.execute(
+      tag: String,
+      testDatas: ThreeDateTestDatas,
+    ): MutationResult<
+      DateNonNullableInsert3Mutation.Data, DateNonNullableInsert3Mutation.Variables
+    > =
+      execute(
+        tag = tag,
+        value1 = testDatas.testData1!!.date,
+        value2 = testDatas.testData2!!.date,
+        value3 = testDatas.testData3!!.date,
       )
+
+    suspend fun DateNonNullableGetByKeyQuery.executeWithStringData(
+      key: DateNonNullableKey
+    ): String? = withDataDeserializer(serializer<StringItemData>()).execute(key).data.item?.value
+
+    suspend fun DateNullableGetByKeyQuery.executeWithStringData(key: DateNullableKey): String? =
+      withDataDeserializer(serializer<StringItemData>()).execute(key).data.item?.value
+
+    suspend fun DateNonNullableInsertMutation.execute(
+      date: String
+    ): MutationResult<DateNonNullableInsertMutation.Data, StringValueVariables> =
+      withVariablesSerializer(serializer<StringValueVariables>())
+        .ref(StringValueVariables(date))
+        .execute()
+
+    suspend fun DateNullableInsertMutation.execute(
+      date: String?
+    ): MutationResult<DateNullableInsertMutation.Data, StringValueVariables> =
+      withVariablesSerializer(serializer<StringValueVariables>())
+        .ref(StringValueVariables(date))
+        .execute()
+
+    suspend fun DateNonNullableInsertMutation.execute(
+      date: Nothing?
+    ): MutationResult<DateNonNullableInsertMutation.Data, NullValueVariables> =
+      withVariablesSerializer(serializer<NullValueVariables>())
+        .ref(NullValueVariables(date))
+        .execute()
+
+    suspend fun DateNonNullableGetAllByTagAndValueQuery.execute(
+      tag: String,
+      value: String,
+    ): QueryResult<DateNonNullableGetAllByTagAndValueQuery.Data, TagAndStringValueVariables> =
+      withVariablesSerializer(serializer<TagAndStringValueVariables>())
+        .ref(TagAndStringValueVariables(tag = tag, value = value))
+        .execute()
+
+    suspend fun DateNonNullableGetAllByTagAndValueQuery.execute(
+      tag: String,
+      value: Nothing?,
+    ): QueryResult<DateNonNullableGetAllByTagAndValueQuery.Data, TagAndNullValueVariables> =
+      withVariablesSerializer(serializer<TagAndNullValueVariables>())
+        .ref(TagAndNullValueVariables(tag = tag, value = value))
+        .execute()
+
+    suspend fun DateNullableGetAllByTagAndValueQuery.execute(
+      tag: String,
+      value: String?,
+    ): QueryResult<DateNullableGetAllByTagAndValueQuery.Data, TagAndStringValueVariables> =
+      withVariablesSerializer(serializer<TagAndStringValueVariables>())
+        .ref(TagAndStringValueVariables(tag = tag, value = value))
+        .execute()
+
+    @JvmName("idsMatching_DateNonNullable")
+    fun ThreeDateTestDatas.idsMatching(
+      result: MutationResult<DateNonNullableInsert3Mutation.Data, *>,
+      localDate: LocalDate?,
+    ): List<UUID> = idsMatching(result.data, localDate)
+
+    @JvmName("idsMatching_DateNonNullable")
+    fun ThreeDateTestDatas.idsMatching(
+      data: DateNonNullableInsert3Mutation.Data,
+      localDate: LocalDate?,
+    ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
+
+    @JvmName("idsMatchingSelected_DateNonNullable")
+    fun ThreeDateTestDatas.idsMatchingSelected(
+      result: MutationResult<DateNonNullableInsert3Mutation.Data, *>
+    ): List<UUID> = idsMatchingSelected(result.data)
+
+    @JvmName("idsMatchingSelected_DateNonNullable")
+    fun ThreeDateTestDatas.idsMatchingSelected(
+      data: DateNonNullableInsert3Mutation.Data
+    ): List<UUID> = idsMatchingSelected { data.uuidFromItemNumber(it) }
+
+    fun DateNonNullableInsert3Mutation.Data.uuidFromItemNumber(itemNumber: ItemNumber): UUID =
+      when (itemNumber) {
+        ItemNumber.ONE -> key1
+        ItemNumber.TWO -> key2
+        ItemNumber.THREE -> key3
+      }.id
+
+    @JvmName("idsMatching_DateNullable")
+    fun ThreeDateTestDatas.idsMatching(
+      result: MutationResult<DateNullableInsert3Mutation.Data, *>,
+      localDate: LocalDate?,
+    ): List<UUID> = idsMatching(result.data, localDate)
+
+    @JvmName("idsMatching_DateNullable")
+    fun ThreeDateTestDatas.idsMatching(
+      data: DateNullableInsert3Mutation.Data,
+      localDate: LocalDate?,
+    ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
+
+    @JvmName("idsMatchingSelected_DateNullable")
+    fun ThreeDateTestDatas.idsMatchingSelected(
+      result: MutationResult<DateNullableInsert3Mutation.Data, *>
+    ): List<UUID> = idsMatchingSelected(result.data)
+
+    @JvmName("idsMatchingSelected_DateNullable")
+    fun ThreeDateTestDatas.idsMatchingSelected(data: DateNullableInsert3Mutation.Data): List<UUID> =
+      idsMatchingSelected {
+        data.uuidFromItemNumber(it)
+      }
+
+    fun DateNullableInsert3Mutation.Data.uuidFromItemNumber(itemNumber: ItemNumber): UUID =
+      when (itemNumber) {
+        ItemNumber.ONE -> key1
+        ItemNumber.TWO -> key2
+        ItemNumber.THREE -> key3
+      }.id
+
+    suspend fun <Data> GeneratedQuery<*, Data, DateNonNullableGetByKeyQuery.Variables>.execute(
+      key: DateNonNullableKey
+    ) = ref(DateNonNullableGetByKeyQuery.Variables(key)).execute()
+
+    suspend fun <Data> GeneratedQuery<*, Data, DateNullableGetByKeyQuery.Variables>.execute(
+      key: DateNullableKey
+    ) = ref(DateNullableGetByKeyQuery.Variables(key)).execute()
   }
 }

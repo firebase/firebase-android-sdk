@@ -59,6 +59,11 @@ _pass_options = click.make_pass_decorator(_CommonOptions, ensure=True)
 
 @click.group()
 @click.option(
+  '--debug/--no-debug',
+  help='Set the min loglevel to debug.',
+  default=False
+)
+@click.option(
     '--artifact-target-dir',
     default='_artifacts',
     help='Directory where artifacts will be copied to.',
@@ -83,7 +88,7 @@ def main(options, **kwargs):
     setattr(options, k, v)
 
 
-def ci_command(name=None, cls=click.Command, group=main):
+def ci_command(name=None, cls=click.Command, group=main, epilog=None):
   """Decorator to use for CI commands.
 
        The differences from the standard @click.command are:
@@ -94,15 +99,19 @@ def ci_command(name=None, cls=click.Command, group=main):
        :param name:  Optional name of the task. Defaults to the function name that is decorated with this decorator.
        :param cls:   Specifies whether the func is a command or a command group. Defaults to `click.Command`.
        :param group: Specifies the group the command belongs to. Defaults to the `main` command group.
+       :param epilog: Specifies epilog text to show at the end of the help text.
     """
 
   def ci_command(f):
     actual_name = f.__name__ if name is None else name
 
-    @click.command(name=actual_name, cls=cls, help=f.__doc__)
+    @click.command(name=actual_name, cls=cls, help=f.__doc__, epilog=epilog)
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
+      if options.debug:
+        logging.getLogger('fireci').setLevel(logging.DEBUG)
+      
       with _artifact_handler(
           options.artifact_target_dir,
           options.artifact_patterns,

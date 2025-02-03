@@ -16,15 +16,15 @@
 
 package com.google.firebase.vertexai.common
 
-import com.google.firebase.vertexai.common.server.BlockReason
-import com.google.firebase.vertexai.common.server.FinishReason
-import com.google.firebase.vertexai.common.server.HarmProbability
-import com.google.firebase.vertexai.common.server.HarmSeverity
-import com.google.firebase.vertexai.common.shared.FunctionCallPart
-import com.google.firebase.vertexai.common.shared.HarmCategory
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.goldenUnaryFile
 import com.google.firebase.vertexai.common.util.shouldNotBeNullOrEmpty
+import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionCallPart
+import com.google.firebase.vertexai.type.HarmCategory
+import com.google.firebase.vertexai.type.HarmProbability
+import com.google.firebase.vertexai.type.HarmSeverity
+import com.google.firebase.vertexai.type.TextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -35,6 +35,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Test
@@ -44,6 +45,7 @@ import org.junit.Test
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `short reply`() =
     goldenUnaryFile("success-basic-reply-short.json") {
@@ -51,12 +53,13 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.candidates?.first()?.content?.parts?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `long reply`() =
     goldenUnaryFile("success-basic-reply-long.json") {
@@ -64,7 +67,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.candidates?.first()?.content?.parts?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
       }
@@ -78,7 +81,7 @@ internal class UnarySnapshotTests {
 
         response.candidates?.isNullOrEmpty() shouldBe false
         val candidate = response.candidates?.first()
-        candidate?.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } shouldBe true
+        candidate?.safetyRatings?.any { it.category == HarmCategory.Internal.UNKNOWN } shouldBe true
       }
     }
 
@@ -91,12 +94,12 @@ internal class UnarySnapshotTests {
         response.candidates?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.all {
-          it.probability == HarmProbability.NEGLIGIBLE
+          it.probability == HarmProbability.Internal.NEGLIGIBLE
         } shouldBe true
         response.candidates?.first()?.safetyRatings?.all { it.probabilityScore != null } shouldBe
           true
         response.candidates?.first()?.safetyRatings?.all {
-          it.severity == HarmSeverity.NEGLIGIBLE
+          it.severity == HarmSeverity.Internal.NEGLIGIBLE
         } shouldBe true
         response.candidates?.first()?.safetyRatings?.all { it.severityScore != null } shouldBe true
       }
@@ -108,7 +111,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> {
           apiController.generateContent(textGenerateContentRequest("prompt"))
-        } should { it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY }
+        } should { it.response.promptFeedback?.blockReason shouldBe BlockReason.Internal.SAFETY }
       }
     }
 
@@ -150,7 +153,7 @@ internal class UnarySnapshotTests {
           shouldThrow<ResponseStoppedException> {
             apiController.generateContent(textGenerateContentRequest("prompt"))
           }
-        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.SAFETY
+        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.SAFETY
       }
     }
 
@@ -188,7 +191,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
       }
@@ -201,7 +204,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.promptTokenCount shouldBe 6
         response.usageMetadata?.totalTokenCount shouldBe null
@@ -219,6 +222,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `properly translates json text`() =
     goldenUnaryFile("success-constraint-decoding-json.json") {
@@ -227,7 +231,12 @@ internal class UnarySnapshotTests {
 
         response.candidates?.isEmpty() shouldBe false
         with(
-          response.candidates?.first()?.content?.parts?.first()?.shouldBeInstanceOf<TextPart>()
+          response.candidates
+            ?.first()
+            ?.content
+            ?.parts
+            ?.first()
+            ?.shouldBeInstanceOf<TextPart.Internal>()
         ) {
           shouldNotBeNull()
           JSON.decodeFromString<List<MountainColors>>(text).shouldNotBeEmpty()
@@ -305,18 +314,21 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call contains null param`() =
     goldenUnaryFile("success-function-call-null.json") {
       withTimeout(testTimeout) {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
-        val callPart = (response.candidates!!.first().content!!.parts.first() as FunctionCallPart)
+        val callPart =
+          (response.candidates!!.first().content!!.parts.first() as FunctionCallPart.Internal)
 
         callPart.functionCall.args shouldNotBe null
         callPart.functionCall.args?.get("season") shouldBe null
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call contains json literal`() =
     goldenUnaryFile("success-function-call-json-literal.json") {
@@ -327,7 +339,7 @@ internal class UnarySnapshotTests {
           content.let {
             it.shouldNotBeNull()
             it.parts.shouldNotBeEmpty()
-            it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
+            it.parts.first().shouldBeInstanceOf<FunctionCallPart.Internal>()
           }
 
         callPart.functionCall.args shouldNotBe null
@@ -335,6 +347,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call has no arguments field`() =
     goldenUnaryFile("success-function-call-empty-arguments.json") {
@@ -342,7 +355,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
         val content = response.candidates.shouldNotBeNullOrEmpty().first().content
         content.shouldNotBeNull()
-        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart.Internal
 
         callPart.functionCall.name shouldBe "current_time"
         callPart.functionCall.args shouldBe null

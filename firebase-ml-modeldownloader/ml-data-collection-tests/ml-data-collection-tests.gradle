@@ -43,13 +43,13 @@ android {
 
 dependencies {
     implementation project(':firebase-ml-modeldownloader')
-    implementation 'androidx.core:core:1.2.0'
+    implementation libs.androidx.core
     implementation 'com.google.firebase:firebase-common:21.0.0'
     implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
 
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.androidx.test.runner
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.robolectric
 }

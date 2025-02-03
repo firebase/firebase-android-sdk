@@ -1,0 +1,164 @@
+name: Data Connect Demo App
+
+on:
+  workflow_dispatch:
+    inputs:
+      nodeVersion:
+      firebaseToolsVersion:
+      javaVersion:
+      gradleInfoLog:
+        type: boolean
+  pull_request:
+    paths:
+      - firebase-dataconnect/demo/**
+      - .github/workflows/dataconnect_demo_app.yml
+  schedule:
+    - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
+
+env:
+  FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.28.0' }}
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
+  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
+
+defaults:
+  run:
+    shell: bash
+    working-directory: firebase-dataconnect/demo
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          sparse-checkout: firebase-dataconnect/demo
+
+      - name: Create Cache Key Files
+        run: |
+          echo "gmagjr2b9d" >github_actions_demo_test_cache_key.txt
+          echo "${{ env.FDC_FIREBASE_TOOLS_VERSION }}" >github_actions_demo_assemble_firebase_tools_version.txt
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.FDC_NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            firebase-dataconnect/demo/github_actions_demo_test_cache_key.txt
+            firebase-dataconnect/demo/github_actions_demo_assemble_firebase_tools_version.txt
+
+      - name: cache package-lock.json
+        id: package_json_lock
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FDC_FIREBASE_TOOLS_DIR }}/package*.json
+          key: firebase_tools_package_json-${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: install firebase-tools from scratch
+        if: steps.package_json_lock.outputs.cache-hit != 'true'
+        run: |
+          set -v
+          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          echo '{}' > package.json
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: install firebase-tools from package-lock.json
+        if: steps.package_json_lock.outputs.cache-hit == 'true'
+        run: |
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          npm ci --fund=false --audit=false 
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: |
+            firebase-dataconnect/demo/build.gradle.kts
+            firebase-dataconnect/demo/gradle.properties
+            firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+            firebase-dataconnect/demo/github_actions_demo_test_cache_key.txt
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          set +e -v
+          which java
+          java -version
+          which javac
+          javac -version
+          which node
+          node --version
+          ${{ env.FDC_FIREBASE_COMMAND }} --version
+          ./gradlew --version
+
+      - name: ./gradlew assemble test
+        run: |
+          set -x
+          ./gradlew \
+          --no-daemon \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          --profile \
+          -PdataConnect.minimalApp.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
+          assemble test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: firebase-dataconnect/demo/build/**/*.apk
+          if-no-files-found: warn
+          compression-level: 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gradle_build_reports
+          path: firebase-dataconnect/demo/build/reports/
+          if-no-files-found: warn
+          compression-level: 9
+
+  spotlessCheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          sparse-checkout: firebase-dataconnect/demo
+
+      - name: Create Cache Key Files
+        run: echo "h99ee4egfd" >github_actions_demo_spotless_cache_key.txt
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: |
+            firebase-dataconnect/demo/build.gradle.kts
+            firebase-dataconnect/demo/gradle.properties
+            firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+            firebase-dataconnect/demo/github_actions_demo_spotless_cache_key.txt
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          set +e -v
+          which java
+          java -version
+          which javac
+          javac -version
+          ./gradlew --version
+
+      - name: ./gradlew spotlessCheck
+        run: |
+          set -x
+          ./gradlew \
+          --no-daemon \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          spotlessCheck

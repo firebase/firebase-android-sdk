@@ -18,9 +18,12 @@ package com.google.firebase.dataconnect.testutil
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.ConnectorConfig
-import com.google.firebase.util.nextAlphanumericString
+import io.kotest.property.Arb
 import io.kotest.property.RandomSource
-import kotlin.random.Random
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.string
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
@@ -40,6 +43,31 @@ abstract class DataConnectIntegrationTestBase {
 
   val rs: RandomSource by randomSeedTestRule.rs
 
+  /**
+   * Generates and returns a string containing random alphanumeric characters, including the name of
+   * the currently-running test as returned from [testName].
+   *
+   * @param string The [Arb] to use to generate the random string; if not specified, then an [Arb]
+   * that generates strings of 20 alphanumeric characters is used.
+   * @param prefix A prefix to include in the returned string; if null (the default) then no prefix
+   * will be included.
+   * @return a string containing random characters and incorporating the other information
+   * identified above.
+   */
+  fun Arb.Companion.alphanumericString(
+    string: Arb<String> = Arb.string(20, Codepoint.alphanumeric()),
+    prefix: String? = null,
+  ): Arb<String> = arbitrary {
+    buildString {
+      if (prefix != null) {
+        append(prefix)
+      }
+      append(testName)
+      append("_")
+      append(string.bind())
+    }
+  }
+
   companion object {
     val testConnectorConfig: ConnectorConfig
       get() =
@@ -54,28 +82,3 @@ abstract class DataConnectIntegrationTestBase {
 /** The name of the currently-running test, in the form "ClassName.MethodName". */
 val DataConnectIntegrationTestBase.testName
   get() = this::class.qualifiedName + "." + testNameRule.methodName
-
-/**
- * Generates and returns a string containing random alphanumeric characters, including the name of
- * the currently-running test as returned from [testName].
- *
- * @param prefix A prefix to include in the returned string; if null (the default) then no prefix
- * will be included.
- * @param numRandomChars The number of random characters to include in the returned string; if null
- * (the default) then a default number will be used. At the time of writing, the default number of
- * characters is 20 (but this may change in the future).
- * @return a string containing random characters and incorporating the other information identified
- * above.
- */
-fun DataConnectIntegrationTestBase.randomAlphanumericString(
-  prefix: String? = null,
-  numRandomChars: Int? = null
-): String = buildString {
-  if (prefix != null) {
-    append(prefix)
-    append("_")
-  }
-  append(testName)
-  append("_")
-  append(Random.nextAlphanumericString(length = numRandomChars ?: 20))
-}

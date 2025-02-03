@@ -23,7 +23,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** Converts raw Java types into JSON objects. */
-class Serializer {
+internal class Serializer {
   private val dateFormat: DateFormat
 
   init {
@@ -32,7 +32,7 @@ class Serializer {
     dateFormat.timeZone = TimeZone.getTimeZone("UTC")
   }
 
-  fun encode(obj: Any?): Any {
+  public fun encode(obj: Any?): Any {
     if (obj == null || obj === JSONObject.NULL) {
       return JSONObject.NULL
     }
@@ -65,10 +65,9 @@ class Serializer {
     }
     if (obj is Map<*, *>) {
       val result = JSONObject()
-      val m = obj
-      for (k in m.keys) {
+      for (k in obj.keys) {
         require(k is String) { "Object keys must be strings." }
-        val value = encode(m[k])
+        val value = encode(obj[k])
         try {
           result.put(k, value)
         } catch (e: JSONException) {
@@ -87,11 +86,10 @@ class Serializer {
     }
     if (obj is JSONObject) {
       val result = JSONObject()
-      val m = obj
-      val keys = m.keys()
+      val keys = obj.keys()
       while (keys.hasNext()) {
         val k = keys.next() ?: throw IllegalArgumentException("Object keys cannot be null.")
-        val value = encode(m.opt(k))
+        val value = encode(obj.opt(k))
         try {
           result.put(k, value)
         } catch (e: JSONException) {
@@ -103,9 +101,8 @@ class Serializer {
     }
     if (obj is JSONArray) {
       val result = JSONArray()
-      val l = obj
-      for (i in 0 until l.length()) {
-        val o = l.opt(i)
+      for (i in 0 until obj.length()) {
+        val o = obj.opt(i)
         result.put(encode(o))
       }
       return result
@@ -113,8 +110,9 @@ class Serializer {
     throw IllegalArgumentException("Object cannot be encoded in JSON: $obj")
   }
 
-  fun decode(obj: Any): Any? {
+  public fun decode(obj: Any?): Any? {
     // TODO: Maybe this should throw a FirebaseFunctionsException instead?
+    if (obj == null) return null
     if (obj is Number) {
       return obj
     }
@@ -170,10 +168,12 @@ class Serializer {
     throw IllegalArgumentException("Object cannot be decoded from JSON: $obj")
   }
 
-  companion object {
-    @VisibleForTesting const val LONG_TYPE = "type.googleapis.com/google.protobuf.Int64Value"
+  internal companion object {
+    @VisibleForTesting
+    internal const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
 
     @VisibleForTesting
-    const val UNSIGNED_LONG_TYPE = "type.googleapis.com/google.protobuf.UInt64Value"
+    internal const val UNSIGNED_LONG_TYPE: String =
+      "type.googleapis.com/google.protobuf.UInt64Value"
   }
 }

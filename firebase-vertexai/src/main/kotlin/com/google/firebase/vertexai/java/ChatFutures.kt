@@ -21,32 +21,48 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.Chat
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.InvalidStateException
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
 /**
- * Helper method for interacting with a [Chat] from Java.
+ * Wrapper class providing Java compatible methods for [Chat].
  *
- * @see from
+ * @see [Chat]
  */
 public abstract class ChatFutures internal constructor() {
 
   /**
-   * Generates a response from the backend with the provided [Content], and any previous ones
-   * sent/returned from this chat.
+   * Sends a message using the existing history of this chat as context and the provided [Content]
+   * prompt.
    *
-   * @param prompt A [Content] to send to the model.
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
+   * @throws InvalidStateException if the [Chat] instance has an active request
    */
   public abstract fun sendMessage(prompt: Content): ListenableFuture<GenerateContentResponse>
 
   /**
-   * Generates a streaming response from the backend with the provided [Content].
+   * Sends a message using the existing history of this chat as context and the provided [Content]
+   * prompt.
    *
-   * @param prompt A [Content] to send to the model.
+   * The response from the model is returned as a stream.
+   *
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
+   * @throws InvalidStateException if the [Chat] instance has an active request
    */
   public abstract fun sendMessageStream(prompt: Content): Publisher<GenerateContentResponse>
 
-  /** Returns the [Chat] instance that was used to create this instance */
+  /** Returns the [Chat] object wrapped by this object. */
   public abstract fun getChat(): Chat
 
   private class FuturesImpl(private val chat: Chat) : ChatFutures() {

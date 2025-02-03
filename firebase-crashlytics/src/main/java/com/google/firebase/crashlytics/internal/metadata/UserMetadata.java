@@ -17,10 +17,13 @@ package com.google.firebase.crashlytics.internal.metadata;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicMarkableReference;
@@ -133,6 +136,47 @@ public class UserMetadata {
       userId.set(sanitizedNewId, true);
     }
     crashlyticsWorkers.diskWrite.submit(this::serializeUserDataIfNeeded);
+  }
+
+  /**
+   * Returns a {@link Map<String, String>} containing all the custom keys to attach to the event.
+   * It overrides the values of app level custom keys with the values of event level custom keys if
+   * they're identical, and event keys or values that exceed 1024 characters are truncated.
+   * Combined with app level custom keys, the map is restricted to 64 key value pairs.
+   *
+   * @param eventKeys a {@link Map<String, String>} representing event specific keys.
+   * @return a {@link Map<String, String>} containing all the custom keys to attach to the event.
+   */
+  public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
+    // In case of empty event keys, preserve existing behavior.
+    if (eventKeys.isEmpty()) {
+      return customKeys.getKeys();
+    }
+
+    // Otherwise merge the event keys with custom keys as appropriate.
+    Map<String, String> globalKeys = customKeys.getKeys();
+    HashMap<String, String> result = new HashMap<>(globalKeys);
+    int eventKeysOverLimit = 0;
+    for (Map.Entry<String, String> entry : eventKeys.entrySet()) {
+      String sanitizedKey = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
+      if (result.size() < MAX_ATTRIBUTES || result.containsKey(sanitizedKey)) {
+        String sanitizedValue = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
+        result.put(sanitizedKey, sanitizedValue);
+      } else {
+        eventKeysOverLimit++;
+      }
+    }
+
+    if (eventKeysOverLimit > 0) {
+      Logger.getLogger()
+          .w(
+              "Ignored "
+                  + eventKeysOverLimit
+                  + " keys when adding event specific keys. Maximum allowable: "
+                  + MAX_ATTRIBUTE_SIZE);
+    }
+
+    return Collections.unmodifiableMap(result);
   }
 
   /**
