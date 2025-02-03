@@ -14,7 +14,11 @@ open class Expr protected constructor() {
             }
         }
 
-        internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<Expr> {
+        internal fun toArrayOfExprOrConstant(others: Iterable<Any>): Array<out Expr> {
+            return others.map(::toExprOrConstant).toTypedArray()
+        }
+
+        internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<out Expr> {
             return others.map(::toExprOrConstant).toTypedArray()
         }
     }
@@ -76,28 +80,26 @@ class Field private constructor(val fieldPath: ModelFieldPath) : Expr() {
     }
 }
 
-class ListOfExpr(val expressions: Array<Expr>) : Expr() {
-    constructor(vararg expressions: Expr) : this(arrayOf(*expressions))
-    constructor(vararg expressions: Any) : this(expressions.map(::toExprOrConstant).toTypedArray())
-}
+class ListOfExpr(val expressions: Array<out Expr>) : Expr()
 
 open class Function protected constructor(
     private val name: String,
-    private val params: Array<Expr>
+    private val params: Array<out Expr>
 ) : Expr() {
-    protected constructor(name: String, vararg params: Expr) : this(name, arrayOf(*params))
+    protected constructor(name: String, param1: Expr) : this(name, arrayOf(param1))
+    protected constructor(name: String, param1: Expr, param2: Expr) : this(name, arrayOf(param1, param2))
+    protected constructor(name: String, param1: Expr, param2: Expr, param3: Expr) : this(name, arrayOf(param1, param2, param3))
 }
 
 open class FilterCondition protected constructor(
     name: String,
     vararg params: Expr
-) : Function(name, *params)
+) : Function(name, params)
 
 open class Accumulator protected constructor(
     name: String,
-    params: Array<Expr>
+    params: Array<out Expr>
 ) : Function(name, params) {
-    protected constructor(name: String, vararg params: Expr) : this(name, arrayOf(*params))
     protected constructor(name: String, param: Expr?) : this(name, if (param == null) emptyArray() else arrayOf(param))
 }
 
@@ -203,10 +205,10 @@ class Gte(left: Expr, right: Expr) : FilterCondition("gte", left, right) {
     constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
 }
 
-class ArrayConcat(array: Expr, vararg arrays: Expr) : Function("array_concat", array, *arrays) {
+class ArrayConcat(array: Expr, vararg arrays: Expr) : Function("array_concat", arrayOf(array, *arrays)) {
     constructor(array: Expr, arrays: List<Any>) : this(array, toExprOrConstant(arrays))
-    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
+    constructor(fieldName: String, vararg arrays: Expr) : this(Field.of(fieldName), *arrays)
+    constructor(fieldName: String, right: List<Any>) : this(Field.of(fieldName), right)
 }
 
 class ArrayReverse(array: Expr) : Function("array_reverse", array) {
@@ -219,11 +221,11 @@ class ArrayContains(array: Expr, value: Expr) : FilterCondition("array_contains"
     constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
 }
 
-class ArrayContainsAll(array: Expr, values: List<Any>) : FilterCondition("array_contains_all", array, ListOfExpr(values)) {
+class ArrayContainsAll(array: Expr, values: List<Any>) : FilterCondition("array_contains_all", array, ListOfExpr(toArrayOfExprOrConstant(values))) {
     constructor(fieldName: String, values: List<Any>) : this(Field.of(fieldName), values)
 }
 
-class ArrayContainsAny(array: Expr, values: List<Any>) : FilterCondition("array_contains_any", array, ListOfExpr(values)) {
+class ArrayContainsAny(array: Expr, values: List<Any>) : FilterCondition("array_contains_any", array,  ListOfExpr(toArrayOfExprOrConstant(values))) {
     constructor(fieldName: String, values: List<Any>) : this(Field.of(fieldName), values)
 }
 
@@ -231,7 +233,7 @@ class ArrayLength(array: Expr) : Function("array_length", array) {
     constructor(fieldName: String) : this(Field.of(fieldName))
 }
 
-class In(array: Expr, values: List<Any>) : FilterCondition("in", array, ListOfExpr(values)) {
+class In(array: Expr, values: List<Any>) : FilterCondition("in", array, ListOfExpr(toArrayOfExprOrConstant(values))) {
     constructor(fieldName: String, values: List<Any>) : this(Field.of(fieldName), values)
 }
 
@@ -349,7 +351,7 @@ class Trim(expr: Expr) : Function("trim", expr) {
     constructor(fieldName: String) : this(Field.of(fieldName))
 }
 
-class StrConcat internal constructor(first: Expr, vararg rest: Expr) : Function("str_concat", first, *rest) {
+class StrConcat internal constructor(first: Expr, vararg rest: Expr) : Function("str_concat", arrayOf(first, *rest)) {
     constructor(first: Expr, vararg rest: String) : this(first, *rest.map(Constant::of).toTypedArray())
     constructor(fieldName: String, vararg rest: Expr) : this(Field.of(fieldName), *rest)
     constructor(fieldName: String, vararg rest: String) : this(Field.of(fieldName), *rest)
