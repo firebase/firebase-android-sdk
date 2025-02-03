@@ -10,7 +10,5 @@ import org.robolectric.annotation.Config;
 public class StageTest {
 
   @Test
-  public void test() {
-
-  }
+  public void test() {}
 }

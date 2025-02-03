@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -10,7 +10,5 @@ import org.robolectric.annotation.Config;
 public class ExprTest {
 
   @Test
-  public void test() {
-
-  }
+  public void test() {}
 }

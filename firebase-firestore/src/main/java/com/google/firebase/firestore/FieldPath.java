@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -43,6 +42,7 @@ public final class FieldPath {
     this.internalPath = internalPath;
   }
 
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public com.google.firebase.firestore.model.FieldPath getInternalPath() {

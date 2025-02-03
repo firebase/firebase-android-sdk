@@ -240,23 +240,27 @@ public class Datastore {
             });
   }
 
-  public void executePipeline(
-      ExecutePipelineRequest request,
-      PipelineResultObserver observer
-  ) {
-    channel
-        .runStreamingResponseRpc(FirestoreGrpc.getExecutePipelineMethod(), request, new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
+  public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    channel.runStreamingResponseRpc(
+        FirestoreGrpc.getExecutePipelineMethod(),
+        request,
+        new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
 
           private SnapshotVersion executionTime = SnapshotVersion.NONE;
 
           @Override
           public void onMessage(ExecutePipelineResponse message) {
             setExecutionTime(serializer.decodeVersion(message.getExecutionTime()));
-            message.getResultsList().forEach(document -> observer.onDocument(
-                document.getName() == null ? null : serializer.decodeKey(document.getName()),
-                document.getFieldsMap(),
-                serializer.decodeVersion(document.getUpdateTime())
-            ));
+            message
+                .getResultsList()
+                .forEach(
+                    document ->
+                        observer.onDocument(
+                            document.getName() == null
+                                ? null
+                                : serializer.decodeKey(document.getName()),
+                            document.getFieldsMap(),
+                            serializer.decodeVersion(document.getUpdateTime())));
           }
 
           @Override
