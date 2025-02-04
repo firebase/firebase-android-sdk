@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.type.Schema
 import com.google.firebase.vertexai.type.StringFormat
 import io.kotest.assertions.json.shouldEqualJson

@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * The model's response to a count tokens request.
  *
@@ -36,4 +38,13 @@ public class CountTokensResponse(
   public operator fun component1(): Int = totalTokens
 
   public operator fun component2(): Int? = totalBillableCharacters
+
+  @Serializable
+  internal data class Internal(val totalTokens: Int, val totalBillableCharacters: Int? = null) :
+    Response {
+
+    internal fun toPublic(): CountTokensResponse {
+      return CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
+    }
+  }
 }

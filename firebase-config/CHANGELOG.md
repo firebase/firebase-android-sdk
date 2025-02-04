@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 22.1.0
 * [feature] Added support for custom signal targeting in Remote Config. Use `setCustomSignals` API for setting custom signals and use them to build custom targeting conditions in Remote Config.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
 
 # 22.0.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
