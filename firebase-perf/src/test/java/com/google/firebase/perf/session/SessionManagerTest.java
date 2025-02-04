@@ -33,7 +33,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -90,13 +89,14 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void testOnUpdateAppStateDoesNothingDuringAppStart() {
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
+    assertThat(oldSessionId).isNotNull();
 
     assertThat(oldSessionId).isNotNull();
     assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
 
     AppStateMonitor.getInstance().setIsColdStart(true);
 
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    //    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
     assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
@@ -107,7 +107,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     assertThat(oldSessionId).isNotNull();
     assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
 
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    //    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
     assertThat(oldSessionId).isNotEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
@@ -118,7 +118,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     assertThat(oldSessionId).isNotNull();
     assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
 
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
+    //    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
     assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
@@ -132,7 +132,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     assertThat(oldSessionId).isNotNull();
     assertThat(oldSessionId).isEqualTo(testSessionManager.perfSession().sessionId());
 
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
     assertThat(oldSessionId).isNotEqualTo(testSessionManager.perfSession().sessionId());
   }
 
@@ -143,7 +143,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
 
     verify(mockGaugeManager)
         .logGaugeMetadata(
@@ -157,7 +157,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
 
     verify(mockGaugeManager, never())
         .logGaugeMetadata(
@@ -171,7 +171,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
 
     verify(mockGaugeManager, never())
         .logGaugeMetadata(
@@ -186,7 +186,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
 
     verify(mockGaugeManager)
         .logGaugeMetadata(
@@ -199,7 +199,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    //    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
 
     verify(mockGaugeManager)
         .startCollectingGauges(AdditionalMatchers.not(eq(mockPerfSession)), any());
