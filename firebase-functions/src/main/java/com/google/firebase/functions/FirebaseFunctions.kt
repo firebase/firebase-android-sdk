@@ -336,7 +336,7 @@ internal constructor(
     return PublisherStream(url, data, options, client, this.serializer, task, executor)
   }
 
-  internal class PublisherStream(
+  private class PublisherStream(
     private val url: URL,
     private val data: Any?,
     private val options: HttpsCallOptions,
@@ -387,12 +387,9 @@ internal constructor(
             MediaType.parse("application/json"),
             JSONObject(mapOf("data" to serializer.encode(data))).toString()
           )
-
         val requestBuilder =
           Request.Builder().url(url).post(requestBody).header("Accept", "text/event-stream")
-
         applyCommonConfiguration(requestBuilder, context)
-
         val request = requestBuilder.build()
         val call = callClient.newCall(request)
         activeCall = call
@@ -517,7 +514,7 @@ internal constructor(
 
     private fun notifyData(data: Any?) {
       for (subscriber in subscribers) {
-        subscriber.onNext(data!!)
+        subscriber.onNext(data)
       }
     }
 

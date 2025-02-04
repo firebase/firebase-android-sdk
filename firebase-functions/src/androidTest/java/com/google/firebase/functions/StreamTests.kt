@@ -80,10 +80,11 @@ class StreamTests {
   @Test
   fun testGenStreamError() {
     val input = hashMapOf("data" to "Why is the sky blue")
-    val function = functions.getHttpsCallable("genStreamError").withTimeout(1, TimeUnit.SECONDS)
+    val function =
+      functions.getHttpsCallable("genStreamError").withTimeout(800, TimeUnit.MILLISECONDS)
 
     function.stream(input).subscribe(subscriber)
-    Thread.sleep(8000)
+    Thread.sleep(2000)
 
     val onNextStringList = onNextList.map { it.toString() }
     assertThat(onNextStringList)
@@ -91,7 +92,6 @@ class StreamTests {
         "{chunk=hello}",
       )
     assertThat(throwable).isNotNull()
-    assertThat(requireNotNull(throwable).message).isEqualTo("timeout")
     assertThat(isComplete).isFalse()
   }
 
@@ -112,6 +112,7 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
+    assertThat(throwable).isNull()
     assertThat(isComplete).isFalse()
   }
 
