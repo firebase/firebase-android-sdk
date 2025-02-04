@@ -88,7 +88,6 @@ jobs:
             echo "==============================================================================="
             echo "Running Command: $*"
             ("$@" 2>&1) || echo "WARNING: command failed with non-zero exit code $?: $*"
-            echo
           }
 
           run_cmd uname -a
