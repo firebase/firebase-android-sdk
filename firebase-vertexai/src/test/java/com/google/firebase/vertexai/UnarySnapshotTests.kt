@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai
 
+import com.google.firebase.vertexai.common.PublicPreviewAPI
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.ContentBlockedException
 import com.google.firebase.vertexai.type.FinishReason
@@ -54,6 +55,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
 
