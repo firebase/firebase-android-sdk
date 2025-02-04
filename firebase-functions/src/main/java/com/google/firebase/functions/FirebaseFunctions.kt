@@ -37,6 +37,7 @@ import java.io.InputStreamReader
 import java.io.InterruptedIOException
 import java.net.MalformedURLException
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
 import javax.inject.Named
 import okhttp3.Call
@@ -48,6 +49,9 @@ import okhttp3.RequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
+import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
 
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
 public class FirebaseFunctions
@@ -314,229 +318,254 @@ internal constructor(
     return tcs.task
   }
 
-  internal fun stream(name: String, data: Any?, options: HttpsCallOptions): StreamFunctionsTask {
-    val task = StreamFunctionsTask()
-    providerInstalled.task
-      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
-      .addOnCompleteListener(executor) { contextTask ->
-        if (!contextTask.isSuccessful) {
-          task.fail(
-            FirebaseFunctionsException(
-              "Error retrieving context",
-              FirebaseFunctionsException.Code.INTERNAL,
-              null,
-              contextTask.exception
-            )
-          )
-          return@addOnCompleteListener
-        }
-        val url = getURL(name)
-        stream(url, data, options, contextTask.result, task)
+  internal fun stream(name: String, data: Any?, options: HttpsCallOptions): Publisher<Any> {
+    val task =
+      providerInstalled.task.continueWithTask(executor) {
+        contextProvider.getContext(options.limitedUseAppCheckTokens)
       }
 
-    return task
+    return PublisherStream(getURL(name), data, options, client, serializer, task, executor)
   }
 
-  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): StreamFunctionsTask {
-    val task = StreamFunctionsTask()
-    providerInstalled.task
-      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
-      .addOnCompleteListener(executor) { contextTask ->
-        if (!contextTask.isSuccessful) {
-          task.fail(
-            FirebaseFunctionsException(
-              "Error retrieving context",
-              FirebaseFunctionsException.Code.INTERNAL,
-              null,
-              contextTask.exception
-            )
-          )
-
-          return@addOnCompleteListener
-        }
-
-        stream(url, data, options, contextTask.result, task)
+  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): Publisher<Any> {
+    val task =
+      providerInstalled.task.continueWithTask(executor) {
+        contextProvider.getContext(options.limitedUseAppCheckTokens)
       }
 
-    return task
+    return PublisherStream(url, data, options, client, this.serializer, task, executor)
   }
 
-  private fun stream(
-    url: URL,
-    data: Any?,
-    options: HttpsCallOptions,
-    context: HttpsCallableContext?,
-    task: StreamFunctionsTask
-  ) {
-    Preconditions.checkNotNull(url, "url cannot be null")
-    val callClient = options.apply(client)
-    callClient.postStream(url, task) { applyCommonConfiguration(data, context) }
-  }
+  internal class PublisherStream(
+    private val url: URL,
+    private val data: Any?,
+    private val options: HttpsCallOptions,
+    private val client: OkHttpClient,
+    private val serializer: Serializer,
+    private val contextTask: Task<HttpsCallableContext?>,
+    private val executor: Executor
+  ) : Publisher<Any> {
 
-  private inline fun OkHttpClient.postStream(
-    url: URL,
-    task: StreamFunctionsTask,
-    crossinline config: Request.Builder.() -> Unit = {}
-  ) {
-    val requestBuilder = Request.Builder().url(url)
-    requestBuilder.config()
-    val request = requestBuilder.build()
+    private val subscribers = ConcurrentLinkedQueue<Subscriber<in Any>>()
+    private var activeCall: Call? = null
 
-    val call = newCall(request)
-    call.enqueue(
-      object : Callback {
-        override fun onFailure(ignored: Call, e: IOException) {
-          val exception: FirebaseFunctionsException =
-            if (e is InterruptedIOException) {
-              FirebaseFunctionsException(
-                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name,
-                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED,
-                null,
-                e
-              )
-            } else {
-              FirebaseFunctionsException(
-                FirebaseFunctionsException.Code.INTERNAL.name,
-                FirebaseFunctionsException.Code.INTERNAL,
-                null,
-                e
-              )
-            }
-          task.fail(exception)
-        }
+    override fun subscribe(subscriber: Subscriber<in Any>) {
+      subscribers.add(subscriber)
+      subscriber.onSubscribe(
+        object : Subscription {
+          override fun request(n: Long) {
+            startStreaming()
+          }
 
-        @Throws(IOException::class)
-        override fun onResponse(ignored: Call, response: Response) {
-          try {
-            validateResponse(response)
-            val bodyStream = response.body()?.byteStream()
-            if (bodyStream != null) {
-              processSSEStream(bodyStream, serializer, task)
-            } else {
-              val exception =
-                FirebaseFunctionsException(
-                  "Response body is null",
-                  FirebaseFunctionsException.Code.INTERNAL,
-                  null
-                )
-              task.fail(exception)
-            }
-          } catch (exception: FirebaseFunctionsException) {
-            task.fail(exception)
+          override fun cancel() {
+            cancelStream()
+            subscribers.remove(subscriber)
           }
         }
-      }
-    )
-  }
-
-  private fun validateResponse(response: Response) {
-    if (response.isSuccessful) return
-
-    val htmlContentType = "text/html; charset=utf-8"
-    val trimMargin: String
-    if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
-      trimMargin = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
-      throw FirebaseFunctionsException(
-        trimMargin,
-        FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
-        null
       )
     }
 
-    val text = response.body()?.string() ?: ""
-    val error: Any?
-    try {
-      val json = JSONObject(text)
-      error = serializer.decode(json.opt("error"))
-    } catch (e: Throwable) {
-      throw FirebaseFunctionsException(
-        "${e.message} Unexpected Response:\n$text ",
-        FirebaseFunctionsException.Code.INTERNAL,
-        e
-      )
-    }
-    throw FirebaseFunctionsException(
-      error.toString(),
-      FirebaseFunctionsException.Code.INTERNAL,
-      error
-    )
-  }
+    private fun startStreaming() {
+      contextTask.addOnCompleteListener(executor) { contextTask ->
+        if (!contextTask.isSuccessful) {
+          notifyError(
+            FirebaseFunctionsException(
+              "Error retrieving context",
+              FirebaseFunctionsException.Code.INTERNAL,
+              null,
+              contextTask.exception
+            )
+          )
+          return@addOnCompleteListener
+        }
 
-  private fun Request.Builder.applyCommonConfiguration(data: Any?, context: HttpsCallableContext?) {
-    val body: MutableMap<String?, Any?> = HashMap()
-    val encoded = serializer.encode(data)
-    body["data"] = encoded
-    if (context!!.authToken != null) {
-      header("Authorization", "Bearer " + context.authToken)
-    }
-    if (context.instanceIdToken != null) {
-      header("Firebase-Instance-ID-Token", context.instanceIdToken)
-    }
-    if (context.appCheckToken != null) {
-      header("X-Firebase-AppCheck", context.appCheckToken)
-    }
-    header("Accept", "text/event-stream")
-    val bodyJSON = JSONObject(body)
-    val contentType = MediaType.parse("application/json")
-    val requestBody = RequestBody.create(contentType, bodyJSON.toString())
-    post(requestBody)
-  }
+        Preconditions.checkNotNull(url, "url cannot be null")
+        val context = contextTask.result
+        val callClient = options.apply(client)
+        val requestBody =
+          RequestBody.create(
+            MediaType.parse("application/json"),
+            JSONObject(mapOf("data" to serializer.encode(data))).toString()
+          )
 
-  private fun processSSEStream(
-    inputStream: InputStream,
-    serializer: Serializer,
-    task: StreamFunctionsTask
-  ) {
-    BufferedReader(InputStreamReader(inputStream)).use { reader ->
-      try {
-        reader.lineSequence().forEach { line ->
-          val dataChunk =
-            when {
-              line.startsWith("data:") -> line.removePrefix("data:")
-              line.startsWith("result:") -> line.removePrefix("result:")
-              else -> return@forEach
+        val requestBuilder =
+          Request.Builder().url(url).post(requestBody).header("Accept", "text/event-stream")
+
+        applyCommonConfiguration(requestBuilder, context)
+
+        val request = requestBuilder.build()
+        val call = callClient.newCall(request)
+        activeCall = call
+
+        call.enqueue(
+          object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+              val message: String
+              val code: FirebaseFunctionsException.Code
+              if (e is InterruptedIOException) {
+                message = FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name
+                code = FirebaseFunctionsException.Code.DEADLINE_EXCEEDED
+              } else {
+                message = FirebaseFunctionsException.Code.INTERNAL.name
+                code = FirebaseFunctionsException.Code.INTERNAL
+              }
+              notifyError(FirebaseFunctionsException(message, code, null, e))
             }
-          try {
-            val json = JSONObject(dataChunk)
-            when {
-              json.has("message") ->
-                serializer.decode(json.opt("message"))?.let { task.notifyListeners(it) }
-              json.has("error") -> {
-                serializer.decode(json.opt("error"))?.let {
-                  throw FirebaseFunctionsException(
-                    it.toString(),
+
+            override fun onResponse(call: Call, response: Response) {
+              validateResponse(response)
+              val bodyStream = response.body()?.byteStream()
+              if (bodyStream != null) {
+                processSSEStream(bodyStream)
+              } else {
+                notifyError(
+                  FirebaseFunctionsException(
+                    "Response body is null",
                     FirebaseFunctionsException.Code.INTERNAL,
-                    it
+                    null
                   )
-                }
-              }
-              json.has("result") -> {
-                serializer.decode(json.opt("result"))?.let {
-                  task.complete(HttpsCallableResult(it))
-                }
-                return
+                )
               }
             }
-          } catch (e: Throwable) {
-            throw FirebaseFunctionsException(
-              "${e.message} Invalid JSON: $dataChunk",
+          }
+        )
+      }
+    }
+
+    private fun cancelStream() {
+      activeCall?.cancel()
+      notifyError(
+        FirebaseFunctionsException(
+          "Stream was canceled",
+          FirebaseFunctionsException.Code.CANCELLED,
+          null
+        )
+      )
+    }
+
+    private fun applyCommonConfiguration(
+      requestBuilder: Request.Builder,
+      context: HttpsCallableContext?
+    ) {
+      context?.authToken?.let { requestBuilder.header("Authorization", "Bearer $it") }
+      context?.instanceIdToken?.let { requestBuilder.header("Firebase-Instance-ID-Token", it) }
+      context?.appCheckToken?.let { requestBuilder.header("X-Firebase-AppCheck", it) }
+    }
+
+    private fun processSSEStream(inputStream: InputStream) {
+      BufferedReader(InputStreamReader(inputStream)).use { reader ->
+        try {
+          reader.lineSequence().forEach { line ->
+            val dataChunk =
+              when {
+                line.startsWith("data:") -> line.removePrefix("data:")
+                line.startsWith("result:") -> line.removePrefix("result:")
+                else -> return@forEach
+              }
+            try {
+              val json = JSONObject(dataChunk)
+              when {
+                json.has("message") ->
+                  serializer.decode(json.opt("message"))?.let { notifyData(it) }
+                json.has("error") -> {
+                  serializer.decode(json.opt("error"))?.let {
+                    notifyError(
+                      FirebaseFunctionsException(
+                        it.toString(),
+                        FirebaseFunctionsException.Code.INTERNAL,
+                        it
+                      )
+                    )
+                  }
+                }
+                json.has("result") -> {
+                  serializer.decode(json.opt("result"))?.let {
+                    notifyData(it)
+                    notifyComplete()
+                  }
+                  return
+                }
+              }
+            } catch (e: Throwable) {
+              notifyError(
+                FirebaseFunctionsException(
+                  "Invalid JSON: $dataChunk",
+                  FirebaseFunctionsException.Code.INTERNAL,
+                  e
+                )
+              )
+            }
+          }
+          notifyError(
+            FirebaseFunctionsException(
+              "Stream ended unexpectedly without completion",
+              FirebaseFunctionsException.Code.INTERNAL,
+              null
+            )
+          )
+        } catch (e: Exception) {
+          notifyError(
+            FirebaseFunctionsException(
+              e.message ?: "Error reading stream",
               FirebaseFunctionsException.Code.INTERNAL,
               e
             )
-          }
+          )
         }
+      }
+    }
+
+    private fun notifyData(data: Any?) {
+      for (subscriber in subscribers) {
+        subscriber.onNext(data!!)
+      }
+    }
+
+    private fun notifyError(e: FirebaseFunctionsException) {
+      for (subscriber in subscribers) {
+        subscriber.onError(e)
+      }
+      subscribers.clear()
+    }
+
+    private fun notifyComplete() {
+      for (subscriber in subscribers) {
+        subscriber.onComplete()
+      }
+      subscribers.clear()
+    }
+
+    private fun validateResponse(response: Response) {
+      if (response.isSuccessful) return
+
+      val htmlContentType = "text/html; charset=utf-8"
+      val trimMargin: String
+      if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
+        trimMargin = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
         throw FirebaseFunctionsException(
-          "Stream ended unexpectedly without completion.",
-          FirebaseFunctionsException.Code.INTERNAL,
+          trimMargin,
+          FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
           null
         )
-      } catch (e: Exception) {
+      }
+
+      val text = response.body()?.string() ?: ""
+      val error: Any?
+      try {
+        val json = JSONObject(text)
+        error = serializer.decode(json.opt("error"))
+      } catch (e: Throwable) {
         throw FirebaseFunctionsException(
-          e.message ?: "Error reading stream",
+          "${e.message} Unexpected Response:\n$text ",
           FirebaseFunctionsException.Code.INTERNAL,
           e
         )
       }
+      throw FirebaseFunctionsException(
+        error.toString(),
+        FirebaseFunctionsException.Code.INTERNAL,
+        error
+      )
     }
   }
 

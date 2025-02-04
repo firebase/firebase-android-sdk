@@ -17,6 +17,7 @@ import androidx.annotation.VisibleForTesting
 import com.google.android.gms.tasks.Task
 import java.net.URL
 import java.util.concurrent.TimeUnit
+import org.reactivestreams.Publisher
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
 public class HttpsCallableReference {
@@ -155,13 +156,13 @@ public class HttpsCallableReference {
    * Instance ID the next time you call this method.
    *
    * @param data Parameters to pass to the endpoint.
-   * @return [StreamFunctionsTask] that will be completed when the streaming operation has finished.
+   * @return [Publisher] that will be completed when the streaming operation has finished.
    * @see org.json.JSONArray
    * @see org.json.JSONObject
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
-  public fun stream(data: Any?): StreamFunctionsTask {
+  public fun stream(data: Any?): Publisher<Any> {
     return if (name != null) {
       functionsClient.stream(name, data, options)
     } else {
@@ -181,9 +182,9 @@ public class HttpsCallableReference {
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
-   * @return [StreamFunctionsTask] that will be completed when the streaming operation has finished.
+   * @return [Publisher] that will be completed when the streaming operation has finished.
    */
-  public fun stream(): StreamFunctionsTask {
+  public fun stream(): Publisher<Any> {
     return if (name != null) {
       functionsClient.stream(name, null, options)
     } else {
