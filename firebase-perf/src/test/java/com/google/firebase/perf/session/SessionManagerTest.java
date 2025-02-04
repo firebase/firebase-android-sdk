@@ -84,8 +84,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSession_sessionAwareObjects_doesntNotifyIfNotRegistered() {
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = SessionManager.getInstance();
 
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
