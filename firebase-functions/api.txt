@@ -86,8 +86,8 @@ package com.google.firebase.functions {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
     method public long getTimeout();
     method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
-    method @NonNull public com.google.firebase.functions.StreamFunctionsTask stream(@Nullable Object data = null);
-    method @NonNull public com.google.firebase.functions.StreamFunctionsTask stream();
+    method @NonNull public org.reactivestreams.Publisher stream(@Nullable Object data = null);
+    method @NonNull public org.reactivestreams.Publisher stream();
     method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
     property public final long timeout;
   }
