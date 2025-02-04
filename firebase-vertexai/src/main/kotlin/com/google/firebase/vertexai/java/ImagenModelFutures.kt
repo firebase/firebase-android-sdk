@@ -19,6 +19,7 @@ package com.google.firebase.vertexai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.ImagenModel
+import com.google.firebase.vertexai.common.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
@@ -28,6 +29,7 @@ import com.google.firebase.vertexai.type.ImagenInlineImage
  *
  * @see [ImagenModel]
  */
+@OptIn(PublicPreviewAPI::class)
 public abstract class ImagenModelFutures internal constructor() {
   /**
    * Generates an image, returning the result directly to the caller.

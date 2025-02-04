@@ -128,6 +128,7 @@ internal constructor(
   }
 }
 
+@OptIn(PublicPreviewAPI::class)
 private fun ImagenGenerationResponse.Internal.validate(): ImagenGenerationResponse.Internal {
   if (predictions.none { it.mimeType != null }) {
     throw ContentBlockedException(
