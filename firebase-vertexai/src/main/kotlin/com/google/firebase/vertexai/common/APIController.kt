@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GRpcErrorResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
@@ -82,6 +83,7 @@ internal val JSON = Json {
  * @property apiClient The value to pass in the `x-goog-api-client` header.
  * @property headerProvider A provider that generates extra headers to include in all HTTP requests.
  */
+@OptIn(PublicPreviewAPI::class)
 internal class APIController
 internal constructor(
   private val key: String,

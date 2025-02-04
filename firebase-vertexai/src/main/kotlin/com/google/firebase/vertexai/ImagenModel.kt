@@ -28,12 +28,14 @@ import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenSafetySettings
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
  */
+@PublicPreviewAPI
 public class ImagenModel
 internal constructor(
   private val modelName: String,
@@ -126,6 +128,7 @@ internal constructor(
   }
 }
 
+@OptIn(PublicPreviewAPI::class)
 private fun ImagenGenerationResponse.Internal.validate(): ImagenGenerationResponse.Internal {
   if (predictions.none { it.mimeType != null }) {
     throw ContentBlockedException(

@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /** Used for safety filtering. */
+@PublicPreviewAPI
 public class ImagenSafetyFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
     /** Strongest filtering level, most strict blocking. */

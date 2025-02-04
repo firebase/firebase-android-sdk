@@ -26,6 +26,7 @@ package com.google.firebase.vertexai.type
  * @param imageFormat The file format/compression of the generated images.
  * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
  */
+@PublicPreviewAPI
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
   public val numberOfImages: Int? = 1,
@@ -88,6 +89,7 @@ public class ImagenGenerationConfig(
  * }
  * ```
  */
+@PublicPreviewAPI
 public fun imagenGenerationConfig(
   init: ImagenGenerationConfig.Builder.() -> Unit
 ): ImagenGenerationConfig {

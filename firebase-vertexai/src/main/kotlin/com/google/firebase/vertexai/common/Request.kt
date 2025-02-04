@@ -20,6 +20,7 @@ import com.google.firebase.vertexai.common.util.fullModelName
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.ImagenImageFormat
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
@@ -74,6 +75,7 @@ internal data class GenerateImageRequest(
 ) : Request {
   @Serializable internal data class ImagenPrompt(val prompt: String)
 
+  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int = 1,

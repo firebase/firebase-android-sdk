@@ -25,6 +25,7 @@ import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
 import com.google.firebase.vertexai.type.PromptBlockedException
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
@@ -35,7 +36,6 @@ import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -54,6 +54,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
 

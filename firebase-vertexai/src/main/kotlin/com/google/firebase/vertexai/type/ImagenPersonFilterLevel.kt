@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /** A filter used to prevent images from containing depictions of children or people. */
+@PublicPreviewAPI
 public class ImagenPersonFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
     /** No filters applied. */

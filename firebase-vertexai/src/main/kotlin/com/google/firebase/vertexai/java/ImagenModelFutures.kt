@@ -22,12 +22,14 @@ import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 
 /**
  * Wrapper class providing Java compatible methods for [ImagenModel].
  *
  * @see [ImagenModel]
  */
+@PublicPreviewAPI
 public abstract class ImagenModelFutures internal constructor() {
   /**
    * Generates an image, returning the result directly to the caller.

@@ -16,12 +16,11 @@
 
 package com.google.firebase.vertexai.type
 
-/**
- * Represents an Imagen-generated image that is contained in Google Cloud Storage.
- *
- * @param gcsUri Contains the `gs://` URI for the image.
- * @param mimeType Contains the MIME type of the image (for example, `"image/png"`).
- */
-@PublicPreviewAPI
-public class ImagenGCSImage
-internal constructor(public val gcsUri: String, public val mimeType: String) {}
+@Retention(AnnotationRetention.BINARY)
+@RequiresOptIn(
+  level = RequiresOptIn.Level.ERROR,
+  message =
+    "This API is part of an experimental public preview and may change in " +
+      "backwards-incompatible ways without notice.",
+)
+public annotation class PublicPreviewAPI()

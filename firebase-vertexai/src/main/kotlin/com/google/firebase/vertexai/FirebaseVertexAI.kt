@@ -27,6 +27,7 @@ import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.InvalidLocationException
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
@@ -91,6 +92,7 @@ internal constructor(
    * @return The initialized [ImagenModel] instance.
    */
   @JvmOverloads
+  @PublicPreviewAPI
   public fun imagenModel(
     modelName: String,
     generationConfig: ImagenGenerationConfig? = null,
