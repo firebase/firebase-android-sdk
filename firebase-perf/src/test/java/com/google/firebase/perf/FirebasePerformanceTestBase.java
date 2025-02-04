@@ -75,7 +75,6 @@ public class FirebasePerformanceTestBase {
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
     FirebaseApp.initializeApp(appContext, options);
-    FirebasePerformance.getInstance();
   }
 
   @After
