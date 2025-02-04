@@ -1,9 +1,13 @@
 package com.google.firebase.perf.session
 
+import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.logging.AndroidLogger
 import com.google.firebase.sessions.api.SessionSubscriber
 
-class SessionManagerKt(val dataCollectionEnabled: Boolean) : SessionSubscriber {
+class SessionManagerKt(private val dataCollectionEnabled: Boolean) : SessionSubscriber {
+  private val perfSessionToAqs: MutableMap<String, SessionSubscriber.SessionDetails?> =
+    mutableMapOf()
+
   override val isDataCollectionEnabled: Boolean
     get() = dataCollectionEnabled
 
@@ -25,9 +29,19 @@ class SessionManagerKt(val dataCollectionEnabled: Boolean) : SessionSubscriber {
     }
   }
 
+  fun reportPerfSession(perfSessionId: String) {
+    perfSessionToAqs[perfSessionId] = null
+  }
+
+  fun getAqsMappedToPerfSession(perfSessionId: String): String {
+    AndroidLogger.getInstance()
+      .debug("AQS for perf session $perfSessionId is ${perfSessionToAqs[perfSessionId]?.sessionId}")
+    return perfSessionToAqs[perfSessionId]?.sessionId ?: perfSessionId
+  }
+
   companion object {
-    val perfSessionToAqs: MutableMap<String, SessionSubscriber.SessionDetails?> by lazy {
-      mutableMapOf()
+    val instance: SessionManagerKt by lazy {
+      SessionManagerKt(ConfigResolver.getInstance().isPerformanceMonitoringEnabled)
     }
   }
 }

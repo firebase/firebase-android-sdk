@@ -23,9 +23,9 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.PerfSession;
-import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.SessionManagerKt;
 import com.google.firebase.perf.util.ImmutableBundle;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -72,6 +72,7 @@ public class FirebasePerformanceTestBase {
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
     FirebaseApp.initializeApp(appContext, options);
+    FirebasePerformance.getInstance();
   }
 
   @After
@@ -98,6 +99,7 @@ public class FirebasePerformanceTestBase {
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
-    SessionManager.getInstance().setPerfSession(PerfSession.createNewSession());
+    SessionManagerKt.Companion.getInstance()
+        .onSessionChanged(new SessionSubscriber.SessionDetails("sessionId"));
   }
 }

@@ -20,13 +20,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +47,7 @@ public class PerfSession implements Parcelable {
     // SessionManagerKt verifies if this is an active session, and sets the AQS session ID.
     // The assumption is that new PerfSessions *should* be limited to either App Start, or through
     // AQS.
-    SessionManagerKt.Companion.getPerfSessionToAqs().put(prunedSessionId, null);
+    SessionManagerKt.Companion.getInstance().reportPerfSession(prunedSessionId);
 
     return session;
   }
@@ -71,12 +68,8 @@ public class PerfSession implements Parcelable {
 
   /** Returns the sessionId of the object. */
   public String sessionId() {
-    // TODO(b/394127311): Verify edge cases.
-    SessionSubscriber.SessionDetails sessionDetails =
-        SessionManagerKt.Companion.getPerfSessionToAqs().get(internalSessionId);
-    AndroidLogger.getInstance()
-        .debug("AQS for " + this.internalSessionId + " is " + sessionDetails);
-    return Objects.requireNonNull(sessionDetails).getSessionId();
+    return SessionManagerKt.Companion.getInstance()
+        .getAqsMappedToPerfSession(this.internalSessionId);
   }
 
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)

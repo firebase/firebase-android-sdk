@@ -202,8 +202,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
 
-    SessionManagerKt sessionSubscriber = new SessionManagerKt(isPerformanceCollectionEnabled());
-    FirebaseSessionsDependencies.register(sessionSubscriber);
+    FirebaseSessionsDependencies.register(SessionManagerKt.Companion.getInstance());
   }
 
   /**
