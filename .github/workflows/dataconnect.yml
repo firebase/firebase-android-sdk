@@ -150,7 +150,7 @@ jobs:
 
       - name: Save AVD cache
         uses: actions/cache/save@v4
-        if: github.event_name == 'schedule'
+        #if: github.event_name == 'schedule'
         with:
           path: |
             ~/.android/avd/*
