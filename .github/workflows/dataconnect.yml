@@ -188,12 +188,12 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+            set -eux && adb logcat -c && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck || (adb logcat -d >logcat.log)
 
       - name: Upload log file artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: logs
+          name: integration_test_logs
           path: "**/*.log"
           if-no-files-found: warn
           compression-level: 9
@@ -201,7 +201,7 @@ jobs:
       - name: Upload Gradle build report artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gradle_build_reports
+          name: integration_test_gradle_build_reports
           path: firebase-dataconnect/**/build/reports/
           if-no-files-found: warn
           compression-level: 9
