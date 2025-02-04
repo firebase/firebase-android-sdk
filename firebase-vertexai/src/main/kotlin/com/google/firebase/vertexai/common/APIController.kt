@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GRpcErrorResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient

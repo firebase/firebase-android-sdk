@@ -16,7 +16,7 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.ContentBlockedException
 import com.google.firebase.vertexai.type.FinishReason
@@ -36,7 +36,6 @@ import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should

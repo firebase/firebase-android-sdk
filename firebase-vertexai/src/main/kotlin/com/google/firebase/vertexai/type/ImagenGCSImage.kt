@@ -16,8 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
-
 /**
  * Represents an Imagen-generated image that is contained in Google Cloud Storage.
  *

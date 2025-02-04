@@ -16,8 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
-
 /**
  * Contains extra settings to configure image generation.
  *

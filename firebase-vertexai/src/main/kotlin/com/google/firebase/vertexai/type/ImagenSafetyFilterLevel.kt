@@ -16,8 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
-
 /** Used for safety filtering. */
 @PublicPreviewAPI
 public class ImagenSafetyFilterLevel private constructor(internal val internalVal: String) {

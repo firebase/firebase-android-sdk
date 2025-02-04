@@ -22,7 +22,7 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.common.ContentBlockedException
 import com.google.firebase.vertexai.common.GenerateImageRequest
-import com.google.firebase.vertexai.common.PublicPreviewAPI
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationConfig

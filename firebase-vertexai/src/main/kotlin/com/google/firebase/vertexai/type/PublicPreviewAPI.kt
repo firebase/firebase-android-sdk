@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.vertexai.common
+package com.google.firebase.vertexai.type
 
 @Retention(AnnotationRetention.BINARY)
 @RequiresOptIn(

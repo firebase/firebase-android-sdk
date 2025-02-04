@@ -21,7 +21,7 @@ package com.google.firebase.vertexai.util
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.PublicPreviewAPI
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull

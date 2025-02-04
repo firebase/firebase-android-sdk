@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
 import kotlinx.serialization.Serializable
 
 /**

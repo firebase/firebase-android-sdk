@@ -16,8 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.PublicPreviewAPI
-
 /**
  * A configuration for filtering unsafe content or images containing people.
  *
