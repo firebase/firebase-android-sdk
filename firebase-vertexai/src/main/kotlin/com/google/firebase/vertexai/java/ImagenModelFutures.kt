@@ -19,10 +19,10 @@ package com.google.firebase.vertexai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.ImagenModel
-import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ImagenGCSImage
 import com.google.firebase.vertexai.type.ImagenGenerationResponse
 import com.google.firebase.vertexai.type.ImagenInlineImage
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 
 /**
  * Wrapper class providing Java compatible methods for [ImagenModel].
