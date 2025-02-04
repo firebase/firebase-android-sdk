@@ -138,7 +138,7 @@ jobs:
       - run: echo "github.event_name == '${{ github.event_name }}' steps.avd-cache.outputs.cache-hit == '${{ steps.avd-cache.outputs.cache-hit }}'"
 
       - name: Create AVD
-        if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
+        #if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
