@@ -22,6 +22,7 @@ import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.common.PublicPreviewAPI
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
@@ -90,6 +91,7 @@ internal constructor(
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [ImagenModel] instance.
    */
+  @OptIn(PublicPreviewAPI::class)
   @JvmOverloads
   public fun imagenModel(
     modelName: String,
