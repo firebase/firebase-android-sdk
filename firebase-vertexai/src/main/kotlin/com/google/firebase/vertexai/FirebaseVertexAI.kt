@@ -91,8 +91,8 @@ internal constructor(
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [ImagenModel] instance.
    */
-  @OptIn(PublicPreviewAPI::class)
   @JvmOverloads
+  @PublicPreviewAPI
   public fun imagenModel(
     modelName: String,
     generationConfig: ImagenGenerationConfig? = null,

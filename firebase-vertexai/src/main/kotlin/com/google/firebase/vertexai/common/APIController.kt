@@ -82,6 +82,7 @@ internal val JSON = Json {
  * @property apiClient The value to pass in the `x-goog-api-client` header.
  * @property headerProvider A provider that generates extra headers to include in all HTTP requests.
  */
+@OptIn(PublicPreviewAPI::class)
 internal class APIController
 internal constructor(
   private val key: String,

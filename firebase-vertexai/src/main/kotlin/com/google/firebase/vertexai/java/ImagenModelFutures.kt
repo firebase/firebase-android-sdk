@@ -29,7 +29,7 @@ import com.google.firebase.vertexai.type.ImagenInlineImage
  *
  * @see [ImagenModel]
  */
-@OptIn(PublicPreviewAPI::class)
+@PublicPreviewAPI
 public abstract class ImagenModelFutures internal constructor() {
   /**
    * Generates an image, returning the result directly to the caller.

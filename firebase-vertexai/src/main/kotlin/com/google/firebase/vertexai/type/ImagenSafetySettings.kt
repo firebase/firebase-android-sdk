@@ -16,12 +16,15 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.PublicPreviewAPI
+
 /**
  * A configuration for filtering unsafe content or images containing people.
  *
  * @param safetyFilterLevel Used to filter unsafe content.
  * @param personFilterLevel Used to filter images containing people.
  */
+@PublicPreviewAPI
 public class ImagenSafetySettings(
   internal val safetyFilterLevel: ImagenSafetyFilterLevel,
   internal val personFilterLevel: ImagenPersonFilterLevel,

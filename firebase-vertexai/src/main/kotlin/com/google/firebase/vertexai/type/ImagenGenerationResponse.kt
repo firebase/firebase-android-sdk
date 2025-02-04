@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.PublicPreviewAPI
 import kotlinx.serialization.Serializable
 
 /**
@@ -25,6 +26,7 @@ import kotlinx.serialization.Serializable
  * @param filteredReason if fewer images were generated than were requested, this field will contain
  * the reason they were filtered out.
  */
+@PublicPreviewAPI
 public class ImagenGenerationResponse<T>
 internal constructor(public val images: List<T>, public val filteredReason: String?) {
 

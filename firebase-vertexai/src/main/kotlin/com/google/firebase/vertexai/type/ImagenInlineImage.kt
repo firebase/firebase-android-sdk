@@ -19,6 +19,7 @@ package com.google.firebase.vertexai.type
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import com.google.firebase.vertexai.common.PublicPreviewAPI
 
 /**
  * Represents an Imagen-generated image that is contained inline
@@ -26,6 +27,7 @@ import android.util.Base64
  * @param data Contains the raw bytes of the image
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`)
  */
+@PublicPreviewAPI
 public class ImagenInlineImage
 internal constructor(public val data: ByteArray, public val mimeType: String) {
 

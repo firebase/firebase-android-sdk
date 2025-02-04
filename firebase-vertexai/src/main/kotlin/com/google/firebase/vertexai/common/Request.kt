@@ -74,6 +74,7 @@ internal data class GenerateImageRequest(
 ) : Request {
   @Serializable internal data class ImagenPrompt(val prompt: String)
 
+  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int = 1,

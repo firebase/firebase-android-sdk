@@ -16,7 +16,10 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.PublicPreviewAPI
+
 /** Represents the aspect ratio that the generated image should conform to. */
+@PublicPreviewAPI
 public class ImagenAspectRatio private constructor(internal val internalVal: String) {
   public companion object {
     /** A square image, useful for icons, profile pictures, etc. */
