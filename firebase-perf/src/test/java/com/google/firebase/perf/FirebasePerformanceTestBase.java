@@ -26,6 +26,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.SessionManagerKt;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.sessions.api.SessionSubscriber;
+import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -51,6 +52,8 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_API_KEY = "AIzaSyBcE-OOIbhjyR83gm4r2MFCu4MJmprNXsw";
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
+
+  protected static final String FAKE_AQS_SESSION_PREFIX = "AIzaSyBcE";
 
   protected Context appContext;
 
@@ -94,12 +97,16 @@ public class FirebasePerformanceTestBase {
     forceVerboseSessionWithSamplingPercentage(0);
   }
 
+  protected static void triggerAqsSession() {
+    SessionManagerKt.Companion.getInstance()
+        .onSessionChanged(
+            new SessionSubscriber.SessionDetails(FAKE_AQS_SESSION_PREFIX + UUID.randomUUID()));
+  }
+
   private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
-
-    SessionManagerKt.Companion.getInstance()
-        .onSessionChanged(new SessionSubscriber.SessionDetails("sessionId"));
+    triggerAqsSession();
   }
 }
