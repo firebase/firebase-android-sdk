@@ -29,14 +29,48 @@ fun String.remove(regex: Regex) = replace(regex, "")
 fun String.remove(str: String) = replace(str, "")
 
 /**
- * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
+ * Joins a variable amount of [objects][Any.toString] to a single [String] split by newlines (`\n`).
  *
  * For example:
  * ```kotlin
- * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
+ * multiLine("Hello", "World", "!") shouldBeText
+ *  """
+ *    Hello
+ *    World
+ *    !
+ *  """.trimIndent()
  * ```
+ *
+ * If any of the elements are collections, their elements will be recursively joined instead.
+ *
+ * ```kotlin
+ * multiLine(
+ *   "Hello",
+ *   listOf("World"),
+ *   listOf("Goodbye", listOf("World", "!"),
+ *   emptyList()
+ * ) shouldBeText
+ *  """
+ *    Hello
+ *    World
+ *    Goodbye
+ *    World
+ *    !
+ *  """.trimIndent()
+ * ```
+ *
+ * _Note:_ Empty collections will not be rendered.
  */
-fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
+fun multiLine(vararg strings: Any?): String =
+  strings
+    .filter { it !is Collection<*> || it.isNotEmpty() }
+    .joinToString("\n") {
+      if (it is Collection<*>) {
+        multiLine(*it.toTypedArray())
+      } else {
+        it.toString()
+      }
+    }
 
 /**
  * Converts an [Element] to an Artifact string.
@@ -290,6 +324,19 @@ fun File.writeStream(stream: InputStream): File {
 }
 
 /**
+ * Creates the the path to a file if it doesn't already exist.
+ *
+ * This includes creating the directories for this file.
+ *
+ * @return This [File] instance for chaining.
+ */
+fun File.createIfAbsent(): File {
+  parentFile?.mkdirs()
+  createNewFile()
+  return this
+}
+
+/**
  * The [path][File.path] represented as a qualified unix path.
  *
  * Useful when a system expects a unix path, but you need to be able to run it on non unix systems.
@@ -308,3 +355,45 @@ val File.unixPath: String
  */
 val File.absoluteUnixPath: String
   get() = absolutePath.replace("\\", "/")
+
+/**
+ * Partitions a map with nullable values into a map of non null values and a list of keys with null
+ * values.
+ *
+ * For example:
+ * ```
+ * val weekdays = mapOf(
+ *   "Monday" to 0,
+ *   "Tuesday" to 1,
+ *   "Wednesday" to null,
+ *   "Thursday" to 3,
+ *   "Friday" to null,
+ * )
+ *
+ * val (validDays, invalidDays) = weekdays.partitionNotNull()
+ *
+ * validDays shouldEqual mapOf(
+ *   "Monday" to 0,
+ *   "Tuesday" to 1,
+ *   "Thursday" to 3,
+ * )
+ * invalidDays shouldContainExactly listOf("Wednesday", "Friday")
+ * ```
+ *
+ * @return A pair where the first component is a map of all the non null values and the second
+ *   component is a list of the keys with null values.
+ */
+fun <K, V> Map<K, V?>.partitionNotNull(): Pair<Map<K, V>, List<K>> {
+  val nonNullEntries = mutableMapOf<K, V>()
+  val nullEntries = mutableListOf<K>()
+
+  for ((key, value) in this) {
+    if (value !== null) {
+      nonNullEntries[key] = value
+    } else {
+      nullEntries.add(key)
+    }
+  }
+
+  return nonNullEntries to nullEntries
+}
