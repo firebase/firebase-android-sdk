@@ -53,7 +53,7 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
-  protected static final String FAKE_AQS_SESSION_PREFIX = "AIzaSyBcE";
+  protected static final String FAKE_AQS_SESSION_PREFIX = "AQS";
 
   protected Context appContext;
 

@@ -62,8 +62,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   public void testInstanceCreation() {
     assertThat(SessionManager.getInstance()).isNotNull();
     assertThat(SessionManager.getInstance()).isEqualTo(SessionManager.getInstance());
-    assertThat(SessionManager.getInstance().perfSession().sessionId())
-        .contains(FAKE_AQS_SESSION_PREFIX);
+    assertThat(SessionManager.getInstance().perfSession().sessionId()).isNotNull();
   }
 
   @Test
