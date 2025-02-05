@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /** Details of a session including a unique Id and related information. */
 public class PerfSession implements Parcelable {
 
-  private static final String SESSION_ID_PREFIX = "fireperf-session";
+  private static final String SESSION_ID_PREFIX = "FPRS";
   private final String sessionId;
   private final Timer creationTime;
 
