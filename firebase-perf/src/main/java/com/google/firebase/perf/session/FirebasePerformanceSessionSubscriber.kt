@@ -17,16 +17,16 @@ class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Bo
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     AndroidLogger.getInstance().debug("AQS Session Changed: $sessionDetails")
-    val currentInternalSessionId = SessionManager.getInstance().perfSession().internalSessionId
+    val perfSessionId = SessionManager.getInstance().perfSession().sessionId()
 
     // There can be situations where a new [PerfSession] was created, but an AQS wasn't
     // available (during cold start).
-    if (perfSessionToAqs[currentInternalSessionId] == null) {
-      perfSessionToAqs[currentInternalSessionId] = sessionDetails
+    if (perfSessionToAqs[perfSessionId] == null) {
+      perfSessionToAqs[perfSessionId] = sessionDetails
     } else {
       val newSession = PerfSession.createNewSession()
       SessionManager.getInstance().updatePerfSession(newSession)
-      perfSessionToAqs[newSession.internalSessionId] = sessionDetails
+      perfSessionToAqs[newSession.sessionId()] = sessionDetails
     }
   }
 
