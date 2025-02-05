@@ -1,5 +1,5 @@
 # Unreleased
-- [changed] Internal improvements to correctly handle empty model responses.
+* [changed] Internal improvements to correctly handle empty responses from models.
 
 
 # 16.0.2
