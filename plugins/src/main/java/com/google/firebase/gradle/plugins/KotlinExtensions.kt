@@ -29,14 +29,48 @@ fun String.remove(regex: Regex) = replace(regex, "")
 fun String.remove(str: String) = replace(str, "")
 
 /**
- * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
+ * Joins a variable amount of [objects][Any.toString] to a single [String] split by newlines (`\n`).
  *
  * For example:
  * ```kotlin
- * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
+ * multiLine("Hello", "World", "!") shouldBeText
+ *  """
+ *    Hello
+ *    World
+ *    !
+ *  """.trimIndent()
  * ```
+ *
+ * If any of the elements are collections, their elements will be recursively joined instead.
+ *
+ * ```kotlin
+ * multiLine(
+ *   "Hello",
+ *   listOf("World"),
+ *   listOf("Goodbye", listOf("World", "!"),
+ *   emptyList()
+ * ) shouldBeText
+ *  """
+ *    Hello
+ *    World
+ *    Goodbye
+ *    World
+ *    !
+ *  """.trimIndent()
+ * ```
+ *
+ * _Note:_ Empty collections will not be rendered.
  */
-fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
+fun multiLine(vararg strings: Any?): String =
+  strings
+    .filter { it !is Collection<*> || it.isNotEmpty() }
+    .joinToString("\n") {
+      if (it is Collection<*>) {
+        multiLine(*it.toTypedArray())
+      } else {
+        it.toString()
+      }
+    }
 
 /**
  * Converts an [Element] to an Artifact string.
