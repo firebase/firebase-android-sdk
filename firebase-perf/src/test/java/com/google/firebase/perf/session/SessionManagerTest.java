@@ -30,8 +30,6 @@ import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.util.Clock;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
