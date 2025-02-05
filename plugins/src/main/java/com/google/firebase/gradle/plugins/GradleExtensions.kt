@@ -28,6 +28,7 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.file.Directory
 import org.gradle.api.plugins.PluginManager
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
@@ -263,3 +264,46 @@ fun LibraryAndroidComponentsExtension.onReleaseVariants(
 inline fun <reified T : BuildService<P>, reified P : BuildServiceParameters> BuildServiceRegistry
   .registerIfAbsent(name: String, noinline config: BuildServiceSpec<P>.() -> Unit = {}) =
   registerIfAbsent(name, T::class.java, config)
+
+/**
+ * The value of this provider if present, or an empty list if it's not present.
+ *
+ * @return The value of this provider or an empty list.
+ */
+fun <V, T : List<V>> Provider<T>.orEmpty() = orNull.orEmpty()
+
+/**
+ * The value of this provider if present, or an empty map if it's not present.
+ *
+ * @return The value of this provider or an map list.
+ */
+fun <K, V, T : Map<K, V>> Provider<T>.orEmpty() = orNull.orEmpty()
+
+/**
+ * Maps to the single file (non directory) within this directory, or throws an exception if it can't
+ * find a file or if there's more than one file.
+ *
+ * Helper wrapper around [Directory.nestedFile] for providers.
+ */
+val Provider<Directory>.nestedFile: Provider<File>
+  get() = map { it.nestedFile }
+
+/**
+ * Maps to the single file (non directory) within this directory, or throws an exception if it can't
+ * find a file or if there's more than one file.
+ *
+ * Useful in situations where a directory merely acts as a container for a nested file whose name
+ * isn't known at compile time.
+ *
+ * For example, given the following directory structure:
+ * ```
+ * com/
+ *  google/
+ *   firebase/
+ *    firebase-bom-34.8.0.pom
+ * ```
+ *
+ * This will result in the `firebase-bom-34.8.0.pom` file being returned.
+ */
+val Directory.nestedFile: File
+  get() = asFileTree.single { it.isFile }

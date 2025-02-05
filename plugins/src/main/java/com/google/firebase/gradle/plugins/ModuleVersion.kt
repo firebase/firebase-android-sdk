@@ -57,7 +57,7 @@ enum class PreReleaseVersionType {
  * Where `Type` is a case insensitive string of any [PreReleaseVersionType], and `Build` is a two
  * digit number (single digits should have a leading zero).
  *
- * Note that `build` will always be present as starting at one by default. That is, the following
+ * Note that `build` will always be present as starting at one by defalt. That is, the following
  * transform occurs:
  * ```
  * "12.13.1-beta" // 12.13.1-beta01
@@ -232,6 +232,30 @@ data class ModuleVersion(
         ?: throw IllegalArgumentException(
           "Invalid module version found for '${artifactId}': $version"
         )
+  }
+
+  /**
+   * Determine the [VersionType] representing the bump that would be required to reach [other], if
+   * any.
+   *
+   * ```
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(2,1,3)).shouldBeEqual(VersionType.MAJOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,1,3)).shouldBeEqual(VersionType.MINOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,3)).shouldBeEqual(VersionType.PATCH)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,0)).shouldBeNull()
+   * ```
+   *
+   * @param other The target version to get the bump for.
+   * @return A [VersionType] representing the bump that this version would need to reach [other], or
+   *   null if they're the same version.
+   */
+  fun bumpFrom(other: ModuleVersion): VersionType? {
+    if (other.major != this.major) return VersionType.MAJOR
+    if (other.minor != this.minor) return VersionType.MINOR
+    if (other.patch != this.patch) return VersionType.PATCH
+    if (other.pre != this.pre) return VersionType.PRE
+
+    return null
   }
 
   /**
