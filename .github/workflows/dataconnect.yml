@@ -175,7 +175,7 @@ jobs:
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
 
       - name: Capture Logcat Logs
-        run: adb logcat >logcat.log
+        run: adb logcat >logcat.log &
 
       - name: Gradle connectedCheck
         id: connectedCheck
