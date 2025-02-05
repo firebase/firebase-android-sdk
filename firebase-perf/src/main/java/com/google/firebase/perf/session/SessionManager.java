@@ -113,8 +113,7 @@ public class SessionManager {
    */
   public void updatePerfSession(PerfSession perfSession) {
     // Do not update the perf session if it is the exact same sessionId.
-    if (Objects.equals(
-        perfSession.sessionId(), this.perfSession.sessionId())) {
+    if (Objects.equals(perfSession.sessionId(), this.perfSession.sessionId())) {
       return;
     }
 

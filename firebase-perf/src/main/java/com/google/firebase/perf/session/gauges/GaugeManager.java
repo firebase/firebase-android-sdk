@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
@@ -242,7 +243,10 @@ public class GaugeManager {
     }
 
     // Adding Session ID info.
-    gaugeMetricBuilder.setSessionId(sessionId);
+    String aqsSessionId =
+        FirebasePerformanceSessionSubscriber.Companion.getInstance()
+            .getAqsMappedToPerfSession(sessionId);
+    gaugeMetricBuilder.setSessionId(aqsSessionId);
 
     transportManager.log(gaugeMetricBuilder.build(), appState);
   }
@@ -256,10 +260,13 @@ public class GaugeManager {
    * @return true if GaugeMetadata was logged, false otherwise.
    */
   public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    String aqsSessionId =
+        FirebasePerformanceSessionSubscriber.Companion.getInstance()
+            .getAqsMappedToPerfSession(sessionId);
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
-              .setSessionId(sessionId)
+              .setSessionId(aqsSessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
       transportManager.log(gaugeMetric, appState);
