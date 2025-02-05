@@ -180,6 +180,9 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
+    // Prioritize registering the FirebaseSession dependency to have the session
+    // `setApplicationContext`.
+    FirebaseSessionsDependencies.register(SessionManagerKt.Companion.getInstance());
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
@@ -201,8 +204,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
-
-    FirebaseSessionsDependencies.register(SessionManagerKt.Companion.getInstance());
   }
 
   /**
