@@ -30,6 +30,8 @@ import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.util.Clock;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,8 +58,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockAppStateMonitor.isColdStart()).thenReturn(false);
     AppStateMonitor.getInstance().setIsColdStart(false);
-    // We assume that an AQS session has been created in all tests.
-    triggerAqsSession();
   }
 
   @Test

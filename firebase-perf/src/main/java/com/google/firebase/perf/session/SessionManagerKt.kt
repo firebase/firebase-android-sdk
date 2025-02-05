@@ -39,6 +39,10 @@ class SessionManagerKt(private val dataCollectionEnabled: Boolean) : SessionSubs
     return perfSessionToAqs[perfSessionId]?.sessionId ?: perfSessionId
   }
 
+  fun clearSessionForTest() {
+    perfSessionToAqs.clear()
+  }
+
   companion object {
     val instance: SessionManagerKt by lazy {
       SessionManagerKt(ConfigResolver.getInstance().isPerformanceMonitoringEnabled)

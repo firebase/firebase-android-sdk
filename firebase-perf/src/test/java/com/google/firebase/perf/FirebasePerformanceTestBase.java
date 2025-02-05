@@ -75,11 +75,13 @@ public class FirebasePerformanceTestBase {
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
     FirebaseApp.initializeApp(appContext, options);
+    triggerAqsSession();
   }
 
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
+    SessionManagerKt.Companion.getInstance().clearSessionForTest();
   }
 
   protected static void forceSessionsFeatureDisabled() {
