@@ -4,7 +4,8 @@ import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.logging.AndroidLogger
 import com.google.firebase.sessions.api.SessionSubscriber
 
-class SessionManagerKt(private val dataCollectionEnabled: Boolean) : SessionSubscriber {
+class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Boolean) :
+  SessionSubscriber {
   private val perfSessionToAqs: MutableMap<String, SessionSubscriber.SessionDetails?> =
     mutableMapOf()
 
@@ -44,8 +45,10 @@ class SessionManagerKt(private val dataCollectionEnabled: Boolean) : SessionSubs
   }
 
   companion object {
-    val instance: SessionManagerKt by lazy {
-      SessionManagerKt(ConfigResolver.getInstance().isPerformanceMonitoringEnabled)
+    val instance: FirebasePerformanceSessionSubscriber by lazy {
+      FirebasePerformanceSessionSubscriber(
+        ConfigResolver.getInstance().isPerformanceMonitoringEnabled
+      )
     }
   }
 }

@@ -23,7 +23,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.SessionManagerKt;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.UUID;
@@ -81,7 +81,7 @@ public class FirebasePerformanceTestBase {
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
-    SessionManagerKt.Companion.getInstance().clearSessionForTest();
+    FirebasePerformanceSessionSubscriber.Companion.getInstance().clearSessionForTest();
   }
 
   protected static void forceSessionsFeatureDisabled() {
@@ -99,7 +99,7 @@ public class FirebasePerformanceTestBase {
   }
 
   protected static void triggerAqsSession() {
-    SessionManagerKt.Companion.getInstance()
+    FirebasePerformanceSessionSubscriber.Companion.getInstance()
         .onSessionChanged(
             new SessionSubscriber.SessionDetails(FAKE_AQS_SESSION_PREFIX + UUID.randomUUID()));
   }

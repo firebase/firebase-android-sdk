@@ -47,7 +47,7 @@ public class PerfSession implements Parcelable {
     // SessionManagerKt verifies if this is an active session, and sets the AQS session ID.
     // The assumption is that new PerfSessions *should* be limited to either App Start, or through
     // AQS.
-    SessionManagerKt.Companion.getInstance().reportPerfSession(prunedSessionId);
+    FirebasePerformanceSessionSubscriber.Companion.getInstance().reportPerfSession(prunedSessionId);
 
     return session;
   }
@@ -68,7 +68,7 @@ public class PerfSession implements Parcelable {
 
   /** Returns the sessionId of the object. */
   public String sessionId() {
-    return SessionManagerKt.Companion.getInstance()
+    return FirebasePerformanceSessionSubscriber.Companion.getInstance()
         .getAqsMappedToPerfSession(this.internalSessionId);
   }
 
