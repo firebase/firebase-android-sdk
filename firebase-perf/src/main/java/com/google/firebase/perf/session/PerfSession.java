@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 /** Details of a session including a unique Id and related information. */
 public class PerfSession implements Parcelable {
 
-  private final String internalSessionId;
+  private static final String SESSION_ID_PREFIX = "fireperf-session";
+  private final String sessionId;
   private final Timer creationTime;
 
   private boolean isGaugeAndEventCollectionEnabled = false;
@@ -39,42 +40,39 @@ public class PerfSession implements Parcelable {
    * Creates a PerfSession object and decides what metrics to collect.
    */
   public static PerfSession createNewSession() {
-    String prunedSessionId = UUID.randomUUID().toString().replace("-", "");
+    String prunedSessionId = SESSION_ID_PREFIX + UUID.randomUUID().toString().replace("-", "");
     PerfSession session = new PerfSession(prunedSessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
-
-    // Every time a PerfSession is created, it sets the AQS to null. Once an AQS is received,
-    // SessionManagerKt verifies if this is an active session, and sets the AQS session ID.
-    // The assumption is that new PerfSessions *should* be limited to either App Start, or through
-    // AQS.
-    FirebasePerformanceSessionSubscriber.Companion.getInstance().reportPerfSession(prunedSessionId);
-
     return session;
   }
 
   /** Creates a PerfSession with the provided {@code sessionId} and {@code clock}. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-  public PerfSession(String internalSessionId, Clock clock) {
-    this.internalSessionId = internalSessionId;
+  public PerfSession(String sessionId, Clock clock) {
+    this.sessionId = sessionId;
     creationTime = clock.getTime();
+    // Every time a PerfSession is created, it sets the AQS to null. Once an AQS is received,
+    // SessionManagerKt verifies if this is an active session, and sets the AQS session ID.
+    // The assumption is that new PerfSessions *should* be limited to either App Start, or through
+    // AQS.
+    FirebasePerformanceSessionSubscriber.Companion.getInstance().reportPerfSession(sessionId);
   }
 
   private PerfSession(@NonNull Parcel in) {
     super();
-    internalSessionId = in.readString();
+    sessionId = in.readString();
     isGaugeAndEventCollectionEnabled = in.readByte() != 0;
     creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
   /** Returns the sessionId of the object. */
   public String sessionId() {
-    return FirebasePerformanceSessionSubscriber.Companion.getInstance()
-        .getAqsMappedToPerfSession(this.internalSessionId);
+    return this.sessionId;
   }
 
-  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-  public String getInternalSessionId() {
-    return internalSessionId;
+  private String aqsSessionId() {
+    return FirebasePerformanceSessionSubscriber.Companion.getInstance()
+        .getAqsMappedToPerfSession(this.sessionId);
   }
 
   /**
@@ -127,7 +125,7 @@ public class PerfSession implements Parcelable {
   /** Creates and returns the proto object for PerfSession object. */
   public com.google.firebase.perf.v1.PerfSession build() {
     com.google.firebase.perf.v1.PerfSession.Builder sessionMetric =
-        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(sessionId());
+        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(aqsSessionId());
 
     // If gauge collection is enabled, enable gauge collection verbosity.
     if (isGaugeAndEventCollectionEnabled) {
@@ -202,7 +200,7 @@ public class PerfSession implements Parcelable {
    * @param flags Additional flags about how the object should be written.
    */
   public void writeToParcel(@NonNull Parcel out, int flags) {
-    out.writeString(internalSessionId);
+    out.writeString(sessionId);
     out.writeByte((byte) (isGaugeAndEventCollectionEnabled ? 1 : 0));
     out.writeParcelable(creationTime, 0);
   }

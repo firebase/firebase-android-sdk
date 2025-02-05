@@ -40,8 +40,6 @@ public class SessionManager {
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
 
-  private static final String COLD_START_GAUGE_NAME = "coldstart";
-
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
@@ -115,8 +113,7 @@ public class SessionManager {
    */
   public void updatePerfSession(PerfSession perfSession) {
     // Do not update the perf session if it is the exact same sessionId.
-    if (Objects.equals(
-        perfSession.getInternalSessionId(), this.perfSession.getInternalSessionId())) {
+    if (Objects.equals(perfSession.sessionId(), this.perfSession.sessionId())) {
       return;
     }
 

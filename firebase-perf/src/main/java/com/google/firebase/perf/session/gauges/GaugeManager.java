@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
@@ -72,8 +73,8 @@ public class GaugeManager {
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
-        new Lazy<>(CpuGaugeCollector::new),
-        new Lazy<>(MemoryGaugeCollector::new));
+        new Lazy<>(() -> new CpuGaugeCollector()),
+        new Lazy<>(() -> new MemoryGaugeCollector()));
   }
 
   @VisibleForTesting
@@ -81,7 +82,7 @@ public class GaugeManager {
       Lazy<ScheduledExecutorService> gaugeManagerExecutor,
       TransportManager transportManager,
       ConfigResolver configResolver,
-      @Nullable GaugeMetadataManager gaugeMetadataManager,
+      GaugeMetadataManager gaugeMetadataManager,
       Lazy<CpuGaugeCollector> cpuGaugeCollector,
       Lazy<MemoryGaugeCollector> memoryGaugeCollector) {
 
@@ -136,12 +137,11 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
-    // TODO(b/394127311): Switch to using AQS.
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
               .get()
-              .scheduleWithFixedDelay(
+              .scheduleAtFixedRate(
                   () -> {
                     syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
@@ -205,7 +205,6 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    // TODO(b/394127311): Switch to using AQS.
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture unusedFuture =
@@ -244,8 +243,10 @@ public class GaugeManager {
     }
 
     // Adding Session ID info.
-    // TODO(b/394127311): Switch to using AQS.
-    gaugeMetricBuilder.setSessionId(sessionId);
+    String aqsSessionId =
+        FirebasePerformanceSessionSubscriber.Companion.getInstance()
+            .getAqsMappedToPerfSession(sessionId);
+    gaugeMetricBuilder.setSessionId(aqsSessionId);
 
     transportManager.log(gaugeMetricBuilder.build(), appState);
   }
@@ -253,12 +254,15 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param aqsSessionId The {@link PerfSession#aqsSessionId()} ()} to which the collected Gauge Metrics
+   * @param sessionId The {@link PerfSession#sessionId()} to which the collected Gauge Metrics
    *     should be associated with.
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String aqsSessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    String aqsSessionId =
+        FirebasePerformanceSessionSubscriber.Companion.getInstance()
+            .getAqsMappedToPerfSession(sessionId);
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
