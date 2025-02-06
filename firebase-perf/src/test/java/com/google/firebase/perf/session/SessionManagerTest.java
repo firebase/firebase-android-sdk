@@ -82,8 +82,8 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.setApplicationContext(mockApplicationContext);
 
     testSessionManager.getSyncInitFuture().get();
-    inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
-    inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
+    inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any(), any());
+    inOrder.verify(mockGaugeManager).logGaugeMetadata(any());
   }
 
   @Test
