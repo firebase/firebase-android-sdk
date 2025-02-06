@@ -51,7 +51,7 @@ abstract class GenerateBomReleaseNotesTask : DefaultTask() {
     val previousDeps = previousBom.get().dependencyManagement?.dependencies.orEmpty()
     previousBomVersions.set(previousDeps.associate { it.fullArtifactName to it.version })
 
-    val sortedDependencies = currentDeps.sortedBy { it.version }
+    val sortedDependencies = currentDeps.sortedBy { it.toString() }
 
     val headingId = "{: #bom_v${bom.version.replace(".", "-")}}"
 
