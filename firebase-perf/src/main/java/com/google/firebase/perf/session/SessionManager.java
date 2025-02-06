@@ -68,6 +68,7 @@ public class SessionManager {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
     this.appStateMonitor = appStateMonitor;
+    AndroidLogger.getInstance().debug("CFPRS: SessionManager()");
   }
 
   /**
@@ -116,8 +117,6 @@ public class SessionManager {
     if (Objects.equals(perfSession.sessionId(), this.perfSession.sessionId())) {
       return;
     }
-
-    AndroidLogger.getInstance().debug("Perf Session Changed: " + perfSession);
 
     this.perfSession = perfSession;
 

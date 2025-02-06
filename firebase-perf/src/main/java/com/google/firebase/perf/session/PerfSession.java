@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
@@ -55,6 +56,7 @@ public class PerfSession implements Parcelable {
     // SessionManagerKt verifies if this is an active session, and sets the AQS session ID.
     // The assumption is that new PerfSessions *should* be limited to either App Start, or through
     // AQS.
+    AndroidLogger.getInstance().debug("CFPRS PerfSession(): " + sessionId);
     FirebasePerformanceSessionSubscriber.Companion.getInstance().reportPerfSession(sessionId);
   }
 
@@ -176,9 +178,9 @@ public class PerfSession implements Parcelable {
   /** If true, Session Gauge collection is enabled. */
   public static boolean shouldCollectGaugesAndEvents() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
-
-    return configResolver.isPerformanceMonitoringEnabled()
-        && Math.random() < configResolver.getSessionsSamplingRate();
+    return true;
+    //    return configResolver.isPerformanceMonitoringEnabled()
+    //        && Math.random() < configResolver.getSessionsSamplingRate();
   }
 
   /**

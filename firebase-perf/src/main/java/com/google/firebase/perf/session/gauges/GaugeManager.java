@@ -247,6 +247,7 @@ public class GaugeManager {
         FirebasePerformanceSessionSubscriber.Companion.getInstance()
             .getAqsMappedToPerfSession(sessionId);
     gaugeMetricBuilder.setSessionId(aqsSessionId);
+    AndroidLogger.getInstance().debug("CFPR syncFlush: " + sessionId + " AQS: " + aqsSessionId);
 
     transportManager.log(gaugeMetricBuilder.build(), appState);
   }
@@ -260,9 +261,13 @@ public class GaugeManager {
    * @return true if GaugeMetadata was logged, false otherwise.
    */
   public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    // TODO(b/394127311): Based on logs, AQS session ID isn't available any time
+    // this is called. Adding a TODO to identify potential changes.
     String aqsSessionId =
         FirebasePerformanceSessionSubscriber.Companion.getInstance()
             .getAqsMappedToPerfSession(sessionId);
+    AndroidLogger.getInstance()
+        .debug("CFPR logGaugeMetadata: " + sessionId + " AQS: " + aqsSessionId);
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()

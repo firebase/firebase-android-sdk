@@ -16,8 +16,9 @@ class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Bo
     get() = SessionSubscriber.Name.PERFORMANCE
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
-    AndroidLogger.getInstance().debug("AQS Session Changed: $sessionDetails")
     val perfSessionId = SessionManager.getInstance().perfSession().sessionId()
+    AndroidLogger.getInstance()
+      .debug("CFPRS AQS Session Changed: $sessionDetails, PerfSession: $perfSessionId")
 
     // There can be situations where a new [PerfSession] was created, but an AQS wasn't
     // available (during cold start).
