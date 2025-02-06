@@ -171,15 +171,25 @@ data class PomElement(
    * @see fromFile
    */
   fun toFile(file: File): File {
-    val xmlWriter = XML {
-      indent = 2
-      xmlDeclMode = XmlDeclMode.None
-    }
-    file.writeText(xmlWriter.encodeToString(this))
+    file.writeText(toString())
     return file
   }
 
+  /**
+   * Serializes this pom element into a valid XML element.
+   *
+   * @see toFile
+   */
+  override fun toString(): String {
+    return xml.encodeToString(this)
+  }
+
   companion object {
+    private val xml = XML {
+      indent = 2
+      xmlDeclMode = XmlDeclMode.None
+    }
+
     /**
      * Deserializes a [PomElement] from a `pom.xml` file.
      *
@@ -201,6 +211,6 @@ data class PomElement(
      * @see fromFile
      */
     fun fromElement(element: Element): PomElement =
-      XML.decodeFromReader(xmlStreaming.newReader(element))
+      xml.decodeFromReader(xmlStreaming.newReader(element))
   }
 }
