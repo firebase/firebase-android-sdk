@@ -17,8 +17,6 @@ package com.google.firebase.perf.session.gauges;
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.StorageUnit;
@@ -41,7 +39,6 @@ class GaugeMetadataManager {
   private final Runtime runtime;
   private final ActivityManager activityManager;
   private final MemoryInfo memoryInfo;
-  private final Context appContext;
 
   GaugeMetadataManager(Context appContext) {
     this(Runtime.getRuntime(), appContext);
@@ -50,7 +47,6 @@ class GaugeMetadataManager {
   @VisibleForTesting
   GaugeMetadataManager(Runtime runtime, Context appContext) {
     this.runtime = runtime;
-    this.appContext = appContext;
     this.activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
     memoryInfo = new ActivityManager.MemoryInfo();
     activityManager.getMemoryInfo(memoryInfo);
@@ -75,11 +71,7 @@ class GaugeMetadataManager {
 
   /** Returns the total memory (in kilobytes) accessible by the kernel (called the RAM size). */
   public int getDeviceRamSizeKb() {
-    if (VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN) {
-      return Utils.saturatedIntCast(StorageUnit.BYTES.toKilobytes(memoryInfo.totalMem));
-    }
-
-    return readTotalRAM(/* procFileName= */ "/proc/meminfo");
+    return Utils.saturatedIntCast(StorageUnit.BYTES.toKilobytes(memoryInfo.totalMem));
   }
 
   /** Returns the total ram size of the device (in kilobytes) by reading the "proc/meminfo" file. */
