@@ -269,9 +269,10 @@ data class ModuleVersion(
       .let { it ?: if (pre != null) VersionType.PRE else VersionType.PATCH }
       .let {
         when (it) {
-          VersionType.MAJOR -> copy(major = major + 1)
-          VersionType.MINOR -> copy(minor = minor + 1)
-          VersionType.PATCH -> copy(patch = patch + 1)
+          VersionType.MAJOR ->
+            copy(major = major + 1, minor = 0, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.MINOR -> copy(minor = minor + 1, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.PATCH -> copy(patch = patch + 1, pre = pre?.copy(build = 1))
           VersionType.PRE -> copy(pre = pre?.bump())
         }
       }
