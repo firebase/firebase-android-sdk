@@ -274,6 +274,7 @@ public class GaugeManager {
               .setSessionId(aqsSessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
+      // TODO(b/394127311): Explore maintaining this metadata until AQS is available.
       transportManager.log(gaugeMetric, appState);
       return true;
     }
