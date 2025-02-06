@@ -29,8 +29,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
@@ -76,14 +74,7 @@ public class SessionManager {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    // TODO(b/258263016): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
-    syncInitFuture =
-        executorService.submit(
-            () -> {
-              gaugeManager.initializeGaugeMetadataManager(appContext);
-            });
+    gaugeManager.initializeGaugeMetadataManager(appContext, ApplicationProcessState.FOREGROUND);
   }
 
   /**

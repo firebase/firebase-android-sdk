@@ -95,8 +95,10 @@ public class GaugeManager {
   }
 
   /** Initializes GaugeMetadataManager which requires application context. */
-  public void initializeGaugeMetadataManager(Context appContext) {
+  public void initializeGaugeMetadataManager(
+      Context appContext, ApplicationProcessState applicationProcessState) {
     this.gaugeMetadataManager = new GaugeMetadataManager(appContext);
+    this.applicationProcessState = applicationProcessState;
   }
 
   /** Returns the singleton instance of this class. */
@@ -255,28 +257,20 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param sessionId The {@link PerfSession#sessionId()} to which the collected Gauge Metrics
+   * @param aqsSessionId The {@link FirebasePerformanceSessionSubscriber#getAqsMappedToPerfSession(String)} to which the collected Gauge Metrics
    *     should be associated with.
-   * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
-    // TODO(b/394127311): Re-introduce logging of metadata for AQS.
-    String aqsSessionId =
-        FirebasePerformanceSessionSubscriber.Companion.getInstance()
-            .getAqsMappedToPerfSession(sessionId);
-    AndroidLogger.getInstance()
-        .debug("CFPR logGaugeMetadata: " + sessionId + " AQS: " + aqsSessionId);
-    if (gaugeMetadataManager != null) {
-      GaugeMetric gaugeMetric =
-          GaugeMetric.newBuilder()
-              .setSessionId(aqsSessionId)
-              .setGaugeMetadata(getGaugeMetadata())
-              .build();
-      transportManager.log(gaugeMetric, appState);
-      return true;
-    }
-    return false;
+  public void logGaugeMetadata(String aqsSessionId) {
+    // TODO(b/394127311): This can now throw an NPE. Explore if there's anything that should be
+    // verified.
+    AndroidLogger.getInstance().debug("CFPR logGaugeMetadata: " + aqsSessionId);
+    GaugeMetric gaugeMetric =
+        GaugeMetric.newBuilder()
+            .setSessionId(aqsSessionId)
+            .setGaugeMetadata(getGaugeMetadata())
+            .build();
+    transportManager.log(gaugeMetric, this.applicationProcessState);
   }
 
   private GaugeMetadata getGaugeMetadata() {

@@ -2,6 +2,7 @@ package com.google.firebase.perf.session
 
 import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.logging.AndroidLogger
+import com.google.firebase.perf.session.gauges.GaugeManager
 import com.google.firebase.sessions.api.SessionSubscriber
 
 class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Boolean) :
@@ -29,6 +30,9 @@ class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Bo
       SessionManager.getInstance().updatePerfSession(newSession)
       perfSessionToAqs[newSession.sessionId()] = sessionDetails
     }
+
+    // Always log GaugeMetadata when a session changes.
+    GaugeManager.getInstance().logGaugeMetadata(sessionDetails.sessionId)
   }
 
   fun reportPerfSession(perfSessionId: String) {
