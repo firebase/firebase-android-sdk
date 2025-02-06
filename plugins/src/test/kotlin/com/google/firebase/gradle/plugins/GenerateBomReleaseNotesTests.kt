@@ -106,13 +106,13 @@ class GenerateBomReleaseNotesTests : FunSpec() {
           groupId = "com.google.firebase",
           artifactId = "firebase-auth",
           version = "10.0.0",
-        )
+        ),
       )
     val bom = makeBom("1.0.0", dependencies)
     val file = makeReleaseNotes(bom, bom)
 
     file.readText().trim() shouldBeText
-            """
+      """
             ### {{firebase_bom_long}} ({{bill_of_materials}}) version 1.0.0 {: #bom_v1-0-0}
             {% comment %}
             These library versions must be flat-typed, do not use variables.
@@ -149,7 +149,7 @@ class GenerateBomReleaseNotesTests : FunSpec() {
               </table>
             </section>
         """
-              .trimIndent()
+        .trimIndent()
   }
 
   @Test
