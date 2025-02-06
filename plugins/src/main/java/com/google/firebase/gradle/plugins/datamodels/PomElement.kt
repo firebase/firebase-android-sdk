@@ -158,7 +158,7 @@ data class PomElement(
   @XmlElement val artifactId: String,
   @XmlElement val version: String,
   @XmlElement val packaging: String? = null,
-  @XmlChildrenName("licenses") val licenses: List<LicenseElement>? = null,
+  @XmlChildrenName("license") val licenses: List<LicenseElement>? = null,
   @XmlElement val scm: SourceControlManagement? = null,
   @XmlElement val dependencyManagement: DependencyManagementElement? = null,
   @XmlChildrenName("dependency") val dependencies: List<ArtifactDependency>? = null,
