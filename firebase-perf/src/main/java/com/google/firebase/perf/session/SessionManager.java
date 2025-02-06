@@ -76,9 +76,6 @@ public class SessionManager {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
-    // which creates a new perfSession, before the following is executed in background thread
-    final PerfSession appStartSession = perfSession;
     // TODO(b/258263016): Migrate to go/firebase-android-executors
     @SuppressLint("ThreadPoolCreation")
     ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -86,10 +83,6 @@ public class SessionManager {
         executorService.submit(
             () -> {
               gaugeManager.initializeGaugeMetadataManager(appContext);
-              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
-                gaugeManager.logGaugeMetadata(
-                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
-              }
             });
   }
 
@@ -133,9 +126,6 @@ public class SessionManager {
       }
     }
 
-    // Log the gauge metadata event if data collection is enabled.
-    logGaugeMetadataIfCollectionEnabled(appStateMonitor.getAppState());
-
     // Start of stop the gauge data collection.
     startOrStopCollectingGauges(appStateMonitor.getAppState());
   }
@@ -147,7 +137,6 @@ public class SessionManager {
    * this does not reset the perfSession.
    */
   public void initializeGaugeCollection() {
-    logGaugeMetadataIfCollectionEnabled(ApplicationProcessState.FOREGROUND);
     startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
   }
 
@@ -172,12 +161,6 @@ public class SessionManager {
   public void unregisterForSessionUpdates(WeakReference<SessionAwareObject> client) {
     synchronized (clients) {
       clients.remove(client);
-    }
-  }
-
-  private void logGaugeMetadataIfCollectionEnabled(ApplicationProcessState appState) {
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.logGaugeMetadata(perfSession.sessionId(), appState);
     }
   }
 

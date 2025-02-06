@@ -41,7 +41,7 @@ data class LicenseElement(
   @XmlElement val name: String,
   @XmlElement val url: String? = null,
   @XmlElement val distribution: String? = null,
-)
+) : java.io.Serializable
 
 /**
  * Representation of an `<scm />` element in a a pom file.
@@ -50,7 +50,10 @@ data class LicenseElement(
  */
 @Serializable
 @XmlSerialName("scm")
-data class SourceControlManagement(@XmlElement val connection: String, @XmlElement val url: String)
+data class SourceControlManagement(
+  @XmlElement val connection: String,
+  @XmlElement val url: String,
+) : java.io.Serializable
 
 /**
  * Representation of a `<dependency />` element in a pom file.
@@ -66,7 +69,7 @@ data class ArtifactDependency(
   @XmlElement val version: String? = null,
   @XmlElement val type: String? = null,
   @XmlElement val scope: String? = null,
-) {
+) : java.io.Serializable {
   /**
    * Returns the artifact dependency as a a gradle dependency string.
    *
@@ -141,7 +144,7 @@ val ArtifactDependency.configuration: String
 @XmlSerialName("dependencyManagement")
 data class DependencyManagementElement(
   @XmlChildrenName("dependency") val dependencies: List<ArtifactDependency>? = null
-)
+) : java.io.Serializable
 
 /** Representation of a `<project />` element within a `pom.xml` file. */
 @Serializable
@@ -159,7 +162,7 @@ data class PomElement(
   @XmlElement val scm: SourceControlManagement? = null,
   @XmlElement val dependencyManagement: DependencyManagementElement? = null,
   @XmlChildrenName("dependency") val dependencies: List<ArtifactDependency>? = null,
-) {
+) : java.io.Serializable {
   /**
    * Serializes this pom element into a valid XML element and saves it to the specified [file].
    *
