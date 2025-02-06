@@ -74,7 +74,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setApplicationContext_logGaugeMetadata_afterGaugeMetadataManagerIsInitialized()
+  public void setApplicationContext_initializeGaugeMetadataManager()
       throws ExecutionException, InterruptedException {
     when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
     InOrder inOrder = Mockito.inOrder(mockGaugeManager);
@@ -84,7 +84,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     testSessionManager.getSyncInitFuture().get();
     inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
-    inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
   }
 
   @Test
