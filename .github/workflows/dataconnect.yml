@@ -174,8 +174,16 @@ jobs:
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
 
+      - name: Capture Logcat Logs
+        run: adb logcat >logcat.log &
+
       - name: Gradle connectedCheck
+        id: connectedCheck
         uses: reactivecircus/android-emulator-runner@v2
+        # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
+        # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
+        # A later step in this "job" will fail the job if this step fails
+        continue-on-error: true
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
@@ -185,20 +193,27 @@ jobs:
           script: |
             set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
-      - uses: actions/upload-artifact@v4
-        if: true
+      - name: Upload log file artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: logs
+          name: integration_test_logs
           path: "**/*.log"
           if-no-files-found: warn
           compression-level: 9
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Gradle build report artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: gradle_build_reports
+          name: integration_test_gradle_build_reports
           path: firebase-dataconnect/**/build/reports/
           if-no-files-found: warn
           compression-level: 9
+
+      - name: Check test result
+        if: steps.connectedCheck.outcome != 'success'
+        run: |
+          echo "Failing the job since the connectedCheck step failed"
+          exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
   # To run actionlint yourself, run `brew install actionlint` followed by
