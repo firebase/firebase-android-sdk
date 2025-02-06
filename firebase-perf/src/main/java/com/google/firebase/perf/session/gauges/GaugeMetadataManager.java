@@ -22,6 +22,11 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.StorageUnit;
 import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.GaugeMetadata;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The {@code GaugeMetadataManager} class is responsible for collecting {@link GaugeMetadata}
@@ -67,5 +72,24 @@ class GaugeMetadataManager {
   /** Returns the total memory (in kilobytes) accessible by the kernel (called the RAM size). */
   public int getDeviceRamSizeKb() {
     return Utils.saturatedIntCast(StorageUnit.BYTES.toKilobytes(memoryInfo.totalMem));
+  }
+
+  /** Returns the total ram size of the device (in kilobytes) by reading the "proc/meminfo" file. */
+  @VisibleForTesting
+  int readTotalRAM(String procFileName) {
+    try (BufferedReader br = new BufferedReader(new FileReader(procFileName))) {
+      for (String s = br.readLine(); s != null; s = br.readLine()) {
+        if (s.startsWith("MemTotal")) {
+          Matcher m = Pattern.compile("\\d+").matcher(s);
+          return m.find() ? Integer.parseInt(m.group()) : 0;
+        }
+      }
+    } catch (IOException ioe) {
+      logger.warn("Unable to read '" + procFileName + "' file: " + ioe.getMessage());
+    } catch (NumberFormatException nfe) {
+      logger.warn("Unable to parse '" + procFileName + "' file: " + nfe.getMessage());
+    }
+
+    return 0;
   }
 }
