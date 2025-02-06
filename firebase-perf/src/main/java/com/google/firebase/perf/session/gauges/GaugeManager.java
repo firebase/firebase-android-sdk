@@ -256,6 +256,7 @@ public class GaugeManager {
    * @return true if GaugeMetadata was logged, false otherwise.
    */
   public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    // TODO(b/394127311): Re-introduce logging of metadata for AQS.
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
