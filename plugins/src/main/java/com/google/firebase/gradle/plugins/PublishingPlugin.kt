@@ -61,6 +61,8 @@ import org.gradle.kotlin.dsl.register
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
+ *   [registerGenerateBomTask]
+ * - [BUILD_BOM_BUNDLE_ZIP_TASK] -> Creates a zip file of the contents of [BUILD_BOM_ZIP_TASK]
  *   [registerGenerateBomTask],
  *   [GENERATE_BOM_RELEASE_NOTES_TASK][registerGenerateBomReleaseNotesTask] and
  *   [GENERATE_TUTORIAL_BUNDLE_TASK][registerGenerateTutorialBundleTask]
@@ -140,9 +142,16 @@ abstract class PublishingPlugin : Plugin<Project> {
           destinationDirectory.set(project.layout.buildDirectory)
         }
 
-      project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
-        from(generateBom, generateBomReleaseNotes, generateTutorialBundle)
-        archiveFileName.set("bom.zip")
+      val buildBomZip =
+        project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
+          from(generateBom)
+          archiveFileName.set("bom.zip")
+          destinationDirectory.set(project.layout.buildDirectory)
+        }
+
+      project.tasks.register<Zip>(BUILD_BOM_BUNDLE_ZIP_TASK) {
+        from(buildBomZip, generateBomReleaseNotes, generateTutorialBundle)
+        archiveFileName.set("bomBundle.zip")
         destinationDirectory.set(project.layout.projectDirectory)
       }
 
@@ -757,6 +766,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BUILD_KOTLINDOC_ZIP_TASK = "buildKotlindocZip"
     const val BUILD_RELEASE_NOTES_ZIP_TASK = "buildReleaseNotesZip"
     const val BUILD_BOM_ZIP_TASK = "buildBomZip"
+    const val BUILD_BOM_BUNDLE_ZIP_TASK = "buildBomBundleZip"
     const val FIREBASE_PUBLISH_TASK = "firebasePublish"
     const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
 

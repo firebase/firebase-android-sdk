@@ -243,11 +243,11 @@ class GenerateBomTests : FunSpec() {
         <version>1.0.1</version>
         <packaging>pom</packaging>
         <licenses>
-          <licenses>
+          <license>
             <name>The Apache Software License, Version 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
-          </licenses>
+          </license>
         </licenses>
         <dependencyManagement>
           <dependencies>
