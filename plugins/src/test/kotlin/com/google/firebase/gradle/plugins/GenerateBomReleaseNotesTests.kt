@@ -65,8 +65,68 @@ class GenerateBomReleaseNotesTests : FunSpec() {
                 Firebase Android SDKs mapped to this {{bom}} version
               </p>
               <p>
-                Libraries that were versioned with this release are in highlighted rows.<br>
-                Refer to a library's release notes (on this page) for details about its changes.
+                Libraries that were versioned with this release are in highlighted rows.
+                <br>Refer to a library's release notes (on this page) for details about its
+                changes.
+              </p>
+              <table>
+                <thead>
+                  <th>Artifact name</th>
+                  <th>Version mapped<br>to previous {{bom}} v1.0.0</th>
+                  <th>Version mapped<br>to this {{bom}} v1.0.0</th>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>com.google.firebase:firebase-auth</td>
+                    <td>10.0.0</td>
+                    <td>10.0.0</td>
+                  </tr>
+                  <tr>
+                    <td>com.google.firebase:firebase-firestore</td>
+                    <td>10.0.0</td>
+                    <td>10.0.0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+        """
+        .trimIndent()
+  }
+
+  @Test
+  fun `sorts the entries alphabetically`() {
+    val dependencies =
+      listOf(
+        ArtifactDependency(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-firestore",
+          version = "10.0.0",
+        ),
+        ArtifactDependency(
+          groupId = "com.google.firebase",
+          artifactId = "firebase-auth",
+          version = "10.0.0",
+        ),
+      )
+    val bom = makeBom("1.0.0", dependencies)
+    val file = makeReleaseNotes(bom, bom)
+
+    file.readText().trim() shouldBeText
+      """
+            ### {{firebase_bom_long}} ({{bill_of_materials}}) version 1.0.0 {: #bom_v1-0-0}
+            {% comment %}
+            These library versions must be flat-typed, do not use variables.
+            The release note for this BoM version is a library-version snapshot.
+            {% endcomment %}
+           
+            <section class="expandable">
+              <p class="showalways">
+                Firebase Android SDKs mapped to this {{bom}} version
+              </p>
+              <p>
+                Libraries that were versioned with this release are in highlighted rows.
+                <br>Refer to a library's release notes (on this page) for details about its
+                changes.
               </p>
               <table>
                 <thead>
@@ -147,8 +207,9 @@ class GenerateBomReleaseNotesTests : FunSpec() {
               Firebase Android SDKs mapped to this {{bom}} version
             </p>
             <p>
-              Libraries that were versioned with this release are in highlighted rows.<br>
-              Refer to a library's release notes (on this page) for details about its changes.
+              Libraries that were versioned with this release are in highlighted rows.
+              <br>Refer to a library's release notes (on this page) for details about its
+              changes.
             </p>
             <table>
               <thead>
