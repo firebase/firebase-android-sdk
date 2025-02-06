@@ -25,8 +25,8 @@ import com.google.firebase.gradle.plugins.datamodels.LicenseElement
 import com.google.firebase.gradle.plugins.datamodels.PomElement
 import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
 import com.google.firebase.gradle.plugins.datamodels.moduleVersion
-import com.google.firebase.gradle.plugins.diff
 import com.google.firebase.gradle.plugins.orEmpty
+import com.google.firebase.gradle.plugins.pairBy
 import com.google.firebase.gradle.plugins.partitionNotNull
 import com.google.firebase.gradle.plugins.services.GMavenService
 import org.gradle.api.DefaultTask
@@ -144,7 +144,7 @@ abstract class GenerateBomTask : DefaultTask() {
     val oldBomVersion = ModuleVersion.fromString(oldBom.artifactId, oldBom.version)
 
     val oldBomDependencies = oldBom.dependencyManagement?.dependencies.orEmpty()
-    val changedDependencies = oldBomDependencies.diff(releasingDependencies)
+    val changedDependencies = oldBomDependencies.pairBy(releasingDependencies) { it.artifactId }
 
     val versionBumps =
       changedDependencies.mapNotNull { (old, new) ->

@@ -51,7 +51,7 @@ abstract class GenerateBomReleaseNotesTask : DefaultTask() {
     val previousDeps = previousBom.get().dependencyManagement?.dependencies.orEmpty()
     previousBomVersions.set(previousDeps.associate { it.fullArtifactName to it.version })
 
-    val sortedDependencies = currentDeps.sortedBy { it.version }
+    val sortedDependencies = currentDeps.sortedBy { it.toString() }
 
     val headingId = "{: #bom_v${bom.version.replace(".", "-")}}"
 
@@ -71,8 +71,9 @@ abstract class GenerateBomReleaseNotesTask : DefaultTask() {
          |    Firebase Android SDKs mapped to this {{bom}} version
          |  </p>
          |  <p>
-         |    Libraries that were versioned with this release are in highlighted rows.<br>
-         |    Refer to a library's release notes (on this page) for details about its changes.
+         |    Libraries that were versioned with this release are in highlighted rows.
+         |    <br>Refer to a library's release notes (on this page) for details about its
+         |    changes.
          |  </p>
          |  <table>
          |    <thead>

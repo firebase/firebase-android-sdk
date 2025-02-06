@@ -297,6 +297,43 @@ infix fun <T> List<T>.diff(other: List<T>): List<Pair<T?, T?>> {
 }
 
 /**
+ * Creates a list of pairs between two lists, matching according to the provided [mapper].
+ *
+ * ```kotlin
+ * data class Person(name: String, age: Int)
+ *
+ * val firstList = listOf(
+ *   Person("Mike", 5),
+ *   Person("Rachel", 6)
+ * )
+ *
+ * val secondList = listOf(
+ *   Person("Michael", 4),
+ *   Person("Mike", 1)
+ * )
+ *
+ * val diffList = firstList.pairBy(secondList) {
+ *   it.name
+ * }
+ *
+ * diffList shouldBeEqualTo listOf(
+ *   Person("Mike", 5) to Person("Mike", 1)
+ *   Person("Rachel", 6) to null
+ *   null to Person("Mike", 1)
+ * )
+ * ```
+ */
+inline fun <T, R> List<T>.pairBy(other: List<T>, mapper: (T) -> R): List<Pair<T?, T?>> {
+  val firstMap = associateBy { mapper(it) }
+  val secondMap = other.associateBy { mapper(it) }
+
+  val changedOrRemoved = firstMap.map { it.value to secondMap[it.key] }
+  val added = secondMap.filterKeys { it !in firstMap }.map { null to it.value }
+
+  return changedOrRemoved + added
+}
+
+/**
  * Creates a list that is forced to certain size.
  *
  * If the list is longer than the specified size, the extra elements will be cut. If the list is
