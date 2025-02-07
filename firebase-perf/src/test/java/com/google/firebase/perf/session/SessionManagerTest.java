@@ -16,9 +16,6 @@ package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -40,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -83,7 +79,9 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.setApplicationContext(mockApplicationContext);
 
     testSessionManager.getSyncInitFuture().get();
-    inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any(), ApplicationProcessState.FOREGROUND);
+    inOrder
+        .verify(mockGaugeManager)
+        .initializeGaugeMetadataManager(any(), ApplicationProcessState.FOREGROUND);
   }
 
   @Test
