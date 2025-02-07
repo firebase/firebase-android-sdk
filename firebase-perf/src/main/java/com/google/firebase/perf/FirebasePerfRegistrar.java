@@ -32,7 +32,6 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
