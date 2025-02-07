@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`
 
 
 # 16.1.0
