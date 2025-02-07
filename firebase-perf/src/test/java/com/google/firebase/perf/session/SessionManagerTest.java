@@ -74,7 +74,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setApplicationContext_logGaugeMetadata_afterGaugeMetadataManagerIsInitialized()
+  public void setApplicationContext_initializeGaugeMetadataManager()
       throws ExecutionException, InterruptedException {
     when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
     InOrder inOrder = Mockito.inOrder(mockGaugeManager);
@@ -84,7 +84,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     testSessionManager.getSyncInitFuture().get();
     inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
-    inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
   }
 
   @Test
@@ -138,20 +137,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void
-      testOnUpdateAppStateMakesGaugeManagerLogGaugeMetadataOnForegroundStateIfSessionIsVerbose() {
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-
-    verify(mockGaugeManager)
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void
       testOnUpdateAppStateDoesntMakeGaugeManagerLogGaugeMetadataOnForegroundStateIfSessionIsNonVerbose() {
     forceNonVerboseSession();
 
@@ -174,21 +159,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
 
     verify(mockGaugeManager, never())
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void
-      testOnUpdateAppStateMakesGaugeManagerLogGaugeMetadataOnBackgroundAppStateIfSessionIsVerboseAndTimedOut() {
-    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
-
-    verify(mockGaugeManager)
         .logGaugeMetadata(
             anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
   }
@@ -230,32 +200,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
 
     verify(mockGaugeManager).stopCollectingGauges();
-  }
-
-  @Test
-  public void testGaugeMetadataIsFlushedOnlyWhenNewVerboseSessionIsCreated() {
-    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
-
-    // Start with a non verbose session
-    forceNonVerboseSession();
-    SessionManager testSessionManager =
-        new SessionManager(
-            mockGaugeManager, PerfSession.createWithId("testSessionId1"), mockAppStateMonitor);
-
-    verify(mockGaugeManager, times(0))
-        .logGaugeMetadata(
-            eq("testSessionId1"),
-            eq(com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND));
-
-    // Forcing a verbose session will enable Gauge collection
-    forceVerboseSession();
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
-    verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId2"), any());
-
-    // Force a non-verbose session and verify if we are not logging metadata
-    forceVerboseSession();
-    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId3"));
-    verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId3"), any());
   }
 
   @Test
