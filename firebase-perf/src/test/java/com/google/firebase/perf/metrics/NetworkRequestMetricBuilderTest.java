@@ -225,7 +225,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
-    PerfSession perfSession = PerfSession.createWithId("testSessionId");
+    PerfSession perfSession = PerfSession.createNewSession();
     SessionManager.getInstance().updatePerfSession(perfSession);
 
     assertThat(metricBuilder.getSessions().size()).isEqualTo(numberOfSessionIds + 1);
@@ -328,7 +328,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     networkMetricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
     assertThat(networkMetricBuilder.getSessions()).hasSize(1);
-    networkMetricBuilder.updateSession(PerfSession.createWithId("testSessionId"));
+    networkMetricBuilder.updateSession(PerfSession.createNewSession());
     assertThat(networkMetricBuilder.getSessions()).hasSize(2);
   }
 

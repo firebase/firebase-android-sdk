@@ -36,12 +36,14 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -178,6 +180,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
+    // Prioritize registering the FirebaseSession dependency to have the session
+    // `setApplicationContext`.
+    FirebaseSessionsDependencies.register(
+        FirebasePerformanceSessionSubscriber.Companion.getInstance());
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 

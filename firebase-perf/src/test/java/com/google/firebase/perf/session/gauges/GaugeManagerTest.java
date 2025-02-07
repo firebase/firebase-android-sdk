@@ -641,7 +641,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     when(fakeGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).thenReturn(1000);
     when(fakeGaugeMetadataManager.getMaxEncouragedAppJavaHeapMemoryKb()).thenReturn(800);
 
-    testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND);
+    testGaugeManager.logGaugeMetadata("sessionId");
 
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
@@ -668,35 +668,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             /* gaugeMetadataManager= */ null,
             new Lazy<>(() -> fakeCpuGaugeCollector),
             new Lazy<>(() -> fakeMemoryGaugeCollector));
-
-    assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
-        .isFalse();
-  }
-
-  @Test
-  public void testLogGaugeMetadataLogsAfterApplicationContextIsSet() {
-
-    testGaugeManager =
-        new GaugeManager(
-            new Lazy<>(() -> fakeScheduledExecutorService),
-            mockTransportManager,
-            mockConfigResolver,
-            /* gaugeMetadataManager= */ null,
-            new Lazy<>(() -> fakeCpuGaugeCollector),
-            new Lazy<>(() -> fakeMemoryGaugeCollector));
-
-    assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
-        .isFalse();
-
-    testGaugeManager.initializeGaugeMetadataManager(ApplicationProvider.getApplicationContext());
-    assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
-        .isTrue();
-
-    GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
-    GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
-
-    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo("sessionId");
   }
 
   @Test

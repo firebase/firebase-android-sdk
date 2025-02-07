@@ -1,0 +1,56 @@
+package com.google.firebase.perf.session
+
+import com.google.firebase.perf.logging.AndroidLogger
+import com.google.firebase.perf.session.gauges.GaugeManager
+import com.google.firebase.sessions.api.SessionSubscriber
+
+class FirebasePerformanceSessionSubscriber() : SessionSubscriber {
+  private val perfSessionToAqs: MutableMap<String, SessionSubscriber.SessionDetails?> =
+    mutableMapOf()
+
+  // TODO(b/394127311): Identify a way to ste this value after ConfigResolver has relevant metadata.
+  override val isDataCollectionEnabled: Boolean
+    get() = true
+
+  override val sessionSubscriberName: SessionSubscriber.Name
+    get() = SessionSubscriber.Name.PERFORMANCE
+
+  override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
+    val perfSessionId = SessionManager.getInstance().perfSession().sessionId()
+    AndroidLogger.getInstance()
+      .debug("CFPRS AQS Session Changed: $sessionDetails, PerfSession: $perfSessionId")
+
+    // There can be situations where a new [PerfSession] was created, but an AQS wasn't
+    // available (during cold start).
+    if (perfSessionToAqs[perfSessionId] == null) {
+      perfSessionToAqs[perfSessionId] = sessionDetails
+    } else {
+      val newSession = PerfSession.createNewSession()
+      SessionManager.getInstance().updatePerfSession(newSession)
+      perfSessionToAqs[newSession.sessionId()] = sessionDetails
+    }
+
+    // Always log GaugeMetadata when a session changes.
+    GaugeManager.getInstance().logGaugeMetadata(sessionDetails.sessionId)
+  }
+
+  fun reportPerfSession(perfSessionId: String) {
+    perfSessionToAqs[perfSessionId] = null
+  }
+
+  fun getAqsMappedToPerfSession(perfSessionId: String): String {
+    AndroidLogger.getInstance()
+      .debug("AQS for perf session $perfSessionId is ${perfSessionToAqs[perfSessionId]?.sessionId}")
+    return perfSessionToAqs[perfSessionId]?.sessionId ?: perfSessionId
+  }
+
+  fun clearSessionForTest() {
+    perfSessionToAqs.clear()
+  }
+
+  companion object {
+    val instance: FirebasePerformanceSessionSubscriber by lazy {
+      FirebasePerformanceSessionSubscriber()
+    }
+  }
+}
