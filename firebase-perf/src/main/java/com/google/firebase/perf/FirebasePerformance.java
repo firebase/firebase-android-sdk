@@ -182,7 +182,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
     Context appContext = firebaseApp.getApplicationContext();
-    // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
