@@ -24,7 +24,6 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
-import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -60,12 +59,10 @@ public class GaugeManager {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-  @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
-  @Nullable private PerfSession session = null;
-
-  // The default value for application process state is Foreground. This will be updated based on
-  // app state changes.
-  private ApplicationProcessState applicationProcessState = ApplicationProcessState.FOREGROUND;
+  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
+  @Nullable private String sessionId = null;
+  private ApplicationProcessState applicationProcessState =
+      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
@@ -106,22 +103,38 @@ public class GaugeManager {
     return instance;
   }
 
-  public void updateGaugeCollection(ApplicationProcessState applicationProcessState) {
-    if (gaugeManagerDataCollectionJob != null) {
-      gaugeManagerDataCollectionJob.cancel(false);
+  /**
+   * Starts the collection of available gauges for the given {@code sessionId} and {@code
+   * applicationProcessState}. The collected Gauge Metrics will be flushed at regular intervals.
+   *
+   * <p>GaugeManager can only collect gauges for one session at a time, and if this method is called
+   * again with the same or new sessionId while it's already collecting gauges, all future gauges
+   * will then be associated with the same or new sessionId and applicationProcessState.
+   *
+   * @param session The {@link PerfSession} to which the collected gauges will be associated with.
+   * @param applicationProcessState The {@link ApplicationProcessState} the collected GaugeMetrics
+   *     will be associated with.
+   * @note: This method is NOT thread safe - {@link this.startCollectingGauges()} and {@link
+   *     this.stopCollectingGauges()} should always be called from the same thread.
+   */
+  public void startCollectingGauges(
+      PerfSession session, ApplicationProcessState applicationProcessState) {
+    if (this.sessionId != null) {
+      stopCollectingGauges();
     }
 
-    if (shouldStopCollectingGauges()) {
-      logger.warn("Not starting gauge collection.");
-      stopCollectingGauges();
+    long collectionFrequency = startCollectingGauges(applicationProcessState, session.getTimer());
+    if (collectionFrequency == INVALID_GAUGE_COLLECTION_FREQUENCY) {
+      logger.warn("Invalid gauge collection frequency. Unable to start collecting Gauges.");
       return;
     }
 
-    long collectionFrequency =
-        Math.min(
-            getCpuGaugeCollectionFrequencyMs(applicationProcessState),
-            getMemoryGaugeCollectionFrequencyMs(applicationProcessState));
-    String sessionIdForScheduledTask = session.aqsSessionId();
+    this.sessionId = session.sessionId();
+    this.applicationProcessState = applicationProcessState;
+
+    // This is needed, otherwise the Runnable might use a stale value.
+    final String sessionIdForScheduledTask = sessionId;
+    final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     try {
       gaugeManagerDataCollectionJob =
@@ -129,7 +142,7 @@ public class GaugeManager {
               .get()
               .scheduleWithFixedDelay(
                   () -> {
-                    syncFlush(sessionIdForScheduledTask, applicationProcessState);
+                    syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
                   /* initialDelay= */ collectionFrequency
                       * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
@@ -139,49 +152,10 @@ public class GaugeManager {
     } catch (RejectedExecutionException e) {
       logger.warn("Unable to start collecting Gauges: " + e.getMessage());
     }
-
-    if (this.applicationProcessState != applicationProcessState) {
-      this.applicationProcessState = applicationProcessState;
-
-      // If there's a change in App State - update the gauge collection frequency as well.
-      stopCollectingGauges();
-      startCollectingGauges(applicationProcessState, this.session.getTimer());
-    }
   }
 
   /**
-   * Starts the collection of available gauges for the given {@code session}.
-   *
-   * <p>GaugeManager can only collect gauges for one session at a time, and if this method is called
-   * again with the same or new sessionId while it's already collecting gauges, all future gauges
-   * will then be associated with the same or new sessionId and applicationProcessState.
-   *
-   * @param session The {@link PerfSession} to which the collected gauges will be associated with.
-   * @note: This method is NOT thread safe - {@link this.startCollectingGauges()} and {@link
-   *     this.stopCollectingGauges()} should always be called from the same thread.
-   */
-  public void startCollectingGauges(PerfSession session) {
-    if (this.session != null) {
-      stopCollectingGauges();
-    }
-
-    // Updates the session associated w/ Gauge Manager when starting collecting gauges.
-    this.session = session;
-
-    if (!session.isGaugeAndEventCollectionEnabled()) {
-      return;
-    }
-
-    long collectionFrequency = startCollectingGauges(applicationProcessState, session.getTimer());
-    if (collectionFrequency == INVALID_GAUGE_COLLECTION_FREQUENCY) {
-      logger.warn("Invalid gauge collection frequency. Unable to start collecting Gauges.");
-    }
-  }
-
-  /**
-   * Starts the collection of available Gauges for the given {@code appState}. Do note that
-   * uploading the gauges *only* starts after calling
-   * {@link #updateGaugeCollection(ApplicationProcessState)}
+   * Starts the collection of available Gauges for the given {@code appState}.
    *
    * @param appState The app state to which the collected gauges are associated.
    * @param referenceTime The time off which the system time is calculated when collecting gauges.
@@ -215,14 +189,12 @@ public class GaugeManager {
    *     this.stopCollectingGauges()} should always be called from the same thread.
    */
   public void stopCollectingGauges() {
-    if (this.session == null) {
+    if (this.sessionId == null) {
       return;
     }
 
     // This is needed, otherwise the Runnable might use a stale value.
-
-    // AQS is guaranteed to be available when stopping gauge collection.
-    final String sessionIdForScheduledTask = session.aqsSessionId();
+    final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     cpuGaugeCollector.get().stopCollecting();
@@ -232,10 +204,9 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    // TODO(b/394127311): Switch to using AQS.
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
-    ScheduledFuture<?> unusedFuture =
+    ScheduledFuture unusedFuture =
         gaugeManagerExecutor
             .get()
             .schedule(
@@ -245,7 +216,8 @@ public class GaugeManager {
                 TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
                 TimeUnit.MILLISECONDS);
 
-    this.session = null;
+    this.sessionId = null;
+    this.applicationProcessState = ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
   }
 
   /**
@@ -278,16 +250,17 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param aqsSessionId The {@link PerfSession#aqsSessionId()} ()} to which the collected Gauge Metrics
+   * @param sessionId The {@link PerfSession#sessionId()} to which the collected Gauge Metrics
    *     should be associated with.
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String aqsSessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    // TODO(b/394127311): Re-introduce logging of metadata for AQS.
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
-              .setSessionId(aqsSessionId)
+              .setSessionId(sessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
       transportManager.log(gaugeMetric, appState);
@@ -429,16 +402,5 @@ public class GaugeManager {
     } else {
       return memoryGaugeCollectionFrequency;
     }
-  }
-
-  private boolean shouldStopCollectingGauges() {
-    return session == null
-        || !session.isGaugeAndEventCollectionEnabled()
-        || session.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID);
-  }
-
-  @VisibleForTesting
-  void setApplicationProcessState(ApplicationProcessState applicationProcessState) {
-    this.applicationProcessState = applicationProcessState;
   }
 }
