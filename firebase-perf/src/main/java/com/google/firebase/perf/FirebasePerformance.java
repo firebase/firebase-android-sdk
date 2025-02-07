@@ -44,7 +44,7 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
-import com.google.firebase.sessions.api.SessionSubscriber;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 
 /**
  * The Firebase Performance Monitoring API.
@@ -95,9 +96,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // once during initialization and cache it.
   private final ImmutableBundle mMetadataBundle;
 
-  private final SessionSubscriber sessionSubscriber;
-
-  /** Valid HttpMethods for manual network APIs */
+    /** Valid HttpMethods for manual network APIs */
   @StringDef({
     HttpMethod.GET,
     HttpMethod.PUT,
@@ -141,7 +140,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  /**
+    /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
    *
    * <p>TODO(b/172007278): Initialize SDK components in a background thread to avoid cases of cyclic
@@ -170,7 +169,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
-      this.sessionSubscriber = new FirebasePerformanceSessionSubscriber(false);
       return;
     }
 
@@ -187,9 +185,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-    this.sessionSubscriber =
-        new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled());
-    FirebaseSessionsDependencies.register(this.sessionSubscriber);
+    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled()));
 
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
@@ -464,11 +460,5 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @VisibleForTesting
   Boolean getPerformanceCollectionForceEnabledState() {
     return mPerformanceCollectionForceEnabledState;
-  }
-
-  @NonNull
-  @VisibleForTesting
-  protected SessionSubscriber getSessionSubscriber() {
-    return sessionSubscriber;
   }
 }

@@ -93,14 +93,7 @@ public class SessionManager extends AppStateUpdateHandler {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    // TODO(b/258263016): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
-    syncInitFuture =
-        executorService.submit(
-            () -> {
-              gaugeManager.initializeGaugeMetadataManager(appContext);
-            });
+    gaugeManager.initializeGaugeMetadataManager(appContext);
   }
 
   @Override

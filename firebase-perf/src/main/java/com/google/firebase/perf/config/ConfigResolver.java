@@ -116,7 +116,7 @@ public class ConfigResolver {
   /** Default API to call for whether performance monitoring is currently silent. */
   public boolean isPerformanceMonitoringEnabled() {
     Boolean isPerformanceCollectionEnabled = getIsPerformanceCollectionEnabled();
-    return (isPerformanceCollectionEnabled == null || isPerformanceCollectionEnabled == true)
+    return (isPerformanceCollectionEnabled == null || isPerformanceCollectionEnabled)
         && getIsServiceCollectionEnabled();
   }
 
@@ -131,7 +131,7 @@ public class ConfigResolver {
     // return developer config.
     // 4. Else, return null. Because Firebase Performance will read highlevel Firebase flag in this
     // case.
-    if (getIsPerformanceCollectionDeactivated()) {
+    if (Boolean.TRUE.equals(getIsPerformanceCollectionDeactivated())) {
       // 1. If developer has deactivated Firebase Performance in Manifest, return false.
       return false;
     }
@@ -186,7 +186,7 @@ public class ConfigResolver {
     // 2. Otherwise, save this configuration in device cache.
 
     // If collection is deactivated, skip the action to save user configuration.
-    if (getIsPerformanceCollectionDeactivated()) {
+    if (Boolean.TRUE.equals(getIsPerformanceCollectionDeactivated())) {
       return;
     }
 
