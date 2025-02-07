@@ -1,6 +1,8 @@
 # Unreleased
-* [changed] Internal improvements to correctly handle empty responses from models.
 
+
+# 16.1.0
+* [changed] Internal improvements to correctly handle empty model responses.
 
 # 16.0.2
 * [fixed] Improved error message when using an invalid location. (#6428)
