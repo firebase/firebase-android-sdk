@@ -50,7 +50,7 @@ public class MemoryGaugeCollector {
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
   private final Runtime runtime;
 
-  @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
+  @Nullable private ScheduledFuture<?> memoryMetricCollectorJob = null;
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
@@ -124,7 +124,7 @@ public class MemoryGaugeCollector {
 
     try {
       memoryMetricCollectorJob =
-          memoryMetricCollectorExecutor.scheduleAtFixedRate(
+          memoryMetricCollectorExecutor.scheduleWithFixedDelay(
               () -> {
                 AndroidMemoryReading memoryReading = syncCollectMemoryMetric(referenceTime);
                 if (memoryReading != null) {
@@ -142,7 +142,7 @@ public class MemoryGaugeCollector {
   private synchronized void scheduleMemoryMetricCollectionOnce(Timer referenceTime) {
     try {
       @SuppressWarnings("FutureReturnValueIgnored")
-      ScheduledFuture unusedFuture =
+      ScheduledFuture<?> unusedFuture =
           memoryMetricCollectorExecutor.schedule(
               () -> {
                 AndroidMemoryReading memoryReading = syncCollectMemoryMetric(referenceTime);
