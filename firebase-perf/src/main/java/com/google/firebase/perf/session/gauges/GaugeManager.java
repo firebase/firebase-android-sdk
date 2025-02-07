@@ -72,8 +72,8 @@ public class GaugeManager {
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
-        new Lazy<>(() -> new CpuGaugeCollector()),
-        new Lazy<>(() -> new MemoryGaugeCollector()));
+        new Lazy<>(CpuGaugeCollector::new),
+        new Lazy<>(MemoryGaugeCollector::new));
   }
 
   @VisibleForTesting
@@ -81,7 +81,7 @@ public class GaugeManager {
       Lazy<ScheduledExecutorService> gaugeManagerExecutor,
       TransportManager transportManager,
       ConfigResolver configResolver,
-      GaugeMetadataManager gaugeMetadataManager,
+      @Nullable GaugeMetadataManager gaugeMetadataManager,
       Lazy<CpuGaugeCollector> cpuGaugeCollector,
       Lazy<MemoryGaugeCollector> memoryGaugeCollector) {
 
@@ -140,7 +140,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
               .get()
-              .scheduleAtFixedRate(
+              .scheduleWithFixedDelay(
                   () -> {
                     syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
@@ -256,6 +256,7 @@ public class GaugeManager {
    * @return true if GaugeMetadata was logged, false otherwise.
    */
   public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+    // TODO(b/394127311): Re-introduce logging of metadata for AQS.
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
