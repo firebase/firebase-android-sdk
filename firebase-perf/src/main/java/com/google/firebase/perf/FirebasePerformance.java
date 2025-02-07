@@ -36,12 +36,15 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -51,6 +54,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 
 /**
  * The Firebase Performance Monitoring API.
@@ -92,7 +96,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // once during initialization and cache it.
   private final ImmutableBundle mMetadataBundle;
 
-  /** Valid HttpMethods for manual network APIs */
+    /** Valid HttpMethods for manual network APIs */
   @StringDef({
     HttpMethod.GET,
     HttpMethod.PUT,
@@ -136,12 +140,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  private final FirebaseApp firebaseApp;
-  private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private final Provider<TransportFactory> transportFactoryProvider;
-
-  /**
+    /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
    *
    * <p>TODO(b/172007278): Initialize SDK components in a background thread to avoid cases of cyclic
@@ -166,11 +165,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
-    this.firebaseApp = firebaseApp;
-    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.transportFactoryProvider = transportFactoryProvider;
-
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
@@ -191,6 +185,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled()));
+
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
           String.format(
@@ -281,7 +277,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    if (configResolver.getIsPerformanceCollectionDeactivated()) {
+    if (Boolean.TRUE.equals(configResolver.getIsPerformanceCollectionDeactivated())) {
       logger.info("Firebase Performance is permanently disabled");
       return;
     }
