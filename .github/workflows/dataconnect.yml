@@ -121,7 +121,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-jqnvfzw6w7
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -160,7 +160,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
       - name: Data Connect Emulator
         run: |
