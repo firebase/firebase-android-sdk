@@ -59,8 +59,6 @@ public class BlockReason private constructor(public val name: String, public val
     OTHER,
     BLOCKLIST,
     PROHIBITED_CONTENT,
-    MODEL_ARMOR,
-    IMAGE_SAFETY;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
@@ -70,8 +68,6 @@ public class BlockReason private constructor(public val name: String, public val
         OTHER -> BlockReason.OTHER
         BLOCKLIST -> BlockReason.BLOCKLIST
         PROHIBITED_CONTENT -> BlockReason.PROHIBITED_CONTENT
-        MODEL_ARMOR -> BlockReason.MODEL_ARMOR
-        IMAGE_SAFETY -> BlockReason.IMAGE_SAFETY
         else -> BlockReason.UNKNOWN
       }
   }
@@ -90,11 +86,5 @@ public class BlockReason private constructor(public val name: String, public val
 
     /** Candidates blocked due to the terms which are included from the terminology blocklist. */
     @JvmField public val PROHIBITED_CONTENT: BlockReason = BlockReason("PROHIBITED_CONTENT", 4)
-
-    /** The user prompt was blocked by Model Armor. */
-    @JvmField public val MODEL_ARMOR: BlockReason = BlockReason("MODEL_ARMOR", 5)
-
-    /** Candidates blocked due to unsafe image generation content. */
-    @JvmField public val IMAGE_SAFETY: BlockReason = BlockReason("IMAGE_SAFETY", 6)
   }
 }
