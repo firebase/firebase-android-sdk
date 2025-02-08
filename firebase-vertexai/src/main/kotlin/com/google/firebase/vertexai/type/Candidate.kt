@@ -251,7 +251,7 @@ public class FinishReason private constructor(public val name: String, public va
     BLOCKLIST,
     PROHIBITED_CONTENT,
     SPII,
-    MALFORMED_FUNCTION_CALL,
+    MALFORMED_FUNCTION_CALL;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 

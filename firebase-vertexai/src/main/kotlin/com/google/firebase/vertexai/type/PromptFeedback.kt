@@ -58,7 +58,7 @@ public class BlockReason private constructor(public val name: String, public val
     SAFETY,
     OTHER,
     BLOCKLIST,
-    PROHIBITED_CONTENT,
+    PROHIBITED_CONTENT;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
