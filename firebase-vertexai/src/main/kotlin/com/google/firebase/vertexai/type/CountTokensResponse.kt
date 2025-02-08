@@ -30,7 +30,7 @@ import kotlinx.serialization.Serializable
  * to the model as a prompt. **Important:** this property does not include billable image, video or
  * other non-text input. See
  * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
- * @property promptTokenDetails The breakdown, by modality, of how many tokens are consumed by the
+ * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * prompt.
  */
 public class CountTokensResponse(

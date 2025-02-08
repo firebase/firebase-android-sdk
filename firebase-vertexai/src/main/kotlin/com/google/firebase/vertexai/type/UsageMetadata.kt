@@ -26,8 +26,6 @@ import kotlinx.serialization.Serializable
  * @param totalTokenCount Total number of tokens.
  * @param promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * prompt.
- * @param cacheTokensDetails The breakdown, by modality, of how many tokens are consumed by the
- * cache.
  * @param candidatesTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * candidates.
  */
