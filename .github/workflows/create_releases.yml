@@ -40,7 +40,7 @@ jobs:
           ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f
         with:
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'

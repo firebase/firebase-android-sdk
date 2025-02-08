@@ -1,4 +1,4 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.annotations {
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface PreviewApi {

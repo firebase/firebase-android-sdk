@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 16.1.0
+* [changed] Internal improvements to correctly handle empty model responses.
+
 # 16.0.2
 * [fixed] Improved error message when using an invalid location. (#6428)
 * [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
