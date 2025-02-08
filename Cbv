@@ -1,0 +1,10 @@
+ref = new Firebase("myfirebase.com")
+
+ref.push({key:val}, function(error){
+  //do stuff after push completed
+});
+
+// deletes all data pushed so far
+ref.remove(function(error){
+  //do stuff after removal
+});
