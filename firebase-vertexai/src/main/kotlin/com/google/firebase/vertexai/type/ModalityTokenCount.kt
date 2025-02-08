@@ -18,6 +18,12 @@ package com.google.firebase.vertexai.type
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Represents token counting info for a single modality.
+ *
+ * @property modality The modality associated with this token count.
+ * @property tokenCount The number of tokens counted.
+ */
 public class ModalityTokenCount
 private constructor(public val modality: ContentModality, public val tokenCount: Int) {
 
