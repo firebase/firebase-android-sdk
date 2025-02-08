@@ -24,11 +24,17 @@ import kotlinx.serialization.Serializable
  * @param promptTokenCount Number of tokens in the request.
  * @param candidatesTokenCount Number of tokens in the response(s).
  * @param totalTokenCount Total number of tokens.
+ * @param promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
+ * prompt.
+ * @param candidatesTokensDetails The breakdown, by modality, of how many tokens are consumed by the
+ * candidates.
  */
 public class UsageMetadata(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
-  public val totalTokenCount: Int
+  public val totalTokenCount: Int,
+  public val promptTokensDetails: List<ModalityTokenCount>?,
+  public val candidatesTokensDetails: List<ModalityTokenCount>?,
 ) {
 
   @Serializable
@@ -36,9 +42,17 @@ public class UsageMetadata(
     val promptTokenCount: Int? = null,
     val candidatesTokenCount: Int? = null,
     val totalTokenCount: Int? = null,
+    val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
+    val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
   ) {
 
     internal fun toPublic(): UsageMetadata =
-      UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
+      UsageMetadata(
+        promptTokenCount ?: 0,
+        candidatesTokenCount ?: 0,
+        totalTokenCount ?: 0,
+        promptTokensDetails = promptTokensDetails?.map { it.toPublic() },
+        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() }
+      )
   }
 }
