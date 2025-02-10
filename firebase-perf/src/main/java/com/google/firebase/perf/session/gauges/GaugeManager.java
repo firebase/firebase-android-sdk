@@ -136,6 +136,7 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
+    // TODO(b/394127311): Switch to using AQS.
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
