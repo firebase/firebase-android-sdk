@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`
+* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
 * [changed] Added support for modality-based token count. (#6658)
 
 # 16.1.0
