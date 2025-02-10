@@ -199,7 +199,7 @@ sealed interface TimeOffset {
     }
 
     fun toSeconds(): Int {
-      val absValue = hours + (minutes * 60)
+      val absValue = (hours * SECONDS_PER_HOUR) + (minutes * SECONDS_PER_MINUTE)
       return when (sign) {
         Sign.Positive -> absValue
         Sign.Negative -> -absValue
@@ -221,14 +221,17 @@ sealed interface TimeOffset {
     companion object {
       val validHours = 0..18
       val validMinutes = 0..59
-      val maxSeconds: Int = 18 * 60
+      val maxSeconds: Int = 18 * 60 * 60
+
+      private const val SECONDS_PER_MINUTE = 60
+      private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 
       fun forSeconds(seconds: Int, sign: Sign): HhMm {
         require(seconds in 0..maxSeconds) {
           "invalid seconds: $seconds (must be between 0 and $maxSeconds, inclusive)"
         }
-        val hours = seconds / 60
-        val minutes = seconds - (hours * 60)
+        val hours = seconds / SECONDS_PER_HOUR
+        val minutes = (seconds - (hours * SECONDS_PER_HOUR)) / SECONDS_PER_MINUTE
         return HhMm(hours = hours, minutes = minutes, sign = sign)
       }
     }
@@ -279,7 +282,7 @@ object JavaTimeArbs {
         "internal error gh98nqedss: " +
           "invalid numSecondsBelowMaxEpochSecond: $numSecondsBelowMaxEpochSecond"
       }
-      val maxTimeZoneOffset =
+      val minTimeZoneOffset =
         if (numSecondsBelowMaxEpochSecond >= TimeOffset.HhMm.maxSeconds) {
           null
         } else {
@@ -294,7 +297,7 @@ object JavaTimeArbs {
         "internal error mje6a4mrbm: " +
           "invalid numSecondsAboveMinEpochSecond: $numSecondsAboveMinEpochSecond"
       }
-      val minTimeZoneOffset =
+      val maxTimeZoneOffset =
         if (numSecondsAboveMinEpochSecond >= TimeOffset.HhMm.maxSeconds) {
           null
         } else {
@@ -323,8 +326,8 @@ object JavaTimeArbs {
         "internal error weppxzqj2y: " +
           "instant.epochSecond out of range by " +
           "${validEpochSecondRange.first - instant.epochSecond}: ${instant.epochSecond} (" +
-          "validEpochSecondRange.first=${validEpochSecondRange.first}, "
-        "year=$year, month=$month, day=$day, " +
+          "validEpochSecondRange.first=${validEpochSecondRange.first}, " +
+          "year=$year, month=$month, day=$day, " +
           "hour=$hour, minute=$minute, second=$second, " +
           "nanosecond=$nanosecond timeOffset=$timeOffset, " +
           "minTimeZoneOffset=$minTimeZoneOffset, maxTimeZoneOffset=$maxTimeZoneOffset)"
@@ -335,6 +338,7 @@ object JavaTimeArbs {
           "${instant.epochSecond - validEpochSecondRange.last}: ${instant.epochSecond} (" +
           "validEpochSecondRange.last=${validEpochSecondRange.last}, " +
           "year=$year, month=$month, day=$day, " +
+          "hour=$hour, minute=$minute, second=$second, " +
           "nanosecond=$nanosecond timeOffset=$timeOffset, " +
           "minTimeZoneOffset=$minTimeZoneOffset, maxTimeZoneOffset=$maxTimeZoneOffset)"
       }
