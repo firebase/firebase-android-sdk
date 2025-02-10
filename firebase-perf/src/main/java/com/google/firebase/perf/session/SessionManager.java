@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
@@ -43,7 +42,6 @@ public class SessionManager {
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
-  private Future syncInitFuture;
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
@@ -168,10 +166,5 @@ public class SessionManager {
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
     this.perfSession = perfSession;
-  }
-
-  @VisibleForTesting
-  public Future getSyncInitFuture() {
-    return this.syncInitFuture;
   }
 }
