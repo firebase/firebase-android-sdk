@@ -32,7 +32,6 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
-import kotlin.random.nextInt
 import org.threeten.bp.Instant
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.ZoneOffset
@@ -154,7 +153,11 @@ private fun Instant.toFdcFieldRegex(): Regex {
   return Regex(pattern)
 }
 
-data class Nanoseconds(val nanoseconds: Int, val string: String)
+data class Nanoseconds(
+  val nanoseconds: Int,
+  val string: String,
+  val digitCounts: JavaTimeArbs.NanosecondComponents
+)
 
 sealed interface TimeOffset {
 
@@ -241,6 +244,16 @@ object JavaTimeArbs {
             timeOffset.zoneOffset
           )
           .toInstant()
+
+      // The valid range below was copied from:
+      // com.google.firebase.Timestamp.Timestamp.validateRange()
+      require(instant.epochSecond in -62_135_596_800 until 253_402_300_800) {
+        "internal error weppxzqj2y: " +
+          "instant.epochSecond out of range: ${instant.epochSecond} (" +
+          "year=$year, month=$month, day=$day, " +
+          "hour=$hour, minute=$minute, second=$second, " +
+          "nanosecond=$nanosecond timeOffset=$timeOffset)"
+      }
 
       val string = buildString {
         append(year)
@@ -350,15 +363,11 @@ object JavaTimeArbs {
           "$nanosecondsInt (digitCounts=$digitCounts)"
       }
 
-      Nanoseconds(nanosecondsInt, nanosecondsString)
+      Nanoseconds(nanosecondsInt, nanosecondsString, digitCounts)
     }
   }
 
-  private data class NanosecondComponents(
-    val leadingZeroes: Int,
-    val proper: Int,
-    val trailingZeroes: Int
-  )
+  data class NanosecondComponents(val leadingZeroes: Int, val proper: Int, val trailingZeroes: Int)
 
   private fun nanosecondComponents(): Arb<NanosecondComponents> =
     arbitrary(
