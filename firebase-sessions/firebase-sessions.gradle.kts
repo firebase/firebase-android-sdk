@@ -67,12 +67,12 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.2.0")
   api("com.google.firebase:firebase-annotations:16.2.0")
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
+  implementation(libs.androidx.datastore.preferences.android)
   compileOnly(libs.errorprone.annotations)
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
