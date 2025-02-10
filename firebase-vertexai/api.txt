@@ -95,8 +95,10 @@ package com.google.firebase.vertexai.type {
     method public int getOrdinal();
     property public final String name;
     property public final int ordinal;
+    field public static final com.google.firebase.vertexai.type.BlockReason BLOCKLIST;
     field public static final com.google.firebase.vertexai.type.BlockReason.Companion Companion;
     field public static final com.google.firebase.vertexai.type.BlockReason OTHER;
+    field public static final com.google.firebase.vertexai.type.BlockReason PROHIBITED_CONTENT;
     field public static final com.google.firebase.vertexai.type.BlockReason SAFETY;
     field public static final com.google.firebase.vertexai.type.BlockReason UNKNOWN;
   }
@@ -206,11 +208,15 @@ package com.google.firebase.vertexai.type {
     method public int getOrdinal();
     property public final String name;
     property public final int ordinal;
+    field public static final com.google.firebase.vertexai.type.FinishReason BLOCKLIST;
     field public static final com.google.firebase.vertexai.type.FinishReason.Companion Companion;
+    field public static final com.google.firebase.vertexai.type.FinishReason MALFORMED_FUNCTION_CALL;
     field public static final com.google.firebase.vertexai.type.FinishReason MAX_TOKENS;
     field public static final com.google.firebase.vertexai.type.FinishReason OTHER;
+    field public static final com.google.firebase.vertexai.type.FinishReason PROHIBITED_CONTENT;
     field public static final com.google.firebase.vertexai.type.FinishReason RECITATION;
     field public static final com.google.firebase.vertexai.type.FinishReason SAFETY;
+    field public static final com.google.firebase.vertexai.type.FinishReason SPII;
     field public static final com.google.firebase.vertexai.type.FinishReason STOP;
     field public static final com.google.firebase.vertexai.type.FinishReason UNKNOWN;
   }
