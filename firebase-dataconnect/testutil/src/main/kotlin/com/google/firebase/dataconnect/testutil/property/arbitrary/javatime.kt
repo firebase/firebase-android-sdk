@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeC
 import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeCases.MIN_NANO
 import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeCases.MIN_YEAR
 import com.google.firebase.dataconnect.testutil.toTimestamp
+import io.kotest.common.mapError
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
@@ -316,8 +317,12 @@ object JavaTimeArbs {
         repeat(digitCounts.leadingZeroes) { append('0') }
         if (digitCounts.proper > 0) {
           append(nonZeroDigits.bind())
-          repeat(digitCounts.proper - 2) { append(digits.bind()) }
-          append(nonZeroDigits.bind())
+          if (digitCounts.proper > 1) {
+            if (digitCounts.proper > 2) {
+              repeat(digitCounts.proper - 2) { append(digits.bind()) }
+            }
+            append(nonZeroDigits.bind())
+          }
         }
         repeat(digitCounts.trailingZeroes) { append('0') }
       }
@@ -327,8 +332,23 @@ object JavaTimeArbs {
         if (nanosecondsStringTrimmed.isEmpty()) {
           0
         } else {
-          nanosecondsStringTrimmed.toInt()
+          val toIntResult = nanosecondsStringTrimmed.runCatching { toInt() }
+          toIntResult.mapError { exception ->
+            Exception(
+              "internal error qbdgapmye2: " +
+                "failed to parse nanosecondsStringTrimmed as an int: " +
+                "\"$nanosecondsStringTrimmed\" (digitCounts=$digitCounts)",
+              exception
+            )
+          }
+          toIntResult.getOrThrow()
         }
+
+      check(nanosecondsInt in 0..999_999_999) {
+        "internal error c7j2myw6bd: " +
+          "nanosecondsStringTrimmed parsed to a value outside the valid range: " +
+          "$nanosecondsInt (digitCounts=$digitCounts)"
+      }
 
       Nanoseconds(nanosecondsInt, nanosecondsString)
     }
