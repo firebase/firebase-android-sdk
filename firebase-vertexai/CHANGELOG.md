@@ -1,6 +1,6 @@
 # Unreleased
 * [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`
-
+* [changed] Added support for modality-based token count. (#6658)
 
 # 16.1.0
 * [changed] Internal improvements to correctly handle empty model responses.
@@ -65,4 +65,3 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
-
