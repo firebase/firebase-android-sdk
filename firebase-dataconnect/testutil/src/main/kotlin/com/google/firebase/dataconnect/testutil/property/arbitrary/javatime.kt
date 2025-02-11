@@ -227,7 +227,7 @@ sealed interface TimeOffset {
       val validHours = 0..18
       val validMinutes = 0..59
 
-      @Suppress("MayBeConstant") val maxSeconds: Int = 18 * SECONDS_PER_HOUR
+      val maxSeconds: Int = 18 * SECONDS_PER_HOUR
 
       fun forSeconds(seconds: Int, sign: Sign): HhMm {
         require(seconds in 0..maxSeconds) {
