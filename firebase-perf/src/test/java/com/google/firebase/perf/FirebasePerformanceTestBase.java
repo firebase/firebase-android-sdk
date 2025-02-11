@@ -23,13 +23,8 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.PerfSession;
-import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.ImmutableBundle;
-import com.google.firebase.sessions.FirebaseSessions;
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
-
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
