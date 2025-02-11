@@ -129,7 +129,7 @@ public class PerfSession implements Parcelable {
   public com.google.firebase.perf.v1.PerfSession build() {
     // TODO(b/394127311): Switch to using AQS.
     com.google.firebase.perf.v1.PerfSession.Builder sessionMetric =
-        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(sessionId);
+        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(aqsSessionId);
 
     // If gauge collection is enabled, enable gauge collection verbosity.
     if (isGaugeAndEventCollectionEnabled) {

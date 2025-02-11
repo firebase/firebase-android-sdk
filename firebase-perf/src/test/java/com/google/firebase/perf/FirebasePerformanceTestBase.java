@@ -26,12 +26,15 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.ImmutableBundle;
+import com.google.firebase.sessions.FirebaseSessions;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
+import com.google.firebase.sessions.api.SessionSubscriber;
+
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
 
 public class FirebasePerformanceTestBase {
-
   /**
    * The following values are needed by Firebase to identify the project and application that all
    * data stored in Firebase databases gets associated with. This is important to determine data
@@ -72,6 +75,7 @@ public class FirebasePerformanceTestBase {
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
     FirebaseApp.initializeApp(appContext, options);
+    forceAppQualitySession();
   }
 
   @After
@@ -93,11 +97,15 @@ public class FirebasePerformanceTestBase {
     forceVerboseSessionWithSamplingPercentage(0);
   }
 
+  protected static void forceAppQualitySession() {
+    SessionSubscriber sessionSubscriber = FirebasePerformance.getInstance().getSessionSubscriber();
+    sessionSubscriber.onSessionChanged(new SessionSubscriber.SessionDetails("testAqsSession"));
+  }
+
   private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
-
-    SessionManager.getInstance().setPerfSession(PerfSession.createWithId("sessionId"));
+    forceAppQualitySession();
   }
 }
