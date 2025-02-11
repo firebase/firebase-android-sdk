@@ -37,6 +37,7 @@ import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
@@ -93,6 +94,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // Extracting the metadata from the application context is expensive and so we only extract it
   // once during initialization and cache it.
   private final ImmutableBundle mMetadataBundle;
+
+  private final SessionSubscriber sessionSubscriber;
 
   /** Valid HttpMethods for manual network APIs */
   @StringDef({
@@ -167,6 +170,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
+      this.sessionSubscriber = new FirebasePerformanceSessionSubscriber(false);
       return;
     }
 
@@ -183,8 +187,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-    FirebaseSessionsDependencies.register(
-        new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled()));
+    this.sessionSubscriber = new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled());
+    FirebaseSessionsDependencies.register(this.sessionSubscriber);
 
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
@@ -459,5 +463,11 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @VisibleForTesting
   Boolean getPerformanceCollectionForceEnabledState() {
     return mPerformanceCollectionForceEnabledState;
+  }
+
+  @NonNull
+  @VisibleForTesting
+  protected SessionSubscriber getSessionSubscriber() {
+    return sessionSubscriber;
   }
 }
