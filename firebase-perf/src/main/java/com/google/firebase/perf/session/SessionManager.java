@@ -79,6 +79,8 @@ public class SessionManager extends AppStateUpdateHandler {
       return;
     }
 
+    // While the change in app state doesn't start or stop gauge collection, it updates the upload
+    // frequency.
     updateGaugeCollection(newAppState);
   }
 
@@ -130,7 +132,6 @@ public class SessionManager extends AppStateUpdateHandler {
       }
     }
 
-    // Start of stop the gauge data collection.
     startOrStopCollectingGauges();
     updateGaugeCollection(appStateMonitor.getAppState());
   }

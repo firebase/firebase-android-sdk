@@ -110,14 +110,11 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    if (session == null || !session.isGaugeAndEventCollectionEnabled()) {
+    if (session == null
+        || !session.isGaugeAndEventCollectionEnabled()
+        || session.aqsSessionId() == null) {
       logger.warn("Not starting gauge collection.");
-      stopCollectingGauges();
       return;
-    }
-
-    if (session.aqsSessionId() == null) {
-      logger.warn("Not starting gauge collection.");
     }
 
     long collectionFrequency =
@@ -166,6 +163,13 @@ public class GaugeManager {
   public void startCollectingGauges(PerfSession session) {
     if (this.session != null) {
       stopCollectingGauges();
+    }
+
+    // Updates the session associated w/ Gauge Manager when starting collecting gauges.
+    this.session = session;
+
+    if (!session.isGaugeAndEventCollectionEnabled()) {
+      return;
     }
 
     long collectionFrequency = startCollectingGauges(applicationProcessState, session.getTimer());
