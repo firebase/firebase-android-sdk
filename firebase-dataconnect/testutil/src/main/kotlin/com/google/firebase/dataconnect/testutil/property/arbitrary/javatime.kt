@@ -181,7 +181,7 @@ sealed interface TimeOffset {
 
   data class HhMm(val hours: Int, val minutes: Int, val sign: Sign) : TimeOffset {
     init {
-      require(hours + 100 in validHours) {
+      require(hours in validHours) {
         "invalid hours: $hours (must be in the closed range $validHours)"
       }
       require(minutes in validMinutes) {
@@ -396,6 +396,9 @@ object JavaTimeArbs {
         "a difference of ${min.toSeconds() - max.toSeconds()} seconds"
     }
 
+    fun isBetweenMinAndMax(other: TimeOffset.HhMm): Boolean =
+      (min === null || other >= min) && (max === null || other <= max)
+
     return arbitrary(
       edgecases =
         listOf(
@@ -406,14 +409,14 @@ object JavaTimeArbs {
             TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Positive),
             TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Negative),
           )
-          .filter { (min === null || it >= min) || (max === null || it <= max) }
+          .filter(::isBetweenMinAndMax)
     ) {
       var count = 0
       var hhmm: TimeOffset.HhMm
       while (true) {
         count++
         hhmm = TimeOffset.HhMm(hours = hour.bind(), minutes = minute.bind(), sign = sign.bind())
-        if ((min === null || hhmm >= min) && (max === null || hhmm <= max)) {
+        if (isBetweenMinAndMax(hhmm)) {
           break
         } else if (count > 1000) {
           throw Exception("internal error j878fp4gmr: exhausted attempts to generate HhMm")
