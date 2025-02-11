@@ -67,11 +67,12 @@ public class PerfSession implements Parcelable {
   }
 
   /** Returns the AQS sessionId for the given session. */
+  @Nullable
   public String aqsSessionId() {
     return aqsSessionId;
   }
 
-  /** Returns the AQS sessionId for the given session. */
+  /** Sets the AQS sessionId for the given session. */
   public void setAQSId(SessionSubscriber.SessionDetails aqs) {
     if (aqsSessionId == null) {
       aqsSessionId = aqs.getSessionId();
