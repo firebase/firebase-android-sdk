@@ -37,6 +37,7 @@ import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.perf.v1.NetworkRequestMetric
 import com.google.firebase.perf.v1.TraceMetric
 import com.google.firebase.platforminfo.UserAgentPublisher
+import com.google.firebase.sessions.api.SessionSubscriber
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -83,6 +84,9 @@ abstract class BaseTestCase {
         .setProjectId("123")
         .build(),
       EXISTING_APP
+    )
+    Firebase.performance.sessionSubscriber.onSessionChanged(
+      SessionSubscriber.SessionDetails("fakeAQSSession")
     )
   }
 

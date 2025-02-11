@@ -32,7 +32,6 @@ import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
-import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
@@ -1016,8 +1015,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    PerfSession perfSession = PerfSession.createWithId("test_session_id");
-    SessionManager.getInstance().updatePerfSession(perfSession);
+    forceAppQualitySession();
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds + 1);
 
     trace.stop();
@@ -1071,7 +1069,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     trace.start();
 
     assertThat(trace.getSessions()).hasSize(1);
-    trace.updateSession(PerfSession.createWithId("test_session_id"));
+    forceAppQualitySession();
     assertThat(trace.getSessions()).hasSize(2);
 
     trace.stop();

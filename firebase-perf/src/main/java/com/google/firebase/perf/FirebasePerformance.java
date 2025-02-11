@@ -466,8 +466,9 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     return mPerformanceCollectionForceEnabledState;
   }
 
+  @NonNull
   @VisibleForTesting
-  SessionSubscriber getSessionSubscriber() {
+  protected SessionSubscriber getSessionSubscriber() {
     return sessionSubscriber;
   }
 }

@@ -23,8 +23,11 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.sessions.api.SessionSubscriber;
+import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -93,8 +96,11 @@ public class FirebasePerformanceTestBase {
   }
 
   protected static void forceAppQualitySession() {
+    PerfSession existingPerfSession = PerfSession.createWithId(UUID.randomUUID().toString());
+    existingPerfSession.setAQSId(new SessionSubscriber.SessionDetails("notnull"));
+    SessionManager.getInstance().setPerfSession(existingPerfSession);
     SessionSubscriber sessionSubscriber = FirebasePerformance.getInstance().getSessionSubscriber();
-    sessionSubscriber.onSessionChanged(new SessionSubscriber.SessionDetails("testAqsSession"));
+    sessionSubscriber.onSessionChanged(new SessionSubscriber.SessionDetails("fakeAQS"));
   }
 
   private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {

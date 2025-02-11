@@ -30,6 +30,7 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,10 +141,11 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   @Test
   public void testPerfSessionConversion() {
     PerfSession session1 = new PerfSession("sessionId", mockClock);
+    session1.setAQSId(new SessionSubscriber.SessionDetails("aqsSessionId"));
     session1.setGaugeAndEventCollectionEnabled(true);
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
-    Assert.assertEquals(session1.sessionId(), perfSession.getSessionId());
+    Assert.assertEquals(session1.aqsSessionId(), perfSession.getSessionId());
     Assert.assertEquals(
         SessionVerbosity.GAUGES_AND_SYSTEM_EVENTS, perfSession.getSessionVerbosity(0));
   }
@@ -151,9 +153,10 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   @Test
   public void testPerfSessionConversionWithoutVerbosity() {
     PerfSession session1 = new PerfSession("sessionId", mockClock);
+    session1.setAQSId(new SessionSubscriber.SessionDetails("aqsSessionId"));
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
-    Assert.assertEquals(session1.sessionId(), perfSession.getSessionId());
+    assertThat(perfSession.getSessionId()).isEqualTo(session1.aqsSessionId());
     assertThat(perfSession.getSessionVerbosityList()).isEmpty();
   }
 
@@ -180,21 +183,15 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testBuildAndSortMovesTheVerboseSessionToTop() {
-    // Force all the sessions from now onwards to be non-verbose
-    forceNonVerboseSession();
-
-    // Next, create 3 non-verbose sessions
+    // Create 3 non-verbose sessions
     List<PerfSession> sessions = new ArrayList<>();
-    sessions.add(PerfSession.createWithId("sessionId1"));
-    sessions.add(PerfSession.createWithId("sessionId2"));
-    sessions.add(PerfSession.createWithId("sessionId3"));
+    sessions.add(createSession(false));
+    sessions.add(createSession(false));
+    sessions.add(createSession(false));
 
-    // Force all the sessions from now onwards to be verbose
-    forceVerboseSession();
-
-    // Next, create 2 verbose sessions
-    sessions.add(PerfSession.createWithId("sessionId4"));
-    sessions.add(PerfSession.createWithId("sessionId5"));
+    // Create 2 verbose sessions
+    sessions.add(createSession(true));
+    sessions.add(createSession(true));
 
     // Verify that the first session in the list of sessions was not verbose
     assertThat(sessions.get(0).isVerbose()).isFalse();
@@ -240,5 +237,15 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
     PerfSession session = new PerfSession("sessionId", mockClock);
     assertThat(session.isSessionRunningTooLong()).isTrue();
+  }
+
+  private PerfSession createSession(boolean verbose) {
+    if (verbose) {
+      forceVerboseSession();
+      return SessionManager.getInstance().perfSession();
+    }
+
+    forceNonVerboseSession();
+    return SessionManager.getInstance().perfSession();
   }
 }
