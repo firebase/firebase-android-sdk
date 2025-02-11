@@ -80,26 +80,6 @@ internal constructor(
       throw FirebaseVertexAIException.from(e)
     }
 
-  /**
-   * Generates an image, storing the result in Google Cloud Storage and returning a URL
-   *
-   * @param prompt The input(s) given to the model as a prompt.
-   * @param gcsUri Specifies where in Google Cloud Storage to store the image (for example, a
-   * specific bucket or folder).
-   */
-  public suspend fun generateImages(
-    prompt: String,
-    gcsUri: String,
-  ): ImagenGenerationResponse<ImagenGCSImage> =
-    try {
-      controller
-        .generateImage(constructRequest(prompt, gcsUri, generationConfig))
-        .validate()
-        .toPublicGCS()
-    } catch (e: Throwable) {
-      throw FirebaseVertexAIException.from(e)
-    }
-
   private fun constructRequest(
     prompt: String,
     gcsUri: String?,

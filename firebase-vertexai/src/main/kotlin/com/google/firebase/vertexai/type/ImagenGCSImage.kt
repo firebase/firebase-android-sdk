@@ -23,5 +23,5 @@ package com.google.firebase.vertexai.type
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`).
  */
 @PublicPreviewAPI
-public class ImagenGCSImage
+internal class ImagenGCSImage
 internal constructor(public val gcsUri: String, public val mimeType: String) {}

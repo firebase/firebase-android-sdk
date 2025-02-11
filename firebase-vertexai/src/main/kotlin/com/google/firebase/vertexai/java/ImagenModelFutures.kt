@@ -40,17 +40,6 @@ public abstract class ImagenModelFutures internal constructor() {
     prompt: String,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
-  /**
-   * Generates an image, storing the result in Google Cloud Storage and returning a URL
-   *
-   * @param prompt The main text prompt from which the image is generated.
-   * @param gcsUri Specifies the GCS bucket in which to store the image.
-   */
-  public abstract fun generateImages(
-    prompt: String,
-    gcsUri: String,
-  ): ListenableFuture<ImagenGenerationResponse<ImagenGCSImage>>
-
   /** Returns the [ImagenModel] object wrapped by this object. */
   public abstract fun getImageModel(): ImagenModel
 
@@ -59,12 +48,6 @@ public abstract class ImagenModelFutures internal constructor() {
       prompt: String,
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
       SuspendToFutureAdapter.launchFuture { model.generateImages(prompt) }
-
-    override fun generateImages(
-      prompt: String,
-      gcsUri: String,
-    ): ListenableFuture<ImagenGenerationResponse<ImagenGCSImage>> =
-      SuspendToFutureAdapter.launchFuture { model.generateImages(prompt, gcsUri) }
 
     override fun getImageModel(): ImagenModel = model
   }
