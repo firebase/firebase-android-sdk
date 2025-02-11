@@ -28,12 +28,14 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
+    val gaugeManager = GaugeManager.getInstance()
 
     // A [PerfSession] was created before a session was started.
     if (currentPerfSession.aqsSessionId() == null) {
       currentPerfSession.setAQSId(sessionDetails)
-      GaugeManager.getInstance()
+      gaugeManager
         .logGaugeMetadata(currentPerfSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
+      gaugeManager.updateGaugeCollection(ApplicationProcessState.FOREGROUND)
       return
     }
 
