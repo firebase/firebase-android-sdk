@@ -138,11 +138,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  private final FirebaseApp firebaseApp;
-  private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private final Provider<TransportFactory> transportFactoryProvider;
-
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
    *
@@ -168,11 +163,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
-    this.firebaseApp = firebaseApp;
-    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.transportFactoryProvider = transportFactoryProvider;
-
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
@@ -197,6 +187,9 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+    FirebaseSessionsDependencies.register(
+        new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled()));
+
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
           String.format(
@@ -287,7 +280,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    if (configResolver.getIsPerformanceCollectionDeactivated()) {
+    if (Boolean.TRUE.equals(configResolver.getIsPerformanceCollectionDeactivated())) {
       logger.info("Firebase Performance is permanently disabled");
       return;
     }

@@ -50,6 +50,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
 
   static {
+    // Add Firebase Performance as a dependency of Sessions when this class is loaded into memory.
     FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.PERFORMANCE);
   }
 
