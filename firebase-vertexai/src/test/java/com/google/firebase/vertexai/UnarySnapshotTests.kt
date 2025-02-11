@@ -17,8 +17,8 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
-import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.ContentBlockedException
+import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
