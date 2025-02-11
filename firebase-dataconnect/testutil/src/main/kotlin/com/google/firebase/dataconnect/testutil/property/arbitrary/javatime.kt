@@ -181,9 +181,11 @@ sealed interface TimeOffset {
 
   data class HhMm(val hours: Int, val minutes: Int, val sign: Sign) : TimeOffset {
     init {
-      require(hours in validHours) { "invalid hours: $hours (must be in the closed range 0..23)" }
+      require(hours + 100 in validHours) {
+        "invalid hours: $hours (must be in the closed range $validHours)"
+      }
       require(minutes in validMinutes) {
-        "invalid minutes: $minutes (must be in the closed range 0..59)"
+        "invalid minutes: $minutes (must be in the closed range $validMinutes)"
       }
       require(hours != 18 || minutes == 0) { "invalid minutes: $minutes (must be 0 when hours=18)" }
     }
