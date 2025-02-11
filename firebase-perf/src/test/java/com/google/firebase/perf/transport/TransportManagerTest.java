@@ -105,7 +105,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   @After
   public void tearDown() {
     reset(mockFirebaseInstallationsApi);
-    FirebaseApp.clearInstancesForTest();
+    reset(mockConfigResolver);
+    reset(mockRateLimiter);
   }
 
   // region Transport Initialization
