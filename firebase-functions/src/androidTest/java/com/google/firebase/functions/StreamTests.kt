@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.StreamResponse
 import com.google.firebase.functions.functions
 import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
@@ -19,8 +20,8 @@ import org.reactivestreams.Subscription
 class StreamTests {
 
   private lateinit var functions: FirebaseFunctions
-  var onNextList = mutableListOf<Any>()
-  private lateinit var subscriber: Subscriber<Any>
+  var onNextList = mutableListOf<StreamResponse>()
+  private lateinit var subscriber: Subscriber<StreamResponse>
   private var throwable: Throwable? = null
   private var isComplete = false
 
@@ -29,13 +30,13 @@ class StreamTests {
     Firebase.initialize(ApplicationProvider.getApplicationContext())
     functions = Firebase.functions
     subscriber =
-      object : Subscriber<Any> {
+      object : Subscriber<StreamResponse> {
         override fun onSubscribe(subscription: Subscription?) {
           subscription?.request(1)
         }
 
-        override fun onNext(t: Any) {
-          onNextList.add(t)
+        override fun onNext(streamResponse: StreamResponse) {
+          onNextList.add(streamResponse)
         }
 
         override fun onError(t: Throwable?) {
@@ -63,7 +64,7 @@ class StreamTests {
     function.stream(input).subscribe(subscriber)
 
     Thread.sleep(8000)
-    val onNextStringList = onNextList.map { it.toString() }
+    val onNextStringList = onNextList.map { it.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
@@ -86,7 +87,7 @@ class StreamTests {
     function.stream(input).subscribe(subscriber)
     Thread.sleep(2000)
 
-    val onNextStringList = onNextList.map { it.toString() }
+    val onNextStringList = onNextList.map { it.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
@@ -103,7 +104,7 @@ class StreamTests {
     function.stream(input).subscribe(subscriber)
     Thread.sleep(8000)
 
-    val onNextStringList = onNextList.map { it.toString() }
+    val onNextStringList = onNextList.map { it.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
@@ -123,14 +124,14 @@ class StreamTests {
     val publisher = function.stream(input)
     var subscription: Subscription? = null
     val cancelableSubscriber =
-      object : Subscriber<Any> {
+      object : Subscriber<StreamResponse> {
         override fun onSubscribe(s: Subscription?) {
           subscription = s
           s?.request(1)
         }
 
-        override fun onNext(message: Any) {
-          onNextList.add(message)
+        override fun onNext(streamResponse: StreamResponse) {
+          onNextList.add(streamResponse)
         }
 
         override fun onError(t: Throwable?) {
@@ -147,7 +148,7 @@ class StreamTests {
     subscription?.cancel()
     Thread.sleep(6000)
 
-    val onNextStringList = onNextList.map { it.toString() }
+    val onNextStringList = onNextList.map { it.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",

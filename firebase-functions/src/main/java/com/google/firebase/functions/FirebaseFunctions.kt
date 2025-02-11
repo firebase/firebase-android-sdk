@@ -318,7 +318,11 @@ internal constructor(
     return tcs.task
   }
 
-  internal fun stream(name: String, data: Any?, options: HttpsCallOptions): Publisher<Any> {
+  internal fun stream(
+    name: String,
+    data: Any?,
+    options: HttpsCallOptions
+  ): Publisher<StreamResponse> {
     val task =
       providerInstalled.task.continueWithTask(executor) {
         contextProvider.getContext(options.limitedUseAppCheckTokens)
@@ -327,7 +331,7 @@ internal constructor(
     return PublisherStream(getURL(name), data, options, client, serializer, task, executor)
   }
 
-  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): Publisher<Any> {
+  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): Publisher<StreamResponse> {
     val task =
       providerInstalled.task.continueWithTask(executor) {
         contextProvider.getContext(options.limitedUseAppCheckTokens)
@@ -344,12 +348,12 @@ internal constructor(
     private val serializer: Serializer,
     private val contextTask: Task<HttpsCallableContext?>,
     private val executor: Executor
-  ) : Publisher<Any> {
+  ) : Publisher<StreamResponse> {
 
-    private val subscribers = ConcurrentLinkedQueue<Subscriber<in Any>>()
+    private val subscribers = ConcurrentLinkedQueue<Subscriber<in StreamResponse>>()
     private var activeCall: Call? = null
 
-    override fun subscribe(subscriber: Subscriber<in Any>) {
+    override fun subscribe(subscriber: Subscriber<in StreamResponse>) {
       subscribers.add(subscriber)
       subscriber.onSubscribe(
         object : Subscription {
@@ -463,7 +467,9 @@ internal constructor(
               val json = JSONObject(dataChunk)
               when {
                 json.has("message") ->
-                  serializer.decode(json.opt("message"))?.let { notifyData(it) }
+                  serializer.decode(json.opt("message"))?.let {
+                    notifyData(StreamResponse.Message(data = it))
+                  }
                 json.has("error") -> {
                   serializer.decode(json.opt("error"))?.let {
                     notifyError(
@@ -477,7 +483,7 @@ internal constructor(
                 }
                 json.has("result") -> {
                   serializer.decode(json.opt("result"))?.let {
-                    notifyData(it)
+                    notifyData(StreamResponse.Result(data = it))
                     notifyComplete()
                   }
                   return
@@ -512,7 +518,7 @@ internal constructor(
       }
     }
 
-    private fun notifyData(data: Any?) {
+    private fun notifyData(data: StreamResponse?) {
       for (subscriber in subscribers) {
         subscriber.onNext(data)
       }

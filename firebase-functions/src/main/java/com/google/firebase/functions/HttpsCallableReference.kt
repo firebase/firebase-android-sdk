@@ -162,7 +162,7 @@ public class HttpsCallableReference {
    * @see java.io.IOException
    * @see FirebaseFunctionsException
    */
-  public fun stream(data: Any?): Publisher<Any> {
+  public fun stream(data: Any?): Publisher<StreamResponse> {
     return if (name != null) {
       functionsClient.stream(name, data, options)
     } else {
@@ -184,7 +184,7 @@ public class HttpsCallableReference {
    *
    * @return [Publisher] that will be completed when the streaming operation has finished.
    */
-  public fun stream(): Publisher<Any> {
+  public fun stream(): Publisher<StreamResponse> {
     return if (name != null) {
       functionsClient.stream(name, null, options)
     } else {
