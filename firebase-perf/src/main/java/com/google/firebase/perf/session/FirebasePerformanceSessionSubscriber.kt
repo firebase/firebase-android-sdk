@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,10 @@ import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.sessions.api.SessionSubscriber
 import java.util.UUID
 
-class FirebasePerformanceSessionSubscriber(private val dataCollectionEnabled: Boolean) :
+class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled: Boolean) :
   SessionSubscriber {
-  override val isDataCollectionEnabled: Boolean
-    get() = dataCollectionEnabled
 
-  override val sessionSubscriberName: SessionSubscriber.Name
-    get() = SessionSubscriber.Name.PERFORMANCE
+  override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.PERFORMANCE
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
