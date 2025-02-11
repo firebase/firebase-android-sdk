@@ -40,19 +40,6 @@ object FirebaseSessionsDependencies {
    */
   @JvmStatic
   fun addDependency(subscriberName: SessionSubscriber.Name) {
-    if (subscriberName == SessionSubscriber.Name.PERFORMANCE) {
-      throw IllegalArgumentException(
-        """
-          Incompatible versions of Firebase Perf and Firebase Sessions.
-          A safe combination would be:
-            firebase-sessions:1.1.0
-            firebase-crashlytics:18.5.0
-            firebase-perf:20.5.0
-          For more information contact Firebase Support.
-        """
-          .trimIndent()
-      )
-    }
     if (dependencies.containsKey(subscriberName)) {
       Log.d(TAG, "Dependency $subscriberName already added.")
       return
