@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Resolve Kotlin migration visibility issues
 
 
 # 21.1.0
