@@ -289,6 +289,7 @@ internal class UnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
+        response.usageMetadata?.promptTokensDetails?.isEmpty() shouldBe true
       }
     }
 
@@ -478,6 +479,7 @@ internal class UnarySnapshotTests {
 
         response.totalTokens shouldBe 6
         response.totalBillableCharacters shouldBe 16
+        response.promptTokensDetails.isEmpty() shouldBe true
       }
     }
 

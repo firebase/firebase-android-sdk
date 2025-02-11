@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
 public class CountTokensResponse(
   public val totalTokens: Int,
   public val totalBillableCharacters: Int? = null,
-  public val promptTokensDetails: List<ModalityTokenCount>? = null,
+  public val promptTokensDetails: List<ModalityTokenCount> = emptyList(),
 ) {
   public operator fun component1(): Int = totalTokens
 
@@ -55,7 +55,7 @@ public class CountTokensResponse(
       return CountTokensResponse(
         totalTokens,
         totalBillableCharacters ?: 0,
-        promptTokensDetails?.map { it.toPublic() }
+        promptTokensDetails?.map { it.toPublic() } ?: emptyList()
       )
     }
   }
