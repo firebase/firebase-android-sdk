@@ -221,12 +221,13 @@ sealed interface TimeOffset {
     }
 
     companion object {
+      private const val SECONDS_PER_MINUTE: Int = 60
+      private const val SECONDS_PER_HOUR: Int = 60 * SECONDS_PER_MINUTE
+
       val validHours = 0..18
       val validMinutes = 0..59
-      val maxSeconds: Int = 18 * 60 * 60
 
-      private const val SECONDS_PER_MINUTE = 60
-      private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+      @Suppress("MayBeConstant") val maxSeconds: Int = 18 * SECONDS_PER_HOUR
 
       fun forSeconds(seconds: Int, sign: Sign): HhMm {
         require(seconds in 0..maxSeconds) {
