@@ -136,6 +136,7 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
+    // TODO(b/394127311): Switch to using AQS.
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
@@ -204,6 +205,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
+    // TODO(b/394127311): Switch to using AQS.
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture unusedFuture =
@@ -242,6 +244,7 @@ public class GaugeManager {
     }
 
     // Adding Session ID info.
+    // TODO(b/394127311): Switch to using AQS.
     gaugeMetricBuilder.setSessionId(sessionId);
 
     transportManager.log(gaugeMetricBuilder.build(), appState);
@@ -250,17 +253,16 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param sessionId The {@link PerfSession#sessionId()} to which the collected Gauge Metrics
+   * @param aqsSessionId The {@link PerfSession#aqsSessionId()} ()} to which the collected Gauge Metrics
    *     should be associated with.
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
-    // TODO(b/394127311): Re-introduce logging of metadata for AQS.
+  public boolean logGaugeMetadata(String aqsSessionId, ApplicationProcessState appState) {
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
-              .setSessionId(sessionId)
+              .setSessionId(aqsSessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
       transportManager.log(gaugeMetric, appState);
