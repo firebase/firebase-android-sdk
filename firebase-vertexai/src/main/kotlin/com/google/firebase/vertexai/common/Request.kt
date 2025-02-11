@@ -78,8 +78,8 @@ internal data class GenerateImageRequest(
   @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
-    val sampleCount: Int?,
-    val includeRaiReason: Boolean?,
+    val sampleCount: Int,
+    val includeRaiReason: Boolean,
     val storageUri: String?,
     val negativePrompt: String?,
     val aspectRatio: String?,
