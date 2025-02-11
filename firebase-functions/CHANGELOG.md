@@ -1,5 +1,6 @@
 # Unreleased
 * [fixed] Resolve Kotlin migration visibility issues
+  ([#6522](//github.com/firebase/firebase-android-sdk/pull/6522))
 
 
 # 21.1.0
