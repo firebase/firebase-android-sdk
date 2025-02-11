@@ -18,7 +18,7 @@ constraintlayout = "2.1.4"
 coreKtx = "1.12.0"
 coroutines = "1.7.3"
 dagger = "2.43.2"
-datastorePreferencesAndroid = "1.1.2"
+datastorePreferences = "1.1.2"
 dexmaker = "2.28.1"
 dexmakerVersion = "1.2"
 espressoCore = "3.6.1"
@@ -92,7 +92,7 @@ androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "card
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
-androidx-datastore-preferences-android = { module = "androidx.datastore:datastore-preferences-android", version.ref = "datastorePreferencesAndroid" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espressoCore" }
 androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espressoCore" }

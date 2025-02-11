@@ -72,7 +72,7 @@ dependencies {
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
-  implementation(libs.androidx.datastore.preferences.android)
+  implementation(libs.androidx.datastore.preferences)
   compileOnly(libs.errorprone.annotations)
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
