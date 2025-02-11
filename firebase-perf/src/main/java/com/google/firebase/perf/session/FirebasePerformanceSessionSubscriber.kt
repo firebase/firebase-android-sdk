@@ -34,6 +34,8 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
       currentPerfSession.setAQSId(sessionDetails)
       GaugeManager.getInstance()
         .logGaugeMetadata(currentPerfSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
+      // TODO(b/394127311): Explore deciding whether to collect gauges or not via. AQS.
+      SessionManager.getInstance().initializeGaugeCollection()
       return
     }
 

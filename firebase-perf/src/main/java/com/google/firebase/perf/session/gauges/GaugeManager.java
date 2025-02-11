@@ -59,8 +59,9 @@ public class GaugeManager {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
+  @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
   @Nullable private String sessionId = null;
+  @Nullable private String aqsSessionId = null;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
 
@@ -130,10 +131,11 @@ public class GaugeManager {
     }
 
     this.sessionId = session.sessionId();
+    this.aqsSessionId = session.aqsSessionId();
     this.applicationProcessState = applicationProcessState;
 
     // This is needed, otherwise the Runnable might use a stale value.
-    final String sessionIdForScheduledTask = sessionId;
+    final String sessionIdForScheduledTask = aqsSessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     // TODO(b/394127311): Switch to using AQS.
@@ -195,7 +197,7 @@ public class GaugeManager {
     }
 
     // This is needed, otherwise the Runnable might use a stale value.
-    final String sessionIdForScheduledTask = sessionId;
+    final String sessionIdForScheduledTask = aqsSessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     cpuGaugeCollector.get().stopCollecting();
@@ -205,10 +207,9 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    // TODO(b/394127311): Switch to using AQS.
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
-    ScheduledFuture unusedFuture =
+    ScheduledFuture<?> unusedFuture =
         gaugeManagerExecutor
             .get()
             .schedule(
