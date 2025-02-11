@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.ContentBlockedException
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
@@ -72,15 +73,27 @@ internal class UnarySnapshotTests {
     }
 
   @Test
-  fun `long reply`() =
-    goldenUnaryFile("unary-success-basic-reply-long.json") {
+  fun `response with detailed token-based usageMetadata`() =
+    goldenUnaryFile("unary-success-basic-response-long-usage-metadata.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
         response.candidates.isEmpty() shouldBe false
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+        response.usageMetadata shouldNotBe null
+        response.usageMetadata?.apply {
+          totalTokenCount shouldBe 1913
+          candidatesTokenCount shouldBe 76
+          promptTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.IMAGE
+            it.tokenCount shouldBe 1806
+          }
+          candidatesTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.TEXT
+            it.tokenCount shouldBe 76
+          }
+        }
       }
     }
 
@@ -468,6 +481,22 @@ internal class UnarySnapshotTests {
 
         response.totalTokens shouldBe 6
         response.totalBillableCharacters shouldBe 16
+      }
+    }
+
+  @Test
+  fun `countTokens with modality fields returned`() =
+    goldenUnaryFile("unary-success-detailed-token-response.json") {
+      withTimeout(testTimeout) {
+        val response = model.countTokens("prompt")
+
+        response.totalTokens shouldBe 1837
+        response.totalBillableCharacters shouldBe 117
+        response.promptTokensDetails shouldNotBe null
+        response.promptTokensDetails?.forAtLeastOne {
+          it.modality shouldBe ContentModality.IMAGE
+          it.tokenCount shouldBe 1806
+        }
       }
     }
 
