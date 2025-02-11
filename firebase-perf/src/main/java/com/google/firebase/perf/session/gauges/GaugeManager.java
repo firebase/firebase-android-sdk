@@ -114,6 +114,7 @@ public class GaugeManager {
         || !session.isGaugeAndEventCollectionEnabled()
         || session.aqsSessionId() == null) {
       logger.warn("Not starting gauge collection.");
+      stopCollectingGauges();
       return;
     }
 

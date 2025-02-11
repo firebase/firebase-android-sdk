@@ -133,7 +133,8 @@ public class SessionManager extends AppStateUpdateHandler {
     }
 
     startOrStopCollectingGauges();
-    updateGaugeCollection(appStateMonitor.getAppState());
+    // A session is *only* updated in Foreground.
+    updateGaugeCollection(ApplicationProcessState.FOREGROUND);
   }
 
   /**
