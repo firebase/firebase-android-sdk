@@ -80,7 +80,7 @@ public class SessionManager extends AppStateUpdateHandler {
     }
 
     // While the change in app state doesn't start or stop gauge collection, it updates the upload
-    // frequency.
+    // and gauge collection frequency.
     updateGaugeCollection(newAppState);
   }
 
