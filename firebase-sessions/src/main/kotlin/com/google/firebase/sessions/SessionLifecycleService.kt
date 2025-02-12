@@ -127,10 +127,16 @@ internal class SessionLifecycleService : Service() {
 
     /** Generates a new session id and sends it everywhere it's needed */
     private fun newSession() {
-      SessionGenerator.instance.generateNewSession()
-      Log.d(TAG, "Generated new session.")
-      broadcastSession()
-      SessionDatastore.instance.updateSessionId(SessionGenerator.instance.currentSession.sessionId)
+      try {
+        SessionGenerator.instance.generateNewSession()
+        Log.d(TAG, "Generated new session.")
+        broadcastSession()
+        SessionDatastore.instance.updateSessionId(
+          SessionGenerator.instance.currentSession.sessionId
+        )
+      } catch (ex: IllegalStateException) {
+        Log.w(TAG, "Failed to generate new session.", ex)
+      }
     }
 
     /**
@@ -149,10 +155,14 @@ internal class SessionLifecycleService : Service() {
       if (hasForegrounded) {
         sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
       } else {
-        // Send the value from the datastore before the first foregrounding it exists
-        val storedSession = SessionDatastore.instance.getCurrentSessionId()
-        Log.d(TAG, "App has not yet foregrounded. Using previously stored session.")
-        storedSession?.let { sendSessionToClient(client, it) }
+        try {
+          // Send the value from the datastore before the first foregrounding it exists
+          val storedSession = SessionDatastore.instance.getCurrentSessionId()
+          Log.d(TAG, "App has not yet foregrounded. Using previously stored session.")
+          storedSession?.let { sendSessionToClient(client, it) }
+        } catch (ex: IllegalStateException) {
+          Log.w(TAG, "Failed to send session to client.", ex)
+        }
       }
     }
 
