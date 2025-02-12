@@ -41,6 +41,7 @@ android {
     minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("firebase-sessions.pro")
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -73,7 +74,6 @@ dependencies {
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
   implementation(libs.androidx.datastore.preferences)
-  implementation(libs.androidx.datastore.preferences.android)
   compileOnly(libs.errorprone.annotations)
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {

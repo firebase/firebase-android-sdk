@@ -93,7 +93,6 @@ androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayo
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
-androidx-datastore-preferences-android = { module = "androidx.datastore:datastore-preferences-android", version.ref = "datastorePreferences" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espressoCore" }
 androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espressoCore" }
