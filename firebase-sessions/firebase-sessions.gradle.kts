@@ -73,6 +73,9 @@ dependencies {
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
+  implementation("androidx.datastore:datastore-preferences:1.1.2") {
+    exclude(group = "androidx.datastore", module = "datastore-preferences-jvm")
+  }
   implementation("androidx.datastore:datastore-preferences-android:1.1.2")
   compileOnly(libs.errorprone.annotations)
 
