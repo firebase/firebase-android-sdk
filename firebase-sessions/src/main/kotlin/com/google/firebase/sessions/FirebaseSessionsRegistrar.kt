@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import android.util.Log
 import androidx.annotation.Keep
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
@@ -38,8 +39,9 @@ import kotlinx.coroutines.CoroutineDispatcher
  */
 @Keep
 internal class FirebaseSessionsRegistrar : ComponentRegistrar {
-  override fun getComponents() =
-    listOf(
+  override fun getComponents(): List<Component<out Any>> {
+    Log.w("find me", "the missing class name: ${Eh.getMissingClassName()}")
+    return listOf(
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
@@ -110,6 +112,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
+  }
 
   private companion object {
     private const val LIBRARY_NAME = "fire-sessions"
