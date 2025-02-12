@@ -17,12 +17,22 @@
 package com.google.firebase.sessions;
 
 import androidx.annotation.NonNull;
+import androidx.datastore.DataStoreFile;
 import androidx.datastore.preferences.PreferenceDataStoreDelegateKt;
 
 public class Eh {
 
   @NonNull
-  public static String getMissingClassName() {
+  public static String getMissingClassName0() {
+    try {
+      return DataStoreFile.class.getName();
+    } catch (Exception ex) {
+      return "oops: " + ex.getMessage();
+    }
+  }
+
+  @NonNull
+  public static String getMissingClassName1() {
     try {
       return PreferenceDataStoreDelegateKt.class.getName();
     } catch (Exception ex) {

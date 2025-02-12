@@ -41,7 +41,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class FirebaseSessionsRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<out Any>> {
     Log.w("find me", "this is the modified aqs: " + BuildConfig.VERSION_NAME)
-    Log.w("find me", "the missing class name: ${Eh.getMissingClassName()}")
+    Log.w("find me", "the missing class name 0: ${Eh.getMissingClassName0()}")
+    Log.w("find me", "the missing class name 1: ${Eh.getMissingClassName1()}")
     return listOf(
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
