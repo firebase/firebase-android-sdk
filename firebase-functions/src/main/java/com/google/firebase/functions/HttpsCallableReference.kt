@@ -129,12 +129,14 @@ public class HttpsCallableReference {
   /**
    * Streams data to the specified HTTPS endpoint asynchronously.
    *
-   * The data passed into the endpoint can be any of the following types:
+   * The data passed into the trigger can be any of the following types:
    *
-   * * Any primitive type, including `null`, `int`, `long`, `float`, and `boolean`.
+   * * Any primitive type, including null, int, long, float, and boolean.
    * * [String]
-   * * [List&lt;?&gt;][java.util.List], where the contained objects are also one of these types.
-   * * [Map&lt;String, ?&gt;][java.util.Map], where the values are also one of these types.
+   * * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
+   * types.
+   * * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
+   * types.
    * * [org.json.JSONArray]
    * * [org.json.JSONObject]
    * * [org.json.JSONObject.NULL]
