@@ -23,6 +23,10 @@ public class Eh {
 
   @NonNull
   public static String getMissingClassName() {
-    return PreferenceDataStoreDelegateKt.class.getName();
+    try {
+      return PreferenceDataStoreDelegateKt.class.getName();
+    } catch (Exception ex) {
+      return "oops: " + ex.getMessage();
+    }
   }
 }
