@@ -1,5 +1,6 @@
 # Unreleased
 
+* [fixed] Make AQS resilient to background init in multi-process apps.
 
 # 2.0.7
 * [fixed] Removed extraneous logs that risk leaking internal identifiers.
