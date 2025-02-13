@@ -258,20 +258,11 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
         "com.google.firebase:firebase-ml-vision" to
           ArtifactTutorialMapping("Firebase MLKit Vision", "ml-vision-dependency"),
         "androidx.credentials:credentials" to
-          ArtifactTutorialMapping(
-            "Auth Google Sign In",
-            "auth-google-signin-first-dependency"
-          ),
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-first-dependency"),
         "androidx.credentials:credentials-play-services-auth" to
-          ArtifactTutorialMapping(
-            "Auth Google Sign In",
-            "auth-google-signin-second-dependency"
-          ),
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-second-dependency"),
         "com.google.android.libraries.identity.googleid" to
-          ArtifactTutorialMapping(
-            "Auth Google Sign In",
-            "auth-google-signin-third-dependency"
-          ),
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-third-dependency"),
         "com.google.firebase:firebase-appdistribution-gradle" to
           ArtifactTutorialMapping(
             "App Distribution",
