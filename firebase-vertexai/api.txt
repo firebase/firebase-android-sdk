@@ -95,8 +95,10 @@ package com.google.firebase.vertexai.type {
     method public int getOrdinal();
     property public final String name;
     property public final int ordinal;
+    field public static final com.google.firebase.vertexai.type.BlockReason BLOCKLIST;
     field public static final com.google.firebase.vertexai.type.BlockReason.Companion Companion;
     field public static final com.google.firebase.vertexai.type.BlockReason OTHER;
+    field public static final com.google.firebase.vertexai.type.BlockReason PROHIBITED_CONTENT;
     field public static final com.google.firebase.vertexai.type.BlockReason SAFETY;
     field public static final com.google.firebase.vertexai.type.BlockReason UNKNOWN;
   }
@@ -181,14 +183,14 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class CountTokensResponse {
-    ctor public CountTokensResponse(int totalTokens, Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? promptTokensDetails = null);
+    ctor public CountTokensResponse(int totalTokens, Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
     method public operator Integer? component2();
     method public operator java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? component3();
-    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? getPromptTokensDetails();
+    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> getPromptTokensDetails();
     method public Integer? getTotalBillableCharacters();
     method public int getTotalTokens();
-    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? promptTokensDetails;
+    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> promptTokensDetails;
     property public final Integer? totalBillableCharacters;
     property public final int totalTokens;
   }
@@ -206,11 +208,15 @@ package com.google.firebase.vertexai.type {
     method public int getOrdinal();
     property public final String name;
     property public final int ordinal;
+    field public static final com.google.firebase.vertexai.type.FinishReason BLOCKLIST;
     field public static final com.google.firebase.vertexai.type.FinishReason.Companion Companion;
+    field public static final com.google.firebase.vertexai.type.FinishReason MALFORMED_FUNCTION_CALL;
     field public static final com.google.firebase.vertexai.type.FinishReason MAX_TOKENS;
     field public static final com.google.firebase.vertexai.type.FinishReason OTHER;
+    field public static final com.google.firebase.vertexai.type.FinishReason PROHIBITED_CONTENT;
     field public static final com.google.firebase.vertexai.type.FinishReason RECITATION;
     field public static final com.google.firebase.vertexai.type.FinishReason SAFETY;
+    field public static final com.google.firebase.vertexai.type.FinishReason SPII;
     field public static final com.google.firebase.vertexai.type.FinishReason STOP;
     field public static final com.google.firebase.vertexai.type.FinishReason UNKNOWN;
   }
@@ -576,16 +582,16 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? promptTokensDetails, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? candidatesTokensDetails);
+    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> candidatesTokensDetails);
     method public Integer? getCandidatesTokenCount();
-    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? getCandidatesTokensDetails();
+    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
-    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? getPromptTokensDetails();
+    method public java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> getPromptTokensDetails();
     method public int getTotalTokenCount();
     property public final Integer? candidatesTokenCount;
-    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? candidatesTokensDetails;
+    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
-    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount>? promptTokensDetails;
+    property public final java.util.List<com.google.firebase.vertexai.type.ModalityTokenCount> promptTokensDetails;
     property public final int totalTokenCount;
   }
 

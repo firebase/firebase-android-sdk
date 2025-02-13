@@ -33,8 +33,8 @@ public class UsageMetadata(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
   public val totalTokenCount: Int,
-  public val promptTokensDetails: List<ModalityTokenCount>?,
-  public val candidatesTokensDetails: List<ModalityTokenCount>?,
+  public val promptTokensDetails: List<ModalityTokenCount>,
+  public val candidatesTokensDetails: List<ModalityTokenCount>,
 ) {
 
   @Serializable
@@ -51,8 +51,8 @@ public class UsageMetadata(
         promptTokenCount ?: 0,
         candidatesTokenCount ?: 0,
         totalTokenCount ?: 0,
-        promptTokensDetails = promptTokensDetails?.map { it.toPublic() },
-        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() }
+        promptTokensDetails = promptTokensDetails?.map { it.toPublic() } ?: emptyList(),
+        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList()
       )
   }
 }
