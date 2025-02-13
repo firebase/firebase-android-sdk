@@ -7,7 +7,7 @@ package com.google.firebase.functions
  * - [Message]: Represents an intermediate event pushed from the server.
  * - [Result]: Represents the final response that signifies the stream has ended.
  */
-public abstract class StreamResponse private constructor(public open val data: Any) {
+public abstract class StreamResponse private constructor(public val data: HttpsCallableResult) {
 
   /**
    * An event message received during the stream.
@@ -19,7 +19,7 @@ public abstract class StreamResponse private constructor(public open val data: A
    * data: { "message": { "chunk": "foo" } }
    * ```
    */
-  public class Message(override val data: Any) : StreamResponse(data)
+  public class Message(data: HttpsCallableResult) : StreamResponse(data)
 
   /**
    * The final response that terminates the stream.
@@ -32,5 +32,5 @@ public abstract class StreamResponse private constructor(public open val data: A
    * data: { "result": { "text": "foo bar" } }
    * ```
    */
-  public class Result(override val data: Any) : StreamResponse(data)
+  public class Result(data: HttpsCallableResult) : StreamResponse(data)
 }

@@ -145,7 +145,7 @@ internal class PublisherStream(
             when {
               json.has("message") ->
                 serializer.decode(json.opt("message"))?.let {
-                  notifyData(StreamResponse.Message(data = it))
+                  notifyData(StreamResponse.Message(data = HttpsCallableResult(it)))
                 }
               json.has("error") -> {
                 serializer.decode(json.opt("error"))?.let {
@@ -160,7 +160,7 @@ internal class PublisherStream(
               }
               json.has("result") -> {
                 serializer.decode(json.opt("result"))?.let {
-                  notifyData(StreamResponse.Result(data = it))
+                  notifyData(StreamResponse.Result(data = HttpsCallableResult(it)))
                   notifyComplete()
                 }
                 return

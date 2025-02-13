@@ -11,6 +11,9 @@ import com.google.firebase.functions.StreamResponse.Result
 import com.google.firebase.functions.functions
 import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -59,8 +62,8 @@ class StreamTests {
   }
 
   @Test
-  fun testGenStream_receivesMessagesAndFinalResult() {
-    val input = hashMapOf("data" to "Why is the sky blue")
+  fun genStream_withPublisher_receivesMessagesAndFinalResult() {
+    val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStream")
 
     function.stream(input).subscribe(subscriber)
@@ -68,7 +71,7 @@ class StreamTests {
     Thread.sleep(8000)
     val messages = onNextList.filterIsInstance<Message>()
     val results = onNextList.filterIsInstance<Result>()
-    assertThat(messages.map { it.data.toString() })
+    assertThat(messages.map { it.data.data.toString() })
       .containsExactly(
         "{chunk=hello}",
         "{chunk=world}",
@@ -77,14 +80,44 @@ class StreamTests {
         "{chunk=cool}"
       )
     assertThat(results).hasSize(1)
-    assertThat(results.first().data.toString()).isEqualTo("hello world this is cool")
+    assertThat(results.first().data.data.toString()).isEqualTo("hello world this is cool")
     assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }
 
   @Test
-  fun testGenStreamError_receivesErrorAndStops() {
-    val input = hashMapOf("data" to "Why is the sky blue")
+  fun genStream_withFlow_receivesMessagesAndFinalResult() = runBlocking {
+    val input = mapOf("data" to "Why is the sky blue")
+    val function = functions.getHttpsCallable("genStream")
+
+    val flow = function.stream(input).asFlow()
+    val receivedResponses = mutableListOf<StreamResponse>()
+    try {
+      withTimeout(8000) { flow.collect { response -> receivedResponses.add(response) } }
+      isComplete = true
+    } catch (e: Throwable) {
+      throwable = e
+    }
+
+    val messages = receivedResponses.filterIsInstance<Message>()
+    val results = receivedResponses.filterIsInstance<Result>()
+    assertThat(messages.map { it.data.data.toString() })
+      .containsExactly(
+        "{chunk=hello}",
+        "{chunk=world}",
+        "{chunk=this}",
+        "{chunk=is}",
+        "{chunk=cool}"
+      )
+    assertThat(results).hasSize(1)
+    assertThat(results.first().data.data.toString()).isEqualTo("hello world this is cool")
+    assertThat(throwable).isNull()
+    assertThat(isComplete).isTrue()
+  }
+
+  @Test
+  fun genStreamError_receivesErrorAndStops() {
+    val input = mapOf("data" to "Why is the sky blue")
     val function =
       functions.getHttpsCallable("genStreamError").withTimeout(800, TimeUnit.MILLISECONDS)
 
@@ -92,7 +125,7 @@ class StreamTests {
     Thread.sleep(2000)
 
     val messages = onNextList.filterIsInstance<Message>()
-    val onNextStringList = messages.map { it.data.toString() }
+    val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
@@ -102,8 +135,8 @@ class StreamTests {
   }
 
   @Test
-  fun testGenStreamNoReturn_receivesOnlyMessages() {
-    val input = hashMapOf("data" to "Why is the sky blue")
+  fun genStreamNoReturn_receivesOnlyMessages() {
+    val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
 
     function.stream(input).subscribe(subscriber)
@@ -112,7 +145,7 @@ class StreamTests {
     val messages = onNextList.filterIsInstance<Message>()
     val results = onNextList.filterIsInstance<Result>()
 
-    val onNextStringList = messages.map { it.data.toString() }
+    val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
@@ -127,8 +160,8 @@ class StreamTests {
   }
 
   @Test
-  fun testGenStream_cancelStream_receivesPartialMessagesAndError() {
-    val input = hashMapOf("data" to "Why is the sky blue")
+  fun genStream_cancelStream_receivesPartialMessagesAndError() {
+    val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
     val publisher = function.stream(input)
     var subscription: Subscription? = null
@@ -153,16 +186,15 @@ class StreamTests {
       }
 
     publisher.subscribe(cancelableSubscriber)
-    Thread.sleep(2000)
+    Thread.sleep(500)
     subscription?.cancel()
     Thread.sleep(6000)
 
     val messages = onNextList.filterIsInstance<Message>()
-    val onNextStringList = messages.map { it.data.toString() }
+    val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
-        "{chunk=world}",
       )
     assertThat(throwable).isNotNull()
     assertThat(requireNotNull(throwable).message).isEqualTo("Stream was canceled")
