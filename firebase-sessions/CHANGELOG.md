@@ -2,6 +2,7 @@
 
 * [changed] Updated datastore dependency to `1.1.2` to
   fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
+* [fixed] Make AQS resilient to background init in multi-process apps.
 
 # 2.0.7
 * [fixed] Removed extraneous logs that risk leaking internal identifiers.
