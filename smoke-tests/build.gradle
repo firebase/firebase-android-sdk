@@ -76,7 +76,6 @@ dependencies {
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
-  implementation "com.google.firebase:firebase-crashlytics:19.4.1"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
@@ -91,6 +90,14 @@ dependencies {
   implementation "com.google.firebase:firebase-storage"
   implementation "com.google.truth:truth:1.0.1"
   implementation libs.junit
+
+  implementation("com.google.firebase:firebase-crashlytics:19.4.1") {
+    exclude group: 'androidx.datastore', module: 'datastore-preferences'
+  }
+  implementation("androidx.datastore:datastore-preferences-android:1.1.2") {
+    exclude group: 'androidx.datastore', module: 'datastore'
+  }
+  implementation("androidx.datastore:datastore-android:1.1.2")
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
