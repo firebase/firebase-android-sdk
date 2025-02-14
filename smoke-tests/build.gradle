@@ -91,13 +91,21 @@ dependencies {
   implementation "com.google.truth:truth:1.0.1"
   implementation libs.junit
 
-  implementation("com.google.firebase:firebase-crashlytics:19.4.1") {
-    exclude group: 'androidx.datastore', module: 'datastore-preferences'
+  implementation("com.google.firebase:firebase-crashlytics:19.4.1")
+  implementation "androidx.datastore:datastore-android:1.1.2"
+  implementation "androidx.datastore:datastore-core-android:1.1.2"
+  implementation "androidx.datastore:datastore-preferences-android:1.1.2"
+  modules {
+    module("androidx.datastore:datastore-jvm") {
+      replacedBy("androidx.datastore:datastore-android", "eh")
+    }
+    module("androidx.datastore:datastore-core-jvm") {
+      replacedBy("androidx.datastore:datastore-core-android", "eh")
+    }
+    module("androidx.datastore:datastore-preferences-jvm") {
+      replacedBy("androidx.datastore:datastore-preferences-android", "eh")
+    }
   }
-  implementation("androidx.datastore:datastore-preferences-android:1.1.2") {
-    exclude group: 'androidx.datastore', module: 'datastore'
-  }
-  implementation("androidx.datastore:datastore-android:1.1.2")
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
