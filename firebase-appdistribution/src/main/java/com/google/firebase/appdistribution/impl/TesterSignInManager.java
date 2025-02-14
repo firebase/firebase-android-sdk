@@ -212,10 +212,7 @@ class TesterSignInManager {
   }
 
   private boolean supportsCustomTabs(Context context) {
-    String packageName = CustomTabsClient.getPackageName(
-        context,
-        Collections.emptyList()
-    );
+    String packageName = CustomTabsClient.getPackageName(context, Collections.emptyList());
     return packageName != null;
   }
 }
