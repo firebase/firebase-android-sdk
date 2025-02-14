@@ -93,17 +93,17 @@ dependencies {
 
   implementation("com.google.firebase:firebase-crashlytics:19.4.1")
   implementation "androidx.datastore:datastore-android:1.1.2"
-  implementation "androidx.datastore:datastore-core-android:1.1.2"
   implementation "androidx.datastore:datastore-preferences-android:1.1.2"
+  implementation "androidx.datastore:datastore-preferences-core-android:1.1.2"
   modules {
     module("androidx.datastore:datastore-jvm") {
       replacedBy("androidx.datastore:datastore-android")
     }
-//    module("androidx.datastore:datastore-core-jvm") {
-//      replacedBy("androidx.datastore:datastore-core-android")
-//    }
     module("androidx.datastore:datastore-preferences-jvm") {
       replacedBy("androidx.datastore:datastore-preferences-android")
+    }
+    module("androidx.datastore:datastore-preferences-core-jvm") {
+      replacedBy("androidx.datastore:datastore-preferences-core-android")
     }
   }
 
