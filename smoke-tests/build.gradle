@@ -94,6 +94,7 @@ dependencies {
   implementation("com.google.firebase:firebase-crashlytics:19.4.1")
   implementation "androidx.datastore:datastore-android:1.1.2"
   implementation "androidx.datastore:datastore-preferences-android:1.1.2"
+  implementation "androidx.datastore:datastore-preferences-core-jvm:1.1.2"
   implementation "androidx.datastore:datastore-core-android:1.1.2"
   modules {
     module("androidx.datastore:datastore-jvm") {
