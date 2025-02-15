@@ -11,605 +11,683 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.firestore.model
 
-package com.google.firebase.firestore.model;
+import com.google.firebase.firestore.Blob
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.util.Assert
+import com.google.firebase.firestore.util.Util
+import com.google.firestore.v1.ArrayValue
+import com.google.firestore.v1.ArrayValueOrBuilder
+import com.google.firestore.v1.MapValue
+import com.google.firestore.v1.Value
+import com.google.firestore.v1.Value.ValueTypeCase
+import com.google.protobuf.ByteString
+import com.google.protobuf.NullValue
+import com.google.protobuf.Timestamp
+import com.google.type.LatLng
+import java.lang.Double.doubleToLongBits
+import java.util.Date
+import java.util.TreeMap
+import kotlin.math.min
 
-import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
-import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
-import static com.google.firebase.firestore.util.Assert.fail;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
+internal object Values {
+  const val TYPE_KEY: String = "__type__"
+  @JvmField val NAN_VALUE: Value = Value.newBuilder().setDoubleValue(Double.NaN).build()
+  @JvmField val NULL_VALUE: Value = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+  @JvmField val MIN_VALUE: Value = NULL_VALUE
+  @JvmField val MAX_VALUE_TYPE: Value = Value.newBuilder().setStringValue("__max__").build()
+  @JvmField
+  val MAX_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
+      .build()
 
-import androidx.annotation.Nullable;
-import com.google.firebase.firestore.util.Util;
-import com.google.firestore.v1.ArrayValue;
-import com.google.firestore.v1.ArrayValueOrBuilder;
-import com.google.firestore.v1.MapValue;
-import com.google.firestore.v1.Value;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.NullValue;
-import com.google.protobuf.Timestamp;
-import com.google.type.LatLng;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-public class Values {
-  public static final String TYPE_KEY = "__type__";
-  public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
-  public static final Value NULL_VALUE =
-      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-  public static final Value MIN_VALUE = NULL_VALUE;
-  public static final Value MAX_VALUE_TYPE = Value.newBuilder().setStringValue("__max__").build();
-  public static final Value MAX_VALUE =
-      Value.newBuilder()
-          .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
-          .build();
-
-  public static final Value VECTOR_VALUE_TYPE =
-      Value.newBuilder().setStringValue("__vector__").build();
-  public static final String VECTOR_MAP_VECTORS_KEY = "value";
-  private static final Value MIN_VECTOR_VALUE =
-      Value.newBuilder()
-          .setMapValue(
-              MapValue.newBuilder()
-                  .putFields(TYPE_KEY, VECTOR_VALUE_TYPE)
-                  .putFields(
-                      VECTOR_MAP_VECTORS_KEY,
-                      Value.newBuilder().setArrayValue(ArrayValue.newBuilder()).build()))
-          .build();
+  @JvmField val VECTOR_VALUE_TYPE: Value = Value.newBuilder().setStringValue("__vector__").build()
+  const val VECTOR_MAP_VECTORS_KEY: String = "value"
+  private val MIN_VECTOR_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(TYPE_KEY, VECTOR_VALUE_TYPE)
+          .putFields(
+            VECTOR_MAP_VECTORS_KEY,
+            Value.newBuilder().setArrayValue(ArrayValue.newBuilder()).build()
+          )
+      )
+      .build()
 
   /**
    * The order of types in Firestore. This order is based on the backend's ordering, but modified to
-   * support server timestamps and {@link #MAX_VALUE}.
+   * support server timestamps and [.MAX_VALUE].
    */
-  public static final int TYPE_ORDER_NULL = 0;
+  const val TYPE_ORDER_NULL: Int = 0
 
-  public static final int TYPE_ORDER_BOOLEAN = 1;
-  public static final int TYPE_ORDER_NUMBER = 2;
-  public static final int TYPE_ORDER_TIMESTAMP = 3;
-  public static final int TYPE_ORDER_SERVER_TIMESTAMP = 4;
-  public static final int TYPE_ORDER_STRING = 5;
-  public static final int TYPE_ORDER_BLOB = 6;
-  public static final int TYPE_ORDER_REFERENCE = 7;
-  public static final int TYPE_ORDER_GEOPOINT = 8;
-  public static final int TYPE_ORDER_ARRAY = 9;
-  public static final int TYPE_ORDER_VECTOR = 10;
-  public static final int TYPE_ORDER_MAP = 11;
+  const val TYPE_ORDER_BOOLEAN: Int = 1
+  const val TYPE_ORDER_NUMBER: Int = 2
+  const val TYPE_ORDER_TIMESTAMP: Int = 3
+  const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 4
+  const val TYPE_ORDER_STRING: Int = 5
+  const val TYPE_ORDER_BLOB: Int = 6
+  const val TYPE_ORDER_REFERENCE: Int = 7
+  const val TYPE_ORDER_GEOPOINT: Int = 8
+  const val TYPE_ORDER_ARRAY: Int = 9
+  const val TYPE_ORDER_VECTOR: Int = 10
+  const val TYPE_ORDER_MAP: Int = 11
 
-  public static final int TYPE_ORDER_MAX_VALUE = Integer.MAX_VALUE;
+  const val TYPE_ORDER_MAX_VALUE: Int = Int.MAX_VALUE
 
   /** Returns the backend's type order of the given Value type. */
-  public static int typeOrder(Value value) {
-    switch (value.getValueTypeCase()) {
-      case NULL_VALUE:
-        return TYPE_ORDER_NULL;
-      case BOOLEAN_VALUE:
-        return TYPE_ORDER_BOOLEAN;
-      case INTEGER_VALUE:
-        return TYPE_ORDER_NUMBER;
-      case DOUBLE_VALUE:
-        return TYPE_ORDER_NUMBER;
-      case TIMESTAMP_VALUE:
-        return TYPE_ORDER_TIMESTAMP;
-      case STRING_VALUE:
-        return TYPE_ORDER_STRING;
-      case BYTES_VALUE:
-        return TYPE_ORDER_BLOB;
-      case REFERENCE_VALUE:
-        return TYPE_ORDER_REFERENCE;
-      case GEO_POINT_VALUE:
-        return TYPE_ORDER_GEOPOINT;
-      case ARRAY_VALUE:
-        return TYPE_ORDER_ARRAY;
-      case MAP_VALUE:
-        if (isServerTimestamp(value)) {
-          return TYPE_ORDER_SERVER_TIMESTAMP;
+  @JvmStatic
+  fun typeOrder(value: Value): Int {
+    return when (value.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> TYPE_ORDER_NULL
+      ValueTypeCase.BOOLEAN_VALUE -> TYPE_ORDER_BOOLEAN
+      ValueTypeCase.INTEGER_VALUE -> TYPE_ORDER_NUMBER
+      ValueTypeCase.DOUBLE_VALUE -> TYPE_ORDER_NUMBER
+      ValueTypeCase.TIMESTAMP_VALUE -> TYPE_ORDER_TIMESTAMP
+      ValueTypeCase.STRING_VALUE -> TYPE_ORDER_STRING
+      ValueTypeCase.BYTES_VALUE -> TYPE_ORDER_BLOB
+      ValueTypeCase.REFERENCE_VALUE -> TYPE_ORDER_REFERENCE
+      ValueTypeCase.GEO_POINT_VALUE -> TYPE_ORDER_GEOPOINT
+      ValueTypeCase.ARRAY_VALUE -> TYPE_ORDER_ARRAY
+      ValueTypeCase.MAP_VALUE ->
+        if (ServerTimestamps.isServerTimestamp(value)) {
+          TYPE_ORDER_SERVER_TIMESTAMP
         } else if (isMaxValue(value)) {
-          return TYPE_ORDER_MAX_VALUE;
+          TYPE_ORDER_MAX_VALUE
         } else if (isVectorValue(value)) {
-          return TYPE_ORDER_VECTOR;
+          TYPE_ORDER_VECTOR
         } else {
-          return TYPE_ORDER_MAP;
+          TYPE_ORDER_MAP
         }
-      default:
-        throw fail("Invalid value type: " + value.getValueTypeCase());
+      else -> throw Assert.fail("Invalid value type: " + value.valueTypeCase)
     }
   }
 
-  public static boolean equals(Value left, Value right) {
-    if (left == right) {
-      return true;
+  @JvmStatic
+  fun equals(left: Value?, right: Value?): Boolean {
+    if (left === right) {
+      return true
     }
 
     if (left == null || right == null) {
-      return false;
+      return false
     }
 
-    int leftType = typeOrder(left);
-    int rightType = typeOrder(right);
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
     if (leftType != rightType) {
-      return false;
+      return false
     }
 
-    switch (leftType) {
-      case TYPE_ORDER_NUMBER:
-        return numberEquals(left, right);
-      case TYPE_ORDER_ARRAY:
-        return arrayEquals(left, right);
-      case TYPE_ORDER_VECTOR:
-      case TYPE_ORDER_MAP:
-        return objectEquals(left, right);
-      case TYPE_ORDER_SERVER_TIMESTAMP:
-        return getLocalWriteTime(left).equals(getLocalWriteTime(right));
-      case TYPE_ORDER_MAX_VALUE:
-        return true;
-      default:
-        return left.equals(right);
+    return when (leftType) {
+      TYPE_ORDER_NUMBER -> numberEquals(left, right)
+      TYPE_ORDER_ARRAY -> arrayEquals(left, right)
+      TYPE_ORDER_VECTOR,
+      TYPE_ORDER_MAP -> objectEquals(left, right)
+      TYPE_ORDER_SERVER_TIMESTAMP ->
+        ServerTimestamps.getLocalWriteTime(left) == ServerTimestamps.getLocalWriteTime(right)
+      TYPE_ORDER_MAX_VALUE -> true
+      else -> left == right
     }
   }
 
-  private static boolean numberEquals(Value left, Value right) {
-    if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
-        && right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      return left.getIntegerValue() == right.getIntegerValue();
-    } else if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE
-        && right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-      return Double.doubleToLongBits(left.getDoubleValue())
-          == Double.doubleToLongBits(right.getDoubleValue());
+  private fun numberEquals(left: Value, right: Value): Boolean {
+    if (left.valueTypeCase != right.valueTypeCase) {
+      return false
     }
-
-    return false;
+    return when (left.valueTypeCase) {
+      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+      ValueTypeCase.DOUBLE_VALUE ->
+        doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+      else -> false
+    }
   }
 
-  private static boolean arrayEquals(Value left, Value right) {
-    ArrayValue leftArray = left.getArrayValue();
-    ArrayValue rightArray = right.getArrayValue();
+  private fun arrayEquals(left: Value, right: Value): Boolean {
+    val leftArray = left.arrayValue
+    val rightArray = right.arrayValue
 
-    if (leftArray.getValuesCount() != rightArray.getValuesCount()) {
-      return false;
+    if (leftArray.valuesCount != rightArray.valuesCount) {
+      return false
     }
 
-    for (int i = 0; i < leftArray.getValuesCount(); ++i) {
+    for (i in 0 until leftArray.valuesCount) {
       if (!equals(leftArray.getValues(i), rightArray.getValues(i))) {
-        return false;
+        return false
       }
     }
 
-    return true;
+    return true
   }
 
-  private static boolean objectEquals(Value left, Value right) {
-    MapValue leftMap = left.getMapValue();
-    MapValue rightMap = right.getMapValue();
+  private fun objectEquals(left: Value, right: Value): Boolean {
+    val leftMap = left.mapValue
+    val rightMap = right.mapValue
 
-    if (leftMap.getFieldsCount() != rightMap.getFieldsCount()) {
-      return false;
+    if (leftMap.fieldsCount != rightMap.fieldsCount) {
+      return false
     }
 
-    for (Map.Entry<String, Value> entry : leftMap.getFieldsMap().entrySet()) {
-      Value otherEntry = rightMap.getFieldsMap().get(entry.getKey());
-      if (!equals(entry.getValue(), otherEntry)) {
-        return false;
+    for ((key, value) in leftMap.fieldsMap) {
+      val otherEntry = rightMap.fieldsMap[key]
+      if (!equals(value, otherEntry)) {
+        return false
       }
     }
 
-    return true;
+    return true
   }
 
   /** Returns true if the Value list contains the specified element. */
-  public static boolean contains(ArrayValueOrBuilder haystack, Value needle) {
-    for (Value haystackElement : haystack.getValuesList()) {
+  @JvmStatic
+  fun contains(haystack: ArrayValueOrBuilder, needle: Value?): Boolean {
+    for (haystackElement in haystack.valuesList) {
       if (equals(haystackElement, needle)) {
-        return true;
+        return true
       }
     }
-    return false;
+    return false
   }
 
-  public static int compare(Value left, Value right) {
-    int leftType = typeOrder(left);
-    int rightType = typeOrder(right);
+  @JvmStatic
+  fun compare(left: Value, right: Value): Int {
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
 
     if (leftType != rightType) {
-      return Util.compareIntegers(leftType, rightType);
+      return Util.compareIntegers(leftType, rightType)
     }
 
-    switch (leftType) {
-      case TYPE_ORDER_NULL:
-      case TYPE_ORDER_MAX_VALUE:
-        return 0;
-      case TYPE_ORDER_BOOLEAN:
-        return Util.compareBooleans(left.getBooleanValue(), right.getBooleanValue());
-      case TYPE_ORDER_NUMBER:
-        return compareNumbers(left, right);
-      case TYPE_ORDER_TIMESTAMP:
-        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
-      case TYPE_ORDER_SERVER_TIMESTAMP:
-        return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
-      case TYPE_ORDER_STRING:
-        return Util.compareUtf8Strings(left.getStringValue(), right.getStringValue());
-      case TYPE_ORDER_BLOB:
-        return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
-      case TYPE_ORDER_REFERENCE:
-        return compareReferences(left.getReferenceValue(), right.getReferenceValue());
-      case TYPE_ORDER_GEOPOINT:
-        return compareGeoPoints(left.getGeoPointValue(), right.getGeoPointValue());
-      case TYPE_ORDER_ARRAY:
-        return compareArrays(left.getArrayValue(), right.getArrayValue());
-      case TYPE_ORDER_MAP:
-        return compareMaps(left.getMapValue(), right.getMapValue());
-      case TYPE_ORDER_VECTOR:
-        return compareVectors(left.getMapValue(), right.getMapValue());
-      default:
-        throw fail("Invalid value type: " + leftType);
+    return when (leftType) {
+      TYPE_ORDER_NULL,
+      TYPE_ORDER_MAX_VALUE -> 0
+      TYPE_ORDER_BOOLEAN -> Util.compareBooleans(left.booleanValue, right.booleanValue)
+      TYPE_ORDER_NUMBER -> compareNumbers(left, right)
+      TYPE_ORDER_TIMESTAMP -> compareTimestamps(left.timestampValue, right.timestampValue)
+      TYPE_ORDER_SERVER_TIMESTAMP ->
+        compareTimestamps(
+          ServerTimestamps.getLocalWriteTime(left),
+          ServerTimestamps.getLocalWriteTime(right)
+        )
+      TYPE_ORDER_STRING -> Util.compareUtf8Strings(left.stringValue, right.stringValue)
+      TYPE_ORDER_BLOB -> Util.compareByteStrings(left.bytesValue, right.bytesValue)
+      TYPE_ORDER_REFERENCE -> compareReferences(left.referenceValue, right.referenceValue)
+      TYPE_ORDER_GEOPOINT -> compareGeoPoints(left.geoPointValue, right.geoPointValue)
+      TYPE_ORDER_ARRAY -> compareArrays(left.arrayValue, right.arrayValue)
+      TYPE_ORDER_MAP -> compareMaps(left.mapValue, right.mapValue)
+      TYPE_ORDER_VECTOR -> compareVectors(left.mapValue, right.mapValue)
+      else -> throw Assert.fail("Invalid value type: $leftType")
     }
   }
 
-  public static int lowerBoundCompare(
-      Value left, boolean leftInclusive, Value right, boolean rightInclusive) {
-    int cmp = compare(left, right);
+  @JvmStatic
+  fun lowerBoundCompare(
+    left: Value,
+    leftInclusive: Boolean,
+    right: Value,
+    rightInclusive: Boolean
+  ): Int {
+    val cmp = compare(left, right)
     if (cmp != 0) {
-      return cmp;
+      return cmp
     }
 
     if (leftInclusive && !rightInclusive) {
-      return -1;
+      return -1
     } else if (!leftInclusive && rightInclusive) {
-      return 1;
+      return 1
     }
 
-    return 0;
+    return 0
   }
 
-  public static int upperBoundCompare(
-      Value left, boolean leftInclusive, Value right, boolean rightInclusive) {
-    int cmp = compare(left, right);
+  @JvmStatic
+  fun upperBoundCompare(
+    left: Value,
+    leftInclusive: Boolean,
+    right: Value,
+    rightInclusive: Boolean
+  ): Int {
+    val cmp = compare(left, right)
     if (cmp != 0) {
-      return cmp;
+      return cmp
     }
 
     if (leftInclusive && !rightInclusive) {
-      return 1;
+      return 1
     } else if (!leftInclusive && rightInclusive) {
-      return -1;
+      return -1
     }
 
-    return 0;
+    return 0
   }
 
-  private static int compareNumbers(Value left, Value right) {
-    if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-      double leftDouble = left.getDoubleValue();
-      if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-        return Util.compareDoubles(leftDouble, right.getDoubleValue());
-      } else if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareMixed(leftDouble, right.getIntegerValue());
+  private fun compareNumbers(left: Value, right: Value): Int {
+    if (left.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
+      if (right.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
+        return Util.compareDoubles(left.doubleValue, right.doubleValue)
+      } else if (right.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
+        return Util.compareMixed(left.doubleValue, right.integerValue)
       }
-    } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      long leftLong = left.getIntegerValue();
-      if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(leftLong, right.getIntegerValue());
-      } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-        return -1 * Util.compareMixed(right.getDoubleValue(), leftLong);
+    } else if (left.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
+      if (right.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
+        return Util.compareLongs(left.integerValue, right.integerValue)
+      } else if (right.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
+        return -1 * Util.compareMixed(right.doubleValue, left.integerValue)
       }
     }
 
-    throw fail("Unexpected values: %s vs %s", left, right);
+    throw Assert.fail("Unexpected values: %s vs %s", left, right)
   }
 
-  private static int compareTimestamps(Timestamp left, Timestamp right) {
-    int cmp = Util.compareLongs(left.getSeconds(), right.getSeconds());
+  private fun compareTimestamps(left: Timestamp, right: Timestamp): Int {
+    val cmp = Util.compareLongs(left.seconds, right.seconds)
     if (cmp != 0) {
-      return cmp;
+      return cmp
     }
-    return Util.compareIntegers(left.getNanos(), right.getNanos());
+    return Util.compareIntegers(left.nanos, right.nanos)
   }
 
-  private static int compareReferences(String leftPath, String rightPath) {
-    String[] leftSegments = leftPath.split("/", -1);
-    String[] rightSegments = rightPath.split("/", -1);
+  private fun compareReferences(leftPath: String, rightPath: String): Int {
+    val leftSegments = leftPath.split("/".toRegex()).toTypedArray()
+    val rightSegments = rightPath.split("/".toRegex()).toTypedArray()
 
-    int minLength = Math.min(leftSegments.length, rightSegments.length);
-    for (int i = 0; i < minLength; i++) {
-      int cmp = leftSegments[i].compareTo(rightSegments[i]);
+    val minLength = min(leftSegments.size.toDouble(), rightSegments.size.toDouble()).toInt()
+    for (i in 0 until minLength) {
+      val cmp = leftSegments[i].compareTo(rightSegments[i])
       if (cmp != 0) {
-        return cmp;
+        return cmp
       }
     }
-    return Util.compareIntegers(leftSegments.length, rightSegments.length);
+    return Util.compareIntegers(leftSegments.size, rightSegments.size)
   }
 
-  private static int compareGeoPoints(LatLng left, LatLng right) {
-    int comparison = Util.compareDoubles(left.getLatitude(), right.getLatitude());
+  private fun compareGeoPoints(left: LatLng, right: LatLng): Int {
+    val comparison = Util.compareDoubles(left.latitude, right.latitude)
     if (comparison == 0) {
-      return Util.compareDoubles(left.getLongitude(), right.getLongitude());
+      return Util.compareDoubles(left.longitude, right.longitude)
     }
-    return comparison;
+    return comparison
   }
 
-  private static int compareArrays(ArrayValue left, ArrayValue right) {
-    int minLength = Math.min(left.getValuesCount(), right.getValuesCount());
-    for (int i = 0; i < minLength; i++) {
-      int cmp = compare(left.getValues(i), right.getValues(i));
+  private fun compareArrays(left: ArrayValue, right: ArrayValue): Int {
+    val minLength = min(left.valuesCount.toDouble(), right.valuesCount.toDouble()).toInt()
+    for (i in 0 until minLength) {
+      val cmp = compare(left.getValues(i), right.getValues(i))
       if (cmp != 0) {
-        return cmp;
+        return cmp
       }
     }
-    return Util.compareIntegers(left.getValuesCount(), right.getValuesCount());
+    return Util.compareIntegers(left.valuesCount, right.valuesCount)
   }
 
-  private static int compareMaps(MapValue left, MapValue right) {
-    Iterator<Map.Entry<String, Value>> iterator1 =
-        new TreeMap<>(left.getFieldsMap()).entrySet().iterator();
-    Iterator<Map.Entry<String, Value>> iterator2 =
-        new TreeMap<>(right.getFieldsMap()).entrySet().iterator();
+  private fun compareMaps(left: MapValue, right: MapValue): Int {
+    val iterator1: Iterator<Map.Entry<String, Value>> = TreeMap(left.fieldsMap).entries.iterator()
+    val iterator2: Iterator<Map.Entry<String, Value>> = TreeMap(right.fieldsMap).entries.iterator()
     while (iterator1.hasNext() && iterator2.hasNext()) {
-      Map.Entry<String, Value> entry1 = iterator1.next();
-      Map.Entry<String, Value> entry2 = iterator2.next();
-      int keyCompare = Util.compareUtf8Strings(entry1.getKey(), entry2.getKey());
+      val entry1 = iterator1.next()
+      val entry2 = iterator2.next()
+      val keyCompare = Util.compareUtf8Strings(entry1.key, entry2.key)
       if (keyCompare != 0) {
-        return keyCompare;
+        return keyCompare
       }
-      int valueCompare = compare(entry1.getValue(), entry2.getValue());
+      val valueCompare = compare(entry1.value, entry2.value)
       if (valueCompare != 0) {
-        return valueCompare;
+        return valueCompare
       }
     }
 
     // Only equal if both iterators are exhausted.
-    return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
+    return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext())
   }
 
-  private static int compareVectors(MapValue left, MapValue right) {
-    Map<String, Value> leftMap = left.getFieldsMap();
-    Map<String, Value> rightMap = right.getFieldsMap();
+  private fun compareVectors(left: MapValue, right: MapValue): Int {
+    val leftMap = left.fieldsMap
+    val rightMap = right.fieldsMap
 
     // The vector is a map, but only vector value is compared.
-    ArrayValue leftArrayValue = leftMap.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue();
-    ArrayValue rightArrayValue = rightMap.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue();
+    val leftArrayValue = leftMap[VECTOR_MAP_VECTORS_KEY]!!.arrayValue
+    val rightArrayValue = rightMap[VECTOR_MAP_VECTORS_KEY]!!.arrayValue
 
-    int lengthCompare =
-        Util.compareIntegers(leftArrayValue.getValuesCount(), rightArrayValue.getValuesCount());
+    val lengthCompare =
+      Util.compareIntegers(leftArrayValue.valuesCount, rightArrayValue.valuesCount)
     if (lengthCompare != 0) {
-      return lengthCompare;
+      return lengthCompare
     }
 
-    return compareArrays(leftArrayValue, rightArrayValue);
+    return compareArrays(leftArrayValue, rightArrayValue)
   }
 
   /** Generate the canonical ID for the provided field value (as used in Target serialization). */
-  public static String canonicalId(Value value) {
-    StringBuilder builder = new StringBuilder();
-    canonifyValue(builder, value);
-    return builder.toString();
+  @JvmStatic
+  fun canonicalId(value: Value): String {
+    val builder = StringBuilder()
+    canonifyValue(builder, value)
+    return builder.toString()
   }
 
-  private static void canonifyValue(StringBuilder builder, Value value) {
-    switch (value.getValueTypeCase()) {
-      case NULL_VALUE:
-        builder.append("null");
-        break;
-      case BOOLEAN_VALUE:
-        builder.append(value.getBooleanValue());
-        break;
-      case INTEGER_VALUE:
-        builder.append(value.getIntegerValue());
-        break;
-      case DOUBLE_VALUE:
-        builder.append(value.getDoubleValue());
-        break;
-      case TIMESTAMP_VALUE:
-        canonifyTimestamp(builder, value.getTimestampValue());
-        break;
-      case STRING_VALUE:
-        builder.append(value.getStringValue());
-        break;
-      case BYTES_VALUE:
-        builder.append(Util.toDebugString(value.getBytesValue()));
-        break;
-      case REFERENCE_VALUE:
-        canonifyReference(builder, value);
-        break;
-      case GEO_POINT_VALUE:
-        canonifyGeoPoint(builder, value.getGeoPointValue());
-        break;
-      case ARRAY_VALUE:
-        canonifyArray(builder, value.getArrayValue());
-        break;
-      case MAP_VALUE:
-        canonifyObject(builder, value.getMapValue());
-        break;
-      default:
-        throw fail("Invalid value type: " + value.getValueTypeCase());
+  private fun canonifyValue(builder: StringBuilder, value: Value) {
+    when (value.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> builder.append("null")
+      ValueTypeCase.BOOLEAN_VALUE -> builder.append(value.booleanValue)
+      ValueTypeCase.INTEGER_VALUE -> builder.append(value.integerValue)
+      ValueTypeCase.DOUBLE_VALUE -> builder.append(value.doubleValue)
+      ValueTypeCase.TIMESTAMP_VALUE -> canonifyTimestamp(builder, value.timestampValue)
+      ValueTypeCase.STRING_VALUE -> builder.append(value.stringValue)
+      ValueTypeCase.BYTES_VALUE -> builder.append(Util.toDebugString(value.bytesValue))
+      ValueTypeCase.REFERENCE_VALUE -> canonifyReference(builder, value)
+      ValueTypeCase.GEO_POINT_VALUE -> canonifyGeoPoint(builder, value.geoPointValue)
+      ValueTypeCase.ARRAY_VALUE -> canonifyArray(builder, value.arrayValue)
+      ValueTypeCase.MAP_VALUE -> canonifyObject(builder, value.mapValue)
+      else -> throw Assert.fail("Invalid value type: " + value.valueTypeCase)
     }
   }
 
-  private static void canonifyTimestamp(StringBuilder builder, Timestamp timestamp) {
-    builder.append(String.format("time(%s,%s)", timestamp.getSeconds(), timestamp.getNanos()));
+  private fun canonifyTimestamp(builder: StringBuilder, timestamp: Timestamp) {
+    builder.append(String.format("time(%s,%s)", timestamp.seconds, timestamp.nanos))
   }
 
-  private static void canonifyGeoPoint(StringBuilder builder, LatLng latLng) {
-    builder.append(String.format("geo(%s,%s)", latLng.getLatitude(), latLng.getLongitude()));
+  private fun canonifyGeoPoint(builder: StringBuilder, latLng: LatLng) {
+    builder.append(String.format("geo(%s,%s)", latLng.latitude, latLng.longitude))
   }
 
-  private static void canonifyReference(StringBuilder builder, Value value) {
-    hardAssert(isReferenceValue(value), "Value should be a ReferenceValue");
-    builder.append(DocumentKey.fromName(value.getReferenceValue()));
+  private fun canonifyReference(builder: StringBuilder, value: Value) {
+    Assert.hardAssert(isReferenceValue(value), "Value should be a ReferenceValue")
+    builder.append(DocumentKey.fromName(value.referenceValue))
   }
 
-  private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
+  private fun canonifyObject(builder: StringBuilder, mapValue: MapValue) {
     // Even though MapValue are likely sorted correctly based on their insertion order (for example,
     // when received from the backend), local modifications can bring elements out of order. We need
     // to re-sort the elements to ensure that canonical IDs are independent of insertion order.
-    List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
-    Collections.sort(keys);
+    val keys = ArrayList(mapValue.fieldsMap.keys)
+    keys.sort()
 
-    builder.append("{");
-    boolean first = true;
-    for (String key : keys) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
+    builder.append("{")
+    val iterator = keys.iterator()
+    while (iterator.hasNext()) {
+      val key = iterator.next()
+      builder.append(key).append(":")
+      canonifyValue(builder, mapValue.getFieldsOrThrow(key))
+      if (iterator.hasNext()) {
+        builder.append(",")
       }
-      builder.append(key).append(":");
-      canonifyValue(builder, mapValue.getFieldsOrThrow(key));
     }
-    builder.append("}");
+    builder.append("}")
   }
 
-  private static void canonifyArray(StringBuilder builder, ArrayValue arrayValue) {
-    builder.append("[");
-    for (int i = 0; i < arrayValue.getValuesCount(); ++i) {
-      canonifyValue(builder, arrayValue.getValues(i));
-      if (i != arrayValue.getValuesCount() - 1) {
-        builder.append(",");
+  private fun canonifyArray(builder: StringBuilder, arrayValue: ArrayValue) {
+    builder.append("[")
+    if (arrayValue.valuesCount > 0) {
+      canonifyValue(builder, arrayValue.getValues(0))
+      for (i in 1 until arrayValue.valuesCount) {
+        builder.append(",")
+        canonifyValue(builder, arrayValue.getValues(i))
       }
     }
-    builder.append("]");
+    builder.append("]")
   }
 
   /** Returns true if `value` is a INTEGER_VALUE. */
-  public static boolean isInteger(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE;
+  @JvmStatic
+  fun isInteger(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.INTEGER_VALUE
   }
 
   /** Returns true if `value` is a DOUBLE_VALUE. */
-  public static boolean isDouble(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE;
+  @JvmStatic
+  fun isDouble(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.DOUBLE_VALUE
   }
 
   /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
-  public static boolean isNumber(@Nullable Value value) {
-    return isInteger(value) || isDouble(value);
+  @JvmStatic
+  fun isNumber(value: Value?): Boolean {
+    return isInteger(value) || isDouble(value)
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
-  public static boolean isArray(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.ARRAY_VALUE;
+  @JvmStatic
+  fun isArray(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.ARRAY_VALUE
   }
 
-  public static boolean isReferenceValue(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.REFERENCE_VALUE;
+  @JvmStatic
+  fun isReferenceValue(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.REFERENCE_VALUE
   }
 
-  public static boolean isNullValue(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.NULL_VALUE;
+  @JvmStatic
+  fun isNullValue(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.NULL_VALUE
   }
 
-  public static boolean isNanValue(@Nullable Value value) {
-    return value != null && Double.isNaN(value.getDoubleValue());
+  @JvmStatic
+  fun isNanValue(value: Value?): Boolean {
+    return value != null && java.lang.Double.isNaN(value.doubleValue)
   }
 
-  public static boolean isMapValue(@Nullable Value value) {
-    return value != null && value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE;
+  @JvmStatic
+  fun isMapValue(value: Value?): Boolean {
+    return value != null && value.valueTypeCase == ValueTypeCase.MAP_VALUE
   }
 
-  public static Value refValue(DatabaseId databaseId, DocumentKey key) {
-    Value value =
-        Value.newBuilder()
-            .setReferenceValue(
-                String.format(
-                    "projects/%s/databases/%s/documents/%s",
-                    databaseId.getProjectId(), databaseId.getDatabaseId(), key.toString()))
-            .build();
-    return value;
-  }
-
-  public static Value MIN_BOOLEAN = Value.newBuilder().setBooleanValue(false).build();
-  public static Value MIN_NUMBER = Value.newBuilder().setDoubleValue(Double.NaN).build();
-  public static Value MIN_TIMESTAMP =
+  @JvmStatic
+  fun refValue(databaseId: DatabaseId, key: DocumentKey): Value {
+    val value =
       Value.newBuilder()
-          .setTimestampValue(Timestamp.newBuilder().setSeconds(Long.MIN_VALUE))
-          .build();
-  public static Value MIN_STRING = Value.newBuilder().setStringValue("").build();
-  public static Value MIN_BYTES = Value.newBuilder().setBytesValue(ByteString.EMPTY).build();
-  public static Value MIN_REFERENCE = refValue(DatabaseId.EMPTY, DocumentKey.empty());
-  public static Value MIN_GEO_POINT =
-      Value.newBuilder()
-          .setGeoPointValue(LatLng.newBuilder().setLatitude(-90.0).setLongitude(-180.0))
-          .build();
-  public static Value MIN_ARRAY =
-      Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build();
-  public static Value MIN_MAP =
-      Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
+        .setReferenceValue(
+          String.format(
+            "projects/%s/databases/%s/documents/%s",
+            databaseId.projectId,
+            databaseId.databaseId,
+            key.toString()
+          )
+        )
+        .build()
+    return value
+  }
+
+  private val MIN_BOOLEAN: Value = Value.newBuilder().setBooleanValue(false).build()
+  private val MIN_NUMBER: Value = Value.newBuilder().setDoubleValue(Double.NaN).build()
+  private val MIN_TIMESTAMP: Value =
+    Value.newBuilder().setTimestampValue(Timestamp.newBuilder().setSeconds(Long.MIN_VALUE)).build()
+  private val MIN_STRING: Value = Value.newBuilder().setStringValue("").build()
+  private val MIN_BYTES: Value = Value.newBuilder().setBytesValue(ByteString.EMPTY).build()
+  private val MIN_REFERENCE: Value = refValue(DatabaseId.EMPTY, DocumentKey.empty())
+  private val MIN_GEO_POINT: Value =
+    Value.newBuilder()
+      .setGeoPointValue(LatLng.newBuilder().setLatitude(-90.0).setLongitude(-180.0))
+      .build()
+  private val MIN_ARRAY: Value =
+    Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build()
+  private val MIN_MAP: Value = Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build()
 
   /** Returns the lowest value for the given value type (inclusive). */
-  public static Value getLowerBound(Value value) {
-    switch (value.getValueTypeCase()) {
-      case NULL_VALUE:
-        return Values.NULL_VALUE;
-      case BOOLEAN_VALUE:
-        return MIN_BOOLEAN;
-      case INTEGER_VALUE:
-      case DOUBLE_VALUE:
-        return MIN_NUMBER;
-      case TIMESTAMP_VALUE:
-        return MIN_TIMESTAMP;
-      case STRING_VALUE:
-        return MIN_STRING;
-      case BYTES_VALUE:
-        return MIN_BYTES;
-      case REFERENCE_VALUE:
-        return MIN_REFERENCE;
-      case GEO_POINT_VALUE:
-        return MIN_GEO_POINT;
-      case ARRAY_VALUE:
-        return MIN_ARRAY;
-      case MAP_VALUE:
-        // VectorValue sorts after ArrayValue and before an empty MapValue
-        if (isVectorValue(value)) {
-          return MIN_VECTOR_VALUE;
-        }
-        return MIN_MAP;
-      default:
-        throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
+  @JvmStatic
+  fun getLowerBound(value: Value): Value {
+    return when (value.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> NULL_VALUE
+      ValueTypeCase.BOOLEAN_VALUE -> MIN_BOOLEAN
+      ValueTypeCase.INTEGER_VALUE,
+      ValueTypeCase.DOUBLE_VALUE -> MIN_NUMBER
+      ValueTypeCase.TIMESTAMP_VALUE -> MIN_TIMESTAMP
+      ValueTypeCase.STRING_VALUE -> MIN_STRING
+      ValueTypeCase.BYTES_VALUE -> MIN_BYTES
+      ValueTypeCase.REFERENCE_VALUE -> MIN_REFERENCE
+      ValueTypeCase.GEO_POINT_VALUE -> MIN_GEO_POINT
+      ValueTypeCase.ARRAY_VALUE -> MIN_ARRAY
+      // VectorValue sorts after ArrayValue and before an empty MapValue
+      ValueTypeCase.MAP_VALUE -> if (isVectorValue(value)) MIN_VECTOR_VALUE else MIN_MAP
+      else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
     }
   }
 
   /** Returns the largest value for the given value type (exclusive). */
-  public static Value getUpperBound(Value value) {
-    switch (value.getValueTypeCase()) {
-      case NULL_VALUE:
-        return MIN_BOOLEAN;
-      case BOOLEAN_VALUE:
-        return MIN_NUMBER;
-      case INTEGER_VALUE:
-      case DOUBLE_VALUE:
-        return MIN_TIMESTAMP;
-      case TIMESTAMP_VALUE:
-        return MIN_STRING;
-      case STRING_VALUE:
-        return MIN_BYTES;
-      case BYTES_VALUE:
-        return MIN_REFERENCE;
-      case REFERENCE_VALUE:
-        return MIN_GEO_POINT;
-      case GEO_POINT_VALUE:
-        return MIN_ARRAY;
-      case ARRAY_VALUE:
-        return MIN_VECTOR_VALUE;
-      case MAP_VALUE:
-        // VectorValue sorts after ArrayValue and before an empty MapValue
-        if (isVectorValue(value)) {
-          return MIN_MAP;
-        }
-        return MAX_VALUE;
-      default:
-        throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
+  @JvmStatic
+  fun getUpperBound(value: Value): Value {
+    return when (value.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> MIN_BOOLEAN
+      ValueTypeCase.BOOLEAN_VALUE -> MIN_NUMBER
+      ValueTypeCase.INTEGER_VALUE,
+      ValueTypeCase.DOUBLE_VALUE -> MIN_TIMESTAMP
+      ValueTypeCase.TIMESTAMP_VALUE -> MIN_STRING
+      ValueTypeCase.STRING_VALUE -> MIN_BYTES
+      ValueTypeCase.BYTES_VALUE -> MIN_REFERENCE
+      ValueTypeCase.REFERENCE_VALUE -> MIN_GEO_POINT
+      ValueTypeCase.GEO_POINT_VALUE -> MIN_ARRAY
+      ValueTypeCase.ARRAY_VALUE -> MIN_VECTOR_VALUE
+      // VectorValue sorts after ArrayValue and before an empty MapValue
+      ValueTypeCase.MAP_VALUE -> if (isVectorValue(value)) MIN_MAP else MAX_VALUE
+      else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
     }
   }
 
-  /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
-  public static boolean isMaxValue(Value value) {
-    return MAX_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  /** Returns true if the Value represents the canonical [.MAX_VALUE] . */
+  @JvmStatic
+  fun isMaxValue(value: Value): Boolean {
+    return MAX_VALUE_TYPE == value.mapValue.fieldsMap[TYPE_KEY]
   }
 
   /** Returns true if the Value represents a VectorValue . */
-  public static boolean isVectorValue(Value value) {
-    return VECTOR_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  @JvmStatic
+  fun isVectorValue(value: Value): Boolean {
+    return VECTOR_VALUE_TYPE == value.mapValue.fieldsMap[TYPE_KEY]
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Long): Value {
+    return Value.newBuilder().setIntegerValue(value).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Int): Value {
+    return Value.newBuilder().setIntegerValue(value.toLong()).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Double): Value {
+    return Value.newBuilder().setDoubleValue(value).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Float): Value {
+    return Value.newBuilder().setDoubleValue(value.toDouble()).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Number): Value {
+    return when (value) {
+      is Long -> encodeValue(value)
+      is Int -> encodeValue(value)
+      is Double -> encodeValue(value)
+      is Float -> encodeValue(value)
+      else -> throw IllegalArgumentException("Unexpected number type: $value")
+    }
+  }
+
+  @JvmStatic
+  fun encodeValue(value: String): Value {
+    return Value.newBuilder().setStringValue(value).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(date: Date): Value {
+    return encodeValue(com.google.firebase.Timestamp((date)))
+  }
+
+  @JvmStatic
+  fun encodeValue(timestamp: com.google.firebase.Timestamp): Value {
+    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
+    // the same with regards to truncation, perform the truncation immediately without waiting for
+    // the backend to do that.
+    val truncatedNanoseconds: Int = timestamp.nanoseconds / 1000 * 1000
+
+    return Value.newBuilder()
+      .setTimestampValue(
+        com.google.protobuf.Timestamp.newBuilder()
+          .setSeconds(timestamp.seconds)
+          .setNanos(truncatedNanoseconds)
+      )
+      .build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Boolean): Value {
+    return Value.newBuilder().setBooleanValue(value).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(geoPoint: GeoPoint): Value {
+    return Value.newBuilder()
+      .setGeoPointValue(
+        LatLng.newBuilder().setLatitude(geoPoint.latitude).setLongitude(geoPoint.longitude)
+      )
+      .build()
+  }
+
+  @JvmStatic
+  fun encodeValue(value: Blob): Value {
+    return Value.newBuilder().setBytesValue(value.toByteString()).build()
+  }
+
+  @JvmStatic
+  fun encodeValue(docRef: DocumentReference): Value {
+    val databaseId = docRef.firestore.databaseId
+    return Value.newBuilder()
+      .setReferenceValue(
+        String.format(
+          "projects/%s/databases/%s/documents/%s",
+          databaseId.projectId,
+          databaseId.databaseId,
+          docRef.path
+        )
+      )
+      .build()
+  }
+
+  @JvmStatic
+  fun encodeValue(vector: VectorValue): Value {
+    return encodeVectorValue(vector.toArray())
+  }
+
+  @JvmStatic
+  fun encodeVectorValue(vector: DoubleArray): Value {
+    val listBuilder = ArrayValue.newBuilder()
+    for (value in vector) {
+      listBuilder.addValues(encodeValue(value))
+    }
+    return Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(TYPE_KEY, VECTOR_VALUE_TYPE)
+          .putFields(VECTOR_MAP_VECTORS_KEY, Value.newBuilder().setArrayValue(listBuilder).build())
+      )
+      .build()
+  }
+
+  @JvmStatic
+  fun encodeValue(map: Map<String, Value>): Value {
+    return Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(map)).build()
+  }
+
+  @JvmStatic
+  fun encodeAnyValue(value: Any?): Value {
+    return when (value) {
+      null -> NULL_VALUE
+      is String -> encodeValue(value)
+      is Number -> encodeValue(value)
+      is Date -> encodeValue(value)
+      is com.google.firebase.Timestamp -> encodeValue(value)
+      is Boolean -> encodeValue(value)
+      is GeoPoint -> encodeValue(value)
+      is Blob -> encodeValue(value)
+      is DocumentReference -> encodeValue(value)
+      else -> throw IllegalArgumentException("Unexpected type: $value")
+    }
   }
 }

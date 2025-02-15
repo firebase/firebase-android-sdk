@@ -14,14 +14,16 @@
 
 package com.google.firebase.firestore;
 
+import static org.mockito.Mockito.mock;
+
 import com.google.firebase.firestore.model.DocumentKey;
 
 public final class TestAccessHelper {
 
   /** Makes the DocumentReference constructor accessible. */
   public static DocumentReference createDocumentReference(DocumentKey documentKey) {
-    // We can use null here because the tests only use this as a wrapper for documentKeys.
-    return new DocumentReference(documentKey, null);
+    // We can use mock here because the tests only use this as a wrapper for documentKeys.
+    return new DocumentReference(documentKey, mock(FirebaseFirestore.class));
   }
 
   /** Makes the getKey() method accessible. */

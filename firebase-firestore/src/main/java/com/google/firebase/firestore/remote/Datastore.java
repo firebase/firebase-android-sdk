@@ -21,6 +21,7 @@ import android.os.Build;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.common.base.Strings;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.PipelineResultObserver;
@@ -255,7 +256,7 @@ public class Datastore {
             for (Document document : message.getResultsList()) {
               String documentName = document.getName();
               observer.onDocument(
-                  documentName == null ? null : serializer.decodeKey(documentName),
+                  Strings.isNullOrEmpty(documentName) ? null : serializer.decodeKey(documentName),
                   document.getFieldsMap(),
                   serializer.decodeVersion(document.getUpdateTime()));
             }

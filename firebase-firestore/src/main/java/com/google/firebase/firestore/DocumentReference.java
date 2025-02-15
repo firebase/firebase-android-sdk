@@ -57,7 +57,7 @@ import java.util.concurrent.Executor;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-public class DocumentReference {
+public final class DocumentReference {
 
   private final DocumentKey key;
 
@@ -65,9 +65,7 @@ public class DocumentReference {
 
   DocumentReference(DocumentKey key, FirebaseFirestore firestore) {
     this.key = checkNotNull(key);
-    // TODO: We should checkNotNull(firestore), but tests are currently cheating
-    // and setting it to null.
-    this.firestore = firestore;
+    this.firestore = checkNotNull(firestore);
   }
 
   /** @hide */
@@ -562,6 +560,12 @@ public class DocumentReference {
     int result = key.hashCode();
     result = 31 * result + firestore.hashCode();
     return result;
+  }
+
+  @NonNull
+  @Override
+  public String toString() {
+    return "DocumentReference{" + "key=" + key + ", firestore=" + firestore + '}';
   }
 
   private com.google.firebase.firestore.core.Query asQuery() {

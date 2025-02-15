@@ -555,6 +555,7 @@ public class DocumentSnapshot {
     return hash;
   }
 
+  @NonNull
   @Override
   public String toString() {
     return "DocumentSnapshot{" + "key=" + key + ", metadata=" + metadata + ", doc=" + doc + '}';

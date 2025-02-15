@@ -23,6 +23,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -850,7 +851,9 @@ public class FirebaseFirestore {
     return clientProvider.call(call);
   }
 
-  DatabaseId getDatabaseId() {
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public DatabaseId getDatabaseId() {
     return databaseId;
   }
 
@@ -884,6 +887,7 @@ public class FirebaseFirestore {
 
   @NonNull
   public PipelineSource pipeline() {
+    clientProvider.ensureConfigured();
     return new PipelineSource(this);
   }
 }

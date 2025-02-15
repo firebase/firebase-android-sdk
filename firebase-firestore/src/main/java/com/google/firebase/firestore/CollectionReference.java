@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.pipeline.CollectionSource;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 
@@ -126,5 +127,10 @@ public class CollectionReference extends Query {
               task.getResult();
               return ref;
             });
+  }
+
+  @NonNull
+  public Pipeline pipeline() {
+    return new Pipeline(firestore, new CollectionSource(getPath()));
   }
 }

@@ -6,11 +6,26 @@ import com.google.common.collect.FluentIterable
 import com.google.common.collect.ImmutableList
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.SnapshotVersion
+import com.google.firebase.firestore.pipeline.AccumulatorWithAlias
+import com.google.firebase.firestore.pipeline.AddFieldsStage
+import com.google.firebase.firestore.pipeline.AggregateStage
+import com.google.firebase.firestore.pipeline.BooleanExpr
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
+import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
+import com.google.firebase.firestore.pipeline.Field
+import com.google.firebase.firestore.pipeline.LimitStage
+import com.google.firebase.firestore.pipeline.OffsetStage
+import com.google.firebase.firestore.pipeline.Ordering
+import com.google.firebase.firestore.pipeline.RemoveFieldsStage
+import com.google.firebase.firestore.pipeline.SelectStage
+import com.google.firebase.firestore.pipeline.Selectable
+import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
+import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
@@ -31,19 +46,15 @@ internal constructor(
 
   fun execute(): Task<PipelineSnapshot> {
     val observerTask = ObserverSnapshotTask()
-    execute(observerTask)
+    firestore.callClient { call -> call!!.executePipeline(toProto(), observerTask) }
     return observerTask.task
-  }
-
-  private fun execute(observer: PipelineResultObserver) {
-    firestore.callClient { call -> call!!.executePipeline(toProto(), observer) }
   }
 
   internal fun documentReference(key: DocumentKey): DocumentReference {
     return DocumentReference(key, firestore)
   }
 
-  fun toProto(): ExecutePipelineRequest {
+  internal fun toProto(): ExecutePipelineRequest {
     val database = firestore.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
@@ -57,17 +68,74 @@ internal constructor(
     return builder.build()
   }
 
-  private fun toPipelineProto(): com.google.firestore.v1.Pipeline =
+  internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
     com.google.firestore.v1.Pipeline.newBuilder()
       .addAllStages(stages.map(Stage::toProtoStage))
       .build()
 
-  private inner class ObserverSnapshotTask : PipelineResultObserver {
+  fun addFields(vararg fields: Selectable): Pipeline {
+    return append(AddFieldsStage(fields))
+  }
+
+  fun removeFields(vararg fields: Field): Pipeline {
+    return append(RemoveFieldsStage(fields))
+  }
+
+  fun removeFields(vararg fields: String): Pipeline {
+    return append(RemoveFieldsStage(fields.map(Field::of).toTypedArray()))
+  }
+
+  fun select(vararg fields: Selectable): Pipeline {
+    return append(SelectStage(fields))
+  }
+
+  fun select(vararg fields: String): Pipeline {
+    return append(SelectStage(fields.map(Field::of).toTypedArray()))
+  }
+
+  fun sort(vararg orders: Ordering): Pipeline {
+    return append(SortStage(orders))
+  }
+
+  fun where(condition: BooleanExpr): Pipeline {
+    return append(WhereStage(condition))
+  }
+
+  fun offset(offset: Long): Pipeline {
+    return append(OffsetStage(offset))
+  }
+
+  fun limit(limit: Long): Pipeline {
+    return append(LimitStage(limit))
+  }
+
+  fun distinct(vararg groups: Selectable): Pipeline {
+    return append(DistinctStage(groups))
+  }
+
+  fun distinct(vararg groups: String): Pipeline {
+    return append(DistinctStage(groups.map(Field::of).toTypedArray()))
+  }
+
+  fun aggregate(vararg accumulators: AccumulatorWithAlias): Pipeline {
+    return append(AggregateStage.withAccumulators(*accumulators))
+  }
+
+  fun aggregate(aggregateStage: AggregateStage): Pipeline {
+    return append(aggregateStage)
+  }
+
+  private inner class ObserverSnapshotTask() : PipelineResultObserver {
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
     private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
     override fun onDocument(key: DocumentKey?, data: Map<String, Value>, version: SnapshotVersion) {
       results.add(
-        PipelineResult(if (key == null) null else DocumentReference(key, firestore), data, version)
+        PipelineResult(
+          firestore,
+          if (key == null) null else DocumentReference(key, firestore),
+          data,
+          version
+        )
       )
     }
 
@@ -84,12 +152,26 @@ internal constructor(
   }
 }
 
-class PipelineSource(private val firestore: FirebaseFirestore) {
+class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
   fun collection(path: String): Pipeline {
-    return Pipeline(firestore, CollectionSource(path))
+    // Validate path by converting to CollectionReference
+    return collection(firestore.collection(path))
+  }
+
+  fun collection(ref: CollectionReference): Pipeline {
+    if (ref.firestore.databaseId != firestore.databaseId) {
+      throw IllegalArgumentException(
+        "Provided collection reference is from a different Firestore instance."
+      )
+    }
+    return Pipeline(firestore, CollectionSource(ref.path))
   }
 
   fun collectionGroup(collectionId: String): Pipeline {
+    Preconditions.checkNotNull(collectionId, "Provided collection ID must not be null.")
+    require(!collectionId.contains("/")) {
+      "Invalid collectionId '$collectionId'. Collection IDs must not contain '/'."
+    }
     return Pipeline(firestore, CollectionGroupSource(collectionId))
   }
 
@@ -97,23 +179,49 @@ class PipelineSource(private val firestore: FirebaseFirestore) {
     return Pipeline(firestore, DatabaseSource())
   }
 
+  fun documents(vararg documents: String): Pipeline {
+    // Validate document path by converting to DocumentReference
+    return documents(*documents.map(firestore::document).toTypedArray())
+  }
+
   fun documents(vararg documents: DocumentReference): Pipeline {
-    return Pipeline(firestore, DocumentsSource(documents))
+    val databaseId = firestore.databaseId
+    for (document in documents) {
+      if (document.firestore.databaseId != databaseId) {
+        throw IllegalArgumentException(
+          "Provided document reference is from a different Firestore instance."
+        )
+      }
+    }
+    return Pipeline(
+      firestore,
+      DocumentsSource(documents.map { docRef -> "/" + docRef.path }.toTypedArray())
+    )
   }
 }
 
 class PipelineSnapshot
-internal constructor(
-  private val executionTime: SnapshotVersion,
-  private val results: List<PipelineResult>
-)
+internal constructor(private val executionTime: SnapshotVersion, val results: List<PipelineResult>)
 
 class PipelineResult
 internal constructor(
-  private val key: DocumentReference?,
+  private val firestore: FirebaseFirestore,
+  val ref: DocumentReference?,
   private val fields: Map<String, Value>,
   private val version: SnapshotVersion,
-)
+) {
+
+  fun getData(): Map<String, Any> {
+    return userDataWriter().convertObject(fields)
+  }
+
+  private fun userDataWriter(): UserDataWriter =
+    UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
+
+  override fun toString(): String {
+    return "PipelineResult{ref=$ref, version=$version}, data=${getData()}"
+  }
+}
 
 internal interface PipelineResultObserver {
   fun onDocument(key: DocumentKey?, data: Map<String, Value>, version: SnapshotVersion)
