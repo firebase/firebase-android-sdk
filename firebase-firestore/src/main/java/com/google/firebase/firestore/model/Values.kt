@@ -637,17 +637,7 @@ internal object Values {
 
   @JvmStatic
   fun encodeValue(docRef: DocumentReference): Value {
-    val databaseId = docRef.firestore.databaseId
-    return Value.newBuilder()
-      .setReferenceValue(
-        String.format(
-          "projects/%s/databases/%s/documents/%s",
-          databaseId.projectId,
-          databaseId.databaseId,
-          docRef.path
-        )
-      )
-      .build()
+    return Value.newBuilder().setReferenceValue(docRef.fullPath).build()
   }
 
   @JvmStatic

@@ -22,6 +22,7 @@ import static java.util.Collections.singletonList;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -33,6 +34,7 @@ import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -116,6 +118,15 @@ public final class DocumentReference {
   @NonNull
   public String getPath() {
     return key.getPath().canonicalString();
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public String getFullPath() {
+    DatabaseId databaseId = firestore.getDatabaseId();
+    return String.format(
+        "projects/%s/databases/%s/documents/%s",
+        databaseId.getProjectId(), databaseId.getDatabaseId(), getPath());
   }
 
   /**

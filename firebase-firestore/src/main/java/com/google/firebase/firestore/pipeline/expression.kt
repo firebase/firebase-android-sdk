@@ -238,12 +238,12 @@ abstract class Expr protected constructor() {
 
 abstract class Selectable(internal val alias: String) : Expr()
 
-open class ExprWithAlias internal constructor(alias: String, internal val expr: Expr) :
+open class ExprWithAlias internal constructor(alias: String, private val expr: Expr) :
   Selectable(alias) {
   override fun toProto(): Value = expr.toProto()
 }
 
-class Field private constructor(val fieldPath: ModelFieldPath) :
+class Field private constructor(private val fieldPath: ModelFieldPath) :
   Selectable(fieldPath.canonicalString()) {
   companion object {
 
