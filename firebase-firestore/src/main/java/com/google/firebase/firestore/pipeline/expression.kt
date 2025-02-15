@@ -22,7 +22,6 @@ import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
-import com.google.protobuf.Timestamp
 
 abstract class Expr protected constructor() {
   internal companion object {
@@ -546,7 +545,10 @@ class Gte(left: Expr, right: Expr) : BooleanExpr("gte", left, right) {
 
 class ArrayConcat(array: Expr, vararg arrays: Expr) :
   Function("array_concat", arrayOf(array, *arrays)) {
-  constructor(array: Expr, arrays: List<Any>) : this(array, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+  constructor(
+    array: Expr,
+    arrays: List<Any>
+  ) : this(array, ListOfExprs(toArrayOfExprOrConstant(arrays)))
   constructor(fieldName: String, vararg arrays: Expr) : this(Field.of(fieldName), *arrays)
   constructor(fieldName: String, right: List<Any>) : this(Field.of(fieldName), right)
 }
@@ -710,7 +712,11 @@ class StrConcat internal constructor(first: Expr, vararg rest: Expr) :
     vararg rest: Expr
   ) : this(first, Constant.of(second), *rest)
   constructor(fieldName: String, vararg rest: Expr) : this(Field.of(fieldName), *rest)
-  constructor(fieldName: String, second: String, vararg rest: Expr) : this(Field.of(fieldName), second, *rest)
+  constructor(
+    fieldName: String,
+    second: String,
+    vararg rest: Expr
+  ) : this(Field.of(fieldName), second, *rest)
 }
 
 class MapGet(map: Expr, key: Expr) : Function("map_get", map, key) {

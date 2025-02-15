@@ -37,7 +37,6 @@ import com.google.firebase.firestore.pipeline.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import java.util.Objects;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -47,22 +46,26 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class PipelineTest {
 
-  private static final Correspondence<PipelineResult, Map<String, Object>> DATA_CORRESPONDENCE = Correspondence.from((result, expected) -> {
-    assertThat(result.getData())
-        .comparingValuesUsing(Correspondence.from(
-            (x, y) -> {
-              if (x instanceof Long && y instanceof Integer) {
-                return (long) x == (long) (int) y;
-              }
-              return Objects.equals(x, y);
-            },
-            "MapValueCompare"
-        ))
-        .containsExactlyEntriesIn(expected);
-    return true;
-  }, "GetData");
+  private static final Correspondence<PipelineResult, Map<String, Object>> DATA_CORRESPONDENCE =
+      Correspondence.from(
+          (result, expected) -> {
+            assertThat(result.getData())
+                .comparingValuesUsing(
+                    Correspondence.from(
+                        (x, y) -> {
+                          if (x instanceof Long && y instanceof Integer) {
+                            return (long) x == (long) (int) y;
+                          }
+                          return Objects.equals(x, y);
+                        },
+                        "MapValueCompare"))
+                .containsExactlyEntriesIn(expected);
+            return true;
+          },
+          "GetData");
 
-  private static final Correspondence<PipelineResult, String> ID_CORRESPONDENCE = Correspondence.transforming(x -> x.getRef().getId(), "GetRefId");
+  private static final Correspondence<PipelineResult, String> ID_CORRESPONDENCE =
+      Correspondence.transforming(x -> x.getRef().getId(), "GetRefId");
 
   private CollectionReference randomCol;
   private FirebaseFirestore firestore;
@@ -277,7 +280,12 @@ public class PipelineTest {
   @Test
   public void canSelectFields() {
     Task<PipelineSnapshot> execute =
-        firestore.pipeline().collection(randomCol).select("title", "author").sort(Field.of("author").ascending()).execute();
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .select("title", "author")
+            .sort(Field.of("author").ascending())
+            .execute();
     PipelineSnapshot snapshot = waitFor(execute);
     assertThat(snapshot.getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -426,13 +434,19 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
-            .select(Field.of("tags").arrayConcat(ImmutableList.of("newTag1", "newTag2")).as("modifiedTags"))
+            .select(
+                Field.of("tags")
+                    .arrayConcat(ImmutableList.of("newTag1", "newTag2"))
+                    .as("modifiedTags"))
             .limit(1)
             .execute();
     PipelineSnapshot snapshot = waitFor(execute);
     assertThat(snapshot.getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("modifiedTags", ImmutableList.of("comedy", "space", "adventure", "newTag1", "newTag2")));
+        .containsExactly(
+            ImmutableMap.of(
+                "modifiedTags",
+                ImmutableList.of("comedy", "space", "adventure", "newTag1", "newTag2")));
   }
 
   @Test
@@ -446,6 +460,7 @@ public class PipelineTest {
     PipelineSnapshot snapshot = waitFor(execute);
     assertThat(snapshot.getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("bookInfo", "Douglas Adams - The Hitchhiker's Guide to the Galaxy"));
+        .containsExactly(
+            ImmutableMap.of("bookInfo", "Douglas Adams - The Hitchhiker's Guide to the Galaxy"));
   }
 }
