@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
@@ -34,7 +35,6 @@ import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -70,15 +70,27 @@ internal class UnarySnapshotTests {
     }
 
   @Test
-  fun `long reply`() =
-    goldenUnaryFile("unary-success-basic-reply-long.json") {
+  fun `response with detailed token-based usageMetadata`() =
+    goldenUnaryFile("unary-success-basic-response-long-usage-metadata.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
         response.candidates.isEmpty() shouldBe false
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+        response.usageMetadata shouldNotBe null
+        response.usageMetadata?.apply {
+          totalTokenCount shouldBe 1913
+          candidatesTokenCount shouldBe 76
+          promptTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.IMAGE
+            it.tokenCount shouldBe 1806
+          }
+          candidatesTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.TEXT
+            it.tokenCount shouldBe 76
+          }
+        }
       }
     }
 
@@ -277,6 +289,7 @@ internal class UnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
+        response.usageMetadata?.promptTokensDetails?.isEmpty() shouldBe true
       }
     }
 
@@ -466,6 +479,23 @@ internal class UnarySnapshotTests {
 
         response.totalTokens shouldBe 6
         response.totalBillableCharacters shouldBe 16
+        response.promptTokensDetails.isEmpty() shouldBe true
+      }
+    }
+
+  @Test
+  fun `countTokens with modality fields returned`() =
+    goldenUnaryFile("unary-success-detailed-token-response.json") {
+      withTimeout(testTimeout) {
+        val response = model.countTokens("prompt")
+
+        response.totalTokens shouldBe 1837
+        response.totalBillableCharacters shouldBe 117
+        response.promptTokensDetails shouldNotBe null
+        response.promptTokensDetails?.forAtLeastOne {
+          it.modality shouldBe ContentModality.IMAGE
+          it.tokenCount shouldBe 1806
+        }
       }
     }
 

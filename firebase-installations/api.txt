@@ -1,18 +1,18 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.installations {
 
   public class FirebaseInstallations implements com.google.firebase.installations.FirebaseInstallationsApi {
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getId();
-    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance();
-    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstance(@NonNull com.google.firebase.FirebaseApp);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult> getToken(boolean);
-    method @NonNull public com.google.firebase.installations.internal.FidListenerHandle registerFidListener(@NonNull com.google.firebase.installations.internal.FidListener);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> delete();
+    method public com.google.android.gms.tasks.Task<java.lang.String!> getId();
+    method public static com.google.firebase.installations.FirebaseInstallations getInstance();
+    method public static com.google.firebase.installations.FirebaseInstallations getInstance(com.google.firebase.FirebaseApp);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.installations.InstallationTokenResult!> getToken(boolean);
+    method public com.google.firebase.installations.internal.FidListenerHandle registerFidListener(com.google.firebase.installations.internal.FidListener);
   }
 
   public final class InstallationsKt {
-    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstallations(@NonNull com.google.firebase.Firebase);
-    method @NonNull public static com.google.firebase.installations.FirebaseInstallations installations(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method public static com.google.firebase.installations.FirebaseInstallations getInstallations(com.google.firebase.Firebase);
+    method public static com.google.firebase.installations.FirebaseInstallations installations(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app);
   }
 
 }
@@ -20,8 +20,8 @@ package com.google.firebase.installations {
 package com.google.firebase.installations.ktx {
 
   public final class InstallationsKt {
-    method @Deprecated @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstallations(@NonNull com.google.firebase.ktx.Firebase);
-    method @Deprecated @NonNull public static com.google.firebase.installations.FirebaseInstallations installations(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @Deprecated public static com.google.firebase.installations.FirebaseInstallations getInstallations(com.google.firebase.ktx.Firebase);
+    method @Deprecated public static com.google.firebase.installations.FirebaseInstallations installations(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
   }
 
 }
