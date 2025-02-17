@@ -385,7 +385,9 @@ public final class UserDataReader {
    *     not be included in the resulting parsed data.
    */
   public Value parseScalarValue(Object input, ParseContext context) {
-    if (input.getClass().isArray()) {
+    if (input == null) {
+      return Values.NULL_VALUE;
+    } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
     } else {
       try {
