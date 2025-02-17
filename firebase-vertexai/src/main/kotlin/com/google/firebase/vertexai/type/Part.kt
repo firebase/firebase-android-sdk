@@ -40,9 +40,8 @@ public class TextPart(public val text: String) : Part {
 }
 
 /**
- * Represents image data sent to and received from requests. The image is
- * converted client-side to JPEG encoding at 80% quality before being sent
- * to the server.
+ * Represents image data sent to and received from requests. The image is converted client-side to
+ * JPEG encoding at 80% quality before being sent to the server.
  *
  * @param image [Bitmap] to convert into a [Part]
  */
