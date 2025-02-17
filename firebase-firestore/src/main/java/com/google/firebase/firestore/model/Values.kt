@@ -677,6 +677,7 @@ internal object Values {
       is GeoPoint -> encodeValue(value)
       is Blob -> encodeValue(value)
       is DocumentReference -> encodeValue(value)
+      is VectorValue -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
   }

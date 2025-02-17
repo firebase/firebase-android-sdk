@@ -15,7 +15,9 @@
 package com.google.firebase.firestore;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 
 public final class TestAccessHelper {
@@ -23,7 +25,9 @@ public final class TestAccessHelper {
   /** Makes the DocumentReference constructor accessible. */
   public static DocumentReference createDocumentReference(DocumentKey documentKey) {
     // We can use mock here because the tests only use this as a wrapper for documentKeys.
-    return new DocumentReference(documentKey, mock(FirebaseFirestore.class));
+    FirebaseFirestore mock = mock(FirebaseFirestore.class);
+    when(mock.getDatabaseId()).thenReturn(DatabaseId.forProject("project"));
+    return new DocumentReference(documentKey, mock);
   }
 
   /** Makes the getKey() method accessible. */
