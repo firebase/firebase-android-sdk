@@ -87,9 +87,31 @@ public class Util {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    ByteString leftBytes = ByteString.copyFromUtf8(left);
-    ByteString rightBytes = ByteString.copyFromUtf8(right);
-    return compareByteStrings(leftBytes, rightBytes);
+    int i = 0;
+    while (i < left.length() && i < right.length()) {
+      int leftCodePoint = left.codePointAt(i);
+      int rightCodePoint = right.codePointAt(i);
+
+      if (leftCodePoint != rightCodePoint) {
+        if (leftCodePoint < 128 && rightCodePoint < 128) {
+          // ASCII comparison
+          return Integer.compare(leftCodePoint, rightCodePoint);
+        } else {
+          // UTF-8 encoded byte comparison, substring 2 indexes to cover surrogate pairs
+          ByteString leftBytes =
+              ByteString.copyFromUtf8(left.substring(i, Math.min(i + 2, left.length())));
+          ByteString rightBytes =
+              ByteString.copyFromUtf8(right.substring(i, Math.min(i + 2, right.length())));
+          return compareByteStrings(leftBytes, rightBytes);
+        }
+      }
+
+      // Increment by 2 for surrogate pairs, 1 otherwise
+      i += Character.charCount(leftCodePoint);
+    }
+
+    // Compare lengths if all characters are equal
+    return Integer.compare(left.length(), right.length());
   }
 
   /**
