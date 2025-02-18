@@ -15,12 +15,21 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.pipeline.Function.add;
 import static com.google.firebase.firestore.pipeline.Function.and;
 import static com.google.firebase.firestore.pipeline.Function.arrayContains;
 import static com.google.firebase.firestore.pipeline.Function.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Function.endsWith;
 import static com.google.firebase.firestore.pipeline.Function.eq;
 import static com.google.firebase.firestore.pipeline.Function.gt;
+import static com.google.firebase.firestore.pipeline.Function.lt;
+import static com.google.firebase.firestore.pipeline.Function.lte;
+import static com.google.firebase.firestore.pipeline.Function.neq;
+import static com.google.firebase.firestore.pipeline.Function.not;
 import static com.google.firebase.firestore.pipeline.Function.or;
+import static com.google.firebase.firestore.pipeline.Function.startsWith;
+import static com.google.firebase.firestore.pipeline.Function.strConcat;
+import static com.google.firebase.firestore.pipeline.Function.subtract;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static java.util.Map.entry;
@@ -55,6 +64,9 @@ public class PipelineTest {
                         (x, y) -> {
                           if (x instanceof Long && y instanceof Integer) {
                             return (long) x == (long) (int) y;
+                          }
+                          if (x instanceof Double && y instanceof Integer) {
+                            return (double) x == (double) (int) y;
                           }
                           return Objects.equals(x, y);
                         },
@@ -189,15 +201,13 @@ public class PipelineTest {
   public void emptyResults() {
     Task<PipelineSnapshot> execute =
         firestore.pipeline().collection(randomCol.getPath()).limit(0).execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults()).isEmpty();
+    assertThat(waitFor(execute).getResults()).isEmpty();
   }
 
   @Test
   public void fullResults() {
     Task<PipelineSnapshot> execute = firestore.pipeline().collection(randomCol.getPath()).execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults()).hasSize(10);
+    assertThat(waitFor(execute).getResults()).hasSize(10);
   }
 
   @Test
@@ -208,8 +218,7 @@ public class PipelineTest {
             .collection(randomCol)
             .aggregate(Accumulator.countAll().as("count"))
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("count", 10));
   }
@@ -227,8 +236,7 @@ public class PipelineTest {
                 Accumulator.avg("rating").as("avgRating"),
                 Field.of("rating").max().as("maxRating"))
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.ofEntries(
@@ -241,15 +249,14 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Function.lt(Field.of("published"), 1984))
+            .where(lt(Field.of("published"), 1984))
             .aggregate(
                 AggregateStage.withAccumulators(Accumulator.avg("rating").as("avgRating"))
                     .withGroups("genre"))
-            .where(Function.gt("avgRating", 4.3))
+            .where(gt("avgRating", 4.3))
             .sort(Field.of("avgRating").descending())
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.ofEntries(entry("avgRating", 4.7), entry("genre", "Fantasy")),
@@ -269,8 +276,7 @@ public class PipelineTest {
                 Field.of("rating").max().as("maxRating"),
                 Field.of("published").min().as("minPublished"))
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.ofEntries(
@@ -286,8 +292,7 @@ public class PipelineTest {
             .select("title", "author")
             .sort(Field.of("author").ascending())
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.ofEntries(
@@ -321,8 +326,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(and(gt("rating", 4.5), eq("genre", "Science Fiction")))
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(ID_CORRESPONDENCE)
         .containsExactly("book10");
   }
@@ -336,8 +340,7 @@ public class PipelineTest {
             .where(or(eq("genre", "Romance"), eq("genre", "Dystopian")))
             .select("title")
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.of("title", "Pride and Prejudice"),
@@ -356,8 +359,7 @@ public class PipelineTest {
             .limit(3)
             .select("title", "author")
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.ofEntries(entry("title", "1984"), entry("author", "George Orwell")),
@@ -376,8 +378,7 @@ public class PipelineTest {
             .where(arrayContains("tags", "comedy"))
             .select("title")
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"));
   }
@@ -391,8 +392,7 @@ public class PipelineTest {
             .where(arrayContainsAny("tags", ImmutableList.of("comedy", "classic")))
             .select("title")
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"),
@@ -408,8 +408,7 @@ public class PipelineTest {
             .where(Field.of("tags").arrayContainsAll(ImmutableList.of("adventure", "magic")))
             .select("title")
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("title", "The Lord of the Rings"));
   }
@@ -422,8 +421,7 @@ public class PipelineTest {
             .select(Field.of("tags").arrayLength().as("tagsCount"))
             .where(eq("tagsCount", 3))
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults()).hasSize(10);
+    assertThat(waitFor(execute).getResults()).hasSize(10);
   }
 
   @Test
@@ -440,8 +438,7 @@ public class PipelineTest {
                     .as("modifiedTags"))
             .limit(1)
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.of(
@@ -457,10 +454,231 @@ public class PipelineTest {
             .select(Field.of("author").strConcat(" - ", Field.of("title")).as("bookInfo"))
             .limit(1)
             .execute();
-    PipelineSnapshot snapshot = waitFor(execute);
-    assertThat(snapshot.getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.of("bookInfo", "Douglas Adams - The Hitchhiker's Guide to the Galaxy"));
   }
+
+  @Test
+  public void testStartsWith() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(startsWith("title", "The"))
+            .select("title")
+            .sort(Field.of("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("title", "The Great Gatsby"),
+            ImmutableMap.of("title", "The Handmaid's Tale"),
+            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"),
+            ImmutableMap.of("title", "The Lord of the Rings"));
+  }
+
+  @Test
+  public void testEndsWith() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(endsWith("title", "y"))
+            .select("title")
+            .sort(Field.of("title").descending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"),
+            ImmutableMap.of("title", "The Great Gatsby"));
+  }
+
+  @Test
+  public void testLength() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(Field.of("title").charLength().as("titleLength"), Field.of("title"))
+            .where(gt("titleLength", 20))
+            .sort(Field.of("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("titleLength", 29, "title", "One Hundred Years of Solitude"),
+            ImmutableMap.of("titleLength", 36, "title", "The Hitchhiker's Guide to the Galaxy"),
+            ImmutableMap.of("titleLength", 21, "title", "The Lord of the Rings"),
+            ImmutableMap.of("titleLength", 21, "title", "To Kill a Mockingbird"));
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  public void testToLowercase() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(Field.of("title").toLower().as("lowercaseTitle"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("lowercaseTitle", "the hitchhiker's guide to the galaxy"));
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  public void testToUppercase() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(Field.of("author").toLower().as("uppercaseAuthor"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("uppercaseAuthor", "DOUGLAS ADAMS"));
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  public void testTrim() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .addFields(strConcat(" ", Field.of("title"), " ").as("spacedTitle"))
+            .select(Field.of("spacedTitle").trim().as("trimmedTitle"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "spacedTitle",
+                " The Hitchhiker's Guide to the Galaxy ",
+                "trimmedTitle",
+                "The Hitchhiker's Guide to the Galaxy"));
+  }
+
+  @Test
+  public void testLike() {
+    Task<PipelineSnapshot> execute =
+        randomCol.pipeline().where(Function.like("title", "%Guide%")).select("title").execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"));
+  }
+
+  @Test
+  public void testRegexContains() {
+    Task<PipelineSnapshot> execute =
+        randomCol.pipeline().where(Function.regexContains("title", "(?i)(the|of)")).execute();
+    assertThat(waitFor(execute).getResults()).hasSize(5);
+  }
+
+  @Test
+  public void testRegexMatches() {
+    Task<PipelineSnapshot> execute =
+        randomCol.pipeline().where(Function.regexContains("title", ".*(?i)(the|of).*")).execute();
+    assertThat(waitFor(execute).getResults()).hasSize(5);
+  }
+
+  @Test
+  public void testArithmeticOperations() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(
+                add(Field.of("rating"), 1).as("ratingPlusOne"),
+                subtract(Field.of("published"), 1900).as("yearsSince1900"),
+                Field.of("rating").multiply(10).as("ratingTimesTen"),
+                Field.of("rating").divide(2).as("ratingDividedByTwo"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.ofEntries(
+                entry("ratingPlusOne", 5.2),
+                entry("yearsSince1900", 79),
+                entry("ratingTimesTen", 42),
+                entry("ratingDividedByTwo", 2.1)));
+  }
+
+  @Test
+  public void testComparisonOperators() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(
+                and(
+                    gt("rating", 4.2),
+                    lte(Field.of("rating"), 4.5),
+                    neq("genre", "Science Function")))
+            .select("rating", "title")
+            .sort(Field.of("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("rating", 4.3, "title", "Crime and Punishment"),
+            ImmutableMap.of("rating", 4.3, "title", "One Hundred Years of Solitude"),
+            ImmutableMap.of("rating", 4.5, "title", "Pride and Prejudice"));
+  }
+
+  @Test
+  public void testLogicalOperators() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(
+                or(
+                    and(gt("rating", 4.5), eq("genre", "Science Fiction")),
+                    lt(Field.of("published"), 1900)))
+            .select("title")
+            .sort(Field.of("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("title", "Crime and Punishment"),
+            ImmutableMap.of("title", "Dune"),
+            ImmutableMap.of("title", "Pride and Prejudice"));
+  }
+
+  @Test
+  public void testChecks() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(not(Field.of("rating").isNan()))
+            .select(Field.of("rating").eq(null).as("ratingIsNull"))
+            .select("title")
+            .sort(Field.of("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("title", "Crime and Punishment"),
+            ImmutableMap.of("title", "Dune"),
+            ImmutableMap.of("title", "Pride and Prejudice"));
+  }
+
+  @Test
+  public void testMapGet() {}
+
+  @Test
+  public void testParent() {}
+
+  @Test
+  public void testCollectionId() {}
+
+  @Test
+  public void testDistanceFunctions() {}
+
+  @Test
+  public void testNestedFields() {}
+
+  @Test
+  public void testMapGetWithFieldNameIncludingNotation() {}
 }
