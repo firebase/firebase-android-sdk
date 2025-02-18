@@ -73,13 +73,16 @@ jobs:
           npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
       - name: Restore Gradle cache
+        id: restore-gradle-cache
         uses: actions/cache/restore@v4
         if: github.event_name != 'schedule'
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-jqnvfzw6w7
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          restore-keys: |
+            gradle-cache-jqnvfzw6w7-
 
       - name: tool versions
         continue-on-error: true
@@ -121,7 +124,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          key: ${{ steps.restore-gradle-cache.outputs.cache-primary-key }}
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -133,24 +136,24 @@ jobs:
       - name: Restore AVD cache
         uses: actions/cache/restore@v4
         if: github.event_name != 'schedule'
-        id: avd-cache
+        id: restore-avd-cache
         with:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
-
-      - run: echo "github.event_name == '${{ github.event_name }}' steps.avd-cache.outputs.cache-hit == '${{ steps.avd-cache.outputs.cache-hit }}'"
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+          restore-keys: |
+            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD
-        if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
+          disable-animations: true
           script: echo "Generated AVD snapshot for caching."
 
       - name: Save AVD cache
@@ -160,7 +163,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+          key: ${{ steps.restore-avd-cache.outputs.cache-primary-key }}
 
       - name: Data Connect Emulator
         run: |
