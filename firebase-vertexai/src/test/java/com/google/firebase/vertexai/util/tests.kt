@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+@file:OptIn(PublicPreviewAPI::class)
+
 package com.google.firebase.vertexai.util
 
 import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -57,7 +61,11 @@ internal suspend fun ByteChannel.send(bytes: ByteArray) {
  * @see commonTest
  * @see send
  */
-internal data class CommonTestScope(val channel: ByteChannel, val model: GenerativeModel)
+internal data class CommonTestScope(
+  val channel: ByteChannel,
+  val model: GenerativeModel,
+  val imagenModel: ImagenModel,
+)
 
 /** A test that runs under a [CommonTestScope]. */
 internal typealias CommonTest = suspend CommonTestScope.() -> Unit
@@ -104,7 +112,8 @@ internal fun commonTest(
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
-  CommonTestScope(channel, model).block()
+  val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
+  CommonTestScope(channel, model, imagenModel).block()
 }
 
 /**
