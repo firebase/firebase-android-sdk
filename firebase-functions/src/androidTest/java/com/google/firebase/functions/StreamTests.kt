@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,52 +37,48 @@ import org.reactivestreams.Subscription
 class StreamTests {
 
   private lateinit var functions: FirebaseFunctions
-  var onNextList = mutableListOf<StreamResponse>()
-  private lateinit var subscriber: Subscriber<StreamResponse>
-  private var throwable: Throwable? = null
-  private var isComplete = false
 
   @Before
   fun setup() {
     Firebase.initialize(ApplicationProvider.getApplicationContext())
     functions = Firebase.functions
-    subscriber =
-      object : Subscriber<StreamResponse> {
-        override fun onSubscribe(subscription: Subscription?) {
-          subscription?.request(1)
-        }
-
-        override fun onNext(streamResponse: StreamResponse) {
-          onNextList.add(streamResponse)
-        }
-
-        override fun onError(t: Throwable?) {
-          throwable = t
-        }
-
-        override fun onComplete() {
-          isComplete = true
-        }
-      }
   }
 
-  @After
-  fun clear() {
-    onNextList.clear()
-    throwable = null
-    isComplete = false
+  internal class StreamSubscriber : Subscriber<StreamResponse> {
+    internal val onNextList = mutableListOf<StreamResponse>()
+    internal var throwable: Throwable? = null
+    internal var isComplete = false
+    internal var subscription: Subscription? = null
+
+    override fun onSubscribe(subscription: Subscription?) {
+      this.subscription = subscription
+      subscription?.request(1)
+    }
+
+    override fun onNext(streamResponse: StreamResponse) {
+      onNextList.add(streamResponse)
+    }
+
+    override fun onError(t: Throwable?) {
+      throwable = t
+    }
+
+    override fun onComplete() {
+      isComplete = true
+    }
   }
 
   @Test
   fun genStream_withPublisher_receivesMessagesAndFinalResult() {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStream")
+    val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
 
     Thread.sleep(8000)
-    val messages = onNextList.filterIsInstance<Message>()
-    val results = onNextList.filterIsInstance<Result>()
+    val messages = subscriber.onNextList.filterIsInstance<Message>()
+    val results = subscriber.onNextList.filterIsInstance<Result>()
     assertThat(messages.map { it.data.data.toString() })
       .containsExactly(
         "{chunk=hello}",
@@ -94,14 +89,16 @@ class StreamTests {
       )
     assertThat(results).hasSize(1)
     assertThat(results.first().data.data.toString()).isEqualTo("hello world this is cool")
-    assertThat(throwable).isNull()
-    assertThat(isComplete).isTrue()
+    assertThat(subscriber.throwable).isNull()
+    assertThat(subscriber.isComplete).isTrue()
   }
 
   @Test
   fun genStream_withFlow_receivesMessagesAndFinalResult() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStream")
+    var isComplete = false
+    var throwable: Throwable? = null
 
     val flow = function.stream(input).asFlow()
     val receivedResponses = mutableListOf<StreamResponse>()
@@ -133,30 +130,32 @@ class StreamTests {
     val input = mapOf("data" to "Why is the sky blue")
     val function =
       functions.getHttpsCallable("genStreamError").withTimeout(800, TimeUnit.MILLISECONDS)
+    val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
     Thread.sleep(2000)
 
-    val messages = onNextList.filterIsInstance<Message>()
+    val messages = subscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
       )
-    assertThat(throwable).isNotNull()
-    assertThat(isComplete).isFalse()
+    assertThat(subscriber.throwable).isNotNull()
+    assertThat(subscriber.isComplete).isFalse()
   }
 
   @Test
   fun genStreamNoReturn_receivesOnlyMessages() {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
+    val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
     Thread.sleep(8000)
 
-    val messages = onNextList.filterIsInstance<Message>()
-    val results = onNextList.filterIsInstance<Result>()
+    val messages = subscriber.onNextList.filterIsInstance<Message>()
+    val results = subscriber.onNextList.filterIsInstance<Result>()
 
     val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
@@ -168,8 +167,8 @@ class StreamTests {
         "{chunk=cool}"
       )
     assertThat(results).isEmpty()
-    assertThat(throwable).isNull()
-    assertThat(isComplete).isFalse()
+    assertThat(subscriber.throwable).isNull()
+    assertThat(subscriber.isComplete).isFalse()
   }
 
   @Test
@@ -177,40 +176,22 @@ class StreamTests {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
     val publisher = function.stream(input)
-    var subscription: Subscription? = null
-    val cancelableSubscriber =
-      object : Subscriber<StreamResponse> {
-        override fun onSubscribe(s: Subscription?) {
-          subscription = s
-          s?.request(1)
-        }
-
-        override fun onNext(streamResponse: StreamResponse) {
-          onNextList.add(streamResponse)
-        }
-
-        override fun onError(t: Throwable?) {
-          throwable = t
-        }
-
-        override fun onComplete() {
-          isComplete = true
-        }
-      }
+    val cancelableSubscriber = StreamSubscriber()
 
     publisher.subscribe(cancelableSubscriber)
     Thread.sleep(500)
-    subscription?.cancel()
+    cancelableSubscriber.subscription?.cancel()
     Thread.sleep(6000)
 
-    val messages = onNextList.filterIsInstance<Message>()
+    val messages = cancelableSubscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
         "{chunk=hello}",
       )
-    assertThat(throwable).isNotNull()
-    assertThat(requireNotNull(throwable).message).isEqualTo("Stream was canceled")
-    assertThat(isComplete).isFalse()
+    assertThat(cancelableSubscriber.throwable).isNotNull()
+    assertThat(requireNotNull(cancelableSubscriber.throwable).message)
+      .isEqualTo("Stream was canceled")
+    assertThat(cancelableSubscriber.isComplete).isFalse()
   }
 }
