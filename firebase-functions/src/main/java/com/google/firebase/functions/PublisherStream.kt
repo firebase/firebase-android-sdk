@@ -81,7 +81,7 @@ internal class PublisherStream(
       }
 
       val context = contextTask.result
-      val callClient = options.apply(client)
+      val configuredClient = options.apply(client)
       val requestBody =
         RequestBody.create(
           MediaType.parse("application/json"),
@@ -89,9 +89,11 @@ internal class PublisherStream(
         )
       val requestBuilder =
         Request.Builder().url(url).post(requestBody).header("Accept", "text/event-stream")
-      applyCommonConfiguration(requestBuilder, context)
+      context?.authToken?.let { requestBuilder.header("Authorization", "Bearer $it") }
+      context?.instanceIdToken?.let { requestBuilder.header("Firebase-Instance-ID-Token", it) }
+      context?.appCheckToken?.let { requestBuilder.header("X-Firebase-AppCheck", it) }
       val request = requestBuilder.build()
-      val call = callClient.newCall(request)
+      val call = configuredClient.newCall(request)
       activeCall = call
 
       call.enqueue(
@@ -137,15 +139,6 @@ internal class PublisherStream(
     )
   }
 
-  private fun applyCommonConfiguration(
-    requestBuilder: Request.Builder,
-    context: HttpsCallableContext?
-  ) {
-    context?.authToken?.let { requestBuilder.header("Authorization", "Bearer $it") }
-    context?.instanceIdToken?.let { requestBuilder.header("Firebase-Instance-ID-Token", it) }
-    context?.appCheckToken?.let { requestBuilder.header("X-Firebase-AppCheck", it) }
-  }
-
   private fun processSSEStream(inputStream: InputStream) {
     BufferedReader(InputStreamReader(inputStream)).use { reader ->
       try {
@@ -161,7 +154,7 @@ internal class PublisherStream(
             when {
               json.has("message") ->
                 serializer.decode(json.opt("message"))?.let {
-                  notifyData(StreamResponse.Message(data = HttpsCallableResult(it)))
+                  notifyData(StreamResponse.Message(message = HttpsCallableResult(it)))
                 }
               json.has("error") -> {
                 serializer.decode(json.opt("error"))?.let {
@@ -176,7 +169,7 @@ internal class PublisherStream(
               }
               json.has("result") -> {
                 serializer.decode(json.opt("result"))?.let {
-                  notifyData(StreamResponse.Result(data = HttpsCallableResult(it)))
+                  notifyData(StreamResponse.Result(message = HttpsCallableResult(it)))
                   notifyComplete()
                 }
                 return
