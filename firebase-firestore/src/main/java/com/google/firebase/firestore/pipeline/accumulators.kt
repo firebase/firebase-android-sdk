@@ -19,67 +19,71 @@ import com.google.firestore.v1.Value
 class AccumulatorWithAlias
 internal constructor(internal val alias: String, internal val accumulator: Accumulator)
 
-open class Accumulator
-protected constructor(private val name: String, private val params: Array<out Expr>) {
-  protected constructor(
-    name: String,
-    param: Expr?
-  ) : this(name, if (param == null) emptyArray() else arrayOf(param))
+class Accumulator
+private constructor(private val name: String, private val params: Array<out Expr>) {
+  private constructor(name: String) : this(name, emptyArray())
+  private constructor(name: String, expr: Expr) : this(name, arrayOf(expr))
+  private constructor(name: String, fieldName: String) : this(name, Field.of(fieldName))
 
   companion object {
     @JvmStatic
-    fun countAll(): Count {
-      return Count(null)
+    fun countAll(): Accumulator {
+      return Accumulator("count")
     }
 
     @JvmStatic
-    fun count(fieldName: String): Count {
-      return Count(fieldName)
+    fun count(fieldName: String): Accumulator {
+      return Accumulator("count", fieldName)
     }
 
     @JvmStatic
-    fun count(expr: Expr): Count {
-      return Count(expr)
+    fun count(expr: Expr): Accumulator {
+      return Accumulator("count", expr)
+    }
+
+    @JvmStatic
+    fun countIf(condition: BooleanExpr): Accumulator {
+      return Accumulator("countIf", condition)
     }
 
     @JvmStatic
     fun sum(fieldName: String): Accumulator {
-      return Sum(fieldName)
+      return Accumulator("sum", fieldName)
     }
 
     @JvmStatic
     fun sum(expr: Expr): Accumulator {
-      return Sum(expr)
+      return Accumulator("sum", expr)
     }
 
     @JvmStatic
     fun avg(fieldName: String): Accumulator {
-      return Avg(fieldName)
+      return Accumulator("avg", fieldName)
     }
 
     @JvmStatic
     fun avg(expr: Expr): Accumulator {
-      return Avg(expr)
+      return Accumulator("avg", expr)
     }
 
     @JvmStatic
     fun min(fieldName: String): Accumulator {
-      return min(fieldName)
+      return Accumulator("min", fieldName)
     }
 
     @JvmStatic
     fun min(expr: Expr): Accumulator {
-      return min(expr)
+      return Accumulator("min", expr)
     }
 
     @JvmStatic
     fun max(fieldName: String): Accumulator {
-      return Max(fieldName)
+      return Accumulator("max", fieldName)
     }
 
     @JvmStatic
     fun max(expr: Expr): Accumulator {
-      return Max(expr)
+      return Accumulator("max", expr)
     }
   }
 
@@ -95,24 +99,4 @@ protected constructor(private val name: String, private val params: Array<out Ex
     }
     return Value.newBuilder().setFunctionValue(builder).build()
   }
-}
-
-class Count(value: Expr?) : Accumulator("count", value) {
-  constructor(fieldName: String) : this(Field.of(fieldName))
-}
-
-class Sum(value: Expr) : Accumulator("sum", value) {
-  constructor(fieldName: String) : this(Field.of(fieldName))
-}
-
-class Avg(value: Expr) : Accumulator("avg", value) {
-  constructor(fieldName: String) : this(Field.of(fieldName))
-}
-
-class Min(value: Expr) : Accumulator("min", value) {
-  constructor(fieldName: String) : this(Field.of(fieldName))
-}
-
-class Max(value: Expr) : Accumulator("max", value) {
-  constructor(fieldName: String) : this(Field.of(fieldName))
 }

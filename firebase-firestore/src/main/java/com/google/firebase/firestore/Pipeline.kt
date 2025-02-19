@@ -225,7 +225,7 @@ internal constructor(
   private val version: SnapshotVersion,
 ) {
 
-  fun getData(): Map<String, Any> {
+  fun getData(): Map<String, Any?> {
     return userDataWriter().convertObject(fields)
   }
 

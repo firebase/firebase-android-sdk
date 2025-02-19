@@ -19,9 +19,13 @@ import static com.google.firebase.firestore.pipeline.Function.add;
 import static com.google.firebase.firestore.pipeline.Function.and;
 import static com.google.firebase.firestore.pipeline.Function.arrayContains;
 import static com.google.firebase.firestore.pipeline.Function.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Function.cosineDistance;
 import static com.google.firebase.firestore.pipeline.Function.endsWith;
 import static com.google.firebase.firestore.pipeline.Function.eq;
+import static com.google.firebase.firestore.pipeline.Function.euclideanDistance;
 import static com.google.firebase.firestore.pipeline.Function.gt;
+import static com.google.firebase.firestore.pipeline.Function.logicalMax;
+import static com.google.firebase.firestore.pipeline.Function.logicalMin;
 import static com.google.firebase.firestore.pipeline.Function.lt;
 import static com.google.firebase.firestore.pipeline.Function.lte;
 import static com.google.firebase.firestore.pipeline.Function.neq;
@@ -41,9 +45,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Correspondence;
 import com.google.firebase.firestore.pipeline.Accumulator;
 import com.google.firebase.firestore.pipeline.AggregateStage;
+import com.google.firebase.firestore.pipeline.Constant;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.junit.After;
@@ -87,11 +94,11 @@ public class PipelineTest {
     IntegrationTestUtil.tearDown();
   }
 
-  private Map<String, Map<String, Object>> bookDocs =
-      ImmutableMap.ofEntries(
+  private final Map<String, Map<String, Object>> bookDocs =
+      mapOfEntries(
           entry(
               "book1",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "The Hitchhiker's Guide to the Galaxy"),
                   entry("author", "Douglas Adams"),
                   entry("genre", "Science Fiction"),
@@ -101,7 +108,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("hugo", true, "nebula", false)))),
           entry(
               "book2",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "Pride and Prejudice"),
                   entry("author", "Jane Austen"),
                   entry("genre", "Romance"),
@@ -111,7 +118,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("none", true)))),
           entry(
               "book3",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "One Hundred Years of Solitude"),
                   entry("author", "Gabriel García Márquez"),
                   entry("genre", "Magical Realism"),
@@ -121,7 +128,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("nobel", true, "nebula", false)))),
           entry(
               "book4",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "The Lord of the Rings"),
                   entry("author", "J.R.R. Tolkien"),
                   entry("genre", "Fantasy"),
@@ -131,7 +138,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("hugo", false, "nebula", false)))),
           entry(
               "book5",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "The Handmaid's Tale"),
                   entry("author", "Margaret Atwood"),
                   entry("genre", "Dystopian"),
@@ -142,7 +149,7 @@ public class PipelineTest {
                       "awards", ImmutableMap.of("arthur c. clarke", true, "booker prize", false)))),
           entry(
               "book6",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "Crime and Punishment"),
                   entry("author", "Fyodor Dostoevsky"),
                   entry("genre", "Psychological Thriller"),
@@ -152,7 +159,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("none", true)))),
           entry(
               "book7",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "To Kill a Mockingbird"),
                   entry("author", "Harper Lee"),
                   entry("genre", "Southern Gothic"),
@@ -162,7 +169,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("pulitzer", true)))),
           entry(
               "book8",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "1984"),
                   entry("author", "George Orwell"),
                   entry("genre", "Dystopian"),
@@ -172,7 +179,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("prometheus", true)))),
           entry(
               "book9",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "The Great Gatsby"),
                   entry("author", "F. Scott Fitzgerald"),
                   entry("genre", "Modernist"),
@@ -182,7 +189,7 @@ public class PipelineTest {
                   entry("awards", ImmutableMap.of("none", true)))),
           entry(
               "book10",
-              ImmutableMap.ofEntries(
+              mapOfEntries(
                   entry("title", "Dune"),
                   entry("author", "Frank Herbert"),
                   entry("genre", "Science Fiction"),
@@ -239,8 +246,7 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(
-                entry("count", 10), entry("avgRating", 4.4), entry("maxRating", 4.6)));
+            mapOfEntries(entry("count", 10), entry("avgRating", 4.4), entry("maxRating", 4.6)));
   }
 
   @Test
@@ -259,9 +265,9 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(entry("avgRating", 4.7), entry("genre", "Fantasy")),
-            ImmutableMap.ofEntries(entry("avgRating", 4.5), entry("genre", "Romance")),
-            ImmutableMap.ofEntries(entry("avgRating", 4.4), entry("genre", "Science Fiction")));
+            mapOfEntries(entry("avgRating", 4.7), entry("genre", "Fantasy")),
+            mapOfEntries(entry("avgRating", 4.5), entry("genre", "Romance")),
+            mapOfEntries(entry("avgRating", 4.4), entry("genre", "Science Fiction")));
   }
 
   @Test
@@ -279,8 +285,7 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(
-                entry("count", 10), entry("maxRating", 4.7), entry("minPublished", 1813)));
+            mapOfEntries(entry("count", 10), entry("maxRating", 4.7), entry("minPublished", 1813)));
   }
 
   @Test
@@ -295,26 +300,23 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(
+            mapOfEntries(
                 entry("title", "The Hitchhiker's Guide to the Galaxy"),
                 entry("author", "Douglas Adams")),
-            ImmutableMap.ofEntries(
+            mapOfEntries(
                 entry("title", "The Great Gatsby"), entry("author", "F. Scott Fitzgerald")),
-            ImmutableMap.ofEntries(entry("title", "Dune"), entry("author", "Frank Herbert")),
-            ImmutableMap.ofEntries(
+            mapOfEntries(entry("title", "Dune"), entry("author", "Frank Herbert")),
+            mapOfEntries(
                 entry("title", "Crime and Punishment"), entry("author", "Fyodor Dostoevsky")),
-            ImmutableMap.ofEntries(
+            mapOfEntries(
                 entry("title", "One Hundred Years of Solitude"),
                 entry("author", "Gabriel García Márquez")),
-            ImmutableMap.ofEntries(entry("title", "1984"), entry("author", "George Orwell")),
-            ImmutableMap.ofEntries(
-                entry("title", "To Kill a Mockingbird"), entry("author", "Harper Lee")),
-            ImmutableMap.ofEntries(
+            mapOfEntries(entry("title", "1984"), entry("author", "George Orwell")),
+            mapOfEntries(entry("title", "To Kill a Mockingbird"), entry("author", "Harper Lee")),
+            mapOfEntries(
                 entry("title", "The Lord of the Rings"), entry("author", "J.R.R. Tolkien")),
-            ImmutableMap.ofEntries(
-                entry("title", "Pride and Prejudice"), entry("author", "Jane Austen")),
-            ImmutableMap.ofEntries(
-                entry("title", "The Handmaid's Tale"), entry("author", "Margaret Atwood")))
+            mapOfEntries(entry("title", "Pride and Prejudice"), entry("author", "Jane Austen")),
+            mapOfEntries(entry("title", "The Handmaid's Tale"), entry("author", "Margaret Atwood")))
         .inOrder();
   }
 
@@ -362,10 +364,9 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(entry("title", "1984"), entry("author", "George Orwell")),
-            ImmutableMap.ofEntries(
-                entry("title", "To Kill a Mockingbird"), entry("author", "Harper Lee")),
-            ImmutableMap.ofEntries(
+            mapOfEntries(entry("title", "1984"), entry("author", "George Orwell")),
+            mapOfEntries(entry("title", "To Kill a Mockingbird"), entry("author", "Harper Lee")),
+            mapOfEntries(
                 entry("title", "The Lord of the Rings"), entry("author", "J.R.R. Tolkien")));
   }
 
@@ -598,7 +599,7 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.ofEntries(
+            mapOfEntries(
                 entry("ratingPlusOne", 5.2),
                 entry("yearsSince1900", 79),
                 entry("ratingTimesTen", 42),
@@ -652,20 +653,66 @@ public class PipelineTest {
         randomCol
             .pipeline()
             .where(not(Field.of("rating").isNan()))
-            .select(Field.of("rating").eq(null).as("ratingIsNull"))
-            .select("title")
-            .sort(Field.of("title").ascending())
+            .select(
+                Field.of("rating").isNull().as("ratingIsNull"),
+                Field.of("rating").eq(Constant.nullValue()).as("ratingEqNull"),
+                not(Field.of("rating").isNan()).as("ratingIsNotNan"))
+            .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.of("title", "Crime and Punishment"),
-            ImmutableMap.of("title", "Dune"),
-            ImmutableMap.of("title", "Pride and Prejudice"));
+            mapOfEntries(
+                entry("ratingIsNull", false),
+                entry("ratingEqNull", null),
+                entry("ratingIsNotNan", true)));
   }
 
   @Test
-  public void testMapGet() {}
+  @Ignore("Not supported yet")
+  public void testLogicalMax() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(Field.of("author").eq("Douglas Adams"))
+            .select(
+                Field.of("rating").logicalMax(4.5).as("max_rating"),
+                logicalMax(Field.of("published"), 1900).as("max_published"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("max_rating", 4.5, "max_published", 1979));
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  public void testLogicalMin() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(
+                Field.of("rating").logicalMin(4.5).as("min_rating"),
+                logicalMin(Field.of("published"), 1900).as("min_published"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("min_rating", 4.2, "min_published", 1900));
+  }
+
+  @Test
+  public void testMapGet() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(Field.of("awards").mapGet("hugo").as("hugoAward"), Field.of("title"))
+            .where(eq("hugoAward", true))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("hugoAward", true, "title", "The Hitchhiker's Guide to the Galaxy"),
+            ImmutableMap.of("hugoAward", true, "title", "Dune"));
+  }
 
   @Test
   public void testParent() {}
@@ -674,11 +721,81 @@ public class PipelineTest {
   public void testCollectionId() {}
 
   @Test
-  public void testDistanceFunctions() {}
+  public void testDistanceFunctions() {
+    double[] sourceVector = {0.1, 0.1};
+    double[] targetVector = {0.5, 0.8};
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .select(
+                cosineDistance(Constant.vector(sourceVector), targetVector).as("cosineDistance"),
+                Function.dotProduct(Constant.vector(sourceVector), targetVector)
+                    .as("dotProductDistance"),
+                euclideanDistance(Constant.vector(sourceVector), targetVector)
+                    .as("euclideanDistance"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "cosineDistance", 0.02560880430538015,
+                "dotProductDistance", 0.13,
+                "euclideanDistance", 0.806225774829855));
+  }
 
   @Test
   public void testNestedFields() {}
 
   @Test
   public void testMapGetWithFieldNameIncludingNotation() {}
+
+  static <T> Map.Entry<String, T> entry(String key, T value) {
+    return new Map.Entry<String, T>() {
+      private String k = key;
+      private T v = value;
+
+      @Override
+      public String getKey() {
+        return k;
+      }
+
+      @Override
+      public T getValue() {
+        return v;
+      }
+
+      @Override
+      public T setValue(T value) {
+        T old = v;
+        v = value;
+        return old;
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (!(o instanceof Map.Entry)) {
+          return false;
+        }
+
+        Map.Entry<?, ?> that = (Map.Entry<?, ?>) o;
+        return com.google.common.base.Objects.equal(k, that.getKey())
+            && com.google.common.base.Objects.equal(v, that.getValue());
+      }
+
+      @Override
+      public int hashCode() {
+        return com.google.common.base.Objects.hashCode(k, v);
+      }
+    };
+  }
+
+  @SafeVarargs
+  static <T> Map<String, T> mapOfEntries(Map.Entry<String, T>... entries) {
+    Map<String, T> res = new LinkedHashMap<>();
+    for (Map.Entry<String, T> entry : entries) {
+      res.put(entry.getKey(), entry.getValue());
+    }
+    return Collections.unmodifiableMap(res);
+  }
 }

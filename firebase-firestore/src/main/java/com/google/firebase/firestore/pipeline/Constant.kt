@@ -27,6 +27,8 @@ import java.util.Date
 class Constant internal constructor(val value: Value) : Expr() {
 
   companion object {
+    internal val NULL = Constant(Values.NULL_VALUE)
+
     fun of(value: Any): Constant {
       return when (value) {
         is String -> of(value)
@@ -38,6 +40,7 @@ class Constant internal constructor(val value: Value) : Expr() {
         is Blob -> of(value)
         is DocumentReference -> of(value)
         is Value -> of(value)
+        is VectorValue -> of(value)
         else -> throw IllegalArgumentException("Unknown type: $value")
       }
     }
@@ -89,7 +92,7 @@ class Constant internal constructor(val value: Value) : Expr() {
 
     @JvmStatic
     fun nullValue(): Constant {
-      return Constant(Values.NULL_VALUE)
+      return NULL
     }
 
     @JvmStatic
