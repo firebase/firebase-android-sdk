@@ -316,16 +316,7 @@ internal constructor(
     name: String,
     data: Any?,
     options: HttpsCallOptions
-  ): Publisher<StreamResponse> {
-    val url = getURL(name)
-    Preconditions.checkNotNull(url, "url cannot be null")
-    val task =
-      providerInstalled.task.continueWithTask(executor) {
-        contextProvider.getContext(options.limitedUseAppCheckTokens)
-      }
-
-    return PublisherStream(url, data, options, client, serializer, task, executor)
-  }
+  ): Publisher<StreamResponse> = stream(getURL(name), data, options)
 
   internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): Publisher<StreamResponse> {
     Preconditions.checkNotNull(url, "url cannot be null")
