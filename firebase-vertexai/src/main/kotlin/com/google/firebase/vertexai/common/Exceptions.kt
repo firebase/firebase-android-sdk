@@ -66,14 +66,18 @@ internal class InvalidAPIKeyException(message: String, cause: Throwable? = null)
  *
  * @property response the full server response for the request.
  */
-internal class PromptBlockedException(
-  val response: GenerateContentResponse.Internal,
-  cause: Throwable? = null
+internal class PromptBlockedException
+internal constructor(
+  val response: GenerateContentResponse.Internal?,
+  cause: Throwable? = null,
+  message: String? = null,
 ) :
   FirebaseCommonAIException(
-    "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
+    "Prompt was blocked: ${response?.promptFeedback?.blockReason?.name?: message}",
     cause,
-  )
+  ) {
+  internal constructor(message: String, cause: Throwable? = null) : this(null, cause, message)
+}
 
 /**
  * The user's location (region) is not supported by the API.
@@ -125,6 +129,9 @@ internal class ServiceDisabledException(message: String, cause: Throwable? = nul
 
 /** Catch all case for exceptions not explicitly expected. */
 internal class UnknownException(message: String, cause: Throwable? = null) :
+  FirebaseCommonAIException(message, cause)
+
+internal class ContentBlockedException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
 
 internal fun makeMissingCaseException(

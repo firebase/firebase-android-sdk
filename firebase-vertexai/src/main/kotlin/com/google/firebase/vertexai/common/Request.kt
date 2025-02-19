@@ -19,13 +19,15 @@ package com.google.firebase.vertexai.common
 import com.google.firebase.vertexai.common.util.fullModelName
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.ImagenImageFormat
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-internal sealed interface Request
+internal interface Request
 
 @Serializable
 internal data class GenerateContentRequest(
@@ -64,4 +66,26 @@ internal data class CountTokensRequest(
         systemInstruction = generateContentRequest.systemInstruction,
       )
   }
+}
+
+@Serializable
+internal data class GenerateImageRequest(
+  val instances: List<ImagenPrompt>,
+  val parameters: ImagenParameters,
+) : Request {
+  @Serializable internal data class ImagenPrompt(val prompt: String)
+
+  @OptIn(PublicPreviewAPI::class)
+  @Serializable
+  internal data class ImagenParameters(
+    val sampleCount: Int,
+    val includeRaiReason: Boolean,
+    val storageUri: String?,
+    val negativePrompt: String?,
+    val aspectRatio: String?,
+    val safetySetting: String?,
+    val personGeneration: String?,
+    val addWatermark: Boolean?,
+    val imageOutputOptions: ImagenImageFormat.Internal?,
+  )
 }

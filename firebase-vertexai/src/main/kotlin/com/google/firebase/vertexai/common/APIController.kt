@@ -25,6 +25,8 @@ import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GRpcErrorResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.ImagenGenerationResponse
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
@@ -58,12 +60,15 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 internal val JSON = Json {
   ignoreUnknownKeys = true
   prettyPrint = false
   isLenient = true
+  explicitNulls = false
 }
 
 /**
@@ -78,6 +83,7 @@ internal val JSON = Json {
  * @property apiClient The value to pass in the `x-goog-api-client` header.
  * @property headerProvider A provider that generates extra headers to include in all HTTP requests.
  */
+@OptIn(PublicPreviewAPI::class)
 internal class APIController
 internal constructor(
   private val key: String,
@@ -122,6 +128,19 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
+  suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
+    try {
+      client
+        .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<ImagenGenerationResponse.Internal>()
+    } catch (e: Throwable) {
+      throw FirebaseCommonAIException.from(e)
+    }
+
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =
@@ -151,6 +170,7 @@ internal constructor(
     when (request) {
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
+      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
     }
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
@@ -257,6 +277,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   }
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
+  }
+  if (message.contains("The prompt could not be submitted")) {
+    throw PromptBlockedException(message)
   }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =

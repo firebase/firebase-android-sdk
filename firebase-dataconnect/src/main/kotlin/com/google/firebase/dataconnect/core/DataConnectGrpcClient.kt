@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.DataConnectExecuteException.Error.PathSegment
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -25,7 +26,6 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Status
@@ -52,7 +52,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectError>,
+    val errors: List<DataConnectExecuteException.Error>,
   )
 
   suspend fun executeQuery(
@@ -139,22 +139,21 @@ internal object DataConnectGrpcClientGlobals {
   private fun ListValue.toPathSegment() =
     valuesList.map {
       when (val kind = it.kindCase) {
-        Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
-        Value.KindCase.NUMBER_VALUE ->
-          DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
-        else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
+        Value.KindCase.STRING_VALUE -> PathSegment.Field(it.stringValue)
+        Value.KindCase.NUMBER_VALUE -> PathSegment.ListIndex(it.numberValue.toInt())
+        else -> PathSegment.Field("invalid PathSegment kind: $kind")
       }
     }
 
-  private fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
-    buildList {
-      this@toSourceLocations.forEach {
-        add(DataConnectError.SourceLocation(line = it.line, column = it.column))
-      }
+  private fun List<google.firebase.dataconnect.proto.SourceLocation>.toSourceLocations():
+    List<DataConnectExecuteException.Error.SourceLocation> = buildList {
+    this@toSourceLocations.forEach {
+      add(DataConnectExecuteException.Error.SourceLocation(line = it.line, column = it.column))
     }
+  }
 
   fun GraphqlError.toDataConnectError() =
-    DataConnectError(
+    DataConnectExecuteException.Error(
       message = message,
       path = path.toPathSegment(),
       this.locationsList.toSourceLocations()
@@ -169,19 +168,31 @@ internal object DataConnectGrpcClientGlobals {
       DataConnectUntypedData(data?.toMap(), errors) as T
     } else if (data === null) {
       if (errors.isNotEmpty()) {
-        throw DataConnectException("operation failed: errors=$errors")
+        throw DataConnectExecuteException("operation failed: errors=$errors", null, errors)
       } else {
-        throw DataConnectException("no data included in result")
+        throw DataConnectExecuteException("no data included in result", null, emptyList())
       }
-    } else if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors (data=$data)")
     } else {
-      try {
-        decodeFromStruct(data, deserializer, serializersModule)
-      } catch (dataConnectException: DataConnectException) {
-        throw dataConnectException
-      } catch (throwable: Throwable) {
-        throw DataConnectException("decoding response data failed: $throwable", throwable)
-      }
+      val decodeResult = runCatching { decodeFromStruct(data!!, deserializer, serializersModule) }
+      decodeResult.fold(
+        onSuccess = {
+          if (errors.isNotEmpty()) {
+            throw DataConnectExecuteException(
+              "operation failed: errors=$errors (data=$data)",
+              data = data.toMap(),
+              errors = errors
+            )
+          }
+          it
+        },
+        onFailure = {
+          throw DataConnectExecuteException(
+            "decoding response data failed: $it (data=$data)",
+            cause = it,
+            data = data.toMap(),
+            errors = errors
+          )
+        },
+      )
     }
 }

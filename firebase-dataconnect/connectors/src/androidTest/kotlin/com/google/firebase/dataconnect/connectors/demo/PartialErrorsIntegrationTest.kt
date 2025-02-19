@@ -16,8 +16,13 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.DataConnectExecuteException
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.assertions.fail
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.test.runTest
@@ -27,9 +32,37 @@ class PartialErrorsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun insertTwoFoosWithSameId() = runTest {
-    val id = Arb.fooId().next(rs)
-    val insertResult = connector.insertTwoFoosWithSameId.execute(id)
-    insertResult.data.foo1.shouldBeNull()
-    insertResult.data.foo2.shouldBeNull()
+    val id: String = Arb.fooId().next(rs)
+    val exception =
+      shouldThrow<DataConnectExecuteException> { connector.insertTwoFoosWithSameId.execute(id) }
+
+    val data = withClue("exception.data") { exception.data.shouldNotBeNull() }
+
+    data class FooAndName(val name: String, val data: Any)
+    val (fooName, foo) =
+      run {
+        val foo1 = data["foo1"]
+        val foo2 = data["foo2"]
+        if (foo1 === null && foo2 === null) {
+          fail(
+            "foo1===null && foo2===null, but expected exactly one of them to not be null" +
+              " (failure code k9rr4r9z5j)"
+          )
+        } else if (foo1 !== null) {
+          FooAndName("foo1", foo1)
+        } else if (foo2 !== null) {
+          FooAndName("foo2", foo2)
+        } else {
+          fail(
+            "foo1!==null && foo2!==null, but expected exactly one of them to not be null" +
+              " (failure code wmsc9pvb3g)"
+          )
+        }
+      }
+
+    withClue("fooName=$fooName") { foo shouldBe mapOf("id" to id) }
+
+
+    TODO("finish assertions!")
   }
 }
