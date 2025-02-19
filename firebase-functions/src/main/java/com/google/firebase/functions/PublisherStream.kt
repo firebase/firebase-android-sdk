@@ -142,47 +142,19 @@ internal class PublisherStream(
   private fun processSSEStream(inputStream: InputStream) {
     BufferedReader(InputStreamReader(inputStream)).use { reader ->
       try {
+        val eventBuffer = StringBuilder()
         reader.lineSequence().forEach { line ->
-          val dataChunk =
-            when {
-              line.startsWith("data:") -> line.removePrefix("data:")
-              line.startsWith("result:") -> line.removePrefix("result:")
-              else -> return@forEach
-            }
-          try {
-            val json = JSONObject(dataChunk)
-            when {
-              json.has("message") ->
-                serializer.decode(json.opt("message"))?.let {
-                  notifyData(StreamResponse.Message(message = HttpsCallableResult(it)))
-                }
-              json.has("error") -> {
-                serializer.decode(json.opt("error"))?.let {
-                  notifyError(
-                    FirebaseFunctionsException(
-                      it.toString(),
-                      FirebaseFunctionsException.Code.INTERNAL,
-                      it
-                    )
-                  )
-                }
+          if (line.isBlank()) {
+            processEvent(eventBuffer.toString())
+            eventBuffer.clear()
+          } else {
+            val dataChunk =
+              when {
+                line.startsWith("data:") -> line.removePrefix("data:")
+                line.startsWith("result:") -> line.removePrefix("result:")
+                else -> return@forEach
               }
-              json.has("result") -> {
-                serializer.decode(json.opt("result"))?.let {
-                  notifyData(StreamResponse.Result(message = HttpsCallableResult(it)))
-                  notifyComplete()
-                }
-                return
-              }
-            }
-          } catch (e: Throwable) {
-            notifyError(
-              FirebaseFunctionsException(
-                "Invalid JSON: $dataChunk",
-                FirebaseFunctionsException.Code.INTERNAL,
-                e
-              )
-            )
+            eventBuffer.append(dataChunk.trim()).append("\n")
           }
         }
         notifyError(
@@ -201,6 +173,44 @@ internal class PublisherStream(
           )
         )
       }
+    }
+  }
+
+  private fun processEvent(dataChunk: String) {
+    try {
+      val json = JSONObject(dataChunk)
+      when {
+        json.has("message") ->
+          serializer.decode(json.opt("message"))?.let {
+            notifyData(StreamResponse.Message(message = HttpsCallableResult(it)))
+          }
+        json.has("error") -> {
+          serializer.decode(json.opt("error"))?.let {
+            notifyError(
+              FirebaseFunctionsException(
+                it.toString(),
+                FirebaseFunctionsException.Code.INTERNAL,
+                it
+              )
+            )
+          }
+        }
+        json.has("result") -> {
+          serializer.decode(json.opt("result"))?.let {
+            notifyData(StreamResponse.Result(message = HttpsCallableResult(it)))
+            notifyComplete()
+          }
+          return
+        }
+      }
+    } catch (e: Throwable) {
+      notifyError(
+        FirebaseFunctionsException(
+          "Invalid JSON: $dataChunk",
+          FirebaseFunctionsException.Code.INTERNAL,
+          e
+        )
+      )
     }
   }
 
@@ -228,11 +238,11 @@ internal class PublisherStream(
     if (response.isSuccessful) return
 
     val htmlContentType = "text/html; charset=utf-8"
-    val trimMargin: String
+    val errorMessage: String
     if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
-      trimMargin = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
+      errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
       throw FirebaseFunctionsException(
-        trimMargin,
+        errorMessage,
         FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
         null
       )

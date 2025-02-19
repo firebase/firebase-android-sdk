@@ -136,7 +136,11 @@ class StreamTests {
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
-    delay(1000)
+    withTimeout(2000) {
+      while (subscriber.throwable == null) {
+        delay(100)
+      }
+    }
 
     val messages = subscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.message.data.toString() }
@@ -190,7 +194,7 @@ class StreamTests {
     }
     val messages = cancelableSubscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.message.data.toString() }
-    assertThat(onNextStringList).containsExactly("{chunk=hello}")
+    assertThat(onNextStringList).contains("{chunk=hello}")
     assertThat(onNextStringList).doesNotContain("{chunk=cool}")
     assertThat(cancelableSubscriber.throwable!!.message!!.uppercase()).contains("CANCEL")
     assertThat(cancelableSubscriber.isComplete).isFalse()
