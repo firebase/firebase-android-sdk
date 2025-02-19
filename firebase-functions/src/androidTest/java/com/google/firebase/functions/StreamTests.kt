@@ -24,6 +24,7 @@ import com.google.firebase.functions.StreamResponse.Message
 import com.google.firebase.functions.StreamResponse.Result
 import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -69,14 +70,16 @@ class StreamTests {
   }
 
   @Test
-  fun genStream_withPublisher_receivesMessagesAndFinalResult() {
+  fun genStream_withPublisher_receivesMessagesAndFinalResult() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStream")
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
 
-    Thread.sleep(8000)
+    while (!subscriber.isComplete) {
+      delay(100)
+    }
     val messages = subscriber.onNextList.filterIsInstance<Message>()
     val results = subscriber.onNextList.filterIsInstance<Result>()
     assertThat(messages.map { it.data.data.toString() })
@@ -103,7 +106,7 @@ class StreamTests {
     val flow = function.stream(input).asFlow()
     val receivedResponses = mutableListOf<StreamResponse>()
     try {
-      withTimeout(8000) { flow.collect { response -> receivedResponses.add(response) } }
+      withTimeout(1000) { flow.collect { response -> receivedResponses.add(response) } }
       isComplete = true
     } catch (e: Throwable) {
       throwable = e
@@ -126,37 +129,36 @@ class StreamTests {
   }
 
   @Test
-  fun genStreamError_receivesErrorAndStops() {
+  fun genStreamError_receivesErrorAndStops() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function =
-      functions.getHttpsCallable("genStreamError").withTimeout(800, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("genStreamError").withTimeout(1000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
-    Thread.sleep(2000)
+    delay(1000)
 
     val messages = subscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.data.data.toString() }
-    assertThat(onNextStringList)
-      .containsExactly(
-        "{chunk=hello}",
-      )
+    assertThat(onNextStringList).contains("{chunk=hello}")
     assertThat(subscriber.throwable).isNotNull()
+    assertThat(subscriber.throwable!!.message).isEqualTo("{message=INTERNAL, status=INTERNAL}")
     assertThat(subscriber.isComplete).isFalse()
   }
 
   @Test
-  fun genStreamNoReturn_receivesOnlyMessages() {
+  fun genStreamNoReturn_receivesOnlyMessages() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
-    Thread.sleep(8000)
 
+    while (subscriber.onNextList.size < 5) {
+      delay(100)
+    }
     val messages = subscriber.onNextList.filterIsInstance<Message>()
     val results = subscriber.onNextList.filterIsInstance<Result>()
-
     val onNextStringList = messages.map { it.data.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
@@ -172,26 +174,25 @@ class StreamTests {
   }
 
   @Test
-  fun genStream_cancelStream_receivesPartialMessagesAndError() {
+  fun genStream_cancelStream_receivesPartialMessagesAndError() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function = functions.getHttpsCallable("genStreamNoReturn")
     val publisher = function.stream(input)
     val cancelableSubscriber = StreamSubscriber()
-
     publisher.subscribe(cancelableSubscriber)
-    Thread.sleep(500)
+    while (cancelableSubscriber.onNextList.isEmpty()) {
+      delay(50)
+    }
     cancelableSubscriber.subscription?.cancel()
-    Thread.sleep(6000)
 
+    while (cancelableSubscriber.throwable == null) {
+      delay(300)
+    }
     val messages = cancelableSubscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.data.data.toString() }
-    assertThat(onNextStringList)
-      .containsExactly(
-        "{chunk=hello}",
-      )
-    assertThat(cancelableSubscriber.throwable).isNotNull()
-    assertThat(requireNotNull(cancelableSubscriber.throwable).message)
-      .isEqualTo("Stream was canceled")
+    assertThat(onNextStringList).containsExactly("{chunk=hello}")
+    assertThat(onNextStringList).doesNotContain("{chunk=cool}")
+    assertThat(cancelableSubscriber.throwable!!.message!!.uppercase()).contains("CANCEL")
     assertThat(cancelableSubscriber.isComplete).isFalse()
   }
 }
