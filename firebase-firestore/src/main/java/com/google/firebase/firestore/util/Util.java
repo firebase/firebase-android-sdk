@@ -27,10 +27,8 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
-
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,8 +88,7 @@ public class Util {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    int i = 0;
-    while (i < left.length() && i < right.length()) {
+    for (int i = 0; i < left.length() && i < right.length(); i++) {
       int leftCodePoint = left.codePointAt(i);
       int rightCodePoint = right.codePointAt(i);
 
@@ -103,15 +100,12 @@ public class Util {
           // substring and do UTF-8 encoded byte comparison
           byte[] leftBytes = getUtf8SafeBytes(left, i);
           byte[] rightBytes = getUtf8SafeBytes(right, i);
-          int comp = compareByteArrays(leftBytes,rightBytes);
-          if(comp !=0) {
+          int comp = compareByteArrays(leftBytes, rightBytes);
+          if (comp != 0) {
             return comp;
           }
         }
       }
-
-      // Increment by 2 for surrogate pairs, 1 otherwise
-      i += Character.charCount(leftCodePoint);
     }
 
     // Compare lengths if all characters are equal
