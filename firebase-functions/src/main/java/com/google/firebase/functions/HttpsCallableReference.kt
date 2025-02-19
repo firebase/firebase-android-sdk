@@ -127,7 +127,7 @@ public class HttpsCallableReference {
   }
 
   /**
-   * Streams data to the specified HTTPS endpoint asynchronously.
+   * Streams data to the specified HTTPS endpoint.
    *
    * The data passed into the trigger can be any of the following types:
    *
@@ -141,7 +141,7 @@ public class HttpsCallableReference {
    * * [org.json.JSONObject]
    * * [org.json.JSONObject.NULL]
    *
-   * If the returned task fails, the exception will be one of the following types:
+   * If the returned streamResponse fails, the exception will be one of the following types:
    *
    * * [java.io.IOException]
    * - if the HTTPS request failed to connect.
@@ -161,8 +161,11 @@ public class HttpsCallableReference {
    * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
    * by the function.
    * @see org.json.JSONArray
+   *
    * @see org.json.JSONObject
+   *
    * @see java.io.IOException
+   *
    * @see FirebaseFunctionsException
    */
   public fun stream(data: Any?): Publisher<StreamResponse> {
@@ -174,7 +177,7 @@ public class HttpsCallableReference {
   }
 
   /**
-   * Streams data to the specified HTTPS endpoint asynchronously without arguments.
+   * Streams data to the specified HTTPS endpoint without arguments.
    *
    * The request to the Cloud Functions backend made by this method automatically includes a
    * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
@@ -185,7 +188,8 @@ public class HttpsCallableReference {
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
-   * @return [Publisher] that will be completed when the streaming operation has finished.
+   * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
+   * by the function.
    */
   public fun stream(): Publisher<StreamResponse> {
     return if (name != null) {
