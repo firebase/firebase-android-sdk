@@ -111,7 +111,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> {
           apiController.generateContent(textGenerateContentRequest("prompt"))
-        } should { it.response.promptFeedback?.blockReason shouldBe BlockReason.Internal.SAFETY }
+        } should { it.response?.promptFeedback?.blockReason shouldBe BlockReason.Internal.SAFETY }
       }
     }
 
