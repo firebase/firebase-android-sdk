@@ -27,7 +27,10 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
+
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,12 +100,13 @@ public class Util {
           // ASCII comparison
           return Integer.compare(leftCodePoint, rightCodePoint);
         } else {
-          // UTF-8 encoded byte comparison, substring 2 indexes to cover surrogate pairs
-          ByteString leftBytes =
-              ByteString.copyFromUtf8(left.substring(i, Math.min(i + 2, left.length())));
-          ByteString rightBytes =
-              ByteString.copyFromUtf8(right.substring(i, Math.min(i + 2, right.length())));
-          return compareByteStrings(leftBytes, rightBytes);
+          // substring and do UTF-8 encoded byte comparison
+          byte[] leftBytes = getUtf8SafeBytes(left, i);
+          byte[] rightBytes = getUtf8SafeBytes(right, i);
+          int comp = compareByteArrays(leftBytes,rightBytes);
+          if(comp !=0) {
+            return comp;
+          }
         }
       }
 
@@ -112,6 +116,19 @@ public class Util {
 
     // Compare lengths if all characters are equal
     return Integer.compare(left.length(), right.length());
+  }
+
+  private static byte[] getUtf8SafeBytes(String str, int index) {
+    int firstCodePoint = str.codePointAt(index);
+    String sub;
+    if (firstCodePoint > 0xffff) {
+      // It's a surrogate pair, return the whole pair
+      sub = str.substring(index, index + 2);
+    } else {
+      // It's a single code point, return it
+      sub = str.substring(index, index + 1);
+    }
+    return sub.getBytes(StandardCharsets.UTF_8);
   }
 
   /**
