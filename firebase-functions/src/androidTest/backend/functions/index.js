@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const assert = require("assert");
-const functionsV1 = require("firebase-functions");
-const functionsV2 = require("firebase-functions/v2");
+const assert = require('assert');
+const functions = require('firebase-functions');
+const functionsV2 = require('firebase-functions/v2');
 
 /**
  * Pauses the execution for a specified amount of time.
@@ -25,118 +25,118 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-exports.dataTest = functionsV1.https.onRequest((request, response) => {
+exports.dataTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {
     data: {
-      "bool": true,
-      "int": 2,
-      "long": {
-        "value": "3",
-        "@type": "type.googleapis.com/google.protobuf.Int64Value",
+      'bool': true,
+      'int': 2,
+      'long': {
+        'value': '3',
+        '@type': 'type.googleapis.com/google.protobuf.Int64Value',
       },
-      "string": "four",
-      "array": [5, 6],
-      "null": null,
+      'string': 'four',
+      'array': [5, 6],
+      'null': null,
     },
   });
   response.send({
     data: {
-      message: "stub response",
+      message: 'stub response',
       code: 42,
       long: {
-        "value": "420",
-        "@type": "type.googleapis.com/google.protobuf.Int64Value",
+        'value': '420',
+        '@type': 'type.googleapis.com/google.protobuf.Int64Value',
       },
     },
   });
 });
 
-exports.scalarTest = functionsV1.https.onRequest((request, response) => {
+exports.scalarTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {data: 17});
   response.send({data: 76});
 });
 
-exports.tokenTest = functionsV1.https.onRequest((request, response) => {
-  assert.equal(request.get("Authorization"), "Bearer token");
+exports.tokenTest = functions.https.onRequest((request, response) => {
+  assert.equal(request.get('Authorization'), 'Bearer token');
   assert.deepEqual(request.body, {data: {}});
   response.send({data: {}});
 });
 
-exports.instanceIdTest = functionsV1.https.onRequest((request, response) => {
-  assert.equal(request.get("Firebase-Instance-ID-Token"), "iid");
+exports.instanceIdTest = functions.https.onRequest((request, response) => {
+  assert.equal(request.get('Firebase-Instance-ID-Token'), 'iid');
   assert.deepEqual(request.body, {data: {}});
   response.send({data: {}});
 });
 
-exports.appCheckTest = functionsV1.https.onRequest((request, response) => {
-  assert.equal(request.get("X-Firebase-AppCheck"), "appCheck");
+exports.appCheckTest = functions.https.onRequest((request, response) => {
+  assert.equal(request.get('X-Firebase-AppCheck'), 'appCheck');
   assert.deepEqual(request.body, {data: {}});
   response.send({data: {}});
 });
 
-exports.appCheckLimitedUseTest = functionsV1.https.onRequest(
+exports.appCheckLimitedUseTest = functions.https.onRequest(
     (request, response) => {
-      assert.equal(request.get("X-Firebase-AppCheck"), "appCheck-limited-use");
+      assert.equal(request.get('X-Firebase-AppCheck'), 'appCheck-limited-use');
       assert.deepEqual(request.body, {data: {}});
       response.send({data: {}});
     });
 
-exports.nullTest = functionsV1.https.onRequest((request, response) => {
+exports.nullTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {data: null});
   response.send({data: null});
 });
 
-exports.missingResultTest = functionsV1.https.onRequest((request, response) => {
+exports.missingResultTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {data: null});
   response.send({});
 });
 
-exports.unhandledErrorTest = functionsV1.https.onRequest(
+exports.unhandledErrorTest = functions.https.onRequest(
     (request, response) => {
       // Fail in a way that the client shouldn't see.
-      throw new Error("nope");
+      throw new Error('nope');
     },
 );
 
-exports.unknownErrorTest = functionsV1.https.onRequest((request, response) => {
+exports.unknownErrorTest = functions.https.onRequest((request, response) => {
   // Send an http error with a body with an explicit code.
   response.status(400).send({
     error: {
-      status: "THIS_IS_NOT_VALID",
-      message: "this should be ignored",
+      status: 'THIS_IS_NOT_VALID',
+      message: 'this should be ignored',
     },
   });
 });
 
-exports.explicitErrorTest = functionsV1.https.onRequest((request, response) => {
+exports.explicitErrorTest = functions.https.onRequest((request, response) => {
   // Send an http error with a body with an explicit code.
   response.status(400).send({
     error: {
-      status: "OUT_OF_RANGE",
-      message: "explicit nope",
+      status: 'OUT_OF_RANGE',
+      message: 'explicit nope',
       details: {
         start: 10,
         end: 20,
         long: {
-          "value": "30",
-          "@type": "type.googleapis.com/google.protobuf.Int64Value",
+          'value': '30',
+          '@type': 'type.googleapis.com/google.protobuf.Int64Value',
         },
       },
     },
   });
 });
 
-exports.httpErrorTest = functionsV1.https.onRequest((request, response) => {
+exports.httpErrorTest = functions.https.onRequest((request, response) => {
   // Send an http error with no body.
   response.status(400).send();
 });
 
-exports.timeoutTest = functionsV1.https.onRequest((request, response) => {
+exports.timeoutTest = functions.https.onRequest((request, response) => {
   // Wait for longer than 500ms.
   setTimeout(() => response.send({data: true}), 500);
 });
 
-const streamData = ["hello", "world", "this", "is", "cool"];
+const streamData = ['hello', 'world', 'this', 'is', 'cool'];
 
 /**
  * Generates chunks of text asynchronously, yielding one chunk at a time.
@@ -157,7 +157,7 @@ exports.genStream = functionsV2.https.onCall(async (request, response) => {
       response.sendChunk({chunk});
     }
   }
-  return streamData.join(" ");
+  return streamData.join(' ');
 });
 
 exports.genStreamError = functionsV2.https.onCall(
@@ -167,7 +167,7 @@ exports.genStreamError = functionsV2.https.onCall(
           response.sendChunk({chunk});
         }
       }
-      throw new Error("BOOM");
+      throw new Error('BOOM');
     });
 
 exports.genStreamNoReturn = functionsV2.https.onCall(

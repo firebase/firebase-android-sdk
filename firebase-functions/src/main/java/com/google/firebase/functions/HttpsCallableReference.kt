@@ -191,13 +191,7 @@ public class HttpsCallableReference {
    * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
    * by the function.
    */
-  public fun stream(): Publisher<StreamResponse> {
-    return if (name != null) {
-      functionsClient.stream(name, null, options)
-    } else {
-      functionsClient.stream(requireNotNull(url), null, options)
-    }
-  }
+  public fun stream(): Publisher<StreamResponse> = stream(data = null)
 
   /**
    * Changes the timeout for calls from this instance of Functions. The default is 60 seconds.

@@ -30,7 +30,7 @@ public abstract class StreamResponse private constructor(public val message: Htt
   /**
    * An event message received during the stream.
    *
-   * Messages are intermediate data chunks sent by the server before the final result.
+   * Messages are intermediate data chunks sent by the server while processing a request.
    *
    * Example SSE format:
    * ```json
@@ -40,10 +40,11 @@ public abstract class StreamResponse private constructor(public val message: Htt
   public class Message(message: HttpsCallableResult) : StreamResponse(message)
 
   /**
-   * The final response that terminates the stream.
+   * The final result of the computation, marking the end of the stream.
    *
-   * This result is sent as the last message in the stream and indicates that no further messages
-   * will be received.
+   * Unlike [Message], which represents intermediate data chunks, [Result] contains the complete
+   * computation output. If clients only care about the final result, they can process this type
+   * alone and ignore intermediate messages.
    *
    * Example SSE format:
    * ```json
