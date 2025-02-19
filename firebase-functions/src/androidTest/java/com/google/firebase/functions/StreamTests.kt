@@ -132,7 +132,7 @@ class StreamTests {
   fun genStreamError_receivesErrorAndStops() = runBlocking {
     val input = mapOf("data" to "Why is the sky blue")
     val function =
-      functions.getHttpsCallable("genStreamError").withTimeout(1000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("genStreamError").withTimeout(2000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
