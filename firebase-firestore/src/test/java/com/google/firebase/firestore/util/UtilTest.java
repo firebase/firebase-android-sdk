@@ -93,12 +93,17 @@ public class UtilTest {
   @Test
   public void compareUtf8StringsShouldReturnCorrectValue() {
     ArrayList<String> errors = new ArrayList<>();
-    int seed = new Random().nextInt();
+    int seed = new Random().nextInt(Integer.MAX_VALUE);
     int passCount = 0;
-    StringGenerator stringGenerator = new StringGenerator(seed);
+    StringGenerator stringGenerator = new StringGenerator(29750468);
+    StringPairGenerator stringPairGenerator = new StringPairGenerator(stringGenerator);
     for (int i = 0; i < 1_000_000 && errors.size() < 10; i++) {
-      String s1 = stringGenerator.next();
-      String s2 = stringGenerator.next();
+      final String s1, s2;
+      {
+        StringPairGenerator.StringPair stringPair = stringPairGenerator.next();
+        s1 = stringPair.s1;
+        s2 = stringPair.s2;
+      }
 
       int actual = Util.compareUtf8Strings(s1, s2);
 
@@ -137,6 +142,31 @@ public class UtilTest {
         sb.append("\nerrors[").append(i).append("]: ").append(errors.get(i));
       }
       fail(sb.toString());
+    }
+  }
+
+  private static class StringPairGenerator {
+
+    private final StringGenerator stringGenerator;
+
+    public StringPairGenerator(StringGenerator stringGenerator) {
+      this.stringGenerator = stringGenerator;
+    }
+
+    public StringPair next() {
+      String prefix = stringGenerator.next();
+      String s1 = prefix + stringGenerator.next();
+      String s2 = prefix + stringGenerator.next();
+      return new StringPair(s1, s2);
+    }
+
+    public static class StringPair {
+      public final String s1, s2;
+
+      public StringPair(String s1, String s2) {
+        this.s1 = s1;
+        this.s2 = s2;
+      }
     }
   }
 
@@ -214,7 +244,8 @@ public class UtilTest {
       final int length = rnd.nextInt(maxLength + 1);
       final StringBuilder sb = new StringBuilder();
       while (sb.length() < length) {
-        sb.appendCodePoint(nextCodePoint());
+        int codePoint = nextCodePoint();
+        sb.appendCodePoint(codePoint);
       }
       return sb.toString();
     }
