@@ -70,6 +70,13 @@ query GetHardcodedFoo
   }
 }
 
+# This is used for testing partial errors, as at least one of the two rows inserted _must_ fail
+# since they have the same primary key (i.e. the "id").
+mutation InsertTwoFoosWithSameId($id: String!) @auth(level: PUBLIC) {
+  foo1: foo_insert(data: { id: $id })
+  foo2: foo_insert(data: { id: $id })
+}
+
 mutation InsertStringVariants(
   $nonNullWithNonEmptyValue: String!,
   $nonNullWithEmptyValue: String!,
