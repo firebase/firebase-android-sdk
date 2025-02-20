@@ -58,6 +58,7 @@ class StreamTests {
 
     override fun onNext(streamResponse: StreamResponse) {
       onNextList.add(streamResponse)
+      subscription?.request(1)
     }
 
     override fun onError(t: Throwable?) {
@@ -158,8 +159,10 @@ class StreamTests {
 
     function.stream(input).subscribe(subscriber)
 
-    while (subscriber.onNextList.size < 5) {
-      delay(100)
+    withTimeout(2000) {
+      while (subscriber.onNextList.size < 5) {
+        delay(100)
+      }
     }
     val messages = subscriber.onNextList.filterIsInstance<Message>()
     val results = subscriber.onNextList.filterIsInstance<Result>()
@@ -184,13 +187,16 @@ class StreamTests {
     val publisher = function.stream(input)
     val cancelableSubscriber = StreamSubscriber()
     publisher.subscribe(cancelableSubscriber)
-    while (cancelableSubscriber.onNextList.isEmpty()) {
-      delay(50)
+    withTimeout(2000) {
+      while (cancelableSubscriber.onNextList.isEmpty()) {
+        delay(50)
+      }
     }
-    cancelableSubscriber.subscription?.cancel()
-
-    while (cancelableSubscriber.throwable == null) {
-      delay(300)
+    withTimeout(2000) { cancelableSubscriber.subscription?.cancel() }
+    withTimeout(1000) {
+      while (cancelableSubscriber.throwable == null) {
+        delay(300)
+      }
     }
     val messages = cancelableSubscriber.onNextList.filterIsInstance<Message>()
     val onNextStringList = messages.map { it.message.data.toString() }

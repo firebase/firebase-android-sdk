@@ -25,6 +25,7 @@ import java.io.InterruptedIOException
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicLong
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType
@@ -47,20 +48,40 @@ internal class PublisherStream(
   private val executor: Executor
 ) : Publisher<StreamResponse> {
 
-  private val subscribers = ConcurrentLinkedQueue<Subscriber<in StreamResponse>>()
+  private val subscribers = ConcurrentLinkedQueue<Pair<Subscriber<in StreamResponse>, AtomicLong>>()
   private var activeCall: Call? = null
+  private var isStreamingStarted = false
+  private var isCompleted = false
+  private val messageQueue = ConcurrentLinkedQueue<StreamResponse>()
 
   override fun subscribe(subscriber: Subscriber<in StreamResponse>) {
-    subscribers.add(subscriber)
+    val requestedCount = AtomicLong(0)
+    subscribers.add(subscriber to requestedCount)
+
     subscriber.onSubscribe(
       object : Subscription {
         override fun request(n: Long) {
-          startStreaming()
+          if (n <= 0) {
+            subscriber.onError(IllegalArgumentException("Requested messages must be positive."))
+            return
+          }
+          requestedCount.addAndGet(n)
+          dispatchMessages()
+          if (!isStreamingStarted) {
+            isStreamingStarted = true
+            startStreaming()
+          }
         }
 
         override fun cancel() {
           cancelStream()
-          subscribers.remove(subscriber)
+          val iterator = subscribers.iterator()
+          while (iterator.hasNext()) {
+            val pair = iterator.next()
+            if (pair.first == subscriber) {
+              iterator.remove()
+            }
+          }
         }
       }
     )
@@ -157,13 +178,6 @@ internal class PublisherStream(
             eventBuffer.append(dataChunk.trim()).append("\n")
           }
         }
-        notifyError(
-          FirebaseFunctionsException(
-            "Stream ended unexpectedly without completion",
-            FirebaseFunctionsException.Code.INTERNAL,
-            null
-          )
-        )
       } catch (e: Exception) {
         notifyError(
           FirebaseFunctionsException(
@@ -180,10 +194,12 @@ internal class PublisherStream(
     try {
       val json = JSONObject(dataChunk)
       when {
-        json.has("message") ->
+        json.has("message") -> {
           serializer.decode(json.opt("message"))?.let {
-            notifyData(StreamResponse.Message(message = HttpsCallableResult(it)))
+            messageQueue.add(StreamResponse.Message(message = HttpsCallableResult(it)))
           }
+          dispatchMessages()
+        }
         json.has("error") -> {
           serializer.decode(json.opt("error"))?.let {
             notifyError(
@@ -197,10 +213,10 @@ internal class PublisherStream(
         }
         json.has("result") -> {
           serializer.decode(json.opt("result"))?.let {
-            notifyData(StreamResponse.Result(message = HttpsCallableResult(it)))
+            messageQueue.add(StreamResponse.Result(message = HttpsCallableResult(it)))
+            dispatchMessages()
             notifyComplete()
           }
-          return
         }
       }
     } catch (e: Throwable) {
@@ -214,24 +230,30 @@ internal class PublisherStream(
     }
   }
 
-  private fun notifyData(data: StreamResponse?) {
-    for (subscriber in subscribers) {
-      subscriber.onNext(data)
+  private fun dispatchMessages() {
+    val iterator = subscribers.iterator()
+    while (iterator.hasNext()) {
+      val (subscriber, requestedCount) = iterator.next()
+      while (requestedCount.get() > 0 && messageQueue.isNotEmpty()) {
+        subscriber.onNext(messageQueue.poll())
+        requestedCount.decrementAndGet()
+      }
     }
   }
 
   private fun notifyError(e: FirebaseFunctionsException) {
-    for (subscriber in subscribers) {
-      subscriber.onError(e)
-    }
+    subscribers.forEach { (subscriber, _) -> subscriber.onError(e) }
     subscribers.clear()
+    messageQueue.clear()
   }
 
   private fun notifyComplete() {
-    for (subscriber in subscribers) {
-      subscriber.onComplete()
+    if (!isCompleted) {
+      subscribers.forEach { (subscriber, _) -> subscriber.onComplete() }
+      subscribers.clear()
+      messageQueue.clear()
+      isCompleted = true
     }
-    subscribers.clear()
   }
 
   private fun validateResponse(response: Response) {
