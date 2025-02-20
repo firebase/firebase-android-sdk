@@ -28,6 +28,7 @@ import static com.google.firebase.firestore.pipeline.Function.logicalMax;
 import static com.google.firebase.firestore.pipeline.Function.logicalMin;
 import static com.google.firebase.firestore.pipeline.Function.lt;
 import static com.google.firebase.firestore.pipeline.Function.lte;
+import static com.google.firebase.firestore.pipeline.Function.mapGet;
 import static com.google.firebase.firestore.pipeline.Function.neq;
 import static com.google.firebase.firestore.pipeline.Function.not;
 import static com.google.firebase.firestore.pipeline.Function.or;
@@ -105,7 +106,10 @@ public class PipelineTest {
                   entry("published", 1979),
                   entry("rating", 4.2),
                   entry("tags", ImmutableList.of("comedy", "space", "adventure")),
-                  entry("awards", ImmutableMap.of("hugo", true, "nebula", false)))),
+                  entry("awards", ImmutableMap.of("hugo", true, "nebula", false)),
+                  entry(
+                      "nestedField",
+                      ImmutableMap.of("level.1", ImmutableMap.of("level.2", true))))),
           entry(
               "book2",
               mapOfEntries(
@@ -715,12 +719,6 @@ public class PipelineTest {
   }
 
   @Test
-  public void testParent() {}
-
-  @Test
-  public void testCollectionId() {}
-
-  @Test
   public void testDistanceFunctions() {
     double[] sourceVector = {0.1, 0.1};
     double[] targetVector = {0.5, 0.8};
@@ -745,10 +743,43 @@ public class PipelineTest {
   }
 
   @Test
-  public void testNestedFields() {}
+  public void testNestedFields() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(eq("awards.hugo", true))
+            .select("title", "awards.hugo")
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true),
+            ImmutableMap.of("title", "Dune", "awards.hugo", true));
+  }
 
   @Test
-  public void testMapGetWithFieldNameIncludingNotation() {}
+  public void testMapGetWithFieldNameIncludingNotation() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(eq("awards.hugo", true))
+            .select(
+                "title",
+                Field.of("nestedField.level.1"),
+                mapGet("nestedField", "level.1").mapGet("level.2").as("nested"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("nestedField.level.`1`", null),
+                entry("nested", true)),
+            mapOfEntries(
+                entry("title", "Dune"),
+                entry("nestedField.level.`1`", null),
+                entry("nested", null)));
+  }
 
   static <T> Map.Entry<String, T> entry(String key, T value) {
     return new Map.Entry<String, T>() {

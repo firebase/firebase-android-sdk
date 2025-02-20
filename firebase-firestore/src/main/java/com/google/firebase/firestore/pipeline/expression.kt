@@ -266,15 +266,29 @@ abstract class Expr protected constructor() {
   internal abstract fun toProto(): Value
 }
 
-abstract class Selectable(internal val alias: String) : Expr()
+abstract class Selectable() : Expr() {
+  internal abstract fun getAlias(): String
 
-open class ExprWithAlias internal constructor(alias: String, private val expr: Expr) :
-  Selectable(alias) {
+  internal companion object {
+    fun toSelectable(o: Any): Selectable {
+      return when (o) {
+        is Selectable -> o
+        is String -> Field.of(o)
+        is FieldPath -> Field.of(o)
+        else -> throw IllegalArgumentException("Unknown Selectable type: $o")
+      }
+    }
+  }
+}
+
+open class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+  Selectable() {
+  override fun getAlias() = alias
   override fun toProto(): Value = expr.toProto()
 }
 
 class Field private constructor(private val fieldPath: ModelFieldPath) :
-  Selectable(fieldPath.canonicalString()) {
+  Selectable() {
   companion object {
 
     @JvmStatic
@@ -293,11 +307,14 @@ class Field private constructor(private val fieldPath: ModelFieldPath) :
       return Field(fieldPath.internalPath)
     }
   }
+
+  override fun getAlias(): String = fieldPath.canonicalString()
+
   override fun toProto() =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 }
 
-class ListOfExprs(val expressions: Array<out Expr>) : Expr() {
+class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
   override fun toProto(): Value {
     val builder = ArrayValue.newBuilder()
     for (expr in expressions) {
@@ -739,7 +756,6 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   fun not() = Function.not(this)
 
   fun countIf(): Accumulator = Accumulator.countIf(this)
-
 
   fun ifThen(then: Expr) = Function.ifThen(this, then)
 

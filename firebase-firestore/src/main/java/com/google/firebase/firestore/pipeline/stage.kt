@@ -57,7 +57,7 @@ class DocumentsSource internal constructor(private val documents: Array<out Stri
 class AddFieldsStage internal constructor(private val fields: Array<out Selectable>) :
   Stage("add_fields") {
   override fun args(): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto() }))
+    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto() }))
 }
 
 class AggregateStage
@@ -65,7 +65,7 @@ internal constructor(
   private val accumulators: Map<String, Accumulator>,
   private val groups: Map<String, Expr>
 ) : Stage("aggregate") {
-  internal constructor(accumulators: Map<String, Accumulator>) : this(accumulators, emptyMap())
+  private constructor(accumulators: Map<String, Accumulator>) : this(accumulators, emptyMap())
   companion object {
     @JvmStatic
     fun withAccumulators(vararg accumulators: AccumulatorWithAlias): AggregateStage {
@@ -78,11 +78,17 @@ internal constructor(
     }
   }
 
-  fun withGroups(vararg selectable: Selectable) =
-    AggregateStage(accumulators, selectable.associateBy(Selectable::alias))
+  fun withGroups(vararg groups: Selectable) =
+    AggregateStage(accumulators, groups.associateBy(Selectable::getAlias))
 
   fun withGroups(vararg fields: String) =
     AggregateStage(accumulators, fields.associateWith(Field::of))
+
+  fun withGroups(vararg selectable: Any) =
+    AggregateStage(
+      accumulators,
+      selectable.map(Selectable::toSelectable).associateBy(Selectable::getAlias)
+    )
 
   override fun args(): Sequence<Value> =
     sequenceOf(
@@ -141,7 +147,7 @@ class OffsetStage internal constructor(private val offset: Long) : Stage("offset
 class SelectStage internal constructor(private val fields: Array<out Selectable>) :
   Stage("select") {
   override fun args(): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto() }))
+    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto() }))
 }
 
 class SortStage internal constructor(private val orders: Array<out Ordering>) : Stage("sort") {
@@ -151,7 +157,7 @@ class SortStage internal constructor(private val orders: Array<out Ordering>) : 
 class DistinctStage internal constructor(private val groups: Array<out Selectable>) :
   Stage("distinct") {
   override fun args(): Sequence<Value> =
-    sequenceOf(encodeValue(groups.associate { it.alias to it.toProto() }))
+    sequenceOf(encodeValue(groups.associate { it.getAlias() to it.toProto() }))
 }
 
 class RemoveFieldsStage internal constructor(private val fields: Array<out Field>) :
@@ -192,5 +198,5 @@ class UnionStage internal constructor(private val other: com.google.firebase.fir
 
 class UnnestStage internal constructor(private val selectable: Selectable) : Stage("unnest") {
   override fun args(): Sequence<Value> =
-    sequenceOf(encodeValue(selectable.alias), selectable.toProto())
+    sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto())
 }

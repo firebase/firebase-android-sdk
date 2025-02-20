@@ -107,6 +107,10 @@ internal constructor(
     return append(SelectStage(fields.map(Field::of).toTypedArray()))
   }
 
+  fun select(vararg fields: Any): Pipeline {
+    return append(SelectStage(fields.map(Selectable::toSelectable).toTypedArray()))
+  }
+
   fun sort(vararg orders: Ordering): Pipeline {
     return append(SortStage(orders))
   }
@@ -129,6 +133,10 @@ internal constructor(
 
   fun distinct(vararg groups: String): Pipeline {
     return append(DistinctStage(groups.map(Field::of).toTypedArray()))
+  }
+
+  fun distinct(vararg groups: Any): Pipeline {
+    return append(DistinctStage(groups.map(Selectable::toSelectable).toTypedArray()))
   }
 
   fun aggregate(vararg accumulators: AccumulatorWithAlias): Pipeline {
