@@ -37,7 +37,7 @@ exports.dataTest = functions.https.onRequest((request, response) => {
       string: 'four',
       array: [5, 6],
       'null': null,
-    },
+    }
   });
   response.send({
     data: {
