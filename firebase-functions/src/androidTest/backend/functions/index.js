@@ -28,14 +28,14 @@ function sleep(ms) {
 exports.dataTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {
     data: {
-      'bool': true,
-      'int': 2,
-      'long': {
-        'value': '3',
+      bool: true,
+      int: 2,
+      long: {
+        value: '3',
         '@type': 'type.googleapis.com/google.protobuf.Int64Value',
       },
-      'string': 'four',
-      'array': [5, 6],
+      string: 'four',
+      array: [5, 6],
       'null': null,
     },
   });
@@ -44,10 +44,10 @@ exports.dataTest = functions.https.onRequest((request, response) => {
       message: 'stub response',
       code: 42,
       long: {
-        'value': '420',
+        value: '420',
         '@type': 'type.googleapis.com/google.protobuf.Int64Value',
       },
-    },
+    }
   });
 });
 
@@ -74,12 +74,11 @@ exports.appCheckTest = functions.https.onRequest((request, response) => {
   response.send({data: {}});
 });
 
-exports.appCheckLimitedUseTest = functions.https.onRequest(
-    (request, response) => {
-      assert.equal(request.get('X-Firebase-AppCheck'), 'appCheck-limited-use');
-      assert.deepEqual(request.body, {data: {}});
-      response.send({data: {}});
-    });
+exports.appCheckLimitedUseTest = functions.https.onRequest((request, response) => {
+  assert.equal(request.get('X-Firebase-AppCheck'), 'appCheck-limited-use');
+  assert.deepEqual(request.body, {data: {}});
+  response.send({data: {}});
+});
 
 exports.nullTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {data: null});
@@ -91,12 +90,10 @@ exports.missingResultTest = functions.https.onRequest((request, response) => {
   response.send({});
 });
 
-exports.unhandledErrorTest = functions.https.onRequest(
-    (request, response) => {
-      // Fail in a way that the client shouldn't see.
-      throw new Error('nope');
-    },
-);
+exports.unhandledErrorTest = functions.https.onRequest((request, response) => {
+  // Fail in a way that the client shouldn't see.
+  throw 'nope';
+});
 
 exports.unknownErrorTest = functions.https.onRequest((request, response) => {
   // Send an http error with a body with an explicit code.
@@ -118,7 +115,7 @@ exports.explicitErrorTest = functions.https.onRequest((request, response) => {
         start: 10,
         end: 20,
         long: {
-          'value': '30',
+          value: '30',
           '@type': 'type.googleapis.com/google.protobuf.Int64Value',
         },
       },
