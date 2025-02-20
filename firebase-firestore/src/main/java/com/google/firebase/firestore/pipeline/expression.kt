@@ -266,7 +266,7 @@ abstract class Expr protected constructor() {
   internal abstract fun toProto(): Value
 }
 
-abstract class Selectable() : Expr() {
+abstract class Selectable : Expr() {
   internal abstract fun getAlias(): String
 
   internal companion object {
@@ -753,17 +753,17 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
     internal constructor(name: String, param: Expr, vararg params: Any) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
     internal constructor(name: String, fieldName: String, vararg params: Any) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
 
-  fun not() = Function.not(this)
+  fun not() = not(this)
 
   fun countIf(): Accumulator = Accumulator.countIf(this)
 
-  fun ifThen(then: Expr) = Function.ifThen(this, then)
+  fun ifThen(then: Expr) = ifThen(this, then)
 
-  fun ifThen(then: Any) = Function.ifThen(this, then)
+  fun ifThen(then: Any) = ifThen(this, then)
 
-  fun ifThenElse(then: Expr, `else`: Expr) = Function.ifThenElse(this, then, `else`)
+  fun ifThenElse(then: Expr, `else`: Expr) = ifThenElse(this, then, `else`)
 
-  fun ifThenElse(then: Any, `else`: Any) = Function.ifThenElse(this, then, `else`)
+  fun ifThenElse(then: Any, `else`: Any) = ifThenElse(this, then, `else`)
 }
 
 class Ordering private constructor(private val expr: Expr, private val dir: Direction) {
@@ -779,7 +779,7 @@ class Ordering private constructor(private val expr: Expr, private val dir: Dire
     fun descending(fieldName: String): Ordering =
       Ordering(Field.of(fieldName), Direction.DESCENDING)
   }
-  private class Direction private constructor(internal val proto: Value) {
+  private class Direction private constructor(val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
       val ASCENDING = Direction("ascending")

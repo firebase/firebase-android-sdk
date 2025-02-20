@@ -26,70 +26,32 @@ private constructor(private val name: String, private val params: Array<out Expr
   private constructor(name: String, fieldName: String) : this(name, Field.of(fieldName))
 
   companion object {
-    @JvmStatic
-    fun countAll(): Accumulator {
-      return Accumulator("count")
-    }
+    @JvmStatic fun countAll() = Accumulator("count")
 
-    @JvmStatic
-    fun count(fieldName: String): Accumulator {
-      return Accumulator("count", fieldName)
-    }
+    @JvmStatic fun count(fieldName: String) = Accumulator("count", fieldName)
 
-    @JvmStatic
-    fun count(expr: Expr): Accumulator {
-      return Accumulator("count", expr)
-    }
+    @JvmStatic fun count(expr: Expr) = Accumulator("count", expr)
 
-    @JvmStatic
-    fun countIf(condition: BooleanExpr): Accumulator {
-      return Accumulator("countIf", condition)
-    }
+    @JvmStatic fun countIf(condition: BooleanExpr) = Accumulator("countIf", condition)
 
-    @JvmStatic
-    fun sum(fieldName: String): Accumulator {
-      return Accumulator("sum", fieldName)
-    }
+    @JvmStatic fun sum(fieldName: String) = Accumulator("sum", fieldName)
 
-    @JvmStatic
-    fun sum(expr: Expr): Accumulator {
-      return Accumulator("sum", expr)
-    }
+    @JvmStatic fun sum(expr: Expr) = Accumulator("sum", expr)
 
-    @JvmStatic
-    fun avg(fieldName: String): Accumulator {
-      return Accumulator("avg", fieldName)
-    }
+    @JvmStatic fun avg(fieldName: String) = Accumulator("avg", fieldName)
 
-    @JvmStatic
-    fun avg(expr: Expr): Accumulator {
-      return Accumulator("avg", expr)
-    }
+    @JvmStatic fun avg(expr: Expr) = Accumulator("avg", expr)
 
-    @JvmStatic
-    fun min(fieldName: String): Accumulator {
-      return Accumulator("min", fieldName)
-    }
+    @JvmStatic fun min(fieldName: String) = Accumulator("min", fieldName)
 
-    @JvmStatic
-    fun min(expr: Expr): Accumulator {
-      return Accumulator("min", expr)
-    }
+    @JvmStatic fun min(expr: Expr) = Accumulator("min", expr)
 
-    @JvmStatic
-    fun max(fieldName: String): Accumulator {
-      return Accumulator("max", fieldName)
-    }
+    @JvmStatic fun max(fieldName: String) = Accumulator("max", fieldName)
 
-    @JvmStatic
-    fun max(expr: Expr): Accumulator {
-      return Accumulator("max", expr)
-    }
+    @JvmStatic fun max(expr: Expr) = Accumulator("max", expr)
   }
 
-  fun `as`(alias: String): AccumulatorWithAlias {
-    return AccumulatorWithAlias(alias, this)
-  }
+  fun `as`(alias: String) = AccumulatorWithAlias(alias, this)
 
   fun toProto(): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()

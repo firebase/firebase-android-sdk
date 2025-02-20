@@ -47,7 +47,7 @@ import com.google.firestore.v1.Value
 class Pipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
-  internal val stages: FluentIterable<Stage>
+  private val stages: FluentIterable<Stage>
 ) {
   internal constructor(
     firestore: FirebaseFirestore,
@@ -68,7 +68,7 @@ internal constructor(
     return DocumentReference(key, firestore)
   }
 
-  internal fun toProto(): ExecutePipelineRequest {
+  private fun toProto(): ExecutePipelineRequest {
     val database = firestore.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
@@ -87,67 +87,43 @@ internal constructor(
       .addAllStages(stages.map(Stage::toProtoStage))
       .build()
 
-  fun addFields(vararg fields: Selectable): Pipeline {
-    return append(AddFieldsStage(fields))
-  }
+  fun addFields(vararg fields: Selectable): Pipeline = append(AddFieldsStage(fields))
 
-  fun removeFields(vararg fields: Field): Pipeline {
-    return append(RemoveFieldsStage(fields))
-  }
+  fun removeFields(vararg fields: Field): Pipeline = append(RemoveFieldsStage(fields))
 
-  fun removeFields(vararg fields: String): Pipeline {
-    return append(RemoveFieldsStage(fields.map(Field::of).toTypedArray()))
-  }
+  fun removeFields(vararg fields: String): Pipeline =
+    append(RemoveFieldsStage(fields.map(Field::of).toTypedArray()))
 
-  fun select(vararg fields: Selectable): Pipeline {
-    return append(SelectStage(fields))
-  }
+  fun select(vararg fields: Selectable): Pipeline = append(SelectStage(fields))
 
-  fun select(vararg fields: String): Pipeline {
-    return append(SelectStage(fields.map(Field::of).toTypedArray()))
-  }
+  fun select(vararg fields: String): Pipeline =
+    append(SelectStage(fields.map(Field::of).toTypedArray()))
 
-  fun select(vararg fields: Any): Pipeline {
-    return append(SelectStage(fields.map(Selectable::toSelectable).toTypedArray()))
-  }
+  fun select(vararg fields: Any): Pipeline =
+    append(SelectStage(fields.map(Selectable::toSelectable).toTypedArray()))
 
-  fun sort(vararg orders: Ordering): Pipeline {
-    return append(SortStage(orders))
-  }
+  fun sort(vararg orders: Ordering): Pipeline = append(SortStage(orders))
 
-  fun where(condition: BooleanExpr): Pipeline {
-    return append(WhereStage(condition))
-  }
+  fun where(condition: BooleanExpr): Pipeline = append(WhereStage(condition))
 
-  fun offset(offset: Long): Pipeline {
-    return append(OffsetStage(offset))
-  }
+  fun offset(offset: Long): Pipeline = append(OffsetStage(offset))
 
-  fun limit(limit: Long): Pipeline {
-    return append(LimitStage(limit))
-  }
+  fun limit(limit: Long): Pipeline = append(LimitStage(limit))
 
-  fun distinct(vararg groups: Selectable): Pipeline {
-    return append(DistinctStage(groups))
-  }
+  fun distinct(vararg groups: Selectable): Pipeline = append(DistinctStage(groups))
 
-  fun distinct(vararg groups: String): Pipeline {
-    return append(DistinctStage(groups.map(Field::of).toTypedArray()))
-  }
+  fun distinct(vararg groups: String): Pipeline =
+    append(DistinctStage(groups.map(Field::of).toTypedArray()))
 
-  fun distinct(vararg groups: Any): Pipeline {
-    return append(DistinctStage(groups.map(Selectable::toSelectable).toTypedArray()))
-  }
+  fun distinct(vararg groups: Any): Pipeline =
+    append(DistinctStage(groups.map(Selectable::toSelectable).toTypedArray()))
 
-  fun aggregate(vararg accumulators: AccumulatorWithAlias): Pipeline {
-    return append(AggregateStage.withAccumulators(*accumulators))
-  }
+  fun aggregate(vararg accumulators: AccumulatorWithAlias): Pipeline =
+    append(AggregateStage.withAccumulators(*accumulators))
 
-  fun aggregate(aggregateStage: AggregateStage): Pipeline {
-    return append(aggregateStage)
-  }
+  fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)
 
-  private inner class ObserverSnapshotTask() : PipelineResultObserver {
+  private inner class ObserverSnapshotTask : PipelineResultObserver {
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
     private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
     override fun onDocument(key: DocumentKey?, data: Map<String, Value>, version: SnapshotVersion) {
@@ -197,9 +173,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     return Pipeline(firestore, CollectionGroupSource(collectionId))
   }
 
-  fun database(): Pipeline {
-    return Pipeline(firestore, DatabaseSource())
-  }
+  fun database(): Pipeline = Pipeline(firestore, DatabaseSource())
 
   fun documents(vararg documents: String): Pipeline {
     // Validate document path by converting to DocumentReference
@@ -233,16 +207,12 @@ internal constructor(
   private val version: SnapshotVersion,
 ) {
 
-  fun getData(): Map<String, Any?> {
-    return userDataWriter().convertObject(fields)
-  }
+  fun getData(): Map<String, Any?> = userDataWriter().convertObject(fields)
 
   private fun userDataWriter(): UserDataWriter =
     UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
 
-  override fun toString(): String {
-    return "PipelineResult{ref=$ref, version=$version}, data=${getData()}"
-  }
+  override fun toString() = "PipelineResult{ref=$ref, version=$version}, data=${getData()}"
 }
 
 internal interface PipelineResultObserver {
