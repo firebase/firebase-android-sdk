@@ -39,20 +39,49 @@ public class ImagenGenerationConfig(
    *
    * This is mainly intended for Java interop. For Kotlin, use [imagenGenerationConfig] for a more
    * idiomatic experience.
-   *
-   * @property negativePrompt See [ImagenGenerationConfig.negativePrompt].
-   * @property numberOfImages See [ImagenGenerationConfig.numberOfImages].
-   * @property aspectRatio See [ImagenGenerationConfig.aspectRatio].
-   * @property imageFormat See [ImagenGenerationConfig.imageFormat]
-   * @property addWatermark See [ImagenGenerationConfig.addWatermark]
-   * @see [imagenGenerationConfig]
    */
   public class Builder {
-    @JvmField public var negativePrompt: String? = null
-    @JvmField public var numberOfImages: Int? = 1
-    @JvmField public var aspectRatio: ImagenAspectRatio? = null
-    @JvmField public var imageFormat: ImagenImageFormat? = null
-    @JvmField public var addWatermark: Boolean? = null
+    private var negativePrompt: String? = null
+    private var numberOfImages: Int? = 1
+    private var aspectRatio: ImagenAspectRatio? = null
+    private var imageFormat: ImagenImageFormat? = null
+    private var addWatermark: Boolean? = null
+
+    /**
+     * See [ImagenGenerationConfig.negativePrompt].
+     */
+    public fun setNegativePrompt(negativePrompt: String): Builder = apply {
+      this.negativePrompt = negativePrompt
+    }
+
+    /**
+     * See [ImagenGenerationConfig.numberOfImages].
+     */
+    public fun setNumberOfImages(numberOfImages: Int): Builder = apply {
+      this.numberOfImages = numberOfImages
+    }
+
+    /**
+     * See [ImagenGenerationConfig.aspectRatio].
+     */
+    public fun setAspectRatio(aspectRatio: ImagenAspectRatio): Builder = apply {
+      this.aspectRatio = aspectRatio
+    }
+
+    /**
+     * See [ImagenGenerationConfig.imageFormat].
+     */
+    public fun setImageFormat(imageFormat: ImagenImageFormat): Builder = apply {
+      this.imageFormat = imageFormat
+    }
+
+    /**
+     * See [ImagenGenerationConfig.addWatermark].
+     */
+    public fun setAddWatermark(addWatermark: Boolean): Builder = apply {
+      this.addWatermark = addWatermark
+    }
+
 
     /**
      * Alternative casing for [ImagenGenerationConfig.Builder]:
