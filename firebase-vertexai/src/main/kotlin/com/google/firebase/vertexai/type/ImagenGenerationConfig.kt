@@ -26,6 +26,8 @@ package com.google.firebase.vertexai.type
  * @param imageFormat The file format/compression of the generated images.
  * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
  */
+import kotlin.jvm.JvmField
+
 @PublicPreviewAPI
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
@@ -41,47 +43,36 @@ public class ImagenGenerationConfig(
    * idiomatic experience.
    */
   public class Builder {
-    private var negativePrompt: String? = null
-    private var numberOfImages: Int? = 1
-    private var aspectRatio: ImagenAspectRatio? = null
-    private var imageFormat: ImagenImageFormat? = null
-    private var addWatermark: Boolean? = null
+    @JvmField public var negativePrompt: String? = null
+    @JvmField public var numberOfImages: Int? = 1
+    @JvmField public var aspectRatio: ImagenAspectRatio? = null
+    @JvmField public var imageFormat: ImagenImageFormat? = null
+    @JvmField public var addWatermark: Boolean? = null
 
-    /**
-     * See [ImagenGenerationConfig.negativePrompt].
-     */
+    /** See [ImagenGenerationConfig.negativePrompt]. */
     public fun setNegativePrompt(negativePrompt: String): Builder = apply {
       this.negativePrompt = negativePrompt
     }
 
-    /**
-     * See [ImagenGenerationConfig.numberOfImages].
-     */
+    /** See [ImagenGenerationConfig.numberOfImages]. */
     public fun setNumberOfImages(numberOfImages: Int): Builder = apply {
       this.numberOfImages = numberOfImages
     }
 
-    /**
-     * See [ImagenGenerationConfig.aspectRatio].
-     */
+    /** See [ImagenGenerationConfig.aspectRatio]. */
     public fun setAspectRatio(aspectRatio: ImagenAspectRatio): Builder = apply {
       this.aspectRatio = aspectRatio
     }
 
-    /**
-     * See [ImagenGenerationConfig.imageFormat].
-     */
+    /** See [ImagenGenerationConfig.imageFormat]. */
     public fun setImageFormat(imageFormat: ImagenImageFormat): Builder = apply {
       this.imageFormat = imageFormat
     }
 
-    /**
-     * See [ImagenGenerationConfig.addWatermark].
-     */
+    /** See [ImagenGenerationConfig.addWatermark]. */
     public fun setAddWatermark(addWatermark: Boolean): Builder = apply {
       this.addWatermark = addWatermark
     }
-
 
     /**
      * Alternative casing for [ImagenGenerationConfig.Builder]:
@@ -125,4 +116,15 @@ public fun imagenGenerationConfig(
   val builder = ImagenGenerationConfig.builder()
   builder.init()
   return builder.build()
+}
+
+@OptIn(PublicPreviewAPI::class)
+public fun xx() {
+  imagenGenerationConfig {
+    negativePrompt = "People, black and white, painting"
+    numberOfImages = 1
+    aspectRatio = ImagenAspectRatio.SQUARE_1x1
+    imageFormat = ImagenImageFormat.png()
+    addWatermark = false
+  }
 }
