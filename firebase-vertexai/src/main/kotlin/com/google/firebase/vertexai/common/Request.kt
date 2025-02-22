@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:OptIn(ExperimentalSerializationApi::class)
+
 package com.google.firebase.vertexai.common
 
 import com.google.firebase.vertexai.common.util.fullModelName
