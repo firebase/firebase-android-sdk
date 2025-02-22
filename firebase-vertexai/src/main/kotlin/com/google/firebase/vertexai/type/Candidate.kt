@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
