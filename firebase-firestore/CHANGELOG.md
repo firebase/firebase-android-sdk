@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 25.1.2
 * [fixed] Fixed a server and sdk mismatch in unicode string sorting. [#6615](//github.com/firebase/firebase-android-sdk/pull/6615)
