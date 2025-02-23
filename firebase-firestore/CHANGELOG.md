@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Fail snapshot listeners when Firestore terminates. [#6136](//github.com/firebase/firebase-android-sdk/pull/6136)
 
 # 25.1.2
 * [fixed] Fixed a server and sdk mismatch in unicode string sorting. [#6615](//github.com/firebase/firebase-android-sdk/pull/6615)
