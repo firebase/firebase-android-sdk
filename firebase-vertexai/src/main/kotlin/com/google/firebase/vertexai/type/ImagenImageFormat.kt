@@ -41,11 +41,13 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      * @param compressionQuality an int (1-100) representing the quality of the image; a lower
      * number means the image is permitted to be lower quality to reduce size.
      */
+    @JvmStatic
     public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
       return ImagenImageFormat("image/jpeg", compressionQuality)
     }
 
     /** An [ImagenImageFormat] representing a PNG image */
+    @JvmStatic
     public fun png(): ImagenImageFormat {
       return ImagenImageFormat("image/png", null)
     }

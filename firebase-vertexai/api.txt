@@ -428,6 +428,11 @@ package com.google.firebase.vertexai.type {
   public static final class ImagenGenerationConfig.Builder {
     ctor public ImagenGenerationConfig.Builder();
     method public com.google.firebase.vertexai.type.ImagenGenerationConfig build();
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setAddWatermark(boolean addWatermark);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setAspectRatio(com.google.firebase.vertexai.type.ImagenAspectRatio aspectRatio);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setImageFormat(com.google.firebase.vertexai.type.ImagenImageFormat imageFormat);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setNegativePrompt(String negativePrompt);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setNumberOfImages(int numberOfImages);
     field public Boolean? addWatermark;
     field public com.google.firebase.vertexai.type.ImagenAspectRatio? aspectRatio;
     field public com.google.firebase.vertexai.type.ImagenImageFormat? imageFormat;
@@ -453,6 +458,8 @@ package com.google.firebase.vertexai.type {
   @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenImageFormat {
     method public Integer? getCompressionQuality();
     method public String getMimeType();
+    method public static com.google.firebase.vertexai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
+    method public static com.google.firebase.vertexai.type.ImagenImageFormat png();
     property public final Integer? compressionQuality;
     property public final String mimeType;
     field public static final com.google.firebase.vertexai.type.ImagenImageFormat.Companion Companion;

@@ -1,0 +1,197 @@
+{
+    "changesByLibraryName": {
+        "firebase-functions": [
+            {
+                "commitId": "f6b59f69458c288509c64065aa3b5db0a8401d77",
+                "prId": "6694",
+                "author": "emilypgoogle",
+                "message": "Add functions changelog (#6694)\n\nChangelog entry should be picked up for the next release",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6b59f69458c288509c64065aa3b5db0a8401d77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6694"
+            },
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-functions/ktx": [
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "f80ba894db04a3b0c328b192700a97889e5dcfba",
+                "prId": "6691",
+                "author": "Matthew Robertson",
+                "message": "Fix deprecated message in KeyValueBuilder to render properly (#6691)\n\nFix deprecated message in KeyValueBuilder to render properly",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f80ba894db04a3b0c328b192700a97889e5dcfba",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6691"
+            },
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "ed5621e59a3d470d511179f5a04aed9973d6f9b2",
+                "prId": "6701",
+                "author": "Matthew Robertson",
+                "message": "Followup to #6699 (#6701)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ed5621e59a3d470d511179f5a04aed9973d6f9b2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6701"
+            },
+            {
+                "commitId": "de931047365e273fa24cb8162ee04b77f9a0f353",
+                "prId": "6699",
+                "author": "Matthew Robertson",
+                "message": "Make AQS resilient to background init in multi-process apps (#6699)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/de931047365e273fa24cb8162ee04b77f9a0f353",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6699"
+            },
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "95bbf92efb794ee8f7ec2acc6fde823a9cfa4958",
+                "prId": "6607",
+                "author": "David Motsonashvili",
+                "message": "Initial implementation to API spec (#6607)\n\nAdded support for querying imagen models to generate images both in gcs\r\nand inline. Documentation incoming in a separate PR for readability\r\n\r\n---------\r\n\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/95bbf92efb794ee8f7ec2acc6fde823a9cfa4958",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6607"
+            },
+            {
+                "commitId": "e125fb7ff1ac3248fffae32e9d4b2d815505eb4f",
+                "prId": "6681",
+                "author": "Rosário P. Fernandes",
+                "message": "docs: update ImagePart refdocs (#6681)\n\nThe current refdocs are somewhat confusing and may lead to assume that\nthe conversion happens server-side, when it's actually client side.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e125fb7ff1ac3248fffae32e9d4b2d815505eb4f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6681"
+            },
+            {
+                "commitId": "2d1905ec53b25f0d5861f30e7ac89a080cfd5aa9",
+                "prId": "6695",
+                "author": "Rodrigo Lazo",
+                "message": "Make token count details fields non-nullable (#6695)\n\nIf missing, they'll default to empty.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d1905ec53b25f0d5861f30e7ac89a080cfd5aa9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6695"
+            },
+            {
+                "commitId": "301d37a384ccfd68a9d39754abeae6e048f0a08a",
+                "prId": "6685",
+                "author": "David Motsonashvili",
+                "message": "Add support for new FinishReason and BlockReason values (#6685)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/301d37a384ccfd68a9d39754abeae6e048f0a08a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6685"
+            },
+            {
+                "commitId": "d9baf9e7ad7f5bf6c41cd0e40204895a63d27ce2",
+                "prId": "6658",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for token-based usage metrics (#6658)\n\nToken measurement is broken down by modaliy, with separate counters for\nimage, audio, etc.\n\nTests are in version 6.*, so this change also includes bumping\nupdate_responses.sh",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d9baf9e7ad7f5bf6c41cd0e40204895a63d27ce2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6658"
+            },
+            {
+                "commitId": "92f448f94f84c769cae00a78397bb0625031f092",
+                "prId": "6671",
+                "author": "emilypgoogle",
+                "message": "Update Metalava and api.txt files (#6671)\n\nThis includes adding vertex ai api.txt which we were lacking until now",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92f448f94f84c769cae00a78397bb0625031f092",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6671"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-abt",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-database-collection",
+        ":firebase-dataconnect",
+        ":firebase-datatransport",
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-installations",
+        ":firebase-installations:ktx",
+        ":firebase-installations-interop",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-ml-modeldownloader",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx",
+        ":protolite-well-known-types",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck:ktx",
+        ":appcheck:firebase-appcheck-interop",
+        ":encoders:firebase-decoders-json",
+        ":encoders:firebase-encoders-json",
+        ":encoders:firebase-encoders-reflective",
+        ":firebase-components:firebase-dynamic-module-support",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}

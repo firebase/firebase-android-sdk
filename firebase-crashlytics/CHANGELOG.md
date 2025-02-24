@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Updated `firebase-sessions` dependency to v2.0.9
 
 # 19.4.0
 * [feature] Added an overload for `recordException` that allows logging additional custom
