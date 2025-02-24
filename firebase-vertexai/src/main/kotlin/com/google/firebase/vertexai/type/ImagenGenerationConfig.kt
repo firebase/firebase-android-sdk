@@ -117,14 +117,3 @@ public fun imagenGenerationConfig(
   builder.init()
   return builder.build()
 }
-
-@OptIn(PublicPreviewAPI::class)
-public fun xx() {
-  imagenGenerationConfig {
-    negativePrompt = "People, black and white, painting"
-    numberOfImages = 1
-    aspectRatio = ImagenAspectRatio.SQUARE_1x1
-    imageFormat = ImagenImageFormat.png()
-    addWatermark = false
-  }
-}
