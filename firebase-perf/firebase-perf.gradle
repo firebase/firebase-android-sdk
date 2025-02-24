@@ -111,7 +111,7 @@ dependencies {
     implementation libs.dagger.dagger
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
-    api 'com.google.firebase:protolite-well-known-types:18.0.0'
+    api project(":protolite-well-known-types")
     implementation libs.okhttp
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
