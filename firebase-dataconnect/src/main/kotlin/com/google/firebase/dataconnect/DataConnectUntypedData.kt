@@ -22,7 +22,7 @@ import kotlinx.serialization.encoding.Decoder
 
 internal class DataConnectUntypedData(
   val data: Map<String, Any?>?,
-  val errors: List<DataConnectExecuteException.Error>
+  val errors: List<DataConnectOperationResponse.Error>
 ) {
 
   override fun equals(other: Any?) =

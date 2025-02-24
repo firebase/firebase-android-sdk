@@ -110,6 +110,7 @@ dependencies {
   implementation(libs.grpc.stub)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.core)
+  compileOnly(libs.kotlinx.serialization.json)
   implementation(libs.protobuf.java.lite)
   implementation(libs.protobuf.kotlin.lite)
 

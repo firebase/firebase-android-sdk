@@ -16,8 +16,13 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.DataConnectExecuteException.Error.PathSegment
+import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectExecuteException
+import com.google.firebase.dataconnect.DataConnectOperationResponse
+import com.google.firebase.dataconnect.DataConnectOperationResponse.Error.PathSegment
+import com.google.firebase.dataconnect.DataConnectOperationResponseImpl
+import com.google.firebase.dataconnect.DataConnectUntypedData
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -52,7 +57,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectExecuteException.Error>,
+    val errors: List<DataConnectOperationResponse.Error>,
   )
 
   suspend fun executeQuery(
@@ -145,54 +150,53 @@ internal object DataConnectGrpcClientGlobals {
       }
     }
 
-  private fun List<google.firebase.dataconnect.proto.SourceLocation>.toSourceLocations():
-    List<DataConnectExecuteException.Error.SourceLocation> = buildList {
-    this@toSourceLocations.forEach {
-      add(DataConnectExecuteException.Error.SourceLocation(line = it.line, column = it.column))
-    }
-  }
-
   fun GraphqlError.toDataConnectError() =
-    DataConnectExecuteException.Error(
+    DataConnectOperationResponseImpl.ErrorImpl(
       message = message,
       path = path.toPathSegment(),
-      this.locationsList.toSourceLocations()
     )
 
   fun <T> DataConnectGrpcClient.OperationResult.deserialize(
     deserializer: DeserializationStrategy<T>,
     serializersModule: SerializersModule?,
-  ): T =
-    if (deserializer === DataConnectUntypedData) {
+  ): T {
+    return if (deserializer === DataConnectUntypedData) {
       @Suppress("UNCHECKED_CAST")
       DataConnectUntypedData(data?.toMap(), errors) as T
     } else if (data === null) {
       if (errors.isNotEmpty()) {
-        throw DataConnectExecuteException("operation failed: errors=$errors", null, errors)
+        val response =
+          DataConnectOperationResponseImpl<T>(data, errors = errors, decodedData = null)
+        throw DataConnectExecuteException("operation failed: errors=$errors", response = response)
       } else {
-        throw DataConnectExecuteException("no data included in result", null, emptyList())
+        val response =
+          DataConnectOperationResponseImpl<T>(data, errors = emptyList(), decodedData = null)
+        throw DataConnectExecuteException("no data included in result", response = response)
       }
     } else {
       val decodeResult = runCatching { decodeFromStruct(data!!, deserializer, serializersModule) }
       decodeResult.fold(
         onSuccess = {
           if (errors.isNotEmpty()) {
+            val response =
+              DataConnectOperationResponseImpl(data.toMap(), errors = errors, decodedData = it)
             throw DataConnectExecuteException(
               "operation failed: errors=$errors (data=$data)",
-              data = data.toMap(),
-              errors = errors
+              response = response,
             )
           }
           it
         },
         onFailure = {
+          val response =
+            DataConnectOperationResponseImpl<T>(data.toMap(), errors = errors, decodedData = null)
           throw DataConnectExecuteException(
             "decoding response data failed: $it (data=$data)",
             cause = it,
-            data = data.toMap(),
-            errors = errors
+            response = response,
           )
         },
       )
     }
+  }
 }
