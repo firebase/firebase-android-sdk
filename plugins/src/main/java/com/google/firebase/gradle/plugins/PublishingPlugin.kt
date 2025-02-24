@@ -820,7 +820,13 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     /** Artifacts that we use in the tutorial bundle, but _not_ in the bom. */
     val EXTRA_TUTORIAL_ARTIFACTS =
-      listOf("com.google.android.gms:play-services-ads", "com.google.firebase:firebase-ml-vision")
+      listOf(
+        "com.google.android.gms:play-services-ads",
+        "com.google.firebase:firebase-ml-vision",
+        "androidx.credentials:credentials",
+        "androidx.credentials:credentials-play-services-auth",
+        "com.google.android.libraries.identity.googleid:googleid",
+      )
   }
 }
 
