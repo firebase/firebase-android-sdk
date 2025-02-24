@@ -40,6 +40,7 @@ import com.google.firebase.vertexai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -199,6 +200,7 @@ internal constructor(
     return countTokens(content { image(prompt) })
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   private fun constructRequest(vararg prompt: Content) =
     GenerateContentRequest(
       modelName,

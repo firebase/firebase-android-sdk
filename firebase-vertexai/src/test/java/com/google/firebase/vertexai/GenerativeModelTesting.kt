@@ -40,6 +40,7 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import org.junit.Test
 
@@ -127,6 +128,7 @@ internal class GenerativeModelTesting {
     exception.message shouldContain "location"
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
       GenerateContentResponse.Internal(

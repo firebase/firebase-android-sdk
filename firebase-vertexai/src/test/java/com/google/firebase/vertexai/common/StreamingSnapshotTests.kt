@@ -30,8 +30,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.junit.Test
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class StreamingSnapshotTests {
   private val testTimeout = 5.seconds
 
