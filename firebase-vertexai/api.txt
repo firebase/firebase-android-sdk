@@ -446,7 +446,6 @@ package com.google.firebase.vertexai.type {
 
   public final class ImagenGenerationConfigKt {
     method @com.google.firebase.vertexai.type.PublicPreviewAPI public static com.google.firebase.vertexai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
-    method public static void xx();
   }
 
   @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenGenerationResponse<T> {
