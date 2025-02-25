@@ -23,7 +23,7 @@ package com.google.firebase.functions
  * - [Message]: Represents an intermediate event pushed from the server.
  * - [Result]: Represents the final response that signifies the stream has ended.
  */
-public abstract class StreamResponse {
+public abstract class StreamResponse private constructor() {
 
   /**
    * An event message received during the stream.
