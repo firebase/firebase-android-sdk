@@ -46,6 +46,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import org.junit.Test
@@ -84,6 +85,7 @@ internal class APIControllerTests {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class RequestFormatTests {
   @Test
   fun `using default endpoint`() = doBlocking {
