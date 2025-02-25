@@ -20,8 +20,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
-import com.google.firebase.functions.StreamResponse.Message
-import com.google.firebase.functions.StreamResponse.Result
 import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.delay
@@ -49,16 +47,16 @@ class StreamTests {
     internal val onNextList = mutableListOf<StreamResponse>()
     internal var throwable: Throwable? = null
     internal var isComplete = false
-    internal var subscription: Subscription? = null
+    internal lateinit var subscription: Subscription
 
-    override fun onSubscribe(subscription: Subscription?) {
+    override fun onSubscribe(subscription: Subscription) {
       this.subscription = subscription
-      subscription?.request(1)
+      subscription.request(1)
     }
 
     override fun onNext(streamResponse: StreamResponse) {
       onNextList.add(streamResponse)
-      subscription?.request(1)
+      subscription.request(1)
     }
 
     override fun onError(t: Throwable?) {
@@ -81,8 +79,8 @@ class StreamTests {
     while (!subscriber.isComplete) {
       delay(100)
     }
-    val messages = subscriber.onNextList.filterIsInstance<Message>()
-    val results = subscriber.onNextList.filterIsInstance<Result>()
+    val messages = subscriber.onNextList.filter { it.isMessage() }
+    val results = subscriber.onNextList.filter { it.isResult() }
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly(
         "{chunk=hello}",
@@ -113,8 +111,8 @@ class StreamTests {
       throwable = e
     }
 
-    val messages = receivedResponses.filterIsInstance<Message>()
-    val results = receivedResponses.filterIsInstance<Result>()
+    val messages = receivedResponses.filter { it.isMessage() }
+    val results = receivedResponses.filter { it.isResult() }
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly(
         "{chunk=hello}",
@@ -143,7 +141,7 @@ class StreamTests {
       }
     }
 
-    val messages = subscriber.onNextList.filterIsInstance<Message>()
+    val messages = subscriber.onNextList.filter { it.isMessage() }
     val onNextStringList = messages.map { it.message.data.toString() }
     assertThat(onNextStringList).contains("{chunk=hello}")
     assertThat(subscriber.throwable).isNotNull()
@@ -164,8 +162,8 @@ class StreamTests {
         delay(100)
       }
     }
-    val messages = subscriber.onNextList.filterIsInstance<Message>()
-    val results = subscriber.onNextList.filterIsInstance<Result>()
+    val messages = subscriber.onNextList.filter { it.isMessage() }
+    val results = subscriber.onNextList.filter { it.isResult() }
     val onNextStringList = messages.map { it.message.data.toString() }
     assertThat(onNextStringList)
       .containsExactly(
@@ -192,13 +190,13 @@ class StreamTests {
         delay(50)
       }
     }
-    withTimeout(2000) { cancelableSubscriber.subscription?.cancel() }
+    withTimeout(2000) { cancelableSubscriber.subscription.cancel() }
     withTimeout(1000) {
       while (cancelableSubscriber.throwable == null) {
         delay(300)
       }
     }
-    val messages = cancelableSubscriber.onNextList.filterIsInstance<Message>()
+    val messages = cancelableSubscriber.onNextList.filter { it.isMessage() }
     val onNextStringList = messages.map { it.message.data.toString() }
     assertThat(onNextStringList).contains("{chunk=hello}")
     assertThat(onNextStringList).doesNotContain("{chunk=cool}")
