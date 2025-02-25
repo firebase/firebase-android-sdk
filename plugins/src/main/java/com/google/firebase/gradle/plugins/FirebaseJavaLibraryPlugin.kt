@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.CopyApiTask
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
@@ -102,6 +103,11 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       )
 
       dependsOn("copyPreviousArtifacts")
+    }
+
+    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
+      apiTxtFile.set(project.file("api.txt"))
+      output.set(project.file("previous_api.txt"))
     }
   }
 
