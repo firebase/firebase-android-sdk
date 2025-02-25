@@ -92,7 +92,7 @@ class StreamTests {
         "{chunk=cool}"
       )
     assertThat(subscriber.result).isNotNull()
-    assertThat(subscriber.result!!.message.data.toString()).isEqualTo("hello world this is cool")
+    assertThat(subscriber.result!!.result.data.toString()).isEqualTo("hello world this is cool")
     assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.isComplete).isTrue()
   }
@@ -131,7 +131,7 @@ class StreamTests {
         "{chunk=cool}"
       )
     assertThat(result).isNotNull()
-    assertThat(result!!.message.data.toString()).isEqualTo("hello world this is cool")
+    assertThat(result!!.result.data.toString()).isEqualTo("hello world this is cool")
     assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }

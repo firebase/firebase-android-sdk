@@ -22,10 +22,8 @@ package com.google.firebase.functions
  * The SSE stream consists of two types of responses:
  * - [Message]: Represents an intermediate event pushed from the server.
  * - [Result]: Represents the final response that signifies the stream has ended.
- *
- * @property message The data received from the server in the SSE stream.
  */
-public abstract class StreamResponse private constructor(public val message: HttpsCallableResult) {
+public abstract class StreamResponse {
 
   /**
    * An event message received during the stream.
@@ -36,8 +34,10 @@ public abstract class StreamResponse private constructor(public val message: Htt
    * ```json
    * data: { "message": { "chunk": "foo" } }
    * ```
+   *
+   * @property message the intermediate data received from the server.
    */
-  public class Message(message: HttpsCallableResult) : StreamResponse(message)
+  public class Message(public val message: HttpsCallableResult) : StreamResponse()
 
   /**
    * The final result of the computation, marking the end of the stream.
@@ -50,6 +50,8 @@ public abstract class StreamResponse private constructor(public val message: Htt
    * ```json
    * data: { "result": { "text": "foo bar" } }
    * ```
+   *
+   * @property result the final computed result received from the server.
    */
-  public class Result(result: HttpsCallableResult) : StreamResponse(result)
+  public class Result(public val result: HttpsCallableResult) : StreamResponse()
 }
