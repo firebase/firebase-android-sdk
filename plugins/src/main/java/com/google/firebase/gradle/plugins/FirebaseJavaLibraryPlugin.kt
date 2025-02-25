@@ -16,7 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.firebase.gradle.CopyApiTask
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
