@@ -180,7 +180,9 @@ public class GaugeManager {
   }
 
   /**
-   * Starts the collection of available Gauges for the given {@code appState}.
+   * Starts the collection of available Gauges for the given {@code appState}. Do note that
+   * uploading the gauges *only* starts after calling
+   * {@link #updateGaugeCollection(ApplicationProcessState)}
    *
    * @param appState The app state to which the collected gauges are associated.
    * @param referenceTime The time off which the system time is calculated when collecting gauges.
