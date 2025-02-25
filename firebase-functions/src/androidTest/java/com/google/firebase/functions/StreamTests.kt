@@ -44,19 +44,23 @@ class StreamTests {
   }
 
   internal class StreamSubscriber : Subscriber<StreamResponse> {
-    internal val onNextList = mutableListOf<StreamResponse>()
+    internal val messages = mutableListOf<StreamResponse.Message>()
+    internal var result: StreamResponse.Result? = null
     internal var throwable: Throwable? = null
     internal var isComplete = false
     internal lateinit var subscription: Subscription
 
     override fun onSubscribe(subscription: Subscription) {
       this.subscription = subscription
-      subscription.request(1)
+      subscription.request(Long.MAX_VALUE)
     }
 
     override fun onNext(streamResponse: StreamResponse) {
-      onNextList.add(streamResponse)
-      subscription.request(1)
+      if (streamResponse is StreamResponse.Message) {
+        messages.add(streamResponse)
+      } else {
+        result = streamResponse as StreamResponse.Result
+      }
     }
 
     override fun onError(t: Throwable?) {
@@ -79,9 +83,7 @@ class StreamTests {
     while (!subscriber.isComplete) {
       delay(100)
     }
-    val messages = subscriber.onNextList.filter { it.isMessage() }
-    val results = subscriber.onNextList.filter { it.isResult() }
-    assertThat(messages.map { it.message.data.toString() })
+    assertThat(subscriber.messages.map { it.message.data.toString() })
       .containsExactly(
         "{chunk=hello}",
         "{chunk=world}",
@@ -89,8 +91,8 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(results).hasSize(1)
-    assertThat(results.first().message.data.toString()).isEqualTo("hello world this is cool")
+    assertThat(subscriber.result).isNotNull()
+    assertThat(subscriber.result!!.message.data.toString()).isEqualTo("hello world this is cool")
     assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.isComplete).isTrue()
   }
@@ -101,18 +103,25 @@ class StreamTests {
     val function = functions.getHttpsCallable("genStream")
     var isComplete = false
     var throwable: Throwable? = null
+    val messages = mutableListOf<StreamResponse.Message>()
+    var result: StreamResponse.Result? = null
 
     val flow = function.stream(input).asFlow()
-    val receivedResponses = mutableListOf<StreamResponse>()
     try {
-      withTimeout(1000) { flow.collect { response -> receivedResponses.add(response) } }
+      withTimeout(1000) {
+        flow.collect { response ->
+          if (response is StreamResponse.Message) {
+            messages.add(response)
+          } else {
+            result = response as StreamResponse.Result
+          }
+        }
+      }
       isComplete = true
     } catch (e: Throwable) {
       throwable = e
     }
 
-    val messages = receivedResponses.filter { it.isMessage() }
-    val results = receivedResponses.filter { it.isResult() }
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly(
         "{chunk=hello}",
@@ -121,8 +130,8 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(results).hasSize(1)
-    assertThat(results.first().message.data.toString()).isEqualTo("hello world this is cool")
+    assertThat(result).isNotNull()
+    assertThat(result!!.message.data.toString()).isEqualTo("hello world this is cool")
     assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }
@@ -141,9 +150,7 @@ class StreamTests {
       }
     }
 
-    val messages = subscriber.onNextList.filter { it.isMessage() }
-    val onNextStringList = messages.map { it.message.data.toString() }
-    assertThat(onNextStringList).contains("{chunk=hello}")
+    assertThat(subscriber.messages.map { it.message.data.toString() }).contains("{chunk=hello}")
     assertThat(subscriber.throwable).isNotNull()
     assertThat(subscriber.throwable!!.message).isEqualTo("{message=INTERNAL, status=INTERNAL}")
     assertThat(subscriber.isComplete).isFalse()
@@ -158,14 +165,11 @@ class StreamTests {
     function.stream(input).subscribe(subscriber)
 
     withTimeout(2000) {
-      while (subscriber.onNextList.size < 5) {
+      while (subscriber.messages.size < 5) {
         delay(100)
       }
     }
-    val messages = subscriber.onNextList.filter { it.isMessage() }
-    val results = subscriber.onNextList.filter { it.isResult() }
-    val onNextStringList = messages.map { it.message.data.toString() }
-    assertThat(onNextStringList)
+    assertThat(subscriber.messages.map { it.message.data.toString() })
       .containsExactly(
         "{chunk=hello}",
         "{chunk=world}",
@@ -173,7 +177,7 @@ class StreamTests {
         "{chunk=is}",
         "{chunk=cool}"
       )
-    assertThat(results).isEmpty()
+    assertThat(subscriber.result).isNull()
     assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.isComplete).isFalse()
   }
@@ -186,7 +190,7 @@ class StreamTests {
     val cancelableSubscriber = StreamSubscriber()
     publisher.subscribe(cancelableSubscriber)
     withTimeout(2000) {
-      while (cancelableSubscriber.onNextList.isEmpty()) {
+      while (cancelableSubscriber.messages.isEmpty()) {
         delay(50)
       }
     }
@@ -196,10 +200,9 @@ class StreamTests {
         delay(300)
       }
     }
-    val messages = cancelableSubscriber.onNextList.filter { it.isMessage() }
-    val onNextStringList = messages.map { it.message.data.toString() }
-    assertThat(onNextStringList).contains("{chunk=hello}")
-    assertThat(onNextStringList).doesNotContain("{chunk=cool}")
+    val messagesAsStringList = cancelableSubscriber.messages.map { it.message.data.toString() }
+    assertThat(messagesAsStringList).contains("{chunk=hello}")
+    assertThat(messagesAsStringList).doesNotContain("{chunk=cool}")
     assertThat(cancelableSubscriber.throwable!!.message!!.uppercase()).contains("CANCEL")
     assertThat(cancelableSubscriber.isComplete).isFalse()
   }

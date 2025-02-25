@@ -51,11 +51,5 @@ public abstract class StreamResponse private constructor(public val message: Htt
    * data: { "result": { "text": "foo bar" } }
    * ```
    */
-  public class Result(message: HttpsCallableResult) : StreamResponse(message)
-
-  /** Returns `true` if this response is a stream message, `false` otherwise. */
-  public fun isMessage(): Boolean = this is Message
-
-  /** Returns `true` if this response marks the end of the stream, `false` otherwise. */
-  public fun isResult(): Boolean = this is Result
+  public class Result(result: HttpsCallableResult) : StreamResponse(result)
 }

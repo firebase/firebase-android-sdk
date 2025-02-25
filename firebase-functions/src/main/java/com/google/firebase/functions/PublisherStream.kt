@@ -213,7 +213,7 @@ internal class PublisherStream(
         }
         json.has("result") -> {
           serializer.decode(json.opt("result"))?.let {
-            messageQueue.add(StreamResponse.Result(message = HttpsCallableResult(it)))
+            messageQueue.add(StreamResponse.Result(result = HttpsCallableResult(it)))
             dispatchMessages()
             notifyComplete()
           }
