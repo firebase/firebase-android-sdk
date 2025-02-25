@@ -667,7 +667,6 @@ public class FirebaseRemoteConfig {
    *   <li>Setting a key's value to {@code null} will remove the associated signal.
    * </ul>
    */
-  // TODO(b/385028620): Add link to documentation about custom signal limits.
   @NonNull
   public Task<Void> setCustomSignals(@NonNull CustomSignals customSignals) {
     return Tasks.call(
