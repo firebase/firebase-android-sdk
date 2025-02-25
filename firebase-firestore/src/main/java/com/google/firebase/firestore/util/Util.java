@@ -113,13 +113,7 @@ public class Util {
 
   private static String getUtf8SafeBytes(String str, int index) {
     int firstCodePoint = str.codePointAt(index);
-    if (firstCodePoint > 0xffff) {
-      // It's a surrogate pair, return the whole pair
-      return str.substring(index, index + 2);
-    } else {
-      // It's a single code point, return it
-      return str.substring(index, index + 1);
-    }
+    return str.substring(index, index + Character.charCount(firstCodePoint));
   }
 
   /**
