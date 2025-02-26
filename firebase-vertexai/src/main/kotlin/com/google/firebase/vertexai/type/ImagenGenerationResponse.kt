@@ -17,9 +17,10 @@
 package com.google.firebase.vertexai.type
 
 import kotlinx.serialization.Serializable
+import com.google.firebase.vertexai.ImagenModel
 
 /**
- * Represents a response from a call to [ImagenModel#generateImages]
+ * Represents a response from a call to [ImagenModel.generateImages]
  *
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
