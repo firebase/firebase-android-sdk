@@ -98,12 +98,9 @@ public class UtilTest {
     StringGenerator stringGenerator = new StringGenerator(29750468);
     StringPairGenerator stringPairGenerator = new StringPairGenerator(stringGenerator);
     for (int i = 0; i < 1_000_000 && errors.size() < 10; i++) {
-      final String s1, s2;
-      {
-        StringPairGenerator.StringPair stringPair = stringPairGenerator.next();
-        s1 = stringPair.s1;
-        s2 = stringPair.s2;
-      }
+      StringPairGenerator.StringPair stringPair = stringPairGenerator.next();
+      final String s1 = stringPair.s1;
+      final String s2 = stringPair.s2;
 
       int actual = Util.compareUtf8Strings(s1, s2);
 
@@ -190,41 +187,36 @@ public class UtilTest {
 
     public StringGenerator(Random rnd, float surrogatePairProbability, int maxLength) {
       this.rnd = rnd;
-      this.surrogatePairProbability =
-          validateProbability("surrogate pair", surrogatePairProbability);
-      this.maxLength = validateLength("maximum string", maxLength);
+      this.surrogatePairProbability = validateProbability(surrogatePairProbability);
+      this.maxLength = validateLength(maxLength);
     }
 
-    private static float validateProbability(String name, float probability) {
+    private static float validateProbability(float probability) {
       if (!Float.isFinite(probability)) {
         throw new IllegalArgumentException(
-            "invalid "
-                + name
-                + " probability: "
+            "invalid surrogate pair probability: "
                 + probability
                 + " (must be between 0.0 and 1.0, inclusive)");
       } else if (probability < 0.0f) {
         throw new IllegalArgumentException(
-            "invalid "
-                + name
-                + " probability: "
+            "invalid surrogate pair probability: "
                 + probability
                 + " (must be greater than or equal to zero)");
       } else if (probability > 1.0f) {
         throw new IllegalArgumentException(
-            "invalid "
-                + name
-                + " probability: "
+            "invalid surrogate pair probability: "
                 + probability
                 + " (must be less than or equal to 1)");
       }
       return probability;
     }
 
-    private static int validateLength(String name, int length) {
+    private static int validateLength(int length) {
       if (length < 0) {
         throw new IllegalArgumentException(
-            "invalid " + name + " length: " + length + " (must be greater than or equal to zero)");
+            "invalid maximum string length: "
+                + length
+                + " (must be greater than or equal to zero)");
       }
       return length;
     }
