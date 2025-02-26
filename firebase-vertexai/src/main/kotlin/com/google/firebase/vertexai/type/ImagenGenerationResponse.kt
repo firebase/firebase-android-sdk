@@ -16,8 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
-import kotlinx.serialization.Serializable
 import com.google.firebase.vertexai.ImagenModel
+import kotlinx.serialization.Serializable
 
 /**
  * Represents a response from a call to [ImagenModel.generateImages]
