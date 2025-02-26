@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,8 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 abstract class CopyApiTask : DefaultTask() {
-  @get:InputFile
-  abstract val apiTxtFile: RegularFileProperty
-  @get:OutputFile
-  abstract val output: RegularFileProperty
+  @get:InputFile abstract val apiTxtFile: RegularFileProperty
+  @get:OutputFile abstract val output: RegularFileProperty
 
   @TaskAction
   fun run() {
