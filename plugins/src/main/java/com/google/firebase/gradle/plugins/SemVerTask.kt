@@ -1,6 +1,23 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.semver.VersionDelta
+import java.io.ByteArrayOutputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
@@ -9,30 +26,25 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.io.ByteArrayOutputStream
 
 abstract class SemVerTask : DefaultTask() {
-  @get:InputFile
-  abstract val apiTxtFile: RegularFileProperty
-  @get:InputFile
-  abstract val otherApiFile: RegularFileProperty
-  @get:Input
-  abstract val currentVersionString: Property<String>
-  @get:Input
-  abstract val previousVersionString: Property<String>
+  @get:InputFile abstract val apiTxtFile: RegularFileProperty
+  @get:InputFile abstract val otherApiFile: RegularFileProperty
+  @get:Input abstract val currentVersionString: Property<String>
+  @get:Input abstract val previousVersionString: Property<String>
 
-  @get:OutputFile
-  abstract val outputApiFile: RegularFileProperty
+  @get:OutputFile abstract val outputApiFile: RegularFileProperty
 
   @TaskAction
   fun run() {
-    val regex = Regex("\\d+\\.\\d+\\.\\d.*")
-    if (!previousVersionString.get().matches(regex) || !currentVersionString.get().matches(regex)) {
+    val previous = ModuleVersion.fromStringOrNull(previousVersionString.get())
+    val current = ModuleVersion.fromStringOrNull(currentVersionString.get())
+    if (previous == null || current == null) {
       return // If these variables don't exist, no reason to check API
     }
-    val (previousMajor, previousMinor, previousPatch) = previousVersionString.get().split(".")
-    val (currentMajor, currentMinor, currentPatch) = currentVersionString.get().split(".")
-    val bump = if (previousMajor != currentMajor) VersionDelta.MAJOR else if (previousMinor != currentMinor) VersionDelta.MINOR else VersionDelta.PATCH
+    val bump =
+      if (previous.major != current.major) VersionDelta.MAJOR
+      else if (previous.minor != current.minor) VersionDelta.MINOR else VersionDelta.PATCH
     val stream = ByteArrayOutputStream()
     project.runMetalavaWithArgs(
       listOf(
