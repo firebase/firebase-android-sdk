@@ -57,7 +57,7 @@ enum class PreReleaseVersionType {
  * Where `Type` is a case insensitive string of any [PreReleaseVersionType], and `Build` is a two
  * digit number (single digits should have a leading zero).
  *
- * Note that `build` will always be present as starting at one by default. That is, the following
+ * Note that `build` will always be present as starting at one by defalt. That is, the following
  * transform occurs:
  * ```
  * "12.13.1-beta" // 12.13.1-beta01
@@ -235,6 +235,30 @@ data class ModuleVersion(
   }
 
   /**
+   * Determine the [VersionType] representing the bump that would be required to reach [other], if
+   * any.
+   *
+   * ```
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(2,1,3)).shouldBeEqual(VersionType.MAJOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,1,3)).shouldBeEqual(VersionType.MINOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,3)).shouldBeEqual(VersionType.PATCH)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,0)).shouldBeNull()
+   * ```
+   *
+   * @param other The target version to get the bump for.
+   * @return A [VersionType] representing the bump that this version would need to reach [other], or
+   *   null if they're the same version.
+   */
+  fun bumpFrom(other: ModuleVersion): VersionType? {
+    if (other.major != this.major) return VersionType.MAJOR
+    if (other.minor != this.minor) return VersionType.MINOR
+    if (other.patch != this.patch) return VersionType.PATCH
+    if (other.pre != this.pre) return VersionType.PRE
+
+    return null
+  }
+
+  /**
    * Returns a copy of this [ModuleVersion], with the given [VersionType] increased by one.
    *
    * @param version the [VersionType] to increase; defaults to the lowest valid version ([pre] else
@@ -245,9 +269,10 @@ data class ModuleVersion(
       .let { it ?: if (pre != null) VersionType.PRE else VersionType.PATCH }
       .let {
         when (it) {
-          VersionType.MAJOR -> copy(major = major + 1)
-          VersionType.MINOR -> copy(minor = minor + 1)
-          VersionType.PATCH -> copy(patch = patch + 1)
+          VersionType.MAJOR ->
+            copy(major = major + 1, minor = 0, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.MINOR -> copy(minor = minor + 1, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.PATCH -> copy(patch = patch + 1, pre = pre?.copy(build = 1))
           VersionType.PRE -> copy(pre = pre?.bump())
         }
       }
