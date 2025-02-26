@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] Changed gRPC proto package to v1 (was v1beta).
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 16.0.0-beta04
 * [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
