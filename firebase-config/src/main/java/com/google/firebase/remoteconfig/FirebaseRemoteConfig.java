@@ -656,9 +656,9 @@ public class FirebaseRemoteConfig {
    * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
    *
    * <p>Custom signals are subject to limits on the size of key/value pairs and the total
-   * number of signals. Any calls that exceed these limits will be discarded.  See the <a
+   * number of signals. Any calls that exceed these limits will be discarded. See <a
    * href="https://firebase.google.com/docs/remote-config/parameters?template_type=client#custom-signal-limits">Custom
-   * Signal Limits</a> to check them.
+   * Signal Limits</a>.
    *
    * @param customSignals The custom signals to set for this instance.
    * <ul>
