@@ -1939,4 +1939,53 @@ public class FirestoreTest {
 
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
+
+  @Test
+  public void snapshotListenerSortsInvalidUnicodeStringsAsServer() {
+    // Note: Protocol Buffer converts any invalid surrogates to "?".
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a",
+            map("value", "Z"),
+            "b",
+            map("value", "你好"),
+            "c",
+            map("value", "😀"),
+            "d",
+            map("value", "ab\uD800"), // Lone high surrogate
+            "e",
+            map("value", "ab\uDC00"), // Lone low surrogate
+            "f",
+            map("value", "ab\uD800\uD800"), // Unpaired high surrogate
+            "g",
+            map("value", "ab\uDC00\uDC00")); // Unpaired low surrogate
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+    Query orderedQuery = colRef.orderBy("value");
+    List<String> expectedDocIds = Arrays.asList("a", "d", "e", "f", "g", "b", "c");
+
+    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
+    List<String> getSnapshotDocIds =
+        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+        orderedQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+          watchSnapshot.getDocuments().stream()
+              .map(documentSnapshot -> documentSnapshot.getId())
+              .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
+    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+
+    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+  }
 }

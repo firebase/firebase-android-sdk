@@ -87,7 +87,8 @@ public class Util {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    for (int i = 0; i < left.length() && i < right.length(); i++) {
+    int i = 0;
+    while (i < left.length() && i < right.length()) {
       int leftCodePoint = left.codePointAt(i);
       int rightCodePoint = right.codePointAt(i);
 
@@ -102,9 +103,19 @@ public class Util {
           int comp = compareByteStrings(leftBytes, rightBytes);
           if (comp != 0) {
             return comp;
+          } else {
+            // EXTREMELY RARE CASE: Code points differ, but their UTF-8 byte representations are
+            // identical. This can happen with malformed input (invalid surrogate pairs), where
+            // Java's encoding leads to unexpected byte sequences. Meanwhile, any invalid surrogate
+            // inputs get converted to "?" by protocol buffer while round tripping, so we almost
+            // never receive invalid strings from backend.
+            // Fallback to code point comparison for graceful handling.
+            return Integer.compare(leftCodePoint, rightCodePoint);
           }
         }
       }
+      // Increment by 2 for surrogate pairs, 1 otherwise.
+      i += Character.charCount(leftCodePoint);
     }
 
     // Compare lengths if all characters are equal

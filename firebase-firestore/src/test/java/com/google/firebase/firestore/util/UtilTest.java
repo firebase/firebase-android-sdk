@@ -175,21 +175,10 @@ public class UtilTest {
     private static final float DEFAULT_SURROGATE_PAIR_PROBABILITY = 0.33f;
     private static final int DEFAULT_MAX_LENGTH = 20;
 
-    // The first Unicode code point that is in the basic multilingual plane ("BMP") and,
-    // therefore requires 1 UTF-16 code unit to be represented in UTF-16.
-    private static final int MIN_BMP_CODE_POINT = 0x00000000;
-
-    // The last Unicode code point that is in the basic multilingual plane ("BMP") and,
-    // therefore requires 1 UTF-16 code unit to be represented in UTF-16.
-    private static final int MAX_BMP_CODE_POINT = 0x0000FFFF;
-
-    // The first Unicode code point that is outside of the basic multilingual plane ("BMP") and,
-    // therefore requires 2 UTF-16 code units, a surrogate pair, to be represented in UTF-16.
-    private static final int MIN_SUPPLEMENTARY_CODE_POINT = 0x00010000;
-
-    // The last Unicode code point that is outside of the basic multilingual plane ("BMP") and,
-    // therefore requires 2 UTF-16 code units, a surrogate pair, to be represented in UTF-16.
-    private static final int MAX_SUPPLEMENTARY_CODE_POINT = 0x0010FFFF;
+    private static final int MIN_HIGH_SURROGATE = 0xD800;
+    private static final int MAX_HIGH_SURROGATE = 0xDBFF;
+    private static final int MIN_LOW_SURROGATE = 0xDC00;
+    private static final int MAX_LOW_SURROGATE = 0xDFFF;
 
     private final Random rnd;
     private final float surrogatePairProbability;
@@ -273,27 +262,18 @@ public class UtilTest {
     }
 
     private int nextSurrogateCodePoint() {
-      return nextCodePoint(rnd, MIN_SUPPLEMENTARY_CODE_POINT, MAX_SUPPLEMENTARY_CODE_POINT, 2);
+      int highSurrogate =
+          rnd.nextInt(MAX_HIGH_SURROGATE - MIN_HIGH_SURROGATE + 1) + MIN_HIGH_SURROGATE;
+      int lowSurrogate = rnd.nextInt(MAX_LOW_SURROGATE - MIN_LOW_SURROGATE + 1) + MIN_LOW_SURROGATE;
+      return Character.toCodePoint((char) highSurrogate, (char) lowSurrogate);
     }
 
     private int nextNonSurrogateCodePoint() {
-      return nextCodePoint(rnd, MIN_BMP_CODE_POINT, MAX_BMP_CODE_POINT, 1);
-    }
-
-    private int nextCodePoint(Random rnd, int min, int max, int expectedCharCount) {
-      int rangeSize = max - min;
-      int offset = rnd.nextInt(rangeSize);
-      int codePoint = min + offset;
-      if (Character.charCount(codePoint) != expectedCharCount) {
-        throw new RuntimeException(
-            "internal error vqgqnxcy97: "
-                + "Character.charCount("
-                + codePoint
-                + ") returned "
-                + Character.charCount(codePoint)
-                + ", but expected "
-                + expectedCharCount);
-      }
+      int codePoint;
+      do {
+        codePoint = rnd.nextInt(0x10000); // BMP range
+      } while (codePoint >= MIN_HIGH_SURROGATE
+          && codePoint <= MAX_LOW_SURROGATE); // Exclude surrogate range
       return codePoint;
     }
   }
