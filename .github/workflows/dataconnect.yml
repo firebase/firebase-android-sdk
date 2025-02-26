@@ -220,7 +220,7 @@ jobs:
       - name: Verify \"Gradle connectedCheck\" step was successful
         if: steps.connectedCheck.outcome != 'success'
         run: |
-          echo 'Failing because the outcome of the "Gradle connectedCheck" step was not successful: ${{ steps.connectedCheck.outcome }}'
+          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
           exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
