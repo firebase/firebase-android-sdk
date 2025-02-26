@@ -26,6 +26,8 @@ jobs:
 
       - name: Checkout PR
         uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Run Metalava SemVer check
         run: ./gradlew metalavaSemver
