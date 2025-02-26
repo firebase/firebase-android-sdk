@@ -656,16 +656,17 @@ public class FirebaseRemoteConfig {
    * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
    *
    * <p>Custom signals are subject to limits on the size of key/value pairs and the total
-   * number of signals. Any calls that exceed these limits will be discarded.
+   * number of signals. Any calls that exceed these limits will be discarded. See <a
+   * href="https://firebase.google.com/docs/remote-config/parameters?template_type=client#custom-signal-limits">Custom
+   * Signal Limits</a>.
    *
    * @param customSignals The custom signals to set for this instance.
-   * <ol>
+   * <ul>
    *   <li>New keys will add new key-value pairs in the custom signals.
    *   <li>Existing keys with new values will update the corresponding signals.
    *   <li>Setting a key's value to {@code null} will remove the associated signal.
-   * </ol>
+   * </ul>
    */
-  // TODO(b/385028620): Add link to documentation about custom signal limits.
   @NonNull
   public Task<Void> setCustomSignals(@NonNull CustomSignals customSignals) {
     return Tasks.call(
