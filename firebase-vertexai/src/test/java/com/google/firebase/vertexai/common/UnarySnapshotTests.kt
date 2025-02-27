@@ -16,15 +16,15 @@
 
 package com.google.firebase.vertexai.common
 
-import com.google.firebase.vertexai.common.server.BlockReason
-import com.google.firebase.vertexai.common.server.FinishReason
-import com.google.firebase.vertexai.common.server.HarmProbability
-import com.google.firebase.vertexai.common.server.HarmSeverity
-import com.google.firebase.vertexai.common.shared.FunctionCallPart
-import com.google.firebase.vertexai.common.shared.HarmCategory
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.goldenUnaryFile
 import com.google.firebase.vertexai.common.util.shouldNotBeNullOrEmpty
+import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionCallPart
+import com.google.firebase.vertexai.type.HarmCategory
+import com.google.firebase.vertexai.type.HarmProbability
+import com.google.firebase.vertexai.type.HarmSeverity
+import com.google.firebase.vertexai.type.TextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -53,7 +53,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.candidates?.first()?.content?.parts?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
       }
@@ -67,7 +67,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.candidates?.first()?.content?.parts?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
       }
@@ -81,7 +81,7 @@ internal class UnarySnapshotTests {
 
         response.candidates?.isNullOrEmpty() shouldBe false
         val candidate = response.candidates?.first()
-        candidate?.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } shouldBe true
+        candidate?.safetyRatings?.any { it.category == HarmCategory.Internal.UNKNOWN } shouldBe true
       }
     }
 
@@ -94,12 +94,12 @@ internal class UnarySnapshotTests {
         response.candidates?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.isEmpty() shouldBe false
         response.candidates?.first()?.safetyRatings?.all {
-          it.probability == HarmProbability.NEGLIGIBLE
+          it.probability == HarmProbability.Internal.NEGLIGIBLE
         } shouldBe true
         response.candidates?.first()?.safetyRatings?.all { it.probabilityScore != null } shouldBe
           true
         response.candidates?.first()?.safetyRatings?.all {
-          it.severity == HarmSeverity.NEGLIGIBLE
+          it.severity == HarmSeverity.Internal.NEGLIGIBLE
         } shouldBe true
         response.candidates?.first()?.safetyRatings?.all { it.severityScore != null } shouldBe true
       }
@@ -111,7 +111,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> {
           apiController.generateContent(textGenerateContentRequest("prompt"))
-        } should { it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY }
+        } should { it.response?.promptFeedback?.blockReason shouldBe BlockReason.Internal.SAFETY }
       }
     }
 
@@ -153,7 +153,7 @@ internal class UnarySnapshotTests {
           shouldThrow<ResponseStoppedException> {
             apiController.generateContent(textGenerateContentRequest("prompt"))
           }
-        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.SAFETY
+        exception.response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.SAFETY
       }
     }
 
@@ -191,7 +191,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
       }
@@ -204,7 +204,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
         response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.finishReason shouldBe FinishReason.STOP
+        response.candidates?.first()?.finishReason shouldBe FinishReason.Internal.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.promptTokenCount shouldBe 6
         response.usageMetadata?.totalTokenCount shouldBe null
@@ -231,7 +231,12 @@ internal class UnarySnapshotTests {
 
         response.candidates?.isEmpty() shouldBe false
         with(
-          response.candidates?.first()?.content?.parts?.first()?.shouldBeInstanceOf<TextPart>()
+          response.candidates
+            ?.first()
+            ?.content
+            ?.parts
+            ?.first()
+            ?.shouldBeInstanceOf<TextPart.Internal>()
         ) {
           shouldNotBeNull()
           JSON.decodeFromString<List<MountainColors>>(text).shouldNotBeEmpty()
@@ -315,7 +320,8 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("success-function-call-null.json") {
       withTimeout(testTimeout) {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
-        val callPart = (response.candidates!!.first().content!!.parts.first() as FunctionCallPart)
+        val callPart =
+          (response.candidates!!.first().content!!.parts.first() as FunctionCallPart.Internal)
 
         callPart.functionCall.args shouldNotBe null
         callPart.functionCall.args?.get("season") shouldBe null
@@ -333,7 +339,7 @@ internal class UnarySnapshotTests {
           content.let {
             it.shouldNotBeNull()
             it.parts.shouldNotBeEmpty()
-            it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
+            it.parts.first().shouldBeInstanceOf<FunctionCallPart.Internal>()
           }
 
         callPart.functionCall.args shouldNotBe null
@@ -349,7 +355,7 @@ internal class UnarySnapshotTests {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
         val content = response.candidates.shouldNotBeNullOrEmpty().first().content
         content.shouldNotBeNull()
-        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart.Internal
 
         callPart.functionCall.name shouldBe "current_time"
         callPart.functionCall.args shouldBe null

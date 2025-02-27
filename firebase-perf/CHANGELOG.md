@@ -1,5 +1,16 @@
 # Unreleased
+* [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]
 
+
+# 21.0.4
+* [fixed] Fixed a performance issue with shared preferences
+  calling `.apply()` every time a value is read from remote config (#6407)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.3
 * [changed] Bump internal dependencies.

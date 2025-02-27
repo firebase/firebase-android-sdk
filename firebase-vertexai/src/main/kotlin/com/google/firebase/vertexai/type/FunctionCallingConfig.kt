@@ -16,6 +16,9 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * The configuration that specifies the function calling behavior.
  *
@@ -42,7 +45,21 @@ internal constructor(
      * The model will never predict a function call to answer a query. This can also be achieved by
      * not passing any tools to the model.
      */
-    NONE
+    NONE,
+  }
+
+  @Serializable
+  internal data class Internal(
+    val mode: Mode,
+    @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
+  ) {
+    @Serializable
+    enum class Mode {
+      @SerialName("MODE_UNSPECIFIED") UNSPECIFIED,
+      AUTO,
+      ANY,
+      NONE,
+    }
   }
 
   public companion object {

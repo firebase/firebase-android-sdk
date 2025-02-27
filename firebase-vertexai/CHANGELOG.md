@@ -1,5 +1,10 @@
 # Unreleased
+* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
+* [changed] Added support for modality-based token count. (#6658)
+* [feature] Added support for generating images with Imagen models.
 
+# 16.1.0
+* [changed] Internal improvements to correctly handle empty model responses.
 
 # 16.0.2
 * [fixed] Improved error message when using an invalid location. (#6428)
