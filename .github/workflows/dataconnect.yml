@@ -217,10 +217,10 @@ jobs:
           if-no-files-found: warn
           compression-level: 9
 
-      - name: Check test result
+      - name: Verify "Gradle connectedCheck" step was successful
         if: steps.connectedCheck.outcome != 'success'
         run: |
-          echo "Failing the job since the connectedCheck step failed"
+          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
           exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
