@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.firebase.dataconnect.DataConnectOperationResponse.Error
+import com.google.firebase.dataconnect.DataConnectOperationResponse.Error.PathSegment
 import java.util.Objects
 import kotlinx.serialization.json.JsonObject
 
@@ -28,7 +28,7 @@ public open class DataConnectExecuteException(
 
 internal class DataConnectOperationResponseImpl<T>(
   override val data: Map<String, Any?>?,
-  override val errors: List<Error>,
+  override val errors: List<DataConnectOperationResponse.Error>,
   override val decodedData: T?,
 ) : DataConnectOperationResponse<T> {
   override fun toJson(): JsonObject = TODO()
@@ -48,8 +48,8 @@ internal class DataConnectOperationResponseImpl<T>(
       "decodedData=$decodedData" +
       ")"
 
-  class ErrorImpl(override val message: String, override val path: List<Error.PathSegment>) :
-    Error {
+  class ErrorImpl(override val message: String, override val path: List<PathSegment>) :
+    DataConnectOperationResponse.Error {
     override fun hashCode(): Int = Objects.hash(message, path)
 
     override fun equals(other: Any?): Boolean =
