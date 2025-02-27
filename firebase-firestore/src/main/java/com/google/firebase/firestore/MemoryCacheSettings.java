@@ -66,7 +66,7 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
 
   /** A Builder for creating {@code MemoryCacheSettings} instance. */
   public static class Builder {
-    private MemoryGarbageCollectorSettings gcSettings = MemoryEagerGcSettings.newBuilder().build();
+    private MemoryGarbageCollectorSettings gcSettings = MemoryLruGcSettings.newBuilder().build();
 
     private Builder() {}
 
