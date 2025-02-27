@@ -37,9 +37,9 @@ abstract class SemVerTask : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val previous = ModuleVersion.fromStringOrNull(previousVersionString.get())
-    val current = ModuleVersion.fromStringOrNull(currentVersionString.get())
-    if (previous == null || current == null) {
+    val previous = ModuleVersion.fromStringOrNull(previousVersionString.get()) ?: return
+    val current = ModuleVersion.fromStringOrNull(currentVersionString.get()) ?: return
+
       return // If these variables don't exist, no reason to check API
     }
     val bump =
