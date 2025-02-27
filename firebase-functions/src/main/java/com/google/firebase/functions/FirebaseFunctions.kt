@@ -58,7 +58,7 @@ internal constructor(
   @UiThread uiExecutor: Executor
 ) {
   // The network client to use for HTTPS requests.
-  private val client: OkHttpClient = OkHttpClient()
+  private var client: OkHttpClient = OkHttpClient()
 
   // A serializer to encode/decode parameters and return values.
   private val serializer: Serializer = Serializer()
@@ -310,6 +310,12 @@ internal constructor(
     )
     return tcs.task
   }
+
+  public fun setOkHttpClient(client: OkHttpClient) {
+    this.client = client
+  }
+
+  public fun getOkHttpClient(): OkHttpClient = this.client
 
   public companion object {
     /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
