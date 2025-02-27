@@ -1,4 +1,19 @@
 # Unreleased
+* [fixed] Added custom tab support for more browsers [#6692]
+
+# 16.0.0-beta14
+* [changed] Internal improvements to testing on Android 14
+
+# 16.0.0-beta13
+* [changed] Bump internal dependencies
+
+# 16.0.0-beta12
+* [changed] Bump internal dependencies.
+
+# 16.0.0-beta10
+* [fixed] Updated the third-party license file to include Dagger's license.
+
+# 16.0.0-beta09
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
 
 # 16.0.0-beta08
@@ -45,10 +60,8 @@
 # 16.0.0-beta02
 * [fixed] Fixed a bug that prevented testers from signing in when the app had
 an underscore in the package name.
-
 * [fixed] Fixed a UI bug where the APK download notification displayed the
 incorrect error message.
-
 * [changed] Internal improvements to tests.
 
 

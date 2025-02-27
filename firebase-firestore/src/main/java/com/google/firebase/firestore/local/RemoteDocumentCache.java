@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents cached documents received from the remote backend.
@@ -89,4 +90,21 @@ interface RemoteDocumentCache {
    */
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
+
+  /**
+   * Returns the documents that match the given query.
+   *
+   * @param query The query to match against remote documents.
+   * @param offset The read time and document key to start scanning at (exclusive).
+   * @param mutatedKeys The keys of documents who have mutations attached, they should be read
+   *     regardless whether they match the given query.
+   * @param context A optional tracker to keep a record of important details during database local
+   *     query execution.
+   * @return A newly created map with the set of documents in the collection.
+   */
+  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nullable QueryContext context);
 }

@@ -60,5 +60,7 @@ public class FirebasePerformanceTest {
     for (Future<?> future : futureList) {
       future.get();
     }
+    // Default wait between flushes is 30s.
+    Thread.sleep(40 * 1000);
   }
 }

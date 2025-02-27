@@ -60,7 +60,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   private final LocalSerializer serializer;
   private final IndexManager indexManager;
 
-  /** The normalized uid (e.g. null => "") used in the uid column. */
+  /** The normalized uid (for example, null => "") used in the uid column. */
   private final String uid;
 
   /**
@@ -341,10 +341,10 @@ final class SQLiteMutationQueue implements MutationQueue {
     // Scan the document_mutations table looking for documents whose path has a prefix that matches
     // the query path.
     //
-    // The most obvious way to do this would be with a LIKE query with a trailing wildcard (e.g.
-    // path LIKE 'foo/%'). Unfortunately SQLite does not convert a trailing wildcard like that into
-    // the equivalent range scan so a LIKE query ends up being a table scan. The query below is
-    // equivalent but hits the index on both uid and path, so it's much faster.
+    // The most obvious way to do this would be with a LIKE query with a trailing wildcard (for
+    // example, path LIKE 'foo/%'). Unfortunately SQLite does not convert a trailing wildcard like
+    // that into the equivalent range scan so a LIKE query ends up being a table scan. The query
+    // below is equivalent but hits the index on both uid and path, so it's much faster.
 
     // TODO: Actually implement a single-collection query
     //

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 7.4.2" type="baseline" client="gradle" dependencies="false" name="AGP (7.4.2)" variant="all" version="7.4.2">
+
+    <issue
+        id="CheckResult"
+        message="The result of `placeholder` is not used"
+        errorLine1="      requestBuilder.placeholder(placeholderResId);"
+        errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/FiamImageLoader.java"
+            line="95"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: Gravity.FILL, Gravity.FILL_HORIZONTAL, Gravity.FILL_VERTICAL, Gravity.START, Gravity.END, Gravity.LEFT, Gravity.RIGHT, Gravity.TOP, Gravity.BOTTOM, Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL, Gravity.DISPLAY_CLIP_HORIZONTAL, Gravity.DISPLAY_CLIP_VERTICAL, Gravity.CLIP_HORIZONTAL, Gravity.CLIP_VERTICAL, Gravity.NO_GRAVITY"
+        errorLine1="    layoutParams.gravity = layoutConfig.viewWindowGravity();"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/FiamWindowManager.java"
+            line="120"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="InflateParams"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)"
+        errorLine1="    View root = inflater.inflate(R.layout.banner, null);"
+        errorLine2="                                                  ~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/bindingwrappers/BannerBindingWrapper.java"
+            line="67"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="InflateParams"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)"
+        errorLine1="    View root = inflater.inflate(R.layout.card, null);"
+        errorLine2="                                                ~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/bindingwrappers/CardBindingWrapper.java"
+            line="72"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="InflateParams"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)"
+        errorLine1="    View v = inflater.inflate(R.layout.image, null);"
+        errorLine2="                                              ~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/bindingwrappers/ImageBindingWrapper.java"
+            line="65"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="InflateParams"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)"
+        errorLine1="    View root = inflater.inflate(R.layout.modal, null);"
+        errorLine2="                                                 ~~~~">
+        <location
+            file="src/main/java/com/google/firebase/inappmessaging/display/internal/bindingwrappers/ModalBindingWrapper.java"
+            line="72"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="DisableBaselineAlignment"
+        message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance"
+        errorLine1="    &lt;LinearLayout"
+        errorLine2="     ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/banner.xml"
+            line="12"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.placeholder_50_50` appears to be unused">
+        <location
+            file="src/debug/res/drawable-mdpi/placeholder_50_50.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_content_descriptor` appears to be unused"
+        errorLine1="  &lt;string name=&quot;card_content_descriptor&quot;>card&lt;/string>"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="3"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="src/main/res/layout-land/card_landscape_inner.xml"
+            line="16"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="ContentDescription"
+        message="Missing `contentDescription` attribute on image"
+        errorLine1="    &lt;ImageView"
+        errorLine2="     ~~~~~~~~~">
+        <location
+            file="src/main/res/layout/card_portrait_inner.xml"
+            line="14"
+            column="6"/>
+    </issue>
+
+    <issue
+        id="RtlEnabled"
+        message="The project references RTL attributes, but does not explicitly enable or disable RTL support with `android:supportsRtl` in the manifest">
+        <location
+            file="src/main/AndroidManifest.xml"/>
+    </issue>
+
+    <issue
+        id="IgnoreWithoutReason"
+        message="Test is ignored without giving any explanation"
+        errorLine1="  @Ignore"
+        errorLine2="  ~~~~~~~">
+        <location
+            file="src/test/java/com/google/firebase/inappmessaging/display/FirebaseInAppMessagingDisplayTest.java"
+            line="366"
+            column="3"/>
+    </issue>
+
+</issues>

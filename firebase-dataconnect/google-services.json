@@ -1,0 +1,24 @@
+{
+  "project_info": {
+    "project_number": "12345678901",
+    "firebase_url": "https://prjh5zbv64sv6.firebaseio.com",
+    "project_id": "prjh5zbv64sv6",
+    "storage_bucket": "prjh5zbv64sv6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12345678901:android:1234567890abcdef123456",
+        "android_client_info": {
+          "package_name": "com.google.firebase.dataconnect"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzayDNSXIbFmlXbIE6mCzDLQAqITYefhixbX4A"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}

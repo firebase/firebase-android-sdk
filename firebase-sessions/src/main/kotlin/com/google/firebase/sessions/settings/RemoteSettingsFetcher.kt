@@ -26,7 +26,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-internal interface CrashlyticsSettingsFetcher {
+internal fun interface CrashlyticsSettingsFetcher {
   suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
@@ -46,12 +46,12 @@ internal class RemoteSettingsFetcher(
     onFailure: suspend (String) -> Unit
   ) =
     withContext(blockingDispatcher) {
-      val connection = settingsUrl().openConnection() as HttpsURLConnection
-      connection.requestMethod = "GET"
-      connection.setRequestProperty("Accept", "application/json")
-      headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
-
       try {
+        val connection = settingsUrl().openConnection() as HttpsURLConnection
+        connection.requestMethod = "GET"
+        connection.setRequestProperty("Accept", "application/json")
+        headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
+
         val responseCode = connection.responseCode
         if (responseCode == HttpsURLConnection.HTTP_OK) {
           val inputStream = connection.inputStream

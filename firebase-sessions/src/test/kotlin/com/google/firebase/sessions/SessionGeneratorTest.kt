@@ -42,7 +42,6 @@ class SessionGeneratorTest {
   fun currentSession_beforeGenerate_throwsUninitialized() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = false,
         timeProvider = FakeTimeProvider(),
       )
 
@@ -53,7 +52,6 @@ class SessionGeneratorTest {
   fun hasGenerateSession_beforeGenerate_returnsFalse() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = false,
         timeProvider = FakeTimeProvider(),
       )
 
@@ -64,7 +62,6 @@ class SessionGeneratorTest {
   fun hasGenerateSession_afterGenerate_returnsTrue() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = false,
         timeProvider = FakeTimeProvider(),
       )
 
@@ -77,7 +74,6 @@ class SessionGeneratorTest {
   fun generateNewSession_generatesValidSessionIds() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = true,
         timeProvider = FakeTimeProvider(),
       )
 
@@ -96,7 +92,6 @@ class SessionGeneratorTest {
   fun generateNewSession_generatesValidSessionDetails() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = true,
         timeProvider = FakeTimeProvider(),
         uuidGenerator = UUIDs()::next,
       )
@@ -123,7 +118,6 @@ class SessionGeneratorTest {
   fun generateNewSession_incrementsSessionIndex_keepsFirstSessionId() {
     val sessionGenerator =
       SessionGenerator(
-        collectEvents = true,
         timeProvider = FakeTimeProvider(),
         uuidGenerator = UUIDs()::next,
       )

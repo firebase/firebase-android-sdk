@@ -14,6 +14,7 @@
 
 package com.google.firebase.components;
 
+import androidx.annotation.NonNull;
 import java.lang.annotation.Annotation;
 
 /** Represents a qualified class object. */
@@ -28,10 +29,12 @@ public final class Qualified<T> {
     this.type = type;
   }
 
+  @NonNull
   public static <T> Qualified<T> unqualified(Class<T> type) {
     return new Qualified<>(Unqualified.class, type);
   }
 
+  @NonNull
   public static <T> Qualified<T> qualified(Class<? extends Annotation> qualifier, Class<T> type) {
     return new Qualified<>(qualifier, type);
   }

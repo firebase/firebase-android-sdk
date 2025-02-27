@@ -28,11 +28,11 @@ export ANDROID_SDK_ROOT=~/Android/Sdk
 
 ## Build Firebase Performance SDK
 
-### Fetch master branch
+### Fetch main branch
 
 ```
-firebase-android-sdk$ git fetch origin master:master
-firebase-android-sdk$ git checkout master
+firebase-android-sdk$ git fetch origin main:main
+firebase-android-sdk$ git checkout main
 ```
 
 ### Build SDK
@@ -65,7 +65,7 @@ Similar mechanism applies to `ClassName` as well.
 
 ## Run Integration Tests
 
-Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/master/README.md#integration-testing) 
+Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/main/README.md#integration-testing) 
 for the initial one time setup.
 
 ### Running Integration Tests on Local Emulator
@@ -84,28 +84,38 @@ firebase-android-sdk$ ./gradlew :firebase-perf:deviceCheck
 
 ### Creating a Release Candidate
 
+Change the version field in `gradle.properties` to reflect the RC status:
+
+```properties
+version=20.4.1-SNAPSHOT
 ```
-firebase-android-sdk$ ./gradlew -PpublishMode=SNAPSHOT -PprojectsToPublish="firebase-perf" firebasePublish
+
+And then generate the library with required libraries:
+
+```bash
+# firebase-perf requires firebase-sessions
+./gradlew -PprojectsToPublish="firebase-perf,firebase-sessions" firebasePublish
+```
+
+This will generate various files in the root build directory that align with
+the release candidates.
+
+Alternatively, you can just build the repository in isolation:
+```bash
+# firebase-perf requires firebase-sessions
+./gradlew -PprojectsToPublish="firebase-perf,firebase-sessions" buildMavenZip
 ```
 
 ### Publish project locally
 
-The simplest way to publish a project and all its associated dependencies is to just publish all 
-projects. The following command builds **SNAPSHOT** dependencies of all projects. All pom level 
-dependencies within the published artifacts will also point to SNAPSHOT versions that are 
-co-published.
+You can publish the project directly to your [local maven](https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:maven_local) 
+repository like so:
 
+```bash
+# firebase-perf requires firebase-sessions
+./gradlew -PprojectsToPublish="firebase-perf,firebase-sessions" \
+    publishReleasingLibrariesToMavenLocal
 ```
-firebase-android-sdk$ ./gradlew publishAllToLocal
-```
-
-Alternative, publish `firebase-perf` only:
-
-```
-firebase-android-sdk$ ./gradlew -PprojectsToPublish=":firebase-perf"  publishProjectsToMavenLocal
-```
-
-The location of published project `~/.m2/repository/com/google/firebase/`.
 
 ### Read SDK from mavenLocal()
 

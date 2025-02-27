@@ -563,6 +563,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
     assertThat(testRemoteConfigManager2.getString("some_key").isAvailable()).isFalse();
   }
+
   // endregion.
 
   // region Tests for testing the quirks of depending on Firebase RC v0.
@@ -744,7 +745,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -772,7 +773,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -1013,7 +1014,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(

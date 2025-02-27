@@ -251,7 +251,8 @@ class TopicsSubscriber {
     } catch (IOException e) {
       // Operation failed, retry failed only if errors from backend are server related error
       if (GmsRpc.ERROR_SERVICE_NOT_AVAILABLE.equals(e.getMessage())
-          || GmsRpc.ERROR_INTERNAL_SERVER_ERROR.equals(e.getMessage())) {
+          || GmsRpc.ERROR_INTERNAL_SERVER_ERROR.equals(e.getMessage())
+          || GmsRpc.TOO_MANY_SUBSCRIBERS.equals(e.getMessage())) {
         Log.e(TAG, "Topic operation failed: " + e.getMessage() + ". Will retry Topic operation.");
 
         return false; // will retry

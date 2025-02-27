@@ -16,7 +16,14 @@ package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.firebase.firestore.Filter.and;
+import static com.google.firebase.firestore.Filter.arrayContains;
+import static com.google.firebase.firestore.Filter.arrayContainsAny;
+import static com.google.firebase.firestore.Filter.equalTo;
+import static com.google.firebase.firestore.Filter.inArray;
+import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -34,7 +41,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -63,25 +69,6 @@ public class QueryTest {
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
-  }
-
-  /**
-   * Checks that running the query while online (against the backend/emulator) results in the same
-   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
-   * that both online and offline query result is equal to the expected documents.
-   *
-   * @param query The query to check
-   * @param expectedDocs Ordered list of document keys that are expected to match the query
-   */
-  public void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
-    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
-
-    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
-    List<String> expected = asList(expectedDocs);
-    if (!expected.isEmpty()) {
-      assertEquals(expected, querySnapshotToIds(docsFromCache));
-    }
   }
 
   @Test
@@ -549,12 +536,12 @@ public class QueryTest {
     assertFalse(querySnapshot.getMetadata().isFromCache());
 
     // offline event with fromCache=true
-    waitFor(collection.firestore.getClient().disableNetwork());
+    waitFor(collection.firestore.disableNetwork());
     querySnapshot = accum.await();
     assertTrue(querySnapshot.getMetadata().isFromCache());
 
     // back online event with fromCache=false
-    waitFor(collection.firestore.getClient().enableNetwork());
+    waitFor(collection.firestore.enableNetwork());
     querySnapshot = accum.await();
     assertFalse(querySnapshot.getMetadata().isFromCache());
 
@@ -1042,6 +1029,15 @@ public class QueryTest {
 
   @Test
   public void resumingAQueryShouldUseBloomFilterToAvoidFullRequery() throws Exception {
+    // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+    // the emulator is improved to include a bloom filter in the existence filter "messages that it
+    // sends.
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the emulator does not "
+            + "include a bloom filter when it sends existence filter messages, making it "
+            + "impossible for this test to verify the correctness of the bloom filter.",
+        isRunningAgainstEmulator());
+
     // Prepare the names and contents of the 100 documents to create.
     Map<String, Map<String, Object>> testData = new HashMap<>();
     for (int i = 0; i < 100; i++) {
@@ -1068,21 +1064,19 @@ public class QueryTest {
       }
       assertWithMessage("createdDocuments").that(createdDocuments).hasSize(100);
 
-      // Delete 50 of the 100 documents. Do this in a transaction, rather than
-      // DocumentReference.delete(), to avoid affecting the local cache.
+      // Delete 50 of the 100 documents. Use a different Firestore instance to avoid affecting the
+      // local cache.
       HashSet<String> deletedDocumentIds = new HashSet<>();
-      waitFor(
-          collection
-              .getFirestore()
-              .runTransaction(
-                  transaction -> {
-                    for (int i = 0; i < createdDocuments.size(); i += 2) {
-                      DocumentReference documentToDelete = createdDocuments.get(i);
-                      transaction.delete(documentToDelete);
-                      deletedDocumentIds.add(documentToDelete.getId());
-                    }
-                    return null;
-                  }));
+      {
+        FirebaseFirestore db2 = testFirestore();
+        WriteBatch batch = db2.batch();
+        for (int i = 0; i < createdDocuments.size(); i += 2) {
+          DocumentReference documentToDelete = db2.document(createdDocuments.get(i).getPath());
+          batch.delete(documentToDelete);
+          deletedDocumentIds.add(documentToDelete.getId());
+        }
+        waitFor(batch.commit());
+      }
       assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(50);
 
       // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
@@ -1103,33 +1097,19 @@ public class QueryTest {
 
       // Verify that the snapshot from the resumed query contains the expected documents; that is,
       // that it contains the 50 documents that were _not_ deleted.
-      // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed to
-      // send an existence filter. At the time of writing, the Firestore emulator fails to send an
-      // existence filter, resulting in the client including the deleted documents in the snapshot
-      // of the resumed query.
-      if (!(isRunningAgainstEmulator() && snapshot2.size() == 100)) {
-        HashSet<String> actualDocumentIds = new HashSet<>();
-        for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
-          actualDocumentIds.add(documentSnapshot.getId());
-        }
-        HashSet<String> expectedDocumentIds = new HashSet<>();
-        for (DocumentReference documentRef : createdDocuments) {
-          if (!deletedDocumentIds.contains(documentRef.getId())) {
-            expectedDocumentIds.add(documentRef.getId());
-          }
-        }
-        assertWithMessage("snapshot2.docs")
-            .that(actualDocumentIds)
-            .containsExactlyElementsIn(expectedDocumentIds);
+      HashSet<String> actualDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+        actualDocumentIds.add(documentSnapshot.getId());
       }
-
-      // Skip the verification of the existence filter mismatch when testing against the Firestore
-      // emulator because the Firestore emulator does not include the `unchanged_names` bloom filter
-      // when it sends ExistenceFilter messages. Some day the emulator _may_ implement this logic,
-      // at which time this short-circuit can be removed.
-      if (isRunningAgainstEmulator()) {
-        return;
+      HashSet<String> expectedDocumentIds = new HashSet<>();
+      for (DocumentReference documentRef : createdDocuments) {
+        if (!deletedDocumentIds.contains(documentRef.getId())) {
+          expectedDocumentIds.add(documentRef.getId());
+        }
       }
+      assertWithMessage("snapshot2.docs")
+          .that(actualDocumentIds)
+          .containsExactlyElementsIn(expectedDocumentIds);
 
       // Verify that Watch sent an existence filter with the correct counts when the query was
       // resumed.
@@ -1172,21 +1152,188 @@ public class QueryTest {
     }
   }
 
+  @Test
+  public void
+      bloomFilterShouldAvertAFullRequeryWhenDocumentsWereAddedDeletedRemovedUpdatedAndUnchangedSinceTheResumeToken()
+          throws Exception {
+    // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+    // the emulator is improved to include a bloom filter in the existence filter messages that it
+    // sends.
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the emulator does not "
+            + "include a bloom filter when it sends existence filter messages, making it "
+            + "impossible for this test to verify the correctness of the bloom filter.",
+        isRunningAgainstEmulator());
+
+    // Prepare the names and contents of the 20 documents to create.
+    Map<String, Map<String, Object>> testData = new HashMap<>();
+    for (int i = 0; i < 20; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42, "removed", false));
+    }
+
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
+    while (true) {
+      attemptNumber++;
+
+      // Create 20 documents in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testData);
+      Query query = collection.whereEqualTo("removed", false);
+
+      // Run a query to populate the local cache with the 20 documents and a resume token.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot = waitFor(query.get());
+        assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(20);
+        for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+      }
+      assertWithMessage("createdDocuments").that(createdDocuments).hasSize(20);
+
+      // Out of the 20 existing documents, leave 5 docs untouched, delete 5 docs, remove 5 docs,
+      // update 5 docs, and add 15 new docs.
+      HashSet<String> deletedDocumentIds = new HashSet<>();
+      HashSet<String> removedDocumentIds = new HashSet<>();
+      HashSet<String> updatedDocumentIds = new HashSet<>();
+      HashSet<String> addedDocumentIds = new HashSet<>();
+
+      {
+        FirebaseFirestore db2 = testFirestore();
+        WriteBatch batch = db2.batch();
+
+        for (int i = 0; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToDelete = db2.document(createdDocuments.get(i).getPath());
+          batch.delete(documentToDelete);
+          deletedDocumentIds.add(documentToDelete.getId());
+        }
+        assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(5);
+
+        // Update 5 documents to no longer match the query.
+        for (int i = 1; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToRemove = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToRemove, map("removed", true));
+          removedDocumentIds.add(documentToRemove.getId());
+        }
+        assertWithMessage("removedDocumentIds").that(removedDocumentIds).hasSize(5);
+
+        // Update 5 documents, but ensure they still match the query.
+        for (int i = 2; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToUpdate = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToUpdate, map("key", 43));
+          updatedDocumentIds.add(documentToUpdate.getId());
+        }
+        assertWithMessage("updatedDocumentIds").that(updatedDocumentIds).hasSize(5);
+
+        for (int i = 0; i < 15; i += 1) {
+          DocumentReference documentToUpdate =
+              db2.document(collection.getPath() + "/newDoc" + (1000 + i));
+          batch.set(documentToUpdate, map("key", 42, "removed", false));
+          addedDocumentIds.add(documentToUpdate.getId());
+        }
+
+        // Ensure the sets above are disjoint.
+        HashSet<String> mergedSet = new HashSet<>();
+        mergedSet.addAll(deletedDocumentIds);
+        mergedSet.addAll(removedDocumentIds);
+        mergedSet.addAll(updatedDocumentIds);
+        mergedSet.addAll(addedDocumentIds);
+        assertWithMessage("mergedSet").that(mergedSet).hasSize(30);
+
+        waitFor(batch.commit());
+      }
+
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
+      // bloom filter, and it was used to avert a full requery.
+      AtomicReference<QuerySnapshot> snapshot2Ref = new AtomicReference<>();
+      ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+          captureExistenceFilterMismatches(
+              () -> {
+                QuerySnapshot querySnapshot = waitFor(query.get());
+                snapshot2Ref.set(querySnapshot);
+              });
+      QuerySnapshot snapshot2 = snapshot2Ref.get();
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // 10 existing documents that still match the query, and 15 documents that are newly added.
+      HashSet<String> actualDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+        actualDocumentIds.add(documentSnapshot.getId());
+      }
+      HashSet<String> expectedDocumentIds = new HashSet<>();
+      for (DocumentReference documentRef : createdDocuments) {
+        if (!deletedDocumentIds.contains(documentRef.getId())
+            && !removedDocumentIds.contains(documentRef.getId())) {
+          expectedDocumentIds.add(documentRef.getId());
+        }
+      }
+      expectedDocumentIds.addAll(addedDocumentIds);
+      assertWithMessage("snapshot2.docs")
+          .that(actualDocumentIds)
+          .containsExactlyElementsIn(expectedDocumentIds);
+      assertWithMessage("actualDocumentIds").that(actualDocumentIds).hasSize(25);
+
+      // Verify that Watch sent an existence filter with the correct counts when the query was
+      // resumed.
+      assertWithMessage("Watch should have sent exactly 1 existence filter")
+          .that(existenceFilterMismatches)
+          .hasSize(1);
+      ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(35);
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(25);
+
+      // Verify that Watch sent a valid bloom filter.
+      ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred then retry the entire test. Although statistically rare, false positives
+      // are expected to happen occasionally. When a false positive _does_ happen, just retry the
+      // test with a different set of documents. If that retry _also_ experiences a false positive,
+      // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
+
+      // Break out of the test loop now that the test passes.
+      break;
+    }
+  }
+
   private static String unicodeNormalize(String s) {
     return Normalizer.normalize(s, Normalizer.Form.NFC);
   }
 
   @Test
   public void bloomFilterShouldCorrectlyEncodeComplexUnicodeCharacters() throws Exception {
+    // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+    // the emulator is improved to include a bloom filter in the existence filter "messages that it
+    // sends.
     assumeFalse(
-        "Skip this test when running against the Firestore emulator because the Firestore emulator "
-            + "fails to send existence filters when queries are resumed (b/270731363), and even "
-            + "if it did send an existence filter it probably wouldn't include a bloom filter.",
+        "Skip this test when running against the Firestore emulator because the emulator does not "
+            + "include a bloom filter when it sends existence filter messages, making it "
+            + "impossible for this test to verify the correctness of the bloom filter.",
         isRunningAgainstEmulator());
 
     // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
-    // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
-    // by a different sequence of Unicode code points are treated as distinct document IDs.
+    // IDs that are canonically-equivalent (they visually appear identical) but are represented by a
+    // different sequence of Unicode code points are treated as distinct document IDs.
     ArrayList<String> testDocIds = new ArrayList<>();
     testDocIds.add("DocumentToDelete");
     // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode
@@ -1240,22 +1387,11 @@ public class QueryTest {
           .containsExactlyElementsIn(testDocIds);
     }
 
-    // Delete one of the documents so that the next call to getDocs() will experience an existence
-    // filter mismatch. Do this deletion in a transaction, rather than using deleteDoc(), to avoid
-    // affecting the local cache.
+    // Delete one of the documents so that the next call to collection.get() will experience an
+    // existence filter mismatch. Use a different Firestore instance to avoid affecting the local
+    // cache.
     DocumentReference documentToDelete = collection.document("DocumentToDelete");
-    waitFor(
-        collection
-            .getFirestore()
-            .runTransaction(
-                transaction -> {
-                  DocumentSnapshot documentToDeleteSnapshot = transaction.get(documentToDelete);
-                  assertWithMessage("documentToDeleteSnapshot.exists()")
-                      .that(documentToDeleteSnapshot.exists())
-                      .isTrue();
-                  transaction.delete(documentToDelete);
-                  return null;
-                }));
+    waitFor(testFirestore().document(documentToDelete.getPath()).delete());
 
     // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
     // existence filter rather than "delete" events when the query is resumed.
@@ -1334,97 +1470,30 @@ public class QueryTest {
 
     // Two equalities: a==1 || b==1.
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.equalTo("b", 1))),
-        "doc1",
-        "doc2",
-        "doc4",
-        "doc5");
+        collection.where(or(equalTo("a", 1), equalTo("b", 1))), "doc1", "doc2", "doc4", "doc5");
 
     // (a==1 && b==0) || (a==3 && b==2)
     checkOnlineAndOfflineResultsMatch(
         collection.where(
-            Filter.or(
-                Filter.and(Filter.equalTo("a", 1), Filter.equalTo("b", 0)),
-                Filter.and(Filter.equalTo("a", 3), Filter.equalTo("b", 2)))),
+            or(and(equalTo("a", 1), equalTo("b", 0)), and(equalTo("a", 3), equalTo("b", 2)))),
         "doc1",
         "doc3");
 
     // a==1 && (b==0 || b==3).
     checkOnlineAndOfflineResultsMatch(
-        collection.where(
-            Filter.and(
-                Filter.equalTo("a", 1), Filter.or(Filter.equalTo("b", 0), Filter.equalTo("b", 3)))),
+        collection.where(and(equalTo("a", 1), or(equalTo("b", 0), equalTo("b", 3)))),
         "doc1",
         "doc4");
 
     // (a==2 || b==2) && (a==3 || b==3)
     checkOnlineAndOfflineResultsMatch(
         collection.where(
-            Filter.and(
-                Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 2)),
-                Filter.or(Filter.equalTo("a", 3), Filter.equalTo("b", 3)))),
+            and(or(equalTo("a", 2), equalTo("b", 2)), or(equalTo("a", 3), equalTo("b", 3)))),
         "doc3");
 
     // Test with limits without orderBy (the __name__ ordering is the tie breaker).
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1))).limit(1),
-        "doc2");
-  }
-
-  @Test
-  public void testOrQueriesWithCompositeIndexes() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries.",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("a", 2, "b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1, "b", 1));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // with one inequality: a>2 || b==1.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.greaterThan("a", 2), Filter.equalTo("b", 1))),
-        "doc5",
-        "doc2",
-        "doc3");
-
-    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0))).limit(2),
-        "doc1",
-        "doc2");
-
-    // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
-    // Note: The public query API does not allow implicit ordering when limitToLast is used.
-    checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0)))
-            .limitToLast(2)
-            .orderBy("b"),
-        "doc3",
-        "doc4");
-
-    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
-    checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
-            .limit(1)
-            .orderBy("a"),
-        "doc5");
-
-    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
-    checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
-            .limitToLast(1)
-            .orderBy("a"),
-        "doc2");
+        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1), "doc2");
   }
 
   @Test
@@ -1441,35 +1510,7 @@ public class QueryTest {
 
     // a==2 || b in [2,3]
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.inArray("b", asList(2, 3)))),
-        "doc3",
-        "doc4",
-        "doc6");
-  }
-
-  @Test
-  public void testOrQueriesWithNotIn() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1),
-            "doc6", map("a", 2));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // a==2 || b not-in [2,3]
-    // Has implicit orderBy b.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.notInArray("b", asList(2, 3)))),
-        "doc1",
-        "doc2");
+        collection.where(or(equalTo("a", 2), inArray("b", asList(2, 3)))), "doc3", "doc4", "doc6");
   }
 
   @Test
@@ -1486,15 +1527,11 @@ public class QueryTest {
 
     // a==2 || b array-contains 7
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.arrayContains("b", 7))),
-        "doc3",
-        "doc4",
-        "doc6");
+        collection.where(or(equalTo("a", 2), arrayContains("b", 7))), "doc3", "doc4", "doc6");
 
     // a==2 || b array-contains-any [0, 3]
     checkOnlineAndOfflineResultsMatch(
-        collection.where(
-            Filter.or(Filter.equalTo("a", 2), Filter.arrayContainsAny("b", asList(0, 3)))),
+        collection.where(or(equalTo("a", 2), arrayContainsAny("b", asList(0, 3)))),
         "doc1",
         "doc4",
         "doc6");
@@ -1502,10 +1539,6 @@ public class QueryTest {
 
   @Test
   public void testMultipleInOps() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1517,25 +1550,17 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     // Two IN operations on different fields with disjunction.
-    Query query1 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))));
+    Query query1 = collection.where(or(inArray("a", asList(2, 3)), inArray("b", asList(0, 2))));
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc6");
 
     // Two IN operations on the same field with disjunction.
     // a IN [0,3] || a IN [0,2] should union them (similar to: a IN [0,2,3]).
-    Query query2 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(0, 3)), Filter.inArray("a", asList(0, 2))));
+    Query query2 = collection.where(or(inArray("a", asList(0, 3)), inArray("a", asList(0, 2))));
     checkOnlineAndOfflineResultsMatch(query2, "doc3", "doc6");
   }
 
   @Test
   public void testUsingInWithArrayContainsAny() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1547,16 +1572,14 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     Query query1 =
-        collection.where(
-            Filter.or(
-                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+        collection.where(or(inArray("a", asList(2, 3)), arrayContainsAny("b", asList(0, 7))));
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc4", "doc6");
 
     Query query2 =
         collection.where(
-            Filter.or(
-                Filter.and(Filter.inArray("a", asList(2, 3)), Filter.equalTo("c", 10)),
-                Filter.arrayContainsAny("b", asList(0, 7))));
+            or(
+                and(inArray("a", asList(2, 3)), equalTo("c", 10)),
+                arrayContainsAny("b", asList(0, 7))));
     checkOnlineAndOfflineResultsMatch(query2, "doc1", "doc3", "doc4");
   }
 
@@ -1572,38 +1595,25 @@ public class QueryTest {
             "doc6", map("a", 2));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    Query query1 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 3)));
+    Query query1 = collection.where(or(inArray("a", asList(2, 3)), arrayContains("b", 3)));
     checkOnlineAndOfflineResultsMatch(query1, "doc3", "doc4", "doc6");
 
-    Query query2 =
-        collection.where(
-            Filter.and(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 7)));
+    Query query2 = collection.where(and(inArray("a", asList(2, 3)), arrayContains("b", 7)));
     checkOnlineAndOfflineResultsMatch(query2, "doc3");
 
     Query query3 =
         collection.where(
-            Filter.or(
-                Filter.inArray("a", asList(2, 3)),
-                Filter.and(Filter.arrayContains("b", 3), Filter.equalTo("a", 1))));
+            or(inArray("a", asList(2, 3)), and(arrayContains("b", 3), equalTo("a", 1))));
     checkOnlineAndOfflineResultsMatch(query3, "doc3", "doc4", "doc6");
 
     Query query4 =
         collection.where(
-            Filter.and(
-                Filter.inArray("a", asList(2, 3)),
-                Filter.or(Filter.arrayContains("b", 7), Filter.equalTo("a", 1))));
+            and(inArray("a", asList(2, 3)), or(arrayContains("b", 7), equalTo("a", 1))));
     checkOnlineAndOfflineResultsMatch(query4, "doc3");
   }
 
   @Test
   public void testOrderByEquality() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because order-by-equality is "
-            + "not supported yet.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1614,10 +1624,10 @@ public class QueryTest {
             "doc6", map("a", 2, "c", 20));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    Query query1 = collection.where(Filter.equalTo("a", 1)).orderBy("a");
+    Query query1 = collection.where(equalTo("a", 1)).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc4", "doc5");
 
-    Query query2 = collection.where(Filter.inArray("a", asList(2, 3))).orderBy("a");
+    Query query2 = collection.where(inArray("a", asList(2, 3))).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
   }
 }

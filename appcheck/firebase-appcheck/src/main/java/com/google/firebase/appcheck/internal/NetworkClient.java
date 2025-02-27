@@ -51,8 +51,6 @@ public class NetworkClient {
 
   private static final String TAG = NetworkClient.class.getName();
 
-  private static final String SAFETY_NET_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
   private static final String DEBUG_EXCHANGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeDebugToken?key=%s";
   private static final String PLAY_INTEGRITY_EXCHANGE_URL_TEMPLATE =
@@ -73,11 +71,10 @@ public class NetworkClient {
   private final Provider<HeartBeatController> heartBeatControllerProvider;
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({UNKNOWN, SAFETY_NET, DEBUG, PLAY_INTEGRITY})
+  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY})
   public @interface AttestationTokenType {}
 
   public static final int UNKNOWN = 0;
-  public static final int SAFETY_NET = 1;
   public static final int DEBUG = 2;
   public static final int PLAY_INTEGRITY = 3;
 
@@ -121,7 +118,8 @@ public class NetworkClient {
       throw new FirebaseException("Too many attempts.");
     }
     URL url = new URL(String.format(getUrlTemplate(tokenType), projectId, appId, apiKey));
-    String response = makeNetworkRequest(url, requestBytes, retryManager);
+    String response =
+        makeNetworkRequest(url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ true);
     return AppCheckTokenResponse.fromJsonString(response);
   }
 
@@ -138,11 +136,15 @@ public class NetworkClient {
     }
     URL url =
         new URL(String.format(PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE, projectId, appId, apiKey));
-    return makeNetworkRequest(url, requestBytes, retryManager);
+    return makeNetworkRequest(
+        url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ false);
   }
 
   private String makeNetworkRequest(
-      @NonNull URL url, @NonNull byte[] requestBytes, @NonNull RetryManager retryManager)
+      @NonNull URL url,
+      @NonNull byte[] requestBytes,
+      @NonNull RetryManager retryManager,
+      boolean resetRetryManagerOnSuccess)
       throws FirebaseException, IOException, JSONException {
     HttpURLConnection urlConnection = createHttpUrlConnection(url);
 
@@ -187,7 +189,9 @@ public class NetworkClient {
                 + " body: "
                 + httpErrorResponse.getErrorMessage());
       }
-      retryManager.resetBackoffOnSuccess();
+      if (resetRetryManagerOnSuccess) {
+        retryManager.resetBackoffOnSuccess();
+      }
       return responseBody;
     } finally {
       urlConnection.disconnect();
@@ -208,6 +212,7 @@ public class NetworkClient {
       return null;
     }
   }
+
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;
@@ -227,8 +232,6 @@ public class NetworkClient {
 
   private static String getUrlTemplate(@AttestationTokenType int tokenType) {
     switch (tokenType) {
-      case SAFETY_NET:
-        return SAFETY_NET_EXCHANGE_URL_TEMPLATE;
       case DEBUG:
         return DEBUG_EXCHANGE_URL_TEMPLATE;
       case PLAY_INTEGRITY:

@@ -17,16 +17,12 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
 
-import android.content.Context;
 import android.os.Build;
-import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.User;
-import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -89,48 +85,24 @@ public class Datastore {
               "x-google-service",
               "x-google-gfe-request-trace"));
 
-  private final DatabaseInfo databaseInfo;
-  private final RemoteSerializer serializer;
+  protected final RemoteSerializer serializer;
   private final AsyncQueue workerQueue;
 
   private final FirestoreChannel channel;
 
-  public Datastore(
-      DatabaseInfo databaseInfo,
-      AsyncQueue workerQueue,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      Context context,
-      @Nullable GrpcMetadataProvider metadataProvider) {
-    this.databaseInfo = databaseInfo;
+  Datastore(AsyncQueue workerQueue, RemoteSerializer serializer, FirestoreChannel channel) {
     this.workerQueue = workerQueue;
-    this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    this.channel =
-        initializeChannel(
-            databaseInfo, workerQueue, authProvider, appCheckProvider, context, metadataProvider);
-  }
-
-  FirestoreChannel initializeChannel(
-      DatabaseInfo databaseInfo,
-      AsyncQueue workerQueue,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      Context context,
-      @Nullable GrpcMetadataProvider metadataProvider) {
-    return new FirestoreChannel(
-        workerQueue, context, authProvider, appCheckProvider, databaseInfo, metadataProvider);
+    this.serializer = serializer;
+    this.channel = channel;
   }
 
   void shutdown() {
     channel.shutdown();
   }
 
+  @VisibleForTesting(otherwise = VisibleForTesting.NONE)
   AsyncQueue getWorkerQueue() {
     return workerQueue;
-  }
-
-  DatabaseInfo getDatabaseInfo() {
-    return databaseInfo;
   }
 
   /** Creates a new WatchStream that is still unstarted but uses a common shared channel */
@@ -225,7 +197,7 @@ public class Datastore {
   public Task<Map<String, Value>> runAggregateQuery(
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
-        serializer.encodeQueryTarget(query.toTarget());
+        serializer.encodeQueryTarget(query.toAggregateTarget());
     HashMap<String, String> aliasMap = new HashMap<>();
     StructuredAggregationQuery structuredAggregationQuery =
         serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
@@ -344,8 +316,8 @@ public class Datastore {
    * write stream should be retried too (even though ABORTED errors are not generally retryable).
    *
    * <p>Note that during the initial handshake on the write stream an ABORTED error signals that we
-   * should discard our stream token (i.e. it is permanent). This means a handshake error should be
-   * classified with isPermanentError, above.
+   * should discard our stream token (because it is permanent). This means a handshake error should
+   * be classified with isPermanentError, above.
    */
   public static boolean isPermanentWriteError(Status status) {
     return isPermanentError(status) && !status.getCode().equals(Status.Code.ABORTED);

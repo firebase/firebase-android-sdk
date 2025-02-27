@@ -16,11 +16,16 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,13 +40,18 @@ public class UserMetadata {
   public static final String KEYDATA_FILENAME = "keys";
   public static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
+  public static final String ROLLOUTS_STATE_FILENAME = "rollouts-state";
+
   @VisibleForTesting public static final int MAX_ATTRIBUTES = 64;
   @VisibleForTesting public static final int MAX_ATTRIBUTE_SIZE = 1024;
   @VisibleForTesting public static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
+  @VisibleForTesting public static final int MAX_ROLLOUT_ASSIGNMENTS = 128;
+
   private final MetaDataStore metaDataStore;
-  private final CrashlyticsBackgroundWorker backgroundWorker;
-  private final String sessionIdentifier;
+
+  private final CrashlyticsWorkers crashlyticsWorkers;
+  private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
   // associated reference has been serialized since the last time it was updated.
@@ -50,6 +60,10 @@ public class UserMetadata {
   // as atomic APIs.
   private final SerializeableKeysMap customKeys = new SerializeableKeysMap(false);
   private final SerializeableKeysMap internalKeys = new SerializeableKeysMap(true);
+
+  private final RolloutAssignmentList rolloutsState =
+      new RolloutAssignmentList(MAX_ROLLOUT_ASSIGNMENTS);
+
   private final AtomicMarkableReference<String> userId = new AtomicMarkableReference<>(null, false);
 
   @Nullable
@@ -58,23 +72,49 @@ public class UserMetadata {
   }
 
   public static UserMetadata loadFromExistingSession(
-      String sessionId, FileStore fileStore, CrashlyticsBackgroundWorker backgroundWorker) {
+      String sessionId, FileStore fileStore, CrashlyticsWorkers crashlyticsWorkers) {
     MetaDataStore store = new MetaDataStore(fileStore);
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, backgroundWorker);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, crashlyticsWorkers);
     // We don't use the set methods in this class, because they will attempt to re-serialize the
     // data, which is unnecessary because we just read them from disk.
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
     metadata.internalKeys.map.getReference().setKeys(store.readKeyData(sessionId, true));
     metadata.userId.set(store.readUserId(sessionId), false);
-
+    metadata.rolloutsState.updateRolloutAssignmentList(store.readRolloutsState(sessionId));
     return metadata;
   }
 
   public UserMetadata(
-      String sessionIdentifier, FileStore fileStore, CrashlyticsBackgroundWorker backgroundWorker) {
+      String sessionIdentifier, FileStore fileStore, CrashlyticsWorkers crashlyticsWorkers) {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
-    this.backgroundWorker = backgroundWorker;
+    this.crashlyticsWorkers = crashlyticsWorkers;
+  }
+
+  /**
+   * Refresh the userMetadata to reflect the status of the new session. This API is mainly for
+   * on-demand fatal feature since we need to close and update to a new session. UserMetadata also
+   * need to make this update instead of updating session id, we also need to manually writing the
+   * into persistence for the new session.
+   */
+  public void setNewSession(String sessionId) {
+    synchronized (sessionIdentifier) {
+      sessionIdentifier = sessionId;
+      Map<String, String> keyData = customKeys.getKeys();
+      List<RolloutAssignment> rolloutAssignments = rolloutsState.getRolloutAssignmentList();
+      crashlyticsWorkers.diskWrite.submit(
+          () -> {
+            if (getUserId() != null) {
+              metaDataStore.writeUserData(sessionId, getUserId());
+            }
+            if (!keyData.isEmpty()) {
+              metaDataStore.writeKeyData(sessionId, keyData);
+            }
+            if (!rolloutAssignments.isEmpty()) {
+              metaDataStore.writeRolloutState(sessionId, rolloutAssignments);
+            }
+          });
+    }
   }
 
   @Nullable
@@ -95,14 +135,53 @@ public class UserMetadata {
       }
       userId.set(sanitizedNewId, true);
     }
-    backgroundWorker.submit(
-        () -> {
-          serializeUserDataIfNeeded();
-          return null;
-        });
+    crashlyticsWorkers.diskWrite.submit(this::serializeUserDataIfNeeded);
   }
 
-  /** @return defensive copy of the custom keys. */
+  /**
+   * Returns a {@link Map<String, String>} containing all the custom keys to attach to the event.
+   * It overrides the values of app level custom keys with the values of event level custom keys if
+   * they're identical, and event keys or values that exceed 1024 characters are truncated.
+   * Combined with app level custom keys, the map is restricted to 64 key value pairs.
+   *
+   * @param eventKeys a {@link Map<String, String>} representing event specific keys.
+   * @return a {@link Map<String, String>} containing all the custom keys to attach to the event.
+   */
+  public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
+    // In case of empty event keys, preserve existing behavior.
+    if (eventKeys.isEmpty()) {
+      return customKeys.getKeys();
+    }
+
+    // Otherwise merge the event keys with custom keys as appropriate.
+    Map<String, String> globalKeys = customKeys.getKeys();
+    HashMap<String, String> result = new HashMap<>(globalKeys);
+    int eventKeysOverLimit = 0;
+    for (Map.Entry<String, String> entry : eventKeys.entrySet()) {
+      String sanitizedKey = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
+      if (result.size() < MAX_ATTRIBUTES || result.containsKey(sanitizedKey)) {
+        String sanitizedValue = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
+        result.put(sanitizedKey, sanitizedValue);
+      } else {
+        eventKeysOverLimit++;
+      }
+    }
+
+    if (eventKeysOverLimit > 0) {
+      Logger.getLogger()
+          .w(
+              "Ignored "
+                  + eventKeysOverLimit
+                  + " keys when adding event specific keys. Maximum allowable: "
+                  + MAX_ATTRIBUTE_SIZE);
+    }
+
+    return Collections.unmodifiableMap(result);
+  }
+
+  /**
+   * @return defensive copy of the custom keys.
+   */
   public Map<String, String> getCustomKeys() {
     return customKeys.getKeys();
   }
@@ -125,7 +204,9 @@ public class UserMetadata {
     customKeys.setKeys(keysAndValues);
   }
 
-  /** @return defensive copy of the internal keys. */
+  /**
+   * @return defensive copy of the internal keys.
+   */
   public Map<String, String> getInternalKeys() {
     return internalKeys.getKeys();
   }
@@ -137,6 +218,28 @@ public class UserMetadata {
    */
   public boolean setInternalKey(String key, String value) {
     return internalKeys.setKey(key, value);
+  }
+
+  public List<CrashlyticsReport.Session.Event.RolloutAssignment> getRolloutsState() {
+    return rolloutsState.getReportRolloutsState();
+  }
+
+  /**
+   * Update RolloutsState in memory and persistence. Return True if update successfully, false
+   * otherwise
+   */
+  @CanIgnoreReturnValue
+  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
+    synchronized (rolloutsState) {
+      if (!rolloutsState.updateRolloutAssignmentList(rolloutAssignments)) {
+        return false;
+      }
+      List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getRolloutAssignmentList();
+
+      crashlyticsWorkers.diskWrite.submit(
+          () -> metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments));
+      return true;
+    }
   }
 
   /**
@@ -166,7 +269,7 @@ public class UserMetadata {
    */
   private class SerializeableKeysMap {
     final AtomicMarkableReference<KeysMap> map;
-    private final AtomicReference<Callable<Void>> queuedSerializer = new AtomicReference<>(null);
+    private final AtomicReference<Runnable> queuedSerializer = new AtomicReference<>(null);
     private final boolean isInternal;
 
     public SerializeableKeysMap(boolean isInternal) {
@@ -204,17 +307,16 @@ public class UserMetadata {
     }
 
     private void scheduleSerializationTaskIfNeeded() {
-      Callable<Void> newCallable =
+      Runnable newRunnable =
           () -> {
             queuedSerializer.set(null);
             serializeIfMarked();
-            return null;
           };
 
       // Don't schedule the task if there's another queued task waiting, because the already-queued
       // task will write the latest data.
-      if (queuedSerializer.compareAndSet(null, newCallable)) {
-        backgroundWorker.submit(newCallable);
+      if (queuedSerializer.compareAndSet(null, newRunnable)) {
+        crashlyticsWorkers.diskWrite.submit(newRunnable);
       }
     }
 

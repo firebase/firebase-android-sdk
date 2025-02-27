@@ -15,6 +15,9 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -23,6 +26,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
@@ -32,9 +37,8 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
   File emptyFile;
   File missingFile;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() throws Exception {
     final Context context = getContext();
     testFile = new File(context.getFilesDir(), "testFile");
     try (FileOutputStream fout = new FileOutputStream(testFile);
@@ -47,9 +51,8 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
     missingFile = new File(context.getFilesDir(), "missingFile");
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
+  @After
+  public void tearDown() throws Exception {
     testFile.delete();
     emptyFile.delete();
   }

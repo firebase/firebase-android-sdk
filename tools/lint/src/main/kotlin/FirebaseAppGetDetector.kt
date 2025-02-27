@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.lint.checks
 
@@ -33,19 +35,19 @@ import org.jetbrains.uast.getParentOfType
 class FirebaseAppGetDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> = listOf("get")
 
-  override fun visitMethodCall(context: JavaContext, call: UCallExpression, method: PsiMethod) {
+  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (!isFirebaseAppGet(method)) {
       return
     }
 
-    if (withinGetInstance(call)) {
+    if (withinGetInstance(node)) {
       return
     }
-    call.getParentOfType<UMethod>() ?: return
+    node.getParentOfType<UMethod>() ?: return
     context.report(
       ISSUE,
-      call,
-      context.getCallLocation(call, includeReceiver = false, includeArguments = true),
+      node,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = true),
       "Use of FirebaseApp#get(Class) is discouraged, and is only acceptable" +
         " in SDK#getInstance(...) methods. Instead declare dependencies explicitly in" +
         " your ComponentRegistrar and inject."

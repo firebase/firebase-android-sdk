@@ -14,20 +14,22 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "inappmessaging"
-    publishJavadoc = true
-    publishSources = true
+    libraryGroup = "inappmessaging"
+    publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
     namespace "com.google.firebase.inappmessaging.display.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -39,26 +41,25 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
-
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api(project(":firebase-inappmessaging"))
+    api(project(":firebase-inappmessaging-display"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation project(':firebase-inappmessaging')
-    implementation project(':firebase-inappmessaging:ktx')
-    implementation project(':firebase-inappmessaging-display')
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.androidx.test.core
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
-    testImplementation 'androidx.test:core:1.2.0'
+         exclude group: "com.google.firebase", module: "firebase-common"
+     }
+    testImplementation libs.truth
+    testImplementation 'junit:junit:4.12'
+    testImplementation libs.robolectric
 }

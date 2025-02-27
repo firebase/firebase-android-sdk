@@ -18,19 +18,21 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup "crashlytics"
+  libraryGroup = "crashlytics"
   testLab.enabled = true
-  publishJavadoc = true
-  publishSources = true
+  publishJavadoc = false
+  releaseNotes { 
+    enabled.set(false)
+}
 }
 
 android {
   namespace "com.google.firebase.crashlytics.ktx"
-  compileSdk 33  
+  compileSdk project.compileSdkVersion
   defaultConfig {
-    minSdk 16
+    minSdk project.minSdkVersion
     multiDexEnabled true
-    targetSdk 33
+    targetSdk project.targetSdkVersion
     versionName version
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -45,13 +47,13 @@ android {
 }
 
 dependencies {
-  implementation "com.google.firebase:firebase-common-ktx:20.3.2"
-  implementation "com.google.firebase:firebase-common:20.3.2"
-  implementation "com.google.firebase:firebase-components:17.1.0"
-  implementation(libs.androidx.annotation)
-  implementation project(":firebase-crashlytics")
+    api(project(":firebase-crashlytics"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-  androidTestImplementation(libs.androidx.test.junit)
-  androidTestImplementation(libs.androidx.test.runner)
-  androidTestImplementation(libs.truth)
+    implementation("com.google.firebase:firebase-components:18.0.0")
+
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
 }

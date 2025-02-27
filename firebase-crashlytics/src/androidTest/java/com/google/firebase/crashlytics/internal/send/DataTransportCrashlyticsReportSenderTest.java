@@ -22,7 +22,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportScheduleCallback;
@@ -33,6 +33,7 @@ import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,14 +48,20 @@ public class DataTransportCrashlyticsReportSenderTest {
   @Mock private Transformer<CrashlyticsReport, byte[]> mockTransform;
 
   private DataTransportCrashlyticsReportSender reportSender;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     when(mockTransform.apply(any())).thenReturn(new byte[0]);
     reportSender =
         new DataTransportCrashlyticsReportSender(
             new ReportQueue(60, 1.2, 3_000, mockTransport, new OnDemandCounter()), mockTransform);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test
@@ -65,9 +72,9 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
     final Task<CrashlyticsReportWithSessionId> send1 =
-        reportSender.enqueueReport(report1, /*isOnDemand=*/ true);
+        reportSender.enqueueReport(report1, /* isOnDemand= */ true);
     final Task<CrashlyticsReportWithSessionId> send2 =
-        reportSender.enqueueReport(report2, /*isOnDemand=*/ true);
+        reportSender.enqueueReport(report2, /* isOnDemand= */ true);
 
     try {
       Thread.sleep(2_000); // give time to process queue

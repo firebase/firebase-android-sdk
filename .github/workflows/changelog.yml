@@ -1,4 +1,4 @@
-name: Changelog
+name: Verify changelog update
 
 on:
   pull_request
@@ -13,7 +13,7 @@ jobs:
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         fetch-depth: 100
         submodules: true

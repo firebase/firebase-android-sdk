@@ -30,9 +30,6 @@ import com.google.firebase.perf.injection.components.FirebasePerformanceComponen
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.FirebaseSessions;
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -49,10 +46,6 @@ import java.util.concurrent.Executor;
 public class FirebasePerfRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-perf";
   private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
-
-  static {
-    FirebaseSessionsDependencies.INSTANCE.addDependency(SessionSubscriber.Name.PERFORMANCE);
-  }
 
   @Override
   @Keep
@@ -71,7 +64,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
         Component.builder(FirebasePerfEarly.class)
             .name(EARLY_LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseSessions.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .add(Dependency.required(uiExecutor))
             .eagerInDefaultApp()
@@ -79,7 +71,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                 container ->
                     new FirebasePerfEarly(
                         container.get(FirebaseApp.class),
-                        container.get(FirebaseSessions.class),
                         container.getProvider(StartupTime.class).get(),
                         container.get(uiExecutor)))
             .build(),

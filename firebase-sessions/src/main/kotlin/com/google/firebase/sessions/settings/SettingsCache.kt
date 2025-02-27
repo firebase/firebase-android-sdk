@@ -99,9 +99,16 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
 
   @VisibleForTesting
   internal suspend fun removeConfigs() {
-    dataStore.edit { preferences ->
-      preferences.clear()
-      updateSessionConfigs(preferences)
+    try {
+      dataStore.edit { preferences ->
+        preferences.clear()
+        updateSessionConfigs(preferences)
+      }
+    } catch (e: IOException) {
+      Log.w(
+        TAG,
+        "Failed to remove config values: $e",
+      )
     }
   }
 

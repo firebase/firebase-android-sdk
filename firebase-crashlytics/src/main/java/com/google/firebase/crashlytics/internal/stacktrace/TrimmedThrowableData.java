@@ -14,6 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import androidx.annotation.Nullable;
+import java.util.Stack;
+
 /**
  * Decorator class that exposes the appropriate APIs for Crashlytics to write crash data, but which
  * pre-processes the stack trace to remove unnecessary frames based on the passed-in
@@ -23,14 +26,39 @@ public class TrimmedThrowableData {
   public final String localizedMessage;
   public final String className;
   public final StackTraceElement[] stacktrace;
-  public final TrimmedThrowableData cause;
+  @Nullable public final TrimmedThrowableData cause;
 
-  public TrimmedThrowableData(Throwable ex, StackTraceTrimmingStrategy trimmingStrategy) {
-    this.localizedMessage = ex.getLocalizedMessage();
-    this.className = ex.getClass().getName();
-    this.stacktrace = trimmingStrategy.getTrimmedStackTrace(ex.getStackTrace());
+  private TrimmedThrowableData(
+      String localizedMessage,
+      String className,
+      StackTraceElement[] stacktrace,
+      @Nullable TrimmedThrowableData cause) {
+    this.localizedMessage = localizedMessage;
+    this.className = className;
+    this.stacktrace = stacktrace;
+    this.cause = cause;
+  }
 
-    final Throwable exCause = ex.getCause();
-    this.cause = (exCause != null) ? new TrimmedThrowableData(exCause, trimmingStrategy) : null;
+  public static TrimmedThrowableData makeTrimmedThrowableData(
+      Throwable ex, StackTraceTrimmingStrategy trimmingStrategy) {
+    Stack<Throwable> throwableStack = new Stack<>();
+    Throwable exCause = ex;
+    while (exCause != null) {
+      throwableStack.push(exCause);
+      exCause = exCause.getCause();
+    }
+
+    TrimmedThrowableData trimmedThrowableData = null;
+    while (!throwableStack.isEmpty()) {
+      Throwable throwable = throwableStack.pop();
+      trimmedThrowableData =
+          new TrimmedThrowableData(
+              throwable.getLocalizedMessage(),
+              throwable.getClass().getName(),
+              trimmingStrategy.getTrimmedStackTrace(throwable.getStackTrace()),
+              trimmedThrowableData);
+    }
+
+    return trimmedThrowableData;
   }
 }

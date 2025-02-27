@@ -49,6 +49,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   private final Map<Qualified<?>, Provider<?>> lazyInstanceMap = new HashMap<>();
   private final Map<Qualified<?>, LazySet<?>> lazySetMap = new HashMap<>();
   private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
+  private Set<String> processedCoroutineDispatcherInterfaces = new HashSet<>();
   private final EventBus eventBus;
   private final AtomicReference<Boolean> eagerComponentsInitializedWith = new AtomicReference<>();
   private final ComponentRegistrarProcessor componentRegistrarProcessor;
@@ -120,6 +121,25 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         } catch (InvalidRegistrarException ex) {
           iterator.remove();
           Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
+        }
+      }
+
+      // kotlinx.coroutines.CoroutineDispatcher interfaces could be provided by both new version of
+      // firebase-common and old version of firebase-common-ktx. In this scenario take the first
+      // interface which was provided.
+
+      Iterator<Component<?>> it = componentsToAdd.iterator();
+      while (it.hasNext()) {
+        Component component = it.next();
+        for (Object anInterface : component.getProvidedInterfaces().toArray()) {
+          if (anInterface.toString().contains("kotlinx.coroutines.CoroutineDispatcher")) {
+            if (processedCoroutineDispatcherInterfaces.contains(anInterface.toString())) {
+              it.remove();
+              break;
+            } else {
+              processedCoroutineDispatcherInterfaces.add(anInterface.toString());
+            }
+          }
         }
       }
 

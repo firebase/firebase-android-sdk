@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +40,8 @@ public class QueryListener {
   private final EventListener<ViewSnapshot> listener;
 
   /**
-   * Initial snapshots (e.g. from cache) may not be propagated to the wrapped observer. This flag is
-   * set to true once we've actually raised an event.
+   * Initial snapshots (from cache for example) may not be propagated to the wrapped observer. This
+   * flag is set to true once we've actually raised an event.
    */
   private boolean raisedInitialEvent = false;
 
@@ -57,6 +58,15 @@ public class QueryListener {
 
   public Query getQuery() {
     return query;
+  }
+
+  public boolean listensToRemoteStore() {
+    if (options != null) {
+      return !options.source.equals(ListenSource.CACHE);
+    }
+    // While not set, source should be default to ListenSource.DEFAULT, which listens to remote
+    // store.
+    return true;
   }
 
   /**
@@ -127,6 +137,11 @@ public class QueryListener {
 
     // Always raise the first event when we're synced
     if (!snapshot.isFromCache()) {
+      return true;
+    }
+
+    // Always raise event if listening to cache
+    if (!this.listensToRemoteStore()) {
       return true;
     }
 

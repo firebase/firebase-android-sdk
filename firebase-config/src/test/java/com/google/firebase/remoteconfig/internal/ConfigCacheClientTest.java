@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -69,8 +70,8 @@ public class ConfigCacheClientTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
 
-    cacheThreadPool = Executors.newFixedThreadPool(/*nThreads=*/ 2);
-    testingThreadPool = Executors.newFixedThreadPool(/*nThreads=*/ 3);
+    cacheThreadPool = Executors.newFixedThreadPool(/* nThreads= */ 2);
+    testingThreadPool = Executors.newFixedThreadPool(/* nThreads= */ 3);
 
     ConfigCacheClient.clearInstancesForTest();
     when(mockStorageClient.getFileName()).thenReturn("FILE_NAME");
@@ -220,9 +221,9 @@ public class ConfigCacheClientTest {
 
   @Test
   public void getBlocking_hasNoCachedValueAndFileReadTimesOut_returnsNull() throws Exception {
-    when(mockStorageClient.read()).thenReturn(configContainer);
+    when(mockStorageClient.read()).thenAnswer(BLOCK_INDEFINITELY);
 
-    ConfigContainer container = cacheClient.getBlocking(/*diskReadTimeoutInSeconds=*/ 0L);
+    ConfigContainer container = cacheClient.getBlocking(/* diskReadTimeoutInSeconds= */ 0L);
 
     assertThat(container).isNull();
   }
@@ -329,4 +330,18 @@ public class ConfigCacheClientTest {
     cacheThreadPool.shutdownNow();
     testingThreadPool.shutdownNow();
   }
+
+  /**
+   * A Mockito "answer" that blocks indefinitely. The only way that {@link Answer#answer} will
+   * return is if its thread is interrupted. This may be useful to cause a method to never return,
+   * which should result in a timeout waiting for the operation to complete.
+   * <p>
+   * Example:
+   * {@code when(foo.get()).thenAnswer(BLOCK_INDEFINITELY); }
+   */
+  private static final Answer<ConfigContainer> BLOCK_INDEFINITELY =
+      invocation -> {
+        Thread.sleep(Long.MAX_VALUE);
+        throw new RuntimeException("BLOCK_INDEFINITELY.answer() should never get here");
+      };
 }

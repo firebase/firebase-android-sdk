@@ -13,49 +13,41 @@
 // limitations under the License.
 
 plugins {
-    id("firebase-library")
-    id("kotlin-android")
+  id("firebase-library")
+  id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup("common")
+  libraryGroup = "common"
+  publishJavadoc = false
+  releaseNotes { enabled.set(false) }
 }
 
 android {
-    val targetSdkVersion : Int by rootProject
-    val minSdkVersion : Int by rootProject
-    compileSdk = targetSdkVersion
-    namespace = "com.google.firebase.ktx"
-    defaultConfig {
-        minSdk = minSdkVersion
-        targetSdk = targetSdkVersion
-    }
-    sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/kotlin")
-        }
-        getByName("test") {
-            java.srcDirs("src/test/kotlin")
-        }
-    }
-    testOptions.unitTests.isIncludeAndroidResources = true
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+  compileSdk = compileSdkVersion
+  namespace = "com.google.firebase.ktx"
+  defaultConfig {
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
+  }
+  sourceSets {
+    getByName("main") { java.srcDirs("src/main/kotlin") }
+    getByName("test") { java.srcDirs("src/test/kotlin") }
+  }
+  kotlinOptions { jvmTarget = "1.8" }
+  testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
-
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation(project(":firebase-common"))
-    implementation("com.google.firebase:firebase-components:17.1.0")
-    implementation(libs.androidx.annotation)
-
-    // We"re exposing this library as a transitive dependency so developers can
-    // get Kotlin Coroutines support out-of-the-box for methods that return a Task
-    api(libs.kotlin.coroutines.tasks)
-
-    testImplementation(libs.robolectric)
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.kotlin.coroutines.test)
+  api(project(":firebase-common"))
+  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 }

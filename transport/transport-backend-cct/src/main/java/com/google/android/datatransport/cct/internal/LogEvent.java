@@ -26,6 +26,9 @@ public abstract class LogEvent {
   @Nullable
   public abstract Integer getEventCode();
 
+  @Nullable
+  public abstract ComplianceData getComplianceData();
+
   public abstract long getEventUptimeMs();
 
   @SuppressWarnings("mutable")
@@ -40,6 +43,9 @@ public abstract class LogEvent {
 
   @Nullable
   public abstract NetworkConnectionInfo getNetworkConnectionInfo();
+
+  @Nullable
+  public abstract ExperimentIds getExperimentIds();
 
   @NonNull
   public static Builder protoBuilder(@NonNull byte[] sourceExtension) {
@@ -64,6 +70,9 @@ public abstract class LogEvent {
     public abstract Builder setEventCode(@Nullable Integer value);
 
     @NonNull
+    public abstract Builder setComplianceData(@Nullable ComplianceData value);
+
+    @NonNull
     public abstract Builder setEventUptimeMs(long value);
 
     @NonNull
@@ -77,6 +86,9 @@ public abstract class LogEvent {
 
     @NonNull
     public abstract Builder setNetworkConnectionInfo(@Nullable NetworkConnectionInfo value);
+
+    @NonNull
+    public abstract Builder setExperimentIds(@Nullable ExperimentIds value);
 
     @NonNull
     public abstract LogEvent build();

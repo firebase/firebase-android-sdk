@@ -17,8 +17,9 @@ package com.google.firebase.perf.session;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -27,13 +28,14 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
-public class SessionManager {
+public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
@@ -56,8 +58,11 @@ public class SessionManager {
   }
 
   private SessionManager() {
-    // Start with an empty session ID as the firebase sessions will override with real Id.
-    this(GaugeManager.getInstance(), PerfSession.createWithId(""), AppStateMonitor.getInstance());
+    // Generate a new sessionID for every cold start.
+    this(
+        GaugeManager.getInstance(),
+        PerfSession.createWithId(UUID.randomUUID().toString()),
+        AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting
@@ -66,6 +71,7 @@ public class SessionManager {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
     this.appStateMonitor = appStateMonitor;
+    registerForAppState();
   }
 
   /**
@@ -88,6 +94,34 @@ public class SessionManager {
                     appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
               }
             });
+  }
+
+  @Override
+  public void onUpdateAppState(ApplicationProcessState newAppState) {
+    super.onUpdateAppState(newAppState);
+
+    if (appStateMonitor.isColdStart()) {
+      // We want the Session to remain unchanged if this is a cold start of the app since we already
+      // update the PerfSession in FirebasePerfProvider#onAttachInfo().
+      return;
+    }
+
+    if (newAppState == ApplicationProcessState.FOREGROUND) {
+      // A new foregrounding of app will force a new sessionID generation.
+      PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+      updatePerfSession(session);
+    } else {
+      // If the session is running for too long, generate a new session and collect gauges as
+      // necessary.
+      if (perfSession.isSessionRunningTooLong()) {
+        PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+        updatePerfSession(session);
+      } else {
+        // For any other state change of the application, modify gauge collection state as
+        // necessary.
+        startOrStopCollectingGauges(newAppState);
+      }
+    }
   }
 
   /**

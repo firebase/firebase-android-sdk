@@ -14,21 +14,24 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "appdistribution"
+    libraryGroup = "appdistribution"
     testLab.enabled = true
-    publishJavadoc = true
-    publishSources = true
+    publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
+    previewMode = "beta"
 }
 
 android {
     namespace "com.google.firebase.appdistribution.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -52,21 +55,19 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api(project(":firebase-appdistribution-api"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(path: ':firebase-appdistribution-api')
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.robolectric
 
-    androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.core
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
+    androidTestImplementation libs.truth
+    androidTestImplementation 'junit:junit:4.12'
 }

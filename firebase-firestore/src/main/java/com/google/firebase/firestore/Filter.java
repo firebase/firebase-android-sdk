@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A {@code Filter} represents a restriction on one or more field values and can be used to refine
@@ -48,6 +49,26 @@ public class Filter {
     public Object getValue() {
       return value;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      UnaryFilter that = (UnaryFilter) o;
+
+      return this.operator == that.operator
+          && Objects.equals(this.field, that.field)
+          && Objects.equals(this.value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = field != null ? field.hashCode() : 0;
+      result = 31 * result + (operator != null ? operator.hashCode() : 0);
+      result = 31 * result + (value != null ? value.hashCode() : 0);
+      return result;
+    }
   }
 
   static class CompositeFilter extends Filter {
@@ -67,6 +88,23 @@ public class Filter {
 
     public com.google.firebase.firestore.core.CompositeFilter.Operator getOperator() {
       return operator;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      CompositeFilter that = (CompositeFilter) o;
+
+      return this.operator == that.operator && Objects.equals(this.filters, that.filters);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = filters != null ? filters.hashCode() : 0;
+      result = 31 * result + (operator != null ? operator.hashCode() : 0);
+      return result;
     }
   }
 

@@ -2,12 +2,12 @@
 # *another* workflow on the Firebase C++ SDK, which will check for the Android
 # version update and create a PR updating its dependencies if any version
 # numbers changed.
-name: update-cpp-sdk-on-release
+name: Update C++ SDKs on release
 on:
   push:
     branches:
       # Change the below line if the main branch is renamed.
-      - 'master'
+      - 'main'
     paths:
       # Only run this if a gradle.properties file is touched.
       - '**/gradle.properties'
@@ -23,7 +23,7 @@ jobs:
     outputs:
       released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v4.1.1
         with:
           # Check out the actual head commit, not any merge commit.
           ref: ${{ github.sha }}
@@ -35,7 +35,7 @@ jobs:
           # Query the git history for all gradle.properties files changed by this push.
           # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
           if (git diff '${{ github.event.before }}' -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
-            echo "::set-output name=released_version_changed::1"
+            echo "released_version_changed=1" >> $GITHUB_OUTPUT
           else
             echo "No change to latestReleasedVersion detected since ${{ github.event.before }}"
           fi
@@ -51,12 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3
         with:
           python-version: 3.7
 
       - name: Check out firebase-cpp-sdk
-        uses: actions/checkout@v2.3.1
+        uses: actions/checkout@v4.1.1
         with:
           repository: firebase/firebase-cpp-sdk
           ref: main

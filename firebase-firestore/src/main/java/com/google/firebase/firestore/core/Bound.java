@@ -39,8 +39,8 @@ import java.util.List;
 public final class Bound {
 
   /**
-   * Whether this bound includes the provided position (e.g. for {#code startAt()} or {#code
-   * endAt()})
+   * Whether this bound includes the provided position (for example, {#code startAt()} or {#code
+   * endAt()} is inclusive)
    */
   private final boolean inclusive;
 

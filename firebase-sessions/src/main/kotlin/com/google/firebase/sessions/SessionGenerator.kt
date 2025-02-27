@@ -16,6 +16,9 @@
 
 package com.google.firebase.sessions
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue
+import com.google.firebase.Firebase
+import com.google.firebase.app
 import java.util.UUID
 
 /**
@@ -33,7 +36,6 @@ internal data class SessionDetails(
  * [SessionDetails] up to date with the latest values.
  */
 internal class SessionGenerator(
-  val collectEvents: Boolean,
   private val timeProvider: TimeProvider,
   private val uuidGenerator: () -> UUID = UUID::randomUUID
 ) {
@@ -49,6 +51,7 @@ internal class SessionGenerator(
     get() = ::currentSession.isInitialized
 
   /** Generates a new session. The first session's sessionId will match firstSessionId. */
+  @CanIgnoreReturnValue
   fun generateNewSession(): SessionDetails {
     sessionIndex++
     currentSession =
@@ -62,4 +65,9 @@ internal class SessionGenerator(
   }
 
   private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
+
+  internal companion object {
+    val instance: SessionGenerator
+      get() = Firebase.app[SessionGenerator::class.java]
+  }
 }

@@ -71,22 +71,6 @@ public class FirebasePlatformLoggingTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.KITKAT)
-  public void test_watch_atNotHighEnoughApiLevel() {
-    ShadowPackageManager shadowPackageManager =
-        shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-    shadowPackageManager.setSystemFeature(PackageManager.FEATURE_WATCH, true);
-    withApp(
-        "myApp",
-        OPTIONS,
-        app -> {
-          UserAgentPublisher ua = app.get(UserAgentPublisher.class);
-
-          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-platform/($|\\s)"));
-        });
-  }
-
-  @Test
   @Config(sdk = Build.VERSION_CODES.O)
   public void test_auto_atHighEnoughApiLevel() {
     ShadowPackageManager shadowPackageManager =

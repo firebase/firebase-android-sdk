@@ -21,7 +21,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(shadows = ShadowPreconditions.class)
 public class TopicsStoreRoboTest {
 
   private TopicsStore store;

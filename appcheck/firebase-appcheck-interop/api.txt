@@ -1,10 +1,10 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.appcheck {
 
   public abstract class AppCheckTokenResult {
     ctor public AppCheckTokenResult();
-    method @Nullable public abstract Exception getError();
-    method @NonNull public abstract String getToken();
+    method public abstract Exception? getError();
+    method public abstract String getToken();
   }
 
 }
@@ -12,7 +12,7 @@ package com.google.firebase.appcheck {
 package com.google.firebase.appcheck.interop {
 
   public interface AppCheckTokenListener {
-    method public void onAppCheckTokenChanged(@NonNull com.google.firebase.appcheck.AppCheckTokenResult);
+    method public void onAppCheckTokenChanged(com.google.firebase.appcheck.AppCheckTokenResult);
   }
 
 }

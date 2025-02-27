@@ -14,9 +14,10 @@
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'copy-google-services'
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
         applicationId "com.googletest.firebase.appcheck"
@@ -35,24 +36,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-
     // Firebase dependencies
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
     implementation project(":appcheck:firebase-appcheck")
     implementation project(":appcheck:firebase-appcheck-debug")
     implementation project(":appcheck:firebase-appcheck-interop")
     implementation project(":appcheck:firebase-appcheck-playintegrity")
-    implementation project(":appcheck:firebase-appcheck-safetynet")
     implementation project(":firebase-storage")
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.googletest.firebase.appcheck"
-apply from: '../../../gradle/googleServices.gradle'

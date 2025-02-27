@@ -65,6 +65,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
 
+  /** The database ID of the Firestore instance. */
+  private final DatabaseId databaseId;
+
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
     /**
@@ -153,11 +156,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
+      DatabaseId databaseId,
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
       ConnectivityMonitor connectivityMonitor) {
+    this.databaseId = databaseId;
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -443,7 +448,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
-    watchChangeAggregator = new WatchChangeAggregator(this);
+    watchChangeAggregator = new WatchChangeAggregator(databaseId, this);
     watchStream.start();
 
     onlineStateTracker.handleWatchStreamStart();
@@ -565,14 +570,14 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
         // Mark the query we send as being on behalf of an existence filter  mismatch, but don't
         // actually retain that in listenTargets. This ensures that we flag the first re-listen this
-        // way without impacting future listens of this target (that might happen e.g. on
+        // way without impacting future listens of this target (that might happen for example on
         // reconnect).
         TargetData requestTargetData =
             new TargetData(
                 targetData.getTarget(),
                 targetId,
                 targetData.getSequenceNumber(),
-                /*purpose=*/ entry.getValue());
+                /* purpose= */ entry.getValue());
         this.sendWatchRequest(requestTargetData);
       }
     }
@@ -624,7 +629,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   /**
-   * Returns true if we can add to the write pipeline (i.e. it is not full and the network is
+   * Returns true if we can add to the write pipeline (because it is not full and the network is
    * enabled).
    */
   private boolean canAddToWritePipeline() {
@@ -760,11 +765,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
-  }
-
-  @Override
-  public DatabaseId getDatabaseId() {
-    return this.datastore.getDatabaseInfo().getDatabaseId();
   }
 
   public Task<Map<String, Value>> runAggregateQuery(

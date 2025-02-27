@@ -51,7 +51,8 @@ public final class RemoteConfigConstants {
     RequestFieldKey.PACKAGE_NAME,
     RequestFieldKey.SDK_VERSION,
     RequestFieldKey.ANALYTICS_USER_PROPERTIES,
-    RequestFieldKey.FIRST_OPEN_TIME
+    RequestFieldKey.FIRST_OPEN_TIME,
+    RequestFieldKey.CUSTOM_SIGNALS
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface RequestFieldKey {
@@ -68,6 +69,7 @@ public final class RemoteConfigConstants {
     String SDK_VERSION = "sdkVersion";
     String ANALYTICS_USER_PROPERTIES = "analyticsUserProperties";
     String FIRST_OPEN_TIME = "firstOpenTime";
+    String CUSTOM_SIGNALS = "customSignals";
   }
 
   /** Keys of fields in the Fetch response body from the Firebase Remote Config server. */
@@ -76,7 +78,8 @@ public final class RemoteConfigConstants {
     ResponseFieldKey.EXPERIMENT_DESCRIPTIONS,
     ResponseFieldKey.PERSONALIZATION_METADATA,
     ResponseFieldKey.STATE,
-    ResponseFieldKey.TEMPLATE_VERSION_NUMBER
+    ResponseFieldKey.TEMPLATE_VERSION_NUMBER,
+    ResponseFieldKey.ROLLOUT_METADATA
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ResponseFieldKey {
@@ -85,6 +88,7 @@ public final class RemoteConfigConstants {
     String PERSONALIZATION_METADATA = "personalizationMetadata";
     String STATE = "state";
     String TEMPLATE_VERSION_NUMBER = "templateVersion";
+    String ROLLOUT_METADATA = "rolloutMetadata";
   }
 
   /**

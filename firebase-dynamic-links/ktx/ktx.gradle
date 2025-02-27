@@ -14,20 +14,22 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "dynamic-links"
-    publishJavadoc = true
-    publishSources = true
+    libraryGroup = "dynamic-links"
+    publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
         namespace "com.google.firebase.dynamiclinks.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -43,18 +45,15 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api(project(":firebase-dynamic-links"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation project(':firebase-dynamic-links')
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation libs.robolectric
 }

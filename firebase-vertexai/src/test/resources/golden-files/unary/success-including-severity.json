@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {
+            "text": "## One Thousand and One Nights: A Summary\n\nOne Thousand and One Nights, also known as Arabian Nights, is a collection of Middle Eastern and South Asian stories."
+          }
+        ]
+      },
+      "finishReason": "STOP",
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "probability": "NEGLIGIBLE",
+          "probabilityScore": 0.062331032,
+          "severity": "HARM_SEVERITY_NEGLIGIBLE",
+          "severityScore": 0.052134257
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "NEGLIGIBLE",
+          "probabilityScore": 0.04240383,
+          "severity": "HARM_SEVERITY_NEGLIGIBLE",
+          "severityScore": 0.06325052
+        },
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "probability": "NEGLIGIBLE",
+          "probabilityScore": 0.06359858,
+          "severity": "HARM_SEVERITY_NEGLIGIBLE",
+          "severityScore": 0.021990221
+        },
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "probability": "NEGLIGIBLE",
+          "probabilityScore": 0.39030153,
+          "severity": "HARM_SEVERITY_NEGLIGIBLE",
+          "severityScore": 0.10650458
+        }
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 11,
+    "candidatesTokenCount": 592,
+    "totalTokenCount": 603
+  }
+}

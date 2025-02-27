@@ -29,10 +29,10 @@ import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL
 import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -72,11 +72,12 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -108,11 +109,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-/**
- * Unit tests for the Firebase Remote Config API.
- *
- * @author Miraziz Yusupov
- */
+/** Unit tests for the Firebase Remote Config API. */
 @RunWith(RobolectricTestRunner.class)
 @Config(
     manifest = Config.NONE,
@@ -158,7 +155,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigCacheClient mockDefaultsCache;
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
-  @Mock private ConfigMetadataClient metadataClient;
+  @Mock private ConfigSharedPrefsClient sharedPrefsClient;
 
   @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
   @Mock private ConfigAutoFetch mockConfigAutoFetch;
@@ -184,6 +181,8 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private Provider<AnalyticsConnector> mockAnalyticsConnectorProvider;
 
+  @Mock private RolloutsStateSubscriptionsHandler mockRolloutsStateSubscriptionsHandler;
+
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
   private FirebaseRemoteConfig personalizationFrc;
@@ -193,7 +192,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigContainer realtimeFetchedContainer;
   private ConfigAutoFetch configAutoFetch;
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
-  private ConfigMetadataClient realtimeMetadataClient;
+  private ConfigSharedPrefsClient realtimeSharedPrefsClient;
 
   private FetchResponse firstFetchedContainerResponse;
 
@@ -241,8 +240,9 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient,
-            mockConfigRealtimeHandler);
+            sharedPrefsClient,
+            mockConfigRealtimeHandler,
+            mockRolloutsStateSubscriptionsHandler);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -252,14 +252,15 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
                 mockFireperfDefaultsCache,
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+                RemoteConfigComponent.getSharedPrefsClient(context, APP_ID, FIREPERF_NAMESPACE),
+                mockRolloutsStateSubscriptionsHandler);
 
     personalizationFrc =
         FirebaseApp.getInstance()
@@ -268,15 +269,16 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 PERSONALIZATION_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFetchedCache,
                 mockActivatedCache,
                 mockDefaultsCache,
                 mockFetchHandler,
                 parameterHandler,
-                RemoteConfigComponent.getMetadataClient(
-                    context, APP_ID, PERSONALIZATION_NAMESPACE));
+                RemoteConfigComponent.getSharedPrefsClient(
+                    context, APP_ID, PERSONALIZATION_NAMESPACE),
+                mockRolloutsStateSubscriptionsHandler);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -315,7 +317,7 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {
             mockOnUpdateListener.onUpdate(configUpdate);
           }
 
@@ -348,8 +350,9 @@ public final class FirebaseRemoteConfigTest {
             listeners,
             mockRetryListener,
             scheduledExecutorService);
-    realtimeMetadataClient =
-        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+    realtimeSharedPrefsClient =
+        new ConfigSharedPrefsClient(
+            context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -359,14 +362,14 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-            realtimeMetadataClient,
+            realtimeSharedPrefsClient,
             scheduledExecutorService);
   }
 
   @Test
   public void ensureInitialized_notInitialized_isNotComplete() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
     loadActivatedCacheWithIncompleteTask();
     loadInstanceIdAndToken();
 
@@ -379,9 +382,9 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_initialized_returnsCorrectFrcInfo() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
@@ -759,6 +762,19 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_publishesRolloutsStateToSubscribers() throws Exception {
+    ConfigContainer configContainer = ConfigContainer.newBuilder().build();
+
+    loadCacheWithConfig(mockFetchedCache, configContainer);
+    cachePutReturnsConfig(mockActivatedCache, configContainer);
+
+    Task<Boolean> activateTask = frc.activate();
+
+    assertThat(activateTask.getResult()).isTrue();
+    verify(mockRolloutsStateSubscriptionsHandler).publishActiveRolloutsState(configContainer);
+  }
+
+  @Test
   public void activate2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
     ConfigContainer containerWithNoAbtExperiments =
         ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
@@ -792,8 +808,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /* container= */ null);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
 
@@ -1010,7 +1026,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void getInfo_returnsInfo() {
-    when(metadataClient.getInfo()).thenReturn(mockFrcInfo);
+    when(sharedPrefsClient.getInfo()).thenReturn(mockFrcInfo);
 
     long fetchTimeInMillis = 100L;
     int lastFetchStatus = LAST_FETCH_STATUS_THROTTLED;
@@ -1057,11 +1073,11 @@ public final class FirebaseRemoteConfigTest {
     verify(mockActivatedCache).clear();
     verify(mockFetchedCache).clear();
     verify(mockDefaultsCache).clear();
-    verify(metadataClient).clear();
+    verify(sharedPrefsClient).clear();
   }
 
   @Test
-  public void setConfigSettingsAsync_updatesMetadata() {
+  public void setConfigSettingsAsync_updatesSharedPrefs() {
     long fetchTimeout = 13L;
     long minimumFetchInterval = 666L;
     FirebaseRemoteConfigSettings frcSettings =
@@ -1073,7 +1089,7 @@ public final class FirebaseRemoteConfigTest {
     Task<Void> setterTask = frc.setConfigSettingsAsync(frcSettings);
 
     assertThat(setterTask.isSuccessful()).isTrue();
-    verify(metadataClient).setConfigSettings(frcSettings);
+    verify(sharedPrefsClient).setConfigSettings(frcSettings);
   }
 
   @Test
@@ -1157,6 +1173,65 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_configWithRolloutMetadata_storedInActivatedCacheSuccessfully()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+
+    ConfigContainer fetchedConfigContainer =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withRolloutMetadata(rolloutsMetadata)
+            .build();
+
+    loadCacheWithConfig(mockFetchedCache, fetchedConfigContainer);
+    loadCacheWithConfig(mockActivatedCache, null);
+    cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
+
+    frc.activate();
+
+    verify(mockActivatedCache).put(fetchedConfigContainer);
+    verify(mockFetchedCache).clear();
+  }
+
+  @Test
+  public void fetchAndActivate_configWithRolloutMetadata_storedInActivatedCacheSuccessfully()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+
+    ConfigContainer fetchedConfigContainer =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withRolloutMetadata(rolloutsMetadata)
+            .build();
+
+    loadFetchHandlerWithResponse(fetchedConfigContainer);
+    loadCacheWithConfig(mockFetchedCache, fetchedConfigContainer);
+    loadCacheWithConfig(mockActivatedCache, null);
+    cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
+
+    frc.fetchAndActivate();
+
+    verify(mockActivatedCache).put(fetchedConfigContainer);
+    verify(mockFetchedCache).clear();
+  }
+
+  @Test
   public void realtime_frc_full_test() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener))
@@ -1222,7 +1297,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verifyZeroInteractions(mockOnUpdateListener);
+    verifyNoInteractions(mockOnUpdateListener);
   }
 
   @Test
@@ -1585,6 +1660,22 @@ public final class FirebaseRemoteConfigTest {
     assertThat(fakeConnection.getRequestMethod()).isEqualTo("POST");
   }
 
+  @Test
+  public void setCustomSignals_succeeds_and_calls_sharedPrefsClient() {
+    CustomSignals customSignals =
+        new CustomSignals.Builder()
+            .put("key1", "value1")
+            .put("key2", 123L)
+            .put("key3", 12.34)
+            .put("key4", null)
+            .build();
+
+    Task<Void> setterTask = frc.setCustomSignals(customSignals);
+
+    assertThat(setterTask.isSuccessful()).isTrue();
+    verify(sharedPrefsClient).setCustomSignals(customSignals.customSignals);
+  }
+
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
@@ -1609,6 +1700,12 @@ public final class FirebaseRemoteConfigTest {
 
   private void loadFetchHandlerWithResponse() {
     when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+  }
+
+  private void loadFetchHandlerWithResponse(ConfigContainer configContainer) {
+    FetchResponse fetchResponse =
+        FetchResponse.forBackendUpdatesFetched(firstFetchedContainer, ETAG);
+    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(fetchResponse));
   }
 
   private void load2pFetchHandlerWithResponse() {
@@ -1678,7 +1775,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(ConfigUpdate configUpdate) {}
+      public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}

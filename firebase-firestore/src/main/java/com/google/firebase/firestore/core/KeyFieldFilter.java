@@ -22,7 +22,7 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
-/** Filter that matches on key fields (i.e. '__name__'). */
+/** Filter that matches on key fields (specifically, '__name__'). */
 public class KeyFieldFilter extends FieldFilter {
   private final DocumentKey key;
 

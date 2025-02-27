@@ -21,7 +21,7 @@
     android:versionName="1">
 
 
-  <!--<uses-sdk android:minSdkVersion="16"/>-->
+  <!--<uses-sdk android:minSdkVersion="21"/>-->
 
   <application android:label="FirebaseCommonTests" >
     <uses-library android:name="android.test.runner" />

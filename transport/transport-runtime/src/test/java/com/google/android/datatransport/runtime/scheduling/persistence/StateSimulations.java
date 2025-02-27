@@ -180,10 +180,11 @@ class StateSimulations {
       assertThat(newEventId).isNotEqualTo(-1);
 
       ContentValues payloads = new ContentValues();
-      values.put("sequence_num", newEventId);
-      values.put("event_id", "42");
-      values.put("bytes", "event".getBytes());
-      long payloadId = db.insert("event_payloads", null, payloads);
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
       metadata.put("event_id", newEventId);
@@ -227,10 +228,11 @@ class StateSimulations {
       assertThat(newEventId).isNotEqualTo(-1);
 
       ContentValues payloads = new ContentValues();
-      values.put("sequence_num", newEventId);
-      values.put("event_id", "42");
-      values.put("bytes", "event".getBytes());
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
       long payloadId = db.insert("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
       metadata.put("event_id", newEventId);
@@ -248,6 +250,129 @@ class StateSimulations {
 
       ContentValues globalState = new ContentValues();
       globalState.put("last_metrics_upload_ms", 1311);
+      long stateId = db.insert("global_log_event_state", null, globalState);
+      assertThat(stateId).isNotEqualTo(-1);
+    }
+  }
+
+  static class V6 implements StateSimulator {
+    @Override
+    public void simulate(SchemaManager schemaManager) {
+      SQLiteDatabase db = schemaManager.getWritableDatabase();
+      Random rd = new Random();
+      byte[] arr = new byte[7];
+      rd.nextBytes(arr);
+
+      ContentValues record = new ContentValues();
+      record.put("backend_name", "b1");
+      record.put("priority", PriorityMapping.toInt(Priority.DEFAULT));
+      record.put("next_request_ms", 0);
+      record.put("extras", arr);
+      long contextId = db.insert("transport_contexts", null, record);
+      assertThat(contextId).isNotEqualTo(-1);
+
+      ContentValues values = new ContentValues();
+      values.put("context_id", contextId);
+      values.put("transport_name", "42");
+      values.put("timestamp_ms", 1);
+      values.put("uptime_ms", 2);
+      values.put(
+          "payload",
+          new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset()))
+              .getBytes());
+      values.put("code", 1);
+      values.put("num_attempts", 0);
+      values.put("payload_encoding", "encoding");
+      values.put("inline", true);
+      values.put("product_id", 42);
+      long newEventId = db.insert("events", null, values);
+      assertThat(newEventId).isNotEqualTo(-1);
+
+      ContentValues payloads = new ContentValues();
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
+
+      ContentValues metadata = new ContentValues();
+      metadata.put("event_id", newEventId);
+      metadata.put("name", "key1");
+      metadata.put("value", "value1");
+      long metadataId = db.insert("event_metadata", null, metadata);
+      assertThat(metadataId).isNotEqualTo(-1);
+
+      ContentValues metrics = new ContentValues();
+      metrics.put("log_source", "source2");
+      metrics.put("reason", LogEventDropped.Reason.CACHE_FULL.getNumber());
+      metrics.put("events_dropped_count", 20);
+      long recordId = db.insert("log_event_dropped", null, metrics);
+      assertThat(recordId).isNotEqualTo(-1);
+
+      ContentValues globalState = new ContentValues();
+      globalState.put("last_metrics_upload_ms", 1411);
+      long stateId = db.insert("global_log_event_state", null, globalState);
+      assertThat(stateId).isNotEqualTo(-1);
+    }
+  }
+
+  static class V7 implements StateSimulator {
+    @Override
+    public void simulate(SchemaManager schemaManager) {
+      SQLiteDatabase db = schemaManager.getWritableDatabase();
+      Random rd = new Random();
+      byte[] arr = new byte[7];
+      rd.nextBytes(arr);
+
+      ContentValues record = new ContentValues();
+      record.put("backend_name", "b1");
+      record.put("priority", PriorityMapping.toInt(Priority.DEFAULT));
+      record.put("next_request_ms", 0);
+      record.put("extras", arr);
+      long contextId = db.insert("transport_contexts", null, record);
+      assertThat(contextId).isNotEqualTo(-1);
+
+      ContentValues values = new ContentValues();
+      values.put("context_id", contextId);
+      values.put("transport_name", "42");
+      values.put("timestamp_ms", 1);
+      values.put("uptime_ms", 2);
+      values.put(
+          "payload",
+          new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset()))
+              .getBytes());
+      values.put("code", 1);
+      values.put("num_attempts", 0);
+      values.put("payload_encoding", "encoding");
+      values.put("inline", true);
+      values.put("product_id", 42);
+      values.put("pseudonymous_id", "pseudonymous id");
+      long newEventId = db.insert("events", null, values);
+      assertThat(newEventId).isNotEqualTo(-1);
+
+      ContentValues payloads = new ContentValues();
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
+
+      ContentValues metadata = new ContentValues();
+      metadata.put("event_id", newEventId);
+      metadata.put("name", "key1");
+      metadata.put("value", "value1");
+      long metadataId = db.insert("event_metadata", null, metadata);
+      assertThat(metadataId).isNotEqualTo(-1);
+
+      ContentValues metrics = new ContentValues();
+      metrics.put("log_source", "source3");
+      metrics.put("reason", LogEventDropped.Reason.CACHE_FULL.getNumber());
+      metrics.put("events_dropped_count", 20);
+      long recordId = db.insert("log_event_dropped", null, metrics);
+      assertThat(recordId).isNotEqualTo(-1);
+
+      ContentValues globalState = new ContentValues();
+      globalState.put("last_metrics_upload_ms", 1511);
       long stateId = db.insert("global_log_event_state", null, globalState);
       assertThat(stateId).isNotEqualTo(-1);
     }

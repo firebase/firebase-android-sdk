@@ -25,6 +25,7 @@ public abstract class BackendRequest {
   public abstract Iterable<EventInternal> getEvents();
 
   @Nullable
+  @SuppressWarnings("mutable")
   public abstract byte[] getExtras();
 
   /** Creates a new instance of the request. */

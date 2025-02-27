@@ -160,7 +160,7 @@ public class RandomOperationGenerator {
         if (random.nextDouble() < REVERT_PROBABILITY || isEmptyPriorityError) {
           writeTree.removeWrite(op.writeId);
           outstandingWrites.remove();
-          return getAckForWrite(op.operation, /*revert=*/ true);
+          return getAckForWrite(op.operation, /* revert= */ true);
         } else {
           // TODO: maybe ignore if write equals server data
           Operation serverOp = userOperationToServerOperation(op.operation);
@@ -290,7 +290,7 @@ public class RandomOperationGenerator {
     hardAssert(op == frontOp, "The write op should be the front of the queue");
     writeTree.removeWrite(op.writeId);
     this.writeOpForLastUpdate = null;
-    return getAckForWrite(op.operation, /*revert=*/ false);
+    return getAckForWrite(op.operation, /* revert= */ false);
   }
 
   private Operation getAckForWrite(Operation writeOp, boolean revert) {

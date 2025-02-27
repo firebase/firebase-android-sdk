@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appcheck.internal.RetryManager.BAD_REQUEST_ERROR_CODE;
-import static com.google.firebase.appcheck.internal.RetryManager.FORBIDDEN_ERROR_CODE;
 import static com.google.firebase.appcheck.internal.RetryManager.MAX_EXP_BACKOFF_MILLIS;
 import static com.google.firebase.appcheck.internal.RetryManager.NOT_FOUND_ERROR_CODE;
 import static com.google.firebase.appcheck.internal.RetryManager.ONE_DAY_MILLIS;
@@ -61,14 +60,6 @@ public class RetryManagerTest {
   }
 
   @Test
-  public void updateBackoffOnFailure_forbiddenError_oneDayRetryStrategy() {
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
-
-    assertThat(retryManager.getNextRetryTimeMillis())
-        .isEqualTo(CURRENT_TIME_MILLIS + ONE_DAY_MILLIS);
-  }
-
-  @Test
   public void updateBackoffOnFailure_notFoundError_oneDayRetryStrategy() {
     retryManager.updateBackoffOnFailure(NOT_FOUND_ERROR_CODE);
 
@@ -78,9 +69,9 @@ public class RetryManagerTest {
 
   @Test
   public void updateBackoffOnFailure_oneDayRetryStrategy_multipleRetries() {
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
 
     // The backoff period should not increase for consecutive failed retries with the ONE_DAY
     // strategy.
@@ -133,7 +124,7 @@ public class RetryManagerTest {
 
   @Test
   public void canRetry_beforeNextRetryTime() {
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
 
     // Sanity check.
     assertThat(mockClock.currentTimeMillis()).isEqualTo(CURRENT_TIME_MILLIS);
@@ -145,7 +136,7 @@ public class RetryManagerTest {
 
   @Test
   public void canRetry_afterNextRetryTime() {
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
     long nextRetryMillis = retryManager.getNextRetryTimeMillis();
 
     when(mockClock.currentTimeMillis()).thenReturn(nextRetryMillis + 1);
@@ -154,7 +145,7 @@ public class RetryManagerTest {
 
   @Test
   public void resetBackoffOnSuccess() {
-    retryManager.updateBackoffOnFailure(FORBIDDEN_ERROR_CODE);
+    retryManager.updateBackoffOnFailure(BAD_REQUEST_ERROR_CODE);
     // Sanity check.
     assertThat(retryManager.getNextRetryTimeMillis())
         .isEqualTo(CURRENT_TIME_MILLIS + ONE_DAY_MILLIS);

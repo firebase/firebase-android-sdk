@@ -52,9 +52,9 @@ interface TargetCache {
   /**
    * A global snapshot version representing the last consistent snapshot we received from the
    * backend. This is monotonically increasing and any snapshots received from the backend prior to
-   * this version (e.g. for targets resumed with a resume_token) should be suppressed (buffered)
-   * until the backend has caught up to this snapshot version again. This prevents our cache from
-   * ever going backwards in time.
+   * this version (for example, for targets resumed with a resume_token) should be suppressed
+   * (buffered) until the backend has caught up to this snapshot version again. This prevents our
+   * cache from ever going backwards in time.
    *
    * <p>This is updated whenever our we get a TargetChange with a read_time and empty target_ids.
    */

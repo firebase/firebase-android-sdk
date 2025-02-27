@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 import org.junit.Rule;
@@ -70,6 +71,8 @@ public class CctTransportBackendTest {
   private static final String JSON_PAYLOAD = "{\"hello\": false}";
   private static final String JSON_PAYLOAD_ESCAPED = "{\\\"hello\\\": false}";
   private static final int CODE = 5;
+
+  private static final int PRODUCT_ID = 98765;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private static final Encoding JSON_ENCODING = Encoding.of("json");
@@ -82,6 +85,16 @@ public class CctTransportBackendTest {
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
   private CctTransportBackend BACKEND =
       new CctTransportBackend(ApplicationProvider.getApplicationContext(), wallClock, uptimeClock);
+
+  private static final String PSEUDONYMOUS_ID = "pseudonymous Id";
+  private ByteString EXPERIMENT_IDS_CLEAR =
+      ByteString.copyFrom("experiment ids clear".getBytes(Charset.defaultCharset()));
+
+  private String EXPERIMENT_IDS_CLEAR_BYTE64 = "ZXhwZXJpbWVudCBpZHMgY2xlYXI=";
+  private ByteString EXPERIMENT_IDS_ENCRYPTED =
+      ByteString.copyFrom("experiment ids encrypted".getBytes(Charset.defaultCharset()));
+
+  private String EXPERIMENT_IDS_ENCRYPTED_BYTE64 = "ZXhwZXJpbWVudCBpZHMgZW5jcnlwdGVk";
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
@@ -110,6 +123,10 @@ public class CctTransportBackendTest {
                             new EncodedPayload(
                                 JSON_ENCODING, JSON_PAYLOAD.getBytes(Charset.defaultCharset())))
                         .setCode(CODE)
+                        .setProductId(PRODUCT_ID)
+                        .setPseudonymousId(PSEUDONYMOUS_ID)
+                        .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR.toByteArray())
+                        .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED.toByteArray())
                         .build())))
         .setExtras(destination.getExtras())
         .build();
@@ -186,10 +203,28 @@ public class CctTransportBackendTest {
             .withRequestBody(notMatching("$[?(@.logRequest[0].logEvent[0].eventCode)]"))
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
             .withRequestBody(
+                matchingJsonPath("$[?(@.logRequest[0].logEvent[0].complianceData)]", absent()))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].complianceData.privacyContext.prequest.originAssociatedProductId == %s)]",
+                        PRODUCT_ID)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.clearBlob == \"%s\")]",
+                        EXPERIMENT_IDS_CLEAR_BYTE64)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == \"%s\")]",
+                        EXPERIMENT_IDS_ENCRYPTED_BYTE64)))
+            .withRequestBody(
                 matchingJsonPath(
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
-                        JSON_PAYLOAD_ESCAPED))));
+                        JSON_PAYLOAD_ESCAPED)))
+            .withoutHeader("Cookie"));
 
     assertEquals(BackendResponse.ok(3), response);
   }
@@ -708,6 +743,73 @@ public class CctTransportBackendTest {
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[1].logEvent.size() == 1)]")));
 
     assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void schedule_shouldAddCookieOnPseudonymousIds() {
+    String pseudonymousId = "testing_world";
+    BackendRequest request =
+        BackendRequest.builder()
+            .setEvents(
+                Collections.singletonList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setPseudonymousId(pseudonymousId)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
+
+    stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(200)));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(request);
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Cookie", equalTo(String.format("NID=%s", pseudonymousId))));
+  }
+
+  @Test
+  public void schedule_shouldDropCookieOnMixedPseudonymousIds() {
+    String pseudonymousId = "testing_world";
+    String otherPseudonymousId = "world_testing";
+    BackendRequest request =
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPseudonymousId(pseudonymousId)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPseudonymousId(otherPseudonymousId)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
+
+    stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(200)));
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BACKEND.send(request);
+    verify(postRequestedFor(urlEqualTo("/api")).withoutHeader("Cookie"));
   }
 
   // When there is no active network, the ConnectivityManager returns null when

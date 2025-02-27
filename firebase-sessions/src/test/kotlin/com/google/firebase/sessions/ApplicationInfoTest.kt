@@ -20,7 +20,10 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
+import com.google.firebase.initialize
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import org.junit.After
 import org.junit.Test
@@ -32,7 +35,12 @@ class ApplicationInfoTest {
 
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
-    val applicationInfo = SessionEvents.getApplicationInfo(FakeFirebaseApp().firebaseApp)
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val actualCurrentProcessDetails =
+      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
+    val actualAppProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
+    val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
     assertThat(applicationInfo)
       .isEqualTo(
         ApplicationInfo(
@@ -46,6 +54,48 @@ class ApplicationInfoTest {
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
             appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
             deviceManufacturer = Build.MANUFACTURER,
+            actualCurrentProcessDetails,
+            actualAppProcessDetails,
+          )
+        )
+      )
+  }
+
+  @Test
+  fun applicationInfo_missiongVersionCode_populatesInfoCorrectly() {
+    // Initialize Firebase with no version code set.
+    val firebaseApp =
+      Firebase.initialize(
+        ApplicationProvider.getApplicationContext(),
+        FirebaseOptions.Builder()
+          .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
+          .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
+          .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
+          .build()
+      )
+
+    val actualCurrentProcessDetails =
+      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
+    val actualAppProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
+
+    val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
+
+    assertThat(applicationInfo)
+      .isEqualTo(
+        ApplicationInfo(
+          appId = FakeFirebaseApp.MOCK_APP_ID,
+          deviceModel = Build.MODEL,
+          sessionSdkVersion = BuildConfig.VERSION_NAME,
+          osVersion = Build.VERSION.RELEASE,
+          logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+          AndroidApplicationInfo(
+            packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+            versionName = "0",
+            appBuildVersion = "0",
+            deviceManufacturer = Build.MANUFACTURER,
+            actualCurrentProcessDetails,
+            actualAppProcessDetails,
           )
         )
       )

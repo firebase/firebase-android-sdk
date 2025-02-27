@@ -17,7 +17,7 @@
     <application>
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"
-            android:exported="false">
+            android:exported="false"> <meta-data android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
             <meta-data
                 android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionApiRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />

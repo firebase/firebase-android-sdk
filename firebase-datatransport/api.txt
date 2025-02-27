@@ -1,1 +1,16 @@
-// Signature format: 2.0
+// Signature format: 3.0
+package com.google.firebase.datatransport {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.PARAMETER, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) @javax.inject.Qualifier public @interface LegacyTransportBackend {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.PARAMETER, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) @javax.inject.Qualifier public @interface TransportBackend {
+  }
+
+  @Keep public class TransportRegistrar implements com.google.firebase.components.ComponentRegistrar {
+    ctor public TransportRegistrar();
+    method public java.util.List<com.google.firebase.components.Component<? extends java.lang.Object!>!> getComponents();
+  }
+
+}
+

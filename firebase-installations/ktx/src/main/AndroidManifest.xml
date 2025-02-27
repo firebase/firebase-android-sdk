@@ -5,7 +5,7 @@
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:exported="false">
             <meta-data
-                android:name="com.google.firebase.components:com.google.firebase.installations.ktx.FirebaseInstallationsKtxRegistrar"
+                android:name="com.google.firebase.components:com.google.firebase.installations.ktx.FirebaseInstallationsLegacyRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>

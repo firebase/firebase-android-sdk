@@ -195,12 +195,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   /**
    * Initiates a new listen. The LocalStore will be queried for initial data and the listen will be
-   * sent to the RemoteStore to get remote data. The registered SyncEngineCallback will be notified
-   * of resulting view snapshots and/or listen errors.
+   * sent to the RemoteStore if the query is listening to watch. The registered SyncEngineCallback
+   * will be notified of resulting view snapshots and/or listen errors.
    *
    * @return the target ID assigned to the query.
    */
-  public int listen(Query query) {
+  public int listen(Query query, boolean shouldListenToRemote) {
     assertCallback("listen");
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
@@ -211,7 +211,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
             query, targetData.getTargetId(), targetData.getResumeToken());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
-    remoteStore.listen(targetData);
+    if (shouldListenToRemote) {
+      remoteStore.listen(targetData);
+    }
 
     return targetData.getTargetId();
   }
@@ -254,8 +256,24 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     return viewChange.getSnapshot();
   }
 
-  /** Stops listening to a query previously listened to via listen. */
-  void stopListening(Query query) {
+  /**
+   * Sends the listen to the RemoteStore to get remote data. Invoked when a Query starts listening
+   * to the remote store, while already listening to the cache.
+   */
+  public void listenToRemoteStore(Query query) {
+    assertCallback("listenToRemoteStore");
+    hardAssert(
+        queryViewsByQuery.containsKey(query), "This is the first listen to query: %s", query);
+
+    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    remoteStore.listen(targetData);
+  }
+
+  /**
+   * Stops listening to a query previously listened. Un-listen to remote store if there is a watch
+   * connection established and stayed open.
+   */
+  void stopListening(Query query, boolean shouldUnlistenToRemote) {
     assertCallback("stopListening");
 
     QueryView queryView = queryViewsByQuery.get(query);
@@ -269,8 +287,28 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     if (targetQueries.isEmpty()) {
       localStore.releaseTarget(targetId);
-      remoteStore.stopListening(targetId);
+      if (shouldUnlistenToRemote) {
+        remoteStore.stopListening(targetId);
+      }
       removeAndCleanupTarget(targetId, Status.OK);
+    }
+  }
+
+  /**
+   * Stops listening to a query from watch. Invoked when a Query stops listening to the remote
+   * store, while still listening to the cache.
+   */
+  void stopListeningToRemoteStore(Query query) {
+    assertCallback("stopListeningToRemoteStore");
+    QueryView queryView = queryViewsByQuery.get(query);
+    hardAssert(queryView != null, "Trying to stop listening to a query not found");
+
+    int targetId = queryView.getTargetId();
+    List<Query> targetQueries = queriesByTarget.get(targetId);
+    targetQueries.remove(query);
+
+    if (targetQueries.isEmpty()) {
+      remoteStore.stopListening(targetId);
     }
   }
 
@@ -286,7 +324,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     LocalDocumentsResult result = localStore.writeLocally(mutations);
     addUserCallback(result.getBatchId(), userTask);
 
-    emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /* remoteEvent= */ null);
     remoteStore.fillWritePipeline();
   }
 
@@ -448,14 +486,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // The local store may or may not be able to apply the write result and raise events immediately
     // (depending on whether the watcher is caught up), so we raise user callbacks first so that
     // they consistently happen before listen events.
-    notifyUser(mutationBatchResult.getBatch().getBatchId(), /*status=*/ null);
+    notifyUser(mutationBatchResult.getBatch().getBatchId(), /* status= */ null);
 
     resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
 
     ImmutableSortedMap<DocumentKey, Document> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
   }
 
   @Override
@@ -474,7 +512,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     resolvePendingWriteTasks(batchId);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
   }
 
   /**
@@ -653,7 +691,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
-      ViewChange viewChange = queryView.getView().applyChanges(viewDocChanges, targetChange);
+
+      boolean targetIsPendingReset =
+          remoteEvent != null
+              && remoteEvent.getTargetMismatches().get(queryView.getTargetId()) != null;
+
+      ViewChange viewChange =
+          queryView.getView().applyChanges(viewDocChanges, targetChange, targetIsPendingReset);
       updateTrackedLimboDocuments(viewChange.getLimboChanges(), queryView.getTargetId());
 
       if (viewChange.getSnapshot() != null) {
@@ -746,7 +790,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       failOutstandingPendingWritesAwaitingTasks();
       // Notify local store and emit any resulting events from swapping out the mutation queue.
       ImmutableSortedMap<DocumentKey, Document> changes = localStore.handleUserChange(user);
-      emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+      emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
     }
 
     // Notify remote store so it can restart its streams.

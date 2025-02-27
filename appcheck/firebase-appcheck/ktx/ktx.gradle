@@ -14,21 +14,23 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
+    libraryGroup = "appcheck"
     testLab.enabled = true
-    publishJavadoc = true
-    publishSources = true
+    publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
     namespace "com.google.firebase.appcheck.ktx"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -52,22 +54,20 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api(project(":appcheck:firebase-appcheck"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(path: ':appcheck:firebase-appcheck')
-    implementation project(path: ':appcheck:firebase-appcheck-interop')
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 
-    androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation 'com.google.firebase:firebase-appcheck-interop:17.1.0'
+    androidTestImplementation libs.truth
+    androidTestImplementation libs.junit
 }

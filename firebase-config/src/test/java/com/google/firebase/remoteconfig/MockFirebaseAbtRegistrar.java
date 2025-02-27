@@ -37,7 +37,7 @@ public class MockFirebaseAbtRegistrar implements ComponentRegistrar {
 
   private static class FakeAbtComponent extends AbtComponent {
     FakeAbtComponent() {
-      super(/*appContext=*/ null, /*analyticsConnector=*/ null);
+      super(/* appContext= */ null, /* analyticsConnector= */ null);
     }
   }
 }

@@ -1,5 +1,18 @@
 # Unreleased
 
+
+# 18.0.0
+* [changed] Bump internal dependencies
+
+# 17.1.2
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 17.1.1
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 17.1.0
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 17.0.0
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
@@ -33,7 +46,6 @@
 # 16.0.0-beta04
 * [changed] Improved error handling logic by minimizing the amount of requests
   that are unlikely to succeed.
-
 * [fixed] Fixed heartbeat reporting.
 
 # 16.0.0-beta03
