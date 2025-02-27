@@ -52,16 +52,13 @@ abstract class SemVerTask : DefaultTask() {
         apiTxtFile.get().asFile.absolutePath,
         "--check-compatibility:api:released",
         otherApiFile.get().asFile.absolutePath,
-      )
-      + MAJOR.flatMap{ m -> listOf("--error", m) }
-      + MINOR.flatMap{ m -> listOf("--error", m) }
-      + IGNORED.flatMap{ m -> listOf("--hide", m) }
-      + listOf(
-        "--format=v3",
-        "--no-color",
-      ),
+      ) +
+        MAJOR.flatMap { m -> listOf("--error", m) } +
+        MINOR.flatMap { m -> listOf("--error", m) } +
+        IGNORED.flatMap { m -> listOf("--hide", m) } +
+        listOf("--format=v3", "--no-color"),
       ignoreFailure = true,
-      stdOut = stream
+      stdOut = stream,
     )
 
     val string = String(stream.toByteArray())
@@ -81,20 +78,23 @@ abstract class SemVerTask : DefaultTask() {
       }
     }
     val allChanges =
-      (majorChanges
-        .joinToString(separator = "") { m -> "  MAJOR: $m\n" }) +
-      minorChanges
-        .joinToString(separator = "")  { m -> "  MINOR: $m\n" }
+      (majorChanges.joinToString(separator = "") { m -> "  MAJOR: $m\n" }) +
+        minorChanges.joinToString(separator = "") { m -> "  MINOR: $m\n" }
     if (majorChanges.isNotEmpty()) {
       if (bump != VersionDelta.MAJOR) {
-        throw GradleException("API has non-bumped breaking MAJOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges")
+        throw GradleException(
+          "API has non-bumped breaking MAJOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges"
+        )
       }
     } else if (minorChanges.isNotEmpty()) {
       if (bump != VersionDelta.MAJOR && bump != VersionDelta.MINOR) {
-        throw GradleException("API has non-bumped MINOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges")
+        throw GradleException(
+          "API has non-bumped MINOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges"
+        )
       }
     }
   }
+
   companion object {
     private val MAJOR = setOf("AddedFinal")
     private val MINOR = setOf("AddedClass", "AddedMethod", "AddedField", "ChangedDeprecated")
