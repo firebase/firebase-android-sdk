@@ -42,9 +42,11 @@ abstract class SemVerTask : DefaultTask() {
 
       return // If these variables don't exist, no reason to check API
     }
-    val bump =
-      if (previous.major != current.major) VersionDelta.MAJOR
-      else if (previous.minor != current.minor) VersionDelta.MINOR else VersionDelta.PATCH
+    val bump = when {
+      previous.major != current.major -> VersionDelta.MAJOR
+      previous.minor != current.minor -> VersionDelta.MINOR
+      else -> VersionDelta.PATCH
+      }
     val stream = ByteArrayOutputStream()
     project.runMetalavaWithArgs(
       listOf(
