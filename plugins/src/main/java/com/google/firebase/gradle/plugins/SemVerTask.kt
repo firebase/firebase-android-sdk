@@ -40,11 +40,12 @@ abstract class SemVerTask : DefaultTask() {
     val previous = ModuleVersion.fromStringOrNull(previousVersionString.get()) ?: return
     val current = ModuleVersion.fromStringOrNull(currentVersionString.get()) ?: return
 
-    val bump = when {
-      previous.major != current.major -> VersionDelta.MAJOR
-      previous.minor != current.minor -> VersionDelta.MINOR
-      else -> VersionDelta.PATCH
-    }
+    val bump =
+      when {
+        previous.major != current.major -> VersionDelta.MAJOR
+        previous.minor != current.minor -> VersionDelta.MINOR
+        else -> VersionDelta.PATCH
+      }
     val stream = ByteArrayOutputStream()
     project.runMetalavaWithArgs(
       listOf(
