@@ -71,7 +71,7 @@ serialization-plugin = "1.8.22"
 slf4jNop = "2.0.9"
 spotless = "7.0.0.BETA3"
 testServices = "1.2.0"
-truth = "1.4.2"
+truth = "1.4.4"
 truthProtoExtension = "1.0"
 wiremockStandalone = "2.26.3"
 
