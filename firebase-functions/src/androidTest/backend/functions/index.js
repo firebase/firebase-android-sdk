@@ -14,6 +14,16 @@
 
 const assert = require('assert');
 const functions = require('firebase-functions');
+const functionsV2 = require('firebase-functions/v2');
+
+/**
+ * Pauses the execution for a specified amount of time.
+ * @param {number} ms - The number of milliseconds to sleep.
+ * @return {Promise<void>} A promise that resolves after the specified time.
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 exports.dataTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {
@@ -122,3 +132,47 @@ exports.timeoutTest = functions.https.onRequest((request, response) => {
   // Wait for longer than 500ms.
   setTimeout(() => response.send({data: true}), 500);
 });
+
+const streamData = ['hello', 'world', 'this', 'is', 'cool'];
+
+/**
+ * Generates chunks of text asynchronously, yielding one chunk at a time.
+ * @async
+ * @generator
+ * @yields {string} A chunk of text from the data array.
+ */
+async function* generateText() {
+  for (const chunk of streamData) {
+    yield chunk;
+    await sleep(100);
+  }
+}
+
+exports.genStream = functionsV2.https.onCall(async (request, response) => {
+  if (request.acceptsStreaming) {
+    for await (const chunk of generateText()) {
+      response.sendChunk({chunk});
+    }
+  }
+  return streamData.join(' ');
+});
+
+exports.genStreamError = functionsV2.https.onCall(
+    async (request, response) => {
+      if (request.acceptsStreaming) {
+        for await (const chunk of generateText()) {
+          response.sendChunk({chunk});
+        }
+      }
+      throw new Error('BOOM');
+    });
+
+exports.genStreamNoReturn = functionsV2.https.onCall(
+    async (request, response) => {
+      if (request.acceptsStreaming) {
+        for await (const chunk of generateText()) {
+          response.sendChunk({chunk});
+        }
+      }
+    },
+);
