@@ -191,7 +191,11 @@ class SyncTask implements Runnable {
         Log.d(TAG, "Connectivity changed. Starting background sync.");
       }
       task.firebaseMessaging.enqueueTaskWithDelaySeconds(task, 0);
-      task.getContext().unregisterReceiver(this);
+      try {
+        task.getContext().unregisterReceiver(this);
+      } catch (IllegalArgumentException e) {
+        // The receiver is not registered
+      }
       task = null;
     }
   }
