@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Use lazy encoding in UTF-8 encoded byte comparison for strings to solve performance issues. [#6706](//github.com/firebase/firebase-android-sdk/pull/6706)
 * [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]
 
 
