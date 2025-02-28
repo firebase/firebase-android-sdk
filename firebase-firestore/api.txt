@@ -658,9 +658,6 @@ package com.google.firebase.firestore.ktx {
 
 package com.google.firebase.firestore.pipeline {
 
-  public final class AddFieldsStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
   public final class AggregateExpr {
     method public com.google.firebase.firestore.pipeline.AggregateWithAlias as(String alias);
     method public static com.google.firebase.firestore.pipeline.AggregateExpr avg(com.google.firebase.firestore.pipeline.Expr expr);
@@ -723,14 +720,6 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
   }
 
-  public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.Stage {
-    method public String getCollectionId();
-    property public final String collectionId;
-  }
-
-  public final class CollectionSource extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
   public abstract class Constant extends com.google.firebase.firestore.pipeline.Expr {
     method public static final com.google.firebase.firestore.pipeline.Constant nullValue();
     method public static final com.google.firebase.firestore.pipeline.Constant of(boolean value);
@@ -760,16 +749,6 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Constant of(java.util.Date value);
     method public com.google.firebase.firestore.pipeline.Constant vector(com.google.firebase.firestore.VectorValue value);
     method public com.google.firebase.firestore.pipeline.Constant vector(double[] value);
-  }
-
-  public final class DatabaseSource extends com.google.firebase.firestore.pipeline.Stage {
-    ctor public DatabaseSource();
-  }
-
-  public final class DistinctStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public final class DocumentsSource extends com.google.firebase.firestore.pipeline.Stage {
   }
 
   public abstract class Expr {
@@ -883,22 +862,6 @@ package com.google.firebase.firestore.pipeline {
 
   public final class FindNearestOptions {
     method public java.util.Map<java.lang.String,error.NonExistentClass> toProto();
-  }
-
-  public final class FindNearestStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public static final class FindNearestStage.DistanceMeasure {
-    field public static final com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure.Companion Companion;
-  }
-
-  public static final class FindNearestStage.DistanceMeasure.Companion {
-    method public error.NonExistentClass getCOSINE();
-    method public error.NonExistentClass getDOT_PRODUCT();
-    method public error.NonExistentClass getEUCLIDEAN();
-    property public final error.NonExistentClass COSINE;
-    property public final error.NonExistentClass DOT_PRODUCT;
-    property public final error.NonExistentClass EUCLIDEAN;
   }
 
   public class Function extends com.google.firebase.firestore.pipeline.Expr {
@@ -1259,21 +1222,12 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr xor(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
   }
 
-  public final class GenericStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public final class LimitStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
   public final class ListOfExprs extends com.google.firebase.firestore.pipeline.Expr {
     ctor public ListOfExprs(com.google.firebase.firestore.pipeline.Expr[] expressions);
   }
 
   public final class MapOfExpr extends com.google.firebase.firestore.pipeline.Expr {
     ctor public MapOfExpr(java.util.Map<java.lang.String,? extends com.google.firebase.firestore.pipeline.Expr> expressions);
-  }
-
-  public final class OffsetStage extends com.google.firebase.firestore.pipeline.Stage {
   }
 
   public final class Ordering {
@@ -1291,59 +1245,11 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Ordering descending(String fieldName);
   }
 
-  public final class RemoveFieldsStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public final class ReplaceStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public static final class ReplaceStage.Mode {
-    field public static final com.google.firebase.firestore.pipeline.ReplaceStage.Mode.Companion Companion;
-  }
-
-  public static final class ReplaceStage.Mode.Companion {
-    method public error.NonExistentClass getFULL_REPLACE();
-    method public error.NonExistentClass getMERGE_PREFER_NEXT();
-    method public error.NonExistentClass getMERGE_PREFER_PARENT();
-    property public final error.NonExistentClass FULL_REPLACE;
-    property public final error.NonExistentClass MERGE_PREFER_NEXT;
-    property public final error.NonExistentClass MERGE_PREFER_PARENT;
-  }
-
-  public final class SampleStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public static final class SampleStage.Mode {
-    field public static final com.google.firebase.firestore.pipeline.SampleStage.Mode.Companion Companion;
-  }
-
-  public static final class SampleStage.Mode.Companion {
-    method public error.NonExistentClass getDOCUMENTS();
-    method public error.NonExistentClass getPERCENT();
-    property public final error.NonExistentClass DOCUMENTS;
-    property public final error.NonExistentClass PERCENT;
-  }
-
-  public final class SelectStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
   public abstract class Selectable extends com.google.firebase.firestore.pipeline.Expr {
     ctor public Selectable();
   }
 
-  public final class SortStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
   public abstract class Stage {
-  }
-
-  public final class UnionStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public final class UnnestStage extends com.google.firebase.firestore.pipeline.Stage {
-  }
-
-  public final class WhereStage extends com.google.firebase.firestore.pipeline.Stage {
   }
 
 }
