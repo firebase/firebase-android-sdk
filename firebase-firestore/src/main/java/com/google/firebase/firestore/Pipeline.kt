@@ -36,10 +36,14 @@ import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
+import com.google.firebase.firestore.pipeline.ReplaceStage
+import com.google.firebase.firestore.pipeline.SampleStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
+import com.google.firebase.firestore.pipeline.UnionStage
+import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.ExecutePipelineRequest
@@ -129,6 +133,28 @@ internal constructor(
     append(AggregateStage.withAccumulators(*accumulators))
 
   fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)
+
+  // fun findNearest()
+
+  fun replace(field: String): Pipeline = replace(Field.of(field))
+
+  fun replace(field: Selectable): Pipeline =
+    append(ReplaceStage(field, ReplaceStage.Mode.FULL_REPLACE))
+
+  fun sample(documents: Int): Pipeline = append(SampleStage(documents, SampleStage.Mode.DOCUMENTS))
+
+  // fun sample(options: SampleOptions): Pipeline
+
+  fun union(other: Pipeline): Pipeline = append(UnionStage(other))
+
+  fun unnest(field: String): Pipeline = unnest(Field.of(field))
+
+  // fun unnest(field: String, options: UnnestOptions): Pipeline = unnest(Field.of(field), options)
+
+  fun unnest(selectable: Selectable): Pipeline = append(UnnestStage(selectable))
+
+  // fun unnest(selectable: Selectable, options: UnnestOptions): Pipeline =
+  // append(UnnestStage(selectable))
 
   private inner class ObserverSnapshotTask : PipelineResultObserver {
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
