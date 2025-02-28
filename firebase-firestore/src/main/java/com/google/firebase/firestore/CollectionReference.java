@@ -131,6 +131,6 @@ public class CollectionReference extends Query {
 
   @NonNull
   public Pipeline pipeline() {
-    return new Pipeline(firestore, new CollectionSource(getPath()));
+    return new Pipeline(firestore, firestore.getUserDataReader(), new CollectionSource(getPath()));
   }
 }

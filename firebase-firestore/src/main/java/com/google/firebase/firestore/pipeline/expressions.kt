@@ -363,6 +363,9 @@ protected constructor(private val name: String, private val params: Array<out Ex
   private constructor(name: String, param: Expr, vararg params: Any) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
   private constructor(name: String, fieldName: String, vararg params: Any) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
   companion object {
+
+    @JvmStatic fun generic(name: String, vararg expr: Expr) = Function(name, expr)
+
     @JvmStatic
     fun and(condition: BooleanExpr, vararg conditions: BooleanExpr) = BooleanExpr("and", condition, *conditions)
 
@@ -786,6 +789,12 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   Function(name, params) {
     internal constructor(name: String, param: Expr, vararg params: Any) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
     internal constructor(name: String, fieldName: String, vararg params: Any) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
+
+  companion object {
+
+    @JvmStatic fun generic(name: String, vararg expr: Expr) = BooleanExpr(name, expr)
+
+  }
 
   fun not() = not(this)
 

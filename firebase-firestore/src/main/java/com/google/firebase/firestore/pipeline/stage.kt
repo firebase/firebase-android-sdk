@@ -31,7 +31,7 @@ internal constructor(private val name: String, private val options: Map<String, 
     builder.putAllOptions(options)
     return builder.build()
   }
-  protected abstract fun args(userDataReader: UserDataReader): Sequence<Value>
+  internal abstract fun args(userDataReader: UserDataReader): Sequence<Value>
 }
 
 class GenericStage internal constructor(name: String, private val params: List<GenericArg>) :

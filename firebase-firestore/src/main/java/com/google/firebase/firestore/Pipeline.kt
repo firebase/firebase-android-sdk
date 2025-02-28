@@ -49,15 +49,17 @@ import com.google.firestore.v1.Value
 class Pipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
+  internal val userDataReader: UserDataReader,
   private val stages: FluentIterable<Stage>
 ) {
   internal constructor(
     firestore: FirebaseFirestore,
+    userDataReader: UserDataReader,
     stage: Stage
-  ) : this(firestore, FluentIterable.of(stage))
+  ) : this(firestore, userDataReader, FluentIterable.of(stage))
 
   private fun append(stage: Stage): Pipeline {
-    return Pipeline(firestore, stages.append(stage))
+    return Pipeline(firestore, userDataReader, stages.append(stage))
   }
 
   fun execute(): Task<PipelineSnapshot> {
@@ -86,7 +88,7 @@ internal constructor(
 
   internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
     com.google.firestore.v1.Pipeline.newBuilder()
-      .addAllStages(stages.map { it.toProtoStage(firestore.userDataReader) })
+      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
       .build()
 
   fun genericStage(name: String, vararg params: Any) =
@@ -167,7 +169,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
         "Provided collection reference is from a different Firestore instance."
       )
     }
-    return Pipeline(firestore, CollectionSource(ref.path))
+    return Pipeline(firestore, firestore.userDataReader, CollectionSource(ref.path))
   }
 
   fun collectionGroup(collectionId: String): Pipeline {
@@ -175,10 +177,10 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     require(!collectionId.contains("/")) {
       "Invalid collectionId '$collectionId'. Collection IDs must not contain '/'."
     }
-    return Pipeline(firestore, CollectionGroupSource(collectionId))
+    return Pipeline(firestore, firestore.userDataReader, CollectionGroupSource(collectionId))
   }
 
-  fun database(): Pipeline = Pipeline(firestore, DatabaseSource())
+  fun database(): Pipeline = Pipeline(firestore, firestore.userDataReader, DatabaseSource())
 
   fun documents(vararg documents: String): Pipeline {
     // Validate document path by converting to DocumentReference
@@ -196,6 +198,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     }
     return Pipeline(
       firestore,
+      firestore.userDataReader,
       DocumentsSource(documents.map { docRef -> "/" + docRef.path }.toTypedArray())
     )
   }

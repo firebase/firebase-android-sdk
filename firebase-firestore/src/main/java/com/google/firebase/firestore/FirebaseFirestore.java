@@ -857,8 +857,7 @@ public class FirebaseFirestore {
   }
 
   @NonNull
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public UserDataReader getUserDataReader() {
+  UserDataReader getUserDataReader() {
     return userDataReader;
   }
 
