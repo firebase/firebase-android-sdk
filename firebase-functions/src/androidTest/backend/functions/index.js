@@ -122,3 +122,7 @@ exports.timeoutTest = functions.https.onRequest((request, response) => {
   // Wait for longer than 500ms.
   setTimeout(() => response.send({data: true}), 500);
 });
+
+exports.headersTest = functions.https.onRequest((request, response) => {
+  response.status(200).send({data: request.headers});
+});
