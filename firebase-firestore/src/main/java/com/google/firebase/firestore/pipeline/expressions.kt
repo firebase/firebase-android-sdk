@@ -309,7 +309,7 @@ abstract class Selectable : Expr() {
   }
 }
 
-open class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
   Selectable() {
   override fun getAlias() = alias
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
@@ -344,7 +344,7 @@ class Field private constructor(private val fieldPath: ModelFieldPath) :
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 }
 
-class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
+internal class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = MapValue.newBuilder()
     for (expr in expressions) {
@@ -354,7 +354,7 @@ class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
   }
 }
 
-class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
+internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
   override fun toProto(userDataReader: UserDataReader): Value = encodeValue(expressions.map{it.toProto(userDataReader)})
 }
 

@@ -846,7 +846,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Function vectorLength();
   }
 
-  public class ExprWithAlias extends com.google.firebase.firestore.pipeline.Selectable {
+  public final class ExprWithAlias extends com.google.firebase.firestore.pipeline.Selectable {
   }
 
   public final class Field extends com.google.firebase.firestore.pipeline.Selectable {
@@ -1220,14 +1220,6 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Function vectorLength(com.google.firebase.firestore.pipeline.Expr vector);
     method public com.google.firebase.firestore.pipeline.Function vectorLength(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpr xor(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
-  }
-
-  public final class ListOfExprs extends com.google.firebase.firestore.pipeline.Expr {
-    ctor public ListOfExprs(com.google.firebase.firestore.pipeline.Expr[] expressions);
-  }
-
-  public final class MapOfExpr extends com.google.firebase.firestore.pipeline.Expr {
-    ctor public MapOfExpr(java.util.Map<java.lang.String,? extends com.google.firebase.firestore.pipeline.Expr> expressions);
   }
 
   public final class Ordering {
