@@ -67,13 +67,23 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.2.0")
   api("com.google.firebase:firebase-annotations:16.2.0")
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
   compileOnly(libs.errorprone.annotations)
+
+  // Workaround for b/328687152, AndroidX desktop artifacts packaged in Android APK
+  val datastoreVersion = "1.1.2"
+  implementation("androidx.datastore:datastore-preferences-android:$datastoreVersion") {
+    exclude(group = "androidx.datastore", module = "datastore")
+    exclude(group = "androidx.datastore", module = "datastore-core")
+  }
+  implementation("androidx.datastore:datastore-android:$datastoreVersion") {
+    exclude(group = "androidx.datastore", module = "datastore-core")
+  }
+  implementation("androidx.datastore:datastore-core-android:$datastoreVersion")
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
