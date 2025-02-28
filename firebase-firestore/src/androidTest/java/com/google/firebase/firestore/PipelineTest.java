@@ -37,14 +37,13 @@ import static com.google.firebase.firestore.pipeline.Function.strConcat;
 import static com.google.firebase.firestore.pipeline.Function.subtract;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
-import static java.util.Map.entry;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Correspondence;
-import com.google.firebase.firestore.pipeline.Accumulator;
+import com.google.firebase.firestore.pipeline.AggregateExpr;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.Constant;
 import com.google.firebase.firestore.pipeline.Field;
@@ -227,7 +226,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .aggregate(Accumulator.countAll().as("count"))
+            .aggregate(AggregateExpr.countAll().as("count"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -243,8 +242,8 @@ public class PipelineTest {
             .collection(randomCol)
             .where(Function.eq("genre", "Science Fiction"))
             .aggregate(
-                Accumulator.countAll().as("count"),
-                Accumulator.avg("rating").as("avgRating"),
+                AggregateExpr.countAll().as("count"),
+                AggregateExpr.avg("rating").as("avgRating"),
                 Field.of("rating").max().as("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -261,10 +260,32 @@ public class PipelineTest {
             .collection(randomCol)
             .where(lt(Field.of("published"), 1984))
             .aggregate(
-                AggregateStage.withAccumulators(Accumulator.avg("rating").as("avgRating"))
+                AggregateStage.withAccumulators(AggregateExpr.avg("rating").as("avgRating"))
                     .withGroups("genre"))
             .where(gt("avgRating", 4.3))
             .sort(Field.of("avgRating").descending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(entry("avgRating", 4.7), entry("genre", "Fantasy")),
+            mapOfEntries(entry("avgRating", 4.5), entry("genre", "Romance")),
+            mapOfEntries(entry("avgRating", 4.4), entry("genre", "Science Fiction")));
+  }
+
+  @Test
+  public void groupAndAccumulateResultsGeneric() {
+    Task<PipelineSnapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .genericStage("where", lt(Field.of("published"), 1984))
+            .genericStage(
+                "aggregate",
+                ImmutableMap.of("avgRating", AggregateExpr.avg("rating")),
+                ImmutableMap.of("genre", Field.of("genre")))
+            .genericStage("where", gt("avgRating", 4.3))
+            .genericStage("sort", Field.of("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -282,7 +303,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .aggregate(
-                Accumulator.countAll().as("count"),
+                AggregateExpr.countAll().as("count"),
                 Field.of("rating").max().as("maxRating"),
                 Field.of("published").min().as("minPublished"))
             .execute();
@@ -779,6 +800,30 @@ public class PipelineTest {
                 entry("title", "Dune"),
                 entry("nestedField.level.`1`", null),
                 entry("nested", null)));
+  }
+
+  @Test
+  public void testListEquals() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(eq("tags", ImmutableList.of("philosophy", "crime", "redemption")))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(ID_CORRESPONDENCE)
+        .containsExactly("book6");
+  }
+
+  @Test
+  public void testMapEquals() {
+    Task<PipelineSnapshot> execute =
+        randomCol
+            .pipeline()
+            .where(eq("awards", ImmutableMap.of("nobel", true, "nebula", false)))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(ID_CORRESPONDENCE)
+        .containsExactly("book3");
   }
 
   static <T> Map.Entry<String, T> entry(String key, T value) {

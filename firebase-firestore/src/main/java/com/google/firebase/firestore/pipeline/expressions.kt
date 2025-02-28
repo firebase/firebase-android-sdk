@@ -14,21 +14,49 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Blob
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
-import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firestore.v1.ArrayValue
+import com.google.firebase.firestore.pipeline.Constant.Companion.of
+import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
+import java.util.Date
+import kotlin.reflect.KFunction1
+import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 
-abstract class Expr protected constructor() {
+abstract class Expr internal constructor() {
   internal companion object {
-    internal fun toExprOrConstant(value: Any): Expr {
+    internal fun toExprOrConstant(value: Any?): Expr = toExpr(value, ::toExprOrConstant) ?: pojoToExprOrConstant(CustomClassMapper.convertToPlainJavaTypes(value))
+
+    private fun pojoToExprOrConstant(value: Any?): Expr = toExpr(value, ::pojoToExprOrConstant) ?: throw IllegalArgumentException("Unknown type: $value")
+
+    private fun toExpr(value: Any?, toExpr: KFunction1<Any?, Expr>): Expr? {
+      if (value == null) return Constant.nullValue()
       return when (value) {
         is Expr -> value
-        else -> Constant.of(value)
+        is String -> of(value)
+        is Number -> of(value)
+        is Date -> of(value)
+        is Timestamp -> of(value)
+        is Boolean -> of(value)
+        is GeoPoint -> of(value)
+        is Blob -> of(value)
+        is DocumentReference -> of(value)
+        is VectorValue -> of(value)
+        is Map<*, *> -> MapOfExpr(value.entries.associate {
+          val key = it.key
+          if (key is String) key to toExpr(it.value) else
+            throw IllegalArgumentException("Maps with non-string keys are not supported")
+        })
+        is List<*> -> ListOfExprs(value.map(toExpr).toTypedArray())
+        else -> null
       }
     }
 
@@ -227,13 +255,13 @@ abstract class Expr protected constructor() {
 
   fun arrayLength() = Function.arrayLength(this)
 
-  fun sum() = Accumulator.sum(this)
+  fun sum() = AggregateExpr.sum(this)
 
-  fun avg() = Accumulator.avg(this)
+  fun avg() = AggregateExpr.avg(this)
 
-  fun min() = Accumulator.min(this)
+  fun min() = AggregateExpr.min(this)
 
-  fun max() = Accumulator.max(this)
+  fun max() = AggregateExpr.max(this)
 
   fun ascending() = Ordering.ascending(this)
 
@@ -263,7 +291,7 @@ abstract class Expr protected constructor() {
 
   fun lte(other: Any) = Function.lte(this, other)
 
-  internal abstract fun toProto(): Value
+  internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
 
 abstract class Selectable : Expr() {
@@ -284,7 +312,7 @@ abstract class Selectable : Expr() {
 open class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
   Selectable() {
   override fun getAlias() = alias
-  override fun toProto(): Value = expr.toProto()
+  override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 }
 
 class Field private constructor(private val fieldPath: ModelFieldPath) :
@@ -310,18 +338,24 @@ class Field private constructor(private val fieldPath: ModelFieldPath) :
 
   override fun getAlias(): String = fieldPath.canonicalString()
 
-  override fun toProto() =
+  override fun toProto(userDataReader: UserDataReader) = toProto()
+
+  internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 }
 
-class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
-  override fun toProto(): Value {
-    val builder = ArrayValue.newBuilder()
+class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
+  override fun toProto(userDataReader: UserDataReader): Value {
+    val builder = MapValue.newBuilder()
     for (expr in expressions) {
-      builder.addValues(expr.toProto())
+      builder.putFields(expr.key, expr.value.toProto(userDataReader))
     }
-    return Value.newBuilder().setArrayValue(builder).build()
+    return Value.newBuilder().setMapValue(builder).build()
   }
+}
+
+class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
+  override fun toProto(userDataReader: UserDataReader): Value = encodeValue(expressions.map{it.toProto(userDataReader)})
 }
 
 open class Function
@@ -738,11 +772,11 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun ifThenElse(condition: BooleanExpr, then: Any, `else`: Any) = Function("if", condition, then, `else`)
   }
 
-  override fun toProto(): Value {
+  override fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
     builder.setName(name)
     for (param in params) {
-      builder.addArgs(param.toProto())
+      builder.addArgs(param.toProto(userDataReader))
     }
     return Value.newBuilder().setFunctionValue(builder).build()
   }
@@ -755,7 +789,7 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
 
   fun not() = not(this)
 
-  fun countIf(): Accumulator = Accumulator.countIf(this)
+  fun countIf(): AggregateExpr = AggregateExpr.countIf(this)
 
   fun ifThen(then: Expr) = ifThen(this, then)
 
@@ -786,12 +820,12 @@ class Ordering private constructor(private val expr: Expr, private val dir: Dire
       val DESCENDING = Direction("descending")
     }
   }
-  internal fun toProto(): Value =
+  internal fun toProto(userDataReader: UserDataReader): Value =
     Value.newBuilder()
       .setMapValue(
         MapValue.newBuilder()
           .putFields("direction", dir.proto)
-          .putFields("expression", expr.toProto())
+          .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
 }

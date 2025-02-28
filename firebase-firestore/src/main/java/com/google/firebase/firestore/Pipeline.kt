@@ -20,9 +20,9 @@ import com.google.common.collect.FluentIterable
 import com.google.common.collect.ImmutableList
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.SnapshotVersion
-import com.google.firebase.firestore.pipeline.AccumulatorWithAlias
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateStage
+import com.google.firebase.firestore.pipeline.AggregateWithAlias
 import com.google.firebase.firestore.pipeline.BooleanExpr
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
@@ -30,6 +30,8 @@ import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Field
+import com.google.firebase.firestore.pipeline.GenericArg
+import com.google.firebase.firestore.pipeline.GenericStage
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
@@ -84,8 +86,11 @@ internal constructor(
 
   internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
     com.google.firestore.v1.Pipeline.newBuilder()
-      .addAllStages(stages.map(Stage::toProtoStage))
+      .addAllStages(stages.map { it.toProtoStage(firestore.userDataReader) })
       .build()
+
+  fun genericStage(name: String, vararg params: Any) =
+    append(GenericStage(name, params.map(GenericArg::from)))
 
   fun addFields(vararg fields: Selectable): Pipeline = append(AddFieldsStage(fields))
 
@@ -118,7 +123,7 @@ internal constructor(
   fun distinct(vararg groups: Any): Pipeline =
     append(DistinctStage(groups.map(Selectable::toSelectable).toTypedArray()))
 
-  fun aggregate(vararg accumulators: AccumulatorWithAlias): Pipeline =
+  fun aggregate(vararg accumulators: AggregateWithAlias): Pipeline =
     append(AggregateStage.withAccumulators(*accumulators))
 
   fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)

@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;
 import com.google.firebase.firestore.FieldValue.DeleteFieldValue;
@@ -36,6 +37,7 @@ import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
+import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firebase.firestore.util.Util;
@@ -389,12 +391,32 @@ public final class UserDataReader {
       return Values.NULL_VALUE;
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
+    } else if (input instanceof DocumentReference) {
+      DocumentReference ref = (DocumentReference) input;
+      validateDocumentReference(ref, context::createError);
+      return Values.encodeValue(ref);
+    } else if (input instanceof Expr) {
+      throw context.createError("Pipeline expressions are not supported user objects");
     } else {
       try {
         return Values.encodeAnyValue(input);
       } catch (IllegalArgumentException e) {
         throw context.createError("Unsupported type: " + Util.typeName(input));
       }
+    }
+  }
+
+  public void validateDocumentReference(
+      DocumentReference ref, Function<String, RuntimeException> createError) {
+    DatabaseId otherDb = ref.getFirestore().getDatabaseId();
+    if (!otherDb.equals(databaseId)) {
+      throw createError.apply(
+          String.format(
+              "Document reference is for database %s/%s but should be for database %s/%s",
+              otherDb.getProjectId(),
+              otherDb.getDatabaseId(),
+              databaseId.getProjectId(),
+              databaseId.getDatabaseId()));
     }
   }
 

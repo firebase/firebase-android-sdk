@@ -14,50 +14,51 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Value
 
-class AccumulatorWithAlias
-internal constructor(internal val alias: String, internal val accumulator: Accumulator)
+class AggregateWithAlias
+internal constructor(internal val alias: String, internal val expr: AggregateExpr)
 
-class Accumulator
+class AggregateExpr
 private constructor(private val name: String, private val params: Array<out Expr>) {
   private constructor(name: String) : this(name, emptyArray())
   private constructor(name: String, expr: Expr) : this(name, arrayOf(expr))
   private constructor(name: String, fieldName: String) : this(name, Field.of(fieldName))
 
   companion object {
-    @JvmStatic fun countAll() = Accumulator("count")
+    @JvmStatic fun countAll() = AggregateExpr("count")
 
-    @JvmStatic fun count(fieldName: String) = Accumulator("count", fieldName)
+    @JvmStatic fun count(fieldName: String) = AggregateExpr("count", fieldName)
 
-    @JvmStatic fun count(expr: Expr) = Accumulator("count", expr)
+    @JvmStatic fun count(expr: Expr) = AggregateExpr("count", expr)
 
-    @JvmStatic fun countIf(condition: BooleanExpr) = Accumulator("countIf", condition)
+    @JvmStatic fun countIf(condition: BooleanExpr) = AggregateExpr("countIf", condition)
 
-    @JvmStatic fun sum(fieldName: String) = Accumulator("sum", fieldName)
+    @JvmStatic fun sum(fieldName: String) = AggregateExpr("sum", fieldName)
 
-    @JvmStatic fun sum(expr: Expr) = Accumulator("sum", expr)
+    @JvmStatic fun sum(expr: Expr) = AggregateExpr("sum", expr)
 
-    @JvmStatic fun avg(fieldName: String) = Accumulator("avg", fieldName)
+    @JvmStatic fun avg(fieldName: String) = AggregateExpr("avg", fieldName)
 
-    @JvmStatic fun avg(expr: Expr) = Accumulator("avg", expr)
+    @JvmStatic fun avg(expr: Expr) = AggregateExpr("avg", expr)
 
-    @JvmStatic fun min(fieldName: String) = Accumulator("min", fieldName)
+    @JvmStatic fun min(fieldName: String) = AggregateExpr("min", fieldName)
 
-    @JvmStatic fun min(expr: Expr) = Accumulator("min", expr)
+    @JvmStatic fun min(expr: Expr) = AggregateExpr("min", expr)
 
-    @JvmStatic fun max(fieldName: String) = Accumulator("max", fieldName)
+    @JvmStatic fun max(fieldName: String) = AggregateExpr("max", fieldName)
 
-    @JvmStatic fun max(expr: Expr) = Accumulator("max", expr)
+    @JvmStatic fun max(expr: Expr) = AggregateExpr("max", expr)
   }
 
-  fun `as`(alias: String) = AccumulatorWithAlias(alias, this)
+  fun `as`(alias: String) = AggregateWithAlias(alias, this)
 
-  fun toProto(): Value {
+  internal fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
     builder.setName(name)
     for (param in params) {
-      builder.addArgs(param.toProto())
+      builder.addArgs(param.toProto(userDataReader))
     }
     return Value.newBuilder().setFunctionValue(builder).build()
   }

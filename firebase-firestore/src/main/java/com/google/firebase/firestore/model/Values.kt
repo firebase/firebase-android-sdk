@@ -609,9 +609,7 @@ internal object Values {
 
     return Value.newBuilder()
       .setTimestampValue(
-        com.google.protobuf.Timestamp.newBuilder()
-          .setSeconds(timestamp.seconds)
-          .setNanos(truncatedNanoseconds)
+        Timestamp.newBuilder().setSeconds(timestamp.seconds).setNanos(truncatedNanoseconds)
       )
       .build()
   }
@@ -666,6 +664,11 @@ internal object Values {
   }
 
   @JvmStatic
+  fun encodeValue(values: Iterable<Value>): Value {
+    return Value.newBuilder().setArrayValue(ArrayValue.newBuilder().addAllValues(values)).build()
+  }
+
+  @JvmStatic
   fun encodeAnyValue(value: Any?): Value {
     return when (value) {
       null -> NULL_VALUE
@@ -676,7 +679,6 @@ internal object Values {
       is Boolean -> encodeValue(value)
       is GeoPoint -> encodeValue(value)
       is Blob -> encodeValue(value)
-      is DocumentReference -> encodeValue(value)
       is VectorValue -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
