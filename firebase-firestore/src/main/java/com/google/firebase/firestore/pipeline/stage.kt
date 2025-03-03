@@ -36,14 +36,21 @@ private constructor(protected val name: String, private val options: InternalOpt
 }
 
 class GenericStage
-private constructor(name: String, private val arguments: List<GenericArg>, private val options: GenericOptions) : Stage(name, options) {
-  internal constructor(name: String, arguments: List<GenericArg>) : this(name, arguments, GenericOptions.DEFAULT)
+private constructor(
+  name: String,
+  private val arguments: List<GenericArg>,
+  private val options: GenericOptions
+) : Stage(name, options) {
+  internal constructor(
+    name: String,
+    arguments: List<GenericArg>
+  ) : this(name, arguments, GenericOptions.DEFAULT)
   companion object {
-    @JvmStatic
-    fun of(name: String) = GenericStage(name, emptyList())
+    @JvmStatic fun of(name: String) = GenericStage(name, emptyList())
   }
 
-  fun withArguments(vararg arguments: Any): GenericStage = GenericStage(name, arguments.map(GenericArg::from), options)
+  fun withArguments(vararg arguments: Any): GenericStage =
+    GenericStage(name, arguments.map(GenericArg::from), options)
 
   fun withOptions(options: GenericOptions): GenericStage = GenericStage(name, arguments, options)
 
@@ -87,10 +94,10 @@ internal sealed class GenericArg {
   }
 }
 
-class GenericOptions private constructor(options: InternalOptions) : AbstractOptions<GenericOptions>(options) {
+class GenericOptions private constructor(options: InternalOptions) :
+  AbstractOptions<GenericOptions>(options) {
   companion object {
-    @JvmField
-    val DEFAULT = GenericOptions(InternalOptions.EMPTY)
+    @JvmField val DEFAULT = GenericOptions(InternalOptions.EMPTY)
   }
   override fun self(options: InternalOptions) = GenericOptions(options)
 }

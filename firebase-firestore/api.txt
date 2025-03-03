@@ -430,7 +430,8 @@ package com.google.firebase.firestore {
     method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.PipelineSnapshot> execute();
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.Expr property, double[] vector, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.Expr property, double[] vector, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure, com.google.firebase.firestore.pipeline.FindNearestOptions options);
-    method public com.google.firebase.firestore.Pipeline genericStage(String name, java.lang.Object... params);
+    method public com.google.firebase.firestore.Pipeline genericStage(com.google.firebase.firestore.pipeline.GenericStage stage);
+    method public com.google.firebase.firestore.Pipeline genericStage(String name, java.lang.Object... arguments);
     method public com.google.firebase.firestore.Pipeline limit(long limit);
     method public com.google.firebase.firestore.Pipeline offset(long offset);
     method public com.google.firebase.firestore.Pipeline removeFields(com.google.firebase.firestore.pipeline.Field... fields);
@@ -1259,6 +1260,25 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr xor(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
   }
 
+  public final class GenericOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.GenericOptions> {
+    field public static final com.google.firebase.firestore.pipeline.GenericOptions.Companion Companion;
+    field public static final com.google.firebase.firestore.pipeline.GenericOptions DEFAULT;
+  }
+
+  public static final class GenericOptions.Companion {
+  }
+
+  public final class GenericStage extends com.google.firebase.firestore.pipeline.Stage {
+    method public static com.google.firebase.firestore.pipeline.GenericStage of(String name);
+    method public com.google.firebase.firestore.pipeline.GenericStage withArguments(java.lang.Object... arguments);
+    method public com.google.firebase.firestore.pipeline.GenericStage withOptions(com.google.firebase.firestore.pipeline.GenericOptions options);
+    field public static final com.google.firebase.firestore.pipeline.GenericStage.Companion Companion;
+  }
+
+  public static final class GenericStage.Companion {
+    method public com.google.firebase.firestore.pipeline.GenericStage of(String name);
+  }
+
   public final class Ordering {
     method public static com.google.firebase.firestore.pipeline.Ordering ascending(com.google.firebase.firestore.pipeline.Expr expr);
     method public static com.google.firebase.firestore.pipeline.Ordering ascending(String fieldName);
@@ -1301,6 +1321,8 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public abstract class Stage {
+    method protected final String getName();
+    property protected final String name;
   }
 
   public final class UnnestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.UnnestOptions> {
