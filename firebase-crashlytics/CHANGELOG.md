@@ -1,5 +1,14 @@
 # Unreleased
+* [fixed] Fixed NoSuchMethodError when getting process info on Android 13 [#6720]
+
+# 19.4.1
 * [changed] Updated `firebase-sessions` dependency to v2.0.9
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.4.0
 * [feature] Added an overload for `recordException` that allows logging additional custom
@@ -324,10 +333,10 @@ updates.
 
 # 18.2.10
 * [fixed] Fixed a bug that could prevent unhandled exceptions from being
-  propogated to the default handler when the network is unavailable.
+  propagated to the default handler when the network is unavailable.
 * [changed] Internal changes to support on-demand fatal crash reporting for
   Flutter apps.
-* [fixed] Fixed a bug that prevented [crashlytics] from initalizing on some
+* [fixed] Fixed a bug that prevented [crashlytics] from initializing on some
   devices in some cases. (#3269)
 
 
