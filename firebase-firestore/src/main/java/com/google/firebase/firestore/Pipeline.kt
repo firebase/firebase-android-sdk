@@ -99,8 +99,10 @@ internal constructor(
       .addAllStages(stages.map { it.toProtoStage(userDataReader) })
       .build()
 
-  fun genericStage(name: String, vararg params: Any) =
-    append(GenericStage(name, params.map(GenericArg::from)))
+  fun genericStage(name: String, vararg arguments: Any): Pipeline =
+    append(GenericStage(name, arguments.map(GenericArg::from)))
+
+  fun genericStage(stage: GenericStage): Pipeline = append(stage)
 
   fun addFields(vararg fields: Selectable): Pipeline = append(AddFieldsStage(fields))
 

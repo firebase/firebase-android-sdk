@@ -22,7 +22,7 @@ import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
 abstract class Stage
-private constructor(private val name: String, private val options: InternalOptions) {
+private constructor(protected val name: String, private val options: InternalOptions) {
   internal constructor(name: String) : this(name, InternalOptions.EMPTY)
   internal constructor(name: String, options: AbstractOptions<*>) : this(name, options.options)
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
@@ -35,10 +35,20 @@ private constructor(private val name: String, private val options: InternalOptio
   internal abstract fun args(userDataReader: UserDataReader): Sequence<Value>
 }
 
-internal class GenericStage
-internal constructor(name: String, private val params: List<GenericArg>) : Stage(name) {
+class GenericStage
+private constructor(name: String, private val arguments: List<GenericArg>, private val options: GenericOptions) : Stage(name, options) {
+  internal constructor(name: String, arguments: List<GenericArg>) : this(name, arguments, GenericOptions.DEFAULT)
+  companion object {
+    @JvmStatic
+    fun of(name: String) = GenericStage(name, emptyList())
+  }
+
+  fun withArguments(vararg arguments: Any): GenericStage = GenericStage(name, arguments.map(GenericArg::from), options)
+
+  fun withOptions(options: GenericOptions): GenericStage = GenericStage(name, arguments, options)
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    params.asSequence().map { it.toProto(userDataReader) }
+    arguments.asSequence().map { it.toProto(userDataReader) }
 }
 
 internal sealed class GenericArg {
@@ -75,6 +85,14 @@ internal sealed class GenericArg {
     override fun toProto(userDataReader: UserDataReader) =
       encodeValue(args.map { it.toProto(userDataReader) })
   }
+}
+
+class GenericOptions private constructor(options: InternalOptions) : AbstractOptions<GenericOptions>(options) {
+  companion object {
+    @JvmField
+    val DEFAULT = GenericOptions(InternalOptions.EMPTY)
+  }
+  override fun self(options: InternalOptions) = GenericOptions(options)
 }
 
 internal class DatabaseSource : Stage("database") {

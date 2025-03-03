@@ -48,6 +48,7 @@ import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.Constant;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.Function;
+import com.google.firebase.firestore.pipeline.GenericStage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -284,7 +285,7 @@ public class PipelineTest {
                 "aggregate",
                 ImmutableMap.of("avgRating", AggregateExpr.avg("rating")),
                 ImmutableMap.of("genre", Field.of("genre")))
-            .genericStage("where", gt("avgRating", 4.3))
+            .genericStage(GenericStage.of("where").withArguments(gt("avgRating", 4.3)))
             .genericStage("sort", Field.of("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
