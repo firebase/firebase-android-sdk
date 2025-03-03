@@ -29,7 +29,10 @@ import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
+import com.google.firebase.firestore.pipeline.Expr
 import com.google.firebase.firestore.pipeline.Field
+import com.google.firebase.firestore.pipeline.FindNearestOptions
+import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.GenericArg
 import com.google.firebase.firestore.pipeline.GenericStage
 import com.google.firebase.firestore.pipeline.LimitStage
@@ -43,6 +46,7 @@ import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
+import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.util.Preconditions
@@ -134,27 +138,39 @@ internal constructor(
 
   fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)
 
-  // fun findNearest()
+  fun findNearest(
+    property: Expr,
+    vector: DoubleArray,
+    distanceMeasure: FindNearestStage.DistanceMeasure
+  ) = append(FindNearestStage(property, vector, distanceMeasure, FindNearestOptions.DEFAULT))
+
+  fun findNearest(
+    property: Expr,
+    vector: DoubleArray,
+    distanceMeasure: FindNearestStage.DistanceMeasure,
+    options: FindNearestOptions
+  ) = append(FindNearestStage(property, vector, distanceMeasure, options))
 
   fun replace(field: String): Pipeline = replace(Field.of(field))
 
   fun replace(field: Selectable): Pipeline =
     append(ReplaceStage(field, ReplaceStage.Mode.FULL_REPLACE))
 
-  fun sample(documents: Int): Pipeline = append(SampleStage(documents, SampleStage.Mode.DOCUMENTS))
+  fun sample(documents: Int): Pipeline = append(SampleStage.withDocLimit(documents))
 
-  // fun sample(options: SampleOptions): Pipeline
+  fun sample(sample: SampleStage): Pipeline = append(sample)
 
   fun union(other: Pipeline): Pipeline = append(UnionStage(other))
 
-  fun unnest(field: String): Pipeline = unnest(Field.of(field))
+  fun unnest(field: String, alias: String): Pipeline = unnest(Field.of(field).`as`(alias))
 
-  // fun unnest(field: String, options: UnnestOptions): Pipeline = unnest(Field.of(field), options)
+  fun unnest(field: String, alias: String, options: UnnestOptions): Pipeline =
+    unnest(Field.of(field).`as`(alias), options)
 
   fun unnest(selectable: Selectable): Pipeline = append(UnnestStage(selectable))
 
-  // fun unnest(selectable: Selectable, options: UnnestOptions): Pipeline =
-  // append(UnnestStage(selectable))
+  fun unnest(selectable: Selectable, options: UnnestOptions): Pipeline =
+    append(UnnestStage(selectable))
 
   private inner class ObserverSnapshotTask : PipelineResultObserver {
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()

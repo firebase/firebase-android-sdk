@@ -14,21 +14,22 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.common.collect.ImmutableMap
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.model.Values.encodeVectorValue
+import com.google.firebase.firestore.pipeline.Field.Companion.of
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
 abstract class Stage
-internal constructor(private val name: String, private val options: Map<String, Value>) {
-  internal constructor(name: String) : this(name, emptyMap())
+private constructor(private val name: String, private val options: InternalOptions) {
+  internal constructor(name: String) : this(name, InternalOptions.EMPTY)
+  internal constructor(name: String, options: AbstractOptions<*>) : this(name, options.options)
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
     args(userDataReader).forEach { arg -> builder.addArgs(arg) }
-    builder.putAllOptions(options)
+    options.forEach(builder::putOptions)
     return builder.build()
   }
   internal abstract fun args(userDataReader: UserDataReader): Sequence<Value>
@@ -147,13 +148,13 @@ internal class WhereStage internal constructor(private val condition: BooleanExp
     sequenceOf(condition.toProto(userDataReader))
 }
 
-internal class FindNearestStage
+class FindNearestStage
 internal constructor(
   private val property: Expr,
   private val vector: DoubleArray,
   private val distanceMeasure: DistanceMeasure,
-  private val options: FindNearestOptions
-) : Stage("find_nearest", options.toProto()) {
+  options: FindNearestOptions
+) : Stage("find_nearest", options) {
 
   class DistanceMeasure private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
@@ -168,18 +169,21 @@ internal constructor(
     sequenceOf(property.toProto(userDataReader), encodeVectorValue(vector), distanceMeasure.proto)
 }
 
-class FindNearestOptions
-internal constructor(private val limit: Long?, private val distanceField: Field?) {
-  fun toProto(): Map<String, Value> {
-    val builder = ImmutableMap.builder<String, Value>()
-    if (limit != null) {
-      builder.put("limit", encodeValue(limit))
-    }
-    if (distanceField != null) {
-      builder.put("distance_field", distanceField.toProto())
-    }
-    return builder.build()
+class FindNearestOptions private constructor(options: InternalOptions) :
+  AbstractOptions<FindNearestOptions>(options) {
+  companion object {
+    @JvmField val DEFAULT = FindNearestOptions(InternalOptions.EMPTY)
   }
+
+  override fun self(options: InternalOptions): FindNearestOptions = FindNearestOptions(options)
+
+  fun withLimit(limit: Long): FindNearestOptions = with("limit", limit)
+
+  fun withDistanceField(distanceField: Field): FindNearestOptions =
+    with("distance_field", distanceField)
+
+  fun withDistanceField(distanceField: String): FindNearestOptions =
+    withDistanceField(of(distanceField))
 }
 
 internal class LimitStage internal constructor(private val limit: Long) : Stage("limit") {
@@ -230,7 +234,7 @@ internal constructor(private val field: Selectable, private val mode: Mode) : St
     sequenceOf(field.toProto(userDataReader), mode.proto)
 }
 
-internal class SampleStage internal constructor(private val size: Number, private val mode: Mode) :
+class SampleStage private constructor(private val size: Number, private val mode: Mode) :
   Stage("sample") {
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
@@ -238,6 +242,11 @@ internal class SampleStage internal constructor(private val size: Number, privat
       val DOCUMENTS = Mode("documents")
       val PERCENT = Mode("percent")
     }
+  }
+  companion object {
+    @JvmStatic fun withPercentage(percentage: Double) = SampleStage(percentage, Mode.PERCENT)
+
+    @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)
@@ -249,8 +258,22 @@ internal constructor(private val other: com.google.firebase.firestore.Pipeline) 
     sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
 }
 
-internal class UnnestStage internal constructor(private val selectable: Selectable) :
-  Stage("unnest") {
+internal class UnnestStage
+internal constructor(private val selectable: Selectable, options: UnnestOptions) :
+  Stage("unnest", options) {
+  internal constructor(selectable: Selectable) : this(selectable, UnnestOptions.DEFAULT)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto(userDataReader))
+}
+
+class UnnestOptions private constructor(options: InternalOptions) :
+  AbstractOptions<UnnestOptions>(options) {
+
+  fun withIndexField(indexField: String): UnnestOptions = with("index_field", indexField)
+
+  override fun self(options: InternalOptions) = UnnestOptions(options)
+
+  companion object {
+    @JvmField val DEFAULT: UnnestOptions = UnnestOptions(InternalOptions.EMPTY)
+  }
 }
