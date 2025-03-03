@@ -25,6 +25,10 @@ package com.google.firebase.vertexai {
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app);
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, String location);
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(String location);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
     property public static final com.google.firebase.vertexai.FirebaseVertexAI instance;
     field public static final com.google.firebase.vertexai.FirebaseVertexAI.Companion Companion;
   }
@@ -53,6 +57,10 @@ package com.google.firebase.vertexai {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.GenerateContentResponse> generateContentStream(com.google.firebase.vertexai.type.Content... prompt);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.GenerateContentResponse> generateContentStream(String prompt);
     method public com.google.firebase.vertexai.Chat startChat(java.util.List<com.google.firebase.vertexai.type.Content> history = emptyList());
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenModel {
+    method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.vertexai.type.ImagenGenerationResponse<com.google.firebase.vertexai.type.ImagenInlineImage>>);
   }
 
 }
@@ -84,6 +92,17 @@ package com.google.firebase.vertexai.java {
 
   public static final class GenerativeModelFutures.Companion {
     method public com.google.firebase.vertexai.java.GenerativeModelFutures from(com.google.firebase.vertexai.GenerativeModel model);
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public abstract class ImagenModelFutures {
+    method public static final com.google.firebase.vertexai.java.ImagenModelFutures from(com.google.firebase.vertexai.ImagenModel model);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.vertexai.type.ImagenGenerationResponse<com.google.firebase.vertexai.type.ImagenInlineImage>> generateImages(String prompt);
+    method public abstract com.google.firebase.vertexai.ImagenModel getImageModel();
+    field public static final com.google.firebase.vertexai.java.ImagenModelFutures.Companion Companion;
+  }
+
+  public static final class ImagenModelFutures.Companion {
+    method public com.google.firebase.vertexai.java.ImagenModelFutures from(com.google.firebase.vertexai.ImagenModel model);
   }
 
 }
@@ -161,6 +180,9 @@ package com.google.firebase.vertexai.type {
     method public void setRole(String?);
     property public final java.util.List<com.google.firebase.vertexai.type.Part> parts;
     property public final String? role;
+  }
+
+  public final class ContentBlockedException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
   }
 
   public final class ContentKt {
@@ -376,6 +398,111 @@ package com.google.firebase.vertexai.type {
     property public final android.graphics.Bitmap image;
   }
 
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenAspectRatio {
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio.Companion Companion;
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio LANDSCAPE_16x9;
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio LANDSCAPE_4x3;
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio PORTRAIT_3x4;
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio PORTRAIT_9x16;
+    field public static final com.google.firebase.vertexai.type.ImagenAspectRatio SQUARE_1x1;
+  }
+
+  public static final class ImagenAspectRatio.Companion {
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenGenerationConfig {
+    ctor public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.vertexai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.vertexai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
+    method public Boolean? getAddWatermark();
+    method public com.google.firebase.vertexai.type.ImagenAspectRatio? getAspectRatio();
+    method public com.google.firebase.vertexai.type.ImagenImageFormat? getImageFormat();
+    method public String? getNegativePrompt();
+    method public Integer? getNumberOfImages();
+    property public final Boolean? addWatermark;
+    property public final com.google.firebase.vertexai.type.ImagenAspectRatio? aspectRatio;
+    property public final com.google.firebase.vertexai.type.ImagenImageFormat? imageFormat;
+    property public final String? negativePrompt;
+    property public final Integer? numberOfImages;
+    field public static final com.google.firebase.vertexai.type.ImagenGenerationConfig.Companion Companion;
+  }
+
+  public static final class ImagenGenerationConfig.Builder {
+    ctor public ImagenGenerationConfig.Builder();
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig build();
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setAddWatermark(boolean addWatermark);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setAspectRatio(com.google.firebase.vertexai.type.ImagenAspectRatio aspectRatio);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setImageFormat(com.google.firebase.vertexai.type.ImagenImageFormat imageFormat);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setNegativePrompt(String negativePrompt);
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder setNumberOfImages(int numberOfImages);
+    field public Boolean? addWatermark;
+    field public com.google.firebase.vertexai.type.ImagenAspectRatio? aspectRatio;
+    field public com.google.firebase.vertexai.type.ImagenImageFormat? imageFormat;
+    field public String? negativePrompt;
+    field public Integer? numberOfImages;
+  }
+
+  public static final class ImagenGenerationConfig.Companion {
+    method public com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder builder();
+  }
+
+  public final class ImagenGenerationConfigKt {
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public static com.google.firebase.vertexai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.vertexai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenGenerationResponse<T> {
+    method public String? getFilteredReason();
+    method public java.util.List<T> getImages();
+    property public final String? filteredReason;
+    property public final java.util.List<T> images;
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenImageFormat {
+    method public Integer? getCompressionQuality();
+    method public String getMimeType();
+    method public static com.google.firebase.vertexai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
+    method public static com.google.firebase.vertexai.type.ImagenImageFormat png();
+    property public final Integer? compressionQuality;
+    property public final String mimeType;
+    field public static final com.google.firebase.vertexai.type.ImagenImageFormat.Companion Companion;
+  }
+
+  public static final class ImagenImageFormat.Companion {
+    method public com.google.firebase.vertexai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
+    method public com.google.firebase.vertexai.type.ImagenImageFormat png();
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenInlineImage {
+    method public android.graphics.Bitmap asBitmap();
+    method public byte[] getData();
+    method public String getMimeType();
+    property public final byte[] data;
+    property public final String mimeType;
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
+    field public static final com.google.firebase.vertexai.type.ImagenPersonFilterLevel ALLOW_ADULT;
+    field public static final com.google.firebase.vertexai.type.ImagenPersonFilterLevel ALLOW_ALL;
+    field public static final com.google.firebase.vertexai.type.ImagenPersonFilterLevel BLOCK_ALL;
+    field public static final com.google.firebase.vertexai.type.ImagenPersonFilterLevel.Companion Companion;
+  }
+
+  public static final class ImagenPersonFilterLevel.Companion {
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenSafetyFilterLevel {
+    field public static final com.google.firebase.vertexai.type.ImagenSafetyFilterLevel BLOCK_LOW_AND_ABOVE;
+    field public static final com.google.firebase.vertexai.type.ImagenSafetyFilterLevel BLOCK_MEDIUM_AND_ABOVE;
+    field public static final com.google.firebase.vertexai.type.ImagenSafetyFilterLevel BLOCK_NONE;
+    field public static final com.google.firebase.vertexai.type.ImagenSafetyFilterLevel BLOCK_ONLY_HIGH;
+    field public static final com.google.firebase.vertexai.type.ImagenSafetyFilterLevel.Companion Companion;
+  }
+
+  public static final class ImagenSafetyFilterLevel.Companion {
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class ImagenSafetySettings {
+    ctor public ImagenSafetySettings(com.google.firebase.vertexai.type.ImagenSafetyFilterLevel safetyFilterLevel, com.google.firebase.vertexai.type.ImagenPersonFilterLevel personFilterLevel);
+  }
+
   public final class InlineDataPart implements com.google.firebase.vertexai.type.Part {
     ctor public InlineDataPart(byte[] inlineData, String mimeType);
     method public byte[] getInlineData();
@@ -413,8 +540,8 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class PromptBlockedException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
-    method public com.google.firebase.vertexai.type.GenerateContentResponse getResponse();
-    property public final com.google.firebase.vertexai.type.GenerateContentResponse response;
+    method public com.google.firebase.vertexai.type.GenerateContentResponse? getResponse();
+    property public final com.google.firebase.vertexai.type.GenerateContentResponse? response;
   }
 
   public final class PromptFeedback {
@@ -425,6 +552,9 @@ package com.google.firebase.vertexai.type {
     property public final com.google.firebase.vertexai.type.BlockReason? blockReason;
     property public final String? blockReasonMessage;
     property public final java.util.List<com.google.firebase.vertexai.type.SafetyRating> safetyRatings;
+  }
+
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
   }
 
   public final class RequestOptions {

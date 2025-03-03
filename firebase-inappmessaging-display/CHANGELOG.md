@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]
 
 
 # 21.0.1

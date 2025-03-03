@@ -241,6 +241,9 @@ constructor(val project: Project, val type: LibraryType) {
   val version: String
     get() = project.version.toString()
 
+  val previousVersion: String
+    get() = project.properties["latestReleasedVersion"].toString()
+
   val path: String = project.path
 
   val runtimeClasspath: String =

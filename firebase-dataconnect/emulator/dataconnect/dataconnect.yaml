@@ -1,4 +1,4 @@
-specVersion: "v1beta"
+specVersion: "v1"
 serviceId: "sid2ehn9ct8te"
 location: "us-central1"
 schema:
