@@ -50,13 +50,24 @@ internal class PublisherStream(
 
   private val subscribers = ConcurrentLinkedQueue<Pair<Subscriber<in StreamResponse>, AtomicLong>>()
   private var activeCall: Call? = null
-  private var isStreamingStarted = false
-  private var isCompleted = false
+  @Volatile private var isStreamingStarted = false
+  @Volatile private var isCompleted = false
   private val messageQueue = ConcurrentLinkedQueue<StreamResponse>()
 
   override fun subscribe(subscriber: Subscriber<in StreamResponse>) {
-    val requestedCount = AtomicLong(0)
-    subscribers.add(subscriber to requestedCount)
+    synchronized(this) {
+      if (isCompleted) {
+        subscriber.onError(
+          FirebaseFunctionsException(
+            "Cannot subscribe: Streaming has already completed.",
+            FirebaseFunctionsException.Code.CANCELLED,
+            null
+          )
+        )
+        return
+      }
+      subscribers.add(subscriber to AtomicLong(0))
+    }
 
     subscriber.onSubscribe(
       object : Subscription {
@@ -65,21 +76,38 @@ internal class PublisherStream(
             subscriber.onError(IllegalArgumentException("Requested messages must be positive."))
             return
           }
-          requestedCount.addAndGet(n)
-          dispatchMessages()
-          if (!isStreamingStarted) {
-            isStreamingStarted = true
-            startStreaming()
+
+          synchronized(this@PublisherStream) {
+            if (isCompleted) return
+
+            val subscriberEntry = subscribers.find { it.first == subscriber }
+            subscriberEntry?.second?.addAndGet(n)
+            dispatchMessages()
+            if (!isStreamingStarted) {
+              isStreamingStarted = true
+              startStreaming()
+            }
           }
         }
 
         override fun cancel() {
-          cancelStream()
-          val iterator = subscribers.iterator()
-          while (iterator.hasNext()) {
-            val pair = iterator.next()
-            if (pair.first == subscriber) {
-              iterator.remove()
+          synchronized(this@PublisherStream) {
+            notifyError(
+              FirebaseFunctionsException(
+                "Stream was canceled",
+                FirebaseFunctionsException.Code.CANCELLED,
+                null
+              )
+            )
+            val iterator = subscribers.iterator()
+            while (iterator.hasNext()) {
+              val pair = iterator.next()
+              if (pair.first == subscriber) {
+                iterator.remove()
+              }
+            }
+            if (subscribers.isEmpty()) {
+              cancelStream()
             }
           }
         }
@@ -231,28 +259,41 @@ internal class PublisherStream(
   }
 
   private fun dispatchMessages() {
-    val iterator = subscribers.iterator()
-    while (iterator.hasNext()) {
-      val (subscriber, requestedCount) = iterator.next()
-      while (requestedCount.get() > 0 && messageQueue.isNotEmpty()) {
-        subscriber.onNext(messageQueue.poll())
-        requestedCount.decrementAndGet()
+    synchronized(this) {
+      val iterator = subscribers.iterator()
+      while (iterator.hasNext()) {
+        val (subscriber, requestedCount) = iterator.next()
+        while (requestedCount.get() > 0 && messageQueue.isNotEmpty()) {
+          subscriber.onNext(messageQueue.poll())
+          requestedCount.decrementAndGet()
+        }
       }
     }
   }
 
-  private fun notifyError(e: FirebaseFunctionsException) {
-    subscribers.forEach { (subscriber, _) -> subscriber.onError(e) }
-    subscribers.clear()
-    messageQueue.clear()
+  private fun notifyError(e: Throwable) {
+    synchronized(this) {
+      if (!isCompleted) {
+        isCompleted = true
+        subscribers.forEach { (subscriber, _) ->
+          try {
+            subscriber.onError(e)
+          } catch (ignored: Exception) {}
+        }
+        subscribers.clear()
+        messageQueue.clear()
+      }
+    }
   }
 
   private fun notifyComplete() {
-    if (!isCompleted) {
-      subscribers.forEach { (subscriber, _) -> subscriber.onComplete() }
-      subscribers.clear()
-      messageQueue.clear()
-      isCompleted = true
+    synchronized(this) {
+      if (!isCompleted) {
+        isCompleted = true
+        subscribers.forEach { (subscriber, _) -> subscriber.onComplete() }
+        subscribers.clear()
+        messageQueue.clear()
+      }
     }
   }
 

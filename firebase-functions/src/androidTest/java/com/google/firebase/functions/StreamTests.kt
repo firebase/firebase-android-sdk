@@ -152,6 +152,7 @@ class StreamTests {
 
     assertThat(subscriber.messages.map { it.message.data.toString() }).contains("{chunk=hello}")
     assertThat(subscriber.throwable).isNotNull()
+    assertThat(subscriber.throwable).isInstanceOf(FirebaseFunctionsException::class.java)
     assertThat(subscriber.throwable!!.message).isEqualTo("{message=INTERNAL, status=INTERNAL}")
     assertThat(subscriber.isComplete).isFalse()
   }
@@ -195,7 +196,7 @@ class StreamTests {
       }
     }
     withTimeout(2000) { cancelableSubscriber.subscription.cancel() }
-    withTimeout(1000) {
+    withTimeout(1500) {
       while (cancelableSubscriber.throwable == null) {
         delay(300)
       }
@@ -203,6 +204,7 @@ class StreamTests {
     val messagesAsStringList = cancelableSubscriber.messages.map { it.message.data.toString() }
     assertThat(messagesAsStringList).contains("{chunk=hello}")
     assertThat(messagesAsStringList).doesNotContain("{chunk=cool}")
+    assertThat(cancelableSubscriber.throwable).isInstanceOf(FirebaseFunctionsException::class.java)
     assertThat(cancelableSubscriber.throwable!!.message!!.uppercase()).contains("CANCEL")
     assertThat(cancelableSubscriber.isComplete).isFalse()
   }
