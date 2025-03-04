@@ -157,7 +157,7 @@ public class HttpsCallableReference {
    * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
-   * @param data Parameters to pass to the endpoint.
+   * @param data Parameters to pass to the endpoint. Defaults to `null` if not provided.
    * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
    * by the function.
    * @see org.json.JSONArray
@@ -168,30 +168,13 @@ public class HttpsCallableReference {
    *
    * @see FirebaseFunctionsException
    */
-  public fun stream(data: Any?): Publisher<StreamResponse> {
+  public fun stream(data: Any? = null): Publisher<StreamResponse> {
     return if (name != null) {
       functionsClient.stream(name, data, options)
     } else {
       functionsClient.stream(requireNotNull(url), data, options)
     }
   }
-
-  /**
-   * Streams data to the specified HTTPS endpoint without arguments.
-   *
-   * The request to the Cloud Functions backend made by this method automatically includes a
-   * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
-   * Auth, an auth token for the user will also be automatically included.
-   *
-   * Firebase Instance ID sends data to the Firebase backend periodically to collect information
-   * regarding the app instance. To stop this, see
-   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
-   * Instance ID the next time you call this method.
-   *
-   * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
-   * by the function.
-   */
-  public fun stream(): Publisher<StreamResponse> = stream(data = null)
 
   /**
    * Changes the timeout for calls from this instance of Functions. The default is 60 seconds.
