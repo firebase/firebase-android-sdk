@@ -96,18 +96,18 @@ package com.google.firebase.functions {
   }
 
   public abstract class StreamResponse {
-    method public final com.google.firebase.functions.HttpsCallableResult getMessage();
-    method public final boolean isMessage();
-    method public final boolean isResult();
-    property public final com.google.firebase.functions.HttpsCallableResult message;
   }
 
   public static final class StreamResponse.Message extends com.google.firebase.functions.StreamResponse {
     ctor public StreamResponse.Message(com.google.firebase.functions.HttpsCallableResult message);
+    method public com.google.firebase.functions.HttpsCallableResult getMessage();
+    property public final com.google.firebase.functions.HttpsCallableResult message;
   }
 
   public static final class StreamResponse.Result extends com.google.firebase.functions.StreamResponse {
-    ctor public StreamResponse.Result(com.google.firebase.functions.HttpsCallableResult message);
+    ctor public StreamResponse.Result(com.google.firebase.functions.HttpsCallableResult result);
+    method public com.google.firebase.functions.HttpsCallableResult getResult();
+    property public final com.google.firebase.functions.HttpsCallableResult result;
   }
 
 }

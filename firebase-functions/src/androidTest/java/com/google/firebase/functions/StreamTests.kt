@@ -206,4 +206,29 @@ class StreamTests {
     assertThat(cancelableSubscriber.throwable!!.message!!.uppercase()).contains("CANCEL")
     assertThat(cancelableSubscriber.isComplete).isFalse()
   }
+
+  @Test
+  fun genStreamWeather_receivesWeatherForecasts() = runBlocking {
+    val inputData = listOf(mapOf("name" to "Toronto"), mapOf("name" to "London"))
+    val input = mapOf("data" to inputData)
+
+    val function = functions.getHttpsCallable("genStreamWeather")
+    val subscriber = StreamSubscriber()
+
+    function.stream(input).subscribe(subscriber)
+
+    while (!subscriber.isComplete) {
+      delay(100)
+    }
+
+    assertThat(subscriber.messages.map { it.message.data.toString() })
+      .containsExactly(
+        "{temperature=25, location=Toronto, conditions=snowy}",
+        "{temperature=50, location=London, conditions=rainy}"
+      )
+    assertThat(subscriber.result).isNotNull()
+    assertThat(subscriber.result!!.result.data.toString()).contains("forecasts")
+    assertThat(subscriber.throwable).isNull()
+    assertThat(subscriber.isComplete).isTrue()
+  }
 }

@@ -176,3 +176,36 @@ exports.genStreamNoReturn = functionsV2.https.onCall(
       }
     },
 );
+
+const weatherForecasts = {
+  Toronto: { conditions: 'snowy', temperature: 25 },
+  London: { conditions: 'rainy', temperature: 50 },
+  Dubai: { conditions: 'sunny', temperature: 75 }
+};
+
+/**
+ * Generates weather forecasts asynchronously for the given locations.
+ * @async
+ * @generator
+ * @param {Array<{name: string}>} locations - An array of location objects.
+ */
+async function* generateForecast(locations) {
+  for (const location of locations) {
+    yield { 'location': location,  ...weatherForecasts[location.name] };
+    await sleep(100);
+  }
+};
+
+exports.genStreamWeather = functionsV2.https.onCall(
+    async (request, response) => {
+      const locations = request.data && request.data.data?
+      request.data.data: [];
+      const forecasts = [];
+      if (request.acceptsStreaming) {
+        for await (const chunk of generateForecast(locations)) {
+          forecasts.push(chunk);
+          response.sendChunk(chunk);
+        }
+      }
+      return {forecasts};
+    });
