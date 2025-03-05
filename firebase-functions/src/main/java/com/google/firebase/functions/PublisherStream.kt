@@ -272,28 +272,24 @@ internal class PublisherStream(
   }
 
   private fun notifyError(e: Throwable) {
-    synchronized(this) {
-      if (!isCompleted) {
-        isCompleted = true
-        subscribers.forEach { (subscriber, _) ->
-          try {
-            subscriber.onError(e)
-          } catch (ignored: Exception) {}
-        }
-        subscribers.clear()
-        messageQueue.clear()
+    if (!isCompleted) {
+      isCompleted = true
+      subscribers.forEach { (subscriber, _) ->
+        try {
+          subscriber.onError(e)
+        } catch (ignored: Exception) {}
       }
+      subscribers.clear()
+      messageQueue.clear()
     }
   }
 
   private fun notifyComplete() {
-    synchronized(this) {
-      if (!isCompleted) {
-        isCompleted = true
-        subscribers.forEach { (subscriber, _) -> subscriber.onComplete() }
-        subscribers.clear()
-        messageQueue.clear()
-      }
+    if (!isCompleted) {
+      isCompleted = true
+      subscribers.forEach { (subscriber, _) -> subscriber.onComplete() }
+      subscribers.clear()
+      messageQueue.clear()
     }
   }
 
