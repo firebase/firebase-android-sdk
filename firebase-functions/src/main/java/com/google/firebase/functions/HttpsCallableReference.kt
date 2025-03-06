@@ -62,10 +62,8 @@ public class HttpsCallableReference {
    *
    * * Any primitive type, including null, int, long, float, and boolean.
    * * [String]
-   * * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
-   * types.
-   * * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
-   * types.
+   * * [List<?>][java.util.List], where the contained objects are also one of these types.
+   * * [Map<String, ?>][java.util.Map], where the values are also one of these types.
    * * [org.json.JSONArray]
    * * [org.json.JSONObject]
    * * [org.json.JSONObject.NULL]
@@ -133,10 +131,8 @@ public class HttpsCallableReference {
    *
    * * Any primitive type, including null, int, long, float, and boolean.
    * * [String]
-   * * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
-   * types.
-   * * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
-   * types.
+   * * [List<?>][java.util.List], where the contained objects are also one of these types.
+   * * [Map<String, ?>][java.util.Map], where the values are also one of these types.
    * * [org.json.JSONArray]
    * * [org.json.JSONObject]
    * * [org.json.JSONObject.NULL]
