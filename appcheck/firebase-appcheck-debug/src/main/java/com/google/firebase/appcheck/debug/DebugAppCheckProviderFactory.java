@@ -27,6 +27,7 @@ import com.google.firebase.appcheck.debug.internal.DebugAppCheckProvider;
 public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
 
   private static final DebugAppCheckProviderFactory instance = new DebugAppCheckProviderFactory();
+  private static String _debugSecret;
 
   private DebugAppCheckProviderFactory() {}
 
@@ -40,11 +41,20 @@ public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
   public static DebugAppCheckProviderFactory getInstance() {
     return instance;
   }
+  @NonNull
+  public static DebugAppCheckProviderFactory getInstance(String debugSecret) {
+    _debugSecret = debugSecret;
+    return instance;
+  }
 
   @NonNull
   @Override
   @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return firebaseApp.get(DebugAppCheckProvider.class);
+    DebugAppCheckProvider debugAppCheckProvider = firebaseApp.get(DebugAppCheckProvider.class);
+    if (_debugSecret != null && !_debugSecret.isEmpty()) {
+      debugAppCheckProvider.setDebugSecret(_debugSecret);
+    }
+    return debugAppCheckProvider;
   }
 }
