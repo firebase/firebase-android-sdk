@@ -19,12 +19,26 @@ package com.google.firebase.vertexai.common.util
 import android.util.Log
 import com.google.firebase.vertexai.common.SerializationException
 import kotlin.reflect.KClass
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.SerialKind
+import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.descriptors.elementDescriptors
+import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 /**
  * Serializer for enums that defaults to the first ordinal on unknown types.
@@ -36,7 +50,12 @@ import kotlinx.serialization.encoding.Encoder
  */
 internal class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) :
   KSerializer<T> {
-  override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FirstOrdinalSerializer")
+  override val descriptor: SerialDescriptor =
+    buildClassSerialDescriptor("FirstOrdinalSerializer") {
+      for (enumValue in enumClass.enumValues()) {
+        element<String>(enumValue.toString())
+      }
+    }
 
   override fun deserialize(decoder: Decoder): T {
     val name = decoder.decodeString()
@@ -82,3 +101,91 @@ internal val <T : Enum<T>> T.serialName: String
  */
 internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
   java.enumConstants ?: throw SerializationException("$simpleName is not a valid enum type.")
+
+/**
+ * Returns a [JsonObject] representing the classes in the hierarchy of a serialization [descriptor].
+ *
+ * The format of the JSON object is similar to that of a Discovery Document, but restricted to these fields:
+ * - id
+ * - type
+ * - properties
+ * - items
+ * - $ref
+ *
+ * @param descriptor The [SerialDescriptor] to process.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+internal fun serializableHierarchyAsJson(descriptor: SerialDescriptor): JsonObject {
+  // If there's only one element, do not nest it.
+  if (descriptor.elementsCount == 1) {
+    val name =
+      descriptor.getElementDescriptor(0).serialName.removeSuffix(".Internal").split(".").last()
+    return buildJsonObject {
+      put("name", name)
+      putDescriptor(descriptor.getElementDescriptor(0), descriptor.isElementOptional(0), false)
+    }
+  }
+  return buildJsonObject {
+    for (i in 0 until descriptor.elementsCount) {
+      val elementDescriptor = descriptor.getElementDescriptor(i)
+      val elementName = descriptor.getElementName(i)
+      putJsonObject(elementName) {
+        // Items is the name of the entry in Schema that can represent nested Schema's, thus cause
+        // recursion.
+        putDescriptor(elementDescriptor, descriptor.isElementOptional(i), elementName == "items")
+      }
+    }
+  }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun JsonObjectBuilder.putEnumDescriptor(descriptor: SerialDescriptor) {
+  put("type", "ENUM")
+  put("values", JsonArray(descriptor.elementNames.map { JsonPrimitive(it) }))
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun JsonObjectBuilder.putDescriptor(
+  descriptor: SerialDescriptor,
+  isNullable: Boolean,
+  stopRecursion: Boolean
+) {
+  put("nullability", isNullable)
+  when (descriptor.kind) {
+    StructureKind.LIST -> {
+      put("type", "LIST")
+      val nestedIsPrimitive =
+        (descriptor.elementsCount == 1 &&
+          descriptor.elementDescriptors.first().kind is PrimitiveKind)
+      // If the nested element is primitive, there's no need to call this method recursively
+      if (stopRecursion || nestedIsPrimitive) {
+
+        put("nestedType", descriptor.elementDescriptors.first().kind.toString())
+      } else {
+        put("nestedType", serializableHierarchyAsJson(descriptor))
+      }
+    }
+    StructureKind.CLASS -> {
+      // FirstOrdinalSerializer is our custom serializer for Enums.
+      if (descriptor.serialName == "FirstOrdinalSerializer") {
+        putEnumDescriptor(descriptor)
+      } else {
+        put("type", "OBJECT")
+        if (stopRecursion) {
+          put("nestedType", descriptor.serialName)
+        } else {
+          put("nestedType", serializableHierarchyAsJson(descriptor))
+        }
+      }
+    }
+    StructureKind.MAP -> {
+      put("type", "MAP")
+    }
+    SerialKind.ENUM -> {
+      putEnumDescriptor(descriptor)
+    }
+    else -> {
+      put("type", descriptor.kind.toString())
+    }
+  }
+}
