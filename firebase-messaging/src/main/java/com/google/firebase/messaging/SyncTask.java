@@ -161,6 +161,7 @@ class SyncTask implements Runnable {
   static class ConnectivityChangeReceiver extends BroadcastReceiver {
 
     @Nullable private SyncTask task; // task is set to null after it has been fired.
+    @Nullable private Context context;
 
     public ConnectivityChangeReceiver(SyncTask task) {
       this.task = task;
@@ -171,7 +172,8 @@ class SyncTask implements Runnable {
         Log.d(TAG, "Connectivity change received registered");
       }
       IntentFilter intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-      task.getContext().registerReceiver(this, intentFilter);
+      context = task.getContext();
+      context.registerReceiver(this, intentFilter);
     }
 
     @Override
@@ -191,8 +193,10 @@ class SyncTask implements Runnable {
         Log.d(TAG, "Connectivity changed. Starting background sync.");
       }
       task.firebaseMessaging.enqueueTaskWithDelaySeconds(task, 0);
-      task.getContext().unregisterReceiver(this);
-      task = null;
+      if(context != null) {
+        context.unregisterReceiver(this);
+        task = null;
+      }
     }
   }
 
