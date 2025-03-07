@@ -35,7 +35,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/** Background task to perform sync operations with the Firebase backend using a bg thread */
+/**
+ * Background task to perform sync operations with the Firebase backend using a bg thread
+ */
 class SyncTask implements Runnable {
 
   private final long nextDelaySeconds;
@@ -113,9 +115,9 @@ class SyncTask implements Runnable {
    * Refreshes the token if needed
    *
    * @return {@code true} if successful, {@code false} if needs to be rescheduled.
-   * @throws IOException on a hard failure that should not be retried. Hard failures are failures
-   *     except {@link GmsRpc#ERROR_SERVICE_NOT_AVAILABLE} and {@link
-   *     GmsRpc#ERROR_INTERNAL_SERVER_ERROR}
+   * @throws IOException on a hard failure that should not be retried. Hard failures are
+   *     failures except {@link GmsRpc#ERROR_SERVICE_NOT_AVAILABLE} and
+   *     {@link GmsRpc#ERROR_INTERNAL_SERVER_ERROR}
    */
   @VisibleForTesting
   boolean maybeRefreshToken() throws IOException {
@@ -160,8 +162,10 @@ class SyncTask implements Runnable {
   @VisibleForTesting
   static class ConnectivityChangeReceiver extends BroadcastReceiver {
 
-    @Nullable private SyncTask task; // task is set to null after it has been fired.
-    @Nullable private Context context;
+    @Nullable
+    private SyncTask task; // task is set to null after it has been fired.
+    @Nullable
+    private Context context;
 
     public ConnectivityChangeReceiver(SyncTask task) {
       this.task = task;
@@ -193,7 +197,7 @@ class SyncTask implements Runnable {
         Log.d(TAG, "Connectivity changed. Starting background sync.");
       }
       task.firebaseMessaging.enqueueTaskWithDelaySeconds(task, 0);
-      if(context != null) {
+      if (context != null) {
         context.unregisterReceiver(this);
         task = null;
       }
