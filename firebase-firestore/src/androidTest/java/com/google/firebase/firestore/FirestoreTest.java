@@ -37,7 +37,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
@@ -1338,8 +1337,8 @@ public class FirestoreTest {
 
     waitFor(instance.document("coll/doc").set(map("foo", "bar")));
 
-    assertThrows(
-        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
   }
 
   @Test
@@ -1366,8 +1365,8 @@ public class FirestoreTest {
 
     waitFor(instance.document("coll/doc").set(map("foo", "bar")));
 
-    assertThrows(
-        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
   }
 
   @Test
