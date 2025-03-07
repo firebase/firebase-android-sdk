@@ -16,7 +16,7 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.common.util.shaj
+import com.google.firebase.vertexai.common.util.descriptorToJson
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
@@ -50,7 +50,7 @@ internal class SerializationTests {
       }
       """
         .trimIndent()
-    val actualJson = shaj(CountTokensResponse.Internal.serializer().descriptor, false)
+    val actualJson = descriptorToJson(CountTokensResponse.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -80,7 +80,7 @@ internal class SerializationTests {
       }
       """
         .trimIndent()
-    val actualJson = shaj(ModalityTokenCount.Internal.serializer().descriptor, false)
+    val actualJson = descriptorToJson(ModalityTokenCount.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -108,7 +108,7 @@ internal class SerializationTests {
      }
      """
         .trimIndent()
-    val actualJson = shaj(GenerateContentResponse.Internal.serializer().descriptor, false)
+    val actualJson = descriptorToJson(GenerateContentResponse.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -155,7 +155,7 @@ internal class SerializationTests {
     }
       """
         .trimIndent()
-    val actualJson = shaj(Candidate.Internal.serializer().descriptor, false)
+    val actualJson = descriptorToJson(Candidate.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -207,7 +207,7 @@ internal class SerializationTests {
     }
       """
         .trimIndent()
-    val actualJson = shaj(Schema.Internal.serializer().descriptor, false)
+    val actualJson = descriptorToJson(Schema.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }

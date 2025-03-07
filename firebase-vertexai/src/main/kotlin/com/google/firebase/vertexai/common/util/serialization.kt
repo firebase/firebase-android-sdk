@@ -116,31 +116,7 @@ internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
  * @param descriptor The [SerialDescriptor] to process.
  */
 @OptIn(ExperimentalSerializationApi::class)
-internal fun serializableHierarchyAsJson(descriptor: SerialDescriptor): JsonObject {
-  // If there's only one element, do not nest it.
-  if (descriptor.elementsCount == 1) {
-    val name =
-      descriptor.getElementDescriptor(0).serialName.removeSuffix(".Internal").split(".").last()
-    return buildJsonObject {
-      put("name", name)
-      putDescriptor(descriptor.getElementDescriptor(0), descriptor.isElementOptional(0), false)
-    }
-  }
-  return buildJsonObject {
-    for (i in 0 until descriptor.elementsCount) {
-      val elementDescriptor = descriptor.getElementDescriptor(i)
-      val elementName = descriptor.getElementName(i)
-      putJsonObject(elementName) {
-        // Items is the name of the entry in Schema that can represent nested Schema's, thus cause
-        // recursion.
-        putDescriptor(elementDescriptor, descriptor.isElementOptional(i), elementName == "items")
-      }
-    }
-  }
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun shaj(descriptor: SerialDescriptor, includeInnerClasses: Boolean = true): JsonObject {
+internal fun descriptorToJson(descriptor: SerialDescriptor): JsonObject {
   return buildJsonObject {
     put("id", simpleNameFromSerialName(descriptor.serialName))
     put("type", typeNameFromKind(descriptor.kind))
@@ -230,55 +206,3 @@ internal fun simpleNameFromSerialName(serialName: String): String =
       }
     }
     .replace("?", "")
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun JsonObjectBuilder.putEnumDescriptor(descriptor: SerialDescriptor) {
-  put("type", "enum")
-  put("values", JsonArray(descriptor.elementNames.map { JsonPrimitive(it) }))
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun JsonObjectBuilder.putDescriptor(
-  descriptor: SerialDescriptor,
-  isNullable: Boolean,
-  stopRecursion: Boolean
-) {
-  put("nullability", isNullable)
-  when (descriptor.kind) {
-    StructureKind.LIST -> {
-      put("type", "list")
-      val nestedIsPrimitive =
-        (descriptor.elementsCount == 1 &&
-          descriptor.elementDescriptors.first().kind is PrimitiveKind)
-      // If the nested element is primitive, there's no need to call this method recursively
-      if (stopRecursion || nestedIsPrimitive) {
-
-        put("nestedType", descriptor.elementDescriptors.first().kind.toString())
-      } else {
-        put("nestedType", serializableHierarchyAsJson(descriptor))
-      }
-    }
-    StructureKind.CLASS -> {
-      // FirstOrdinalSerializer is our custom serializer for Enums.
-      if (descriptor.serialName == "FirstOrdinalSerializer") {
-        putEnumDescriptor(descriptor)
-      } else {
-        put("type", "object")
-        if (stopRecursion) {
-          put("nestedType", descriptor.serialName)
-        } else {
-          put("nested", serializableHierarchyAsJson(descriptor))
-        }
-      }
-    }
-    StructureKind.MAP -> {
-      put("type", "MAP")
-    }
-    SerialKind.ENUM -> {
-      putEnumDescriptor(descriptor)
-    }
-    else -> {
-      put("type", descriptor.kind.toString())
-    }
-  }
-}
