@@ -78,9 +78,7 @@ dependencies {
   implementation(libs.androidx.annotation)
   implementation(libs.androidx.datastore.preferences)
 
-  vendor(libs.dagger.dagger) {
-    exclude(group = "javax.inject", module = "javax.inject")
-  }
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
 
   compileOnly(libs.errorprone.annotations)
 
