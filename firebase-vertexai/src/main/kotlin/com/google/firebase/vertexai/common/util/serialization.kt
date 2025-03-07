@@ -22,7 +22,6 @@ import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
@@ -163,6 +162,14 @@ internal fun shaj(descriptor: SerialDescriptor, includeInnerClasses: Boolean = t
                 addListDescription(elementDescriptor)
               } else if (elementDescriptor.kind == StructureKind.CLASS) {
                 put("\$ref", simpleNameFromSerialName(elementDescriptor.serialName))
+              } else if (elementDescriptor.kind == StructureKind.MAP) {
+                put("type", typeNameFromKind(elementDescriptor.kind))
+                putJsonObject("additionalProperties") {
+                  put(
+                    "\$ref",
+                    simpleNameFromSerialName(elementDescriptor.getElementDescriptor(1).serialName)
+                  )
+                }
               } else {
                 put("type", typeNameFromKind(elementDescriptor.kind))
               }
@@ -206,12 +213,9 @@ internal fun typeNameFromKind(kind: SerialKind): String {
     PrimitiveKind.STRING -> "string"
     StructureKind.CLASS -> "object"
     StructureKind.LIST -> "array"
-    PolymorphicKind.OPEN -> TODO()
-    PolymorphicKind.SEALED -> TODO()
-    SerialKind.CONTEXTUAL -> TODO()
     SerialKind.ENUM -> "string"
-    StructureKind.MAP -> TODO()
-    StructureKind.OBJECT -> TODO()
+    StructureKind.MAP -> "object"
+    else -> TODO()
   }
 }
 

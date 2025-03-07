@@ -21,6 +21,7 @@ import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.ModalityTokenCount
+import com.google.firebase.vertexai.type.Schema
 import io.kotest.assertions.json.shouldEqualJson
 import org.junit.Test
 
@@ -155,6 +156,58 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = shaj(Candidate.Internal.serializer().descriptor, false)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test Schema serialization as Json`() {
+    // Unlike the actual schema in the background, we don't represent "type" as an enum, but
+    // rather as a string. This is because we restrict we values can be used using helper methods
+    // rather than type
+    val expectedJsonAsString =
+      """
+    {
+      "id": "Schema",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "nullable": {
+          "type": "boolean"
+        },
+        "items": {
+          "${'$'}ref": "Schema"
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "${'$'}ref": "Schema"
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        } 
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = shaj(Schema.Internal.serializer().descriptor, false)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }
