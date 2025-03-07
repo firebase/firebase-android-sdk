@@ -26,10 +26,13 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -53,13 +56,16 @@ internal interface SessionDatastore {
 
   companion object {
     val instance: SessionDatastore
-      get() = Firebase.app[SessionDatastore::class.java]
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionDatastore
   }
 }
 
-internal class SessionDatastoreImpl(
-  private val context: Context,
-  private val backgroundDispatcher: CoroutineContext,
+@Singleton
+internal class SessionDatastoreImpl
+@Inject
+constructor(
+  private val appContext: Context,
+  @Background private val backgroundDispatcher: CoroutineContext,
 ) : SessionDatastore {
 
   /** Most recent session from datastore is updated asynchronously whenever it changes */
@@ -70,7 +76,7 @@ internal class SessionDatastoreImpl(
   }
 
   private val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
-    context.dataStore.data
+    appContext.dataStore.data
       .catch { exception ->
         Log.e(TAG, "Error reading stored session data.", exception)
         emit(emptyPreferences())
@@ -86,14 +92,11 @@ internal class SessionDatastoreImpl(
   override fun updateSessionId(sessionId: String) {
     CoroutineScope(backgroundDispatcher).launch {
       try {
-        context.dataStore.edit { preferences ->
+        appContext.dataStore.edit { preferences ->
           preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
         }
       } catch (e: IOException) {
-        Log.w(
-          TAG,
-          "Failed to update session Id: $e",
-        )
+        Log.w(TAG, "Failed to update session Id: $e")
       }
     }
   }
@@ -101,9 +104,7 @@ internal class SessionDatastoreImpl(
   override fun getCurrentSessionId() = currentSessionFromDatastore.get()?.sessionId
 
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
-    FirebaseSessionsData(
-      preferences[FirebaseSessionDataKeys.SESSION_ID],
-    )
+    FirebaseSessionsData(preferences[FirebaseSessionDataKeys.SESSION_ID])
 
   private companion object {
     private const val TAG = "FirebaseSessionsRepo"

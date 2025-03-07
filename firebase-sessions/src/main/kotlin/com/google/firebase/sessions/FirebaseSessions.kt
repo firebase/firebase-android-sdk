@@ -20,18 +20,24 @@ import android.app.Application
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** Responsible for initializing AQS */
-internal class FirebaseSessions(
+@Singleton
+internal class FirebaseSessions
+@Inject
+constructor(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
-  backgroundDispatcher: CoroutineContext,
+  @Background backgroundDispatcher: CoroutineContext,
   lifecycleServiceBinder: SessionLifecycleServiceBinder,
 ) {
 
