@@ -1,0 +1,160 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.firebase.vertexai
+
+import com.google.firebase.vertexai.common.util.shaj
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.ModalityTokenCount
+import io.kotest.assertions.json.shouldEqualJson
+import org.junit.Test
+
+internal class SerializationTests {
+  @Test
+  fun `test countTokensResponse serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "CountTokensResponse",
+        "type": "object",
+        "properties": {
+          "totalTokens": {
+            "type": "integer"
+          },
+          "totalBillableCharacters": {
+            "type": "integer"
+          },
+          "promptTokensDetails": {
+            "type": "array",
+            "items": {
+              "${'$'}ref": "ModalityTokenCount"
+            }
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = shaj(CountTokensResponse.Internal.serializer().descriptor, false)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test modalityTokenCount serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "ModalityTokenCount",
+        "type": "object",
+        "properties": {
+          "modality": {
+            "type": "string",
+            "enum": [
+              "UNSPECIFIED",
+              "TEXT",
+              "IMAGE",
+              "VIDEO",
+              "AUDIO",
+              "DOCUMENT"
+            ]
+          },
+          "tokenCount": {
+            "type": "integer"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = shaj(ModalityTokenCount.Internal.serializer().descriptor, false)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test GenerateContentResponse serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "GenerateContentResponse",
+        "type": "object",
+        "properties": {
+            "candidates": {
+                "type": "array",
+                "items": {
+                    "${'$'}ref": "Candidate"
+                }
+            },
+            "promptFeedback": {
+                "${'$'}ref": "PromptFeedback"
+            },
+            "usageMetadata": {
+                "${'$'}ref": "UsageMetadata"
+            }
+        }
+     }
+     """
+        .trimIndent()
+    val actualJson = shaj(GenerateContentResponse.Internal.serializer().descriptor, false)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test Candidate serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "Candidate",
+      "type": "object",
+      "properties": {
+        "content": {
+          "${'$'}ref": "Content"
+            },
+        "finishReason": {
+          "type": "string",
+          "enum": [
+                      "UNKNOWN",
+            "UNSPECIFIED",
+            "STOP",
+            "MAX_TOKENS",
+            "SAFETY",
+            "RECITATION",
+            "OTHER",
+            "BLOCKLIST",
+            "PROHIBITED_CONTENT",
+            "SPII",
+            "MALFORMED_FUNCTION_CALL"
+          ]
+        },
+        "safetyRatings": {
+          "type": "array",
+          "items": {
+            "${'$'}ref": "SafetyRating"
+            }
+        },
+        "citationMetadata": {
+          "${'$'}ref": "CitationMetadata"
+            },
+        "groundingMetadata": {
+          "${'$'}ref": "GroundingMetadata"
+            }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = shaj(Candidate.Internal.serializer().descriptor, false)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+}

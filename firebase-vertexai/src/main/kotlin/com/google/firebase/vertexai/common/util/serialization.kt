@@ -22,6 +22,7 @@ import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
@@ -105,7 +106,8 @@ internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
 /**
  * Returns a [JsonObject] representing the classes in the hierarchy of a serialization [descriptor].
  *
- * The format of the JSON object is similar to that of a Discovery Document, but restricted to these fields:
+ * The format of the JSON object is similar to that of a Discovery Document, but restricted to these
+ * fields:
  * - id
  * - type
  * - properties
@@ -139,8 +141,95 @@ internal fun serializableHierarchyAsJson(descriptor: SerialDescriptor): JsonObje
 }
 
 @OptIn(ExperimentalSerializationApi::class)
+internal fun shaj(descriptor: SerialDescriptor, includeInnerClasses: Boolean = true): JsonObject {
+  return buildJsonObject {
+    put("id", simpleNameFromSerialName(descriptor.serialName))
+    put("type", typeNameFromKind(descriptor.kind))
+    if (descriptor.kind == StructureKind.CLASS) {
+      if (descriptor.serialName == "FirstOrdinalSerializer") {
+        put("type", typeNameFromKind(SerialKind.ENUM))
+        addEnumDescription(descriptor)
+      } else {
+        putJsonObject("properties") {
+          for (i in 0 until descriptor.elementsCount) {
+            val elementDescriptor = descriptor.getElementDescriptor(i)
+            val elementName = descriptor.getElementName(i)
+            putJsonObject(elementName) {
+              if (elementDescriptor.serialName.startsWith("FirstOrdinalSerializer")) {
+                put("type", typeNameFromKind(SerialKind.ENUM))
+                addEnumDescription(elementDescriptor)
+              } else if (elementDescriptor.kind == StructureKind.LIST) {
+                put("type", typeNameFromKind(elementDescriptor.kind))
+                addListDescription(elementDescriptor)
+              } else if (elementDescriptor.kind == StructureKind.CLASS) {
+                put("\$ref", simpleNameFromSerialName(elementDescriptor.serialName))
+              } else {
+                put("type", typeNameFromKind(elementDescriptor.kind))
+              }
+            }
+          }
+        }
+      }
+    } else if (descriptor.kind == StructureKind.LIST) {
+      addListDescription(descriptor)
+    }
+  }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun JsonObjectBuilder.addListDescription(descriptor: SerialDescriptor) =
+  putJsonObject("items") {
+    val itemDescriptor = descriptor.elementDescriptors.first()
+    val nestedIsPrimitive = (descriptor.elementsCount == 1 && itemDescriptor.kind is PrimitiveKind)
+    if (nestedIsPrimitive) {
+      put("type", typeNameFromKind(itemDescriptor.kind))
+    } else {
+      put("\$ref", simpleNameFromSerialName(itemDescriptor.serialName))
+    }
+  }
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun JsonObjectBuilder.addEnumDescription(descriptor: SerialDescriptor) =
+  put("enum", JsonArray(descriptor.elementNames.map { JsonPrimitive(it) }))
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun typeNameFromKind(kind: SerialKind): String {
+  return when (kind) {
+    PrimitiveKind.BOOLEAN -> "boolean"
+    PrimitiveKind.BYTE -> "integer"
+    PrimitiveKind.CHAR -> "string"
+    PrimitiveKind.DOUBLE -> "number"
+    PrimitiveKind.FLOAT -> "number"
+    PrimitiveKind.INT -> "integer"
+    PrimitiveKind.LONG -> "integer"
+    PrimitiveKind.SHORT -> "integer"
+    PrimitiveKind.STRING -> "string"
+    StructureKind.CLASS -> "object"
+    StructureKind.LIST -> "array"
+    PolymorphicKind.OPEN -> TODO()
+    PolymorphicKind.SEALED -> TODO()
+    SerialKind.CONTEXTUAL -> TODO()
+    SerialKind.ENUM -> "string"
+    StructureKind.MAP -> TODO()
+    StructureKind.OBJECT -> TODO()
+  }
+}
+
+internal fun simpleNameFromSerialName(serialName: String): String =
+  serialName
+    .split(".")
+    .let {
+      if (it.last().startsWith("Internal")) {
+        it[it.size - 2]
+      } else {
+        it.last()
+      }
+    }
+    .replace("?", "")
+
+@OptIn(ExperimentalSerializationApi::class)
 internal fun JsonObjectBuilder.putEnumDescriptor(descriptor: SerialDescriptor) {
-  put("type", "ENUM")
+  put("type", "enum")
   put("values", JsonArray(descriptor.elementNames.map { JsonPrimitive(it) }))
 }
 
@@ -153,7 +242,7 @@ internal fun JsonObjectBuilder.putDescriptor(
   put("nullability", isNullable)
   when (descriptor.kind) {
     StructureKind.LIST -> {
-      put("type", "LIST")
+      put("type", "list")
       val nestedIsPrimitive =
         (descriptor.elementsCount == 1 &&
           descriptor.elementDescriptors.first().kind is PrimitiveKind)
@@ -170,11 +259,11 @@ internal fun JsonObjectBuilder.putDescriptor(
       if (descriptor.serialName == "FirstOrdinalSerializer") {
         putEnumDescriptor(descriptor)
       } else {
-        put("type", "OBJECT")
+        put("type", "object")
         if (stopRecursion) {
           put("nestedType", descriptor.serialName)
         } else {
-          put("nestedType", serializableHierarchyAsJson(descriptor))
+          put("nested", serializableHierarchyAsJson(descriptor))
         }
       }
     }
