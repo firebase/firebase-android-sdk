@@ -88,4 +88,3 @@ internal val <T : Enum<T>> T.serialName: String
  */
 internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
   java.enumConstants ?: throw SerializationException("$simpleName is not a valid enum type.")
-
