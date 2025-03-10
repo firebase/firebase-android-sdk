@@ -133,6 +133,7 @@ internal fun typeNameFromKind(kind: SerialKind): String {
     StructureKind.LIST -> "array"
     SerialKind.ENUM -> "string"
     StructureKind.MAP -> "object"
+    /* Only add new cases if they show up in actual test scenarios. */
     else -> TODO()
   }
 }
