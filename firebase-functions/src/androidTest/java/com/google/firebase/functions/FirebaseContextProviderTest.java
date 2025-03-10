@@ -146,7 +146,7 @@ public class FirebaseContextProviderTest {
     HttpsCallableContext context = Tasks.await(contextProvider.getContext(true));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
-    // AppCheck token needs to be send in all circumstances.
+    // AppCheck token needs to be sent in all circumstances.
     assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_LIMITED_USE_TOKEN);
   }
 
