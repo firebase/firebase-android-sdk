@@ -1,7 +1,14 @@
 # Unreleased
+
+# 21.1.1
 * [fixed] Resolve Kotlin migration visibility issues
   ([#6522](//github.com/firebase/firebase-android-sdk/pull/6522))
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.1.0
 * [changed] Migrated to Kotlin
