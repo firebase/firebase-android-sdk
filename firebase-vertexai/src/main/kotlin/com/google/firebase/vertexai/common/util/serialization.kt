@@ -19,26 +19,13 @@ package com.google.firebase.vertexai.common.util
 import android.util.Log
 import com.google.firebase.vertexai.common.SerializationException
 import kotlin.reflect.KClass
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.SerialKind
-import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.descriptors.elementDescriptors
-import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Serializer for enums that defaults to the first ordinal on unknown types.
@@ -102,107 +89,3 @@ internal val <T : Enum<T>> T.serialName: String
 internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
   java.enumConstants ?: throw SerializationException("$simpleName is not a valid enum type.")
 
-/**
- * Returns a [JsonObject] representing the classes in the hierarchy of a serialization [descriptor].
- *
- * The format of the JSON object is similar to that of a Discovery Document, but restricted to these
- * fields:
- * - id
- * - type
- * - properties
- * - items
- * - $ref
- *
- * @param descriptor The [SerialDescriptor] to process.
- */
-@OptIn(ExperimentalSerializationApi::class)
-internal fun descriptorToJson(descriptor: SerialDescriptor): JsonObject {
-  return buildJsonObject {
-    put("id", simpleNameFromSerialName(descriptor.serialName))
-    put("type", typeNameFromKind(descriptor.kind))
-    if (descriptor.kind == StructureKind.CLASS) {
-      if (descriptor.serialName == "FirstOrdinalSerializer") {
-        put("type", typeNameFromKind(SerialKind.ENUM))
-        addEnumDescription(descriptor)
-      } else {
-        putJsonObject("properties") {
-          for (i in 0 until descriptor.elementsCount) {
-            val elementDescriptor = descriptor.getElementDescriptor(i)
-            val elementName = descriptor.getElementName(i)
-            putJsonObject(elementName) {
-              if (elementDescriptor.serialName.startsWith("FirstOrdinalSerializer")) {
-                put("type", typeNameFromKind(SerialKind.ENUM))
-                addEnumDescription(elementDescriptor)
-              } else if (elementDescriptor.kind == StructureKind.LIST) {
-                put("type", typeNameFromKind(elementDescriptor.kind))
-                addListDescription(elementDescriptor)
-              } else if (elementDescriptor.kind == StructureKind.CLASS) {
-                put("\$ref", simpleNameFromSerialName(elementDescriptor.serialName))
-              } else if (elementDescriptor.kind == StructureKind.MAP) {
-                put("type", typeNameFromKind(elementDescriptor.kind))
-                putJsonObject("additionalProperties") {
-                  put(
-                    "\$ref",
-                    simpleNameFromSerialName(elementDescriptor.getElementDescriptor(1).serialName)
-                  )
-                }
-              } else {
-                put("type", typeNameFromKind(elementDescriptor.kind))
-              }
-            }
-          }
-        }
-      }
-    } else if (descriptor.kind == StructureKind.LIST) {
-      addListDescription(descriptor)
-    }
-  }
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun JsonObjectBuilder.addListDescription(descriptor: SerialDescriptor) =
-  putJsonObject("items") {
-    val itemDescriptor = descriptor.elementDescriptors.first()
-    val nestedIsPrimitive = (descriptor.elementsCount == 1 && itemDescriptor.kind is PrimitiveKind)
-    if (nestedIsPrimitive) {
-      put("type", typeNameFromKind(itemDescriptor.kind))
-    } else {
-      put("\$ref", simpleNameFromSerialName(itemDescriptor.serialName))
-    }
-  }
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun JsonObjectBuilder.addEnumDescription(descriptor: SerialDescriptor) =
-  put("enum", JsonArray(descriptor.elementNames.map { JsonPrimitive(it) }))
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun typeNameFromKind(kind: SerialKind): String {
-  return when (kind) {
-    PrimitiveKind.BOOLEAN -> "boolean"
-    PrimitiveKind.BYTE -> "integer"
-    PrimitiveKind.CHAR -> "string"
-    PrimitiveKind.DOUBLE -> "number"
-    PrimitiveKind.FLOAT -> "number"
-    PrimitiveKind.INT -> "integer"
-    PrimitiveKind.LONG -> "integer"
-    PrimitiveKind.SHORT -> "integer"
-    PrimitiveKind.STRING -> "string"
-    StructureKind.CLASS -> "object"
-    StructureKind.LIST -> "array"
-    SerialKind.ENUM -> "string"
-    StructureKind.MAP -> "object"
-    else -> TODO()
-  }
-}
-
-internal fun simpleNameFromSerialName(serialName: String): String =
-  serialName
-    .split(".")
-    .let {
-      if (it.last().startsWith("Internal")) {
-        it[it.size - 2]
-      } else {
-        it.last()
-      }
-    }
-    .replace("?", "")
