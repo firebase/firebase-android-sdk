@@ -164,6 +164,7 @@ public class HttpsCallableReference {
    *
    * @see FirebaseFunctionsException
    */
+  @JvmOverloads
   public fun stream(data: Any? = null): Publisher<StreamResponse> {
     return if (name != null) {
       functionsClient.stream(name, data, options)
