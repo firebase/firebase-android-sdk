@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed an issue that prevented the App Check token to be handled correctly in case of error.
 
 # 21.1.1
 * [fixed] Resolve Kotlin migration visibility issues
