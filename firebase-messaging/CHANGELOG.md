@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Bug fix in SyncTask to always unregister the receiver on the same
+  context on which it was registered.
 
 
 # 24.1.0
