@@ -45,6 +45,7 @@ import okhttp3.RequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
+import org.reactivestreams.Publisher
 
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
 public class FirebaseFunctions
@@ -309,6 +310,21 @@ internal constructor(
       }
     )
     return tcs.task
+  }
+
+  internal fun stream(
+    name: String,
+    data: Any?,
+    options: HttpsCallOptions
+  ): Publisher<StreamResponse> = stream(getURL(name), data, options)
+
+  internal fun stream(url: URL, data: Any?, options: HttpsCallOptions): Publisher<StreamResponse> {
+    val task =
+      providerInstalled.task.continueWithTask(executor) {
+        contextProvider.getContext(options.limitedUseAppCheckTokens)
+      }
+
+    return PublisherStream(url, data, options, client, this.serializer, task, executor)
   }
 
   public companion object {
