@@ -84,6 +84,8 @@ package com.google.firebase.functions {
     method public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(Object? data);
     method public long getTimeout();
     method public void setTimeout(long timeout, java.util.concurrent.TimeUnit units);
+    method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream();
+    method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream(Object? data = null);
     method public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, java.util.concurrent.TimeUnit units);
     property public final long timeout;
   }
@@ -91,6 +93,21 @@ package com.google.firebase.functions {
   public final class HttpsCallableResult {
     method public Object? getData();
     field public final Object? data;
+  }
+
+  public abstract class StreamResponse {
+  }
+
+  public static final class StreamResponse.Message extends com.google.firebase.functions.StreamResponse {
+    ctor public StreamResponse.Message(com.google.firebase.functions.HttpsCallableResult message);
+    method public com.google.firebase.functions.HttpsCallableResult getMessage();
+    property public final com.google.firebase.functions.HttpsCallableResult message;
+  }
+
+  public static final class StreamResponse.Result extends com.google.firebase.functions.StreamResponse {
+    ctor public StreamResponse.Result(com.google.firebase.functions.HttpsCallableResult result);
+    method public com.google.firebase.functions.HttpsCallableResult getResult();
+    property public final com.google.firebase.functions.HttpsCallableResult result;
   }
 
 }
