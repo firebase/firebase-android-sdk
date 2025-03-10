@@ -161,9 +161,11 @@ internal class SerializationTests {
 
   @Test
   fun `test Schema serialization as Json`() {
-    // Unlike the actual schema in the background, we don't represent "type" as an enum, but
-    // rather as a string. This is because we restrict we values can be used using helper methods
-    // rather than type
+    /**
+     * Unlike the actual schema in the background, we don't represent "type" as an enum, but rather
+     * as a string. This is because we restrict what values can be used (using helper methods,
+     * rather than type).
+     */
     val expectedJsonAsString =
       """
     {
