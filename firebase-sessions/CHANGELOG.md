@@ -1,5 +1,6 @@
 # Unreleased
 
+* [changed] Add warning for known issue b/328687152
 * [changed] Use Dagger for dependency injection
 * [changed] Updated datastore dependency to `1.1.3` to
   fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
