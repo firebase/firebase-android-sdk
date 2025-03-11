@@ -128,7 +128,6 @@ internal class SessionLifecycleService : Service() {
     /** Generates a new session id and sends it everywhere it's needed */
     private fun newSession() {
       try {
-        // TODO(mrober): Consider migrating to Dagger, or update [FirebaseSessionsRegistrar].
         SessionGenerator.instance.generateNewSession()
         Log.d(TAG, "Generated new session.")
         broadcastSession()
