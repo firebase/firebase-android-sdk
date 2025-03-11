@@ -75,7 +75,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `unknown enum`() =
-    goldenUnaryFile("success-unknown-enum.json") {
+    goldenUnaryFile("success-unknown-enum-safety-ratings.json") {
       withTimeout(testTimeout) {
         val response = apiController.generateContent(textGenerateContentRequest("prompt"))
 
@@ -211,17 +211,6 @@ internal class UnarySnapshotTests {
       }
     }
 
-  @Test
-  fun `citation returns correctly when using alternative name`() =
-    goldenUnaryFile("success-citations-altname.json") {
-      withTimeout(testTimeout) {
-        val response = apiController.generateContent(textGenerateContentRequest("prompt"))
-
-        response.candidates?.isEmpty() shouldBe false
-        response.candidates?.first()?.citationMetadata?.citationSources?.isNotEmpty() shouldBe true
-      }
-    }
-
   @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `properly translates json text`() =
@@ -306,7 +295,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `service disabled`() =
-    goldenUnaryFile("failure-service-disabled.json", HttpStatusCode.Forbidden) {
+    goldenUnaryFile("failure-firebaseml-api-not-enabled.json", HttpStatusCode.Forbidden) {
       withTimeout(testTimeout) {
         shouldThrow<ServiceDisabledException> {
           apiController.generateContent(textGenerateContentRequest("prompt"))

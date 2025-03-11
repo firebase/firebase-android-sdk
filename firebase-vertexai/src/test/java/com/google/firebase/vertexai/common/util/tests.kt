@@ -140,7 +140,7 @@ internal fun goldenStreamingFile(
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
 ) = doBlocking {
-  val goldenFile = loadGoldenFile("streaming/$name")
+  val goldenFile = loadGoldenFile("streaming-$name")
   val messages = goldenFile.readLines().filter { it.isNotBlank() }
 
   commonTest(httpStatusCode) {
@@ -171,7 +171,7 @@ internal fun goldenUnaryFile(
   block: CommonTest,
 ) =
   commonTest(httpStatusCode) {
-    val goldenFile = loadGoldenFile("unary/$name")
+    val goldenFile = loadGoldenFile("unary-$name")
     val message = goldenFile.readText()
 
     channel.send(message.toByteArray())
@@ -186,7 +186,8 @@ internal fun goldenUnaryFile(
  *
  * @see goldenUnaryFile
  */
-internal fun loadGoldenFile(path: String): File = loadResourceFile("golden-files/$path")
+internal fun loadGoldenFile(path: String): File =
+  loadResourceFile("vertexai-sdk-test-data/mock-responses/$path")
 
 /** Loads a file from the test resources directory. */
 internal fun loadResourceFile(path: String) = File("src/test/resources/$path")
