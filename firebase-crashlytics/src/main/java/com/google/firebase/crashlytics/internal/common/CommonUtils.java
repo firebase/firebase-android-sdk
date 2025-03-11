@@ -69,6 +69,8 @@ public class CommonUtils {
       "com.google.firebase.crashlytics.build_ids_arch";
   static final String BUILD_IDS_BUILD_ID_RESOURCE_NAME =
       "com.google.firebase.crashlytics.build_ids_build_id";
+  static final String VERSION_CONTROL_INFO_RESOURCE_NAME =
+      "com.google.firebase.crashlytics.version_control_info";
 
   // TODO: Maybe move this method into a more appropriate class.
   public static SharedPreferences getSharedPrefs(Context context) {
@@ -523,6 +525,15 @@ public class CommonUtils {
     }
 
     return buildIdInfoList;
+  }
+
+  @Nullable
+  public static String getVersionControlInfo(Context context) {
+    int id = getResourcesIdentifier(context, VERSION_CONTROL_INFO_RESOURCE_NAME, "string");
+    if (id == 0) {
+      return null;
+    }
+    return context.getResources().getString(id);
   }
 
   public static void closeQuietly(Closeable closeable) {
