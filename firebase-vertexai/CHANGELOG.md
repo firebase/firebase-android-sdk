@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.2.0
 * [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
 * [changed] Added support for modality-based token count. (#6658)
 * [feature] Added support for generating images with Imagen models.
