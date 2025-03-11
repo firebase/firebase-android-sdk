@@ -25,17 +25,23 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.FirebaseSessionsComponent
 import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /** [SessionsSettings] manages all the configs that are relevant to the sessions library. */
+@Singleton
 internal class SessionsSettings(
   private val localOverrideSettings: SettingsProvider,
   private val remoteSettings: SettingsProvider,
@@ -62,10 +68,11 @@ internal class SessionsSettings(
       ),
   )
 
+  @Inject
   constructor(
     firebaseApp: FirebaseApp,
-    blockingDispatcher: CoroutineContext,
-    backgroundDispatcher: CoroutineContext,
+    @Blocking blockingDispatcher: CoroutineContext,
+    @Background backgroundDispatcher: CoroutineContext,
     firebaseInstallationsApi: FirebaseInstallationsApi,
   ) : this(
     firebaseApp.applicationContext,
@@ -143,7 +150,7 @@ internal class SessionsSettings(
     private const val TAG = "SessionsSettings"
 
     val instance: SessionsSettings
-      get() = Firebase.app[SessionsSettings::class.java]
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionsSettings
 
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(
