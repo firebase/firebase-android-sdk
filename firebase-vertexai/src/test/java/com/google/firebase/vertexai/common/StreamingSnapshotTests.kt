@@ -69,7 +69,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `unknown enum`() =
-    goldenStreamingFile("success-unknown-enum.txt") {
+    goldenStreamingFile("success-unknown-safety-enum.txt") {
       val responses = apiController.generateContentStream(textGenerateContentRequest("prompt"))
 
       withTimeout(testTimeout) {
@@ -141,20 +141,6 @@ internal class StreamingSnapshotTests {
   @Test
   fun `citation parsed correctly`() =
     goldenStreamingFile("success-citations.txt") {
-      val responses = apiController.generateContentStream(textGenerateContentRequest("prompt"))
-
-      withTimeout(testTimeout) {
-        val responseList = responses.toList()
-        responseList.any {
-          it.candidates?.any { it.citationMetadata?.citationSources?.isNotEmpty() ?: false }
-            ?: false
-        } shouldBe true
-      }
-    }
-
-  @Test
-  fun `citation returns correctly when using alternative name`() =
-    goldenStreamingFile("success-citations-altname.txt") {
       val responses = apiController.generateContentStream(textGenerateContentRequest("prompt"))
 
       withTimeout(testTimeout) {
