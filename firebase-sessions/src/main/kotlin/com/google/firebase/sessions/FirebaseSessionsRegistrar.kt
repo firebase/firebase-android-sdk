@@ -17,7 +17,9 @@
 package com.google.firebase.sessions
 
 import android.content.Context
+import android.util.Log
 import androidx.annotation.Keep
+import androidx.datastore.preferences.preferencesDataStore
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
@@ -69,6 +71,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     )
 
   private companion object {
+    const val TAG = "FirebaseSessions"
     const val LIBRARY_NAME = "fire-sessions"
 
     val appContext = unqualified(Context::class.java)
@@ -78,5 +81,29 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     val blockingDispatcher = qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     val transportFactory = unqualified(TransportFactory::class.java)
     val firebaseSessionsComponent = unqualified(FirebaseSessionsComponent::class.java)
+
+    init {
+      try {
+        ::preferencesDataStore.javaClass
+      } catch (ex: NoClassDefFoundError) {
+        Log.w(
+          TAG,
+          """
+          Your app is experiencing a known issue in the Android Gradle plugin, see https://issuetracker.google.com/328687152
+
+          It affects Java-only apps using AGP version 8.3.2 and under. To avoid the issue, either:
+
+          1. Upgrade Android Gradle plugin to 8.4.0+
+             Follow the guide at https://developer.android.com/build/agp-upgrade-assistant
+
+          2. Or, add the Kotlin plugin to your app
+             Follow the guide at https://developer.android.com/kotlin/add-kotlin
+
+          3. Or, do the technical workaround described in https://issuetracker.google.com/issues/328687152#comment3
+        """
+            .trimIndent(),
+        )
+      }
+    }
   }
 }
