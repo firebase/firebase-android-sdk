@@ -1,6 +1,7 @@
 # Unreleased
-* [changed] Internal changes to read version control info more efficiently [6754]
-* [fixed] Fixed NoSuchMethodError when getting process info on Android 13 [#6720]
+* [changed] Internal changes to read version control info more efficiently [#6754]
+* [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]
+* [changed] Updated `firebase-sessions` dependency to v2.1.0
 
 # 19.4.1
 * [changed] Updated `firebase-sessions` dependency to v2.0.9
