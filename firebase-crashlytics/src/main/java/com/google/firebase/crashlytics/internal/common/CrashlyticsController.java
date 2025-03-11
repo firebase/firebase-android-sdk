@@ -639,10 +639,11 @@ class CrashlyticsController {
     }
 
     // Fallback to reading the file
-    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
-    if (is != null) {
-      Logger.getLogger().d("Read version control info from file");
-      return Base64.encodeToString(readResource(is), 0);
+    try (InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE)) {
+      if (is != null) {
+        Logger.getLogger().d("Read version control info from file");
+        return Base64.encodeToString(readResource(is), 0);
+      }
     }
 
     Logger.getLogger().i("No version control information found");
