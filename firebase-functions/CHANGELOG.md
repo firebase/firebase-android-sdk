@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Fixed an issue that prevented the App Check token from being handled correctly in case of error.
+
 
 # 21.1.1
 * [fixed] Resolve Kotlin migration visibility issues
@@ -225,3 +225,4 @@ updates.
 optional region to override the default "us-central1".
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
+
