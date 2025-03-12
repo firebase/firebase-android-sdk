@@ -198,10 +198,10 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val content = response.candidates.shouldNotBeNullOrEmpty().first().content
         content.shouldNotBeNull()
-        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart.Internal
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart
 
-        callPart.functionCall.name shouldBe "current_time"
-        callPart.functionCall.args shouldBe null
+        callPart.name shouldBe "current_time"
+        callPart.args shouldBe emptyMap()
       }
     }
 
