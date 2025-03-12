@@ -74,6 +74,19 @@ internal class UnarySnapshotTests {
     }
 
   @Test
+  fun `long reply`() =
+    goldenUnaryFile("unary-success-basic-reply-long.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
   fun `response with detailed token-based usageMetadata`() =
     goldenUnaryFile("unary-success-basic-response-long-usage-metadata.json") {
       withTimeout(testTimeout) {
