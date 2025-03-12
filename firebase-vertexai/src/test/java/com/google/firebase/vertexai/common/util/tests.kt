@@ -19,25 +19,18 @@
 package com.google.firebase.vertexai.common.util
 
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.GenerateContentRequest
 import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.TextPart
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.close
-import io.ktor.utils.io.writeFully
-import java.io.File
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 
