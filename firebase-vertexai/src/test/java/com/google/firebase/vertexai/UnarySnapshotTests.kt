@@ -27,6 +27,7 @@ import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.PublicPreviewAPI
+import com.google.firebase.vertexai.type.QuotaExceededException
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
@@ -236,6 +237,14 @@ internal class UnarySnapshotTests {
           it.probability shouldBe HarmProbability.LOW
           it.severity shouldBe HarmSeverity.LOW
         }
+      }
+    }
+
+  @Test
+  fun `quota exceeded`() =
+    goldenUnaryFile("unary-failure-quota-exceeded.json", HttpStatusCode.BadRequest) {
+      withTimeout(testTimeout) {
+        shouldThrow<QuotaExceededException> { model.generateContent("prompt") }
       }
     }
 
