@@ -1,0 +1,277 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "1e8c2185411d6b62e8a6a74de91d4dccf40838c7",
+                "prId": "6718",
+                "author": "Lee Kellogg",
+                "message": "Update CHANGELOG.md (#6718)\n\nFor this fix: https://github.com/firebase/firebase-android-sdk/pull/6705",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1e8c2185411d6b62e8a6a74de91d4dccf40838c7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6718"
+            },
+            {
+                "commitId": "a2244f976ed16e96defb09d8fda253963864c747",
+                "prId": "6705",
+                "author": "Konstantin Svist",
+                "message": "Support custom tabs in more browsers (#6705)\n\nfixes #6692",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a2244f976ed16e96defb09d8fda253963864c747",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6705"
+            }
+        ],
+        "firebase-appdistribution-api": [
+        ],
+        "firebase-appdistribution-api/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "8f8a74d94c98208986291c273553c00f1950e81b",
+                "prId": "6758",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs and versions for Crashlytics, Perf, and AQS (#6758)\n\nUpdate the versions and changelog entries for Crashlytics, Perf, and\nAQS. The important entries are copied from AQS to Crashlytics so they\nget published on the release notes page.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f8a74d94c98208986291c273553c00f1950e81b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6758"
+            },
+            {
+                "commitId": "68f52edce65e36d64641ee8a0750a29068935614",
+                "prId": "6754",
+                "author": "Matthew Robertson",
+                "message": "Read version control info from Android resource (#6754)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68f52edce65e36d64641ee8a0750a29068935614",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6754"
+            },
+            {
+                "commitId": "aa2bab8225185e43990e87b9f4dc26dd631c66f0",
+                "prId": "6753",
+                "author": "Matthew Robertson",
+                "message": "Remove code style from deprecated message (#6753)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/aa2bab8225185e43990e87b9f4dc26dd631c66f0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6753"
+            },
+            {
+                "commitId": "d701c3437419644dc7846e59613c87dcf070976a",
+                "prId": "6720",
+                "author": "Matthew Robertson",
+                "message": "Avoid Process.myProcessName() on Android 13 (#6720)\n\nAvoid calling `Process.myProcessName()` on Android 13 because it appears\nto be missing from some OEM-specific Android 13 builds. It is fine to\njust let the method fall through to the next, older, method to get the\nprocess name. See\nhttps://github.com/firebase/firebase-unity-sdk/issues/1059\n\nI have not been able to reproduce this issue locally, but this change is\nvery safe.\n\nWe should consider refactoring Crashlytics to consume the Sessions\n`ProcessDetails` data class, instead of the current `@AutoValue` holder.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d701c3437419644dc7846e59613c87dcf070976a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6720"
+            },
+            {
+                "commitId": "5712a26d16fc8b68177fe81d40580e5bbc756c4a",
+                "prId": "6719",
+                "author": "Matthew Robertson",
+                "message": "Update CHANGELOG for Crashlytics and NDK (#6719)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5712a26d16fc8b68177fe81d40580e5bbc756c4a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6719"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "8f8a74d94c98208986291c273553c00f1950e81b",
+                "prId": "6758",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs and versions for Crashlytics, Perf, and AQS (#6758)\n\nUpdate the versions and changelog entries for Crashlytics, Perf, and\nAQS. The important entries are copied from AQS to Crashlytics so they\nget published on the release notes page.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f8a74d94c98208986291c273553c00f1950e81b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6758"
+            },
+            {
+                "commitId": "5712a26d16fc8b68177fe81d40580e5bbc756c4a",
+                "prId": "6719",
+                "author": "Matthew Robertson",
+                "message": "Update CHANGELOG for Crashlytics and NDK (#6719)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5712a26d16fc8b68177fe81d40580e5bbc756c4a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6719"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "8f8a74d94c98208986291c273553c00f1950e81b",
+                "prId": "6758",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs and versions for Crashlytics, Perf, and AQS (#6758)\n\nUpdate the versions and changelog entries for Crashlytics, Perf, and\nAQS. The important entries are copied from AQS to Crashlytics so they\nget published on the release notes page.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f8a74d94c98208986291c273553c00f1950e81b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6758"
+            },
+            {
+                "commitId": "c9287ee0f33a5fee1682030b28ed4523df750064",
+                "prId": "6755",
+                "author": "Matthew Robertson",
+                "message": "Add warning for known issue b/328687152 (#6755)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9287ee0f33a5fee1682030b28ed4523df750064",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6755"
+            },
+            {
+                "commitId": "934050322f5b3ecb07d759174f784be62baac9b2",
+                "prId": "6745",
+                "author": "Matthew Robertson",
+                "message": "Use Dagger for dependency injection in Sessions (#6745)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/934050322f5b3ecb07d759174f784be62baac9b2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6745"
+            },
+            {
+                "commitId": "92632af12a44ac26d177ff5b967b7f2f0fe10f5f",
+                "prId": "6688",
+                "author": "Matthew Robertson",
+                "message": "Update datastore dependency to 1.1.3 (#6688)\n\nUpdate datastore dependency to `1.1.3` to address\n[CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) in\nAQS.\n\nWe had landed #6343, but it missed the datastore dependency because\nversion 1.0.0 \"shaded\" the vulnerable protobuf dependency, see #6534. I\nverified this was happening by extracting the jar from\nhttps://maven.google.com/web/index.html?q=datastore-pre#androidx.datastore:datastore-preferences-core:1.0.0\nand seeing\n`<groupId>com.google.protobuf</groupId><artifactId>protobuf-parent</artifactId><version>3.10.0</version>`\nnested in a maven dir. I also verified datastore 1.1.3 has upgraded the\nprotobuf version to 4.28.2, a safe version. See\nhttps://cs.android.com/androidx/platform/frameworks/support/+/androidx-datastore-release:gradle/libs.versions.toml;l=59.\n\nThis datastore update also includes the stable\n`MultiProcessDataStoreFactory` which we can utilize in a future change\nto optimize things like the settings fetch for multi-process apps.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92632af12a44ac26d177ff5b967b7f2f0fe10f5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6688"
+            },
+            {
+                "commitId": "d701c3437419644dc7846e59613c87dcf070976a",
+                "prId": "6720",
+                "author": "Matthew Robertson",
+                "message": "Avoid Process.myProcessName() on Android 13 (#6720)\n\nAvoid calling `Process.myProcessName()` on Android 13 because it appears\nto be missing from some OEM-specific Android 13 builds. It is fine to\njust let the method fall through to the next, older, method to get the\nprocess name. See\nhttps://github.com/firebase/firebase-unity-sdk/issues/1059\n\nI have not been able to reproduce this issue locally, but this change is\nvery safe.\n\nWe should consider refactoring Crashlytics to consume the Sessions\n`ProcessDetails` data class, instead of the current `@AutoValue` holder.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d701c3437419644dc7846e59613c87dcf070976a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6720"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "16d2ba862415b232a75b7135b893d11b0f382038",
+                "prId": "6729",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: change grpc api version from \"v1beta\" to \"v1\" (#6729)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/16d2ba862415b232a75b7135b893d11b0f382038",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6729"
+            },
+            {
+                "commitId": "00c2919000386b0f9f292e1d98349b14e46c5f44",
+                "prId": "6732",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with versions 1.8.0, 1.8.1, 1.8.2, and 1.8.3 (#6732)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/00c2919000386b0f9f292e1d98349b14e46c5f44",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6732"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "ec26a52d453101fef3f880ceeb6aba5d1a935808",
+                "prId": "6706",
+                "author": "Mila",
+                "message": "Use lazy encoding in utf-8 encoded string comparison (#6706)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec26a52d453101fef3f880ceeb6aba5d1a935808",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6706"
+            },
+            {
+                "commitId": "4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prId": "6716",
+                "author": "Daymon",
+                "message": "Bump well known types (#6716)\n\nPer [b/398840288](https://b.corp.google.com/issues/398840288),\n\nThis bumps `protolite-well-known-types` to properly utilize `3.25.5`. It\nseems as though this was an oversight in #6343, but since gradle uses\nthe highest version when resolving dependency conflicts (and all the\nexisting libraries already use `3.25.5`), this isn't a major issue. This\nis only really an issue if someone is using `protolite-well-known-types`\nin isolation (which isn't really a use-case we're shipping for). But the\nmain reason for fixing this is that it causes a bit of confusion when\ntrying to track dependency issues (see issue #6674 for an example of\nthis).\n\nFixes #6674",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6716"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "dfd0d7c3710fcaa63184b72d55693b7b8a050ce7",
+                "prId": "6750",
+                "author": "Rodrigo Lazo",
+                "message": "[Functions] Send the placeholder appcheck token in case of error (#6750)\n\ntracking b/399116207\n\n---------\n\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dfd0d7c3710fcaa63184b72d55693b7b8a050ce7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6750"
+            },
+            {
+                "commitId": "7c03f4964c48ac0a8f82293e296fa0d6efe42266",
+                "prId": "6602",
+                "author": "mustafa jadid",
+                "message": "Extend Firebase SDK with new APIs to consume streaming callable function response (#6602)\n\nExtend Firebase SDK with new APIs to consume streaming callable function\nresponse.\n\n- Handling the server-sent event (SSE) parsing internally\n- Providing proper error handling and connection management\n- Maintaining memory efficiency for long-running streams\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c03f4964c48ac0a8f82293e296fa0d6efe42266",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6602"
+            },
+            {
+                "commitId": "a232b6d467b5fb51aa9a433234c7b471e7ce2649",
+                "prId": "6751",
+                "author": "Rodrigo Lazo",
+                "message": "Update functions changelog (#6751)\n\nThe mergeback PR from last release didn't include the update to\nfunction's CHANGELOG.md file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a232b6d467b5fb51aa9a433234c7b471e7ce2649",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6751"
+            }
+        ],
+        "firebase-functions/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prId": "6716",
+                "author": "Daymon",
+                "message": "Bump well known types (#6716)\n\nPer [b/398840288](https://b.corp.google.com/issues/398840288),\n\nThis bumps `protolite-well-known-types` to properly utilize `3.25.5`. It\nseems as though this was an oversight in #6343, but since gradle uses\nthe highest version when resolving dependency conflicts (and all the\nexisting libraries already use `3.25.5`), this isn't a major issue. This\nis only really an issue if someone is using `protolite-well-known-types`\nin isolation (which isn't really a use-case we're shipping for). But the\nmain reason for fixing this is that it causes a bit of confusion when\ntrying to track dependency issues (see issue #6674 for an example of\nthis).\n\nFixes #6674",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6716"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prId": "6716",
+                "author": "Daymon",
+                "message": "Bump well known types (#6716)\n\nPer [b/398840288](https://b.corp.google.com/issues/398840288),\n\nThis bumps `protolite-well-known-types` to properly utilize `3.25.5`. It\nseems as though this was an oversight in #6343, but since gradle uses\nthe highest version when resolving dependency conflicts (and all the\nexisting libraries already use `3.25.5`), this isn't a major issue. This\nis only really an issue if someone is using `protolite-well-known-types`\nin isolation (which isn't really a use-case we're shipping for). But the\nmain reason for fixing this is that it causes a bit of confusion when\ntrying to track dependency issues (see issue #6674 for an example of\nthis).\n\nFixes #6674",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6716"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "af5fd66d31cad06a3977ef7c89ba0bdd6891ccd3",
+                "prId": "6752",
+                "author": "welishr",
+                "message": "Store registered context for sync task unregistrations (#6752)\n\nFor issue #6558, this is an attempt at fixing the\nIllegalArgumentException by ensuring that the context we use for\nregistering the SyncTask is the same context we use to unregister the\ntask. Race conditions dont seem like a culprit here since unregister is\nonly triggered by the Receiver itself, which should be only executed\nsynchronously on the main thread.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af5fd66d31cad06a3977ef7c89ba0bdd6891ccd3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6752"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "8f8a74d94c98208986291c273553c00f1950e81b",
+                "prId": "6758",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs and versions for Crashlytics, Perf, and AQS (#6758)\n\nUpdate the versions and changelog entries for Crashlytics, Perf, and\nAQS. The important entries are copied from AQS to Crashlytics so they\nget published on the release notes page.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f8a74d94c98208986291c273553c00f1950e81b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6758"
+            },
+            {
+                "commitId": "79deb5f2fd600cab1f71f30ae808865ee7909e42",
+                "prId": "6721",
+                "author": "Matthew Robertson",
+                "message": "Fix bug that let responsePayloadBytes get set to -1 (#6721)\n\nFix a bug in `InstrHttpInputStream` that let\n`NetworkRequestMetric.responsePayloadBytes` get set to -1 in some\nconditions.\n\nWhile investigating [b/398063523](http://b/398063523), I found that\n`inputStream.read(...)` can return 0 in some cases, for example, when\nthe byte buffer length is 0. When this happens, it was possible to set\n`responsePayloadBytes` to -1 because `-1 + 0 = -1`. I didn't just have\n`bytesRead` initialize to 0 because there is a difference between 0\nbytes read, and no read happened. Tested manually by hacking a test app\nto force this to happen, and by unit tests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/79deb5f2fd600cab1f71f30ae808865ee7909e42",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6721"
+            },
+            {
+                "commitId": "4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prId": "6716",
+                "author": "Daymon",
+                "message": "Bump well known types (#6716)\n\nPer [b/398840288](https://b.corp.google.com/issues/398840288),\n\nThis bumps `protolite-well-known-types` to properly utilize `3.25.5`. It\nseems as though this was an oversight in #6343, but since gradle uses\nthe highest version when resolving dependency conflicts (and all the\nexisting libraries already use `3.25.5`), this isn't a major issue. This\nis only really an issue if someone is using `protolite-well-known-types`\nin isolation (which isn't really a use-case we're shipping for). But the\nmain reason for fixing this is that it causes a bit of confusion when\ntrying to track dependency issues (see issue #6674 for an example of\nthis).\n\nFixes #6674",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6716"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "protolite-well-known-types": [
+            {
+                "commitId": "4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prId": "6716",
+                "author": "Daymon",
+                "message": "Bump well known types (#6716)\n\nPer [b/398840288](https://b.corp.google.com/issues/398840288),\n\nThis bumps `protolite-well-known-types` to properly utilize `3.25.5`. It\nseems as though this was an oversight in #6343, but since gradle uses\nthe highest version when resolving dependency conflicts (and all the\nexisting libraries already use `3.25.5`), this isn't a major issue. This\nis only really an issue if someone is using `protolite-well-known-types`\nin isolation (which isn't really a use-case we're shipping for). But the\nmain reason for fixing this is that it causes a bit of confusion when\ntrying to track dependency issues (see issue #6674 for an example of\nthis).\n\nFixes #6674",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4cf282576e2fec70d8088fab024130b5ec5dda4c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6716"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-vertexai"
+    ]
+}

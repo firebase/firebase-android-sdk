@@ -1,0 +1,27 @@
+{
+    "name": "m161",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":protolite-well-known-types"
+    ]
+}
