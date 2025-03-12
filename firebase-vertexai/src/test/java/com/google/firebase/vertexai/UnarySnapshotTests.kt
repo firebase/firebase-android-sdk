@@ -47,14 +47,14 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
-import java.util.Calendar
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
+import java.util.Calendar
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(PublicPreviewAPI::class)
 internal class UnarySnapshotTests {
@@ -188,6 +188,20 @@ internal class UnarySnapshotTests {
           it.severity == HarmSeverity.NEGLIGIBLE
         } shouldBe true
         response.candidates.first().safetyRatings.all { it.severityScore != null } shouldBe true
+      }
+    }
+
+  @Test
+  fun `function call has no arguments field`() =
+    goldenUnaryFile("unary-success-function-call-empty-arguments.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        content.shouldNotBeNull()
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart.Internal
+
+        callPart.functionCall.name shouldBe "current_time"
+        callPart.functionCall.args shouldBe null
       }
     }
 
