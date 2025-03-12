@@ -47,18 +47,6 @@ internal fun prepareStreamingResponse(
   response: List<GenerateContentResponse.Internal>
 ): List<ByteArray> = response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
-internal fun prepareResponse(response: GenerateContentResponse.Internal) =
-  JSON.encodeToString(response).toByteArray()
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun createRequest(vararg text: String): GenerateContentRequest {
-  val contents = text.map { Content.Internal(parts = listOf(TextPart.Internal(it))) }
-
-  return GenerateContentRequest("gemini", contents)
-}
-
-internal fun createResponse(text: String) = createResponses(text).single()
-
 @OptIn(ExperimentalSerializationApi::class)
 internal fun createResponses(vararg text: String): List<GenerateContentResponse.Internal> {
   val candidates =
@@ -122,83 +110,4 @@ internal fun commonTest(
       null,
     )
   CommonTestScope(channel, apiController).block()
-}
-
-/**
- * A variant of [commonTest] for performing *streaming-based* snapshot tests.
- *
- * Loads the *Golden File* and automatically parses the messages from it; providing it to the
- * channel.
- *
- * @param name The name of the *Golden File* to load
- * @param httpStatusCode An optional [HttpStatusCode] to return as a response
- * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenUnaryFile
- */
-internal fun goldenStreamingFile(
-  name: String,
-  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
-  block: CommonTest,
-) = doBlocking {
-  val goldenFile = loadGoldenFile("streaming-$name")
-  val messages = goldenFile.readLines().filter { it.isNotBlank() }
-
-  commonTest(httpStatusCode) {
-    launch {
-      for (message in messages) {
-        channel.writeFully("$message$SSE_SEPARATOR".toByteArray())
-      }
-      channel.close()
-    }
-
-    block()
-  }
-}
-
-/**
- * A variant of [commonTest] for performing snapshot tests.
- *
- * Loads the *Golden File* and automatically provides it to the channel.
- *
- * @param name The name of the *Golden File* to load
- * @param httpStatusCode An optional [HttpStatusCode] to return as a response
- * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenStreamingFile
- */
-internal fun goldenUnaryFile(
-  name: String,
-  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
-  block: CommonTest,
-) =
-  commonTest(httpStatusCode) {
-    val goldenFile = loadGoldenFile("unary-$name")
-    val message = goldenFile.readText()
-
-    channel.send(message.toByteArray())
-
-    block()
-  }
-
-/**
- * Loads a *Golden File* from the resource directory.
- *
- * Expects golden files to live under `golden-files` in the resource files.
- *
- * @see goldenUnaryFile
- */
-internal fun loadGoldenFile(path: String): File =
-  loadResourceFile("vertexai-sdk-test-data/mock-responses/$path")
-
-/** Loads a file from the test resources directory. */
-internal fun loadResourceFile(path: String) = File("src/test/resources/$path")
-
-/**
- * Ensures that a collection is neither null or empty.
- *
- * Syntax sugar for [shouldNotBeNull] and [shouldNotBeEmpty].
- */
-inline fun <reified T : Any> Collection<T>?.shouldNotBeNullOrEmpty(): Collection<T> {
-  shouldNotBeNull()
-  shouldNotBeEmpty()
-  return this
 }
