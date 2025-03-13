@@ -24,6 +24,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.InvalidLocationException
@@ -68,8 +69,15 @@ internal constructor(
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
+    val modelUri =
+      when (requestOptions.generativeBackend) {
+        GenerativeBackend.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
+        GenerativeBackend.GOOGLE_AI ->
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
+      }
     return GenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
+      modelUri,
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
@@ -144,5 +152,5 @@ public val Firebase.vertexAI: FirebaseVertexAI
 /** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
 public fun Firebase.vertexAI(
   app: FirebaseApp = Firebase.app,
-  location: String = "us-central1"
+  location: String = "us-central1",
 ): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)

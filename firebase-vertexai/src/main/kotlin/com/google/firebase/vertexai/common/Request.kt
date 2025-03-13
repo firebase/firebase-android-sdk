@@ -52,6 +52,15 @@ internal data class CountTokensRequest(
 ) : Request {
   companion object {
 
+    fun forGenAI(generateContentRequest: GenerateContentRequest) =
+      CountTokensRequest(
+        generateContentRequest =
+        generateContentRequest.model?.let {
+          generateContentRequest.copy(model = fullModelName(it))
+        }
+          ?: generateContentRequest
+      )
+
     fun forVertexAI(generateContentRequest: GenerateContentRequest) =
       CountTokensRequest(
         model = generateContentRequest.model?.let { fullModelName(it) },
