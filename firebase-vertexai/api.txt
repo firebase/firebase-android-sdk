@@ -557,6 +557,9 @@ package com.google.firebase.vertexai.type {
   @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
   }
 
+  public final class QuotaExceededException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
+  }
+
   public final class RequestOptions {
     ctor public RequestOptions();
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
