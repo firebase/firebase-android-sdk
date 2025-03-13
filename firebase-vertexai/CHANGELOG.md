@@ -1,5 +1,7 @@
 # Unreleased
+* [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
+
 
 # 16.2.0
 * [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
