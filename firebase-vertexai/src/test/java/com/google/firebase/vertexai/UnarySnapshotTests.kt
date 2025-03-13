@@ -27,6 +27,7 @@ import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.PublicPreviewAPI
+import com.google.firebase.vertexai.type.QuotaExceededException
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
@@ -62,6 +63,19 @@ internal class UnarySnapshotTests {
   @Test
   fun `short reply`() =
     goldenUnaryFile("unary-success-basic-reply-short.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `long reply`() =
+    goldenUnaryFile("unary-success-basic-reply-long.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -178,6 +192,20 @@ internal class UnarySnapshotTests {
     }
 
   @Test
+  fun `function call has no arguments field`() =
+    goldenUnaryFile("unary-success-function-call-empty-arguments.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        content.shouldNotBeNull()
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart
+
+        callPart.name shouldBe "current_time"
+        callPart.args shouldBe emptyMap()
+      }
+    }
+
+  @Test
   fun `prompt blocked for safety`() =
     goldenUnaryFile("unary-failure-prompt-blocked-safety.json") {
       withTimeout(testTimeout) {
@@ -236,6 +264,14 @@ internal class UnarySnapshotTests {
           it.probability shouldBe HarmProbability.LOW
           it.severity shouldBe HarmSeverity.LOW
         }
+      }
+    }
+
+  @Test
+  fun `quota exceeded`() =
+    goldenUnaryFile("unary-failure-quota-exceeded.json", HttpStatusCode.BadRequest) {
+      withTimeout(testTimeout) {
+        shouldThrow<QuotaExceededException> { model.generateContent("prompt") }
       }
     }
 
