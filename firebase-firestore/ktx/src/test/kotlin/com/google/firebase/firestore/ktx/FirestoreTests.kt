@@ -154,7 +154,7 @@ class FirestoreTests : BaseTestCase() {
     assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
     assertThat(settings.isPersistenceEnabled).isFalse()
     assertThat(settings.cacheSettings)
-      .isEqualTo(memoryCacheSettings { setGcSettings(memoryEagerGcSettings {}) })
+      .isEqualTo(memoryCacheSettings { setGcSettings(memoryLruGcSettings {}) })
 
     val otherSettings = firestoreSettings {
       this.setLocalCacheSettings(
