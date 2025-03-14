@@ -23,7 +23,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.initialize
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
@@ -100,7 +99,7 @@ class StreamTests {
     val messages = mutableListOf<StreamResponse.Message>()
     var result: StreamResponse.Result? = null
 
-    val flow = function.stream(input).asFlow()
+    val flow = function.streamAsFlow(input)
     try {
       withTimeout(1000) {
         flow.collect { response ->

@@ -86,6 +86,8 @@ package com.google.firebase.functions {
     method public void setTimeout(long timeout, java.util.concurrent.TimeUnit units);
     method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream();
     method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream(Object? data = null);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.functions.StreamResponse> streamAsFlow();
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.functions.StreamResponse> streamAsFlow(Object? data = null);
     method public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, java.util.concurrent.TimeUnit units);
     property public final long timeout;
   }
