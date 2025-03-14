@@ -427,13 +427,15 @@ public class SessionReportingCoordinator {
   @VisibleForTesting
   @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   public static String convertInputStreamToString(InputStream inputStream) throws IOException {
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
-    int length;
-    while ((length = inputStream.read(bytes)) != -1) {
-      byteArrayOutputStream.write(bytes, 0, length);
+    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+        byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
+        int length;
+        while ((length = bufferedInputStream.read(bytes)) != -1) {
+            byteArrayOutputStream.write(bytes, 0, length);
+        }
+        return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
     }
-    return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
   }
 
   /** Finds the first ANR ApplicationExitInfo within the session. */
