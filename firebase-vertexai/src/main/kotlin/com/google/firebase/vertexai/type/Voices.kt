@@ -16,38 +16,43 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Content part modality. */
 public class Voices private constructor(public val ordinal: Int) {
 
-    @Serializable(Internal.Serializer::class)
-    internal enum class Internal {
-        @SerialName("VOICES_UNSPECIFIED") UNSPECIFIED,
-        CHARON,
-        AOEDE
+  @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
 
-        internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+  @Serializable
+  internal enum class InternalEnum {
+    @SerialName("VOICES_UNSPECIFIED") UNSPECIFIED,
+    CHARON,
+    AOEDE;
+    internal fun toPublic() =
+      when (this) {
+        CHARON -> Voices.CHARON
+        AOEDE -> Voices.AOEDE
+        else -> Voices.UNSPECIFIED
+      }
+  }
 
-        internal fun toPublic() =
-            when (this) {
-                CHARON -> Voices.CHARON
-                AOEDE -> Voices.AOEDE
-                else -> Voices.UNSPECIFIED
-            }
+  internal fun toInternal(): Internal {
+    return when (this) {
+      CHARON -> Internal(InternalEnum.CHARON.name)
+      AOEDE -> Internal(InternalEnum.AOEDE.name)
+      else -> Internal(InternalEnum.UNSPECIFIED.name)
     }
+  }
 
-    public companion object {
-        /** Unspecified modality. */
-        @JvmField public val UNSPECIFIED: Voices = Voices(0)
+  public companion object {
+    /** Unspecified modality. */
+    @JvmField public val UNSPECIFIED: Voices = Voices(0)
 
-        /** Plain text. */
-        @JvmField public val CHARON: Voices = Voices(1)
+    /** Plain text. */
+    @JvmField public val CHARON: Voices = Voices(1)
 
-        /** Image. */
-        @JvmField public val AOEDE: Voices = Voices(2)
-    }
+    /** Image. */
+    @JvmField public val AOEDE: Voices = Voices(2)
+  }
 }

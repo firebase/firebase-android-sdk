@@ -27,6 +27,7 @@ import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.InvalidLocationException
+import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
@@ -73,6 +74,31 @@ internal constructor(
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
+      tools,
+      toolConfig,
+      systemInstruction,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  @JvmOverloads
+  public fun liveModel(
+    modelName: String,
+    generationConfig: LiveGenerationConfig? = null,
+    tools: List<Tool>? = null,
+    toolConfig: ToolConfig? = null,
+    systemInstruction: Content? = null,
+    requestOptions: RequestOptions = RequestOptions(),
+  ): LiveGenerativeModel {
+    if (location.trim().isEmpty() || location.contains("/")) {
+      throw InvalidLocationException(location)
+    }
+    return LiveGenerativeModel(
+      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
+      firebaseApp.options.apiKey,
+      generationConfig,
       tools,
       toolConfig,
       systemInstruction,

@@ -57,11 +57,11 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
+  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
+    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: String)
   }
 }
 
@@ -130,8 +130,6 @@ public fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataP
 /** Returns the part as a [FileDataPart] if it represents a file, and null otherwise */
 public fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart
 
-internal typealias Base64 = String
-
 internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
 @Serializable(PartSerializer::class) internal sealed interface InternalPart
@@ -189,7 +187,9 @@ internal fun InternalPart.toPublic(): Part {
   return when (this) {
     is TextPart.Internal -> TextPart(text)
     is InlineDataPart.Internal -> {
-      val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
+      println(inlineData.data)
+      val data = android.util.Base64.decode(inlineData.data, android.util.Base64.DEFAULT)
+      println(data)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {

@@ -141,6 +141,12 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
+  fun getBidiEndpoint(): String {
+    val vertexAiUrl =
+      "wss://daily-firebaseml.sandbox.googleapis.com/ws/google.firebase.machinelearning.v2beta.LlmBidiService/BidiGenerateContent"
+    return "$vertexAiUrl?key=$key"
+  }
+
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =

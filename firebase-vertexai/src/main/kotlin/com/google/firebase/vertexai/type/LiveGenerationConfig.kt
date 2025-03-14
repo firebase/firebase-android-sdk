@@ -78,106 +78,107 @@ import kotlinx.serialization.Serializable
  */
 public class LiveGenerationConfig
 private constructor(
-    internal val temperature: Float?,
-    internal val topK: Int?,
-    internal val topP: Float?,
-    internal val candidateCount: Int?,
-    internal val maxOutputTokens: Int?,
-    internal val presencePenalty: Float?,
-    internal val frequencyPenalty: Float?,
-    internal val responseModalities: List<ContentModality>?
-    internal val speechConfig: SpeechConfig?
+  internal val temperature: Float?,
+  internal val topK: Int?,
+  internal val topP: Float?,
+  internal val candidateCount: Int?,
+  internal val maxOutputTokens: Int?,
+  internal val presencePenalty: Float?,
+  internal val frequencyPenalty: Float?,
+  internal val responseModalities: List<ContentModality>?,
+  internal val speechConfig: SpeechConfig?
 ) {
 
-    /**
-     * Builder for creating a [GenerationConfig].
-     *
-     * Mainly intended for Java interop. Kotlin consumers should use [generationConfig] for a more
-     * idiomatic experience.
-     *
-     * @property temperature See [GenerationConfig.temperature].
-     *
-     * @property topK See [GenerationConfig.topK].
-     *
-     * @property topP See [GenerationConfig.topP].
-     *
-     * @property presencePenalty See [GenerationConfig.presencePenalty]
-     *
-     * @property frequencyPenalty See [GenerationConfig.frequencyPenalty]
-     *
-     * @property candidateCount See [GenerationConfig.candidateCount].
-     *
-     * @property maxOutputTokens See [GenerationConfig.maxOutputTokens].
-     *
-     * @property stopSequences See [GenerationConfig.stopSequences].
-     *
-     * @property responseMimeType See [GenerationConfig.responseMimeType].
-     *
-     * @property responseSchema See [GenerationConfig.responseSchema].
-     * @see [generationConfig]
-     */
-    public class Builder {
-        @JvmField public var temperature: Float? = null
-        @JvmField public var topK: Int? = null
-        @JvmField public var topP: Float? = null
-        @JvmField public var candidateCount: Int? = null
-        @JvmField public var maxOutputTokens: Int? = null
-        @JvmField public var presencePenalty: Float? = null
-        @JvmField public var frequencyPenalty: Float? = null
-        @JvmField public var responseModalities: List<SpeechConfig>? = null
-        @JvmField public var speechConfig: SpeechConfig? = null
+  /**
+   * Builder for creating a [GenerationConfig].
+   *
+   * Mainly intended for Java interop. Kotlin consumers should use [generationConfig] for a more
+   * idiomatic experience.
+   *
+   * @property temperature See [GenerationConfig.temperature].
+   *
+   * @property topK See [GenerationConfig.topK].
+   *
+   * @property topP See [GenerationConfig.topP].
+   *
+   * @property presencePenalty See [GenerationConfig.presencePenalty]
+   *
+   * @property frequencyPenalty See [GenerationConfig.frequencyPenalty]
+   *
+   * @property candidateCount See [GenerationConfig.candidateCount].
+   *
+   * @property maxOutputTokens See [GenerationConfig.maxOutputTokens].
+   *
+   * @property stopSequences See [GenerationConfig.stopSequences].
+   *
+   * @property responseMimeType See [GenerationConfig.responseMimeType].
+   *
+   * @property responseSchema See [GenerationConfig.responseSchema].
+   * @see [generationConfig]
+   */
+  public class Builder {
+    @JvmField public var temperature: Float? = null
+    @JvmField public var topK: Int? = null
+    @JvmField public var topP: Float? = null
+    @JvmField public var candidateCount: Int? = null
+    @JvmField public var maxOutputTokens: Int? = null
+    @JvmField public var presencePenalty: Float? = null
+    @JvmField public var frequencyPenalty: Float? = null
+    @JvmField public var responseModalities: List<ContentModality>? = null
+    @JvmField public var speechConfig: SpeechConfig? = null
 
-        /** Create a new [GenerationConfig] with the attached arguments. */
-        public fun build(): LiveGenerationConfig =
-            LiveGenerationConfig(
-                temperature = temperature,
-                topK = topK,
-                topP = topP,
-                candidateCount = candidateCount,
-                maxOutputTokens = maxOutputTokens,
-                presencePenalty = presencePenalty,
-                frequencyPenalty = frequencyPenalty,
-                responseModalities = responseModalities,
-                speechConfig = speechConfig
-            )
-    }
+    /** Create a new [GenerationConfig] with the attached arguments. */
+    public fun build(): LiveGenerationConfig =
+      LiveGenerationConfig(
+        temperature = temperature,
+        topK = topK,
+        topP = topP,
+        candidateCount = candidateCount,
+        maxOutputTokens = maxOutputTokens,
+        presencePenalty = presencePenalty,
+        frequencyPenalty = frequencyPenalty,
+        speechConfig = speechConfig,
+        responseModalities = responseModalities
+      )
+  }
 
-    internal fun toInternal() =
-        Internal(
-            temperature = temperature,
-            topP = topP,
-            topK = topK,
-            candidateCount = candidateCount,
-            maxOutputTokens = maxOutputTokens,
-            frequencyPenalty = frequencyPenalty,
-            presencePenalty = presencePenalty,
-            speechConfig = speechConfig,
-            responseModalities = responseModalities
-        )
-
-    @Serializable
-    internal data class Internal(
-        val temperature: Float?,
-        @SerialName("top_p") val topP: Float?,
-        @SerialName("top_k") val topK: Int?,
-        @SerialName("candidate_count") val candidateCount: Int?,
-        @SerialName("max_output_tokens") val maxOutputTokens: Int?,
-        @SerialName("presence_penalty") val presencePenalty: Float? = null,
-        @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-        @SerialName("speech_config") val speechConfig: SpeechConfig? = null,
-        @SerialName("response_modalities") val responseModalities: List<ContentModality>? = null
+  internal fun toInternal(): Internal {
+    return Internal(
+      temperature = temperature,
+      topP = topP,
+      topK = topK,
+      candidateCount = candidateCount,
+      maxOutputTokens = maxOutputTokens,
+      frequencyPenalty = frequencyPenalty,
+      presencePenalty = presencePenalty,
+      speechConfig = speechConfig?.toInternal(),
+      responseModalities = responseModalities?.map { it.toInternal() }
     )
+  }
 
-    public companion object {
+  @Serializable
+  internal data class Internal(
+    val temperature: Float?,
+    @SerialName("top_p") val topP: Float?,
+    @SerialName("top_k") val topK: Int?,
+    @SerialName("candidate_count") val candidateCount: Int?,
+    @SerialName("max_output_tokens") val maxOutputTokens: Int?,
+    @SerialName("presence_penalty") val presencePenalty: Float? = null,
+    @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
+    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null,
+    @SerialName("response_modalities") val responseModalities: List<String>? = null
+  )
 
-        /**
-         * Alternative casing for [GenerationConfig.Builder]:
-         * ```
-         * val config = GenerationConfig.builder()
-         * ```
-         */
-        public fun builder(): Builder = Builder()
-    }
+  public companion object {
+
+    /**
+     * Alternative casing for [GenerationConfig.Builder]:
+     * ```
+     * val config = GenerationConfig.builder()
+     * ```
+     */
+    public fun builder(): Builder = Builder()
+  }
 }
 
 /**
@@ -195,8 +196,10 @@ private constructor(
  * }
  * ```
  */
-public fun liveGenerationConfig(init: LiveGenerationConfig.Builder.() -> Unit): LiveGenerationConfig {
-    val builder = LiveGenerationConfig.builder()
-    builder.init()
-    return builder.build()
+public fun liveGenerationConfig(
+  init: LiveGenerationConfig.Builder.() -> Unit
+): LiveGenerationConfig {
+  val builder = LiveGenerationConfig.builder()
+  builder.init()
+  return builder.build()
 }
