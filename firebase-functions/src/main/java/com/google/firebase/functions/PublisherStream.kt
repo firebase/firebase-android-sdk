@@ -325,11 +325,7 @@ internal class PublisherStream(
       return
     }
     notifyError(
-      FirebaseFunctionsException(
-        error.toString(),
-        FirebaseFunctionsException.Code.INTERNAL,
-        error
-      )
+      FirebaseFunctionsException(error.toString(), FirebaseFunctionsException.Code.INTERNAL, error)
     )
   }
 }

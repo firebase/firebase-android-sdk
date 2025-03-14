@@ -145,8 +145,8 @@ class StreamTests {
 
   @Test
   fun nonExistentFunction_receivesError() = runBlocking {
-    val function = functions.getHttpsCallable("nonexistentFunction")
-      .withTimeout(2000, TimeUnit.MILLISECONDS)
+    val function =
+      functions.getHttpsCallable("nonexistentFunction").withTimeout(2000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream().subscribe(subscriber)
