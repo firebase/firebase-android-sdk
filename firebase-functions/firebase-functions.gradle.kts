@@ -112,7 +112,7 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.playservices.base)
   implementation(libs.playservices.basement)
-  implementation(libs.reactive.streams)
+  api(libs.reactive.streams)
 
   api(libs.playservices.tasks)
 
