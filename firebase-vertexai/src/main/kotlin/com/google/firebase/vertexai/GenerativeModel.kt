@@ -29,6 +29,7 @@ import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ResponseStoppedException
@@ -54,6 +55,7 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
+  private val requestOptions: RequestOptions,
   private val controller: APIController,
 ) {
   internal constructor(
@@ -74,6 +76,7 @@ internal constructor(
     tools,
     toolConfig,
     systemInstruction,
+    requestOptions,
     APIController(
       apiKey,
       modelName,
@@ -213,7 +216,10 @@ internal constructor(
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
-    CountTokensRequest.forVertexAI(constructRequest(*prompt))
+    when (requestOptions.generativeBackend) {
+      GenerativeBackend.GOOGLE_AI -> CountTokensRequest.forGenAI(constructRequest(*prompt))
+      GenerativeBackend.VERTEX_AI -> CountTokensRequest.forVertexAI(constructRequest(*prompt))
+    }
 
   private fun GenerateContentResponse.validate() = apply {
     if (candidates.isEmpty() && promptFeedback == null) {
