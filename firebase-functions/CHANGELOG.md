@@ -1,5 +1,7 @@
 # Unreleased
+* [feature] Streaming callable functions are now supported.
 * [fixed] Fixed an issue that prevented the App Check token from being handled correctly in case of error.
+
 
 # 21.1.1
 * [fixed] Resolve Kotlin migration visibility issues
