@@ -1,19 +1,22 @@
 package com.google.firebase.vertexai.type
 
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
-import android.util.Base64
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentLinkedQueue
 
 public class LiveSession
 internal constructor(
@@ -22,11 +25,15 @@ internal constructor(
   private var audioHelper: AudioHelper? = null
 ) {
 
+  private val audioQueue = ConcurrentLinkedQueue<ByteArray>()
+  private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
+
   @Serializable
   internal data class ClientContent(
     @SerialName("turns") val turns: List<Content.Internal>,
     @SerialName("turn_complete") val turnComplete: Boolean
   )
+
 
   @Serializable
   internal data class ClientContentSetup(
@@ -49,70 +56,114 @@ internal constructor(
     if(isRecording) { return }
     isRecording = true
     audioHelper = AudioHelper()
-    val minBufferSize = AudioTrack.getMinBufferSize(24000,  AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
-    var bytesRead = 0
-    val chunkSize = minBufferSize
-    var recordedData = ByteArray(2*chunkSize)
     audioHelper!!.setupAudioTrack()
 
-    audioHelper!!.startRecording().collect {
-      x ->
-      run {
-        bytesRead += x.size
-        recordedData += x
-        if(bytesRead>=0) {
-           println("BytesRead:")
-           println(Base64.encodeToString(recordedData, Base64.NO_WRAP))
-           sendMediaStream(listOf(MediaData("audio/pcm", x)), listOf(ContentModality.AUDIO)).collect {
-             y ->
-             run {
-               val audioData = y.parts[0].asInlineDataPartOrNull()!!.inlineData
-               audioHelper!!.playAudio(audioData)
-             }
-           }
-          recordedData = byteArrayOf()
-          bytesRead = 0
+    CoroutineScope(Dispatchers.Default).launch {
+      audioHelper!!.startRecording().collect {
+        if(!isRecording) {
+          cancel()
+        }
+        audioQueue.add(it)
+      }
+    }
+    val minBufferSize = AudioTrack.getMinBufferSize(24000,  AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+    var bytesRead = 0
+    var recordedData = ByteArray(minBufferSize * 2)
+    CoroutineScope(Dispatchers.Default).launch {
+      while(true) {
+        if(!isRecording) {
+          break
+        }
+        val byteArr = audioQueue.poll()
+        if(byteArr!=null) {
+          bytesRead += byteArr.size
+          recordedData += byteArr
+          if (bytesRead >= minBufferSize) {
+            sendMediaStream(
+              listOf(MediaData("audio/pcm", recordedData)),
+              listOf(ContentModality.AUDIO)
+            )
+            bytesRead = 0
+            recordedData = byteArrayOf()
+          }
+        } else {
+          continue
         }
       }
-
     }
-
+    CoroutineScope(Dispatchers.Default).launch {
+      receiveMediaStream().collect {
+        if(!isRecording) {
+          cancel()
+        }
+        if(it.interrupted) {
+          while(!playBackQueue.isEmpty()) playBackQueue.poll()
+        } else {
+          playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
+        }
+      }
+    }
+    CoroutineScope(Dispatchers.Default).launch {
+      while(true) {
+        if(!isRecording) {
+          break
+        }
+        val x = playBackQueue.poll()
+        if(x!=null) {
+          audioHelper!!.playAudio(x)
+        }
+      }
+    }
   }
 
   public fun stopAudioConversation() {
     isRecording = false
     if(audioHelper!=null) {
+      while(!playBackQueue.isEmpty()) playBackQueue.poll()
+      while(!audioQueue.isEmpty()) audioQueue.poll()
       audioHelper!!.release()
+      audioHelper = null
     }
-
   }
-  public fun sendMediaStream(
-    mediaChunks: List<MediaData>,
-    outputModalities: List<ContentModality>
-  ): Flow<Content> {
+
+  public suspend fun receiveMediaStream(): Flow<StreamOutput> {
     return flow {
-      val jsonString = Json.encodeToString(MediaStreamingSetup(MediaChunks(mediaChunks.map { it.toInternal() })))
-      println("JsonString: $jsonString")
-      session?.send(Frame.Text(jsonString))
       while (true) {
+        val message = session!!.incoming.receive()
+        val receivedBytes =
+          (message as Frame.Binary).readBytes()
+        val receivedJson = receivedBytes.toString(Charsets.UTF_8)
         try {
-          val message = session?.incoming?.receive() ?: continue
-          val receivedBytes = (message as Frame.Binary).readBytes()
-          val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-          println("Receivedjson: $receivedJson")
-          if (receivedJson.contains("turnComplete")) {
-            break
+          if (receivedJson.contains("interrupted")) {
+            emit(StreamOutput(true, null))
+            continue
           }
-          val serverContent = Json.decodeFromString<ServerContentSetup>(receivedJson)
-          val audioData = serverContent.serverContent.modelTurn.toPublic()
-          emit(audioData)
-        } catch (_: Exception) {}
+          val serverContent =
+            Json.decodeFromString<ServerContentSetup>(
+              receivedJson
+            )
+          val audioData =
+            serverContent.serverContent.modelTurn.toPublic()
+          emit(StreamOutput(false, audioData))
+
+
+        } catch (e: Exception) {
+          println("Exception: $e.message")
+        }
       }
     }
   }
 
-  public fun send(text: String, outputModalities: List<ContentModality>): Flow<Content> {
 
+  public suspend fun sendMediaStream(
+    mediaChunks: List<MediaData>,
+    outputModalities: List<ContentModality>
+  ) {
+    val jsonString = Json.encodeToString(MediaStreamingSetup(MediaChunks(mediaChunks.map { it.toInternal() })))
+    session?.send(Frame.Text(jsonString))
+  }
+
+  public fun send(text: String, outputModalities: List<ContentModality>): Flow<Content> {
     return flow {
       val jsonString =
         Json.encodeToString(

@@ -187,9 +187,7 @@ internal fun InternalPart.toPublic(): Part {
   return when (this) {
     is TextPart.Internal -> TextPart(text)
     is InlineDataPart.Internal -> {
-      println(inlineData.data)
       val data = android.util.Base64.decode(inlineData.data, android.util.Base64.DEFAULT)
-      println(data)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
