@@ -404,7 +404,10 @@ internal class VertexAIUnarySnapshotTests {
 
   @Test
   fun `service disabled`() =
-    goldenVertexUnaryFile("unary-failure-firebaseml-api-not-enabled.json", HttpStatusCode.Forbidden) {
+    goldenVertexUnaryFile(
+      "unary-failure-firebaseml-api-not-enabled.json",
+      HttpStatusCode.Forbidden
+    ) {
       withTimeout(testTimeout) {
         shouldThrow<ServiceDisabledException> { model.generateContent("prompt") }
       }

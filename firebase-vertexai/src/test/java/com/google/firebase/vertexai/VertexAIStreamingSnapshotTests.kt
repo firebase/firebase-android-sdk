@@ -144,7 +144,10 @@ internal class VertexAIStreamingSnapshotTests {
 
   @Test
   fun `http errors`() =
-    goldenVertexStreamingFile("streaming-failure-http-error.txt", HttpStatusCode.PreconditionFailed) {
+    goldenVertexStreamingFile(
+      "streaming-failure-http-error.txt",
+      HttpStatusCode.PreconditionFailed
+    ) {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<ServerException> { responses.collect() } }

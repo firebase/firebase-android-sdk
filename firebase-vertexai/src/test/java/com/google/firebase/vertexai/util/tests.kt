@@ -189,8 +189,8 @@ internal fun goldenUnaryFile(
   }
 
 /**
- * A variant of [goldenUnaryFile] for vertexai tests
- * Loads the *Golden File* and automatically provides it to the channel.
+ * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically
+ * provides it to the channel.
  *
  * @param name The name of the *Golden File* to load
  * @param httpStatusCode An optional [HttpStatusCode] to return as a response
