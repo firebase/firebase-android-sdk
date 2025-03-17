@@ -300,10 +300,12 @@ internal class PublisherStream(
     val errorMessage: String
     if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
       errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
-      throw FirebaseFunctionsException(
-        errorMessage,
-        FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
-        null
+      notifyError(
+        FirebaseFunctionsException(
+          errorMessage,
+          FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
+          null
+        )
       )
     }
 
@@ -313,16 +315,17 @@ internal class PublisherStream(
       val json = JSONObject(text)
       error = serializer.decode(json.opt("error"))
     } catch (e: Throwable) {
-      throw FirebaseFunctionsException(
-        "${e.message} Unexpected Response:\n$text ",
-        FirebaseFunctionsException.Code.INTERNAL,
-        e
+      notifyError(
+        FirebaseFunctionsException(
+          "${e.message} Unexpected Response:\n$text ",
+          FirebaseFunctionsException.Code.INTERNAL,
+          e
+        )
       )
+      return
     }
-    throw FirebaseFunctionsException(
-      error.toString(),
-      FirebaseFunctionsException.Code.INTERNAL,
-      error
+    notifyError(
+      FirebaseFunctionsException(error.toString(), FirebaseFunctionsException.Code.INTERNAL, error)
     )
   }
 }

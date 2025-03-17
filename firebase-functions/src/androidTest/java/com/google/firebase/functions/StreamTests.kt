@@ -144,6 +144,26 @@ class StreamTests {
   }
 
   @Test
+  fun nonExistentFunction_receivesError() = runBlocking {
+    val function =
+      functions.getHttpsCallable("nonexistentFunction").withTimeout(2000, TimeUnit.MILLISECONDS)
+    val subscriber = StreamSubscriber()
+
+    function.stream().subscribe(subscriber)
+
+    withTimeout(2000) {
+      while (subscriber.throwable == null) {
+        delay(100)
+      }
+    }
+
+    assertThat(subscriber.throwable).isNotNull()
+    assertThat(subscriber.throwable).isInstanceOf(FirebaseFunctionsException::class.java)
+    assertThat((subscriber.throwable as FirebaseFunctionsException).code)
+      .isEqualTo(FirebaseFunctionsException.Code.NOT_FOUND)
+  }
+
+  @Test
   fun genStreamWeather_receivesWeatherForecasts() = runBlocking {
     val inputData = listOf(mapOf("name" to "Toronto"), mapOf("name" to "London"))
     val input = mapOf("data" to inputData)
