@@ -19,7 +19,7 @@ package com.google.firebase.sessions
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.firebase.Firebase
 import com.google.firebase.app
-import java.util.UUID
+import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
@@ -37,10 +37,9 @@ internal data class SessionDetails(
  * [SessionDetails] up to date with the latest values.
  */
 @Singleton
-internal class SessionGenerator(
-  private val timeProvider: TimeProvider,
-  private val uuidGenerator: () -> UUID = UUID::randomUUID,
-) {
+internal class SessionGenerator
+@Inject
+constructor(private val timeProvider: TimeProvider, private val uuidGenerator: UuidGenerator) {
   private val firstSessionId = generateSessionId()
   private var sessionIndex = -1
 
@@ -66,7 +65,7 @@ internal class SessionGenerator(
     return currentSession
   }
 
-  private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
+  private fun generateSessionId() = uuidGenerator.next().toString().replace("-", "").lowercase()
 
   internal companion object {
     val instance: SessionGenerator

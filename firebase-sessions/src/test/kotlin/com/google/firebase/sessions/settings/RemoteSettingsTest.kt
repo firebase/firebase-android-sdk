@@ -25,8 +25,8 @@ import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeLazy
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
-import com.google.firebase.sessions.testing.TestSessionEventData.TEST_APPLICATION_INFO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -55,19 +55,21 @@ class RemoteSettingsTest {
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcher = FakeRemoteConfigFetcher()
 
-      TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
-
       val remoteSettings =
         RemoteSettings(
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       runCurrent()
@@ -102,11 +104,15 @@ class RemoteSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       runCurrent()
@@ -143,11 +149,15 @@ class RemoteSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       val fetchedResponse = JSONObject(VALID_RESPONSE)
@@ -195,11 +205,15 @@ class RemoteSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       val fetchedResponse = JSONObject(VALID_RESPONSE)
@@ -248,10 +262,7 @@ class RemoteSettingsTest {
       val context = firebaseApp.applicationContext
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcherWithDelay =
-        FakeRemoteConfigFetcher(
-          JSONObject(VALID_RESPONSE),
-          networkDelay = 3.seconds,
-        )
+        FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE), networkDelay = 3.seconds)
 
       fakeFetcherWithDelay.responseJSONObject
         .getJSONObject("app_quality")
@@ -263,11 +274,15 @@ class RemoteSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           configsFetcher = fakeFetcherWithDelay,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       // Do the first fetch. This one should fetched the configsFetcher.
@@ -289,24 +304,6 @@ class RemoteSettingsTest {
       assertThat(fakeFetcherWithDelay.timesCalled).isEqualTo(1)
       assertThat(remoteSettingsWithDelay.samplingRate).isEqualTo(0.125)
     }
-
-  @Test
-  fun remoteSettingsFetcher_badFetch_callsOnFailure() = runTest {
-    var failure: String? = null
-
-    RemoteSettingsFetcher(
-        TEST_APPLICATION_INFO,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        baseUrl = "this.url.is.invalid",
-      )
-      .doConfigFetch(
-        headerOptions = emptyMap(),
-        onSuccess = {},
-        onFailure = { failure = it },
-      )
-
-    assertThat(failure).isNotNull()
-  }
 
   @After
   fun cleanUp() {

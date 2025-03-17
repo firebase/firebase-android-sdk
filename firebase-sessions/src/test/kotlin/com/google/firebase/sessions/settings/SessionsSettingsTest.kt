@@ -26,6 +26,7 @@ import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeLazy
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import kotlin.time.Duration.Companion.minutes
@@ -112,11 +113,15 @@ class SessionsSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       val sessionsSettings =
@@ -154,11 +159,15 @@ class SessionsSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       val sessionsSettings =
@@ -202,11 +211,15 @@ class SessionsSettingsTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+          lazySettingsCache =
+            FakeLazy {
+              SettingsCache(
+                PreferenceDataStoreFactory.create(
+                  scope = this,
+                  produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+                )
+              )
+            },
         )
 
       val sessionsSettings =
