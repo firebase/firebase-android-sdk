@@ -1,83 +1,83 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase {
 
   public final class Firebase {
-    field @NonNull public static final com.google.firebase.Firebase INSTANCE;
+    field public static final com.google.firebase.Firebase INSTANCE;
   }
 
   public class FirebaseApp {
-    method @NonNull public android.content.Context getApplicationContext();
-    method @NonNull public static java.util.List<com.google.firebase.FirebaseApp> getApps(@NonNull android.content.Context);
-    method @NonNull public static com.google.firebase.FirebaseApp getInstance();
-    method @NonNull public static com.google.firebase.FirebaseApp getInstance(@NonNull String);
-    method @NonNull public String getName();
-    method @NonNull public com.google.firebase.FirebaseOptions getOptions();
-    method @Nullable public static com.google.firebase.FirebaseApp initializeApp(@NonNull android.content.Context);
-    method @NonNull public static com.google.firebase.FirebaseApp initializeApp(@NonNull android.content.Context, @NonNull com.google.firebase.FirebaseOptions);
-    method @NonNull public static com.google.firebase.FirebaseApp initializeApp(@NonNull android.content.Context, @NonNull com.google.firebase.FirebaseOptions, @NonNull String);
+    method public android.content.Context getApplicationContext();
+    method public static java.util.List<com.google.firebase.FirebaseApp!> getApps(android.content.Context);
+    method public static com.google.firebase.FirebaseApp getInstance();
+    method public static com.google.firebase.FirebaseApp getInstance(String);
+    method public String getName();
+    method public com.google.firebase.FirebaseOptions getOptions();
+    method public static com.google.firebase.FirebaseApp? initializeApp(android.content.Context);
+    method public static com.google.firebase.FirebaseApp initializeApp(android.content.Context, com.google.firebase.FirebaseOptions);
+    method public static com.google.firebase.FirebaseApp initializeApp(android.content.Context, com.google.firebase.FirebaseOptions, String);
     method public void setAutomaticResourceManagementEnabled(boolean);
-    field @NonNull public static final String DEFAULT_APP_NAME = "[DEFAULT]";
+    field public static final String DEFAULT_APP_NAME = "[DEFAULT]";
   }
 
   public final class FirebaseKt {
-    method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.Firebase, @NonNull String name);
-    method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.Firebase);
-    method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.Firebase);
-    method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context);
-    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
-    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
+    method public static com.google.firebase.FirebaseApp app(com.google.firebase.Firebase, String name);
+    method public static com.google.firebase.FirebaseApp getApp(com.google.firebase.Firebase);
+    method public static com.google.firebase.FirebaseOptions getOptions(com.google.firebase.Firebase);
+    method public static com.google.firebase.FirebaseApp? initialize(com.google.firebase.Firebase, android.content.Context context);
+    method public static com.google.firebase.FirebaseApp initialize(com.google.firebase.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options);
+    method public static com.google.firebase.FirebaseApp initialize(com.google.firebase.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options, String name);
   }
 
   public class FirebaseNetworkException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseNetworkException(@NonNull String);
+    ctor public FirebaseNetworkException(String);
   }
 
   public final class FirebaseOptions {
-    method @Nullable public static com.google.firebase.FirebaseOptions fromResource(@NonNull android.content.Context);
-    method @NonNull public String getApiKey();
-    method @NonNull public String getApplicationId();
-    method @Nullable public String getDatabaseUrl();
-    method @Nullable public String getGcmSenderId();
-    method @Nullable public String getProjectId();
-    method @Nullable public String getStorageBucket();
+    method public static com.google.firebase.FirebaseOptions? fromResource(android.content.Context);
+    method public String getApiKey();
+    method public String getApplicationId();
+    method public String? getDatabaseUrl();
+    method public String? getGcmSenderId();
+    method public String? getProjectId();
+    method public String? getStorageBucket();
   }
 
   public static final class FirebaseOptions.Builder {
     ctor public FirebaseOptions.Builder();
-    ctor public FirebaseOptions.Builder(@NonNull com.google.firebase.FirebaseOptions);
-    method @NonNull public com.google.firebase.FirebaseOptions build();
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setApiKey(@NonNull String);
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setApplicationId(@NonNull String);
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setDatabaseUrl(@Nullable String);
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setGcmSenderId(@Nullable String);
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setProjectId(@Nullable String);
-    method @NonNull public com.google.firebase.FirebaseOptions.Builder setStorageBucket(@Nullable String);
+    ctor public FirebaseOptions.Builder(com.google.firebase.FirebaseOptions);
+    method public com.google.firebase.FirebaseOptions build();
+    method public com.google.firebase.FirebaseOptions.Builder setApiKey(String);
+    method public com.google.firebase.FirebaseOptions.Builder setApplicationId(String);
+    method public com.google.firebase.FirebaseOptions.Builder setDatabaseUrl(String?);
+    method public com.google.firebase.FirebaseOptions.Builder setGcmSenderId(String?);
+    method public com.google.firebase.FirebaseOptions.Builder setProjectId(String?);
+    method public com.google.firebase.FirebaseOptions.Builder setStorageBucket(String?);
   }
 
   public class FirebaseTooManyRequestsException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseTooManyRequestsException(@NonNull String);
+    ctor public FirebaseTooManyRequestsException(String);
   }
 
   public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
+    ctor @RequiresApi(android.os.Build.VERSION_CODES.O) public Timestamp(java.time.Instant time);
+    ctor public Timestamp(java.util.Date date);
     ctor public Timestamp(long seconds, int nanoseconds);
-    ctor public Timestamp(@NonNull java.util.Date date);
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.O) public Timestamp(@NonNull java.time.Instant time);
-    method public int compareTo(@NonNull com.google.firebase.Timestamp other);
+    method public int compareTo(com.google.firebase.Timestamp other);
     method public int describeContents();
     method public int getNanoseconds();
     method public long getSeconds();
-    method @NonNull public static com.google.firebase.Timestamp now();
-    method @NonNull public java.util.Date toDate();
-    method @NonNull @RequiresApi(android.os.Build.VERSION_CODES.O) public java.time.Instant toInstant();
-    method public void writeToParcel(@NonNull android.os.Parcel dest, int flags);
+    method public static com.google.firebase.Timestamp now();
+    method public java.util.Date toDate();
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public java.time.Instant toInstant();
+    method public void writeToParcel(android.os.Parcel dest, int flags);
     property public final int nanoseconds;
     property public final long seconds;
-    field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
-    field @NonNull public static final com.google.firebase.Timestamp.Companion Companion;
+    field public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
+    field public static final com.google.firebase.Timestamp.Companion Companion;
   }
 
   public static final class Timestamp.Companion {
-    method @NonNull public com.google.firebase.Timestamp now();
+    method public com.google.firebase.Timestamp now();
   }
 
 }
@@ -85,16 +85,16 @@ package com.google.firebase {
 package com.google.firebase.ktx {
 
   @Deprecated public final class Firebase {
-    field @Deprecated @NonNull public static final com.google.firebase.ktx.Firebase INSTANCE;
+    field @Deprecated public static final com.google.firebase.ktx.Firebase INSTANCE;
   }
 
   public final class FirebaseKt {
-    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
-    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
-    method @Deprecated @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);
-    method @Deprecated @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context);
-    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
-    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
+    method @Deprecated public static com.google.firebase.FirebaseApp app(com.google.firebase.ktx.Firebase, String name);
+    method @Deprecated public static com.google.firebase.FirebaseApp getApp(com.google.firebase.ktx.Firebase);
+    method @Deprecated public static com.google.firebase.FirebaseOptions getOptions(com.google.firebase.ktx.Firebase);
+    method @Deprecated public static com.google.firebase.FirebaseApp? initialize(com.google.firebase.ktx.Firebase, android.content.Context context);
+    method @Deprecated public static com.google.firebase.FirebaseApp initialize(com.google.firebase.ktx.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options);
+    method @Deprecated public static com.google.firebase.FirebaseApp initialize(com.google.firebase.ktx.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options, String name);
   }
 
 }
@@ -103,12 +103,12 @@ package com.google.firebase.provider {
 
   public class FirebaseInitProvider extends android.content.ContentProvider {
     ctor public FirebaseInitProvider();
-    method public int delete(@NonNull android.net.Uri, @Nullable String, @Nullable String[]);
-    method @Nullable public String getType(@NonNull android.net.Uri);
-    method @Nullable public android.net.Uri insert(@NonNull android.net.Uri, @Nullable android.content.ContentValues);
+    method public int delete(android.net.Uri, String?, String![]?);
+    method public String? getType(android.net.Uri);
+    method public android.net.Uri? insert(android.net.Uri, android.content.ContentValues?);
     method public boolean onCreate();
-    method @Nullable public android.database.Cursor query(@NonNull android.net.Uri, @Nullable String[], @Nullable String, @Nullable String[], @Nullable String);
-    method public int update(@NonNull android.net.Uri, @Nullable android.content.ContentValues, @Nullable String, @Nullable String[]);
+    method public android.database.Cursor? query(android.net.Uri, String![]?, String?, String![]?, String?);
+    method public int update(android.net.Uri, android.content.ContentValues?, String?, String![]?);
   }
 
 }

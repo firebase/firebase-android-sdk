@@ -44,6 +44,7 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -57,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -216,14 +218,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
-    controller.writeNonFatalException(thread, nonFatal);
+    controller.writeNonFatalException(thread, nonFatal, Map.of());
     crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(testSettingsProvider));
 
     crashlyticsWorkers.common.await();
     crashlyticsWorkers.diskWrite.await();
 
     verify(mockSessionReportingCoordinator)
-        .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
+        .persistNonFatalEvent(eq(nonFatal), eq(thread), any(EventMetadata.class));
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
@@ -377,7 +379,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.writeNonFatalException(Thread.currentThread(), new RuntimeException());
+    controller.writeNonFatalException(Thread.currentThread(), new RuntimeException(), Map.of());
   }
 
   /**

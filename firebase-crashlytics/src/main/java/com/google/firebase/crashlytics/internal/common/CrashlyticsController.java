@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -47,6 +48,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -75,6 +77,8 @@ class CrashlyticsController {
   private static final String VERSION_CONTROL_INFO_KEY = "com.crashlytics.version-control-info";
   private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
   private static final String META_INF_FOLDER = "META-INF/";
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
@@ -405,7 +409,10 @@ class CrashlyticsController {
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
+  void writeNonFatalException(
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex,
+      @NonNull Map<String, String> eventKeys) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
@@ -417,7 +424,9 @@ class CrashlyticsController {
         Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
         return;
       }
-      reportingCoordinator.persistNonFatalEvent(ex, thread, currentSessionId, timestampSeconds);
+      EventMetadata eventMetadata =
+          new EventMetadata(currentSessionId, timestampSeconds, eventKeys);
+      reportingCoordinator.persistNonFatalEvent(ex, thread, eventMetadata);
     }
   }
 
@@ -622,13 +631,23 @@ class CrashlyticsController {
   }
 
   String getVersionControlInfo() throws IOException {
-    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
-    if (is == null) {
-      return null;
+    // Attempt to read from an Android string resource
+    String versionControlInfo = CommonUtils.getVersionControlInfo(context);
+    if (versionControlInfo != null) {
+      Logger.getLogger().d("Read version control info from string resource");
+      return Base64.encodeToString(versionControlInfo.getBytes(UTF_8), 0);
     }
 
-    Logger.getLogger().d("Read version control info");
-    return Base64.encodeToString(readResource(is), 0);
+    // Fallback to reading the file
+    try (InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE)) {
+      if (is != null) {
+        Logger.getLogger().d("Read version control info from file");
+        return Base64.encodeToString(readResource(is), 0);
+      }
+    }
+
+    Logger.getLogger().i("No version control information found");
+    return null;
   }
 
   private InputStream getResourceAsStream(String resource) {
@@ -638,13 +657,7 @@ class CrashlyticsController {
       return null;
     }
 
-    InputStream is = classLoader.getResourceAsStream(resource);
-    if (is == null) {
-      Logger.getLogger().i("No version control information found");
-      return null;
-    }
-
-    return is;
+    return classLoader.getResourceAsStream(resource);
   }
 
   private static byte[] readResource(InputStream is) throws IOException {

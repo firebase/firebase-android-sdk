@@ -47,9 +47,9 @@ android {
 dependencies {
     api 'com.google.firebase:firebase-annotations:16.2.0'
 
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation libs.playservices.tasks
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    compileOnly libs.autovalue.annotations
 
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+    annotationProcessor libs.autovalue
 }

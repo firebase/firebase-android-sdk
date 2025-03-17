@@ -17,15 +17,12 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
-import android.util.Log
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.common.CountTokensRequest
 import com.google.firebase.vertexai.common.GenerateContentRequest
-import com.google.firebase.vertexai.common.HeaderProvider
-import com.google.firebase.vertexai.internal.util.toInternal
-import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
@@ -40,12 +37,10 @@ import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import com.google.firebase.vertexai.type.content
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -59,10 +54,8 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
-  private val controller: APIController
+  private val controller: APIController,
 ) {
-
-  @JvmOverloads
   internal constructor(
     modelName: String,
     apiKey: String,
@@ -86,42 +79,8 @@ internal constructor(
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
-      object : HeaderProvider {
-        override val timeout: Duration
-          get() = 10.seconds
-
-        override suspend fun generateHeaders(): Map<String, String> {
-          val headers = mutableMapOf<String, String>()
-          if (appCheckTokenProvider == null) {
-            Log.w(TAG, "AppCheck not registered, skipping")
-          } else {
-            val token = appCheckTokenProvider.getToken(false).await()
-
-            if (token.error != null) {
-              Log.w(TAG, "Error obtaining AppCheck token", token.error)
-            }
-            // The Firebase App Check backend can differentiate between apps without App Check, and
-            // wrongly configured apps by verifying the value of the token, so it always needs to be
-            // included.
-            headers["X-Firebase-AppCheck"] = token.token
-          }
-
-          if (internalAuthProvider == null) {
-            Log.w(TAG, "Auth not registered, skipping")
-          } else {
-            try {
-              val token = internalAuthProvider.getAccessToken(false).await()
-
-              headers["Authorization"] = "Firebase ${token.token!!}"
-            } catch (e: Exception) {
-              Log.w(TAG, "Error getting Auth token ", e)
-            }
-          }
-
-          return headers
-        }
-      }
-    )
+      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+    ),
   )
 
   /**
@@ -241,6 +200,7 @@ internal constructor(
     return countTokens(content { image(prompt) })
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   private fun constructRequest(vararg prompt: Content) =
     GenerateContentRequest(
       modelName,
@@ -249,7 +209,7 @@ internal constructor(
       generationConfig?.toInternal(),
       tools?.map { it.toInternal() },
       toolConfig?.toInternal(),
-      systemInstruction?.copy(role = "system")?.toInternal()
+      systemInstruction?.copy(role = "system")?.toInternal(),
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =

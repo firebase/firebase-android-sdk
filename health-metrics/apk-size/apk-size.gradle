@@ -28,8 +28,6 @@ plugins {
     id "com.dorongold.task-tree" version "3.0.0"
 }
 
-apply from: '../../sdkProperties.gradle'
-
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

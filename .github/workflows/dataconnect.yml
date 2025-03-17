@@ -1,0 +1,238 @@
+name: Data Connect Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      javaVersion:
+      androidEmulatorApiLevel:
+      nodeJsVersion:
+      firebaseToolsVersion:
+      gradleInfoLog:
+        type: boolean
+  pull_request:
+    paths:
+      - .github/workflows/dataconnect.yml
+      - 'firebase-dataconnect/**'
+      - '!firebase-dataconnect/demo/**'
+      - '!firebase-dataconnect/scripts/**'
+      - '!firebase-dataconnect/**/*.md'
+      - '!firebase-dataconnect/**/*.txt'
+  schedule:
+    - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
+
+env:
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
+  FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
+  FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-test:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.FDC_NODEJS_VERSION }}
+
+      - name: install firebase-tools
+        run: |
+          set -v
+          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          echo '{}' > package.json
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: Restore Gradle cache
+        id: restore-gradle-cache
+        uses: actions/cache/restore@v4
+        if: github.event_name != 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          restore-keys: |
+            gradle-cache-jqnvfzw6w7-
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          function run_cmd {
+            echo "==============================================================================="
+            echo "Running Command: $*"
+            ("$@" 2>&1) || echo "WARNING: command failed with non-zero exit code $?: $*"
+          }
+
+          run_cmd uname -a
+          run_cmd which java
+          run_cmd java -version
+          run_cmd which javac
+          run_cmd javac -version
+          run_cmd which node
+          run_cmd node --version
+          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd ./gradlew --version
+
+      - name: Gradle assembleDebugAndroidTest
+        run: |
+          set -v
+
+          # Speed up build times and also avoid configuring firebase-crashlytics-ndk
+          # which is finicky integrating with the Android NDK.
+          echo >> gradle.properties
+          echo "org.gradle.configureondemand=true" >> gradle.properties
+
+          ./gradlew \
+            --profile \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:assembleDebugAndroidTest
+
+      - name: Save Gradle cache
+        uses: actions/cache/save@v4
+        if: github.event_name == 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.restore-gradle-cache.outputs.cache-primary-key }}
+
+      - name: Enable KVM group permissions for Android Emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Restore AVD cache
+        uses: actions/cache/restore@v4
+        if: github.event_name != 'schedule'
+        id: restore-avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+          restore-keys: |
+            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
+
+      - name: Create AVD
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Save AVD cache
+        uses: actions/cache/save@v4
+        if: github.event_name == 'schedule'
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: ${{ steps.restore-avd-cache.outputs.cache-primary-key }}
+
+      - name: Data Connect Emulator
+        run: |
+          set -x
+
+          echo 'emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable' > firebase-dataconnect/dataconnect.local.properties
+
+          ./gradlew \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
+            >firebase.emulator.dataconnect.log 2>&1 &
+
+      - name: Firebase Auth Emulator
+        run: |
+          set -x
+          cd firebase-dataconnect/emulator
+          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
+
+      - name: Capture Logcat Logs
+        run: adb logcat >logcat.log &
+
+      - name: Gradle connectedCheck
+        id: connectedCheck
+        uses: reactivecircus/android-emulator-runner@v2
+        # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
+        # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
+        # A later step in this "job" will fail the job if this step fails
+        continue-on-error: true
+        with:
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+
+      - name: Upload log file artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration_test_logs
+          path: "**/*.log"
+          if-no-files-found: warn
+          compression-level: 9
+
+      - name: Upload Gradle build report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration_test_gradle_build_reports
+          path: firebase-dataconnect/**/build/reports/
+          if-no-files-found: warn
+          compression-level: 9
+
+      - name: Verify "Gradle connectedCheck" step was successful
+        if: steps.connectedCheck.outcome != 'success'
+        run: |
+          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
+          exit 1
+
+  # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
+  # To run actionlint yourself, run `brew install actionlint` followed by
+  # `actionlint .github/workflows/dataconnect.yml`
+  actionlint-dataconnect-yml:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color /github/workspace/.github/workflows/dataconnect.yml

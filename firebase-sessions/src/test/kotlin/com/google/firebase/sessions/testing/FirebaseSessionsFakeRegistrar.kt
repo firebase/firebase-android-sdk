@@ -17,7 +17,6 @@
 package com.google.firebase.sessions.testing
 
 import androidx.annotation.Keep
-import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
@@ -26,10 +25,10 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
-import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.sessions.BuildConfig
 import com.google.firebase.sessions.FirebaseSessions
+import com.google.firebase.sessions.FirebaseSessionsComponent
 import com.google.firebase.sessions.SessionDatastore
 import com.google.firebase.sessions.SessionFirelogPublisher
 import com.google.firebase.sessions.SessionGenerator
@@ -75,6 +74,10 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
           )
         }
         .build(),
+      Component.builder(FirebaseSessionsComponent::class.java)
+        .name("fake-fire-sessions-component")
+        .factory { FirebaseSessionsFakeComponent() }
+        .build(),
       Component.builder(FakeSessionDatastore::class.java)
         .name("fake-sessions-datastore")
         .factory { FakeSessionDatastore() }
@@ -97,21 +100,14 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
     )
 
   private companion object {
-    private const val LIBRARY_NAME = "fire-sessions"
+    const val LIBRARY_NAME = "fire-sessions"
 
-    private val firebaseApp = unqualified(FirebaseApp::class.java)
-    private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
-    private val backgroundDispatcher =
-      qualified(Background::class.java, CoroutineDispatcher::class.java)
-    private val blockingDispatcher =
-      qualified(Blocking::class.java, CoroutineDispatcher::class.java)
-    private val transportFactory = unqualified(TransportFactory::class.java)
-    private val fakeFirelogPublisher = unqualified(FakeFirelogPublisher::class.java)
-    private val fakeDatastore = unqualified(FakeSessionDatastore::class.java)
-    private val fakeServiceBinder = unqualified(FakeSessionLifecycleServiceBinder::class.java)
-    private val sessionGenerator = unqualified(SessionGenerator::class.java)
-    private val sessionsSettings = unqualified(SessionsSettings::class.java)
-
-    private val fakeFirebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = unqualified(FirebaseApp::class.java)
+    val backgroundDispatcher = qualified(Background::class.java, CoroutineDispatcher::class.java)
+    val blockingDispatcher = qualified(Blocking::class.java, CoroutineDispatcher::class.java)
+    val fakeFirelogPublisher = unqualified(FakeFirelogPublisher::class.java)
+    val fakeDatastore = unqualified(FakeSessionDatastore::class.java)
+    val fakeServiceBinder = unqualified(FakeSessionLifecycleServiceBinder::class.java)
+    val fakeFirebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
   }
 }

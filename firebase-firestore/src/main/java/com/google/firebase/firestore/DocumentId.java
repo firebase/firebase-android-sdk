@@ -43,6 +43,21 @@ import java.lang.annotation.Target;
  * WriteBatch#set(DocumentReference, Object)}), the property annotated by {@code @DocumentId} is
  * ignored, which allows writing the POJO back to any document, even if it's not the origin of the
  * POJO.
+ *
+ * <h3>Kotlin Note</h3>
+ * When applying this annotation to a property of a Kotlin class, the {@code @set} use-site target
+ * should always be used. There is no need to use the {@code @get} use-site target as this
+ * annotation is <em>only</em> considered when <em>reading</em> instances from Firestore, and is
+ * ignored when <em>writing</em> instances into Firestore.
+ * <p>
+ * Here is an example of a class that can both be written into and read from Firestore whose
+ * {@code foo} property will be populated with the Document ID when being read and will be ignored
+ * when being written into Firestore:
+ * <pre>
+ * data class Pojo(@set:DocumentId var foo: String? = null) {
+ *   constructor() : this(null) // Used by Firestore to create new instances
+ * }
+ * </pre>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})

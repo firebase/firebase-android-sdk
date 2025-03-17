@@ -119,7 +119,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<PromptBlockedException> { responses.collect() }
-        exception.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+        exception.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
       }
     }
 
@@ -130,8 +130,8 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<PromptBlockedException> { responses.collect() }
-        exception.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
-        exception.response.promptFeedback?.blockReasonMessage shouldBe "Reasons"
+        exception.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+        exception.response?.promptFeedback?.blockReasonMessage shouldBe "Reasons"
       }
     }
 

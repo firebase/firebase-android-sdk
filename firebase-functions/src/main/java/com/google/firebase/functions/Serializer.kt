@@ -23,7 +23,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** Converts raw Java types into JSON objects. */
-public class Serializer {
+internal class Serializer {
   private val dateFormat: DateFormat
 
   init {
@@ -168,11 +168,12 @@ public class Serializer {
     throw IllegalArgumentException("Object cannot be decoded from JSON: $obj")
   }
 
-  public companion object {
+  internal companion object {
     @VisibleForTesting
-    public const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
+    internal const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
 
     @VisibleForTesting
-    public const val UNSIGNED_LONG_TYPE: String = "type.googleapis.com/google.protobuf.UInt64Value"
+    internal const val UNSIGNED_LONG_TYPE: String =
+      "type.googleapis.com/google.protobuf.UInt64Value"
   }
 }

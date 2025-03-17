@@ -21,10 +21,10 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
@@ -36,7 +36,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -212,10 +212,7 @@ class TesterSignInManager {
   }
 
   private boolean supportsCustomTabs(Context context) {
-    Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
-    customTabIntent.setPackage("com.android.chrome");
-    List<ResolveInfo> resolveInfos =
-        context.getPackageManager().queryIntentServices(customTabIntent, 0);
-    return resolveInfos != null && !resolveInfos.isEmpty();
+    String packageName = CustomTabsClient.getPackageName(context, Collections.emptyList());
+    return packageName != null;
   }
 }

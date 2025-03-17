@@ -17,6 +17,8 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
+import com.google.firebase.vertexai.type.ContentBlockedException
+import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.HarmCategory
@@ -24,6 +26,8 @@ import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
 import com.google.firebase.vertexai.type.PromptBlockedException
+import com.google.firebase.vertexai.type.PublicPreviewAPI
+import com.google.firebase.vertexai.type.QuotaExceededException
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
@@ -33,6 +37,7 @@ import com.google.firebase.vertexai.type.UnsupportedUserLocationException
 import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -42,6 +47,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
+import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
@@ -50,6 +56,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
 
@@ -76,6 +83,31 @@ internal class UnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
         response.candidates.first().safetyRatings.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `response with detailed token-based usageMetadata`() =
+    goldenUnaryFile("unary-success-basic-response-long-usage-metadata.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.usageMetadata shouldNotBe null
+        response.usageMetadata?.apply {
+          totalTokenCount shouldBe 1913
+          candidatesTokenCount shouldBe 76
+          promptTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.IMAGE
+            it.tokenCount shouldBe 1806
+          }
+          candidatesTokensDetails?.forAtLeastOne {
+            it.modality shouldBe ContentModality.TEXT
+            it.tokenCount shouldBe 76
+          }
+        }
       }
     }
 
@@ -110,7 +142,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.UNKNOWN
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.UNKNOWN
           }
       }
     }
@@ -160,12 +192,26 @@ internal class UnarySnapshotTests {
     }
 
   @Test
+  fun `function call has no arguments field`() =
+    goldenUnaryFile("unary-success-function-call-empty-arguments.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        content.shouldNotBeNull()
+        val callPart = content.parts.shouldNotBeNullOrEmpty().first() as FunctionCallPart
+
+        callPart.name shouldBe "current_time"
+        callPart.args shouldBe emptyMap()
+      }
+    }
+
+  @Test
   fun `prompt blocked for safety`() =
     goldenUnaryFile("unary-failure-prompt-blocked-safety.json") {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
           }
       }
     }
@@ -176,8 +222,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
-            it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
-            it.response.promptFeedback?.blockReasonMessage shouldContain "Reasons"
+            it.response?.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+            it.response?.promptFeedback?.blockReasonMessage shouldContain "Reasons"
           }
       }
     }
@@ -200,7 +246,7 @@ internal class UnarySnapshotTests {
   fun `user location error`() =
     goldenUnaryFile(
       "unary-failure-unsupported-user-location.json",
-      HttpStatusCode.PreconditionFailed
+      HttpStatusCode.PreconditionFailed,
     ) {
       withTimeout(testTimeout) {
         shouldThrow<UnsupportedUserLocationException> { model.generateContent("prompt") }
@@ -213,6 +259,19 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
         exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
+        exception.response.candidates.first().safetyRatings.forAtLeastOne {
+          it.category shouldBe HarmCategory.HARASSMENT
+          it.probability shouldBe HarmProbability.LOW
+          it.severity shouldBe HarmSeverity.LOW
+        }
+      }
+    }
+
+  @Test
+  fun `quota exceeded`() =
+    goldenUnaryFile("unary-failure-quota-exceeded.json", HttpStatusCode.BadRequest) {
+      withTimeout(testTimeout) {
+        shouldThrow<QuotaExceededException> { model.generateContent("prompt") }
       }
     }
 
@@ -233,6 +292,10 @@ internal class UnarySnapshotTests {
 
         response.candidates.isEmpty() shouldBe false
         response.candidates.first().citationMetadata?.citations?.size shouldBe 3
+        response.candidates.first().citationMetadata?.citations?.forAtLeastOne {
+          it.publicationDate?.get(Calendar.YEAR) shouldBe 2019
+          it.publicationDate?.get(Calendar.DAY_OF_MONTH) shouldBe 10
+        }
       }
     }
 
@@ -265,6 +328,7 @@ internal class UnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
+        response.usageMetadata?.promptTokensDetails?.isEmpty() shouldBe true
       }
     }
 
@@ -454,6 +518,23 @@ internal class UnarySnapshotTests {
 
         response.totalTokens shouldBe 6
         response.totalBillableCharacters shouldBe 16
+        response.promptTokensDetails.isEmpty() shouldBe true
+      }
+    }
+
+  @Test
+  fun `countTokens with modality fields returned`() =
+    goldenUnaryFile("unary-success-detailed-token-response.json") {
+      withTimeout(testTimeout) {
+        val response = model.countTokens("prompt")
+
+        response.totalTokens shouldBe 1837
+        response.totalBillableCharacters shouldBe 117
+        response.promptTokensDetails shouldNotBe null
+        response.promptTokensDetails?.forAtLeastOne {
+          it.modality shouldBe ContentModality.IMAGE
+          it.tokenCount shouldBe 1806
+        }
       }
     }
 
@@ -472,5 +553,24 @@ internal class UnarySnapshotTests {
   fun `countTokens fails with model not found`() =
     goldenUnaryFile("unary-failure-model-not-found.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.countTokens("prompt") } }
+    }
+
+  @Test
+  fun `generateImages should throw when all images filtered`() =
+    goldenUnaryFile("unary-failure-generate-images-all-filtered.json") {
+      withTimeout(testTimeout) {
+        shouldThrow<ContentBlockedException> { imagenModel.generateImages("prompt") }
+      }
+    }
+
+  @Test
+  fun `generateImages should throw when prompt blocked`() =
+    goldenUnaryFile(
+      "unary-failure-generate-images-prompt-blocked.json",
+      HttpStatusCode.BadRequest,
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
+      }
     }
 }

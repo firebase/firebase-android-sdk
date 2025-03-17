@@ -2,7 +2,8 @@
 
 
 # 22.1.0
-* [changed] Added deprecation annotations to the public API. See https://firebase.google.com/support/dynamic-links-faq for further context.
+* [deprecated] `firebase-dynamic-links` is deprecated. For information about timelines and alternatives,
+  see the [irebase-dynamic-links deprecation FAQ](/support/dynamic-links-faq).
 
 
 ## Kotlin

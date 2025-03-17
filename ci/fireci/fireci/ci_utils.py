@@ -16,6 +16,8 @@ import logging
 import os
 import subprocess
 
+from typing import List, Tuple, Union
+
 _logger = logging.getLogger('fireci.ci_utils')
 
 
@@ -61,3 +63,28 @@ def gcloud_identity_token():
   """Returns an identity token with the current gcloud service account."""
   result = subprocess.run(['gcloud', 'auth', 'print-identity-token'], stdout=subprocess.PIPE, check=True)
   return result.stdout.decode('utf-8').strip()
+
+def get_projects(file_path: str = "subprojects.cfg") -> List[str]:
+  """Parses the specified file for a list of projects in the repo."""
+  with open(file_path, 'r') as file:
+    stripped_lines = [line.strip() for line in file]
+    return [line for line in stripped_lines if line and not line.startswith('#')]
+
+def counts(arr: List[Union[bool, int]]) -> Tuple[int, int]:
+  """Given an array of booleans and ints, returns a tuple mapping of [true, false]. 
+  Positive int values add to the `true` count while values less than one add to `false`.
+  """
+  true_count = 0
+  false_count = 0
+  for value in arr:
+    if isinstance(value, bool):
+      if value:
+        true_count += 1
+      else:
+        false_count += 1
+    elif value >= 1:
+      true_count += value
+    else:
+      false_count += abs(value) if value < 0 else 1
+
+  return true_count, false_count

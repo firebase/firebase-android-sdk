@@ -61,13 +61,13 @@ dependencies {
     implementation("com.google.firebase:firebase-components:18.0.0")
 
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core
-    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation libs.androidx.test.runner
     androidTestImplementation 'com.google.firebase:firebase-appcheck-interop:17.1.0'
     androidTestImplementation libs.truth
-    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation libs.junit
 }

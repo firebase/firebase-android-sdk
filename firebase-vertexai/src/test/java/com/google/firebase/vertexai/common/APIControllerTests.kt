@@ -17,16 +17,17 @@
 package com.google.firebase.vertexai.common
 
 import com.google.firebase.vertexai.BuildConfig
-import com.google.firebase.vertexai.common.client.FunctionCallingConfig
-import com.google.firebase.vertexai.common.client.Tool
-import com.google.firebase.vertexai.common.client.ToolConfig
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
 import com.google.firebase.vertexai.common.util.doBlocking
 import com.google.firebase.vertexai.common.util.prepareStreamingResponse
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.TextPart
+import com.google.firebase.vertexai.type.Tool
+import com.google.firebase.vertexai.type.ToolConfig
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -45,6 +46,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import org.junit.Test
@@ -83,6 +85,7 @@ internal class APIControllerTests {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class RequestFormatTests {
   @Test
   fun `using default endpoint`() = doBlocking {
@@ -140,7 +143,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `client id header is set correctly in the request`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -183,11 +186,11 @@ internal class RequestFormatTests {
         .generateContentStream(
           GenerateContentRequest(
             model = "unused",
-            contents = listOf(Content(parts = listOf(TextPart("Arbitrary")))),
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
             toolConfig =
-              ToolConfig(
-                FunctionCallingConfig(
-                  mode = FunctionCallingConfig.Mode.ANY,
+              ToolConfig.Internal(
+                FunctionCallingConfig.Internal(
+                  mode = FunctionCallingConfig.Internal.Mode.ANY,
                   allowedFunctionNames = listOf("allowedFunctionName")
                 )
               )
@@ -205,7 +208,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `headers from HeaderProvider are added to the request`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -237,7 +240,7 @@ internal class RequestFormatTests {
 
   @Test
   fun `headers from HeaderProvider are ignored if timeout`() = doBlocking {
-    val response = JSON.encodeToString(CountTokensResponse(totalTokens = 10))
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
     val mockEngine = MockEngine {
       respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
     }
@@ -291,8 +294,8 @@ internal class RequestFormatTests {
         .generateContentStream(
           GenerateContentRequest(
             model = "unused",
-            contents = listOf(Content(parts = listOf(TextPart("Arbitrary")))),
-            tools = listOf(Tool(codeExecution = JsonObject(emptyMap()))),
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
+            tools = listOf(Tool.Internal(codeExecution = JsonObject(emptyMap()))),
           )
         )
         .collect { channel.close() }
@@ -351,7 +354,7 @@ internal class ModelNamingTests(private val modelName: String, private val actua
 internal fun textGenerateContentRequest(prompt: String) =
   GenerateContentRequest(
     model = "unused",
-    contents = listOf(Content(parts = listOf(TextPart(prompt)))),
+    contents = listOf(Content.Internal(parts = listOf(TextPart.Internal(prompt)))),
   )
 
 internal fun textCountTokenRequest(prompt: String) =

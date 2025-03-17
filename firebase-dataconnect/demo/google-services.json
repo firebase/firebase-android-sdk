@@ -1,0 +1,14 @@
+{
+  "client": [{
+    "client_info": {
+      "android_client_info": {"package_name": "com.google.firebase.dataconnect.minimaldemo"},
+      "mobilesdk_app_id": "1:12345678901:android:1234567890abcdef123456"
+    },
+    "api_key": [{"current_key": "AIzayDNSXIbFmlXbIE6mCzDLQAqITYefhixbX4A"}]
+  }],
+  "configuration_version": "1",
+  "project_info": {
+    "project_number": "12345678901",
+    "project_id": "fakeproject"
+  }
+}

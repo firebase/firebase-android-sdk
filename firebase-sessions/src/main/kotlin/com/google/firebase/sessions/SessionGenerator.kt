@@ -20,6 +20,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import java.util.UUID
+import javax.inject.Singleton
 
 /**
  * [SessionDetails] is a data class responsible for storing information about the current Session.
@@ -35,9 +36,10 @@ internal data class SessionDetails(
  * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
  * [SessionDetails] up to date with the latest values.
  */
+@Singleton
 internal class SessionGenerator(
   private val timeProvider: TimeProvider,
-  private val uuidGenerator: () -> UUID = UUID::randomUUID
+  private val uuidGenerator: () -> UUID = UUID::randomUUID,
 ) {
   private val firstSessionId = generateSessionId()
   private var sessionIndex = -1
@@ -59,7 +61,7 @@ internal class SessionGenerator(
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
         sessionIndex,
-        sessionStartTimestampUs = timeProvider.currentTimeUs()
+        sessionStartTimestampUs = timeProvider.currentTimeUs(),
       )
     return currentSession
   }
@@ -68,6 +70,6 @@ internal class SessionGenerator(
 
   internal companion object {
     val instance: SessionGenerator
-      get() = Firebase.app[SessionGenerator::class.java]
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionGenerator
   }
 }

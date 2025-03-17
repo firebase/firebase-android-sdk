@@ -33,8 +33,8 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.ArrayList;
@@ -160,7 +160,7 @@ public class FirebaseRemoteConfig {
   private final ConfigCacheClient defaultConfigsCache;
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
-  private final ConfigMetadataClient frcMetadata;
+  private final ConfigSharedPrefsClient frcSharedPrefs;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final ConfigRealtimeHandler configRealtimeHandler;
   private final RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler;
@@ -181,7 +181,7 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata,
+      ConfigSharedPrefsClient frcSharedPrefs,
       ConfigRealtimeHandler configRealtimeHandler,
       RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     this.context = context;
@@ -194,7 +194,7 @@ public class FirebaseRemoteConfig {
     this.defaultConfigsCache = defaultConfigsCache;
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
-    this.frcMetadata = frcMetadata;
+    this.frcSharedPrefs = frcSharedPrefs;
     this.configRealtimeHandler = configRealtimeHandler;
     this.rolloutsStateSubscriptionsHandler = rolloutsStateSubscriptionsHandler;
   }
@@ -208,7 +208,7 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> activatedConfigsTask = activatedConfigsCache.get();
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
-    Task<FirebaseRemoteConfigInfo> metadataTask = Tasks.call(executor, this::getInfo);
+    Task<FirebaseRemoteConfigInfo> sharedPrefsTask = Tasks.call(executor, this::getInfo);
     Task<String> installationIdTask = firebaseInstallations.getId();
     Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
 
@@ -216,10 +216,10 @@ public class FirebaseRemoteConfig {
             activatedConfigsTask,
             defaultsConfigsTask,
             fetchedConfigsTask,
-            metadataTask,
+            sharedPrefsTask,
             installationIdTask,
             installationTokenTask)
-        .continueWith(executor, (unusedListOfCompletedTasks) -> metadataTask.getResult());
+        .continueWith(executor, (unusedListOfCompletedTasks) -> sharedPrefsTask.getResult());
   }
 
   /**
@@ -475,7 +475,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public FirebaseRemoteConfigInfo getInfo() {
-    return frcMetadata.getInfo();
+    return frcSharedPrefs.getInfo();
   }
 
   /**
@@ -488,7 +488,7 @@ public class FirebaseRemoteConfig {
     return Tasks.call(
         executor,
         () -> {
-          frcMetadata.setConfigSettings(settings);
+          frcSharedPrefs.setConfigSettings(settings);
 
           // Return value required; return null for Void.
           return null;
@@ -548,14 +548,14 @@ public class FirebaseRemoteConfig {
   @NonNull
   public Task<Void> reset() {
     // Use a Task to avoid throwing potential file I/O errors to the caller and because
-    // frcMetadata's clear call is blocking.
+    // frcSharedPrefs's clear call is blocking.
     return Tasks.call(
         executor,
         () -> {
           activatedConfigsCache.clear();
           fetchedConfigsCache.clear();
           defaultConfigsCache.clear();
-          frcMetadata.clear();
+          frcSharedPrefs.clear();
           return null;
         });
   }
@@ -650,6 +650,31 @@ public class FirebaseRemoteConfig {
     // Convert Task type to Void.
     return putTask.onSuccessTask(
         FirebaseExecutors.directExecutor(), (unusedContainer) -> Tasks.forResult(null));
+  }
+
+  /**
+   * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
+   *
+   * <p>Custom signals are subject to limits on the size of key/value pairs and the total
+   * number of signals. Any calls that exceed these limits will be discarded. See <a
+   * href="https://firebase.google.com/docs/remote-config/parameters?template_type=client#custom-signal-limits">Custom
+   * Signal Limits</a>.
+   *
+   * @param customSignals The custom signals to set for this instance.
+   * <ul>
+   *   <li>New keys will add new key-value pairs in the custom signals.
+   *   <li>Existing keys with new values will update the corresponding signals.
+   *   <li>Setting a key's value to {@code null} will remove the associated signal.
+   * </ul>
+   */
+  @NonNull
+  public Task<Void> setCustomSignals(@NonNull CustomSignals customSignals) {
+    return Tasks.call(
+        executor,
+        () -> {
+          frcSharedPrefs.setCustomSignals(customSignals.customSignals);
+          return null;
+        });
   }
 
   /**

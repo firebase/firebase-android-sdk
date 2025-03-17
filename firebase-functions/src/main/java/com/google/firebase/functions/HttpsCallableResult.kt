@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.functions
 
-/** The result of calling a HttpsCallableReference function. */
+/** The result of calling a `HttpsCallableReference` function. */
 public class HttpsCallableResult
 internal constructor( // The actual result data, as generic types decoded from JSON.
   /**

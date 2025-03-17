@@ -1,5 +1,17 @@
 # Unreleased
+* [feature] Streaming callable functions are now supported.
+* [fixed] Fixed an issue that prevented the App Check token from being handled correctly in case of error.
 
+
+# 21.1.1
+* [fixed] Resolve Kotlin migration visibility issues
+  ([#6522](//github.com/firebase/firebase-android-sdk/pull/6522))
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.1.0
 * [changed] Migrated to Kotlin
@@ -215,3 +227,4 @@ updates.
 optional region to override the default "us-central1".
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
+

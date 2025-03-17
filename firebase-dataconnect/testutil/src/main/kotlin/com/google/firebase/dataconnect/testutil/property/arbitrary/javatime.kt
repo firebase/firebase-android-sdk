@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeC
 import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeCases.MIN_NANO
 import com.google.firebase.dataconnect.testutil.property.arbitrary.JavaTimeEdgeCases.MIN_YEAR
 import com.google.firebase.dataconnect.testutil.toTimestamp
+import io.kotest.common.mapError
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
@@ -31,7 +32,6 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
-import kotlin.random.nextInt
 import org.threeten.bp.Instant
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.ZoneOffset
@@ -153,7 +153,11 @@ private fun Instant.toFdcFieldRegex(): Regex {
   return Regex(pattern)
 }
 
-data class Nanoseconds(val nanoseconds: Int, val string: String)
+data class Nanoseconds(
+  val nanoseconds: Int,
+  val string: String,
+  val digitCounts: JavaTimeArbs.NanosecondComponents
+)
 
 sealed interface TimeOffset {
 
@@ -177,8 +181,12 @@ sealed interface TimeOffset {
 
   data class HhMm(val hours: Int, val minutes: Int, val sign: Sign) : TimeOffset {
     init {
-      require(hours in 0..18) { "invalid hours: $hours (must be in the closed range 0..23)" }
-      require(minutes in 0..59) { "invalid minutes: $minutes (must be in the closed range 0..59)" }
+      require(hours in validHours) {
+        "invalid hours: $hours (must be in the closed range $validHours)"
+      }
+      require(minutes in validMinutes) {
+        "invalid minutes: $minutes (must be in the closed range $validMinutes)"
+      }
       require(hours != 18 || minutes == 0) { "invalid minutes: $minutes (must be 0 when hours=18)" }
     }
 
@@ -192,14 +200,43 @@ sealed interface TimeOffset {
       append("$minutes".padStart(2, '0'))
     }
 
+    fun toSeconds(): Int {
+      val absValue = (hours * SECONDS_PER_HOUR) + (minutes * SECONDS_PER_MINUTE)
+      return when (sign) {
+        Sign.Positive -> absValue
+        Sign.Negative -> -absValue
+      }
+    }
+
     override fun toString() =
       "HhMm(hours=$hours, minutes=$minutes, sign=$sign, " +
         "zoneOffset=$zoneOffset, rfc3339String=$rfc3339String)"
+
+    operator fun compareTo(other: HhMm): Int = toSeconds() - other.toSeconds()
 
     @Suppress("unused")
     enum class Sign(val char: Char, val multiplier: Int) {
       Positive('+', 1),
       Negative('-', -1),
+    }
+
+    companion object {
+      private const val SECONDS_PER_MINUTE: Int = 60
+      private const val SECONDS_PER_HOUR: Int = 60 * SECONDS_PER_MINUTE
+
+      val validHours = 0..18
+      val validMinutes = 0..59
+
+      val maxSeconds: Int = 18 * SECONDS_PER_HOUR
+
+      fun forSeconds(seconds: Int, sign: Sign): HhMm {
+        require(seconds in 0..maxSeconds) {
+          "invalid seconds: $seconds (must be between 0 and $maxSeconds, inclusive)"
+        }
+        val hours = seconds / SECONDS_PER_HOUR
+        val minutes = (seconds - (hours * SECONDS_PER_HOUR)) / SECONDS_PER_MINUTE
+        return HhMm(hours = hours, minutes = minutes, sign = sign)
+      }
     }
   }
 }
@@ -215,7 +252,6 @@ object JavaTimeArbs {
     val minuteArb = minute()
     val secondArb = second()
     val nanosecondArb = nanosecond().orNull(nullProbability = 0.15)
-    val timeOffsetArb = timeOffset()
 
     return arbitrary(JavaTimeInstantEdgeCases.all) {
       val year = yearArb.bind()
@@ -226,7 +262,55 @@ object JavaTimeArbs {
       val minute = minuteArb.bind()
       val second = secondArb.bind()
       val nanosecond = nanosecondArb.bind()
-      val timeOffset = timeOffsetArb.bind()
+
+      val instantUtc =
+        OffsetDateTime.of(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            nanosecond?.nanoseconds ?: 0,
+            ZoneOffset.UTC,
+          )
+          .toInstant()
+
+      // The valid range below was copied from:
+      // com.google.firebase.Timestamp.Timestamp.validateRange() 253_402_300_800
+      val validEpochSecondRange = -62_135_596_800..253_402_300_800
+
+      val numSecondsBelowMaxEpochSecond = validEpochSecondRange.last - instantUtc.epochSecond
+      require(numSecondsBelowMaxEpochSecond > 0) {
+        "internal error gh98nqedss: " +
+          "invalid numSecondsBelowMaxEpochSecond: $numSecondsBelowMaxEpochSecond"
+      }
+      val minTimeZoneOffset =
+        if (numSecondsBelowMaxEpochSecond >= TimeOffset.HhMm.maxSeconds) {
+          null
+        } else {
+          TimeOffset.HhMm.forSeconds(
+            numSecondsBelowMaxEpochSecond.toInt(),
+            TimeOffset.HhMm.Sign.Negative
+          )
+        }
+
+      val numSecondsAboveMinEpochSecond = instantUtc.epochSecond - validEpochSecondRange.first
+      require(numSecondsAboveMinEpochSecond > 0) {
+        "internal error mje6a4mrbm: " +
+          "invalid numSecondsAboveMinEpochSecond: $numSecondsAboveMinEpochSecond"
+      }
+      val maxTimeZoneOffset =
+        if (numSecondsAboveMinEpochSecond >= TimeOffset.HhMm.maxSeconds) {
+          null
+        } else {
+          TimeOffset.HhMm.forSeconds(
+            numSecondsAboveMinEpochSecond.toInt(),
+            TimeOffset.HhMm.Sign.Positive
+          )
+        }
+
+      val timeOffset = timeOffset(min = minTimeZoneOffset, max = maxTimeZoneOffset).bind()
 
       val instant =
         OffsetDateTime.of(
@@ -240,6 +324,27 @@ object JavaTimeArbs {
             timeOffset.zoneOffset
           )
           .toInstant()
+
+      require(instant.epochSecond >= validEpochSecondRange.first) {
+        "internal error weppxzqj2y: " +
+          "instant.epochSecond out of range by " +
+          "${validEpochSecondRange.first - instant.epochSecond}: ${instant.epochSecond} (" +
+          "validEpochSecondRange.first=${validEpochSecondRange.first}, " +
+          "year=$year, month=$month, day=$day, " +
+          "hour=$hour, minute=$minute, second=$second, " +
+          "nanosecond=$nanosecond timeOffset=$timeOffset, " +
+          "minTimeZoneOffset=$minTimeZoneOffset, maxTimeZoneOffset=$maxTimeZoneOffset)"
+      }
+      require(instant.epochSecond <= validEpochSecondRange.last) {
+        "internal error yxga5xy9bm: " +
+          "instant.epochSecond out of range by " +
+          "${instant.epochSecond - validEpochSecondRange.last}: ${instant.epochSecond} (" +
+          "validEpochSecondRange.last=${validEpochSecondRange.last}, " +
+          "year=$year, month=$month, day=$day, " +
+          "hour=$hour, minute=$minute, second=$second, " +
+          "nanosecond=$nanosecond timeOffset=$timeOffset, " +
+          "minTimeZoneOffset=$minTimeZoneOffset, maxTimeZoneOffset=$maxTimeZoneOffset)"
+      }
 
       val string = buildString {
         append(year)
@@ -268,7 +373,10 @@ object JavaTimeArbs {
     }
   }
 
-  fun timeOffset(): Arb<TimeOffset> = Arb.choice(timeOffsetUtc(), timeOffsetHhMm())
+  fun timeOffset(
+    min: TimeOffset.HhMm?,
+    max: TimeOffset.HhMm?,
+  ): Arb<TimeOffset> = Arb.choice(timeOffsetUtc(), timeOffsetHhMm(min = min, max = max))
 
   fun timeOffsetUtc(
     case: Arb<TimeOffset.Utc.Case> = Arb.enum(),
@@ -278,20 +386,45 @@ object JavaTimeArbs {
     sign: Arb<TimeOffset.HhMm.Sign> = Arb.enum(),
     hour: Arb<Int> = Arb.positiveIntWithUniformNumDigitsProbability(0..18),
     minute: Arb<Int> = minute(),
-  ): Arb<TimeOffset.HhMm> =
-    arbitrary(
+    min: TimeOffset.HhMm?,
+    max: TimeOffset.HhMm?,
+  ): Arb<TimeOffset.HhMm> {
+    require(min === null || max === null || min.toSeconds() < max.toSeconds()) {
+      "min must be strictly less than max, but got: " +
+        "min=$min (${min!!.toSeconds()} seconds), " +
+        "max=$max (${max!!.toSeconds()} seconds), " +
+        "a difference of ${min.toSeconds() - max.toSeconds()} seconds"
+    }
+
+    fun isBetweenMinAndMax(other: TimeOffset.HhMm): Boolean =
+      (min === null || other >= min) && (max === null || other <= max)
+
+    return arbitrary(
       edgecases =
         listOf(
-          TimeOffset.HhMm(hours = 0, minutes = 0, sign = TimeOffset.HhMm.Sign.Positive),
-          TimeOffset.HhMm(hours = 0, minutes = 0, sign = TimeOffset.HhMm.Sign.Negative),
-          TimeOffset.HhMm(hours = 17, minutes = 59, sign = TimeOffset.HhMm.Sign.Positive),
-          TimeOffset.HhMm(hours = 17, minutes = 59, sign = TimeOffset.HhMm.Sign.Negative),
-          TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Positive),
-          TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Negative),
-        )
+            TimeOffset.HhMm(hours = 0, minutes = 0, sign = TimeOffset.HhMm.Sign.Positive),
+            TimeOffset.HhMm(hours = 0, minutes = 0, sign = TimeOffset.HhMm.Sign.Negative),
+            TimeOffset.HhMm(hours = 17, minutes = 59, sign = TimeOffset.HhMm.Sign.Positive),
+            TimeOffset.HhMm(hours = 17, minutes = 59, sign = TimeOffset.HhMm.Sign.Negative),
+            TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Positive),
+            TimeOffset.HhMm(hours = 18, minutes = 0, sign = TimeOffset.HhMm.Sign.Negative),
+          )
+          .filter(::isBetweenMinAndMax)
     ) {
-      TimeOffset.HhMm(hours = hour.bind(), minutes = minute.bind(), sign = sign.bind())
+      var count = 0
+      var hhmm: TimeOffset.HhMm
+      while (true) {
+        count++
+        hhmm = TimeOffset.HhMm(hours = hour.bind(), minutes = minute.bind(), sign = sign.bind())
+        if (isBetweenMinAndMax(hhmm)) {
+          break
+        } else if (count > 1000) {
+          throw Exception("internal error j878fp4gmr: exhausted attempts to generate HhMm")
+        }
+      }
+      hhmm
     }
+  }
 
   fun year(): Arb<Int> = Arb.int(MIN_YEAR..MAX_YEAR)
 
@@ -316,8 +449,12 @@ object JavaTimeArbs {
         repeat(digitCounts.leadingZeroes) { append('0') }
         if (digitCounts.proper > 0) {
           append(nonZeroDigits.bind())
-          repeat(digitCounts.proper - 2) { append(digits.bind()) }
-          append(nonZeroDigits.bind())
+          if (digitCounts.proper > 1) {
+            if (digitCounts.proper > 2) {
+              repeat(digitCounts.proper - 2) { append(digits.bind()) }
+            }
+            append(nonZeroDigits.bind())
+          }
         }
         repeat(digitCounts.trailingZeroes) { append('0') }
       }
@@ -327,18 +464,29 @@ object JavaTimeArbs {
         if (nanosecondsStringTrimmed.isEmpty()) {
           0
         } else {
-          nanosecondsStringTrimmed.toInt()
+          val toIntResult = nanosecondsStringTrimmed.runCatching { toInt() }
+          toIntResult.mapError { exception ->
+            Exception(
+              "internal error qbdgapmye2: " +
+                "failed to parse nanosecondsStringTrimmed as an int: " +
+                "\"$nanosecondsStringTrimmed\" (digitCounts=$digitCounts)",
+              exception
+            )
+          }
+          toIntResult.getOrThrow()
         }
 
-      Nanoseconds(nanosecondsInt, nanosecondsString)
+      check(nanosecondsInt in 0..999_999_999) {
+        "internal error c7j2myw6bd: " +
+          "nanosecondsStringTrimmed parsed to a value outside the valid range: " +
+          "$nanosecondsInt (digitCounts=$digitCounts)"
+      }
+
+      Nanoseconds(nanosecondsInt, nanosecondsString, digitCounts)
     }
   }
 
-  private data class NanosecondComponents(
-    val leadingZeroes: Int,
-    val proper: Int,
-    val trailingZeroes: Int
-  )
+  data class NanosecondComponents(val leadingZeroes: Int, val proper: Int, val trailingZeroes: Int)
 
   private fun nanosecondComponents(): Arb<NanosecondComponents> =
     arbitrary(

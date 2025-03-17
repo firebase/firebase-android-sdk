@@ -110,7 +110,7 @@ public class ConfigRealtimeHttpClient {
   private final String namespace;
   private final Random random;
   private final Clock clock;
-  private final ConfigMetadataClient metadataClient;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -120,7 +120,7 @@ public class ConfigRealtimeHttpClient {
       Context context,
       String namespace,
       Set<ConfigUpdateListener> listeners,
-      ConfigMetadataClient metadataClient,
+      ConfigSharedPrefsClient sharedPrefsClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
@@ -132,7 +132,7 @@ public class ConfigRealtimeHttpClient {
     // Retrieve number of remaining retries from last session. The minimum retry count being one.
     httpRetriesRemaining =
         Math.max(
-            ORIGINAL_RETRIES - metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
+            ORIGINAL_RETRIES - sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
             1);
     clock = DefaultClock.getInstance();
 
@@ -142,7 +142,7 @@ public class ConfigRealtimeHttpClient {
     this.activatedCache = activatedCache;
     this.context = context;
     this.namespace = namespace;
-    this.metadataClient = metadataClient;
+    this.sharedPrefsClient = sharedPrefsClient;
     this.isRealtimeDisabled = false;
     this.isInBackground = false;
   }
@@ -230,13 +230,13 @@ public class ConfigRealtimeHttpClient {
   // Used for Tests only.
   @SuppressLint("VisibleForTests")
   public int getNumberOfFailedStreams() {
-    return metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+    return sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams();
   }
 
   // Used for Tests only.
   @SuppressLint("VisibleForTests")
   public Date getBackoffEndTime() {
-    return metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime();
+    return sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime();
   }
 
   // TODO(issues/265): Make this an atomic operation within the Metadata class to avoid possible
@@ -248,7 +248,7 @@ public class ConfigRealtimeHttpClient {
    */
   private void updateBackoffMetadataWithLastFailedStreamConnectionTime(
       Date lastFailedRealtimeStreamTime) {
-    int numFailedStreams = metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+    int numFailedStreams = sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams();
 
     numFailedStreams++;
 
@@ -256,7 +256,7 @@ public class ConfigRealtimeHttpClient {
     Date backoffEndTime =
         new Date(lastFailedRealtimeStreamTime.getTime() + backoffDurationInMillis);
 
-    metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
+    sharedPrefsClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
   }
 
   /**
@@ -362,7 +362,7 @@ public class ConfigRealtimeHttpClient {
     long retrySeconds =
         Math.max(
             0,
-            metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
+            sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
                 - currentTime.getTime());
     makeRealtimeHttpConnection(retrySeconds);
   }
@@ -473,8 +473,8 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
       retryHttpConnectionWhenBackoffEnds();
@@ -506,7 +506,7 @@ public class ConfigRealtimeHttpClient {
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                   // Reset the retries remaining if we opened the connection without an exception.
                   resetRetryCount();
-                  metadataClient.resetRealtimeBackoff();
+                  sharedPrefsClient.resetRealtimeBackoff();
 
                   // Start listening for realtime notifications.
                   ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);

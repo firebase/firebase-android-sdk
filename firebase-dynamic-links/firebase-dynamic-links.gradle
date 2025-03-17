@@ -59,11 +59,11 @@ android {
 }
 
 dependencies {
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
-    javadocClasspath 'org.checkerframework:checker-qual:2.5.2'
+    javadocClasspath libs.checker.qual
 
-    api 'com.google.android.gms:play-services-tasks:18.0.1'
+    api libs.playservices.tasks
     api('com.google.firebase:firebase-auth-interop:20.0.0') {
          exclude group: "com.google.firebase", module: "firebase-common"
      }
@@ -74,27 +74,27 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
      }
 
-    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation libs.androidx.annotation
     implementation libs.playservices.base
     implementation libs.playservices.basement
     implementation libs.kotlin.stdlib
 
-    testAnnotationProcessor "com.google.auto.value:auto-value:1.6.3"
+    testAnnotationProcessor libs.autovalue
 
     testImplementation libs.androidx.test.core
-    testImplementation 'com.android.support.test:runner:1.0.2'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.10.2'
+    testImplementation libs.runner
+    testImplementation libs.jackson.databind
     testImplementation('com.google.android.gms:play-services-appinvite:18.0.0') {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-dynamic-links'
      }
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.12'
     testImplementation libs.junit
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-core:3.3.3'
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
-    testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
+    testCompileOnly libs.autovalue.annotations
 }

@@ -29,8 +29,8 @@ public class FirebaseFunctionsException : FirebaseException {
    */
   public enum class Code(@Suppress("unused") private val value: Int) {
     /**
-     * The operation completed successfully. FirebaseFunctionsException will never have a status of
-     * OK.
+     * The operation completed successfully. `FirebaseFunctionsException` will never have a status
+     * of `OK`.
      */
     OK(0),
 
@@ -41,9 +41,9 @@ public class FirebaseFunctionsException : FirebaseException {
     UNKNOWN(2),
 
     /**
-     * Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
-     * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the
-     * system (e.g., an invalid field name).
+     * Client specified an invalid argument. Note that this differs from `FAILED_PRECONDITION`.
+     * `INVALID_ARGUMENT` indicates arguments that are problematic regardless of the state of the
+     * system (For example, an invalid field name).
      */
     INVALID_ARGUMENT(3),
 
@@ -126,12 +126,12 @@ public class FirebaseFunctionsException : FirebaseException {
       }
 
       /**
-       * Takes an HTTP status code and returns the corresponding FUNErrorCode error code. This is
-       * the standard HTTP status code -> error mapping defined in:
+       * Takes an HTTP status code and returns the corresponding [Code] error code. This is the
+       * standard HTTP status code -> error mapping defined in:
        * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
        *
        * @param status An HTTP status code.
-       * @return The corresponding Code, or Code.UNKNOWN if none.
+       * @return The corresponding `Code`, or `Code.UNKNOWN` if none.
        */
       @JvmStatic
       public fun fromHttpStatus(status: Int): Code {
@@ -157,7 +157,7 @@ public class FirebaseFunctionsException : FirebaseException {
   /**
    * Gets the error code for the operation that failed.
    *
-   * @return the code for the FirebaseFunctionsException
+   * @return the code for the `FirebaseFunctionsException`
    */
   public val code: Code
 
@@ -183,7 +183,7 @@ public class FirebaseFunctionsException : FirebaseException {
     this.details = details
   }
 
-  public companion object {
+  internal companion object {
     /**
      * Takes an HTTP response and returns the corresponding Exception if any.
      *
@@ -193,7 +193,7 @@ public class FirebaseFunctionsException : FirebaseException {
      * @return The corresponding Exception, or null if none.
      */
     @JvmStatic
-    public fun fromResponse(
+    internal fun fromResponse(
       code: Code,
       body: String?,
       serializer: Serializer

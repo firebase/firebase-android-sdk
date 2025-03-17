@@ -45,13 +45,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
 
-    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation libs.androidx.test.runner
     testImplementation libs.androidx.test.junit
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.13-rc-1'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 }
 

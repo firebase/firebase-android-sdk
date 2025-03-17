@@ -88,11 +88,9 @@ constructor(
       if (getLimitedUseAppCheckToken) appCheck.limitedUseToken else appCheck.getToken(false)
     return tokenTask.onSuccessTask(executor) { result: AppCheckTokenResult ->
       if (result.error != null) {
-        // If there was an error getting the App Check token, do NOT send the placeholder
-        // token. Only valid App Check tokens should be sent to the functions backend.
         Log.w(TAG, "Error getting App Check token. Error: " + result.error)
-        return@onSuccessTask Tasks.forResult<String?>(null)
       }
+      // Send valid token (success) or placeholder (failure).
       Tasks.forResult(result.token)
     }
   }

@@ -16,6 +16,11 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Feedback on the prompt provided in the request.
  *
@@ -27,10 +32,45 @@ public class PromptFeedback(
   public val blockReason: BlockReason?,
   public val safetyRatings: List<SafetyRating>,
   public val blockReasonMessage: String?
-)
+) {
+
+  @Serializable
+  internal data class Internal(
+    val blockReason: BlockReason.Internal? = null,
+    val safetyRatings: List<SafetyRating.Internal>? = null,
+    val blockReasonMessage: String? = null,
+  ) {
+
+    internal fun toPublic(): PromptFeedback {
+      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      return PromptFeedback(blockReason?.toPublic(), safetyRatings, blockReasonMessage)
+    }
+  }
+}
 
 /** Describes why content was blocked. */
 public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
+
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
+    UNKNOWN,
+    @SerialName("BLOCKED_REASON_UNSPECIFIED") UNSPECIFIED,
+    SAFETY,
+    OTHER,
+    BLOCKLIST,
+    PROHIBITED_CONTENT;
+
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+
+    internal fun toPublic() =
+      when (this) {
+        SAFETY -> BlockReason.SAFETY
+        OTHER -> BlockReason.OTHER
+        BLOCKLIST -> BlockReason.BLOCKLIST
+        PROHIBITED_CONTENT -> BlockReason.PROHIBITED_CONTENT
+        else -> BlockReason.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: BlockReason = BlockReason("UNKNOWN", 0)
@@ -40,5 +80,11 @@ public class BlockReason private constructor(public val name: String, public val
 
     /** Content was blocked for another reason. */
     @JvmField public val OTHER: BlockReason = BlockReason("OTHER", 2)
+
+    /** Content was blocked for another reason. */
+    @JvmField public val BLOCKLIST: BlockReason = BlockReason("BLOCKLIST", 3)
+
+    /** Candidates blocked due to the terms which are included from the terminology blocklist. */
+    @JvmField public val PROHIBITED_CONTENT: BlockReason = BlockReason("PROHIBITED_CONTENT", 4)
   }
 }

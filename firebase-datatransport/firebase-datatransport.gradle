@@ -52,15 +52,15 @@ dependencies {
     api 'com.google.firebase:firebase-common:21.0.0'
     api 'com.google.firebase:firebase-components:18.0.0'
 
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
     implementation 'com.google.android.datatransport:transport-api:3.1.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
     implementation(libs.kotlin.stdlib.jdk8)
 
     testImplementation libs.androidx.test.core
-    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation libs.androidx.test.runner
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.12'
+    testImplementation libs.junit
     testImplementation libs.robolectric
 }

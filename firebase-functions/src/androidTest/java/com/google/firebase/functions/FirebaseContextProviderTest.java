@@ -117,7 +117,7 @@ public class FirebaseContextProviderTest {
   }
 
   @Test
-  public void getContext_whenOnlyAppCheckIsAvailableAndHasError_shouldContainOnlyIid()
+  public void getContext_whenOnlyAppCheckIsAvailableAndHasError()
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
@@ -129,11 +129,12 @@ public class FirebaseContextProviderTest {
     HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
-    assertThat(context.getAppCheckToken()).isNull();
+    // AppCheck token needs to be send in all circumstances.
+    assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_TOKEN);
   }
 
   @Test
-  public void getContext_facLimitedUse_whenOnlyAppCheckIsAvailableAndHasError_shouldContainOnlyIid()
+  public void getContext_facLimitedUse_whenOnlyAppCheckIsAvailableAndHasError()
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
@@ -145,7 +146,8 @@ public class FirebaseContextProviderTest {
     HttpsCallableContext context = Tasks.await(contextProvider.getContext(true));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
-    assertThat(context.getAppCheckToken()).isNull();
+    // AppCheck token needs to be sent in all circumstances.
+    assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_LIMITED_USE_TOKEN);
   }
 
   @Test

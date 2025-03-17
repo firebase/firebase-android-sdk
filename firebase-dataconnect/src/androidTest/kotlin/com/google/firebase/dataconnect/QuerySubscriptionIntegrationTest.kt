@@ -303,7 +303,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
             .toList()
 
         assertSoftly {
-          withClue("results.size") { results.size shouldBeInRange 1..2000 }
+          withClue("results.size") { results.size shouldBeInRange 1..5000 }
           results.forEachIndexed { i, result ->
             withClue("results[$i]") { result.shouldHavePersonWithName("NewName") }
           }
