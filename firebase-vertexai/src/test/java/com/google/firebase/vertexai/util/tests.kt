@@ -125,7 +125,7 @@ internal fun commonTest(
  * @param name The name of the *Golden File* to load
  * @param httpStatusCode An optional [HttpStatusCode] to return as a response
  * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenUnaryFile
+ * @see goldenVertexUnaryFile
  */
 internal fun goldenStreamingFile(
   name: String,
@@ -146,6 +146,23 @@ internal fun goldenStreamingFile(
     block()
   }
 }
+
+/**
+ * A variant of [goldenStreamingFile] for testing vertexAI
+ *
+ * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexStreamingFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
@@ -170,6 +187,21 @@ internal fun goldenUnaryFile(
 
     block()
   }
+
+/**
+ * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically
+ * provides it to the channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenUnaryFile
+ */
+internal fun goldenVertexUnaryFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenUnaryFile("vertexai/$name", httpStatusCode, block)
 
 /**
  * Loads a *Golden File* from the resource directory.
