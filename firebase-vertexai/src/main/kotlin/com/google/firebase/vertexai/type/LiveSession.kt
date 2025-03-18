@@ -148,9 +148,6 @@ internal constructor(
           //emit(LiveContentResponse(null, functionContent.toolCall.functionCalls.map { it.toPublic() as FunctionCallPart })))
           break
         } catch (_: Exception){ }
-        if (receivedJson.contains("turnComplete")) {
-          break
-        }
 
         try {
           if (receivedJson.contains("interrupted")) {
@@ -195,17 +192,16 @@ internal constructor(
       val jsonString =
         Json.encodeToString(
           ClientContentSetup(
-            ClientContent(listOf(content.toInternal()), false)
+            ClientContent(listOf(content.toInternal()), true)
           )
         )
-      println(jsonString)
       session?.send(Frame.Text(jsonString))
       while (true) {
         try {
           val message = session?.incoming?.receive() ?: continue
           val receivedBytes = (message as Frame.Binary).readBytes()
           val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-          println(receivedJson)
+          println(receivedBytes)
           try {
             val functionContent = Json.decodeFromString<ToolCallSetup>(receivedJson)
             emit(LiveContentResponse(null, false, functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }))

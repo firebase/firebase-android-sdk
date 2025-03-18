@@ -57,23 +57,27 @@ class LiveModelTesting {
             )
         runBlocking{
             val session =  generativeModel.connect()
-            session!!.send("Tell me the status of the light of type tubelight", listOf(ContentModality.TEXT)).collect {
-                println(it)
-                if(!it.functionCalls.isNullOrEmpty()) {
-                    println("Entered??")
-                    val fetchWeatherCall = it.functionCalls!!.find { it.name == "fetchLight" }
-
-                    val functionResponse = fetchWeatherCall?.let {
-                        // Alternatively, if your `Location` class is marked as @Serializable, you can use
-
-                        val type = it.args["type"]!!.jsonPrimitive.content
-                        fetchWeather(type)
-                    }
-                    session!!.send(Content("function", listOf(FunctionResponsePart("fetchLight", functionResponse!!))), listOf(ContentModality.TEXT)).collect {
-                        x-> println(x.text)
-                    }
-                }
+            session!!.send("Tell me a story", listOf(ContentModality.TEXT)).collect {
+                println(it.text)
             }
+
+//            session!!.send("Tell me the status of the light ", listOf(ContentModality.TEXT)).collect {
+//                println(it)
+//                if(!it.functionCalls.isNullOrEmpty()) {
+//                    println("Entered??")
+//                    val fetchWeatherCall = it.functionCalls!!.find { it.name == "fetchLight" }
+//
+//                    val functionResponse = fetchWeatherCall?.let {
+//                        // Alternatively, if your `Location` class is marked as @Serializable, you can use
+//
+//                        val type = it.args["type"]!!.jsonPrimitive.content
+//                        fetchWeather(type)
+//                    }
+//                    session!!.send(Content("function", listOf(FunctionResponsePart("fetchLight", functionResponse!!))), listOf(ContentModality.TEXT)).collect {
+//                        x-> println(x.text)
+//                    }
+//                }
+//            }
 
 
         }
