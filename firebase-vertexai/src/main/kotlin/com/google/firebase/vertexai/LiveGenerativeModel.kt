@@ -35,6 +35,7 @@ import io.ktor.websocket.readBytes
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.system.exitProcess
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -74,10 +75,16 @@ internal constructor(
     ),
   )
 
+  public fun getModelName(): String {
+    return this.modelName
+  }
+
   @Serializable
   internal data class BidiGenerateContentSetup(
     val model: String,
-    val generation_config: LiveGenerationConfig.Internal?
+    val generationConfig: LiveGenerationConfig.Internal?,
+    val tools: List<Tool.Internal>?,
+    val systemInstruction: Content.Internal?
   )
 
   @Serializable
@@ -87,7 +94,8 @@ internal constructor(
     val client = HttpClient(CIO) { install(WebSockets) }
 
     val roundedUrl = this.controller.getBidiEndpoint()
-    val setup = BidiGenerateContentSetup(this.modelName, this.config?.toInternal())
+    val setup = BidiGenerateContentSetup(this.modelName, this.config?.toInternal(),
+      this.tools?.map{it.toInternal()}, this.systemInstruction?.toInternal())
     val data: String = Json.encodeToString(BidiGenerateContentClientMessage(setup))
     val webSession = client.webSocketSession(roundedUrl)
     webSession.send(Frame.Text(data))

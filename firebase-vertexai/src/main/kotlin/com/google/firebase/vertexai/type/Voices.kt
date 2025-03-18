@@ -28,11 +28,17 @@ public class Voices private constructor(public val ordinal: Int) {
   internal enum class InternalEnum {
     @SerialName("VOICES_UNSPECIFIED") UNSPECIFIED,
     CHARON,
-    AOEDE;
+    AOEDE,
+    FENRIR,
+    KORE,
+    PUCK;
     internal fun toPublic() =
       when (this) {
         CHARON -> Voices.CHARON
         AOEDE -> Voices.AOEDE
+        FENRIR -> Voices.FENRIR
+        KORE -> Voices.KORE
+        PUCK -> Voices.PUCK
         else -> Voices.UNSPECIFIED
       }
   }
@@ -41,6 +47,9 @@ public class Voices private constructor(public val ordinal: Int) {
     return when (this) {
       CHARON -> Internal(InternalEnum.CHARON.name)
       AOEDE -> Internal(InternalEnum.AOEDE.name)
+      FENRIR -> Internal(InternalEnum.FENRIR.name)
+      KORE -> Internal(InternalEnum.KORE.name)
+      PUCK -> Internal(InternalEnum.PUCK.name)
       else -> Internal(InternalEnum.UNSPECIFIED.name)
     }
   }
@@ -49,10 +58,14 @@ public class Voices private constructor(public val ordinal: Int) {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: Voices = Voices(0)
 
-    /** Plain text. */
     @JvmField public val CHARON: Voices = Voices(1)
 
-    /** Image. */
     @JvmField public val AOEDE: Voices = Voices(2)
+
+    @JvmField public val FENRIR: Voices = Voices(3)
+
+    @JvmField public val KORE: Voices = Voices(4)
+
+    @JvmField public val PUCK: Voices = Voices(5)
   }
 }

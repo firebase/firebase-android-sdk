@@ -77,8 +77,9 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
+    // todo change it back
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
+    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement> )
   }
 }
 
@@ -140,7 +141,7 @@ internal object PartSerializer :
     val jsonObject = element.jsonObject
     return when {
       "text" in jsonObject -> TextPart.Internal.serializer()
-      "functionCall" in jsonObject -> FunctionCallPart.Internal.serializer()
+      "functionCalls" in jsonObject -> FunctionCallPart.Internal.serializer()
       "functionResponse" in jsonObject -> FunctionResponsePart.Internal.serializer()
       "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
       "fileData" in jsonObject -> FileDataPart.Internal.serializer()
