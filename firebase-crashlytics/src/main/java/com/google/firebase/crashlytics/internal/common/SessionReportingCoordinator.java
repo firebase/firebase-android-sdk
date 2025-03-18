@@ -428,13 +428,13 @@ public class SessionReportingCoordinator {
   @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   public static String convertInputStreamToString(InputStream inputStream) throws IOException {
     try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-        byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
-        int length;
-        while ((length = bufferedInputStream.read(bytes)) != -1) {
-            byteArrayOutputStream.write(bytes, 0, length);
-        }
-        return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+      byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
+      int length;
+      while ((length = bufferedInputStream.read(bytes)) != -1) {
+        byteArrayOutputStream.write(bytes, 0, length);
+      }
+      return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
     }
   }
 
