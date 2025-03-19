@@ -43,6 +43,7 @@ class PostReleasePlugin : Plugin<Project> {
     val updatePinnedDependencies = registerUpdatePinnedDependenciesTask(project)
 
     project.tasks.register("postReleaseCleanup") {
+      // TODO(b/394606626): Add task for tagging releases
       dependsOn(versionBump, moveUnreleasedChanges, updatePinnedDependencies)
     }
   }

@@ -16,7 +16,10 @@
 
 package com.google.firebase.sessions
 
+import android.content.Context
+import android.util.Log
 import androidx.annotation.Keep
+import androidx.datastore.preferences.preferencesDataStore
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
@@ -28,7 +31,6 @@ import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -42,87 +44,66 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     listOf(
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
-        .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(sessionsSettings))
-        .add(Dependency.required(backgroundDispatcher))
-        .add(Dependency.required(sessionLifecycleServiceBinder))
-        .factory { container ->
-          FirebaseSessions(
-            container[firebaseApp],
-            container[sessionsSettings],
-            container[backgroundDispatcher],
-            container[sessionLifecycleServiceBinder],
-          )
-        }
+        .add(Dependency.required(firebaseSessionsComponent))
+        .factory { container -> container[firebaseSessionsComponent].firebaseSessions }
         .eagerInDefaultApp()
         .build(),
-      Component.builder(SessionGenerator::class.java)
-        .name("session-generator")
-        .factory { SessionGenerator(timeProvider = WallClock) }
-        .build(),
-      Component.builder(SessionFirelogPublisher::class.java)
-        .name("session-publisher")
-        .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(firebaseInstallationsApi))
-        .add(Dependency.required(sessionsSettings))
-        .add(Dependency.requiredProvider(transportFactory))
+      Component.builder(FirebaseSessionsComponent::class.java)
+        .name("fire-sessions-component")
+        .add(Dependency.required(appContext))
         .add(Dependency.required(backgroundDispatcher))
-        .factory { container ->
-          SessionFirelogPublisherImpl(
-            container[firebaseApp],
-            container[firebaseInstallationsApi],
-            container[sessionsSettings],
-            EventGDTLogger(container.getProvider(transportFactory)),
-            container[backgroundDispatcher],
-          )
-        }
-        .build(),
-      Component.builder(SessionsSettings::class.java)
-        .name("sessions-settings")
-        .add(Dependency.required(firebaseApp))
         .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(backgroundDispatcher))
+        .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
+        .add(Dependency.requiredProvider(transportFactory))
         .factory { container ->
-          SessionsSettings(
-            container[firebaseApp],
-            container[blockingDispatcher],
-            container[backgroundDispatcher],
-            container[firebaseInstallationsApi],
-          )
+          DaggerFirebaseSessionsComponent.builder()
+            .appContext(container[appContext])
+            .backgroundDispatcher(container[backgroundDispatcher])
+            .blockingDispatcher(container[blockingDispatcher])
+            .firebaseApp(container[firebaseApp])
+            .firebaseInstallationsApi(container[firebaseInstallationsApi])
+            .transportFactoryProvider(container.getProvider(transportFactory))
+            .build()
         }
-        .build(),
-      Component.builder(SessionDatastore::class.java)
-        .name("sessions-datastore")
-        .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(backgroundDispatcher))
-        .factory { container ->
-          SessionDatastoreImpl(
-            container[firebaseApp].applicationContext,
-            container[backgroundDispatcher],
-          )
-        }
-        .build(),
-      Component.builder(SessionLifecycleServiceBinder::class.java)
-        .name("sessions-service-binder")
-        .add(Dependency.required(firebaseApp))
-        .factory { container -> SessionLifecycleServiceBinderImpl(container[firebaseApp]) }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
 
   private companion object {
-    private const val LIBRARY_NAME = "fire-sessions"
+    const val TAG = "FirebaseSessions"
+    const val LIBRARY_NAME = "fire-sessions"
 
-    private val firebaseApp = unqualified(FirebaseApp::class.java)
-    private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
-    private val backgroundDispatcher =
-      qualified(Background::class.java, CoroutineDispatcher::class.java)
-    private val blockingDispatcher =
-      qualified(Blocking::class.java, CoroutineDispatcher::class.java)
-    private val transportFactory = unqualified(TransportFactory::class.java)
-    private val sessionsSettings = unqualified(SessionsSettings::class.java)
-    private val sessionLifecycleServiceBinder =
-      unqualified(SessionLifecycleServiceBinder::class.java)
+    val appContext = unqualified(Context::class.java)
+    val firebaseApp = unqualified(FirebaseApp::class.java)
+    val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
+    val backgroundDispatcher = qualified(Background::class.java, CoroutineDispatcher::class.java)
+    val blockingDispatcher = qualified(Blocking::class.java, CoroutineDispatcher::class.java)
+    val transportFactory = unqualified(TransportFactory::class.java)
+    val firebaseSessionsComponent = unqualified(FirebaseSessionsComponent::class.java)
+
+    init {
+      try {
+        ::preferencesDataStore.javaClass
+      } catch (ex: NoClassDefFoundError) {
+        Log.w(
+          TAG,
+          """
+          Your app is experiencing a known issue in the Android Gradle plugin, see https://issuetracker.google.com/328687152
+
+          It affects Java-only apps using AGP version 8.3.2 and under. To avoid the issue, either:
+
+          1. Upgrade Android Gradle plugin to 8.4.0+
+             Follow the guide at https://developer.android.com/build/agp-upgrade-assistant
+
+          2. Or, add the Kotlin plugin to your app
+             Follow the guide at https://developer.android.com/kotlin/add-kotlin
+
+          3. Or, do the technical workaround described in https://issuetracker.google.com/issues/328687152#comment3
+        """
+            .trimIndent(),
+        )
+      }
+    }
   }
 }

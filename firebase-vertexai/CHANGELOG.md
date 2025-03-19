@@ -1,6 +1,15 @@
 # Unreleased
-- [changed] Internal improvements to correctly handle empty model responses.
+* [changed] Added new exception type for quota exceeded scenarios.
+* [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
 
+
+# 16.2.0
+* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
+* [changed] Added support for modality-based token count. (#6658)
+* [feature] Added support for generating images with Imagen models.
+
+# 16.1.0
+* [changed] Internal improvements to correctly handle empty model responses.
 
 # 16.0.2
 * [fixed] Improved error message when using an invalid location. (#6428)
@@ -62,4 +71,3 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
-

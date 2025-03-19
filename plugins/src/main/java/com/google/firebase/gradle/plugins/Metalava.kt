@@ -40,7 +40,7 @@ val Project.metalavaConfig: Configuration
       ?: configurations.create("metalavaArtifacts") {
         this.dependencies.add(
           this@metalavaConfig.dependencies.create(
-            "com.android.tools.metalava:metalava:1.0.0-alpha06"
+            "com.android.tools.metalava:metalava:1.0.0-alpha11"
           )
         )
       }
@@ -55,7 +55,6 @@ fun Project.runMetalavaWithArgs(
 ) {
   val allArgs =
     listOf(
-      "--no-banner",
       "--hide",
       "HiddenSuperclass", // We allow having a hidden parent class
       "--hide",
@@ -128,7 +127,7 @@ abstract class GenerateApiTxtTask : DefaultTask() {
         classPath.joinToString(":"),
         "--api",
         apiTxtFile.get().asFile.absolutePath,
-        "--format=v2",
+        "--format=v3",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")
         else if (baselineFile.get().asFile.exists())
@@ -170,7 +169,7 @@ abstract class ApiInformationTask : DefaultTask() {
         classPath.joinToString(":"),
         "--api",
         outputApiFile.get().asFile.absolutePath,
-        "--format=v2",
+        "--format=v3",
       ),
       ignoreFailure = true,
     )
@@ -187,7 +186,7 @@ abstract class ApiInformationTask : DefaultTask() {
         "AddedMethod",
         "--error",
         "AddedField",
-        "--format=v2",
+        "--format=v3",
         "--no-color",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")

@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Updated `protolite-well-known-types` dependency to v18.0.1 [#6716]
+* [fixed] Fixed a bug that allowed invalid payload bytes value in network request metrics [#6721]
 
 
 # 21.0.4
