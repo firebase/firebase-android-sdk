@@ -55,7 +55,7 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
-  private val requestOptions: RequestOptions,
+  private val generativeBackend: GenerativeBackend,
   private val controller: APIController,
 ) {
   internal constructor(
@@ -67,6 +67,7 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
+    generativeBackend: GenerativeBackend,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
@@ -76,7 +77,7 @@ internal constructor(
     tools,
     toolConfig,
     systemInstruction,
-    requestOptions,
+    generativeBackend,
     APIController(
       apiKey,
       modelName,
@@ -216,8 +217,8 @@ internal constructor(
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
-    when (requestOptions.generativeBackend) {
-      GenerativeBackend.GOOGLE_AI -> CountTokensRequest.forGenAI(constructRequest(*prompt))
+    when (generativeBackend) {
+      GenerativeBackend.DEVELOPER_API -> CountTokensRequest.forGenAI(constructRequest(*prompt))
       GenerativeBackend.VERTEX_AI -> CountTokensRequest.forVertexAI(constructRequest(*prompt))
     }
 

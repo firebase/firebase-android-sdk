@@ -25,9 +25,8 @@ import kotlin.time.toDuration
 public class RequestOptions
 internal constructor(
   internal val timeout: Duration,
-  internal val endpoint: String = "https://staging-firebasevertexai.sandbox.googleapis.com",
+  internal val endpoint: String = "https://firebasevertexai.googleapis.com",
   internal val apiVersion: String = "v1beta",
-  internal val generativeBackend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
 ) {
 
   /**
@@ -35,14 +34,11 @@ internal constructor(
    *
    * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
    * the first request to first response.
-   * @param generativeBackend the backend that the request should go to.
    */
   @JvmOverloads
   public constructor(
     timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
-    generativeBackend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
   ) : this(
     timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
-    generativeBackend = generativeBackend,
   )
 }

@@ -55,10 +55,10 @@ internal data class CountTokensRequest(
     fun forGenAI(generateContentRequest: GenerateContentRequest) =
       CountTokensRequest(
         generateContentRequest =
-        generateContentRequest.model?.let {
-          generateContentRequest.copy(model = fullModelName(it))
-        }
-          ?: generateContentRequest
+          generateContentRequest.model?.let {
+            generateContentRequest.copy(model = fullModelName(it))
+          }
+            ?: generateContentRequest
       )
 
     fun forVertexAI(generateContentRequest: GenerateContentRequest) =
