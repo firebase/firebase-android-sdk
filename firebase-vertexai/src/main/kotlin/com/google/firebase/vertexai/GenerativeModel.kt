@@ -55,7 +55,7 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
-  private val generativeBackend: GenerativeBackend,
+  private val generativeBackend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
   private val controller: APIController,
 ) {
   internal constructor(
