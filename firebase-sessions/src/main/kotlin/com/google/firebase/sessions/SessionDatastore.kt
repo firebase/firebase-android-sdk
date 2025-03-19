@@ -16,19 +16,15 @@
 
 package com.google.firebase.sessions
 
-import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
-import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
@@ -64,8 +60,8 @@ internal interface SessionDatastore {
 internal class SessionDatastoreImpl
 @Inject
 constructor(
-  private val appContext: Context,
   @Background private val backgroundDispatcher: CoroutineContext,
+  @SessionDetailsDataStore private val dataStore: DataStore<Preferences>,
 ) : SessionDatastore {
 
   /** Most recent session from datastore is updated asynchronously whenever it changes */
@@ -76,7 +72,7 @@ constructor(
   }
 
   private val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
-    appContext.dataStore.data
+    dataStore.data
       .catch { exception ->
         Log.e(TAG, "Error reading stored session data.", exception)
         emit(emptyPreferences())
@@ -92,7 +88,7 @@ constructor(
   override fun updateSessionId(sessionId: String) {
     CoroutineScope(backgroundDispatcher).launch {
       try {
-        appContext.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
           preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
         }
       } catch (e: IOException) {
@@ -108,15 +104,5 @@ constructor(
 
   private companion object {
     private const val TAG = "FirebaseSessionsRepo"
-
-    private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(
-        name = SessionDataStoreConfigs.SESSIONS_CONFIG_NAME,
-        corruptionHandler =
-          ReplaceFileCorruptionHandler { ex ->
-            Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
-            emptyPreferences()
-          },
-      )
   }
 }
