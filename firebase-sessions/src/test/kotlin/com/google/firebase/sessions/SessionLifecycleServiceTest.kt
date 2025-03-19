@@ -16,7 +16,6 @@
 
 package com.google.firebase.sessions
 
-import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -30,10 +29,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.initialize
 import com.google.firebase.sessions.testing.FakeFirebaseApp
-import com.google.firebase.sessions.testing.FakeFirelogPublisher
-import com.google.firebase.sessions.testing.FakeSessionDatastore
+import com.google.firebase.sessions.testing.FirebaseSessionsFakeComponent
 import java.time.Duration
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -46,14 +43,11 @@ import org.robolectric.annotation.LooperMode
 import org.robolectric.annotation.LooperMode.Mode.PAUSED
 import org.robolectric.shadows.ShadowSystemClock
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @MediumTest
 @LooperMode(PAUSED)
 @RunWith(RobolectricTestRunner::class)
 internal class SessionLifecycleServiceTest {
-
-  lateinit var service: ServiceController<SessionLifecycleService>
-  lateinit var firebaseApp: FirebaseApp
+  private lateinit var service: ServiceController<SessionLifecycleService>
 
   data class CallbackMessage(val code: Int, val sessionId: String?)
 
@@ -68,16 +62,14 @@ internal class SessionLifecycleServiceTest {
 
   @Before
   fun setUp() {
-    val context = ApplicationProvider.getApplicationContext<Context>()
-    firebaseApp =
-      Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
-        FirebaseOptions.Builder()
-          .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
-          .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
-          .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
-      )
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
+        .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
+        .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
+        .build(),
+    )
     service = createService()
   }
 
@@ -99,7 +91,7 @@ internal class SessionLifecycleServiceTest {
   @Test
   fun binding_callbackOnInitialBindWhenSessionIdSet() {
     val client = TestCallbackHandler()
-    firebaseApp.get(FakeSessionDatastore::class.java).updateSessionId("123")
+    FirebaseSessionsFakeComponent.instance.fakeSessionDatastore.updateSessionId("123")
 
     bindToService(client)
 
@@ -222,11 +214,9 @@ internal class SessionLifecycleServiceTest {
   }
 
   private fun createServiceLaunchIntent(client: TestCallbackHandler) =
-    Intent(
-        ApplicationProvider.getApplicationContext<Context>(),
-        SessionLifecycleService::class.java
-      )
-      .apply { putExtra(SessionLifecycleService.CLIENT_CALLBACK_MESSENGER, Messenger(client)) }
+    Intent(ApplicationProvider.getApplicationContext(), SessionLifecycleService::class.java).apply {
+      putExtra(SessionLifecycleService.CLIENT_CALLBACK_MESSENGER, Messenger(client))
+    }
 
   private fun createService() =
     Robolectric.buildService(SessionLifecycleService::class.java).create()
@@ -237,7 +227,7 @@ internal class SessionLifecycleServiceTest {
   }
 
   private fun getUploadedSessions() =
-    firebaseApp.get(FakeFirelogPublisher::class.java).loggedSessions
+    FirebaseSessionsFakeComponent.instance.fakeFirelogPublisher.loggedSessions
 
   private fun getSessionId(msg: Message) =
     msg.data?.getString(SessionLifecycleService.SESSION_UPDATE_EXTRA)

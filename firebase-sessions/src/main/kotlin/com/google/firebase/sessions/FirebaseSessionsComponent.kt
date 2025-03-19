@@ -17,22 +17,48 @@
 package com.google.firebase.sessions
 
 import android.content.Context
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
+import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
+import com.google.firebase.sessions.settings.LocalOverrideSettings
+import com.google.firebase.sessions.settings.RemoteSettings
+import com.google.firebase.sessions.settings.RemoteSettingsFetcher
 import com.google.firebase.sessions.settings.SessionsSettings
+import com.google.firebase.sessions.settings.SettingsProvider
 import dagger.Binds
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
 import dagger.Provides
+import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 
-/** Dagger component to provide [FirebaseSessions] and its dependencies. */
+@Qualifier internal annotation class SessionConfigsDataStore
+
+@Qualifier internal annotation class SessionDetailsDataStore
+
+@Qualifier internal annotation class LocalOverrideSettingsProvider
+
+@Qualifier internal annotation class RemoteSettingsProvider
+
+/**
+ * Dagger component to provide [FirebaseSessions] and its dependencies.
+ *
+ * This gets configured and built in [FirebaseSessionsRegistrar.getComponents].
+ */
 @Singleton
 @Component(modules = [FirebaseSessionsComponent.MainModule::class])
 internal interface FirebaseSessionsComponent {
@@ -79,8 +105,59 @@ internal interface FirebaseSessionsComponent {
       impl: SessionLifecycleServiceBinderImpl
     ): SessionLifecycleServiceBinder
 
+    @Binds
+    @Singleton
+    fun crashlyticsSettingsFetcher(impl: RemoteSettingsFetcher): CrashlyticsSettingsFetcher
+
+    @Binds
+    @Singleton
+    @LocalOverrideSettingsProvider
+    fun localOverrideSettings(impl: LocalOverrideSettings): SettingsProvider
+
+    @Binds
+    @Singleton
+    @RemoteSettingsProvider
+    fun remoteSettings(impl: RemoteSettings): SettingsProvider
+
     companion object {
-      @Provides @Singleton fun sessionGenerator() = SessionGenerator(timeProvider = WallClock)
+      private const val TAG = "FirebaseSessions"
+
+      @Provides @Singleton fun timeProvider(): TimeProvider = TimeProviderImpl
+
+      @Provides @Singleton fun uuidGenerator(): UuidGenerator = UuidGeneratorImpl
+
+      @Provides
+      @Singleton
+      fun applicationInfo(firebaseApp: FirebaseApp): ApplicationInfo =
+        SessionEvents.getApplicationInfo(firebaseApp)
+
+      @Provides
+      @Singleton
+      @SessionConfigsDataStore
+      fun sessionConfigsDataStore(appContext: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+          corruptionHandler =
+            ReplaceFileCorruptionHandler { ex ->
+              Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)
+              emptyPreferences()
+            }
+        ) {
+          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SETTINGS_CONFIG_NAME)
+        }
+
+      @Provides
+      @Singleton
+      @SessionDetailsDataStore
+      fun sessionDetailsDataStore(appContext: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+          corruptionHandler =
+            ReplaceFileCorruptionHandler { ex ->
+              Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
+              emptyPreferences()
+            }
+        ) {
+          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME)
+        }
     }
   }
 }
