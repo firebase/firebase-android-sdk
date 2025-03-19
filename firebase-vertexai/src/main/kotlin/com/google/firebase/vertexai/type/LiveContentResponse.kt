@@ -1,8 +1,13 @@
 package com.google.firebase.vertexai.type
 
+public enum class Status {
+    NORMAL,
+    INTERRUPTED,
+    TURNCOMPLETE;
+}
 
 
-public class LiveContentResponse internal constructor(public val data: Content?, public val interrupted: Boolean?, public val functionCalls: List<FunctionCallPart>?) {
+public class LiveContentResponse internal constructor(public val data: Content?, public val status: Status = Status.NORMAL, public val functionCalls: List<FunctionCallPart>?) {
     /**
      * Convenience field representing all the text parts in the response as a single string, if they
      * exists.

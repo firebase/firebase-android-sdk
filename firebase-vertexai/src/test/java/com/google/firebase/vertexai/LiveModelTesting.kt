@@ -57,7 +57,8 @@ class LiveModelTesting {
             )
         runBlocking{
             val session =  generativeModel.connect()
-            session!!.send("Tell me a story", listOf(ContentModality.TEXT)).collect {
+            session!!.send("Tell me a story")
+            session!!.receive(listOf(ContentModality.TEXT)).collect {
                 println(it.text)
             }
 

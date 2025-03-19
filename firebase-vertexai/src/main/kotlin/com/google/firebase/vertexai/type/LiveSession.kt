@@ -10,9 +10,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -27,6 +29,8 @@ internal constructor(
 
   private val audioQueue = ConcurrentLinkedQueue<ByteArray>()
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
+  private var stopReceiving = false
+  private var startedReceiving = false
 
   @Serializable
   internal data class ClientContent(
@@ -59,27 +63,30 @@ internal constructor(
     if (isRecording) {
       return
     }
+    println("Started Receiving")
     isRecording = true
     audioHelper = AudioHelper()
     audioHelper!!.setupAudioTrack()
-
-    CoroutineScope(Dispatchers.Default).launch {
+    val scope = CoroutineScope(Dispatchers.Default)
+    CoroutineScope(Dispatchers.IO).launch {
       audioHelper!!.startRecording().collect {
         if (!isRecording) {
           cancel()
         }
+        println(it)
         audioQueue.add(it)
       }
     }
-    val minBufferSize =
-      AudioTrack.getMinBufferSize(
-        24000,
-        AudioFormat.CHANNEL_OUT_MONO,
-        AudioFormat.ENCODING_PCM_16BIT
-      )
-    var bytesRead = 0
-    var recordedData = ByteArray(minBufferSize * 2)
-    CoroutineScope(Dispatchers.Default).launch {
+
+    scope.launch {
+      val minBufferSize =
+        AudioTrack.getMinBufferSize(
+          24000,
+          AudioFormat.CHANNEL_OUT_MONO,
+          AudioFormat.ENCODING_PCM_16BIT
+        )
+      var bytesRead = 0
+      var recordedData = ByteArray(minBufferSize * 2)
       while (true) {
         if (!isRecording) {
           break
@@ -98,19 +105,19 @@ internal constructor(
         }
       }
     }
-    CoroutineScope(Dispatchers.Default).launch {
+    scope.launch {
       receive(listOf(ContentModality.AUDIO)).collect {
         if (!isRecording) {
           cancel()
         }
-        if (it.interrupted == true) {
+        if (it.status == Status.INTERRUPTED) {
           while (!playBackQueue.isEmpty()) playBackQueue.poll()
-        } else {
+        } else if(it.status == Status.NORMAL) {
           playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
         }
       }
     }
-    CoroutineScope(Dispatchers.Default).launch {
+    CoroutineScope(Dispatchers.IO).launch {
       while (true) {
         if (!isRecording) {
           break
@@ -124,6 +131,7 @@ internal constructor(
   }
 
   public fun stopAudioConversation() {
+    stopReceiving()
     isRecording = false
     if (audioHelper != null) {
       while (!playBackQueue.isEmpty()) playBackQueue.poll()
@@ -133,37 +141,60 @@ internal constructor(
     }
   }
 
+  public fun stopReceiving() {
+    if(!startedReceiving) {
+      stopReceiving = false
+      return
+    }
+    stopReceiving = true
+    startedReceiving = false
+  }
+
+  public class SessionAlreadyReceivingException: Exception("This session is already receiving. Please call stopReceiving() before calling this again.")
+
   public suspend fun receive(
     outputModalities: List<ContentModality>
   ): Flow<LiveContentResponse> {
+    if(startedReceiving) {
+      throw SessionAlreadyReceivingException()
+    }
+
     return flow {
+      startedReceiving = true
       while (true) {
+        println(stopReceiving)
+        if(stopReceiving) {
+          stopReceiving = false
+          break
+        }
         val message = session!!.incoming.receive()
         val receivedBytes = (message as Frame.Binary).readBytes()
         val receivedJson = receivedBytes.toString(Charsets.UTF_8)
+        if (receivedJson.contains("interrupted")) {
+          emit(LiveContentResponse(null, Status.INTERRUPTED, null))
+          continue
+        }
+        if(receivedJson.contains("turnComplete")) {
+          emit(LiveContentResponse(null, Status.TURNCOMPLETE, null))
+          continue
+        }
         try {
           val functionContent = Json.decodeFromString<ToolCallSetup>(receivedJson)
-//          val y = functionContent.toolCall.functionCalls.map { it.toPublic() as FunctionCallPart }
-//          emit(LiveContentResponse(null,false, y))
-          //emit(LiveContentResponse(null, functionContent.toolCall.functionCalls.map { it.toPublic() as FunctionCallPart })))
-          break
+          emit(LiveContentResponse(null, Status.NORMAL, functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }))
+          continue
         } catch (_: Exception){ }
-
         try {
-          if (receivedJson.contains("interrupted")) {
-            emit(LiveContentResponse(null, true, null))
-            continue
-          }
+
           val serverContent = Json.decodeFromString<ServerContentSetup>(receivedJson)
           val data = serverContent.serverContent.modelTurn.toPublic()
           if (outputModalities.contains(ContentModality.AUDIO)) {
             if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-              emit(LiveContentResponse(data, false, null))
+              emit(LiveContentResponse(data, Status.NORMAL, null))
             }
           }
           if (outputModalities.contains(ContentModality.TEXT)) {
             if (data.parts[0] is TextPart) {
-              emit(LiveContentResponse(data, false, null))
+              emit(LiveContentResponse(data, Status.NORMAL, null))
             }
           }
         } catch (e: Exception) {
@@ -178,6 +209,7 @@ internal constructor(
   ) {
     val jsonString =
       Json.encodeToString(MediaStreamingSetup(MediaChunks(mediaChunks.map { it.toInternal() })))
+    println(jsonString)
     session?.send(Frame.Text(jsonString))
   }
   /*
@@ -187,55 +219,18 @@ internal constructor(
 
    */
 
-  public fun send(content: Content, outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
-    return flow {
-      val jsonString =
-        Json.encodeToString(
-          ClientContentSetup(
-            ClientContent(listOf(content.toInternal()), true)
-          )
+  public suspend fun send(content: Content){
+    val jsonString =
+      Json.encodeToString(
+        ClientContentSetup(
+          ClientContent(listOf(content.toInternal()), true)
         )
-      session?.send(Frame.Text(jsonString))
-      while (true) {
-        try {
-          val message = session?.incoming?.receive() ?: continue
-          val receivedBytes = (message as Frame.Binary).readBytes()
-          val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-          println(receivedBytes)
-          try {
-            val functionContent = Json.decodeFromString<ToolCallSetup>(receivedJson)
-            emit(LiveContentResponse(null, false, functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }))
-//            val y = functionContent.toolCall.functionCalls.map { it.toPublic() as FunctionCallPart }
-//            emit(LiveContentResponse(null, false, y))
-            //emit(LiveContentResponse(null, functionContent.toolCall.functionCalls.map { it.toPublic() as FunctionCallPart })))
-            break
-          } catch (e: Exception){
-            println(e.message)
-          }
-          if (receivedJson.contains("turnComplete")) {
-            break
-          }
-          val serverContent = Json.decodeFromString<ServerContentSetup>(receivedJson)
-          val data = serverContent.serverContent.modelTurn.toPublic()
-
-          if (outputModalities.contains(ContentModality.AUDIO)) {
-            if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-              emit(LiveContentResponse(data, false, listOf()))
-            }
-          }
-          if (outputModalities.contains(ContentModality.TEXT)) {
-            if (data.parts[0] is TextPart) {
-              emit(LiveContentResponse(data, false, null))
-            }
-          }
-        } catch (e: Exception) {
-          println(e.message)
-        }
-      }
-    }
+      )
+    println(jsonString)
+    session?.send(Frame.Text(jsonString))
   }
-  public fun send(text: String, outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
-    return send(Content.Builder().text(text).build(), outputModalities)
+  public suspend fun send(text: String){
+     send(Content.Builder().text(text).build())
 
   }
 

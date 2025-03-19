@@ -143,7 +143,8 @@ internal constructor(
 
   fun getBidiEndpoint(): String {
     val vertexAiUrl =
-      "wss://daily-firebaseml.sandbox.googleapis.com/ws/google.firebase.machinelearning.v2beta.LlmBidiService/BidiGenerateContent"
+      "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/us-central1"
+
     return "$vertexAiUrl?key=$key"
   }
 
