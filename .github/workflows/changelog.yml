@@ -17,7 +17,7 @@ jobs:
       with:
         fetch-depth: 100
         submodules: true
-    - uses: ruby/setup-ruby@v1
+    - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
       with:
         ruby-version: '2.7'
     - name: Setup Bundler

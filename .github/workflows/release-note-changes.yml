@@ -54,7 +54,7 @@ jobs:
           fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
 
       - name: Add PR Comment
-        uses: mshick/add-pr-comment@v2.8.1
+        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
         continue-on-error: true
         with:
           status: ${{ steps.generate-comment.outcome }}

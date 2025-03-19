@@ -26,7 +26,7 @@ jobs:
         run: |
           ./gradlew plugins:check
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@82082dac68ad6a19d980f8ce817e108b9f496c2a
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
         with:
           files: "**/build/test-results/**/*.xml"
           check_name: "plugins test results"

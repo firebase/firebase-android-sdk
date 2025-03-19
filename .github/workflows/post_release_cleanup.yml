@@ -26,7 +26,7 @@ jobs:
           ./gradlew postReleaseCleanup
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
           committer: google-oss-bot <firebase-oss-bot@google.com>
@@ -41,6 +41,6 @@ jobs:
           title: '${{ inputs.name}} mergeback'
           body: |
             Auto-generated PR for cleaning up release ${{ inputs.name}}
-            
+
             NO_RELEASE_CHANGE
           commit-message: 'Post release cleanup for ${{ inputs.name }}'

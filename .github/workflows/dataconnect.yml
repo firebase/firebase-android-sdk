@@ -147,7 +147,7 @@ jobs:
 
       - name: Create AVD
         if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
@@ -187,7 +187,7 @@ jobs:
 
       - name: Gradle connectedCheck
         id: connectedCheck
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
         # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
         # A later step in this "job" will fail the job if this step fails

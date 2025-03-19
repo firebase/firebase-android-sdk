@@ -72,7 +72,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
       - name: firebase-firestore Integ Tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
@@ -137,7 +137,7 @@ jobs:
 
       # create composite indexes with Terraform
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
       - name: Terraform Init
         run: |
           cd firebase-firestore
@@ -164,7 +164,7 @@ jobs:
 
       - name: Firestore Named DB Integ Tests
         timeout-minutes: 20
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
@@ -227,7 +227,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
 
       - name: Firestore Nightly Integ Tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
