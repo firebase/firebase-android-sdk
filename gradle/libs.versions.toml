@@ -68,7 +68,6 @@ runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.1.14"
 serialization = "1.5.1"
-serialization-plugin = "1.8.22"
 slf4jNop = "2.0.9"
 spotless = "7.0.0.BETA3"
 testServices = "1.2.0"
@@ -231,7 +230,7 @@ maven-resolver = [
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "gradleErrorpronePlugin" }
