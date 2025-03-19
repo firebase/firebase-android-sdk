@@ -18,8 +18,8 @@ package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.testing.FakeTimeProvider
+import com.google.firebase.sessions.testing.FakeUuidGenerator
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
-import java.util.UUID
 import org.junit.Test
 
 class SessionGeneratorTest {
@@ -41,9 +41,7 @@ class SessionGeneratorTest {
   @Test(expected = UninitializedPropertyAccessException::class)
   fun currentSession_beforeGenerate_throwsUninitialized() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
     sessionGenerator.currentSession
   }
@@ -51,9 +49,7 @@ class SessionGeneratorTest {
   @Test
   fun hasGenerateSession_beforeGenerate_returnsFalse() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
     assertThat(sessionGenerator.hasGenerateSession).isFalse()
   }
@@ -61,9 +57,7 @@ class SessionGeneratorTest {
   @Test
   fun hasGenerateSession_afterGenerate_returnsTrue() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
     sessionGenerator.generateNewSession()
 
@@ -73,9 +67,7 @@ class SessionGeneratorTest {
   @Test
   fun generateNewSession_generatesValidSessionIds() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
     sessionGenerator.generateNewSession()
 
@@ -91,10 +83,7 @@ class SessionGeneratorTest {
   @Test
   fun generateNewSession_generatesValidSessionDetails() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-        uuidGenerator = UUIDs()::next,
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
     sessionGenerator.generateNewSession()
 
@@ -117,10 +106,7 @@ class SessionGeneratorTest {
   @Test
   fun generateNewSession_incrementsSessionIndex_keepsFirstSessionId() {
     val sessionGenerator =
-      SessionGenerator(
-        timeProvider = FakeTimeProvider(),
-        uuidGenerator = UUIDs()::next,
-      )
+      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
     val firstSessionDetails = sessionGenerator.generateNewSession()
 
@@ -170,22 +156,9 @@ class SessionGeneratorTest {
       )
   }
 
-  private class UUIDs(val names: List<String> = listOf(UUID_1, UUID_2, UUID_3)) {
-    var index = -1
-
-    fun next(): UUID {
-      index = (index + 1).coerceAtMost(names.size - 1)
-      return UUID.fromString(names[index])
-    }
-  }
-
-  @Suppress("SpellCheckingInspection") // UUIDs are not words.
   companion object {
-    const val UUID_1 = "11111111-1111-1111-1111-111111111111"
     const val SESSION_ID_1 = "11111111111111111111111111111111"
-    const val UUID_2 = "22222222-2222-2222-2222-222222222222"
     const val SESSION_ID_2 = "22222222222222222222222222222222"
-    const val UUID_3 = "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
     const val SESSION_ID_3 = "cccccccccccccccccccccccccccccccc"
   }
 }

@@ -49,6 +49,7 @@ internal data class CountTokensRequest(
   val contents: List<Content.Internal>? = null,
   val tools: List<Tool.Internal>? = null,
   @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
+  val generationConfig: GenerationConfig.Internal? = null
 ) : Request {
   companion object {
 
@@ -67,6 +68,7 @@ internal data class CountTokensRequest(
         contents = generateContentRequest.contents,
         tools = generateContentRequest.tools,
         systemInstruction = generateContentRequest.systemInstruction,
+        generationConfig = generateContentRequest.generationConfig,
       )
   }
 }
