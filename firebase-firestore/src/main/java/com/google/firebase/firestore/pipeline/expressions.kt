@@ -22,6 +22,7 @@ import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
+import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Constant.Companion.of
 import com.google.firebase.firestore.util.CustomClassMapper
@@ -29,13 +30,16 @@ import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 import java.util.Date
 import kotlin.reflect.KFunction1
-import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 
 abstract class Expr internal constructor() {
   internal companion object {
-    internal fun toExprOrConstant(value: Any?): Expr = toExpr(value, ::toExprOrConstant) ?: pojoToExprOrConstant(CustomClassMapper.convertToPlainJavaTypes(value))
+    internal fun toExprOrConstant(value: Any?): Expr =
+      toExpr(value, ::toExprOrConstant)
+        ?: pojoToExprOrConstant(CustomClassMapper.convertToPlainJavaTypes(value))
 
-    private fun pojoToExprOrConstant(value: Any?): Expr = toExpr(value, ::pojoToExprOrConstant) ?: throw IllegalArgumentException("Unknown type: $value")
+    private fun pojoToExprOrConstant(value: Any?): Expr =
+      toExpr(value, ::pojoToExprOrConstant)
+        ?: throw IllegalArgumentException("Unknown type: $value")
 
     private fun toExpr(value: Any?, toExpr: KFunction1<Any?, Expr>): Expr? {
       if (value == null) return Constant.nullValue()
@@ -50,11 +54,15 @@ abstract class Expr internal constructor() {
         is Blob -> of(value)
         is DocumentReference -> of(value)
         is VectorValue -> of(value)
-        is Map<*, *> -> MapOfExpr(value.entries.associate {
-          val key = it.key
-          if (key is String) key to toExpr(it.value) else
-            throw IllegalArgumentException("Maps with non-string keys are not supported")
-        })
+        is Value -> of(value)
+        is Map<*, *> ->
+          MapOfExpr(
+            value.entries.associate {
+              val key = it.key
+              if (key is String) key to toExpr(it.value)
+              else throw IllegalArgumentException("Maps with non-string keys are not supported")
+            }
+          )
         is List<*> -> ListOfExprs(value.map(toExpr).toTypedArray())
         else -> null
       }
@@ -66,6 +74,28 @@ abstract class Expr internal constructor() {
     internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<out Expr> =
       others.map(::toExprOrConstant).toTypedArray()
   }
+
+  fun bitAnd(right: Expr) = Function.bitAnd(this, right)
+
+  fun bitAnd(right: Any) = Function.bitAnd(this, right)
+
+  fun bitOr(right: Expr) = Function.bitOr(this, right)
+
+  fun bitOr(right: Any) = Function.bitOr(this, right)
+
+  fun bitXor(right: Expr) = Function.bitXor(this, right)
+
+  fun bitXor(right: Any) = Function.bitXor(this, right)
+
+  fun bitNot() = Function.bitNot(this)
+
+  fun bitLeftShift(numberExpr: Expr) = Function.bitLeftShift(this, numberExpr)
+
+  fun bitLeftShift(number: Int) = Function.bitLeftShift(this, number)
+
+  fun bitRightShift(numberExpr: Expr) = Function.bitRightShift(this, numberExpr)
+
+  fun bitRightShift(number: Int) = Function.bitRightShift(this, number)
 
   /**
    * Assigns an alias to this expression.
@@ -291,6 +321,8 @@ abstract class Expr internal constructor() {
 
   fun lte(other: Any) = Function.lte(this, other)
 
+  fun exists() = Function.exists(this)
+
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
 
@@ -315,8 +347,7 @@ class ExprWithAlias internal constructor(private val alias: String, private val 
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 }
 
-class Field private constructor(private val fieldPath: ModelFieldPath) :
-  Selectable() {
+class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
 
     @JvmStatic
@@ -329,9 +360,6 @@ class Field private constructor(private val fieldPath: ModelFieldPath) :
 
     @JvmStatic
     fun of(fieldPath: FieldPath): Field {
-      if (fieldPath == FieldPath.documentId()) {
-        return Field(FieldPath.documentId().internalPath)
-      }
       return Field(fieldPath.internalPath)
     }
   }
@@ -347,35 +375,101 @@ class Field private constructor(private val fieldPath: ModelFieldPath) :
 internal class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = MapValue.newBuilder()
-    for (expr in expressions) {
-      builder.putFields(expr.key, expr.value.toProto(userDataReader))
+    for ((key, value) in expressions) {
+      builder.putFields(key, value.toProto(userDataReader))
     }
     return Value.newBuilder().setMapValue(builder).build()
   }
 }
 
 internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
-  override fun toProto(userDataReader: UserDataReader): Value = encodeValue(expressions.map{it.toProto(userDataReader)})
+  override fun toProto(userDataReader: UserDataReader): Value =
+    encodeValue(expressions.map { it.toProto(userDataReader) })
 }
 
 open class Function
 protected constructor(private val name: String, private val params: Array<out Expr>) : Expr() {
-  private constructor(name: String, param: Expr, vararg params: Any) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
-  private constructor(name: String, fieldName: String, vararg params: Any) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
+  private constructor(
+    name: String,
+    param: Expr,
+    vararg params: Any
+  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  private constructor(
+    name: String,
+    fieldName: String,
+    vararg params: Any
+  ) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
   companion object {
 
     @JvmStatic fun generic(name: String, vararg expr: Expr) = Function(name, expr)
 
     @JvmStatic
-    fun and(condition: BooleanExpr, vararg conditions: BooleanExpr) = BooleanExpr("and", condition, *conditions)
+    fun and(condition: BooleanExpr, vararg conditions: BooleanExpr) =
+      BooleanExpr("and", condition, *conditions)
 
     @JvmStatic
-    fun or(condition: BooleanExpr, vararg conditions: BooleanExpr) = BooleanExpr("or", condition, *conditions)
+    fun or(condition: BooleanExpr, vararg conditions: BooleanExpr) =
+      BooleanExpr("or", condition, *conditions)
 
     @JvmStatic
-    fun xor(condition: BooleanExpr, vararg conditions: BooleanExpr) = BooleanExpr("xor", condition, *conditions)
+    fun xor(condition: BooleanExpr, vararg conditions: BooleanExpr) =
+      BooleanExpr("xor", condition, *conditions)
 
     @JvmStatic fun not(condition: BooleanExpr) = BooleanExpr("not", condition)
+
+    @JvmStatic fun bitAnd(left: Expr, right: Expr) = Function("bit_and", left, right)
+
+    @JvmStatic fun bitAnd(left: Expr, right: Any) = Function("bit_and", left, right)
+
+    @JvmStatic fun bitAnd(fieldName: String, right: Expr) = Function("bit_and", fieldName, right)
+
+    @JvmStatic fun bitAnd(fieldName: String, right: Any) = Function("bit_and", fieldName, right)
+
+    @JvmStatic fun bitOr(left: Expr, right: Expr) = Function("bit_or", left, right)
+
+    @JvmStatic fun bitOr(left: Expr, right: Any) = Function("bit_or", left, right)
+
+    @JvmStatic fun bitOr(fieldName: String, right: Expr) = Function("bit_or", fieldName, right)
+
+    @JvmStatic fun bitOr(fieldName: String, right: Any) = Function("bit_or", fieldName, right)
+
+    @JvmStatic fun bitXor(left: Expr, right: Expr) = Function("bit_xor", left, right)
+
+    @JvmStatic fun bitXor(left: Expr, right: Any) = Function("bit_xor", left, right)
+
+    @JvmStatic fun bitXor(fieldName: String, right: Expr) = Function("bit_xor", fieldName, right)
+
+    @JvmStatic fun bitXor(fieldName: String, right: Any) = Function("bit_xor", fieldName, right)
+
+    @JvmStatic fun bitNot(left: Expr) = Function("bit_not", left)
+
+    @JvmStatic fun bitNot(fieldName: String) = Function("bit_not", fieldName)
+
+    @JvmStatic
+    fun bitLeftShift(left: Expr, numberExpr: Expr) = Function("bit_left_shift", left, numberExpr)
+
+    @JvmStatic fun bitLeftShift(left: Expr, number: Int) = Function("bit_left_shift", left, number)
+
+    @JvmStatic
+    fun bitLeftShift(fieldName: String, numberExpr: Expr) =
+      Function("bit_left_shift", fieldName, numberExpr)
+
+    @JvmStatic
+    fun bitLeftShift(fieldName: String, number: Int) = Function("bit_left_shift", fieldName, number)
+
+    @JvmStatic
+    fun bitRightShift(left: Expr, numberExpr: Expr) = Function("bit_right_shift", left, numberExpr)
+
+    @JvmStatic
+    fun bitRightShift(left: Expr, number: Int) = Function("bit_right_shift", left, number)
+
+    @JvmStatic
+    fun bitRightShift(fieldName: String, numberExpr: Expr) =
+      Function("bit_right_shift", fieldName, numberExpr)
+
+    @JvmStatic
+    fun bitRightShift(fieldName: String, number: Int) =
+      Function("bit_right_shift", fieldName, number)
 
     @JvmStatic fun add(left: Expr, right: Expr) = Function("add", left, right)
 
@@ -417,9 +511,13 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun mod(fieldName: String, other: Any) = Function("mod", fieldName, other)
 
-    @JvmStatic fun inAny(array: Expr, values: List<Any>) = BooleanExpr("in", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    @JvmStatic
+    fun inAny(array: Expr, values: List<Any>) =
+      BooleanExpr("in", array, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    @JvmStatic fun inAny(fieldName: String, values: List<Any>) = BooleanExpr("in", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    @JvmStatic
+    fun inAny(fieldName: String, values: List<Any>) =
+      BooleanExpr("in", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     @JvmStatic fun notInAny(array: Expr, values: List<Any>) = not(inAny(array, values))
 
@@ -434,7 +532,8 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun isNull(fieldName: String) = BooleanExpr("is_null", fieldName)
 
     @JvmStatic
-    fun replaceFirst(value: Expr, find: Expr, replace: Expr) = Function("replace_first", value, find, replace)
+    fun replaceFirst(value: Expr, find: Expr, replace: Expr) =
+      Function("replace_first", value, find, replace)
 
     @JvmStatic
     fun replaceFirst(value: Expr, find: String, replace: String) =
@@ -445,10 +544,12 @@ protected constructor(private val name: String, private val params: Array<out Ex
       Function("replace_first", fieldName, find, replace)
 
     @JvmStatic
-    fun replaceAll(value: Expr, find: Expr, replace: Expr) = Function("replace_all", value, find, replace)
+    fun replaceAll(value: Expr, find: Expr, replace: Expr) =
+      Function("replace_all", value, find, replace)
 
     @JvmStatic
-    fun replaceAll(value: Expr, find: String, replace: String) = Function("replace_all", value, find, replace)
+    fun replaceAll(value: Expr, find: String, replace: String) =
+      Function("replace_all", value, find, replace)
 
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String) =
@@ -468,71 +569,94 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun like(fieldName: String, pattern: Expr) = BooleanExpr("like", fieldName, pattern)
 
-    @JvmStatic fun like(fieldName: String, pattern: String) = BooleanExpr("like", fieldName, pattern)
-
-    @JvmStatic fun regexContains(expr: Expr, pattern: Expr) =  BooleanExpr("regex_contains", expr, pattern)
-
-    @JvmStatic fun regexContains(expr: Expr, pattern: String) =  BooleanExpr("regex_contains", expr, pattern)
+    @JvmStatic
+    fun like(fieldName: String, pattern: String) = BooleanExpr("like", fieldName, pattern)
 
     @JvmStatic
-    fun regexContains(fieldName: String, pattern: Expr) =  BooleanExpr("regex_contains", fieldName, pattern)
+    fun regexContains(expr: Expr, pattern: Expr) = BooleanExpr("regex_contains", expr, pattern)
 
     @JvmStatic
-    fun regexContains(fieldName: String, pattern: String) =  BooleanExpr("regex_contains", fieldName, pattern)
+    fun regexContains(expr: Expr, pattern: String) = BooleanExpr("regex_contains", expr, pattern)
+
+    @JvmStatic
+    fun regexContains(fieldName: String, pattern: Expr) =
+      BooleanExpr("regex_contains", fieldName, pattern)
+
+    @JvmStatic
+    fun regexContains(fieldName: String, pattern: String) =
+      BooleanExpr("regex_contains", fieldName, pattern)
 
     @JvmStatic fun regexMatch(expr: Expr, pattern: Expr) = BooleanExpr("regex_match", expr, pattern)
 
-    @JvmStatic fun regexMatch(expr: Expr, pattern: String) = BooleanExpr("regex_match", expr, pattern)
+    @JvmStatic
+    fun regexMatch(expr: Expr, pattern: String) = BooleanExpr("regex_match", expr, pattern)
 
-    @JvmStatic fun regexMatch(fieldName: String, pattern: Expr) = BooleanExpr("regex_match", fieldName, pattern)
+    @JvmStatic
+    fun regexMatch(fieldName: String, pattern: Expr) =
+      BooleanExpr("regex_match", fieldName, pattern)
 
-    @JvmStatic fun regexMatch(fieldName: String, pattern: String) = BooleanExpr("regex_match", fieldName, pattern)
+    @JvmStatic
+    fun regexMatch(fieldName: String, pattern: String) =
+      BooleanExpr("regex_match", fieldName, pattern)
 
     @JvmStatic fun logicalMax(left: Expr, right: Expr) = Function("logical_max", left, right)
 
     @JvmStatic fun logicalMax(left: Expr, right: Any) = Function("logical_max", left, right)
 
-    @JvmStatic fun logicalMax(fieldName: String, other: Expr) = Function("logical_max", fieldName, other)
+    @JvmStatic
+    fun logicalMax(fieldName: String, other: Expr) = Function("logical_max", fieldName, other)
 
-    @JvmStatic fun logicalMax(fieldName: String, other: Any) = Function("logical_max", fieldName, other)
+    @JvmStatic
+    fun logicalMax(fieldName: String, other: Any) = Function("logical_max", fieldName, other)
 
     @JvmStatic fun logicalMin(left: Expr, right: Expr) = Function("logical_min", left, right)
 
     @JvmStatic fun logicalMin(left: Expr, right: Any) = Function("logical_min", left, right)
 
-    @JvmStatic fun logicalMin(fieldName: String, other: Expr) = Function("logical_min", fieldName, other)
+    @JvmStatic
+    fun logicalMin(fieldName: String, other: Expr) = Function("logical_min", fieldName, other)
 
-    @JvmStatic fun logicalMin(fieldName: String, other: Any) = Function("logical_min", fieldName, other)
+    @JvmStatic
+    fun logicalMin(fieldName: String, other: Any) = Function("logical_min", fieldName, other)
 
     @JvmStatic fun reverse(expr: Expr) = Function("reverse", expr)
 
     @JvmStatic fun reverse(fieldName: String) = Function("reverse", fieldName)
 
-    @JvmStatic fun strContains(expr: Expr, substring: Expr) = BooleanExpr("str_contains", expr, substring)
-
-    @JvmStatic fun strContains(expr: Expr, substring: String) = BooleanExpr("str_contains", expr, substring)
+    @JvmStatic
+    fun strContains(expr: Expr, substring: Expr) = BooleanExpr("str_contains", expr, substring)
 
     @JvmStatic
-    fun strContains(fieldName: String, substring: Expr) = BooleanExpr("str_contains", fieldName, substring)
+    fun strContains(expr: Expr, substring: String) = BooleanExpr("str_contains", expr, substring)
 
     @JvmStatic
-    fun strContains(fieldName: String, substring: String) = BooleanExpr("str_contains", fieldName, substring)
+    fun strContains(fieldName: String, substring: Expr) =
+      BooleanExpr("str_contains", fieldName, substring)
+
+    @JvmStatic
+    fun strContains(fieldName: String, substring: String) =
+      BooleanExpr("str_contains", fieldName, substring)
 
     @JvmStatic fun startsWith(expr: Expr, prefix: Expr) = BooleanExpr("starts_with", expr, prefix)
 
     @JvmStatic fun startsWith(expr: Expr, prefix: String) = BooleanExpr("starts_with", expr, prefix)
 
-    @JvmStatic fun startsWith(fieldName: String, prefix: Expr) = BooleanExpr("starts_with", fieldName, prefix)
+    @JvmStatic
+    fun startsWith(fieldName: String, prefix: Expr) = BooleanExpr("starts_with", fieldName, prefix)
 
-    @JvmStatic fun startsWith(fieldName: String, prefix: String) = BooleanExpr("starts_with", fieldName, prefix)
+    @JvmStatic
+    fun startsWith(fieldName: String, prefix: String) =
+      BooleanExpr("starts_with", fieldName, prefix)
 
     @JvmStatic fun endsWith(expr: Expr, suffix: Expr) = BooleanExpr("ends_with", expr, suffix)
 
     @JvmStatic fun endsWith(expr: Expr, suffix: String) = BooleanExpr("ends_with", expr, suffix)
 
-    @JvmStatic fun endsWith(fieldName: String, suffix: Expr) = BooleanExpr("ends_with", fieldName, suffix)
+    @JvmStatic
+    fun endsWith(fieldName: String, suffix: Expr) = BooleanExpr("ends_with", fieldName, suffix)
 
-    @JvmStatic fun endsWith(fieldName: String, suffix: String) = BooleanExpr("ends_with", fieldName, suffix)
+    @JvmStatic
+    fun endsWith(fieldName: String, suffix: String) = BooleanExpr("ends_with", fieldName, suffix)
 
     @JvmStatic fun toLower(expr: Expr) = Function("to_lower", expr)
 
@@ -556,9 +680,11 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun strConcat(first: Expr, vararg rest: Any) = Function("str_concat", first, *rest)
 
-    @JvmStatic fun strConcat(fieldName: String, vararg rest: Expr) = Function("str_concat", fieldName, *rest)
+    @JvmStatic
+    fun strConcat(fieldName: String, vararg rest: Expr) = Function("str_concat", fieldName, *rest)
 
-    @JvmStatic fun strConcat(fieldName: String, vararg rest: Any) = Function("str_concat", fieldName, *rest)
+    @JvmStatic
+    fun strConcat(fieldName: String, vararg rest: Any) = Function("str_concat", fieldName, *rest)
 
     @JvmStatic fun mapGet(map: Expr, key: Expr) = Function("map_get", map, key)
 
@@ -568,48 +694,65 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun mapGet(fieldName: String, key: String) = Function("map_get", fieldName, key)
 
-    @JvmStatic fun cosineDistance(vector1: Expr, vector2: Expr) = Function("cosine_distance", vector1, vector2)
+    @JvmStatic
+    fun cosineDistance(vector1: Expr, vector2: Expr) = Function("cosine_distance", vector1, vector2)
 
     @JvmStatic
-    fun cosineDistance(vector1: Expr, vector2: DoubleArray) = Function("cosine_distance", vector1, Constant.vector(vector2))
+    fun cosineDistance(vector1: Expr, vector2: DoubleArray) =
+      Function("cosine_distance", vector1, Constant.vector(vector2))
 
     @JvmStatic
-    fun cosineDistance(vector1: Expr, vector2: VectorValue) = Function("cosine_distance", vector1, vector2)
+    fun cosineDistance(vector1: Expr, vector2: VectorValue) =
+      Function("cosine_distance", vector1, vector2)
 
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: Expr) = Function("cosine_distance", fieldName, vector)
+    fun cosineDistance(fieldName: String, vector: Expr) =
+      Function("cosine_distance", fieldName, vector)
 
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: DoubleArray) = Function("cosine_distance", fieldName, Constant.vector(vector))
+    fun cosineDistance(fieldName: String, vector: DoubleArray) =
+      Function("cosine_distance", fieldName, Constant.vector(vector))
 
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: VectorValue) = Function("cosine_distance", fieldName, vector)
-
-    @JvmStatic fun dotProduct(vector1: Expr, vector2: Expr) = Function("dot_product", vector1, vector2)
-
-    @JvmStatic fun dotProduct(vector1: Expr, vector2: DoubleArray) = Function("dot_product", vector1, Constant.vector(vector2))
-
-    @JvmStatic fun dotProduct(vector1: Expr, vector2: VectorValue) = Function("dot_product", vector1, vector2)
-
-    @JvmStatic fun dotProduct(fieldName: String, vector: Expr) = Function("dot_product", fieldName, vector)
+    fun cosineDistance(fieldName: String, vector: VectorValue) =
+      Function("cosine_distance", fieldName, vector)
 
     @JvmStatic
-    fun dotProduct(fieldName: String, vector: DoubleArray) = Function("dot_product", fieldName, Constant.vector(vector))
+    fun dotProduct(vector1: Expr, vector2: Expr) = Function("dot_product", vector1, vector2)
 
     @JvmStatic
-    fun dotProduct(fieldName: String, vector: VectorValue) = Function("dot_product", fieldName, vector)
+    fun dotProduct(vector1: Expr, vector2: DoubleArray) =
+      Function("dot_product", vector1, Constant.vector(vector2))
 
     @JvmStatic
-    fun euclideanDistance(vector1: Expr, vector2: Expr) = Function("euclidean_distance", vector1, vector2)
+    fun dotProduct(vector1: Expr, vector2: VectorValue) = Function("dot_product", vector1, vector2)
 
     @JvmStatic
-    fun euclideanDistance(vector1: Expr, vector2: DoubleArray) = Function("euclidean_distance", vector1, Constant.vector(vector2))
+    fun dotProduct(fieldName: String, vector: Expr) = Function("dot_product", fieldName, vector)
 
     @JvmStatic
-    fun euclideanDistance(vector1: Expr, vector2: VectorValue) = Function("euclidean_distance", vector1, vector2)
+    fun dotProduct(fieldName: String, vector: DoubleArray) =
+      Function("dot_product", fieldName, Constant.vector(vector))
 
     @JvmStatic
-    fun euclideanDistance(fieldName: String, vector: Expr) = Function("euclidean_distance", fieldName, vector)
+    fun dotProduct(fieldName: String, vector: VectorValue) =
+      Function("dot_product", fieldName, vector)
+
+    @JvmStatic
+    fun euclideanDistance(vector1: Expr, vector2: Expr) =
+      Function("euclidean_distance", vector1, vector2)
+
+    @JvmStatic
+    fun euclideanDistance(vector1: Expr, vector2: DoubleArray) =
+      Function("euclidean_distance", vector1, Constant.vector(vector2))
+
+    @JvmStatic
+    fun euclideanDistance(vector1: Expr, vector2: VectorValue) =
+      Function("euclidean_distance", vector1, vector2)
+
+    @JvmStatic
+    fun euclideanDistance(fieldName: String, vector: Expr) =
+      Function("euclidean_distance", fieldName, vector)
 
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: DoubleArray) =
@@ -625,27 +768,35 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun unixMicrosToTimestamp(input: Expr) = Function("unix_micros_to_timestamp", input)
 
-    @JvmStatic fun unixMicrosToTimestamp(fieldName: String) = Function("unix_micros_to_timestamp", fieldName)
+    @JvmStatic
+    fun unixMicrosToTimestamp(fieldName: String) = Function("unix_micros_to_timestamp", fieldName)
 
     @JvmStatic fun timestampToUnixMicros(input: Expr) = Function("timestamp_to_unix_micros", input)
 
-    @JvmStatic fun timestampToUnixMicros(fieldName: String) = Function("timestamp_to_unix_micros", fieldName)
+    @JvmStatic
+    fun timestampToUnixMicros(fieldName: String) = Function("timestamp_to_unix_micros", fieldName)
 
     @JvmStatic fun unixMillisToTimestamp(input: Expr) = Function("unix_millis_to_timestamp", input)
 
-    @JvmStatic fun unixMillisToTimestamp(fieldName: String) = Function("unix_millis_to_timestamp", fieldName)
+    @JvmStatic
+    fun unixMillisToTimestamp(fieldName: String) = Function("unix_millis_to_timestamp", fieldName)
 
     @JvmStatic fun timestampToUnixMillis(input: Expr) = Function("timestamp_to_unix_millis", input)
 
-    @JvmStatic fun timestampToUnixMillis(fieldName: String) = Function("timestamp_to_unix_millis", fieldName)
+    @JvmStatic
+    fun timestampToUnixMillis(fieldName: String) = Function("timestamp_to_unix_millis", fieldName)
 
-    @JvmStatic fun unixSecondsToTimestamp(input: Expr) = Function("unix_seconds_to_timestamp", input)
+    @JvmStatic
+    fun unixSecondsToTimestamp(input: Expr) = Function("unix_seconds_to_timestamp", input)
 
-    @JvmStatic fun unixSecondsToTimestamp(fieldName: String) = Function("unix_seconds_to_timestamp", fieldName)
+    @JvmStatic
+    fun unixSecondsToTimestamp(fieldName: String) = Function("unix_seconds_to_timestamp", fieldName)
 
-    @JvmStatic fun timestampToUnixSeconds(input: Expr) = Function("timestamp_to_unix_seconds", input)
+    @JvmStatic
+    fun timestampToUnixSeconds(input: Expr) = Function("timestamp_to_unix_seconds", input)
 
-    @JvmStatic fun timestampToUnixSeconds(fieldName: String) = Function("timestamp_to_unix_seconds", fieldName)
+    @JvmStatic
+    fun timestampToUnixSeconds(fieldName: String) = Function("timestamp_to_unix_seconds", fieldName)
 
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr) =
@@ -727,52 +878,74 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun lte(fieldName: String, right: Any) = BooleanExpr("lte", fieldName, right)
 
-    @JvmStatic fun arrayConcat(array: Expr, vararg arrays: Expr) = Function("array_concat", array, *arrays)
+    @JvmStatic
+    fun arrayConcat(array: Expr, vararg arrays: Expr) = Function("array_concat", array, *arrays)
 
     @JvmStatic
-    fun arrayConcat(fieldName: String, vararg arrays: Expr) = Function("array_concat", fieldName, *arrays)
-
-    @JvmStatic fun arrayConcat(array: Expr, arrays: List<Any>) = Function("array_concat", array, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+    fun arrayConcat(fieldName: String, vararg arrays: Expr) =
+      Function("array_concat", fieldName, *arrays)
 
     @JvmStatic
-    fun arrayConcat(fieldName: String, arrays: List<Any>) = Function("array_concat", fieldName, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+    fun arrayConcat(array: Expr, arrays: List<Any>) =
+      Function("array_concat", array, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+
+    @JvmStatic
+    fun arrayConcat(fieldName: String, arrays: List<Any>) =
+      Function("array_concat", fieldName, ListOfExprs(toArrayOfExprOrConstant(arrays)))
 
     @JvmStatic fun arrayReverse(array: Expr) = Function("array_reverse", array)
 
     @JvmStatic fun arrayReverse(fieldName: String) = Function("array_reverse", fieldName)
 
-    @JvmStatic fun arrayContains(array: Expr, value: Expr) = BooleanExpr("array_contains", array, value)
-
-    @JvmStatic fun arrayContains(fieldName: String, value: Expr) = BooleanExpr("array_contains", fieldName, value)
-
-    @JvmStatic fun arrayContains(array: Expr, value: Any) = BooleanExpr("array_contains", array, value)
-
-    @JvmStatic fun arrayContains(fieldName: String, value: Any) = BooleanExpr("array_contains", fieldName, value)
+    @JvmStatic
+    fun arrayContains(array: Expr, value: Expr) = BooleanExpr("array_contains", array, value)
 
     @JvmStatic
-    fun arrayContainsAll(array: Expr, values: List<Any>) = BooleanExpr("array_contains_all", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContains(fieldName: String, value: Expr) =
+      BooleanExpr("array_contains", fieldName, value)
 
     @JvmStatic
-    fun arrayContainsAll(fieldName: String, values: List<Any>) = BooleanExpr("array_contains_all", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContains(array: Expr, value: Any) = BooleanExpr("array_contains", array, value)
 
     @JvmStatic
-    fun arrayContainsAny(array: Expr, values: List<Any>) = BooleanExpr("array_contains_any", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContains(fieldName: String, value: Any) =
+      BooleanExpr("array_contains", fieldName, value)
 
     @JvmStatic
-    fun arrayContainsAny(fieldName: String, values: List<Any>) = BooleanExpr("array_contains_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContainsAll(array: Expr, values: List<Any>) =
+      BooleanExpr("array_contains_all", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+
+    @JvmStatic
+    fun arrayContainsAll(fieldName: String, values: List<Any>) =
+      BooleanExpr("array_contains_all", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+
+    @JvmStatic
+    fun arrayContainsAny(array: Expr, values: List<Any>) =
+      BooleanExpr("array_contains_any", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+
+    @JvmStatic
+    fun arrayContainsAny(fieldName: String, values: List<Any>) =
+      BooleanExpr("array_contains_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     @JvmStatic fun arrayLength(array: Expr) = Function("array_length", array)
 
     @JvmStatic fun arrayLength(fieldName: String) = Function("array_length", fieldName)
 
-    @JvmStatic fun ifThen(condition: BooleanExpr, then: Expr) =
-      Function("if", condition, then, Constant.NULL)
+    @JvmStatic
+    fun ifThen(condition: BooleanExpr, then: Expr) = Function("if", condition, then, Constant.NULL)
 
-    @JvmStatic fun ifThen(condition: BooleanExpr, then: Any) = Function("if", condition, then, Constant.NULL)
+    @JvmStatic
+    fun ifThen(condition: BooleanExpr, then: Any) = Function("if", condition, then, Constant.NULL)
 
-    @JvmStatic fun ifThenElse(condition: BooleanExpr, then: Expr, `else`: Expr) = Function("if", condition, then, `else`)
+    @JvmStatic
+    fun ifThenElse(condition: BooleanExpr, then: Expr, `else`: Expr) =
+      Function("if", condition, then, `else`)
 
-    @JvmStatic fun ifThenElse(condition: BooleanExpr, then: Any, `else`: Any) = Function("if", condition, then, `else`)
+    @JvmStatic
+    fun ifThenElse(condition: BooleanExpr, then: Any, `else`: Any) =
+      Function("if", condition, then, `else`)
+
+    @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
   }
 
   override fun toProto(userDataReader: UserDataReader): Value {
@@ -787,13 +960,24 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
 class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   Function(name, params) {
-    internal constructor(name: String, param: Expr, vararg params: Any) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
-    internal constructor(name: String, fieldName: String, vararg params: Any) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
+  internal constructor(
+    name: String,
+    params: List<Any>
+  ) : this(name, toArrayOfExprOrConstant(params))
+  internal constructor(
+    name: String,
+    param: Expr,
+    vararg params: Any
+  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  internal constructor(
+    name: String,
+    fieldName: String,
+    vararg params: Any
+  ) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
 
   companion object {
 
     @JvmStatic fun generic(name: String, vararg expr: Expr) = BooleanExpr(name, expr)
-
   }
 
   fun not() = not(this)
@@ -838,39 +1022,3 @@ class Ordering private constructor(private val expr: Expr, private val dir: Dire
       )
       .build()
 }
-
-// class BitAnd(left: Expr, right: Expr) : Function("bit_and", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
-
-// class BitOr(left: Expr, right: Expr) : Function("bit_or", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
-
-// class BitXor(left: Expr, right: Expr) : Function("bit_xor", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
-
-// class BitNot(left: Expr, right: Expr) : Function("bit_not", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
-
-// class BitLeftShift(left: Expr, right: Expr) : Function("bit_left_shift", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
-
-// class BitRightShift(left: Expr, right: Expr) : Function("bit_right_shift", left, right) {
-//    constructor(left: Expr, right: Any) : this(left, castToExprOrConvertToConstant(right))
-//    constructor(fieldName: String, right: Expr) : this(Field.of(fieldName), right)
-//    constructor(fieldName: String, right: Any) : this(Field.of(fieldName), right)
-// }
