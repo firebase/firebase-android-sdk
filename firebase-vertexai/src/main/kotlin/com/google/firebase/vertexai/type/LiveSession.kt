@@ -33,6 +33,7 @@ internal constructor(
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
   private var startedReceiving = false
   private var receiveChannel: Channel<Frame> = Channel()
+  private var functionCallChannel: Channel<List<FunctionCallPart>> = Channel()
 
   @Serializable
   internal data class ClientContent(
@@ -51,7 +52,7 @@ internal constructor(
   )
   @Serializable
   internal data class ToolResponse(
-     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
+    val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
   )
 
   @Serializable
@@ -70,10 +71,14 @@ internal constructor(
 
   @Serializable internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
 
-  public suspend fun startAudioConversation() {
+  public fun receiveFunctionCalls(): Flow<List<FunctionCallPart>> {
+    return functionCallChannel.receiveAsFlow()
+  }
+  public suspend fun startAudioConversation(){
     if (isRecording) {
       return
     }
+    functionCallChannel = Channel()
     println("Started Receiving")
     isRecording = true
     audioHelper = AudioHelper()
@@ -124,6 +129,9 @@ internal constructor(
         if (it.status == Status.INTERRUPTED) {
           while (!playBackQueue.isEmpty()) playBackQueue.poll()
         } else if(it.status == Status.NORMAL) {
+          if(!it.functionCalls.isNullOrEmpty()) {
+            functionCallChannel.send(it.functionCalls)
+          }
           playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
         }
       }
@@ -217,7 +225,7 @@ internal constructor(
   }
 
   public suspend fun sendFunctionResponse(
-     functionList: List<FunctionResponsePart>
+    functionList: List<FunctionResponsePart>
   ) {
     val jsonString = Json.encodeToString(ToolResponseSetup(ToolResponse(functionList.map{it.toInternalFunctionCall()})))
     session?.send(Frame.Text(jsonString))
@@ -249,7 +257,7 @@ internal constructor(
     session?.send(Frame.Text(jsonString))
   }
   public suspend fun send(text: String){
-     send(Content.Builder().text(text).build())
+    send(Content.Builder().text(text).build())
 
   }
 
@@ -257,3 +265,4 @@ internal constructor(
     session?.close()
   }
 }
+
