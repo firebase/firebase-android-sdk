@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Use multi-process DataStore instead of Preferences DataStore
 
 # 2.1.1
 * [unchanged] Updated to keep SDK versions aligned.
@@ -16,20 +16,8 @@ updates.
 * [changed] Updated datastore dependency to v1.1.3 to
   fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
 
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
-
 # 2.0.9
 * [fixed] Make AQS resilient to background init in multi-process apps.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
 
 # 2.0.7
 * [fixed] Removed extraneous logs that risk leaking internal identifiers.
