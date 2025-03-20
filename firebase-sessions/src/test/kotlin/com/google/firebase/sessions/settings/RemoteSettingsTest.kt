@@ -16,24 +16,22 @@
 
 package com.google.firebase.sessions.settings
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.SessionEvents
+import com.google.firebase.sessions.TimeProvider
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
-import kotlin.coroutines.CoroutineContext
+import com.google.firebase.sessions.testing.FakeSettingsCache
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -53,22 +51,16 @@ class RemoteSettingsTest {
   fun remoteSettings_successfulFetchCachesValues() =
     runTest(UnconfinedTestDispatcher()) {
       val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcher = FakeRemoteConfigFetcher()
 
       val remoteSettings =
         buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+          FakeTimeProvider(),
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          FakeSettingsCache(),
         )
 
       runCurrent()
@@ -90,120 +82,100 @@ class RemoteSettingsTest {
     }
 
   @Test
-  fun remoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() =
-    runTest(UnconfinedTestDispatcher()) {
-      val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
-      val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-      val fakeFetcher = FakeRemoteConfigFetcher()
+  fun remoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() = runTest {
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val fakeFetcher = FakeRemoteConfigFetcher()
 
-      val remoteSettings =
-        buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-          firebaseInstallations,
-          SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
-        )
+    val remoteSettings =
+      buildRemoteSettings(
+        FakeTimeProvider(),
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp),
+        fakeFetcher,
+        FakeSettingsCache(),
+      )
 
-      runCurrent()
+    runCurrent()
 
-      assertThat(remoteSettings.sessionEnabled).isNull()
-      assertThat(remoteSettings.samplingRate).isNull()
-      assertThat(remoteSettings.sessionRestartTimeout).isNull()
+    assertThat(remoteSettings.sessionEnabled).isNull()
+    assertThat(remoteSettings.samplingRate).isNull()
+    assertThat(remoteSettings.sessionRestartTimeout).isNull()
 
-      val fetchedResponse = JSONObject(VALID_RESPONSE)
-      fetchedResponse.getJSONObject("app_quality").remove("sessions_enabled")
-      fakeFetcher.responseJSONObject = fetchedResponse
-      remoteSettings.updateSettings()
+    val fetchedResponse = JSONObject(VALID_RESPONSE)
+    fetchedResponse.getJSONObject("app_quality").remove("sessions_enabled")
+    fakeFetcher.responseJSONObject = fetchedResponse
+    remoteSettings.updateSettings()
 
-      runCurrent()
+    runCurrent()
 
-      assertThat(remoteSettings.sessionEnabled).isNull()
-      assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-      assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isNull()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
-      remoteSettings.clearCachedSettings()
-    }
+    remoteSettings.clearCachedSettings()
+  }
 
   @Test
-  fun remoteSettings_successfulReFetchUpdatesCache() =
-    runTest(UnconfinedTestDispatcher()) {
-      val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
-      val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-      val fakeFetcher = FakeRemoteConfigFetcher()
+  fun remoteSettings_successfulReFetchUpdatesCache() = runTest {
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val fakeFetcher = FakeRemoteConfigFetcher()
+    val fakeTimeProvider = FakeTimeProvider()
 
-      val remoteSettings =
-        buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-          firebaseInstallations,
-          SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
-        )
+    val remoteSettings =
+      buildRemoteSettings(
+        fakeTimeProvider,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp),
+        fakeFetcher,
+        FakeSettingsCache(fakeTimeProvider),
+      )
 
-      val fetchedResponse = JSONObject(VALID_RESPONSE)
-      fetchedResponse.getJSONObject("app_quality").put("cache_duration", 1)
-      fakeFetcher.responseJSONObject = fetchedResponse
-      remoteSettings.updateSettings()
+    val fetchedResponse = JSONObject(VALID_RESPONSE)
+    fetchedResponse.getJSONObject("app_quality").put("cache_duration", 1)
+    fakeFetcher.responseJSONObject = fetchedResponse
+    remoteSettings.updateSettings()
 
-      runCurrent()
+    runCurrent()
 
-      assertThat(remoteSettings.sessionEnabled).isFalse()
-      assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-      assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isFalse()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
-      fetchedResponse.getJSONObject("app_quality").put("sessions_enabled", true)
-      fetchedResponse.getJSONObject("app_quality").put("sampling_rate", 0.25)
-      fetchedResponse.getJSONObject("app_quality").put("session_timeout_seconds", 1200)
+    fetchedResponse.getJSONObject("app_quality").put("sessions_enabled", true)
+    fetchedResponse.getJSONObject("app_quality").put("sampling_rate", 0.25)
+    fetchedResponse.getJSONObject("app_quality").put("session_timeout_seconds", 1200)
 
-      // TODO(mrober): Fix these so we don't need to sleep. Maybe use FakeTime?
-      // Sleep for a second before updating configs
-      Thread.sleep(2000)
+    fakeTimeProvider.addInterval(31.minutes)
 
-      fakeFetcher.responseJSONObject = fetchedResponse
-      remoteSettings.updateSettings()
+    fakeFetcher.responseJSONObject = fetchedResponse
+    remoteSettings.updateSettings()
 
-      runCurrent()
+    runCurrent()
 
-      assertThat(remoteSettings.sessionEnabled).isTrue()
-      assertThat(remoteSettings.samplingRate).isEqualTo(0.25)
-      assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(20.minutes)
+    assertThat(remoteSettings.sessionEnabled).isTrue()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.25)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(20.minutes)
 
-      remoteSettings.clearCachedSettings()
-    }
+    remoteSettings.clearCachedSettings()
+  }
 
   @Test
   fun remoteSettings_successfulFetchWithEmptyConfigRetainsOldConfigs() =
     runTest(UnconfinedTestDispatcher()) {
       val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcher = FakeRemoteConfigFetcher()
+      val fakeTimeProvider = FakeTimeProvider()
 
       val remoteSettings =
         buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+          fakeTimeProvider,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          FakeSettingsCache(),
         )
 
       val fetchedResponse = JSONObject(VALID_RESPONSE)
@@ -212,6 +184,7 @@ class RemoteSettingsTest {
       remoteSettings.updateSettings()
 
       runCurrent()
+      fakeTimeProvider.addInterval(31.seconds)
 
       assertThat(remoteSettings.sessionEnabled).isFalse()
       assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
@@ -226,6 +199,7 @@ class RemoteSettingsTest {
       remoteSettings.updateSettings()
 
       runCurrent()
+      Thread.sleep(30)
 
       assertThat(remoteSettings.sessionEnabled).isFalse()
       assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
@@ -249,7 +223,6 @@ class RemoteSettingsTest {
       //    - Third fetch should exit even earlier, never having gone into the mutex.
 
       val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcherWithDelay =
         FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE), networkDelay = 3.seconds)
@@ -260,16 +233,11 @@ class RemoteSettingsTest {
 
       val remoteSettingsWithDelay =
         buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+          FakeTimeProvider(),
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcherWithDelay,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          configsFetcher = fakeFetcherWithDelay,
+          FakeSettingsCache(),
         )
 
       // Do the first fetch. This one should fetched the configsFetcher.
@@ -298,8 +266,6 @@ class RemoteSettingsTest {
   }
 
   internal companion object {
-    const val SESSION_TEST_CONFIGS_NAME = "firebase_session_settings_test"
-
     const val VALID_RESPONSE =
       """
       {
@@ -329,14 +295,14 @@ class RemoteSettingsTest {
      * the test code.
      */
     fun buildRemoteSettings(
-      backgroundDispatcher: CoroutineContext,
+      timeProvider: TimeProvider,
       firebaseInstallationsApi: FirebaseInstallationsApi,
       appInfo: ApplicationInfo,
       configsFetcher: CrashlyticsSettingsFetcher,
       settingsCache: SettingsCache,
     ): RemoteSettings =
       RemoteSettings_Factory.create(
-          { backgroundDispatcher },
+          { timeProvider },
           { firebaseInstallationsApi },
           { appInfo },
           { configsFetcher },
