@@ -17,7 +17,7 @@
 package com.google.firebase.sessions.settings
 
 import android.net.Uri
-import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.sessions.ApplicationInfo
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -42,7 +42,7 @@ internal class RemoteSettingsFetcher
 @Inject
 constructor(
   private val appInfo: ApplicationInfo,
-  @Background private val blockingDispatcher: CoroutineContext,
+  @Blocking private val blockingDispatcher: CoroutineContext,
 ) : CrashlyticsSettingsFetcher {
   @Suppress("BlockingMethodInNonBlockingContext") // blockingDispatcher is safe for blocking calls.
   override suspend fun doConfigFetch(
