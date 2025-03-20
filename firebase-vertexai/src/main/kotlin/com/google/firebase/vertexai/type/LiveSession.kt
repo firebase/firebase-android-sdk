@@ -46,6 +46,15 @@ internal constructor(
   )
 
   @Serializable
+  internal data class ToolResponseSetup(
+    val toolResponse: ToolResponse
+  )
+  @Serializable
+  internal data class ToolResponse(
+     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
+  )
+
+  @Serializable
   internal data class ServerContentSetup(
     @SerialName("serverContent") val serverContent: ServerContent
   )
@@ -205,6 +214,13 @@ internal constructor(
         }
       }
     }
+  }
+
+  public suspend fun sendFunctionResponse(
+     functionList: List<FunctionResponsePart>
+  ) {
+    val jsonString = Json.encodeToString(ToolResponseSetup(ToolResponse(functionList.map{it.toInternalFunctionCall()})))
+    session?.send(Frame.Text(jsonString))
   }
 
   public suspend fun sendMediaStream(
