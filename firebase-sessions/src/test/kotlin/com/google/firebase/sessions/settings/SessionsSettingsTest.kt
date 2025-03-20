@@ -20,7 +20,6 @@ import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.SessionEvents
-import com.google.firebase.sessions.settings.RemoteSettingsTest.Companion.buildRemoteSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
@@ -28,9 +27,6 @@ import com.google.firebase.sessions.testing.FakeSettingsCache
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
@@ -38,7 +34,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionsSettingsTest {
 
@@ -89,128 +84,117 @@ class SessionsSettingsTest {
         remoteSettings = FakeSettingsProvider(),
       )
 
-    runCurrent()
-
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
   }
 
   @Test
-  fun sessionSettings_remoteSettingsOverrideDefaultsWhenPresent() =
-    runTest(UnconfinedTestDispatcher()) {
-      val firebaseApp = FakeFirebaseApp().firebaseApp
-      val context = firebaseApp.applicationContext
-      val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-      val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
+  fun sessionSettings_remoteSettingsOverrideDefaultsWhenPresent() = runTest {
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
-      val remoteSettings =
-        buildRemoteSettings(
-          FakeTimeProvider(),
-          firebaseInstallations,
-          SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcher,
-          FakeSettingsCache(),
-        )
+    val remoteSettings =
+      RemoteSettings(
+        FakeTimeProvider(),
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp),
+        fakeFetcher,
+        FakeSettingsCache(),
+      )
 
-      val sessionsSettings =
-        SessionsSettings(
-          localOverrideSettings = LocalOverrideSettings(context),
-          remoteSettings = remoteSettings,
-        )
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = LocalOverrideSettings(context),
+        remoteSettings = remoteSettings,
+      )
 
-      sessionsSettings.updateSettings()
+    sessionsSettings.updateSettings()
 
-      runCurrent()
+    assertThat(sessionsSettings.sessionsEnabled).isFalse()
+    assertThat(sessionsSettings.samplingRate).isEqualTo(0.75)
+    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
-      assertThat(sessionsSettings.sessionsEnabled).isFalse()
-      assertThat(sessionsSettings.samplingRate).isEqualTo(0.75)
-      assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(40.minutes)
-
-      remoteSettings.clearCachedSettings()
-    }
+    remoteSettings.clearCachedSettings()
+  }
 
   @Test
-  fun sessionSettings_manifestOverridesRemoteSettingsAndDefaultsWhenPresent() =
-    runTest(UnconfinedTestDispatcher()) {
-      val metadata = Bundle()
-      metadata.putBoolean("firebase_sessions_enabled", true)
-      metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
-      metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
-      val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
-      val context = firebaseApp.applicationContext
-      val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-      val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
+  fun sessionSettings_manifestOverridesRemoteSettingsAndDefaultsWhenPresent() = runTest {
+    val metadata = Bundle()
+    metadata.putBoolean("firebase_sessions_enabled", true)
+    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
+    metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
+    val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
+    val context = firebaseApp.applicationContext
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
-      val remoteSettings =
-        buildRemoteSettings(
-          FakeTimeProvider(),
-          firebaseInstallations,
-          SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcher,
-          FakeSettingsCache(),
-        )
+    val remoteSettings =
+      RemoteSettings(
+        FakeTimeProvider(),
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp),
+        fakeFetcher,
+        FakeSettingsCache(),
+      )
 
-      val sessionsSettings =
-        SessionsSettings(
-          localOverrideSettings = LocalOverrideSettings(context),
-          remoteSettings = remoteSettings,
-        )
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = LocalOverrideSettings(context),
+        remoteSettings = remoteSettings,
+      )
 
-      sessionsSettings.updateSettings()
+    sessionsSettings.updateSettings()
 
-      runCurrent()
+    assertThat(sessionsSettings.sessionsEnabled).isTrue()
+    assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
+    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)
 
-      assertThat(sessionsSettings.sessionsEnabled).isTrue()
-      assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
-      assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)
-
-      remoteSettings.clearCachedSettings()
-    }
+    remoteSettings.clearCachedSettings()
+  }
 
   @Test
-  fun sessionSettings_invalidManifestConfigsDoNotOverride() =
-    runTest(UnconfinedTestDispatcher()) {
-      val metadata = Bundle()
-      metadata.putBoolean("firebase_sessions_enabled", false)
-      metadata.putDouble("firebase_sessions_sampling_rate", -0.2) // Invalid
-      metadata.putInt("firebase_sessions_sessions_restart_timeout", -2) // Invalid
-      val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
-      val context = firebaseApp.applicationContext
-      val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-      val fakeFetcher = FakeRemoteConfigFetcher()
-      val invalidResponse =
-        VALID_RESPONSE.replace(
-          "\"sampling_rate\":0.75,",
-          "\"sampling_rate\":1.2,", // Invalid
-        )
-      fakeFetcher.responseJSONObject = JSONObject(invalidResponse)
+  fun sessionSettings_invalidManifestConfigsDoNotOverride() = runTest {
+    val metadata = Bundle()
+    metadata.putBoolean("firebase_sessions_enabled", false)
+    metadata.putDouble("firebase_sessions_sampling_rate", -0.2) // Invalid
+    metadata.putInt("firebase_sessions_sessions_restart_timeout", -2) // Invalid
+    val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
+    val context = firebaseApp.applicationContext
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val fakeFetcher = FakeRemoteConfigFetcher()
+    val invalidResponse =
+      VALID_RESPONSE.replace(
+        "\"sampling_rate\":0.75,",
+        "\"sampling_rate\":1.2,", // Invalid
+      )
+    fakeFetcher.responseJSONObject = JSONObject(invalidResponse)
 
-      val remoteSettings =
-        buildRemoteSettings(
-          FakeTimeProvider(),
-          firebaseInstallations,
-          SessionEvents.getApplicationInfo(firebaseApp),
-          fakeFetcher,
-          FakeSettingsCache(),
-        )
+    val remoteSettings =
+      RemoteSettings(
+        FakeTimeProvider(),
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp),
+        fakeFetcher,
+        FakeSettingsCache(),
+      )
 
-      val sessionsSettings =
-        SessionsSettings(
-          localOverrideSettings = LocalOverrideSettings(context),
-          remoteSettings = remoteSettings,
-        )
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = LocalOverrideSettings(context),
+        remoteSettings = remoteSettings,
+      )
 
-      sessionsSettings.updateSettings()
+    sessionsSettings.updateSettings()
 
-      runCurrent()
+    assertThat(sessionsSettings.sessionsEnabled).isFalse() // Manifest
+    assertThat(sessionsSettings.samplingRate).isEqualTo(1.0) // SDK default
+    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(40.minutes) // Remote
 
-      assertThat(sessionsSettings.sessionsEnabled).isFalse() // Manifest
-      assertThat(sessionsSettings.samplingRate).isEqualTo(1.0) // SDK default
-      assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(40.minutes) // Remote
-
-      remoteSettings.clearCachedSettings()
-    }
+    remoteSettings.clearCachedSettings()
+  }
 
   @After
   fun cleanUp() {
