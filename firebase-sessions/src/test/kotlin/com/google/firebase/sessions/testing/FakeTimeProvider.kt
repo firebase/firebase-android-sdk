@@ -16,17 +16,19 @@
 
 package com.google.firebase.sessions.testing
 
+import com.google.firebase.sessions.Time
 import com.google.firebase.sessions.TimeProvider
-import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
+import kotlin.time.DurationUnit.MILLISECONDS
 
 /**
  * Fake [TimeProvider] that allows programmatically elapsing time forward.
  *
  * Default [elapsedRealtime] is [Duration.ZERO] until the time is moved using [addInterval].
  */
-class FakeTimeProvider(private val initialTimeUs: Long = TEST_SESSION_TIMESTAMP_US) : TimeProvider {
+internal class FakeTimeProvider(private val initialTime: Time = TEST_SESSION_TIMESTAMP) :
+  TimeProvider {
   private var elapsed = Duration.ZERO
 
   fun addInterval(interval: Duration) {
@@ -38,5 +40,5 @@ class FakeTimeProvider(private val initialTimeUs: Long = TEST_SESSION_TIMESTAMP_
 
   override fun elapsedRealtime(): Duration = elapsed
 
-  override fun currentTimeUs(): Long = initialTimeUs + elapsed.toLong(DurationUnit.MICROSECONDS)
+  override fun currentTime(): Time = Time(ms = initialTime.ms + elapsed.toLong(MILLISECONDS))
 }
