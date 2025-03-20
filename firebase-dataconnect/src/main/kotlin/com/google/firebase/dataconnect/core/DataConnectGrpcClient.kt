@@ -17,15 +17,16 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
+import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Status
@@ -52,7 +53,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectError>,
+    val errors: List<DataConnectOperationFailureResponse.ErrorInfo>,
   )
 
   suspend fun executeQuery(
@@ -74,7 +75,7 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() }
     )
   }
 
@@ -97,7 +98,7 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() }
     )
   }
 
@@ -138,26 +139,23 @@ internal class DataConnectGrpcClient(
 internal object DataConnectGrpcClientGlobals {
   private fun ListValue.toPathSegment() =
     valuesList.map {
-      when (val kind = it.kindCase) {
-        Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
-        Value.KindCase.NUMBER_VALUE ->
-          DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
-        else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
+      when (it.kindCase) {
+        Value.KindCase.STRING_VALUE -> PathSegment.Field(it.stringValue)
+        Value.KindCase.NUMBER_VALUE -> PathSegment.ListIndex(it.numberValue.toInt())
+        // The cases below are expected to never occur; however, implement some logic for them
+        // to avoid things like throwing exceptions in those cases.
+        Value.KindCase.NULL_VALUE -> PathSegment.Field("null")
+        Value.KindCase.BOOL_VALUE -> PathSegment.Field(it.boolValue.toString())
+        Value.KindCase.LIST_VALUE -> PathSegment.Field(it.listValue.toCompactString())
+        Value.KindCase.STRUCT_VALUE -> PathSegment.Field(it.structValue.toCompactString())
+        else -> PathSegment.Field(it.toString())
       }
     }
 
-  private fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
-    buildList {
-      this@toSourceLocations.forEach {
-        add(DataConnectError.SourceLocation(line = it.line, column = it.column))
-      }
-    }
-
-  fun GraphqlError.toDataConnectError() =
-    DataConnectError(
+  fun GraphqlError.toErrorInfoImpl() =
+    DataConnectOperationFailureResponseImpl.ErrorInfoImpl(
       message = message,
       path = path.toPathSegment(),
-      this.locationsList.toSourceLocations()
     )
 
   fun <T> DataConnectGrpcClient.OperationResult.deserialize(

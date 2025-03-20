@@ -15,17 +15,18 @@
  */
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
+import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -192,7 +193,7 @@ class DataConnectGrpcClientUnitTest {
       dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
-      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
+      OperationResult(data = responseData, errors = responseErrors.map { it.errorInfo })
   }
 
   @Test
@@ -209,7 +210,7 @@ class DataConnectGrpcClientUnitTest {
       dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
-      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
+      OperationResult(data = responseData, errors = responseErrors.map { it.errorInfo })
   }
 
   @Test
@@ -492,7 +493,7 @@ class DataConnectGrpcClientUnitTest {
 
   private data class GraphqlErrorInfo(
     val graphqlError: GraphqlError,
-    val dataConnectError: DataConnectError,
+    val errorInfo: ErrorInfoImpl,
   ) {
     companion object {
       private val randomPathComponents =
@@ -510,28 +511,24 @@ class DataConnectGrpcClientUnitTest {
 
       fun random(rs: RandomSource): GraphqlErrorInfo {
 
-        val dataConnectErrorPath = mutableListOf<DataConnectError.PathSegment>()
+        val dataConnectErrorPath = mutableListOf<PathSegment>()
         val graphqlErrorPath = ListValue.newBuilder()
         repeat(6) {
           if (rs.random.nextFloat() < 0.33f) {
             val pathComponent = randomInts.next(rs)
-            dataConnectErrorPath.add(DataConnectError.PathSegment.ListIndex(pathComponent))
+            dataConnectErrorPath.add(PathSegment.ListIndex(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathComponent.toDouble()))
           } else {
             val pathComponent = randomPathComponents.next(rs)
-            dataConnectErrorPath.add(DataConnectError.PathSegment.Field(pathComponent))
+            dataConnectErrorPath.add(PathSegment.Field(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathComponent))
           }
         }
 
-        val dataConnectErrorLocations = mutableListOf<DataConnectError.SourceLocation>()
         val graphqlErrorLocations = mutableListOf<SourceLocation>()
         repeat(3) {
           val line = randomInts.next(rs)
           val column = randomInts.next(rs)
-          dataConnectErrorLocations.add(
-            DataConnectError.SourceLocation(line = line, column = column)
-          )
           graphqlErrorLocations.add(
             SourceLocation.newBuilder().setLine(line).setColumn(column).build()
           )
@@ -547,14 +544,13 @@ class DataConnectGrpcClientUnitTest {
             }
             .build()
 
-        val dataConnectError =
-          DataConnectError(
+        val errorInfo =
+          ErrorInfoImpl(
             message = message,
             path = dataConnectErrorPath.toList(),
-            locations = dataConnectErrorLocations.toList()
           )
 
-        return GraphqlErrorInfo(graphqlError, dataConnectError)
+        return GraphqlErrorInfo(graphqlError, errorInfo)
       }
     }
   }
@@ -567,7 +563,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should ignore the module given with DataConnectUntypedData`() {
-    val errors = listOf(Arb.dataConnect.dataConnectError().next())
+    val errors = Arb.dataConnect.operationErrors().next()
     val operationResult = OperationResult(buildStructProto { put("foo", 42.0) }, errors)
     val result = operationResult.deserialize(DataConnectUntypedData, mockk<SerializersModule>())
     result shouldBe DataConnectUntypedData(mapOf("foo" to 42.0), errors)
