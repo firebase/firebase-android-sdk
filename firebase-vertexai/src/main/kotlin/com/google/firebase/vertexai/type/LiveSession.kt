@@ -71,7 +71,7 @@ internal constructor(
 
   @Serializable internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
 
-  public fun receiveFunctionCalls(): Flow<List<FunctionCallPart>> {
+  public fun receiveAudioConvoFunctionCalls(): Flow<List<FunctionCallPart>> {
     return functionCallChannel.receiveAsFlow()
   }
   public suspend fun startAudioConversation(){
@@ -79,7 +79,6 @@ internal constructor(
       return
     }
     functionCallChannel = Channel()
-    println("Started Receiving")
     isRecording = true
     audioHelper = AudioHelper()
     audioHelper!!.setupAudioTrack()
@@ -131,8 +130,9 @@ internal constructor(
         } else if(it.status == Status.NORMAL) {
           if(!it.functionCalls.isNullOrEmpty()) {
             functionCallChannel.send(it.functionCalls)
+          } else {
+            playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
           }
-          playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
         }
       }
     }
@@ -147,6 +147,7 @@ internal constructor(
         }
       }
     }
+    delay(1000)
   }
 
   public fun stopAudioConversation() {
@@ -236,15 +237,8 @@ internal constructor(
   ) {
     val jsonString =
       Json.encodeToString(MediaStreamingSetup(MediaChunks(mediaChunks.map { it.toInternal() })))
-    println(jsonString)
     session?.send(Frame.Text(jsonString))
   }
-  /*
-  ChunkSize: fits two letters [hel, lo]
-
-
-
-   */
 
   public suspend fun send(content: Content){
     val jsonString =
@@ -253,7 +247,6 @@ internal constructor(
           ClientContent(listOf(content.toInternal()), true)
         )
       )
-    println(jsonString)
     session?.send(Frame.Text(jsonString))
   }
   public suspend fun send(text: String){
