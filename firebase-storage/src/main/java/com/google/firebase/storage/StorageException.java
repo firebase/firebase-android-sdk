@@ -127,6 +127,7 @@ public class StorageException extends FirebaseException {
   static String getErrorMessageForCode(int errorCode) {
     switch (errorCode) {
       case ERROR_UNKNOWN:
+        System.out.println("Error code: " + errorCode);
         return "An unknown error occurred, please check the HTTP result code and inner "
             + "exception for server response.";
       case ERROR_OBJECT_NOT_FOUND:
@@ -150,6 +151,7 @@ public class StorageException extends FirebaseException {
       case ERROR_CANCELED:
         return "The operation was cancelled.";
       default:
+        System.out.println("Error code: " + errorCode);
         return "An unknown error occurred, please check the HTTP result code and inner "
             + "exception for server response.";
     }
