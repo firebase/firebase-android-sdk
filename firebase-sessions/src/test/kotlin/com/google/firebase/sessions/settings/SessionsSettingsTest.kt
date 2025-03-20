@@ -17,20 +17,18 @@
 package com.google.firebase.sessions.settings
 
 import android.os.Bundle
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.concurrent.TestOnlyExecutors
-import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
+import com.google.firebase.sessions.settings.RemoteSettingsTest.Companion.buildRemoteSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
+import com.google.firebase.sessions.testing.FakeSettingsCache
 import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -107,17 +105,12 @@ class SessionsSettingsTest {
       val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
       val remoteSettings =
-        RemoteSettingsTest.buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        buildRemoteSettings(
+          FakeTimeProvider(),
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          FakeSettingsCache(),
         )
 
       val sessionsSettings =
@@ -150,17 +143,12 @@ class SessionsSettingsTest {
       val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
       val remoteSettings =
-        RemoteSettingsTest.buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        buildRemoteSettings(
+          FakeTimeProvider(),
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          FakeSettingsCache(),
         )
 
       val sessionsSettings =
@@ -199,17 +187,12 @@ class SessionsSettingsTest {
       fakeFetcher.responseJSONObject = JSONObject(invalidResponse)
 
       val remoteSettings =
-        RemoteSettingsTest.buildRemoteSettings(
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        buildRemoteSettings(
+          FakeTimeProvider(),
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          SettingsCache(
-            PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            )
-          ),
+          FakeSettingsCache(),
         )
 
       val sessionsSettings =
@@ -229,19 +212,12 @@ class SessionsSettingsTest {
       remoteSettings.clearCachedSettings()
     }
 
-  @Test
-  fun sessionSettings_dataStorePreferencesNameIsFilenameSafe() {
-    assertThat(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME).matches("^[a-zA-Z0-9_=]+\$")
-  }
-
   @After
   fun cleanUp() {
     FirebaseApp.clearInstancesForTest()
   }
 
   private companion object {
-    const val SESSION_TEST_CONFIGS_NAME = "firebase_session_settings_test"
-
     const val VALID_RESPONSE =
       """
       {
