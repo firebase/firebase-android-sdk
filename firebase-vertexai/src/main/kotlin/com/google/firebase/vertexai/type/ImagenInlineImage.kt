@@ -23,7 +23,7 @@ import android.util.Base64
 /**
  * Represents an Imagen-generated image that is contained inline
  *
- * @param data Contains the base64 encoded image data.
+ * @param data Contains the base64-encoded image data.
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`)
  */
 @PublicPreviewAPI
