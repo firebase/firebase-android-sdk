@@ -190,8 +190,6 @@ class SettingsCacheTest {
           ),
       )
 
-    runCurrent()
-
     settingsCache.updateConfigs(
       SessionConfigs(
         sessionsEnabled = false,
@@ -201,8 +199,6 @@ class SettingsCacheTest {
         cacheDurationSeconds = 1000,
       )
     )
-
-    runCurrent()
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
