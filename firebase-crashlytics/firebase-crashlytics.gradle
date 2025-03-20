@@ -99,6 +99,8 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(project(":integ-testing"))
+    testImplementation("io.mockk:mockk:1.13.8")
+
 
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
