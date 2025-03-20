@@ -10,9 +10,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
@@ -29,8 +31,8 @@ internal constructor(
 
   private val audioQueue = ConcurrentLinkedQueue<ByteArray>()
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
-  private var stopReceiving = false
   private var startedReceiving = false
+  private var receiveChannel: Channel<Frame> = Channel()
 
   @Serializable
   internal data class ClientContent(
@@ -143,10 +145,10 @@ internal constructor(
 
   public fun stopReceiving() {
     if(!startedReceiving) {
-      stopReceiving = false
       return
     }
-    stopReceiving = true
+    receiveChannel.cancel()
+    receiveChannel = Channel()
     startedReceiving = false
   }
 
@@ -159,15 +161,16 @@ internal constructor(
       throw SessionAlreadyReceivingException()
     }
 
+    val flowReceive = session!!.incoming.receiveAsFlow()
+    CoroutineScope(Dispatchers.IO).launch {
+      flowReceive.collect {
+        receiveChannel.send(it)
+      }
+    }
     return flow {
       startedReceiving = true
       while (true) {
-        println(stopReceiving)
-        if(stopReceiving) {
-          stopReceiving = false
-          break
-        }
-        val message = session!!.incoming.receive()
+        val message = receiveChannel.receive()
         val receivedBytes = (message as Frame.Binary).readBytes()
         val receivedJson = receivedBytes.toString(Charsets.UTF_8)
         if (receivedJson.contains("interrupted")) {
