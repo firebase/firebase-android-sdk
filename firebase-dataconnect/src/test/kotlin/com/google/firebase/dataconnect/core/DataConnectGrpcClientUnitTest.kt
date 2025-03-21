@@ -33,9 +33,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
-import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
-import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
+import com.google.firebase.dataconnect.testutil.shouldSatisfy
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
@@ -51,7 +50,6 @@ import google.firebase.dataconnect.proto.SourceLocation
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.fail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -741,37 +739,15 @@ class DataConnectGrpcClientOperationResultUnitTest {
       expectedRawData: Struct?,
       expectedData: T?,
       expectedErrors: List<ErrorInfo>,
-    ) {
-      assertSoftly {
-        withClue("exception.message") {
-          message shouldContainWithNonAbuttingTextIgnoringCase
-            expectedMessageSubstringCaseInsensitive
-          if (expectedMessageSubstringCaseSensitive != null) {
-            message shouldContainWithNonAbuttingText expectedMessageSubstringCaseSensitive
-          }
-        }
-        withClue("exception.cause") {
-          if (expectedCause == null) {
-            cause.shouldBeNull()
-          } else {
-            val cause = cause.shouldNotBeNull()
-            if (!expectedCause.isInstance(cause)) {
-              fail(
-                "cause was an instance of ${cause::class.qualifiedName}, " +
-                  "but expected it to be an instance of ${expectedCause.qualifiedName}"
-              )
-            }
-          }
-        }
-        withClue("exception.response.rawData") {
-          response.rawData shouldBe expectedRawData?.toMap()
-        }
-        withClue("exception.response.data") { response.data shouldBe expectedData }
-        withClue("exception.response.errors") {
-          response.errors shouldContainExactly expectedErrors
-        }
-      }
-    }
+    ) =
+      shouldSatisfy(
+        expectedMessageSubstringCaseInsensitive = expectedMessageSubstringCaseInsensitive,
+        expectedMessageSubstringCaseSensitive = expectedMessageSubstringCaseSensitive,
+        expectedCause = expectedCause,
+        expectedRawData = expectedRawData?.toMap(),
+        expectedData = expectedData,
+        expectedErrors = expectedErrors,
+      )
 
     fun DataConnectUntypedData.shouldHaveDataAndErrors(
       expectedData: Map<String, Any?>,
