@@ -37,6 +37,8 @@ internal constructor(
    */
   @JvmOverloads
   public constructor(
-    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
-  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
+    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
+  ) : this(
+    timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
+  )
 }

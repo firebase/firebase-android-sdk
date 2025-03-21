@@ -24,6 +24,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.InvalidLocationException
@@ -37,6 +38,7 @@ import com.google.firebase.vertexai.type.ToolConfig
 public class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
+  private val backend: GenerativeBackend,
   private val location: String,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
@@ -68,8 +70,15 @@ internal constructor(
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
+    val modelUri =
+      when (backend) {
+        GenerativeBackend.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
+        GenerativeBackend.DEVELOPER_API ->
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
+      }
     return GenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
+      modelUri,
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
@@ -77,6 +86,7 @@ internal constructor(
       toolConfig,
       systemInstruction,
       requestOptions,
+      backend,
       appCheckProvider.get(),
       internalAuthProvider.get(),
     )
@@ -117,7 +127,7 @@ internal constructor(
     /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
     @JvmStatic
     public val instance: FirebaseVertexAI
-      get() = getInstance(location = "us-central1")
+      get() = getInstance(backend = GenerativeBackend.VERTEX_AI)
 
     @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
 
@@ -130,9 +140,13 @@ internal constructor(
      */
     @JvmStatic
     @JvmOverloads
-    public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
+    public fun getInstance(
+      app: FirebaseApp = Firebase.app,
+      backend: GenerativeBackend,
+      location: String = "us-central1"
+    ): FirebaseVertexAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.get(location)
+      return multiResourceComponent.get(backend, location)
     }
   }
 }
@@ -144,5 +158,12 @@ public val Firebase.vertexAI: FirebaseVertexAI
 /** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
 public fun Firebase.vertexAI(
   app: FirebaseApp = Firebase.app,
-  location: String = "us-central1"
-): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)
+  location: String = "us-central1",
+): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, GenerativeBackend.VERTEX_AI, location)
+
+public val Firebase.developerApi: FirebaseVertexAI
+  get() = Firebase.developerApi()
+
+public fun Firebase.developerApi(
+  app: FirebaseApp = Firebase.app,
+): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, GenerativeBackend.DEVELOPER_API)

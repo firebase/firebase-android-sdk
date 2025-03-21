@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.type.GenerativeBackend
 
 /**
  * Multi-resource container for Firebase Vertex AI.
@@ -35,11 +36,16 @@ internal class FirebaseVertexAIMultiResourceComponent(
 
   @GuardedBy("this") private val instances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
-  fun get(location: String): FirebaseVertexAI =
+  fun get(generativeBackend: GenerativeBackend, location: String): FirebaseVertexAI =
     synchronized(this) {
       instances[location]
-        ?: FirebaseVertexAI(app, location, appCheckProvider, internalAuthProvider).also {
-          instances[location] = it
-        }
+        ?: FirebaseVertexAI(
+            app,
+            generativeBackend,
+            location,
+            appCheckProvider,
+            internalAuthProvider
+          )
+          .also { instances[location] = it }
     }
 }
