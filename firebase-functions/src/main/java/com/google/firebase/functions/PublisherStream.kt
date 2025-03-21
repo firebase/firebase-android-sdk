@@ -306,6 +306,7 @@ internal class PublisherStream(
           null
         )
       )
+      return
     }
 
     val text = response.body()?.string() ?: ""
