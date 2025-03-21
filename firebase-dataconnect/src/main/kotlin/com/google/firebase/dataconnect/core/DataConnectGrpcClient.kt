@@ -53,7 +53,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectOperationFailureResponse.ErrorInfo>,
+    val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
   )
 
   suspend fun executeQuery(
@@ -161,25 +161,49 @@ internal object DataConnectGrpcClientGlobals {
   fun <T> DataConnectGrpcClient.OperationResult.deserialize(
     deserializer: DeserializationStrategy<T>,
     serializersModule: SerializersModule?,
-  ): T =
+  ): T {
     if (deserializer === DataConnectUntypedData) {
-      @Suppress("UNCHECKED_CAST")
-      DataConnectUntypedData(data?.toMap(), errors) as T
-    } else if (data === null) {
-      if (errors.isNotEmpty()) {
-        throw DataConnectException("operation failed: errors=$errors")
-      } else {
-        throw DataConnectException("no data included in result")
-      }
-    } else if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors (data=$data)")
-    } else {
-      try {
-        decodeFromStruct(data, deserializer, serializersModule)
-      } catch (dataConnectException: DataConnectException) {
-        throw dataConnectException
-      } catch (throwable: Throwable) {
-        throw DataConnectException("decoding response data failed: $throwable", throwable)
-      }
+      @Suppress("UNCHECKED_CAST") return DataConnectUntypedData(data?.toMap(), errors) as T
     }
+
+    val decodedData: Result<T>? =
+      data?.let { data -> runCatching { decodeFromStruct(data, deserializer, serializersModule) } }
+
+    if (errors.isNotEmpty()) {
+      throw DataConnectOperationException(
+        "operation encountered errors during execution: $errors",
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = data?.toMap(),
+            data = decodedData?.getOrNull(),
+            errors = errors,
+          )
+      )
+    }
+
+    if (decodedData == null) {
+      throw DataConnectOperationException(
+        "no data was included in the response from the server",
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = null,
+            data = null,
+            errors = emptyList(),
+          )
+      )
+    }
+
+    return decodedData.getOrElse { exception ->
+      throw DataConnectOperationException(
+        "decoding data from the server's response failed: ${exception.message}",
+        cause = exception,
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = data?.toMap(),
+            data = null,
+            errors = emptyList(),
+          )
+      )
+    }
+  }
 }
