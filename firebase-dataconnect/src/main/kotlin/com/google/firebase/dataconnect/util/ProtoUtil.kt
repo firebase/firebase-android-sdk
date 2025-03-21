@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
@@ -136,6 +136,10 @@ internal object ProtoUtil {
   fun Struct.toCompactString(keySortSelector: ((String) -> String)? = null): String =
     Value.newBuilder().setStructValue(this).build().toCompactString(keySortSelector)
 
+  /** Generates and returns a string similar to [Struct.toString] but more compact. */
+  fun ListValue.toCompactString(keySortSelector: ((String) -> String)? = null): String =
+    Value.newBuilder().setListValue(this).build().toCompactString(keySortSelector)
+
   /** Generates and returns a string similar to [Value.toString] but more compact. */
   fun Value.toCompactString(keySortSelector: ((String) -> String)? = null): String {
     val charArrayWriter = CharArrayWriter()
@@ -204,7 +208,7 @@ internal object ProtoUtil {
 
   fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
     if (hasData()) put("data", data)
-    putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
+    putList("errors") { errorsList.forEach { add(it.toErrorInfoImpl().toString()) } }
   }
 
   fun ExecuteMutationRequest.toCompactString(): String = toStructProto().toCompactString()
@@ -219,7 +223,7 @@ internal object ProtoUtil {
 
   fun ExecuteMutationResponse.toStructProto(): Struct = buildStructProto {
     if (hasData()) put("data", data)
-    putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
+    putList("errors") { errorsList.forEach { add(it.toErrorInfoImpl().toString()) } }
   }
 
   fun EmulatorInfo.toStructProto(): Struct = buildStructProto {

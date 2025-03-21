@@ -26,9 +26,9 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
@@ -181,7 +181,7 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
     val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = listOf(Arb.dataConnect.dataConnectError().next())
+    val errors = Arb.dataConnect.operationErrors().next()
     val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
     val variablesSlot: CapturingSlot<Struct> = slot()
     val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)

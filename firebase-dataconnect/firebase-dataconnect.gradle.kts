@@ -103,6 +103,7 @@ dependencies {
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
+  compileOnly(libs.kotlinx.serialization.json)
   implementation(libs.grpc.android)
   implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.okhttp)
