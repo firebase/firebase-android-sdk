@@ -6,7 +6,7 @@
   errors; that is, any data that was received and/or was able to be decoded is
   now available via the "response" property of the exception thrown when a
   query or mutation is executed.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#6794](https://github.com/firebase/firebase-android-sdk/pull/6794))
 * [changed] Changed gRPC proto package to v1 (was v1beta).
   ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
 
