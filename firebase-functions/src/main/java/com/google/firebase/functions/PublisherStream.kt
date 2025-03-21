@@ -296,9 +296,8 @@ internal class PublisherStream(
   private fun validateResponse(response: Response) {
     if (response.isSuccessful) return
 
-    val htmlContentType = "text/html; charset=utf-8"
     val errorMessage: String
-    if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
+    if (response.code() == 404 && MediaType.get(response.header("Content-Type")?: "").subtype() == "html") {
       errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
       notifyError(
         FirebaseFunctionsException(
