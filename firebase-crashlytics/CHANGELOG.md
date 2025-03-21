@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] avoid android.os.strictmode.UnbufferedIoViolation on SessionReportingCoordinator [#6565]
 * [changed] Internal changes to read version control info more efficiently [#6754]
 * [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]
 * [changed] Updated `firebase-sessions` dependency to v2.1.0
