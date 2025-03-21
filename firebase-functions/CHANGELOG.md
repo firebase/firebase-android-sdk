@@ -1,7 +1,15 @@
 # Unreleased
+
+
+# 21.2.0
 * [feature] Streaming callable functions are now supported.
 * [fixed] Fixed an issue that prevented the App Check token from being handled correctly in case of error.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.1.1
 * [fixed] Resolve Kotlin migration visibility issues
