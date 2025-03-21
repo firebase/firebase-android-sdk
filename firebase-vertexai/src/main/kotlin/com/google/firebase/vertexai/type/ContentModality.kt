@@ -22,6 +22,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Content part modality. */
+@Serializable
 public class ContentModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
@@ -46,6 +47,15 @@ public class ContentModality private constructor(public val ordinal: Int) {
       }
   }
 
+  internal fun toInternal() =
+    when (this) {
+      TEXT -> "TEXT"
+      IMAGE -> "IMAGE"
+      VIDEO -> "VIDEO"
+      AUDIO -> "AUDIO"
+      DOCUMENT -> "DOCUMENT"
+      else -> "UNSPECIFIED"
+    }
   public companion object {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: ContentModality = ContentModality(0)

@@ -141,6 +141,13 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
+  fun getBidiEndpoint(): String {
+    val vertexAiUrl =
+      "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/us-central1"
+
+    return "$vertexAiUrl?key=$key"
+  }
+
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =

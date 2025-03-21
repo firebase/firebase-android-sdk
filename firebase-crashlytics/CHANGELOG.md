@@ -6,6 +6,7 @@
   * [changed] Updated datastore dependency to v1.1.3 to fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
 
 
+
 # 19.4.1
 * [changed] Updated `firebase-sessions` dependency to v2.0.9
 
