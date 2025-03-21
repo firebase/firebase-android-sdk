@@ -261,7 +261,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
           ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-first-dependency"),
         "androidx.credentials:credentials-play-services-auth" to
           ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-second-dependency"),
-          "com.google.android.libraries.identity.googleid:googleid" to
+        "com.google.android.libraries.identity.googleid:googleid" to
           ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-third-dependency"),
         "com.google.firebase:firebase-appdistribution-gradle" to
           ArtifactTutorialMapping(
