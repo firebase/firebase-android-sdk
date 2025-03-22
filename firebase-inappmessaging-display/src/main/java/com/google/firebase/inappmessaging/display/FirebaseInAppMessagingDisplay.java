@@ -19,10 +19,7 @@ import static com.google.firebase.inappmessaging.display.internal.FiamAnimator.P
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.content.Intent;
-import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,7 +27,6 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -97,6 +93,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
+  private FirebaseInAppMessagingDisplayActionHandler actionHandler =
+      new FirebaseInAppMessagingDisplayDefaultActionHandler();
 
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
@@ -175,6 +173,13 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    */
   public void clearFiamListener() {
     this.fiamListener = null;
+  }
+
+  /**
+   * Sets the action handler used when one of the message elements is clicked.
+   */
+  public void setActionHandler(@NonNull FirebaseInAppMessagingDisplayActionHandler actionHandler) {
+    this.actionHandler = actionHandler;
   }
 
   /**
@@ -333,7 +338,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                   Logging.logi("Calling callback for click action");
                   callbacks.messageClicked(action);
                 }
-                launchUriIntent(activity, Uri.parse(action.getActionUrl()));
+                actionHandler.handleAction(activity, action);
                 notifyFiamClick();
                 // Ensure that we remove the displayed FIAM, and ensure that on re-load, the message
                 // isn't re-displayed
@@ -546,44 +551,5 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     if (fiamListener != null) {
       fiamListener.onFiamDismiss();
     }
-  }
-
-  private void launchUriIntent(Activity activity, Uri uri) {
-    if (ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
-      // If we can launch a chrome view, try that.
-      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
-      Intent intent = customTabsIntent.intent;
-      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      customTabsIntent.launchUrl(activity, uri);
-    } else {
-      // If we can't launch a chrome view try to launch anything that can handle a URL.
-      Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      ResolveInfo info = activity.getPackageManager().resolveActivity(browserIntent, 0);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      if (info != null) {
-        activity.startActivity(browserIntent);
-      } else {
-        // If the device can't resolve a url then log, but don't crash.
-        Logging.loge("Device cannot resolve intent for: " + Intent.ACTION_VIEW);
-      }
-    }
-  }
-
-  private boolean supportsCustomTabs(Activity activity) {
-    Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
-    customTabIntent.setPackage("com.android.chrome");
-    List<ResolveInfo> resolveInfos =
-        activity.getPackageManager().queryIntentServices(customTabIntent, 0);
-    return resolveInfos != null && !resolveInfos.isEmpty();
-  }
-
-  private boolean ishttpOrHttpsUri(Uri uri) {
-    if (uri == null) {
-      return false;
-    }
-    String scheme = uri.getScheme();
-    return scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"));
   }
 }
