@@ -116,11 +116,11 @@ class StreamTests {
       throwable = e
     }
 
+    assertThat(throwable).isNull()
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly("hello", "world", "this", "is", "cool")
     assertThat(result).isNotNull()
     assertThat(result!!.result.data.toString()).isEqualTo("hello world this is cool")
-    assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }
 
@@ -196,6 +196,7 @@ class StreamTests {
     function.stream(mapOf("data" to "test")).subscribe(subscriber)
 
     withTimeout(2000) { delay(500) }
+    assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.messages).isEmpty()
     assertThat(subscriber.result).isNull()
   }
