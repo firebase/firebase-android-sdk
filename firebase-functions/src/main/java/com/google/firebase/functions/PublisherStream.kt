@@ -136,15 +136,20 @@ internal class PublisherStream(
           MediaType.parse("application/json"),
           JSONObject(mapOf("data" to serializer.encode(data))).toString()
         )
-      val request = Request.Builder().url(url).post(requestBody).apply {
-        header("Accept", "text/event-stream")
-        header("Content-Type", "application/json")
-        context?.apply {
-          authToken?.let { header("Authorization", "Bearer $it") }
-          instanceIdToken?.let { header("Firebase-Instance-ID-Token", it) }
-          appCheckToken?.let { header("X-Firebase-AppCheck", it) }
-        }
-      }.build()
+      val request =
+        Request.Builder()
+          .url(url)
+          .post(requestBody)
+          .apply {
+            header("Accept", "text/event-stream")
+            header("Content-Type", "application/json")
+            context?.apply {
+              authToken?.let { header("Authorization", "Bearer $it") }
+              instanceIdToken?.let { header("Firebase-Instance-ID-Token", it) }
+              appCheckToken?.let { header("X-Firebase-AppCheck", it) }
+            }
+          }
+          .build()
       val call = configuredClient.newCall(request)
       activeCall = call
 
@@ -303,7 +308,10 @@ internal class PublisherStream(
     if (response.isSuccessful) return
 
     val errorMessage: String
-    if (response.code() == 404 && MediaType.get(response.header("Content-Type")?: "").subtype() == "html") {
+    if (
+      response.code() == 404 &&
+        MediaType.get(response.header("Content-Type") ?: "").subtype() == "html"
+    ) {
       errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
       notifyError(
         FirebaseFunctionsException(
