@@ -1,4 +1,9 @@
 # Unreleased
+* [changed] Removed the "beta" suffix from the version of the Firebase Data
+  Connect Android SDK, thus graduating it from "beta" to "generally available".
+  ([#6792](https://github.com/firebase/firebase-android-sdk/pull/6792))
+
+# 16.0.0-beta05
 * [changed] Changed gRPC proto package to v1 (was v1beta).
   ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
 
@@ -70,4 +75,3 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 * [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
-
