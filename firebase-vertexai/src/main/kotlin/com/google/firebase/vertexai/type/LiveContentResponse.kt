@@ -1,11 +1,14 @@
 package com.google.firebase.vertexai.type
 
+
+/* Public class representing the status of the server's response. */
 public enum class Status {
   NORMAL,
   INTERRUPTED,
   TURNCOMPLETE
 }
 
+/* Class that represents the response from the server. */
 public class LiveContentResponse
 internal constructor(
   public val data: Content?,

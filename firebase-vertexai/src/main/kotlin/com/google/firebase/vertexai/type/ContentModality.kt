@@ -22,7 +22,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Content part modality. */
-@Serializable
 public class ContentModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
