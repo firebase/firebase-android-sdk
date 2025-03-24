@@ -310,7 +310,7 @@ internal class PublisherStream(
     val errorMessage: String
     if (
       response.code() == 404 &&
-        MediaType.get(response.header("Content-Type") ?: "").subtype() == "html"
+        MediaType.parse(response.header("Content-Type") ?: "")?.subtype() == "html"
     ) {
       errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
       notifyError(
