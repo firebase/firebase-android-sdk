@@ -17,12 +17,18 @@
 package com.google.firebase.sessions.settings
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.sessions.TimeProvider
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 internal interface SettingsCache {
@@ -41,23 +47,38 @@ internal interface SettingsCache {
 internal class SettingsCacheImpl
 @Inject
 constructor(
+  @Background private val backgroundDispatcher: CoroutineContext,
   private val timeProvider: TimeProvider,
   private val sessionConfigsDataStore: DataStore<SessionConfigs>,
 ) : SettingsCache {
-  private var sessionConfigs: SessionConfigs
+  private val sessionConfigsAtomicReference = AtomicReference<SessionConfigs>()
+
+  private val sessionConfigs: SessionConfigs
+    get() {
+      // Ensure configs are loaded from disk before the first access
+      if (sessionConfigsAtomicReference.get() == null) {
+        // Double check to avoid the `runBlocking` unless necessary
+        sessionConfigsAtomicReference.compareAndSet(
+          null,
+          runBlocking { sessionConfigsDataStore.data.first() },
+        )
+      }
+
+      return sessionConfigsAtomicReference.get()
+    }
 
   init {
-    // Block until the cache is loaded from disk to ensure cache
-    // values are valid and readable from the main thread on init.
-    runBlocking { sessionConfigs = sessionConfigsDataStore.data.first() }
+    CoroutineScope(backgroundDispatcher).launch {
+      sessionConfigsDataStore.data.collect(sessionConfigsAtomicReference::set)
+    }
   }
 
   override fun hasCacheExpired(): Boolean {
-    val cacheUpdatedTimeMs = sessionConfigs.cacheUpdatedTimeMs
+    val cacheUpdatedTimeSeconds = sessionConfigs.cacheUpdatedTimeSeconds
     val cacheDurationSeconds = sessionConfigs.cacheDurationSeconds
 
-    if (cacheUpdatedTimeMs != null && cacheDurationSeconds != null) {
-      val timeDifferenceSeconds = (timeProvider.currentTime().ms - cacheUpdatedTimeMs) / 1000
+    if (cacheUpdatedTimeSeconds != null && cacheDurationSeconds != null) {
+      val timeDifferenceSeconds = timeProvider.currentTime().seconds - cacheUpdatedTimeSeconds
       if (timeDifferenceSeconds < cacheDurationSeconds) {
         return false
       }
@@ -74,12 +95,12 @@ constructor(
   override suspend fun updateConfigs(sessionConfigs: SessionConfigs) {
     try {
       sessionConfigsDataStore.updateData { sessionConfigs }
-      this.sessionConfigs = sessionConfigs
     } catch (ex: IOException) {
       Log.w(TAG, "Failed to update config values: $ex")
     }
   }
 
+  @VisibleForTesting
   internal suspend fun removeConfigs() =
     try {
       sessionConfigsDataStore.updateData { SessionConfigsSerializer.defaultValue }
