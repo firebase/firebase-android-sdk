@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.0.0-beta05
 * [changed] Changed gRPC proto package to v1 (was v1beta).
   ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
 
