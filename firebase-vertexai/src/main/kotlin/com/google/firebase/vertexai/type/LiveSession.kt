@@ -99,7 +99,6 @@ internal constructor(
         if (!isRecording) {
           cancel()
         }
-        println(it)
         audioQueue.add(it)
       }
     }
@@ -224,7 +223,7 @@ internal constructor(
             LiveContentResponse(
               null,
               Status.NORMAL,
-              functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }
+              functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args) }
             )
           )
           continue

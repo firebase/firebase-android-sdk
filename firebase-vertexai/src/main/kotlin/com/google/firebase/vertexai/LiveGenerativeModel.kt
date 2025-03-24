@@ -48,8 +48,8 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
-  private val controller: APIController,
-  private val location: String
+  private val location: String,
+  private val controller: APIController
 ) {
   public constructor(
     modelName: String,

@@ -114,6 +114,7 @@ internal constructor(
       tools,
       toolConfig,
       systemInstruction,
+      location,
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
