@@ -44,7 +44,7 @@ class SessionDatastoreTest {
           DataStoreFactory.create(
             serializer = SessionDataSerializer,
             scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
-            produceFile = { appContext.dataStoreFile("sessionDataTestDataStore.data") },
+            produceFile = { appContext.dataStoreFile("sessionDataStore.data") },
           ),
       )
 
