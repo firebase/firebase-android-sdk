@@ -1,5 +1,4 @@
 # Unreleased
-
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
 
