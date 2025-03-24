@@ -20,26 +20,12 @@ import com.google.firebase.dataconnect.DataConnectOperationFailureResponse
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import java.util.Objects
-import kotlinx.serialization.json.JsonObject
 
 internal class DataConnectOperationFailureResponseImpl<Data>(
   override val rawData: Map<String, Any?>?,
   override val data: Data?,
   override val errors: List<ErrorInfoImpl>
 ) : DataConnectOperationFailureResponse<Data> {
-
-  /**
-   * Creates and returns a [JsonObject] that is equivalent to [rawData].
-   *
-   * If this function is called, the application must take a Gradle dependency on `
-   * [org.jetbrains.kotlinx:kotlinx-serialization-json](https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-json)
-   * `; otherwise, an error such as [NoClassDefFoundError] will be thrown at runtime.
-   *
-   * @return `null` if [rawData] is `null`; otherwise, a newly-created [JsonObject] object that has
-   * the same structure and information as [rawData] but represented using [JsonObject].
-   */
-  // TODO(dconeybe) move this to the public API once it is properly implemented and tested.
-  fun toJson(): JsonObject? = TODO()
 
   override fun toString(): String =
     "DataConnectOperationFailureResponseImpl(rawData=$rawData, data=$data, errors=$errors)"
