@@ -30,7 +30,7 @@ internal data class SessionConfigs(
   val sessionSamplingRate: Double?,
   val sessionTimeoutSeconds: Int?,
   val cacheDurationSeconds: Int?,
-  val cacheUpdatedTimeMs: Long?,
+  val cacheUpdatedTimeSeconds: Long?,
 )
 
 /** DataStore json [Serializer] for [SessionConfigs]. */
@@ -41,7 +41,7 @@ internal object SessionConfigsSerializer : Serializer<SessionConfigs> {
       sessionSamplingRate = null,
       sessionTimeoutSeconds = null,
       cacheDurationSeconds = null,
-      cacheUpdatedTimeMs = null,
+      cacheUpdatedTimeSeconds = null,
     )
 
   override suspend fun readFrom(input: InputStream): SessionConfigs =
