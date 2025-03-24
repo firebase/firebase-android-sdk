@@ -44,6 +44,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/exception_handler_protocol.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/initial_signal_dispositions.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/memory_map.cc \
+    $(THIRD_PARTY_PATH)/crashpad/util/linux/pac_helper.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/proc_stat_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/proc_task_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/ptrace_broker.cc \
