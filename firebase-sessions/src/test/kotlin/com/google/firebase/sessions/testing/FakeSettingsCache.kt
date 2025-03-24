@@ -27,11 +27,11 @@ internal class FakeSettingsCache(
   private var sessionConfigs: SessionConfigs = SessionConfigsSerializer.defaultValue,
 ) : SettingsCache {
   override fun hasCacheExpired(): Boolean {
-    val cacheUpdatedTimeMs = sessionConfigs.cacheUpdatedTimeMs
+    val cacheUpdatedTimeSeconds = sessionConfigs.cacheUpdatedTimeSeconds
     val cacheDurationSeconds = sessionConfigs.cacheDurationSeconds
 
-    if (cacheUpdatedTimeMs != null && cacheDurationSeconds != null) {
-      val timeDifferenceSeconds = (timeProvider.currentTime().ms - cacheUpdatedTimeMs) / 1000
+    if (cacheUpdatedTimeSeconds != null && cacheDurationSeconds != null) {
+      val timeDifferenceSeconds = timeProvider.currentTime().seconds - cacheUpdatedTimeSeconds
       if (timeDifferenceSeconds < cacheDurationSeconds) {
         return false
       }
