@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -27,11 +28,15 @@ import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
@@ -132,6 +137,24 @@ object DataConnectArb {
 
   fun serializersModule(): Arb<SerializersModule?> =
     arbitrary<SerializersModule> { mockk() }.orNull(nullProbability = 0.333)
+
+  fun fieldPathSegment(string: Arb<String> = string()): Arb<DataConnectPathSegment.Field> =
+    string.map { DataConnectPathSegment.Field(it) }
+
+  fun listIndexPathSegment(int: Arb<Int> = Arb.int()): Arb<DataConnectPathSegment.ListIndex> =
+    int.map { DataConnectPathSegment.ListIndex(it) }
+
+  fun pathSegment(
+    field: Arb<DataConnectPathSegment.Field> = fieldPathSegment(),
+    fieldWeight: Int = 1,
+    listIndex: Arb<DataConnectPathSegment.ListIndex> = listIndexPathSegment(),
+    listIndexWeight: Int = 1,
+  ): Arb<DataConnectPathSegment> = Arb.choose(fieldWeight to field, listIndexWeight to listIndex)
+
+  fun errorPath(
+    pathSegment: Arb<DataConnectPathSegment> = pathSegment(),
+    range: IntRange = 0..10,
+  ): Arb<List<DataConnectPathSegment>> = Arb.list(pathSegment, range)
 }
 
 val Arb.Companion.dataConnect: DataConnectArb
