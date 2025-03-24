@@ -1,5 +1,5 @@
 # Unreleased
-# 19.4.2
+# 19.4.3
 * [changed] Updated internal Crashpad version to commit `8df174`.
 
 # 19.4.2
