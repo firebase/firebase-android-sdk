@@ -19,7 +19,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.ConnectorConfig
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -138,23 +138,23 @@ object DataConnectArb {
   fun serializersModule(): Arb<SerializersModule?> =
     arbitrary<SerializersModule> { mockk() }.orNull(nullProbability = 0.333)
 
-  fun fieldPathSegment(string: Arb<String> = string()): Arb<PathSegment.Field> =
-    string.map { PathSegment.Field(it) }
+  fun fieldPathSegment(string: Arb<String> = string()): Arb<DataConnectPathSegment.Field> =
+    string.map { DataConnectPathSegment.Field(it) }
 
-  fun listIndexPathSegment(int: Arb<Int> = Arb.int()): Arb<PathSegment.ListIndex> =
-    int.map { PathSegment.ListIndex(it) }
+  fun listIndexPathSegment(int: Arb<Int> = Arb.int()): Arb<DataConnectPathSegment.ListIndex> =
+    int.map { DataConnectPathSegment.ListIndex(it) }
 
   fun pathSegment(
-    field: Arb<PathSegment.Field> = fieldPathSegment(),
+    field: Arb<DataConnectPathSegment.Field> = fieldPathSegment(),
     fieldWeight: Int = 1,
-    listIndex: Arb<PathSegment.ListIndex> = listIndexPathSegment(),
+    listIndex: Arb<DataConnectPathSegment.ListIndex> = listIndexPathSegment(),
     listIndexWeight: Int = 1,
-  ): Arb<PathSegment> = Arb.choose(fieldWeight to field, listIndexWeight to listIndex)
+  ): Arb<DataConnectPathSegment> = Arb.choose(fieldWeight to field, listIndexWeight to listIndex)
 
   fun errorPath(
-    pathSegment: Arb<PathSegment> = pathSegment(),
+    pathSegment: Arb<DataConnectPathSegment> = pathSegment(),
     range: IntRange = 0..10,
-  ): Arb<List<PathSegment>> = Arb.list(pathSegment, range)
+  ): Arb<List<DataConnectPathSegment>> = Arb.list(pathSegment, range)
 }
 
 val Arb.Companion.dataConnect: DataConnectArb

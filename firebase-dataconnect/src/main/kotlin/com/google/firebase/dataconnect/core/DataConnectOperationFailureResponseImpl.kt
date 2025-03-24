@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import java.util.Objects
 import kotlinx.serialization.json.JsonObject
 
@@ -44,8 +44,10 @@ internal class DataConnectOperationFailureResponseImpl<Data>(
   override fun toString(): String =
     "DataConnectOperationFailureResponseImpl(rawData=$rawData, data=$data, errors=$errors)"
 
-  internal class ErrorInfoImpl(override val message: String, override val path: List<PathSegment>) :
-    ErrorInfo {
+  internal class ErrorInfoImpl(
+    override val message: String,
+    override val path: List<DataConnectPathSegment>,
+  ) : ErrorInfo {
 
     override fun equals(other: Any?): Boolean =
       other is ErrorInfoImpl && other.message == message && other.path == path
@@ -55,13 +57,13 @@ internal class DataConnectOperationFailureResponseImpl<Data>(
     override fun toString(): String = buildString {
       path.forEachIndexed { segmentIndex, segment ->
         when (segment) {
-          is PathSegment.Field -> {
+          is DataConnectPathSegment.Field -> {
             if (segmentIndex != 0) {
               append('.')
             }
             append(segment.field)
           }
-          is PathSegment.ListIndex -> {
+          is DataConnectPathSegment.ListIndex -> {
             append('[').append(segment.index).append(']')
           }
         }

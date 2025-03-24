@@ -19,7 +19,7 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.errorPath as errorPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as fieldPathSegmentArb
@@ -283,7 +283,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
   fun `equals() should return false when path differs`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), errorPathArb()) {
       errorInfo1: ErrorInfoImpl,
-      otherPath: List<PathSegment> ->
+      otherPath: List<DataConnectPathSegment> ->
       assume(errorInfo1.path != otherPath)
       val errorInfo2 = ErrorInfoImpl(errorInfo1.message, otherPath)
       errorInfo1.equals(errorInfo2) shouldBe false
@@ -323,7 +323,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
   fun `hashCode() should return a different value if path is different`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), errorPathArb()) {
       errorInfo1: ErrorInfoImpl,
-      otherPath: List<PathSegment> ->
+      otherPath: List<DataConnectPathSegment> ->
       assume(errorInfo1.path.hashCode() != otherPath.hashCode())
       val errorInfo2 = ErrorInfoImpl(errorInfo1.message, otherPath)
       errorInfo1.equals(errorInfo2) shouldBe false
@@ -334,17 +334,17 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
 private object MyArb {
 
   fun samplePathSegments(
-    field: Arb<PathSegment.Field> = fieldPathSegmentArb(),
-    listIndex: Arb<PathSegment.ListIndex> = listIndexPathSegmentArb(),
+    field: Arb<DataConnectPathSegment.Field> = fieldPathSegmentArb(),
+    listIndex: Arb<DataConnectPathSegment.ListIndex> = listIndexPathSegmentArb(),
   ): Arb<SamplePathSegments> =
     Arb.bind(field, field, listIndex, listIndex) { field1, field2, listIndex1, listIndex2 ->
       SamplePathSegments(field1, field2, listIndex1, listIndex2)
     }
 
   data class SamplePathSegments(
-    val field1: PathSegment.Field,
-    val field2: PathSegment.Field,
-    val listIndex1: PathSegment.ListIndex,
-    val listIndex2: PathSegment.ListIndex,
+    val field1: DataConnectPathSegment.Field,
+    val field2: DataConnectPathSegment.Field,
+    val listIndex1: DataConnectPathSegment.ListIndex,
+    val listIndex2: DataConnectPathSegment.ListIndex,
   )
 }

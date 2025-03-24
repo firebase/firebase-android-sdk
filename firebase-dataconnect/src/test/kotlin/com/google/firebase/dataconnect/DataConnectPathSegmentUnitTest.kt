@@ -18,7 +18,6 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as fieldPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -40,35 +39,35 @@ import org.junit.Test
 private val propTestConfig =
   PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.25))
 
-/** Unit tests for [PathSegment.Field] */
-class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
+/** Unit tests for [DataConnectPathSegment.Field] */
+class DataConnectPathSegmentFieldUnitTest {
 
   @Test
   fun `constructor should set field property`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
-      val pathSegment = PathSegment.Field(field)
+      val pathSegment = DataConnectPathSegment.Field(field)
       pathSegment.field shouldBeSameInstanceAs field
     }
   }
 
   @Test
   fun `toString() should return a string equal to the field property`() = runTest {
-    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: PathSegment.Field ->
+    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: DataConnectPathSegment.Field ->
       pathSegment.toString() shouldBeSameInstanceAs pathSegment.field
     }
   }
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: PathSegment.Field ->
+    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: DataConnectPathSegment.Field ->
       pathSegment.equals(pathSegment) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment1: PathSegment.Field ->
-      val pathSegment2 = PathSegment.Field(pathSegment1.field)
+    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment1: DataConnectPathSegment.Field ->
+      val pathSegment2 = DataConnectPathSegment.Field(pathSegment1.field)
       pathSegment1.equals(pathSegment2) shouldBe true
       pathSegment2.equals(pathSegment1) shouldBe true
     }
@@ -76,7 +75,7 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: PathSegment.Field ->
+    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: DataConnectPathSegment.Field ->
       pathSegment.equals(null) shouldBe false
     }
   }
@@ -85,7 +84,7 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
   fun `equals() should return false for a different type`() = runTest {
     val otherTypes = Arb.choice(Arb.string(), Arb.int(), listIndexPathSegmentArb())
     checkAll(propTestConfig, fieldPathSegmentArb(), otherTypes) {
-      pathSegment: PathSegment.Field,
+      pathSegment: DataConnectPathSegment.Field,
       other ->
       pathSegment.equals(other) shouldBe false
     }
@@ -94,8 +93,8 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
   @Test
   fun `equals() should return false when field differs`() = runTest {
     checkAll(propTestConfig, fieldPathSegmentArb(), fieldPathSegmentArb()) {
-      pathSegment1: PathSegment.Field,
-      pathSegment2: PathSegment.Field ->
+      pathSegment1: DataConnectPathSegment.Field,
+      pathSegment2: DataConnectPathSegment.Field ->
       assume(pathSegment1.field != pathSegment2.field)
       pathSegment1.equals(pathSegment2) shouldBe false
     }
@@ -104,7 +103,7 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: PathSegment.Field ->
+      checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment: DataConnectPathSegment.Field ->
         val hashCode1 = pathSegment.hashCode()
         pathSegment.hashCode() shouldBe hashCode1
         pathSegment.hashCode() shouldBe hashCode1
@@ -113,8 +112,8 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment1: PathSegment.Field ->
-      val pathSegment2 = PathSegment.Field(pathSegment1.field)
+    checkAll(propTestConfig, fieldPathSegmentArb()) { pathSegment1: DataConnectPathSegment.Field ->
+      val pathSegment2 = DataConnectPathSegment.Field(pathSegment1.field)
       pathSegment1.hashCode() shouldBe pathSegment2.hashCode()
     }
   }
@@ -122,43 +121,46 @@ class DataConnectOperationFailureResponsePathSegmentFieldUnitTest {
   @Test
   fun `hashCode() should return a different value if field is different`() = runTest {
     checkAll(propTestConfig, fieldPathSegmentArb(), fieldPathSegmentArb()) {
-      pathSegment1: PathSegment.Field,
-      pathSegment2: PathSegment.Field ->
+      pathSegment1: DataConnectPathSegment.Field,
+      pathSegment2: DataConnectPathSegment.Field ->
       assume(pathSegment1.field.hashCode() != pathSegment2.field.hashCode())
       pathSegment1.hashCode() shouldNotBe pathSegment2.hashCode()
     }
   }
 }
 
-/** Unit tests for [PathSegment.ListIndex] */
-class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
+/** Unit tests for [DataConnectPathSegment.ListIndex] */
+class DataConnectPathSegmentListIndexUnitTest {
 
   @Test
   fun `constructor should set index property`() = runTest {
     checkAll(propTestConfig, Arb.int()) { listIndex ->
-      val pathSegment = PathSegment.ListIndex(listIndex)
+      val pathSegment = DataConnectPathSegment.ListIndex(listIndex)
       pathSegment.index shouldBe listIndex
     }
   }
 
   @Test
   fun `toString() should return a string equal to the index property`() = runTest {
-    checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment: PathSegment.ListIndex ->
+    checkAll(propTestConfig, listIndexPathSegmentArb()) {
+      pathSegment: DataConnectPathSegment.ListIndex ->
       pathSegment.toString() shouldBe "${pathSegment.index}"
     }
   }
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment: PathSegment.ListIndex ->
+    checkAll(propTestConfig, listIndexPathSegmentArb()) {
+      pathSegment: DataConnectPathSegment.ListIndex ->
       pathSegment.equals(pathSegment) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment1: PathSegment.ListIndex ->
-      val pathSegment2 = PathSegment.ListIndex(pathSegment1.index)
+    checkAll(propTestConfig, listIndexPathSegmentArb()) {
+      pathSegment1: DataConnectPathSegment.ListIndex ->
+      val pathSegment2 = DataConnectPathSegment.ListIndex(pathSegment1.index)
       pathSegment1.equals(pathSegment2) shouldBe true
       pathSegment2.equals(pathSegment1) shouldBe true
     }
@@ -166,7 +168,8 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment: PathSegment.ListIndex ->
+    checkAll(propTestConfig, listIndexPathSegmentArb()) {
+      pathSegment: DataConnectPathSegment.ListIndex ->
       pathSegment.equals(null) shouldBe false
     }
   }
@@ -175,7 +178,7 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
   fun `equals() should return false for a different type`() = runTest {
     val otherTypes = Arb.choice(Arb.string(), Arb.int(), fieldPathSegmentArb())
     checkAll(propTestConfig, listIndexPathSegmentArb(), otherTypes) {
-      pathSegment: PathSegment.ListIndex,
+      pathSegment: DataConnectPathSegment.ListIndex,
       other ->
       pathSegment.equals(other) shouldBe false
     }
@@ -184,8 +187,8 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
   @Test
   fun `equals() should return false when field differs`() = runTest {
     checkAll(propTestConfig, listIndexPathSegmentArb(), listIndexPathSegmentArb()) {
-      pathSegment1: PathSegment.ListIndex,
-      pathSegment2: PathSegment.ListIndex ->
+      pathSegment1: DataConnectPathSegment.ListIndex,
+      pathSegment2: DataConnectPathSegment.ListIndex ->
       assume(pathSegment1.index != pathSegment2.index)
       pathSegment1.equals(pathSegment2) shouldBe false
     }
@@ -194,7 +197,8 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment: PathSegment.ListIndex ->
+      checkAll(propTestConfig, listIndexPathSegmentArb()) {
+        pathSegment: DataConnectPathSegment.ListIndex ->
         val hashCode1 = pathSegment.hashCode()
         pathSegment.hashCode() shouldBe hashCode1
         pathSegment.hashCode() shouldBe hashCode1
@@ -203,8 +207,9 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, listIndexPathSegmentArb()) { pathSegment1: PathSegment.ListIndex ->
-      val pathSegment2 = PathSegment.ListIndex(pathSegment1.index)
+    checkAll(propTestConfig, listIndexPathSegmentArb()) {
+      pathSegment1: DataConnectPathSegment.ListIndex ->
+      val pathSegment2 = DataConnectPathSegment.ListIndex(pathSegment1.index)
       pathSegment1.hashCode() shouldBe pathSegment2.hashCode()
     }
   }
@@ -212,8 +217,8 @@ class DataConnectOperationFailureResponsePathSegmentListIndexUnitTest {
   @Test
   fun `hashCode() should return a different value if index is different`() = runTest {
     checkAll(propTestConfig, listIndexPathSegmentArb(), listIndexPathSegmentArb()) {
-      pathSegment1: PathSegment.ListIndex,
-      pathSegment2: PathSegment.ListIndex ->
+      pathSegment1: DataConnectPathSegment.ListIndex,
+      pathSegment2: DataConnectPathSegment.ListIndex ->
       assume(pathSegment1.index.hashCode() != pathSegment2.index.hashCode())
       pathSegment1.hashCode() shouldNotBe pathSegment2.hashCode()
     }

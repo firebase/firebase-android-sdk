@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -140,15 +140,16 @@ internal object DataConnectGrpcClientGlobals {
   private fun ListValue.toPathSegment() =
     valuesList.map {
       when (it.kindCase) {
-        Value.KindCase.STRING_VALUE -> PathSegment.Field(it.stringValue)
-        Value.KindCase.NUMBER_VALUE -> PathSegment.ListIndex(it.numberValue.toInt())
+        Value.KindCase.STRING_VALUE -> DataConnectPathSegment.Field(it.stringValue)
+        Value.KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(it.numberValue.toInt())
         // The cases below are expected to never occur; however, implement some logic for them
         // to avoid things like throwing exceptions in those cases.
-        Value.KindCase.NULL_VALUE -> PathSegment.Field("null")
-        Value.KindCase.BOOL_VALUE -> PathSegment.Field(it.boolValue.toString())
-        Value.KindCase.LIST_VALUE -> PathSegment.Field(it.listValue.toCompactString())
-        Value.KindCase.STRUCT_VALUE -> PathSegment.Field(it.structValue.toCompactString())
-        else -> PathSegment.Field(it.toString())
+        Value.KindCase.NULL_VALUE -> DataConnectPathSegment.Field("null")
+        Value.KindCase.BOOL_VALUE -> DataConnectPathSegment.Field(it.boolValue.toString())
+        Value.KindCase.LIST_VALUE -> DataConnectPathSegment.Field(it.listValue.toCompactString())
+        Value.KindCase.STRUCT_VALUE ->
+          DataConnectPathSegment.Field(it.structValue.toCompactString())
+        else -> DataConnectPathSegment.Field(it.toString())
       }
     }
 

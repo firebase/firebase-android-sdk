@@ -19,7 +19,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectOperationException
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
@@ -523,16 +523,16 @@ class DataConnectGrpcClientUnitTest {
 
       fun random(rs: RandomSource): GraphqlErrorInfo {
 
-        val dataConnectErrorPath = mutableListOf<PathSegment>()
+        val dataConnectErrorPath = mutableListOf<DataConnectPathSegment>()
         val graphqlErrorPath = ListValue.newBuilder()
         repeat(6) {
           if (rs.random.nextFloat() < 0.33f) {
             val pathComponent = randomInts.next(rs)
-            dataConnectErrorPath.add(PathSegment.ListIndex(pathComponent))
+            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathComponent.toDouble()))
           } else {
             val pathComponent = randomPathComponents.next(rs)
-            dataConnectErrorPath.add(PathSegment.Field(pathComponent))
+            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathComponent))
           }
         }

@@ -18,7 +18,7 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -80,7 +80,7 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
 
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
-  path: Arb<List<PathSegment>> = errorPath(),
+  path: Arb<List<DataConnectPathSegment>> = errorPath(),
 ): Arb<ErrorInfoImpl> =
   Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
 
