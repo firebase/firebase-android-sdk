@@ -76,7 +76,7 @@ public interface DataConnectOperationFailureResponse<Data> {
     public val message: String
 
     /** The path of the field in the response data to which this error relates. */
-    public val path: List<PathSegment>
+    public val path: List<DataConnectPathSegment>
 
     /**
      * Compares this object with another object for equality.
@@ -112,44 +112,5 @@ public interface DataConnectOperationFailureResponse<Data> {
      * not empty), and the message.
      */
     override fun toString(): String
-
-    /** The "segment" of a path to a field in the response data. */
-    public sealed interface PathSegment {
-
-      /** A named field in a path to a field in the response data. */
-      @JvmInline
-      public value class Field(public val field: String) : PathSegment {
-
-        /**
-         * Returns a string representation of this object, useful for debugging.
-         *
-         * The string representation is _not_ guaranteed to be stable and may change without notice
-         * at any time. Therefore, the only recommended usage of the returned string is debugging
-         * and/or logging. Namely, parsing the returned string or storing the returned string in
-         * non-volatile storage should generally be avoided in order to be robust in case that the
-         * string representation changes.
-         *
-         * @return returns simply [field].
-         */
-        override fun toString(): String = field
-      }
-
-      /** An index of a list in a path to a field in the response data. */
-      @JvmInline
-      public value class ListIndex(public val index: Int) : PathSegment {
-        /**
-         * Returns a string representation of this object, useful for debugging.
-         *
-         * The string representation is _not_ guaranteed to be stable and may change without notice
-         * at any time. Therefore, the only recommended usage of the returned string is debugging
-         * and/or logging. Namely, parsing the returned string or storing the returned string in
-         * non-volatile storage should generally be avoided in order to be robust in case that the
-         * string representation changes.
-         *
-         * @return returns simply the string representation of [index].
-         */
-        override fun toString(): String = index.toString()
-      }
-    }
   }
 }

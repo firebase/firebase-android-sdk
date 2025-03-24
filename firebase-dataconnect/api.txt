@@ -61,24 +61,24 @@ package com.google.firebase.dataconnect {
   public static interface DataConnectOperationFailureResponse.ErrorInfo {
     method public boolean equals(Object? other);
     method public String getMessage();
-    method public java.util.List<com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment> getPath();
+    method public java.util.List<com.google.firebase.dataconnect.DataConnectPathSegment> getPath();
     method public int hashCode();
     method public String toString();
     property public abstract String message;
-    property public abstract java.util.List<com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment> path;
+    property public abstract java.util.List<com.google.firebase.dataconnect.DataConnectPathSegment> path;
   }
 
-  public static sealed interface DataConnectOperationFailureResponse.ErrorInfo.PathSegment {
+  public sealed interface DataConnectPathSegment {
   }
 
-  @kotlin.jvm.JvmInline public static final value class DataConnectOperationFailureResponse.ErrorInfo.PathSegment.Field implements com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment {
-    ctor public DataConnectOperationFailureResponse.ErrorInfo.PathSegment.Field(String field);
+  @kotlin.jvm.JvmInline public static final value class DataConnectPathSegment.Field implements com.google.firebase.dataconnect.DataConnectPathSegment {
+    ctor public DataConnectPathSegment.Field(String field);
     method public String getField();
     property public final String field;
   }
 
-  @kotlin.jvm.JvmInline public static final value class DataConnectOperationFailureResponse.ErrorInfo.PathSegment.ListIndex implements com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo.PathSegment {
-    ctor public DataConnectOperationFailureResponse.ErrorInfo.PathSegment.ListIndex(int index);
+  @kotlin.jvm.JvmInline public static final value class DataConnectPathSegment.ListIndex implements com.google.firebase.dataconnect.DataConnectPathSegment {
+    ctor public DataConnectPathSegment.ListIndex(int index);
     method public int getIndex();
     property public final int index;
   }
