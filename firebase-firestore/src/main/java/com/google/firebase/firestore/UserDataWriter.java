@@ -78,7 +78,7 @@ public class UserDataWriter {
       case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
       case TYPE_ORDER_NUMBER:
-        return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
+        return value.hasIntegerValue()
             ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
             : (Object) value.getDoubleValue();
       case TYPE_ORDER_STRING:

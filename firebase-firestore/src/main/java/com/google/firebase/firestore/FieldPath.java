@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkArgument;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -33,15 +34,18 @@ public final class FieldPath {
 
   private final com.google.firebase.firestore.model.FieldPath internalPath;
 
-  private FieldPath(List<String> segments) {
+  private FieldPath(@NonNull List<String> segments) {
     this.internalPath = com.google.firebase.firestore.model.FieldPath.fromSegments(segments);
   }
 
-  private FieldPath(com.google.firebase.firestore.model.FieldPath internalPath) {
+  private FieldPath(@NonNull com.google.firebase.firestore.model.FieldPath internalPath) {
     this.internalPath = internalPath;
   }
 
-  com.google.firebase.firestore.model.FieldPath getInternalPath() {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public com.google.firebase.firestore.model.FieldPath getInternalPath() {
     return internalPath;
   }
 
@@ -78,7 +82,9 @@ public final class FieldPath {
   }
 
   /** Parses a field path string into a {@code FieldPath}, treating dots as separators. */
-  static FieldPath fromDotSeparatedPath(@NonNull String path) {
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public static FieldPath fromDotSeparatedPath(@NonNull String path) {
     checkNotNull(path, "Provided field path must not be null.");
     checkArgument(
         !RESERVED.matcher(path).find(), "Use FieldPath.of() for field names containing '~*/[]'.");
