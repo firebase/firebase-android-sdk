@@ -1,6 +1,5 @@
 package com.google.firebase.vertexai.type
 
-
 /* Public class representing the status of the server's response. */
 public enum class Status {
   NORMAL,

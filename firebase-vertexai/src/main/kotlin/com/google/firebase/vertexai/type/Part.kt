@@ -57,11 +57,11 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
+  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: String)
+    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
   }
 }
 
@@ -77,9 +77,8 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
-    // todo change it back
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement>)
+    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
   }
 }
 
@@ -134,6 +133,8 @@ public fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataP
 
 /** Returns the part as a [FileDataPart] if it represents a file, and null otherwise */
 public fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart
+
+internal typealias Base64 = String
 
 internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
