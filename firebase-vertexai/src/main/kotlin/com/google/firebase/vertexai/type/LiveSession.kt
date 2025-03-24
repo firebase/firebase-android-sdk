@@ -16,12 +16,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+/**
+ * Represents a live WebSocket session capable of streaming bidirectional content to and from the
+ * server.
+ */
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession?,
@@ -46,10 +49,7 @@ internal constructor(
     @SerialName("client_content") val clientContent: ClientContent
   )
 
-  @Serializable
-  internal data class ToolResponseSetup(
-    val toolResponse: ToolResponse
-  )
+  @Serializable internal data class ToolResponseSetup(val toolResponse: ToolResponse)
   @Serializable
   internal data class ToolResponse(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
@@ -69,12 +69,23 @@ internal constructor(
 
   @Serializable internal data class ToolCallSetup(val toolCall: ToolCall)
 
-  @Serializable internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
+  @Serializable
+  internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
 
+  /**
+   * Receives all function call responses from the server for the audio conversation feature..
+   *
+   * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
+   */
   public fun receiveAudioConvoFunctionCalls(): Flow<List<FunctionCallPart>> {
     return functionCallChannel.receiveAsFlow()
   }
-  public suspend fun startAudioConversation(){
+
+  /**
+   * Starts an audio conversation with the Gemini server, which can only be stopped using
+   * stopAudioConversation.
+   */
+  public suspend fun startAudioConversation() {
     if (isRecording) {
       return
     }
@@ -127,8 +138,8 @@ internal constructor(
         }
         if (it.status == Status.INTERRUPTED) {
           while (!playBackQueue.isEmpty()) playBackQueue.poll()
-        } else if(it.status == Status.NORMAL) {
-          if(!it.functionCalls.isNullOrEmpty()) {
+        } else if (it.status == Status.NORMAL) {
+          if (!it.functionCalls.isNullOrEmpty()) {
             functionCallChannel.send(it.functionCalls)
           } else {
             playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
@@ -150,6 +161,7 @@ internal constructor(
     delay(1000)
   }
 
+  /** Stops the audio conversation with the Gemini Server. */
   public fun stopAudioConversation() {
     stopReceiving()
     isRecording = false
@@ -161,8 +173,9 @@ internal constructor(
     }
   }
 
+  /** Stop receiving from the server. */
   public fun stopReceiving() {
-    if(!startedReceiving) {
+    if (!startedReceiving) {
       return
     }
     receiveChannel.cancel()
@@ -170,21 +183,27 @@ internal constructor(
     startedReceiving = false
   }
 
-  public class SessionAlreadyReceivingException: Exception("This session is already receiving. Please call stopReceiving() before calling this again.")
+  public class SessionAlreadyReceivingException :
+    Exception(
+      "This session is already receiving. Please call stopReceiving() before calling this again."
+    )
 
-  public suspend fun receive(
-    outputModalities: List<ContentModality>
-  ): Flow<LiveContentResponse> {
-    if(startedReceiving) {
+  /**
+   * Receives responses from the server for both streaming and standard requests.
+   *
+   * @param outputModalities The list of output formats to receive from the server.
+   *
+   * @return A [Flow] which will emit [LiveContentResponse] as and when it receives it
+   *
+   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   */
+  public suspend fun receive(outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
+    if (startedReceiving) {
       throw SessionAlreadyReceivingException()
     }
 
     val flowReceive = session!!.incoming.receiveAsFlow()
-    CoroutineScope(Dispatchers.IO).launch {
-      flowReceive.collect {
-        receiveChannel.send(it)
-      }
-    }
+    CoroutineScope(Dispatchers.IO).launch { flowReceive.collect { receiveChannel.send(it) } }
     return flow {
       startedReceiving = true
       while (true) {
@@ -195,15 +214,21 @@ internal constructor(
           emit(LiveContentResponse(null, Status.INTERRUPTED, null))
           continue
         }
-        if(receivedJson.contains("turnComplete")) {
+        if (receivedJson.contains("turnComplete")) {
           emit(LiveContentResponse(null, Status.TURNCOMPLETE, null))
           continue
         }
         try {
           val functionContent = Json.decodeFromString<ToolCallSetup>(receivedJson)
-          emit(LiveContentResponse(null, Status.NORMAL, functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }))
+          emit(
+            LiveContentResponse(
+              null,
+              Status.NORMAL,
+              functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args!!) }
+            )
+          )
           continue
-        } catch (_: Exception){ }
+        } catch (_: Exception) {}
         try {
 
           val serverContent = Json.decodeFromString<ServerContentSetup>(receivedJson)
@@ -225,13 +250,25 @@ internal constructor(
     }
   }
 
-  public suspend fun sendFunctionResponse(
-    functionList: List<FunctionResponsePart>
-  ) {
-    val jsonString = Json.encodeToString(ToolResponseSetup(ToolResponse(functionList.map{it.toInternalFunctionCall()})))
+  /**
+   * Sends the function response from the client to the server.
+   *
+   * @param functionList The list of [FunctionResponsePart] instances indicating the function
+   * response from the client.
+   */
+  public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
+    val jsonString =
+      Json.encodeToString(
+        ToolResponseSetup(ToolResponse(functionList.map { it.toInternalFunctionCall() }))
+      )
     session?.send(Frame.Text(jsonString))
   }
 
+  /**
+   * Streams client data to the server.
+   *
+   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
+   */
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
@@ -240,22 +277,28 @@ internal constructor(
     session?.send(Frame.Text(jsonString))
   }
 
-  public suspend fun send(content: Content){
+  /**
+   * Sends data to the server
+   *
+   * @param content Client [Content] to be sent to the server.
+   */
+  public suspend fun send(content: Content) {
     val jsonString =
-      Json.encodeToString(
-        ClientContentSetup(
-          ClientContent(listOf(content.toInternal()), true)
-        )
-      )
+      Json.encodeToString(ClientContentSetup(ClientContent(listOf(content.toInternal()), true)))
     session?.send(Frame.Text(jsonString))
   }
-  public suspend fun send(text: String){
-    send(Content.Builder().text(text).build())
 
+  /**
+   * Sends text to the server
+   *
+   * @param text Text to be sent to the server.
+   */
+  public suspend fun send(text: String) {
+    send(Content.Builder().text(text).build())
   }
 
+  /** Closes the client session. */
   public suspend fun close() {
     session?.close()
   }
 }
-

@@ -3,6 +3,7 @@ package com.google.firebase.vertexai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** Speech configuration class for setting up the voice of the server's response. */
 public class SpeechConfig(public val voice: Voices) {
 
   @Serializable

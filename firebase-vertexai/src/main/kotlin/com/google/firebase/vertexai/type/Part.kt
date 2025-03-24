@@ -79,9 +79,8 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
 
     // todo change it back
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement> )
+    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement>)
   }
-
 }
 
 /**
@@ -95,8 +94,7 @@ public class FunctionResponsePart(public val name: String, public val response: 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable
-    public data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable public data class FunctionResponse(val name: String, val response: JsonObject)
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {

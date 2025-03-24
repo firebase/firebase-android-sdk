@@ -83,6 +83,18 @@ internal constructor(
     )
   }
 
+  /**
+   * Instantiates a new [LiveGenerationConfig] given the provided parameters.
+   *
+   * @param modelName The name of the model to use, for example `"gemini-1.5-pro"`.
+   * @param generationConfig The configuration parameters to use for content generation.
+   * @param tools A list of [Tool]s the model may use to generate content.
+   * @param toolConfig The [ToolConfig] that defines how the model handles the tools provided.
+   * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
+   * Currently only text content is supported.
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [LiveGenerativeModel] instance.
+   */
   @JvmOverloads
   public fun liveModel(
     modelName: String,

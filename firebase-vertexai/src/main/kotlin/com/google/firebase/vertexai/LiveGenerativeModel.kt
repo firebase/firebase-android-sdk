@@ -32,10 +32,10 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readBytes
+import java.nio.channels.ClosedChannelException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlin.system.exitProcess
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -49,6 +49,7 @@ internal constructor(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val controller: APIController,
+  private val location: String
 ) {
   public constructor(
     modelName: String,
@@ -57,6 +58,7 @@ internal constructor(
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
+    location: String = "us-central1",
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
@@ -66,6 +68,7 @@ internal constructor(
     tools,
     toolConfig,
     systemInstruction,
+    location,
     APIController(
       apiKey,
       modelName,
@@ -74,10 +77,6 @@ internal constructor(
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
   )
-
-  public fun getModelName(): String {
-    return this.modelName
-  }
 
   @Serializable
   internal data class BidiGenerateContentSetup(
@@ -90,12 +89,23 @@ internal constructor(
   @Serializable
   internal data class BidiGenerateContentClientMessage(val setup: BidiGenerateContentSetup)
 
+  /**
+   * Creates and returns a LiveSession object using which you could send/receive messages from the
+   * server
+   * @return LiveSession object created. Returns null if the object cannot be created.
+   * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
+   */
   public suspend fun connect(): LiveSession? {
     val client = HttpClient(CIO) { install(WebSockets) }
 
-    val roundedUrl = this.controller.getBidiEndpoint()
-    val setup = BidiGenerateContentSetup(this.modelName, this.config?.toInternal(),
-      this.tools?.map{it.toInternal()}, this.systemInstruction?.toInternal())
+    val roundedUrl = this.controller.getBidiEndpoint(location)
+    val setup =
+      BidiGenerateContentSetup(
+        this.modelName,
+        this.config?.toInternal(),
+        this.tools?.map { it.toInternal() },
+        this.systemInstruction?.toInternal()
+      )
     val data: String = Json.encodeToString(BidiGenerateContentClientMessage(setup))
     val webSession = client.webSocketSession(roundedUrl)
     webSession.send(Frame.Text(data))
@@ -108,10 +118,10 @@ internal constructor(
         shouldContinue = true
       }
     }
-    if (shouldContinue) {
-      return LiveSession(session = webSession, isRecording = false)
+    return if (shouldContinue) {
+      LiveSession(session = webSession, isRecording = false)
     } else {
-      return null
+      null
     }
   }
 

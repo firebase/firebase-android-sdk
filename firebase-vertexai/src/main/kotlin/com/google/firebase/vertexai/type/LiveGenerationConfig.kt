@@ -55,22 +55,10 @@ import kotlinx.serialization.Serializable
  * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
  * (unbounded).
  *
- * @property stopSequences A set of up to 5 `String`s that will stop output generation. If
- * specified, the API will stop at the first appearance of a stop sequence. The stop sequence will
- * not be included as part of the response.
+ * @property responseModalities Specifies the format of the data in which the server responds to
+ * requests
  *
- * @property responseMimeType Output response MIME type of the generated candidate text (IANA
- * standard).
- *
- * Supported MIME types depend on the model used, but could include:
- * - `text/plain`: Text output; the default behavior if unspecified.
- * - `application/json`: JSON response in the candidates.
- *
- * @property responseSchema Output schema of the generated candidate text. If set, a compatible
- * [responseMimeType] must also be set.
- *
- * Compatible MIME types:
- * - `application/json`: Schema for JSON response.
+ * @property speechConfig Specifies the voice configuration of the audio response from the server.
  *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
@@ -90,31 +78,28 @@ private constructor(
 ) {
 
   /**
-   * Builder for creating a [GenerationConfig].
+   * Builder for creating a [LiveGenerationConfig].
    *
-   * Mainly intended for Java interop. Kotlin consumers should use [generationConfig] for a more
+   * Mainly intended for Java interop. Kotlin consumers should use [liveGenerationConfig] for a more
    * idiomatic experience.
    *
-   * @property temperature See [GenerationConfig.temperature].
+   * @property temperature See [LiveGenerationConfig.temperature].
    *
-   * @property topK See [GenerationConfig.topK].
+   * @property topK See [LiveGenerationConfig.topK].
    *
-   * @property topP See [GenerationConfig.topP].
+   * @property topP See [LiveGenerationConfig.topP].
    *
-   * @property presencePenalty See [GenerationConfig.presencePenalty]
+   * @property presencePenalty See [LiveGenerationConfig.presencePenalty]
    *
-   * @property frequencyPenalty See [GenerationConfig.frequencyPenalty]
+   * @property frequencyPenalty See [LiveGenerationConfig.frequencyPenalty]
    *
-   * @property candidateCount See [GenerationConfig.candidateCount].
+   * @property candidateCount See [LiveGenerationConfig.candidateCount].
    *
-   * @property maxOutputTokens See [GenerationConfig.maxOutputTokens].
+   * @property maxOutputTokens See [LiveGenerationConfig.maxOutputTokens].
    *
-   * @property stopSequences See [GenerationConfig.stopSequences].
+   * @property responseModalities See [LiveGenerationConfig.responseModalities]
    *
-   * @property responseMimeType See [GenerationConfig.responseMimeType].
-   *
-   * @property responseSchema See [GenerationConfig.responseSchema].
-   * @see [generationConfig]
+   * @property speechConfig See [LiveGenerationConfig.speechConfig]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
@@ -127,7 +112,7 @@ private constructor(
     @JvmField public var responseModalities: List<ContentModality>? = null
     @JvmField public var speechConfig: SpeechConfig? = null
 
-    /** Create a new [GenerationConfig] with the attached arguments. */
+    /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(
         temperature = temperature,
@@ -172,9 +157,9 @@ private constructor(
   public companion object {
 
     /**
-     * Alternative casing for [GenerationConfig.Builder]:
+     * Alternative casing for [LiveGenerationConfig.Builder]:
      * ```
-     * val config = GenerationConfig.builder()
+     * val config = LiveGenerationConfig.builder()
      * ```
      */
     public fun builder(): Builder = Builder()
@@ -182,17 +167,17 @@ private constructor(
 }
 
 /**
- * Helper method to construct a [GenerationConfig] in a DSL-like manner.
+ * Helper method to construct a [LiveGenerationConfig] in a DSL-like manner.
  *
  * Example Usage:
  * ```
- * generationConfig {
+ * liveGenerationConfig {
  *   temperature = 0.75f
  *   topP = 0.5f
  *   topK = 30
  *   candidateCount = 4
  *   maxOutputTokens = 300
- *   stopSequences = listOf("in conclusion", "-----", "do you need")
+ *   ...
  * }
  * ```
  */

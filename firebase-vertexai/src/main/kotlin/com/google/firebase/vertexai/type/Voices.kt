@@ -19,7 +19,7 @@ package com.google.firebase.vertexai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Content part modality. */
+/** Various voices supported by the server */
 public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
