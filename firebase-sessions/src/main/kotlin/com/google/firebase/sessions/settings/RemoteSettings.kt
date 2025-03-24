@@ -23,13 +23,11 @@ import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.InstallationId
 import com.google.firebase.sessions.TimeProvider
-import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONException
@@ -43,11 +41,8 @@ constructor(
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher,
-  private val lazySettingsCache: Lazy<SettingsCache>,
+  private val settingsCache: SettingsCache,
 ) : SettingsProvider {
-  private val settingsCache: SettingsCache
-    get() = lazySettingsCache.get()
-
   private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?
@@ -133,7 +128,7 @@ constructor(
               sessionTimeoutSeconds = sessionTimeoutSeconds,
               sessionSamplingRate = sessionSamplingRate,
               cacheDurationSeconds = cacheDuration ?: defaultCacheDuration,
-              cacheUpdatedTimeMs = timeProvider.currentTime().ms,
+              cacheUpdatedTimeSeconds = timeProvider.currentTime().seconds,
             )
           )
         },
@@ -148,7 +143,7 @@ constructor(
   override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
 
   @VisibleForTesting
-  internal fun clearCachedSettings() = runBlocking {
+  internal suspend fun clearCachedSettings() {
     settingsCache.updateConfigs(SessionConfigsSerializer.defaultValue)
   }
 
