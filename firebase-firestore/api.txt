@@ -54,7 +54,6 @@ package com.google.firebase.firestore {
     method public String getId();
     method public com.google.firebase.firestore.DocumentReference? getParent();
     method public String getPath();
-    method public com.google.firebase.firestore.Pipeline pipeline();
   }
 
   public class DocumentChange {
@@ -432,8 +431,8 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.Expr property, double[] vector, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure, com.google.firebase.firestore.pipeline.FindNearestOptions options);
     method public com.google.firebase.firestore.Pipeline genericStage(com.google.firebase.firestore.pipeline.GenericStage stage);
     method public com.google.firebase.firestore.Pipeline genericStage(String name, java.lang.Object... arguments);
-    method public com.google.firebase.firestore.Pipeline limit(long limit);
-    method public com.google.firebase.firestore.Pipeline offset(long offset);
+    method public com.google.firebase.firestore.Pipeline limit(int limit);
+    method public com.google.firebase.firestore.Pipeline offset(int offset);
     method public com.google.firebase.firestore.Pipeline removeFields(com.google.firebase.firestore.pipeline.Field... fields);
     method public com.google.firebase.firestore.Pipeline removeFields(java.lang.String... fields);
     method public com.google.firebase.firestore.Pipeline replace(com.google.firebase.firestore.pipeline.Selectable field);
@@ -453,13 +452,17 @@ package com.google.firebase.firestore {
   }
 
   public final class PipelineResult {
+    method public Object? get(com.google.firebase.firestore.FieldPath fieldPath);
+    method public Object? get(String field);
     method public java.util.Map<java.lang.String,java.lang.Object?> getData();
+    method public String? getId();
     method public com.google.firebase.firestore.DocumentReference? getRef();
     property public final com.google.firebase.firestore.DocumentReference? ref;
   }
 
-  public final class PipelineSnapshot {
+  public final class PipelineSnapshot implements java.lang.Iterable<com.google.firebase.firestore.PipelineResult> kotlin.jvm.internal.markers.KMappedMarker {
     method public java.util.List<com.google.firebase.firestore.PipelineResult> getResults();
+    method public java.util.Iterator<com.google.firebase.firestore.PipelineResult> iterator();
     property public final java.util.List<com.google.firebase.firestore.PipelineResult> results;
   }
 
@@ -499,6 +502,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Query orderBy(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.Query.Direction);
     method public com.google.firebase.firestore.Query orderBy(String);
     method public com.google.firebase.firestore.Query orderBy(String, com.google.firebase.firestore.Query.Direction);
+    method public com.google.firebase.firestore.Pipeline pipeline();
     method public com.google.firebase.firestore.Query startAfter(com.google.firebase.firestore.DocumentSnapshot);
     method public com.google.firebase.firestore.Query startAfter(java.lang.Object!...!);
     method public com.google.firebase.firestore.Query startAt(com.google.firebase.firestore.DocumentSnapshot);
@@ -780,6 +784,17 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.ExprWithAlias as(String alias);
     method public final com.google.firebase.firestore.pipeline.Ordering ascending();
     method public final com.google.firebase.firestore.pipeline.AggregateExpr avg();
+    method public final com.google.firebase.firestore.pipeline.Function bitAnd(com.google.firebase.firestore.pipeline.Expr right);
+    method public final com.google.firebase.firestore.pipeline.Function bitAnd(Object right);
+    method public final com.google.firebase.firestore.pipeline.Function bitLeftShift(com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public final com.google.firebase.firestore.pipeline.Function bitLeftShift(int number);
+    method public final com.google.firebase.firestore.pipeline.Function bitNot();
+    method public final com.google.firebase.firestore.pipeline.Function bitOr(com.google.firebase.firestore.pipeline.Expr right);
+    method public final com.google.firebase.firestore.pipeline.Function bitOr(Object right);
+    method public final com.google.firebase.firestore.pipeline.Function bitRightShift(com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public final com.google.firebase.firestore.pipeline.Function bitRightShift(int number);
+    method public final com.google.firebase.firestore.pipeline.Function bitXor(com.google.firebase.firestore.pipeline.Expr right);
+    method public final com.google.firebase.firestore.pipeline.Function bitXor(Object right);
     method public final com.google.firebase.firestore.pipeline.Function byteLength();
     method public final com.google.firebase.firestore.pipeline.Function charLength();
     method public final com.google.firebase.firestore.pipeline.Function cosineDistance(com.google.firebase.firestore.pipeline.Expr vector);
@@ -795,15 +810,18 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.BooleanExpr endsWith(String suffix);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr eq(com.google.firebase.firestore.pipeline.Expr other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr eq(Object other);
+    method public final com.google.firebase.firestore.pipeline.BooleanExpr eqAny(java.util.List<?> values);
     method public final com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector);
     method public final com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.VectorValue vector);
     method public final com.google.firebase.firestore.pipeline.Function euclideanDistance(double[] vector);
+    method public final com.google.firebase.firestore.pipeline.BooleanExpr exists();
     method public final com.google.firebase.firestore.pipeline.BooleanExpr gt(com.google.firebase.firestore.pipeline.Expr other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr gt(Object other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr gte(com.google.firebase.firestore.pipeline.Expr other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr gte(Object other);
-    method public final com.google.firebase.firestore.pipeline.BooleanExpr inAny(java.util.List<?> values);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr isNan();
+    method public final com.google.firebase.firestore.pipeline.BooleanExpr isNotNan();
+    method public final com.google.firebase.firestore.pipeline.BooleanExpr isNotNull();
     method public final com.google.firebase.firestore.pipeline.BooleanExpr isNull();
     method public final com.google.firebase.firestore.pipeline.BooleanExpr like(com.google.firebase.firestore.pipeline.Expr pattern);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr like(String pattern);
@@ -825,7 +843,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Function multiply(Object other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr other);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr neq(Object other);
-    method public final com.google.firebase.firestore.pipeline.BooleanExpr notInAny(java.util.List<?> values);
+    method public final com.google.firebase.firestore.pipeline.BooleanExpr notEqAny(java.util.List<?> values);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr regexContains(com.google.firebase.firestore.pipeline.Expr pattern);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr regexContains(String pattern);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr regexMatch(com.google.firebase.firestore.pipeline.Expr pattern);
@@ -868,6 +886,7 @@ package com.google.firebase.firestore.pipeline {
     method public static com.google.firebase.firestore.pipeline.Field of(com.google.firebase.firestore.FieldPath fieldPath);
     method public static com.google.firebase.firestore.pipeline.Field of(String name);
     field public static final com.google.firebase.firestore.pipeline.Field.Companion Companion;
+    field public static final com.google.firebase.firestore.pipeline.Field DOCUMENT_ID;
   }
 
   public static final class Field.Companion {
@@ -925,6 +944,28 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Function arrayLength(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.Function arrayReverse(com.google.firebase.firestore.pipeline.Expr array);
     method public static final com.google.firebase.firestore.pipeline.Function arrayReverse(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.Function bitAnd(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitAnd(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitAnd(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitAnd(String fieldName, Object right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitLeftShift(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public static final com.google.firebase.firestore.pipeline.Function bitLeftShift(com.google.firebase.firestore.pipeline.Expr left, int number);
+    method public static final com.google.firebase.firestore.pipeline.Function bitLeftShift(String fieldName, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public static final com.google.firebase.firestore.pipeline.Function bitLeftShift(String fieldName, int number);
+    method public static final com.google.firebase.firestore.pipeline.Function bitNot(com.google.firebase.firestore.pipeline.Expr left);
+    method public static final com.google.firebase.firestore.pipeline.Function bitNot(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.Function bitOr(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitOr(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitOr(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitOr(String fieldName, Object right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitRightShift(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public static final com.google.firebase.firestore.pipeline.Function bitRightShift(com.google.firebase.firestore.pipeline.Expr left, int number);
+    method public static final com.google.firebase.firestore.pipeline.Function bitRightShift(String fieldName, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public static final com.google.firebase.firestore.pipeline.Function bitRightShift(String fieldName, int number);
+    method public static final com.google.firebase.firestore.pipeline.Function bitXor(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitXor(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitXor(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public static final com.google.firebase.firestore.pipeline.Function bitXor(String fieldName, Object right);
     method public static final com.google.firebase.firestore.pipeline.Function byteLength(com.google.firebase.firestore.pipeline.Expr value);
     method public static final com.google.firebase.firestore.pipeline.Function byteLength(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.Function charLength(com.google.firebase.firestore.pipeline.Expr value);
@@ -953,12 +994,15 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr eq(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr eq(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr eq(String fieldName, Object right);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr eqAny(com.google.firebase.firestore.pipeline.Expr value, java.util.List<?> values);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr eqAny(String fieldName, java.util.List<?> values);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, com.google.firebase.firestore.pipeline.Expr vector2);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, com.google.firebase.firestore.VectorValue vector2);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, double[] vector2);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, com.google.firebase.firestore.pipeline.Expr vector);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, com.google.firebase.firestore.VectorValue vector);
     method public static final com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, double[] vector);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr exists(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.Function generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr gt(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr gt(com.google.firebase.firestore.pipeline.Expr left, Object right);
@@ -972,10 +1016,12 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Function ifThen(com.google.firebase.firestore.pipeline.BooleanExpr condition, Object then);
     method public static final com.google.firebase.firestore.pipeline.Function ifThenElse(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.Expr then, com.google.firebase.firestore.pipeline.Expr else);
     method public static final com.google.firebase.firestore.pipeline.Function ifThenElse(com.google.firebase.firestore.pipeline.BooleanExpr condition, Object then, Object else);
-    method public static final com.google.firebase.firestore.pipeline.BooleanExpr inAny(com.google.firebase.firestore.pipeline.Expr array, java.util.List<?> values);
-    method public static final com.google.firebase.firestore.pipeline.BooleanExpr inAny(String fieldName, java.util.List<?> values);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNan(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNan(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNotNan(com.google.firebase.firestore.pipeline.Expr expr);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNotNan(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNotNull(com.google.firebase.firestore.pipeline.Expr expr);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNotNull(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNull(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr isNull(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr like(com.google.firebase.firestore.pipeline.Expr expr, com.google.firebase.firestore.pipeline.Expr pattern);
@@ -1015,8 +1061,8 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr neq(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr neq(String fieldName, Object right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr not(com.google.firebase.firestore.pipeline.BooleanExpr condition);
-    method public static final com.google.firebase.firestore.pipeline.BooleanExpr notInAny(com.google.firebase.firestore.pipeline.Expr array, java.util.List<?> values);
-    method public static final com.google.firebase.firestore.pipeline.BooleanExpr notInAny(String fieldName, java.util.List<?> values);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr notEqAny(com.google.firebase.firestore.pipeline.Expr value, java.util.List<?> values);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr notEqAny(String fieldName, java.util.List<?> values);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr or(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr regexContains(com.google.firebase.firestore.pipeline.Expr expr, com.google.firebase.firestore.pipeline.Expr pattern);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr regexContains(com.google.firebase.firestore.pipeline.Expr expr, String pattern);
@@ -1104,6 +1150,28 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Function arrayLength(String fieldName);
     method public com.google.firebase.firestore.pipeline.Function arrayReverse(com.google.firebase.firestore.pipeline.Expr array);
     method public com.google.firebase.firestore.pipeline.Function arrayReverse(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Function bitAnd(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitAnd(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public com.google.firebase.firestore.pipeline.Function bitAnd(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitAnd(String fieldName, Object right);
+    method public com.google.firebase.firestore.pipeline.Function bitLeftShift(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public com.google.firebase.firestore.pipeline.Function bitLeftShift(com.google.firebase.firestore.pipeline.Expr left, int number);
+    method public com.google.firebase.firestore.pipeline.Function bitLeftShift(String fieldName, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public com.google.firebase.firestore.pipeline.Function bitLeftShift(String fieldName, int number);
+    method public com.google.firebase.firestore.pipeline.Function bitNot(com.google.firebase.firestore.pipeline.Expr left);
+    method public com.google.firebase.firestore.pipeline.Function bitNot(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Function bitOr(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitOr(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public com.google.firebase.firestore.pipeline.Function bitOr(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitOr(String fieldName, Object right);
+    method public com.google.firebase.firestore.pipeline.Function bitRightShift(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public com.google.firebase.firestore.pipeline.Function bitRightShift(com.google.firebase.firestore.pipeline.Expr left, int number);
+    method public com.google.firebase.firestore.pipeline.Function bitRightShift(String fieldName, com.google.firebase.firestore.pipeline.Expr numberExpr);
+    method public com.google.firebase.firestore.pipeline.Function bitRightShift(String fieldName, int number);
+    method public com.google.firebase.firestore.pipeline.Function bitXor(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitXor(com.google.firebase.firestore.pipeline.Expr left, Object right);
+    method public com.google.firebase.firestore.pipeline.Function bitXor(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
+    method public com.google.firebase.firestore.pipeline.Function bitXor(String fieldName, Object right);
     method public com.google.firebase.firestore.pipeline.Function byteLength(com.google.firebase.firestore.pipeline.Expr value);
     method public com.google.firebase.firestore.pipeline.Function byteLength(String fieldName);
     method public com.google.firebase.firestore.pipeline.Function charLength(com.google.firebase.firestore.pipeline.Expr value);
@@ -1132,12 +1200,15 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr eq(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr eq(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr eq(String fieldName, Object right);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr eqAny(com.google.firebase.firestore.pipeline.Expr value, java.util.List<?> values);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr eqAny(String fieldName, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, com.google.firebase.firestore.pipeline.Expr vector2);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, com.google.firebase.firestore.VectorValue vector2);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(com.google.firebase.firestore.pipeline.Expr vector1, double[] vector2);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, com.google.firebase.firestore.pipeline.Expr vector);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, com.google.firebase.firestore.VectorValue vector);
     method public com.google.firebase.firestore.pipeline.Function euclideanDistance(String fieldName, double[] vector);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr exists(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.Function generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
     method public com.google.firebase.firestore.pipeline.BooleanExpr gt(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr gt(com.google.firebase.firestore.pipeline.Expr left, Object right);
@@ -1151,10 +1222,12 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Function ifThen(com.google.firebase.firestore.pipeline.BooleanExpr condition, Object then);
     method public com.google.firebase.firestore.pipeline.Function ifThenElse(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.Expr then, com.google.firebase.firestore.pipeline.Expr else);
     method public com.google.firebase.firestore.pipeline.Function ifThenElse(com.google.firebase.firestore.pipeline.BooleanExpr condition, Object then, Object else);
-    method public com.google.firebase.firestore.pipeline.BooleanExpr inAny(com.google.firebase.firestore.pipeline.Expr array, java.util.List<?> values);
-    method public com.google.firebase.firestore.pipeline.BooleanExpr inAny(String fieldName, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.BooleanExpr isNan(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.BooleanExpr isNan(String fieldName);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr isNotNan(com.google.firebase.firestore.pipeline.Expr expr);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr isNotNan(String fieldName);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr isNotNull(com.google.firebase.firestore.pipeline.Expr expr);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr isNotNull(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpr isNull(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.BooleanExpr isNull(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpr like(com.google.firebase.firestore.pipeline.Expr expr, com.google.firebase.firestore.pipeline.Expr pattern);
@@ -1194,8 +1267,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr neq(String fieldName, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr neq(String fieldName, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr not(com.google.firebase.firestore.pipeline.BooleanExpr condition);
-    method public com.google.firebase.firestore.pipeline.BooleanExpr notInAny(com.google.firebase.firestore.pipeline.Expr array, java.util.List<?> values);
-    method public com.google.firebase.firestore.pipeline.BooleanExpr notInAny(String fieldName, java.util.List<?> values);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr notEqAny(com.google.firebase.firestore.pipeline.Expr value, java.util.List<?> values);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr notEqAny(String fieldName, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.BooleanExpr or(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
     method public com.google.firebase.firestore.pipeline.BooleanExpr regexContains(com.google.firebase.firestore.pipeline.Expr expr, com.google.firebase.firestore.pipeline.Expr pattern);
     method public com.google.firebase.firestore.pipeline.BooleanExpr regexContains(com.google.firebase.firestore.pipeline.Expr expr, String pattern);
@@ -1284,6 +1357,9 @@ package com.google.firebase.firestore.pipeline {
     method public static com.google.firebase.firestore.pipeline.Ordering ascending(String fieldName);
     method public static com.google.firebase.firestore.pipeline.Ordering descending(com.google.firebase.firestore.pipeline.Expr expr);
     method public static com.google.firebase.firestore.pipeline.Ordering descending(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Expr getExpr();
+    method public com.google.firebase.firestore.pipeline.Ordering reverse();
+    property public final com.google.firebase.firestore.pipeline.Expr expr;
     field public static final com.google.firebase.firestore.pipeline.Ordering.Companion Companion;
   }
 

@@ -170,7 +170,8 @@ public class CompositeFilter extends Filter {
 
   @Override
   BooleanExpr toPipelineExpr() {
-    BooleanExpr[] booleanExprs = filters.stream().map(Filter::toPipelineExpr).toArray(BooleanExpr[]::new);
+    BooleanExpr[] booleanExprs =
+        filters.stream().map(Filter::toPipelineExpr).toArray(BooleanExpr[]::new);
     switch (operator) {
       case AND:
         return new BooleanExpr("and", booleanExprs);

@@ -27,7 +27,6 @@ import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Constant.Companion.of
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
-import com.google.firestore.v1.StructuredQuery.Order
 import com.google.firestore.v1.Value
 import java.util.Date
 import kotlin.reflect.KFunction1
@@ -355,8 +354,7 @@ class ExprWithAlias internal constructor(private val alias: String, private val 
 
 class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
-    @JvmField
-    val DOCUMENT_ID: Field = of(FieldPath.documentId())
+    @JvmField val DOCUMENT_ID: Field = of(FieldPath.documentId())
 
     @JvmStatic
     fun of(name: String): Field {
@@ -527,10 +525,12 @@ protected constructor(private val name: String, private val params: Array<out Ex
     fun eqAny(fieldName: String, values: List<Any>) =
       BooleanExpr("eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    @JvmStatic fun notEqAny(value: Expr, values: List<Any>) =
+    @JvmStatic
+    fun notEqAny(value: Expr, values: List<Any>) =
       BooleanExpr("not_eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    @JvmStatic fun notEqAny(fieldName: String, values: List<Any>) =
+    @JvmStatic
+    fun notEqAny(fieldName: String, values: List<Any>) =
       BooleanExpr("not_eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     @JvmStatic fun isNan(expr: Expr) = BooleanExpr("is_nan", expr)
@@ -950,7 +950,8 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun arrayLength(fieldName: String) = Function("array_length", fieldName)
 
     @JvmStatic
-    fun ifThen(condition: BooleanExpr, then: Expr) = Function("cond", condition, then, Constant.NULL)
+    fun ifThen(condition: BooleanExpr, then: Expr) =
+      Function("cond", condition, then, Constant.NULL)
 
     @JvmStatic
     fun ifThen(condition: BooleanExpr, then: Any) = Function("cond", condition, then, Constant.NULL)
@@ -1040,5 +1041,6 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
       )
       .build()
 
-  fun reverse(): Ordering = Ordering(expr, if (dir == Direction.ASCENDING) Direction.DESCENDING else Direction.ASCENDING)
+  fun reverse(): Ordering =
+    Ordering(expr, if (dir == Direction.ASCENDING) Direction.DESCENDING else Direction.ASCENDING)
 }

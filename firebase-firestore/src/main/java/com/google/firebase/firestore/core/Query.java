@@ -38,9 +38,7 @@ import com.google.firebase.firestore.pipeline.Function;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.Stage;
 import com.google.firestore.v1.Value;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -48,7 +46,6 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Encapsulates all the query attributes we support in the SDK. It can be run against the
@@ -549,7 +546,9 @@ public final class Query {
     if (fields.size() == 1) {
       p = p.where(fields.get(0).exists());
     } else {
-      p = p.where(and(fields.get(0).exists(), fields.stream().skip(1).map(Expr::exists).toArray(BooleanExpr[]::new)));
+      BooleanExpr[] conditions =
+          fields.stream().skip(1).map(Expr::exists).toArray(BooleanExpr[]::new);
+      p = p.where(and(fields.get(0).exists(), conditions));
     }
 
     if (startAt != null) {
@@ -578,7 +577,8 @@ public final class Query {
     return p;
   }
 
-  private static BooleanExpr whereConditionsFromCursor(Bound bound, List<Field> fields, BiFunction<Expr, Object, BooleanExpr> cmp) {
+  private static BooleanExpr whereConditionsFromCursor(
+      Bound bound, List<Field> fields, BiFunction<Expr, Object, BooleanExpr> cmp) {
     List<Value> boundPosition = bound.getPosition();
     int size = boundPosition.size();
     hardAssert(size <= fields.size(), "Bound positions must not exceed order fields.");
@@ -587,7 +587,7 @@ public final class Query {
     if (bound.isInclusive()) {
       condition = or(condition, Function.eq(fields.get(last), boundPosition.get(last)));
     }
-    for (int i = size - 2; i >=0; i--) {
+    for (int i = size - 2; i >= 0; i--) {
       final Field field = fields.get(i);
       final Value value = boundPosition.get(i);
       condition = or(cmp.apply(field, value), and(field.eq(value), condition));
