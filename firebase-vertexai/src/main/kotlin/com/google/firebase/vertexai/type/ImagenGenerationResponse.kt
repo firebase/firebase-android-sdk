@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
+import android.util.Base64
 import com.google.firebase.vertexai.ImagenModel
 import kotlinx.serialization.Serializable
 
@@ -53,7 +54,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     val raiFilteredReason: String? = null,
   ) {
     internal fun toPublicInline() =
-      ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType!!)
+      ImagenInlineImage(Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP), mimeType!!)
 
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }

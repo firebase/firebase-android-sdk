@@ -18,7 +18,6 @@ package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Base64
 
 /**
  * Represents an Imagen-generated image that is contained inline
@@ -34,7 +33,6 @@ internal constructor(public val data: ByteArray, public val mimeType: String) {
    * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.
    */
   public fun asBitmap(): Bitmap {
-    val data = Base64.decode(data, Base64.NO_WRAP)
     return BitmapFactory.decodeByteArray(data, 0, data.size)
   }
 }
