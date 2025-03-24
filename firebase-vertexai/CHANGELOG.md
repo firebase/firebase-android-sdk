@@ -1,7 +1,7 @@
 # Unreleased
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
-
+* [changed] `ImagenInlineImage.data` is now returned as binary instead of base64. (#6800)
 
 # 16.2.0
 * [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
