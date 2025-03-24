@@ -1,6 +1,14 @@
 # Unreleased
+
+
+# 21.0.2
 * [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
