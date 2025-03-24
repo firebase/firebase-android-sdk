@@ -130,6 +130,7 @@ public class CollectionReference extends Query {
   }
 
   @NonNull
+  @Override
   public Pipeline pipeline() {
     return new Pipeline(firestore, firestore.getUserDataReader(), new CollectionSource(getPath()));
   }

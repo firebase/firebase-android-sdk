@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.pipeline.BooleanExpr;
 import com.google.firebase.firestore.util.Function;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,6 +166,19 @@ public class CompositeFilter extends Filter {
     builder.append(TextUtils.join(",", filters));
     builder.append(")");
     return builder.toString();
+  }
+
+  @Override
+  BooleanExpr toPipelineExpr() {
+    BooleanExpr[] booleanExprs = filters.stream().map(Filter::toPipelineExpr).toArray(BooleanExpr[]::new);
+    switch (operator) {
+      case AND:
+        return new BooleanExpr("and", booleanExprs);
+      case OR:
+        return new BooleanExpr("or", booleanExprs);
+    }
+    // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed
+    throw new IllegalArgumentException("Unsupported operator: " + operator);
   }
 
   @Override

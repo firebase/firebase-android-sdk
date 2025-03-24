@@ -14,21 +14,41 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.pipeline.Function.and;
+import static com.google.firebase.firestore.pipeline.Function.or;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Pipeline;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.pipeline.BooleanExpr;
+import com.google.firebase.firestore.pipeline.CollectionGroupSource;
+import com.google.firebase.firestore.pipeline.CollectionSource;
+import com.google.firebase.firestore.pipeline.DocumentsSource;
+import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Field;
+import com.google.firebase.firestore.pipeline.Function;
+import com.google.firebase.firestore.pipeline.Ordering;
+import com.google.firebase.firestore.pipeline.Stage;
+import com.google.firestore.v1.Value;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates all the query attributes we support in the SDK. It can be run against the
@@ -499,6 +519,90 @@ public final class Query {
           this.limit,
           newStartAt,
           newEndAt);
+    }
+  }
+
+  @NonNull
+  public Pipeline toPipeline(FirebaseFirestore firestore, UserDataReader userDataReader) {
+    Pipeline p = new Pipeline(firestore, userDataReader, pipelineSource());
+
+    // Filters
+    for (Filter filter : filters) {
+      p = p.where(filter.toPipelineExpr());
+    }
+
+    // Orders
+    List<OrderBy> normalizedOrderBy = getNormalizedOrderBy();
+    int size = normalizedOrderBy.size();
+    List<Field> fields = new ArrayList<>(size);
+    List<Ordering> orderings = new ArrayList<>(size);
+    for (OrderBy order : normalizedOrderBy) {
+      Field field = new Field(order.getField());
+      fields.add(field);
+      if (order.getDirection() == Direction.ASCENDING) {
+        orderings.add(field.ascending());
+      } else {
+        orderings.add(field.descending());
+      }
+    }
+
+    if (fields.size() == 1) {
+      p = p.where(fields.get(0).exists());
+    } else {
+      p = p.where(and(fields.get(0).exists(), fields.stream().skip(1).map(Expr::exists).toArray(BooleanExpr[]::new)));
+    }
+
+    if (startAt != null) {
+      p = p.where(whereConditionsFromCursor(startAt, fields, Function::gt));
+    }
+
+    if (endAt != null) {
+      p = p.where(whereConditionsFromCursor(endAt, fields, Function::lt));
+    }
+
+    // Cursors, Limit, Offset
+    if (hasLimit()) {
+      // TODO: Handle situation where user enters limit larger than integer.
+      if (limitType == LimitType.LIMIT_TO_FIRST) {
+        p = p.sort(orderings.toArray(Ordering[]::new));
+        p = p.limit((int) limit);
+      } else {
+        p = p.sort(orderings.stream().map(Ordering::reverse).toArray(Ordering[]::new));
+        p = p.limit((int) limit);
+        p = p.sort(orderings.toArray(Ordering[]::new));
+      }
+    } else {
+      p = p.sort(orderings.toArray(Ordering[]::new));
+    }
+
+    return p;
+  }
+
+  private static BooleanExpr whereConditionsFromCursor(Bound bound, List<Field> fields, BiFunction<Expr, Object, BooleanExpr> cmp) {
+    List<Value> boundPosition = bound.getPosition();
+    int size = boundPosition.size();
+    hardAssert(size <= fields.size(), "Bound positions must not exceed order fields.");
+    int last = size - 1;
+    BooleanExpr condition = cmp.apply(fields.get(last), boundPosition.get(last));
+    if (bound.isInclusive()) {
+      condition = or(condition, Function.eq(fields.get(last), boundPosition.get(last)));
+    }
+    for (int i = size - 2; i >=0; i--) {
+      final Field field = fields.get(i);
+      final Value value = boundPosition.get(i);
+      condition = or(cmp.apply(field, value), and(field.eq(value), condition));
+    }
+    return condition;
+  }
+
+  @NonNull
+  private Stage pipelineSource() {
+    if (isDocumentQuery()) {
+      return new DocumentsSource(path.canonicalString());
+    } else if (isCollectionGroupQuery()) {
+      return new CollectionGroupSource(collectionGroup);
+    } else {
+      return new CollectionSource(path.canonicalString());
     }
   }
 

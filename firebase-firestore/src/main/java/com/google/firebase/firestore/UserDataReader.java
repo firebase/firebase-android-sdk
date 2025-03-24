@@ -230,7 +230,7 @@ public final class UserDataReader {
 
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     Value parsedValue = parseData(converted, context);
-    if (parsedValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
+    if (!parsedValue.hasMapValue()) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
     }
     return new ObjectValue(parsedValue);

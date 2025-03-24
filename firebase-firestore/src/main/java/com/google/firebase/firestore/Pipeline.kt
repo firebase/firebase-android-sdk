@@ -20,6 +20,7 @@ import com.google.common.collect.FluentIterable
 import com.google.common.collect.ImmutableList
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.SnapshotVersion
+import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AggregateWithAlias
@@ -123,9 +124,9 @@ internal constructor(
 
   fun where(condition: BooleanExpr): Pipeline = append(WhereStage(condition))
 
-  fun offset(offset: Long): Pipeline = append(OffsetStage(offset))
+  fun offset(offset: Int): Pipeline = append(OffsetStage(offset))
 
-  fun limit(limit: Long): Pipeline = append(LimitStage(limit))
+  fun limit(limit: Int): Pipeline = append(LimitStage(limit))
 
   fun distinct(vararg groups: Selectable): Pipeline = append(DistinctStage(groups))
 
@@ -175,12 +176,15 @@ internal constructor(
     append(UnnestStage(selectable))
 
   private inner class ObserverSnapshotTask : PipelineResultObserver {
+    private val userDataWriter =
+      UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
     private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
     override fun onDocument(key: DocumentKey?, data: Map<String, Value>, version: SnapshotVersion) {
       results.add(
         PipelineResult(
           firestore,
+          userDataWriter,
           if (key == null) null else DocumentReference(key, firestore),
           data,
           version
@@ -249,20 +253,52 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
 }
 
 class PipelineSnapshot
-internal constructor(private val executionTime: SnapshotVersion, val results: List<PipelineResult>)
+internal constructor(
+  private val executionTime: SnapshotVersion,
+  val results: List<PipelineResult>
+) : Iterable<PipelineResult> {
+  override fun iterator() = results.iterator()
+}
 
 class PipelineResult
 internal constructor(
   private val firestore: FirebaseFirestore,
+  private val userDataWriter: UserDataWriter,
   val ref: DocumentReference?,
   private val fields: Map<String, Value>,
   private val version: SnapshotVersion,
 ) {
 
-  fun getData(): Map<String, Any?> = userDataWriter().convertObject(fields)
+  /**
+   * Returns the ID of the document represented by this result. Returns null if this result is not
+   * corresponding to a Firestore document.
+   */
+  fun getId(): String? = ref?.id
 
-  private fun userDataWriter(): UserDataWriter =
-    UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
+  fun getData(): Map<String, Any?> = userDataWriter.convertObject(fields)
+
+  private fun extractNestedValue(fieldPath: FieldPath): Value? {
+    val segments = fieldPath.internalPath.iterator()
+    if (!segments.hasNext()) {
+      return Values.encodeValue(fields)
+    }
+    val firstSegment = segments.next()
+    if (!fields.containsKey(firstSegment)) {
+      return null
+    }
+    var value: Value? = fields[firstSegment]
+    for (segment in segments) {
+      if (value == null || !value.hasMapValue()) {
+        return null
+      }
+      value = value.mapValue.getFieldsOrDefault(segment, null)
+    }
+    return value
+  }
+
+  fun get(field: String): Any? = get(FieldPath.fromDotSeparatedPath(field))
+
+  fun get(fieldPath: FieldPath): Any? = userDataWriter.convertValue(extractNestedValue(fieldPath))
 
   override fun toString() = "PipelineResult{ref=$ref, version=$version}, data=${getData()}"
 }

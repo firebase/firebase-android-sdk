@@ -34,6 +34,10 @@ abstract class Constant internal constructor() : Expr() {
   companion object {
     internal val NULL: Constant = ValueConstant(Values.NULL_VALUE)
 
+    internal fun of(value: Value): Constant {
+      return ValueConstant(value)
+    }
+
     @JvmStatic
     fun of(value: String): Constant {
       return ValueConstant(encodeValue(value))

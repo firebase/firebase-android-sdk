@@ -28,7 +28,7 @@ private constructor(protected val name: String, private val options: InternalOpt
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
-    args(userDataReader).forEach { arg -> builder.addArgs(arg) }
+    args(userDataReader).forEach(builder::addArgs)
     options.forEach(builder::putOptions)
     return builder.build()
   }
@@ -64,7 +64,8 @@ internal sealed class GenericArg {
       when (arg) {
         is AggregateExpr -> AggregateArg(arg)
         is Ordering -> OrderingArg(arg)
-        is Map<*, *> -> MapArg(arg.asIterable().associate { it.key as String to from(it.value) })
+        is Map<*, *> ->
+          MapArg(arg.asIterable().associate { (key, value) -> key as String to from(value) })
         is List<*> -> ListArg(arg.map(::from))
         else -> ExprArg(Expr.toExprOrConstant(arg))
       }
@@ -120,8 +121,9 @@ internal class CollectionGroupSource internal constructor(val collectionId: Stri
 
 internal class DocumentsSource internal constructor(private val documents: Array<out String>) :
   Stage("documents") {
+  internal constructor(document: String) : this(arrayOf(document))
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    documents.asSequence().map(::encodeValue)
+    documents.asSequence().map { if (it.startsWith("/")) it else "/" + it }.map(::encodeValue)
 }
 
 internal class AddFieldsStage internal constructor(private val fields: Array<out Selectable>) :
@@ -211,12 +213,12 @@ class FindNearestOptions private constructor(options: InternalOptions) :
     withDistanceField(of(distanceField))
 }
 
-internal class LimitStage internal constructor(private val limit: Long) : Stage("limit") {
+internal class LimitStage internal constructor(private val limit: Int) : Stage("limit") {
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
 }
 
-internal class OffsetStage internal constructor(private val offset: Long) : Stage("offset") {
+internal class OffsetStage internal constructor(private val offset: Int) : Stage("offset") {
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
 }

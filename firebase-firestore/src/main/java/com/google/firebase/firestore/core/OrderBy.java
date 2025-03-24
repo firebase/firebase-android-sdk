@@ -21,7 +21,7 @@ import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 
 /** Represents a sort order for a Firestore Query */
-public class OrderBy {
+public final class OrderBy {
   /** The direction of the ordering */
   public enum Direction {
     ASCENDING(1),

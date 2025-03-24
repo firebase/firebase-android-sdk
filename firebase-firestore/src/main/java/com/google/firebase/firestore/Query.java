@@ -1241,6 +1241,11 @@ public class Query {
     return new AggregateQuery(this, fields);
   }
 
+  @NonNull
+  public Pipeline pipeline() {
+    return query.toPipeline(firestore, firestore.getUserDataReader());
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

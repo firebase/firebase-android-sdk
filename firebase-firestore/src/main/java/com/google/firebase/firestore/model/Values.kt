@@ -267,16 +267,16 @@ internal object Values {
   }
 
   private fun compareNumbers(left: Value, right: Value): Int {
-    if (left.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
-      if (right.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
+    if (left.hasDoubleValue()) {
+      if (right.hasDoubleValue()) {
         return Util.compareDoubles(left.doubleValue, right.doubleValue)
-      } else if (right.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
+      } else if (right.hasIntegerValue()) {
         return Util.compareMixed(left.doubleValue, right.integerValue)
       }
-    } else if (left.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
-      if (right.valueTypeCase == ValueTypeCase.INTEGER_VALUE) {
+    } else if (left.hasIntegerValue()) {
+      if (right.hasIntegerValue()) {
         return Util.compareLongs(left.integerValue, right.integerValue)
-      } else if (right.valueTypeCase == ValueTypeCase.DOUBLE_VALUE) {
+      } else if (right.hasDoubleValue()) {
         return -1 * Util.compareMixed(right.doubleValue, left.integerValue)
       }
     }
@@ -435,13 +435,13 @@ internal object Values {
   /** Returns true if `value` is a INTEGER_VALUE. */
   @JvmStatic
   fun isInteger(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.INTEGER_VALUE
+    return value != null && value.hasIntegerValue()
   }
 
   /** Returns true if `value` is a DOUBLE_VALUE. */
   @JvmStatic
   fun isDouble(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.DOUBLE_VALUE
+    return value != null && value.hasDoubleValue()
   }
 
   /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
@@ -453,17 +453,17 @@ internal object Values {
   /** Returns true if `value` is an ARRAY_VALUE. */
   @JvmStatic
   fun isArray(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.ARRAY_VALUE
+    return value != null && value.hasArrayValue()
   }
 
   @JvmStatic
   fun isReferenceValue(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.REFERENCE_VALUE
+    return value != null && value.hasReferenceValue()
   }
 
   @JvmStatic
   fun isNullValue(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.NULL_VALUE
+    return value != null && value.hasNullValue()
   }
 
   @JvmStatic
@@ -473,7 +473,7 @@ internal object Values {
 
   @JvmStatic
   fun isMapValue(value: Value?): Boolean {
-    return value != null && value.valueTypeCase == ValueTypeCase.MAP_VALUE
+    return value != null && value.hasMapValue()
   }
 
   @JvmStatic

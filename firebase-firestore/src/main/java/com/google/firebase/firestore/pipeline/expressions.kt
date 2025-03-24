@@ -27,11 +27,13 @@ import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Constant.Companion.of
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
+import com.google.firestore.v1.StructuredQuery.Order
 import com.google.firestore.v1.Value
 import java.util.Date
 import kotlin.reflect.KFunction1
 
 abstract class Expr internal constructor() {
+
   internal companion object {
     internal fun toExprOrConstant(value: Any?): Expr =
       toExpr(value, ::toExprOrConstant)
@@ -159,13 +161,17 @@ abstract class Expr internal constructor() {
 
   fun mod(other: Any) = Function.mod(this, other)
 
-  fun inAny(values: List<Any>) = Function.inAny(this, values)
+  fun eqAny(values: List<Any>) = Function.eqAny(this, values)
 
-  fun notInAny(values: List<Any>) = Function.notInAny(this, values)
+  fun notEqAny(values: List<Any>) = Function.notEqAny(this, values)
 
   fun isNan() = Function.isNan(this)
 
+  fun isNotNan() = Function.isNotNan(this)
+
   fun isNull() = Function.isNull(this)
+
+  fun isNotNull() = Function.isNotNull(this)
 
   fun replaceFirst(find: Expr, replace: Expr) = Function.replaceFirst(this, find, replace)
 
@@ -349,6 +355,8 @@ class ExprWithAlias internal constructor(private val alias: String, private val 
 
 class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
+    @JvmField
+    val DOCUMENT_ID: Field = of(FieldPath.documentId())
 
     @JvmStatic
     fun of(name: String): Field {
@@ -512,24 +520,34 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun mod(fieldName: String, other: Any) = Function("mod", fieldName, other)
 
     @JvmStatic
-    fun inAny(array: Expr, values: List<Any>) =
-      BooleanExpr("in", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(value: Expr, values: List<Any>) =
+      BooleanExpr("eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     @JvmStatic
-    fun inAny(fieldName: String, values: List<Any>) =
-      BooleanExpr("in", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(fieldName: String, values: List<Any>) =
+      BooleanExpr("eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    @JvmStatic fun notInAny(array: Expr, values: List<Any>) = not(inAny(array, values))
+    @JvmStatic fun notEqAny(value: Expr, values: List<Any>) =
+      BooleanExpr("not_eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    @JvmStatic fun notInAny(fieldName: String, values: List<Any>) = not(inAny(fieldName, values))
+    @JvmStatic fun notEqAny(fieldName: String, values: List<Any>) =
+      BooleanExpr("not_eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     @JvmStatic fun isNan(expr: Expr) = BooleanExpr("is_nan", expr)
 
     @JvmStatic fun isNan(fieldName: String) = BooleanExpr("is_nan", fieldName)
 
+    @JvmStatic fun isNotNan(expr: Expr) = BooleanExpr("is_not_nan", expr)
+
+    @JvmStatic fun isNotNan(fieldName: String) = BooleanExpr("is_not_nan", fieldName)
+
     @JvmStatic fun isNull(expr: Expr) = BooleanExpr("is_null", expr)
 
     @JvmStatic fun isNull(fieldName: String) = BooleanExpr("is_null", fieldName)
+
+    @JvmStatic fun isNotNull(expr: Expr) = BooleanExpr("is_not_null", expr)
+
+    @JvmStatic fun isNotNull(fieldName: String) = BooleanExpr("is_not_null", fieldName)
 
     @JvmStatic
     fun replaceFirst(value: Expr, find: Expr, replace: Expr) =
@@ -932,18 +950,18 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun arrayLength(fieldName: String) = Function("array_length", fieldName)
 
     @JvmStatic
-    fun ifThen(condition: BooleanExpr, then: Expr) = Function("if", condition, then, Constant.NULL)
+    fun ifThen(condition: BooleanExpr, then: Expr) = Function("cond", condition, then, Constant.NULL)
 
     @JvmStatic
-    fun ifThen(condition: BooleanExpr, then: Any) = Function("if", condition, then, Constant.NULL)
+    fun ifThen(condition: BooleanExpr, then: Any) = Function("cond", condition, then, Constant.NULL)
 
     @JvmStatic
     fun ifThenElse(condition: BooleanExpr, then: Expr, `else`: Expr) =
-      Function("if", condition, then, `else`)
+      Function("cond", condition, then, `else`)
 
     @JvmStatic
     fun ifThenElse(condition: BooleanExpr, then: Any, `else`: Any) =
-      Function("if", condition, then, `else`)
+      Function("cond", condition, then, `else`)
 
     @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
   }
@@ -993,7 +1011,7 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   fun ifThenElse(then: Any, `else`: Any) = ifThenElse(this, then, `else`)
 }
 
-class Ordering private constructor(private val expr: Expr, private val dir: Direction) {
+class Ordering private constructor(val expr: Expr, private val dir: Direction) {
   companion object {
     @JvmStatic fun ascending(expr: Expr): Ordering = Ordering(expr, Direction.ASCENDING)
 
@@ -1021,4 +1039,6 @@ class Ordering private constructor(private val expr: Expr, private val dir: Dire
           .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
+
+  fun reverse(): Ordering = Ordering(expr, if (dir == Direction.ASCENDING) Direction.DESCENDING else Direction.ASCENDING)
 }
