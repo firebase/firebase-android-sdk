@@ -26,19 +26,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
-import com.google.firebase.perf.metrics.Trace as PerfTrace
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
+import kotlinx.coroutines.Dispatchers
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
   val crashlytics = FirebaseCrashlytics.getInstance()
   val performance = FirebasePerformance.getInstance()
-  var performanceTrace: PerfTrace?  = null
-  var performanceTraceIdenticalName: PerfTrace? = null
 
   private var _binding: FragmentFirstBinding? = null
 
@@ -70,16 +71,12 @@ class FirstFragment : Fragment() {
       }
     }
     binding.createTrace.setOnClickListener {
-      performanceTrace = performance.newTrace("test_trace")
-      performanceTraceIdenticalName = performance.newTrace("test_trace")
-    }
-    binding.startTrace.setOnClickListener {
-      performanceTrace?.start()
-      performanceTraceIdenticalName?.start()
-    }
-    binding.stopTrace.setOnClickListener {
-      performanceTrace?.stop()
-      performanceTraceIdenticalName?.stop()
+      viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace")
+        performanceTrace.start()
+        delay(1000)
+        performanceTrace.stop()
+      }
     }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
