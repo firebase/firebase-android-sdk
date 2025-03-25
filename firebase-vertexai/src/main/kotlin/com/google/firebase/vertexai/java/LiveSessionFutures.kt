@@ -21,10 +21,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.ContentModality
+import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.LiveContentResponse
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.MediaData
+import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
@@ -34,27 +36,73 @@ import org.reactivestreams.Publisher
  * @see [GenerativeModel]
  */
 public abstract class LiveSessionFutures internal constructor() {
+
+  /**
+   * Starts an audio conversation with the Gemini server, which can only be stopped using
+   * stopAudioConversation.
+   */
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
 
+  /** Stops the audio conversation with the Gemini Server. */
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
+  /** Stop receiving from the server. */
   public abstract fun stopReceiving()
 
+  /**
+   * Sends the function response from the client to the server.
+   *
+   * @param functionList The list of [FunctionResponsePart] instances indicating the function
+   * response from the client.
+   */
   public abstract fun sendFunctionResponse(
     functionList: List<FunctionResponsePart>
   ): ListenableFuture<Unit>
 
+  /**
+   * Streams client data to the server.
+   *
+   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
+   */
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
+  /**
+   * Sends data to the server
+   *
+   * @param content Client [Content] to be sent to the server.
+   */
   public abstract fun send(content: Content): ListenableFuture<Unit>
 
+  /**
+   * Sends text to the server
+   *
+   * @param text Text to be sent to the server.
+   */
   public abstract fun send(text: String): ListenableFuture<Unit>
 
+  /** Closes the client session. */
   public abstract fun close(): ListenableFuture<Unit>
 
+  /**
+   * Receives responses from the server for both streaming and standard requests.
+   *
+   * @param outputModalities The list of output formats to receive from the server.
+   *
+   * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it
+   *
+   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   */
   public abstract fun receive(
     outputModalities: List<ContentModality>
   ): ListenableFuture<Publisher<LiveContentResponse>>
+
+  /**
+   * Receives all function call responses from the server for the audio conversation feature..
+   *
+   * @return A [Publisher] which will emit list of [FunctionCallPart] as they are returned by the
+   * model.
+   */
+  public abstract fun receiveAudioConversationFunctionCalls(): Publisher<List<FunctionCallPart>>
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
@@ -62,6 +110,9 @@ public abstract class LiveSessionFutures internal constructor() {
       outputModalities: List<ContentModality>
     ): ListenableFuture<Publisher<LiveContentResponse>> =
       SuspendToFutureAdapter.launchFuture { session.receive(outputModalities).asPublisher() }
+
+    override fun receiveAudioConversationFunctionCalls(): Publisher<List<FunctionCallPart>> =
+      session.receiveAudioConversationFunctionCalls().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }

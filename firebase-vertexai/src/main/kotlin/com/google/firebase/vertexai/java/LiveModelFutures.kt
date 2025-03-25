@@ -31,15 +31,14 @@ import java.nio.channels.ClosedChannelException
 public abstract class LiveModelFutures internal constructor() {
 
   /**
-   * Creates and returns a LiveSession object using which you could send/receive messages from the
-   * server
+   * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created. Returns null if the object cannot be created.
    * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
    */
-  public abstract fun connect(): ListenableFuture<LiveSession?>
+  public abstract fun connect(): ListenableFuture<LiveSession>
 
   private class FuturesImpl(private val model: LiveGenerativeModel) : LiveModelFutures() {
-    override fun connect(): ListenableFuture<LiveSession?> {
+    override fun connect(): ListenableFuture<LiveSession> {
       return SuspendToFutureAdapter.launchFuture { model.connect() }
     }
   }
