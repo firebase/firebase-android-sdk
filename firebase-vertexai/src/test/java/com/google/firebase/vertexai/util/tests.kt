@@ -18,6 +18,7 @@
 
 package com.google.firebase.vertexai.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
@@ -35,8 +36,11 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+private val TEST_APP_ID = "1:android:12345"
+private val TEST_VERSION = 1
 
 /** String separator used in SSE communication to signal the end of a message. */
 internal const val SSE_SEPARATOR = "\r\n\r\n"
@@ -100,6 +104,9 @@ internal fun commonTest(
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val apiController =
     APIController(
       "super_cool_test_key",
@@ -109,6 +116,9 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
