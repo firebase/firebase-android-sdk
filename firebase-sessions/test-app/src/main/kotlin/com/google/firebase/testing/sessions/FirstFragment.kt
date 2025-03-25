@@ -30,11 +30,11 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
-import kotlinx.coroutines.Dispatchers
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
