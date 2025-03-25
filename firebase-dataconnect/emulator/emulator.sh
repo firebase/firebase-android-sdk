@@ -16,9 +16,8 @@
 
 set -euo pipefail
 
-echo "[$0] PID=$$"
-
-readonly SELF_DIR="$(dirname "$0")"
+export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
+echo "[$0] export FIREBASE_DATACONNECT_POSTGRESQL_STRING='$FIREBASE_DATACONNECT_POSTGRESQL_STRING'"
 
 readonly FIREBASE_ARGS=(
   firebase
