@@ -1,7 +1,9 @@
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class BidiGenerateContentClientMessage(
   val model: String,
   val generationConfig: LiveGenerationConfig.Internal?,

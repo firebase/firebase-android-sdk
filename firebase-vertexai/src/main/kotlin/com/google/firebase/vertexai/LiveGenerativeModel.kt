@@ -22,6 +22,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
+import com.google.firebase.vertexai.type.BidiServerHandshakeFailed
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
@@ -33,8 +34,8 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.websocket.Frame
+import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
-import java.nio.channels.ClosedChannelException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -84,9 +85,9 @@ internal constructor(
   /**
    * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created. Returns null if the object cannot be created.
-   * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
+   * @throws [BidiServerHandshakeFailed] if the handshake with the server failed.
    */
-  public suspend fun connect(): LiveSession? {
+  public suspend fun connect(): LiveSession {
     val client = HttpClient(OkHttp) { install(WebSockets) }
 
     val bidiEndPoint = this.controller.getBidiEndpoint(location)
@@ -115,7 +116,8 @@ internal constructor(
     return if (shouldReturn) {
       LiveSession(session = webSession, isRecording = false)
     } else {
-      null
+      webSession.close()
+      throw BidiServerHandshakeFailed()
     }
   }
 

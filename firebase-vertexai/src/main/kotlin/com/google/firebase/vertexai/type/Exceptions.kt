@@ -189,6 +189,10 @@ public class AudioRecordInitializationFailedException :
 public class AudioRecordInvalidBufferSizeException :
   FirebaseVertexAIException("Audio Record buffer size is invalid")
 
+/** Handshake failed with the server */
+public class BidiServerHandshakeFailed :
+  FirebaseVertexAIException("Handshake failed with the server.")
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
