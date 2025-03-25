@@ -40,7 +40,9 @@ public class PerfSession implements Parcelable {
   public static PerfSession createWithId(@NonNull String sessionId) {
     String prunedSessionId = sessionId.replace("-", "");
     PerfSession session = new PerfSession(prunedSessionId, new Clock());
-    session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
+//    session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
+    // For testing.
+    session.setGaugeAndEventCollectionEnabled(true);
 
     return session;
   }

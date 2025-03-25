@@ -27,6 +27,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.metrics.Trace as PerfTrace
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
 import java.util.Date
 import java.util.Locale
@@ -34,6 +36,9 @@ import java.util.Locale
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
   val crashlytics = FirebaseCrashlytics.getInstance()
+  val performance = FirebasePerformance.getInstance()
+  var performanceTrace: PerfTrace?  = null
+  var performanceTraceIdenticalName: PerfTrace? = null
 
   private var _binding: FragmentFirstBinding? = null
 
@@ -63,6 +68,18 @@ class FirstFragment : Fragment() {
       while (true) {
         Thread.sleep(1_000)
       }
+    }
+    binding.createTrace.setOnClickListener {
+      performanceTrace = performance.newTrace("test_trace")
+      performanceTraceIdenticalName = performance.newTrace("test_trace")
+    }
+    binding.startTrace.setOnClickListener {
+      performanceTrace?.start()
+      performanceTraceIdenticalName?.start()
+    }
+    binding.stopTrace.setOnClickListener {
+      performanceTrace?.stop()
+      performanceTraceIdenticalName?.stop()
     }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
