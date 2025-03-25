@@ -111,6 +111,7 @@ internal constructor(
     return LiveGenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       tools,
       toolConfig,
