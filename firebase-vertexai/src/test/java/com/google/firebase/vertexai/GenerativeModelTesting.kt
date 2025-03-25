@@ -49,6 +49,8 @@ import org.mockito.Mockito
 
 internal class GenerativeModelTesting {
   private val TEST_CLIENT_ID = "test"
+  private val TEST_APP_ID = "1:android:12345"
+  private val TEST_VERSION = 1
 
   private var mockFirebaseApp: FirebaseApp = Mockito.mock<FirebaseApp>()
 
@@ -75,6 +77,8 @@ internal class GenerativeModelTesting {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
@@ -121,6 +125,8 @@ internal class GenerativeModelTesting {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 

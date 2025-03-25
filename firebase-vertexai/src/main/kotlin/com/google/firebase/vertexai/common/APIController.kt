@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.common
 
+import android.content.Context
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -93,6 +94,8 @@ internal constructor(
   httpEngine: HttpClientEngine,
   private val apiClient: String,
   private val firebaseApp: FirebaseApp,
+  private val appVersion: Int = 0,
+  private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
 ) {
 
@@ -103,7 +106,17 @@ internal constructor(
     apiClient: String,
     firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
-  ) : this(key, model, requestOptions, OkHttp.create(), apiClient, firebaseApp, headerProvider)
+  ) : this(
+    key,
+    model,
+    requestOptions,
+    OkHttp.create(),
+    apiClient,
+    firebaseApp,
+    getVersionNumber(firebaseApp),
+    firebaseApp.options.applicationId,
+    headerProvider
+  )
 
   private val model = fullModelName(model)
 
@@ -179,20 +192,11 @@ internal constructor(
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
     if (firebaseApp.isDataCollectionDefaultEnabled) {
-      header("X-Firebase-AppId", firebaseApp.options.applicationId)
-      header("X-Firebase-AppVersion", getVersionNumber())
+      header("X-Firebase-AppId", googleAppId)
+      header("X-Firebase-AppVersion", appVersion)
     }
   }
 
-  private fun getVersionNumber(): Int {
-    try {
-      val context = firebaseApp.applicationContext
-      return context.packageManager.getPackageInfo(context.packageName, 0).versionCode
-    } catch (e: Exception) {
-      Log.d(TAG, "Error while getting app version: ${e.message}")
-      return 0
-    }
-  }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
     if (headerProvider != null) {
@@ -257,6 +261,16 @@ internal constructor(
 
   companion object {
     private val TAG = APIController::class.java.simpleName
+
+    private fun getVersionNumber(app: FirebaseApp): Int {
+      try {
+        val context = app.applicationContext
+        return context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+      } catch (e: Exception) {
+        Log.d(TAG, "Error while getting app version: ${e.message}")
+        return 0
+      }
+    }
   }
 }
 

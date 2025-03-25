@@ -16,7 +16,11 @@
 
 package com.google.firebase.vertexai.common
 
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.google.firebase.vertexai.BuildConfig
 import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
@@ -54,9 +58,15 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
+
+private val TEST_APP_ID = "1:android:12345"
+
+private val TEST_VERSION = 1
 
 internal class APIControllerTests {
   private val testTimeout = 5.seconds
@@ -113,6 +123,8 @@ internal class RequestFormatTests {
         mockEngine,
         "genai-android/${BuildConfig.VERSION_NAME}",
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
@@ -141,6 +153,8 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
@@ -169,12 +183,43 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
     withTimeout(5.seconds) { controller.countTokens(textCountTokenRequest("cats")) }
 
     mockEngine.requestHistory.first().headers["x-goog-api-client"] shouldBe TEST_CLIENT_ID
+  }
+
+  @Test
+  fun `ml monitoring header is set correctly if data collection is enabled`() = doBlocking {
+    val response = JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10))
+    val mockEngine = MockEngine {
+      respond(response, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+
+    Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(true)
+
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-1.5",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    withTimeout(5.seconds) { controller.countTokens(textCountTokenRequest("cats")) }
+
+    mockEngine.requestHistory.first().headers["X-Firebase-AppId"] shouldBe TEST_APP_ID
+    mockEngine.requestHistory.first().headers["X-Firebase-AppVersion"] shouldBe
+      TEST_VERSION.toString()
   }
 
   @Test
@@ -193,6 +238,8 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
@@ -245,6 +292,8 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         testHeaderProvider,
       )
 
@@ -280,6 +329,8 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         testHeaderProvider,
       )
 
@@ -304,6 +355,8 @@ internal class RequestFormatTests {
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 
@@ -349,6 +402,8 @@ internal class ModelNamingTests(private val modelName: String, private val actua
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
         null,
       )
 

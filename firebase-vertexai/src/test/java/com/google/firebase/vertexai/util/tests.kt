@@ -39,6 +39,8 @@ import kotlinx.coroutines.launch
 import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+private val TEST_APP_ID = "1:android:12345"
+private val TEST_VERSION = 1
 
 /** String separator used in SSE communication to signal the end of a message. */
 internal const val SSE_SEPARATOR = "\r\n\r\n"
@@ -115,6 +117,8 @@ internal fun commonTest(
       },
       TEST_CLIENT_ID,
       mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
