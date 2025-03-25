@@ -20,10 +20,11 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
 /**
- * Represents an Imagen-generated image that is contained inline
+ * Represents an Imagen-generated image that is returned as inline data.
  *
- * @param data Contains the raw bytes of the image
- * @param mimeType Contains the MIME type of the image (for example, `"image/png"`)
+ * @property data The raw image bytes in JPEG or PNG format, as specified by [mimeType].
+ * @property mimeType The IANA standard MIME type of the image data; either `"image/png"` or
+ * `"image/jpeg"`; to request a different format, see [ImagenGenerationConfig.imageFormat].
  */
 @PublicPreviewAPI
 public class ImagenInlineImage
