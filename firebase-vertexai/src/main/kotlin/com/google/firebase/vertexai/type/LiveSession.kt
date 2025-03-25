@@ -38,62 +38,78 @@ internal constructor(
   private var receiveChannel: Channel<Frame> = Channel()
   private var functionCallChannel: Channel<List<FunctionCallPart>> = Channel()
 
-  @Serializable
-  internal data class ClientContent(
-    @SerialName("turns") val turns: List<Content.Internal>,
-    @SerialName("turn_complete") val turnComplete: Boolean
-  )
+  internal class ClientContentSetup(val turns: List<Content.Internal>, val turnComplete: Boolean) {
+    @Serializable
+    internal class Internal(@SerialName("client_content") val clientContent: ClientContent) {
+      @Serializable
+      internal data class ClientContent(
+        @SerialName("turns") val turns: List<Content.Internal>,
+        @SerialName("turn_complete") val turnComplete: Boolean
+      )
+    }
 
-  @Serializable
-  internal data class ClientContentSetup(
-    @SerialName("client_content") val clientContent: ClientContent
-  )
+    fun toInternal() = Internal(Internal.ClientContent(turns, turnComplete))
+  }
 
-  @Serializable internal data class ToolResponseSetup(val toolResponse: ToolResponse)
-  @Serializable
-  internal data class ToolResponse(
+  internal class ToolResponseSetup(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
-  )
+  ) {
 
-  @Serializable
-  internal data class ServerContentSetup(
-    @SerialName("serverContent") val serverContent: ServerContent
-  )
+    @Serializable
+    internal data class Internal(val toolResponse: ToolResponse) {
+      @Serializable
+      internal data class ToolResponse(
+        val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
+      )
+    }
 
-  @Serializable
-  internal data class ServerContent(@SerialName("modelTurn") val modelTurn: Content.Internal)
+    fun toInternal() = Internal(Internal.ToolResponse(functionResponses))
+  }
 
-  @Serializable internal data class MediaChunks(val mediaChunks: List<MediaData.Internal>)
+  internal class ServerContentSetup(val modelTurn: Content.Internal) {
+    @Serializable
+    internal class Internal(@SerialName("serverContent") val serverContent: ServerContent) {
+      @Serializable
+      internal data class ServerContent(@SerialName("modelTurn") val modelTurn: Content.Internal)
+    }
 
-  @Serializable internal data class MediaStreamingSetup(val realtimeInput: MediaChunks)
+    fun toInternal() = Internal(Internal.ServerContent(modelTurn))
+  }
 
-  @Serializable internal data class ToolCallSetup(val toolCall: ToolCall)
+  internal class MediaStreamingSetup(val mediaChunks: List<MediaData.Internal>) {
+    @Serializable
+    internal class Internal(val realtimeInput: MediaChunks) {
+      @Serializable internal data class MediaChunks(val mediaChunks: List<MediaData.Internal>)
+    }
+    fun toInternal() = Internal(Internal.MediaChunks(mediaChunks))
+  }
 
-  @Serializable
-  internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
+  internal data class ToolCallSetup(
+    val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
+  ) {
+
+    @Serializable
+    internal class Internal(val toolCall: ToolCall) {
+
+      @Serializable
+      internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
+    }
+
+    fun toInternal(): Internal {
+      return Internal(Internal.ToolCall(functionCalls))
+    }
+  }
 
   /**
    * Receives all function call responses from the server for the audio conversation feature..
    *
    * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
    */
-  public fun receiveAudioConvoFunctionCalls(): Flow<List<FunctionCallPart>> {
+  public fun receiveAudioConversationFunctionCalls(): Flow<List<FunctionCallPart>> {
     return functionCallChannel.receiveAsFlow()
   }
 
-  /**
-   * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * stopAudioConversation.
-   */
-  public suspend fun startAudioConversation() {
-    if (isRecording) {
-      return
-    }
-    functionCallChannel = Channel()
-    isRecording = true
-    audioHelper = AudioHelper()
-    audioHelper!!.setupAudioTrack()
-    val scope = CoroutineScope(Dispatchers.Default)
+  private fun fillRecordedAudioQueue() {
     CoroutineScope(Dispatchers.IO).launch {
       audioHelper!!.startRecording().collect {
         if (!isRecording) {
@@ -102,8 +118,10 @@ internal constructor(
         audioQueue.add(it)
       }
     }
+  }
 
-    scope.launch {
+  private fun sendAudioDataToServer() {
+    CoroutineScope(Dispatchers.Default).launch {
       val minBufferSize =
         AudioTrack.getMinBufferSize(
           24000,
@@ -130,14 +148,17 @@ internal constructor(
         }
       }
     }
-    scope.launch {
+  }
+
+  private fun fillServerResponseAudioQueue() {
+    CoroutineScope(Dispatchers.Default).launch {
       receive(listOf(ContentModality.AUDIO)).collect {
         if (!isRecording) {
           cancel()
         }
-        if (it.status == Status.INTERRUPTED) {
+        if (it.status == LiveContentResponse.Status.INTERRUPTED) {
           while (!playBackQueue.isEmpty()) playBackQueue.poll()
-        } else if (it.status == Status.NORMAL) {
+        } else if (it.status == LiveContentResponse.Status.NORMAL) {
           if (!it.functionCalls.isNullOrEmpty()) {
             functionCallChannel.send(it.functionCalls)
           } else {
@@ -146,6 +167,9 @@ internal constructor(
         }
       }
     }
+  }
+
+  private fun playServerResponseAudio() {
     CoroutineScope(Dispatchers.IO).launch {
       while (true) {
         if (!isRecording) {
@@ -157,6 +181,25 @@ internal constructor(
         }
       }
     }
+  }
+
+  /**
+   * Starts an audio conversation with the Gemini server, which can only be stopped using
+   * stopAudioConversation.
+   */
+  public suspend fun startAudioConversation() {
+    if (isRecording) {
+      return
+    }
+    functionCallChannel = Channel()
+    isRecording = true
+    audioHelper = AudioHelper()
+    audioHelper!!.setupAudioTrack()
+    val scope = CoroutineScope(Dispatchers.Default)
+    fillRecordedAudioQueue()
+    sendAudioDataToServer()
+    fillServerResponseAudioQueue()
+    playServerResponseAudio()
     delay(1000)
   }
 
@@ -182,11 +225,6 @@ internal constructor(
     startedReceiving = false
   }
 
-  public class SessionAlreadyReceivingException :
-    Exception(
-      "This session is already receiving. Please call stopReceiving() before calling this again."
-    )
-
   /**
    * Receives responses from the server for both streaming and standard requests.
    *
@@ -210,19 +248,19 @@ internal constructor(
         val receivedBytes = (message as Frame.Binary).readBytes()
         val receivedJson = receivedBytes.toString(Charsets.UTF_8)
         if (receivedJson.contains("interrupted")) {
-          emit(LiveContentResponse(null, Status.INTERRUPTED, null))
+          emit(LiveContentResponse(null, LiveContentResponse.Status.INTERRUPTED, null))
           continue
         }
         if (receivedJson.contains("turnComplete")) {
-          emit(LiveContentResponse(null, Status.TURNCOMPLETE, null))
+          emit(LiveContentResponse(null, LiveContentResponse.Status.TURN_COMPLETE, null))
           continue
         }
         try {
-          val functionContent = Json.decodeFromString<ToolCallSetup>(receivedJson)
+          val functionContent = Json.decodeFromString<ToolCallSetup.Internal>(receivedJson)
           emit(
             LiveContentResponse(
               null,
-              Status.NORMAL,
+              LiveContentResponse.Status.NORMAL,
               functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args) }
             )
           )
@@ -230,16 +268,16 @@ internal constructor(
         } catch (_: Exception) {}
         try {
 
-          val serverContent = Json.decodeFromString<ServerContentSetup>(receivedJson)
+          val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
           val data = serverContent.serverContent.modelTurn.toPublic()
           if (outputModalities.contains(ContentModality.AUDIO)) {
             if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-              emit(LiveContentResponse(data, Status.NORMAL, null))
+              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
             }
           }
           if (outputModalities.contains(ContentModality.TEXT)) {
             if (data.parts[0] is TextPart) {
-              emit(LiveContentResponse(data, Status.NORMAL, null))
+              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
             }
           }
         } catch (e: Exception) {
@@ -258,7 +296,7 @@ internal constructor(
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
     val jsonString =
       Json.encodeToString(
-        ToolResponseSetup(ToolResponse(functionList.map { it.toInternalFunctionCall() }))
+        ToolResponseSetup(functionList.map { it.toInternalFunctionCall() }).toInternal()
       )
     session?.send(Frame.Text(jsonString))
   }
@@ -272,7 +310,7 @@ internal constructor(
     mediaChunks: List<MediaData>,
   ) {
     val jsonString =
-      Json.encodeToString(MediaStreamingSetup(MediaChunks(mediaChunks.map { it.toInternal() })))
+      Json.encodeToString(MediaStreamingSetup(mediaChunks.map { it.toInternal() }).toInternal())
     session?.send(Frame.Text(jsonString))
   }
 
@@ -283,7 +321,7 @@ internal constructor(
    */
   public suspend fun send(content: Content) {
     val jsonString =
-      Json.encodeToString(ClientContentSetup(ClientContent(listOf(content.toInternal()), true)))
+      Json.encodeToString(ClientContentSetup(listOf(content.toInternal()), true).toInternal())
     session?.send(Frame.Text(jsonString))
   }
 

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.vertexai.type
 
 import android.media.AudioFormat
@@ -14,9 +30,6 @@ internal class AudioHelper {
   private lateinit var audioRecord: AudioRecord
   private lateinit var audioTrack: AudioTrack
   private var stopRecording: Boolean = false
-  private val RECORDER_SAMPLE_RATE = 16000 // Adjust based on server settings
-  private val RECORDER_CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
-  private val RECORDER_AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
 
   internal fun release() {
     stopRecording = true
@@ -31,17 +44,17 @@ internal class AudioHelper {
   }
 
   internal fun setupAudioTrack() {
-    val sampleRate = 24000 // Adjust based on server settings
-    val channelConfig = AudioFormat.CHANNEL_OUT_MONO
-    val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-    val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
     audioTrack =
       AudioTrack(
         AudioManager.STREAM_MUSIC,
-        sampleRate,
-        channelConfig,
-        audioFormat,
-        minBufferSize,
+        24000,
+        AudioFormat.CHANNEL_OUT_MONO,
+        AudioFormat.ENCODING_PCM_16BIT,
+        AudioTrack.getMinBufferSize(
+          24000,
+          AudioFormat.CHANNEL_OUT_MONO,
+          AudioFormat.ENCODING_PCM_16BIT
+        ),
         AudioTrack.MODE_STREAM
       )
     audioTrack.play()
@@ -54,29 +67,30 @@ internal class AudioHelper {
   }
 
   suspend fun startRecording(): Flow<ByteArray> {
+
     val bufferSize =
       AudioRecord.getMinBufferSize(
-        RECORDER_SAMPLE_RATE,
-        RECORDER_CHANNEL_CONFIG,
-        RECORDER_AUDIO_FORMAT
+        16000,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT
       )
     if (
       bufferSize == AudioRecord.ERROR ||
         bufferSize == AudioRecord.ERROR_BAD_VALUE ||
         bufferSize <= 0
     ) {
-      println("Invalid buffer size: $bufferSize")
+      throw AudioRecordInvalidBufferSizeException()
     }
     audioRecord =
       AudioRecord(
         MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-        RECORDER_SAMPLE_RATE,
-        RECORDER_CHANNEL_CONFIG,
-        RECORDER_AUDIO_FORMAT,
+        16000,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT,
         bufferSize
       )
     if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
-      println("AudioRecord initialization failed.")
+      throw AudioRecordInitializationFailedException()
     }
     if (AcousticEchoCanceler.isAvailable()) {
       val echoCanceler = AcousticEchoCanceler.create(audioRecord.audioSessionId)
@@ -86,11 +100,8 @@ internal class AudioHelper {
     audioRecord.startRecording()
 
     return flow {
-      while (true) {
-        if (stopRecording) {
-          break
-        }
-        val buffer = ByteArray(bufferSize / 2)
+      while (!stopRecording) {
+        val buffer = ByteArray(bufferSize)
         val bytesRead = audioRecord.read(buffer, 0, buffer.size)
         if (bytesRead > 0) {
           emit(buffer.copyOf(bytesRead))

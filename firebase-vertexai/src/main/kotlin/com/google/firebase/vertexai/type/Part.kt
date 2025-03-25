@@ -95,7 +95,7 @@ public class FunctionResponsePart(public val name: String, public val response: 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable public data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {
@@ -195,7 +195,7 @@ internal fun InternalPart.toPublic(): Part {
   return when (this) {
     is TextPart.Internal -> TextPart(text)
     is InlineDataPart.Internal -> {
-      val data = android.util.Base64.decode(inlineData.data, android.util.Base64.DEFAULT)
+      val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {

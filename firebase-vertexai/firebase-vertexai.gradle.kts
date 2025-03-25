@@ -83,8 +83,8 @@ tasks.withType<KotlinCompile>().all {
 dependencies {
   implementation(libs.ktor.client.okhttp)
   implementation(libs.ktor.client.core)
-  implementation(libs.ktor.client.websockets) // Client-side WebSocket
-  implementation(libs.ktor.client.cio) // For WebSocket client
+  implementation(libs.ktor.client.websockets)
+  implementation(libs.ktor.client.cio)
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.ktor.client.logging)
@@ -110,7 +110,6 @@ dependencies {
   testImplementation(libs.kotest.assertions.json)
   testImplementation(libs.ktor.client.okhttp)
   testImplementation(libs.ktor.client.mock)
-
   testImplementation(libs.org.json)
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)

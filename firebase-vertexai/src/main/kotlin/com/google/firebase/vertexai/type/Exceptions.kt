@@ -175,6 +175,20 @@ public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
+/** Bidi session already receiving. */
+public class SessionAlreadyReceivingException :
+  FirebaseVertexAIException(
+    "This session is already receiving. Please call stopReceiving() before calling this again."
+  )
+
+/** Audio record initialization failed for audio streaming */
+public class AudioRecordInitializationFailedException :
+  FirebaseVertexAIException("Audio Record initialization failed exception")
+
+/** Audio record buffer size invalid for audio streaming */
+public class AudioRecordInvalidBufferSizeException :
+  FirebaseVertexAIException("Audio Record buffer size is invalid")
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
+import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
+import com.google.firebase.vertexai.type.BidiGenerateContentSetup
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
@@ -33,13 +35,12 @@ import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readBytes
 import java.nio.channels.ClosedChannelException
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Represents a multimodal model (like Gemini), capable of generating content based on various input
- * types.
+ * Represents a multimodal model (like Gemini) capable of real-time content generation based on
+ * various input types, supporting bidirectional streaming.
  */
 public class LiveGenerativeModel
 internal constructor(
@@ -51,7 +52,7 @@ internal constructor(
   private val location: String,
   private val controller: APIController
 ) {
-  public constructor(
+  internal constructor(
     modelName: String,
     apiKey: String,
     config: LiveGenerationConfig? = null,
@@ -78,27 +79,15 @@ internal constructor(
     ),
   )
 
-  @Serializable
-  internal data class BidiGenerateContentSetup(
-    val model: String,
-    val generationConfig: LiveGenerationConfig.Internal?,
-    val tools: List<Tool.Internal>?,
-    val systemInstruction: Content.Internal?
-  )
-
-  @Serializable
-  internal data class BidiGenerateContentClientMessage(val setup: BidiGenerateContentSetup)
-
   /**
-   * Creates and returns a LiveSession object using which you could send/receive messages from the
-   * server
+   * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created. Returns null if the object cannot be created.
    * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
    */
   public suspend fun connect(): LiveSession? {
     val client = HttpClient(CIO) { install(WebSockets) }
 
-    val roundedUrl = this.controller.getBidiEndpoint(location)
+    val bidiEndPoint = this.controller.getBidiEndpoint(location)
     val setup =
       BidiGenerateContentSetup(
         this.modelName,
@@ -107,18 +96,19 @@ internal constructor(
         this.systemInstruction?.toInternal()
       )
     val data: String = Json.encodeToString(BidiGenerateContentClientMessage(setup))
-    val webSession = client.webSocketSession(roundedUrl)
+    val webSession = client.webSocketSession(bidiEndPoint)
     webSession.send(Frame.Text(data))
-    var shouldContinue = false
+    var shouldReturn = false
     webSession.let {
       val serverMessage = it.incoming.receive()
       val receivedBytes = (serverMessage as Frame.Binary).readBytes()
       val receivedJson = receivedBytes.toString(Charsets.UTF_8)
+      // TODO: Try to decode the json instead of string matching.
       if ("setupComplete" in receivedJson) {
-        shouldContinue = true
+        shouldReturn = true
       }
     }
-    return if (shouldContinue) {
+    return if (shouldReturn) {
       LiveSession(session = webSession, isRecording = false)
     } else {
       null

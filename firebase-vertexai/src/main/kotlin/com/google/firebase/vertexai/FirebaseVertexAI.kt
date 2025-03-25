@@ -46,7 +46,7 @@ internal constructor(
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-1.5-pro"`.
+   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
    * @param generationConfig The configuration parameters to use for content generation.
    * @param safetySettings The safety bounds the model will abide to during content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
