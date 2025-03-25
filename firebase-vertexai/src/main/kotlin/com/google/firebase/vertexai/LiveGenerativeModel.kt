@@ -22,7 +22,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
-import com.google.firebase.vertexai.type.BidiGenerateContentSetup
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
@@ -91,14 +90,16 @@ internal constructor(
     val client = HttpClient(OkHttp) { install(WebSockets) }
 
     val bidiEndPoint = this.controller.getBidiEndpoint(location)
-    val setup =
-      BidiGenerateContentSetup(
-        this.modelName,
-        this.config?.toInternal(),
-        this.tools?.map { it.toInternal() },
-        this.systemInstruction?.toInternal()
-      )
-    val data: String = Json.encodeToString(BidiGenerateContentClientMessage(setup))
+    val clientMessage =
+      BidiGenerateContentClientMessage(
+          this.modelName,
+          this.config?.toInternal(),
+          this.tools?.map { it.toInternal() },
+          this.toolConfig?.toInternal(),
+          this.systemInstruction?.toInternal()
+        )
+        .toInternal()
+    val data: String = Json.encodeToString(clientMessage)
     val webSession = client.webSocketSession(bidiEndPoint)
     webSession.send(Frame.Text(data))
     var shouldReturn = false
