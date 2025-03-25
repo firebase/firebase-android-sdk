@@ -22,10 +22,13 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.perf.FirebasePerformance
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Second activity from the MainActivity that runs on a different process. */
 class SecondActivity : BaseActivity() {
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_second)
@@ -37,6 +40,15 @@ class SecondActivity : BaseActivity() {
     }
     findViewById<Button>(R.id.second_crash_button).setOnClickListener {
       throw IllegalStateException("SecondActivity has crashed")
+    }
+    findViewById<Button>(R.id.second_create_trace).setOnClickListener {
+      lifecycleScope.launch {
+        val performanceTrace = FirebasePerformance.getInstance().newTrace("test_trace")
+        performanceTrace.start()
+        delay(1000)
+        performanceTrace.stop()
+      }
+
     }
     findViewById<Button>(R.id.kill_background_processes).setOnClickListener {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

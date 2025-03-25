@@ -71,7 +71,7 @@ class FirstFragment : Fragment() {
       }
     }
     binding.createTrace.setOnClickListener {
-      viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+      lifecycleScope.launch(Dispatchers.IO) {
         val performanceTrace = performance.newTrace("test_trace")
         performanceTrace.start()
         delay(1000)
