@@ -36,6 +36,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 
 /**
  * Represents a live WebSocket session capable of streaming bidirectional content to and from the
@@ -117,7 +118,7 @@ internal constructor(
   }
 
   /**
-   * Receives all function call responses from the server for the audio conversation feature..
+   * Receives all function call responses from the server for the audio conversation feature.
    *
    * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
    */
@@ -277,7 +278,9 @@ internal constructor(
             LiveContentResponse(
               null,
               LiveContentResponse.Status.NORMAL,
-              functionContent.toolCall.functionCalls.map { FunctionCallPart(it.name, it.args) }
+              functionContent.toolCall.functionCalls.map {
+                FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
+              }
             )
           )
           continue

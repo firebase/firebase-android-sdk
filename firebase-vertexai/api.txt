@@ -32,9 +32,8 @@ package com.google.firebase.vertexai {
     method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName);
     method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null);
     method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
+    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
+    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
     property public static final com.google.firebase.vertexai.FirebaseVertexAI instance;
     field public static final com.google.firebase.vertexai.FirebaseVertexAI.Companion Companion;
   }
@@ -70,7 +69,7 @@ package com.google.firebase.vertexai {
   }
 
   public final class LiveGenerativeModel {
-    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.vertexai.type.LiveSession?>);
+    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.vertexai.type.LiveSession>);
   }
 
 }
@@ -116,7 +115,7 @@ package com.google.firebase.vertexai.java {
   }
 
   public abstract class LiveModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.vertexai.type.LiveSession?> connect();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.vertexai.type.LiveSession> connect();
     method public static final com.google.firebase.vertexai.java.LiveModelFutures from(com.google.firebase.vertexai.LiveGenerativeModel model);
     field public static final com.google.firebase.vertexai.java.LiveModelFutures.Companion Companion;
   }
@@ -129,6 +128,7 @@ package com.google.firebase.vertexai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.vertexai.java.LiveSessionFutures from(com.google.firebase.vertexai.type.LiveSession session);
     method public abstract com.google.common.util.concurrent.ListenableFuture<org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse>> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
+    method public abstract org.reactivestreams.Publisher<java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>> receiveAudioConversationFunctionCalls();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.vertexai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList);
@@ -153,6 +153,10 @@ package com.google.firebase.vertexai.type {
 
   public final class AudioRecordInvalidBufferSizeException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
     ctor public AudioRecordInvalidBufferSizeException();
+  }
+
+  public final class BidiServerHandshakeFailed extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
+    ctor public BidiServerHandshakeFailed();
   }
 
   public final class BlockReason {
@@ -296,10 +300,10 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class FunctionCallPart implements com.google.firebase.vertexai.type.Part {
-    ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement?>? args);
-    method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement?>? getArgs();
+    ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
+    method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
     method public String getName();
-    property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement?>? args;
+    property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
     property public final String name;
   }
 
@@ -800,14 +804,6 @@ package com.google.firebase.vertexai.type {
     ctor public SpeechConfig(com.google.firebase.vertexai.type.Voices voice);
     method public com.google.firebase.vertexai.type.Voices getVoice();
     property public final com.google.firebase.vertexai.type.Voices voice;
-  }
-
-  public final class StreamOutput {
-    ctor public StreamOutput(boolean interrupted, com.google.firebase.vertexai.type.Content? data);
-    method public com.google.firebase.vertexai.type.Content? getData();
-    method public boolean getInterrupted();
-    property public final com.google.firebase.vertexai.type.Content? data;
-    property public final boolean interrupted;
   }
 
   public abstract class StringFormat {
