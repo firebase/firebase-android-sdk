@@ -1,4 +1,6 @@
 # Unreleased
+* [feature] Emits a warning when attempting to use an incompatible model with
+  `GenerativeModel` or `ImagenModel`.
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
 * [feature] Public Preview: Added support for streaming input and output (including audio) using the [Multimodal Live API](/docs/vertex-ai/live-api?platform=android)
