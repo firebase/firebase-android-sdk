@@ -28,7 +28,6 @@ import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Tool
-import com.google.firebase.vertexai.type.ToolConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
@@ -58,7 +57,6 @@ internal constructor(
     firebaseApp: FirebaseApp,
     config: LiveGenerationConfig? = null,
     tools: List<Tool>? = null,
-    toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     location: String = "us-central1",
     requestOptions: RequestOptions = RequestOptions(),
