@@ -61,7 +61,7 @@ class MyApplication : Application() {
         }
     )
 
-  private val initialLogLevel = FirebaseDataConnect.logLevel
+  private val initialLogLevel = FirebaseDataConnect.logLevel.value
   private val connectorMutex = Mutex()
   private var connector: Ctry3q3tp6kzxConnector? = null
 
@@ -70,7 +70,7 @@ class MyApplication : Application() {
 
     coroutineScope.launch {
       if (getDataConnectDebugLoggingEnabled()) {
-        FirebaseDataConnect.logLevel = LogLevel.DEBUG
+        FirebaseDataConnect.logLevel.value = LogLevel.DEBUG
       }
     }
   }
@@ -102,7 +102,7 @@ class MyApplication : Application() {
     getSharedPreferences().all[SharedPrefsKeys.IS_DATA_CONNECT_LOGGING_ENABLED] as? Boolean ?: false
 
   suspend fun setDataConnectDebugLoggingEnabled(enabled: Boolean) {
-    FirebaseDataConnect.logLevel = if (enabled) LogLevel.DEBUG else initialLogLevel
+    FirebaseDataConnect.logLevel.value = if (enabled) LogLevel.DEBUG else initialLogLevel
     editSharedPreferences { putBoolean(SharedPrefsKeys.IS_DATA_CONNECT_LOGGING_ENABLED, enabled) }
   }
 

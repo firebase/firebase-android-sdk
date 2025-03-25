@@ -17,14 +17,14 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.server.Candidate
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.doBlocking
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ServerException
+import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.content
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
@@ -40,6 +40,7 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import org.junit.Test
 
@@ -127,9 +128,12 @@ internal class GenerativeModelTesting {
     exception.message shouldContain "location"
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
-      GenerateContentResponse(listOf(Candidate(Content(parts = listOf(TextPart(text))))))
+      GenerateContentResponse.Internal(
+        listOf(Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(text)))))
+      )
     )
   }
 }

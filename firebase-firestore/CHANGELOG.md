@@ -1,6 +1,25 @@
 # Unreleased
 
 
+# 25.1.3
+* [fixed] Use lazy encoding in UTF-8 encoded byte comparison for strings to solve performance issues. [#6706](//github.com/firebase/firebase-android-sdk/pull/6706)
+* [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 25.1.2
+* [fixed] Fixed a server and sdk mismatch in unicode string sorting. [#6615](//github.com/firebase/firebase-android-sdk/pull/6615)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
 # 25.1.1
 * [changed] Update Firestore proto definitions. [#6369](//github.com/firebase/firebase-android-sdk/pull/6369)
 * [changed] Updated protobuf dependency to `3.25.5` to fix

@@ -28,7 +28,6 @@ firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false
   publishJavadoc = false
-  previewMode = "beta"
   releaseNotes {
     name.set("{{data_connect_short}}")
     versionName.set("data-connect")
