@@ -296,9 +296,7 @@ internal constructor(
               emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
             }
           }
-        } catch (e: Exception) {
-          println("Exception: $e.message")
-        }
+        } catch (_: Exception) {}
       }
     }
   }
