@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai.common
 
-import android.content.Context
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -196,7 +195,6 @@ internal constructor(
       header("X-Firebase-AppVersion", appVersion)
     }
   }
-
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
     if (headerProvider != null) {

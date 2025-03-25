@@ -16,11 +16,7 @@
 
 package com.google.firebase.vertexai.common
 
-import android.content.Context
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
 import com.google.firebase.vertexai.BuildConfig
 import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
@@ -58,8 +54,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
