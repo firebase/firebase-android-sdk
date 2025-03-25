@@ -2,8 +2,8 @@
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
 * [changed] **Breaking Change**: `ImagenInlineImage.data` now returns the raw
-  image bytes (in JPEG or PNG format, specified in `ImagenInlineImage.mimeType`)
-  instead of Base64-encoded data. (#6800)
+  image bytes (in JPEG or PNG format, as specified in
+  `ImagenInlineImage.mimeType`) instead of Base64-encoded data. (#6800)
     * **Action Required:** Remove any Base64 decoding from your
       `ImagenInlineImage.data` usage.
     * The `asBitmap()` helper method is unaffected and requires no code changes.
