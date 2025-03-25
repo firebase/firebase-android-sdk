@@ -29,7 +29,7 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.websocket.Frame
@@ -85,7 +85,7 @@ internal constructor(
    * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
    */
   public suspend fun connect(): LiveSession? {
-    val client = HttpClient(CIO) { install(WebSockets) }
+    val client = HttpClient(OkHttp) { install(WebSockets) }
 
     val bidiEndPoint = this.controller.getBidiEndpoint(location)
     val setup =
