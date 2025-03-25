@@ -87,6 +87,12 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
 
+    <TextView
+        android:id="@+id/process_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

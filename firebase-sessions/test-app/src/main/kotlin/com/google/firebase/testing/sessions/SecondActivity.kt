@@ -17,11 +17,13 @@
 package com.google.firebase.testing.sessions
 
 import android.app.ActivityManager
+import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.perf.FirebasePerformance
 import kotlinx.coroutines.delay
@@ -55,6 +57,7 @@ class SecondActivity : BaseActivity() {
           .killBackgroundProcesses("com.google.firebase.testing.sessions")
       }
     }
+    findViewById<TextView>(R.id.process_name_second).text = getProcessName()
   }
 
   override fun onResume() {
@@ -65,5 +68,11 @@ class SecondActivity : BaseActivity() {
   override fun onPause() {
     super.onPause()
     TestApplication.sessionSubscriber.unregisterView(findViewById(R.id.session_id_second_text))
+  }
+
+  companion object {
+    fun getProcessName(): String =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
+      else "unknown"
   }
 }
