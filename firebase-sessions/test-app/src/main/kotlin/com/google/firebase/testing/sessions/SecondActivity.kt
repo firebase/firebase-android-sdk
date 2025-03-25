@@ -48,7 +48,6 @@ class SecondActivity : BaseActivity() {
         delay(1000)
         performanceTrace.stop()
       }
-
     }
     findViewById<Button>(R.id.kill_background_processes).setOnClickListener {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
