@@ -116,7 +116,8 @@ class HeartBeatInfoStorage {
         Set<String> dates = new HashSet<>((Set<String>) entry.getValue());
         dates.remove(today);
         if (!dates.isEmpty()) {
-          heartBeatResults.add(HeartBeatResult.create(entry.getKey().getName(), new ArrayList<>()));
+          heartBeatResults.add(
+              HeartBeatResult.create(entry.getKey().getName(), new ArrayList<>(dates)));
         }
       }
     }
