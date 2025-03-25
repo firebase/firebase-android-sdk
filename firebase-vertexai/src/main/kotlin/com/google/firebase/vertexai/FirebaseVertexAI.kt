@@ -106,6 +106,7 @@ internal constructor(
    * @return The initialized [LiveGenerativeModel] instance.
    */
   @JvmOverloads
+  @PublicPreviewAPI
   public fun liveModel(
     modelName: String,
     generationConfig: LiveGenerationConfig? = null,
@@ -113,6 +114,15 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): LiveGenerativeModel {
+    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Gemini model "${modelName}"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      """
+          .trimIndent()
+      )
+    }
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
