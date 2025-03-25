@@ -17,7 +17,6 @@
 package com.google.firebase.testing.sessions
 
 import android.app.ActivityManager
-import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
@@ -68,11 +67,5 @@ class SecondActivity : BaseActivity() {
   override fun onPause() {
     super.onPause()
     TestApplication.sessionSubscriber.unregisterView(findViewById(R.id.session_id_second_text))
-  }
-
-  companion object {
-    fun getProcessName(): String =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
-      else "unknown"
   }
 }

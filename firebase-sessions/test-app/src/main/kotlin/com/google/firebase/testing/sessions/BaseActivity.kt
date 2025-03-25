@@ -30,6 +30,7 @@ open class BaseActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     FirebaseApp.initializeApp(this)
+    logProcessDetails()
     Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
   }
 
@@ -64,8 +65,15 @@ open class BaseActivity : AppCompatActivity() {
     return processInfo.importance
   }
 
-  private fun getProcessName(): String =
+  protected fun getProcessName(): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else "unknown"
+
+  private fun logProcessDetails() {
+    val pid = android.os.Process.myPid()
+    val uid = android.os.Process.myUid()
+    val activity = javaClass.name
+    Log.i(TAG, "activity: $activity pid: $pid, uid: $uid")
+  }
 
   companion object {
     val TAG = "BaseActivity"

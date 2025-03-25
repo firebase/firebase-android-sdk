@@ -104,7 +104,7 @@ class FirstFragment : Fragment() {
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
-    binding.processName.setText(getProcessName())
+    binding.processName.text = getProcessName()
   }
 
   override fun onResume() {
