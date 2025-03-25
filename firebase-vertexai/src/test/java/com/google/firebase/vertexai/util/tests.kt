@@ -21,6 +21,7 @@ package com.google.firebase.vertexai.util
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -97,6 +98,7 @@ internal typealias CommonTest = suspend CommonTestScope.() -> Unit
 internal fun commonTest(
   status: HttpStatusCode = HttpStatusCode.OK,
   requestOptions: RequestOptions = RequestOptions(),
+  backend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
@@ -111,7 +113,7 @@ internal fun commonTest(
       TEST_CLIENT_ID,
       null,
     )
-  val model = GenerativeModel("cool-model-name", controller = apiController)
+  val model = GenerativeModel("cool-model-name", generativeBackend = backend, controller = apiController)
   val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
   CommonTestScope(channel, model, imagenModel).block()
 }
@@ -130,12 +132,13 @@ internal fun commonTest(
 internal fun goldenStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  backend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
   block: CommonTest,
 ) = doBlocking {
   val goldenFile = loadGoldenFile(name)
   val messages = goldenFile.readLines().filter { it.isNotBlank() }
 
-  commonTest(httpStatusCode) {
+  commonTest(httpStatusCode, backend = backend) {
     launch {
       for (message in messages) {
         channel.writeFully("$message$SSE_SEPARATOR".toByteArray())
@@ -162,7 +165,24 @@ internal fun goldenVertexStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenStreamingFile("vertexai/$name", httpStatusCode, block)
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, block = block)
+
+/**
+ * A variant of [goldenStreamingFile] for testing the developer api
+ *
+ * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenDevAPIStreamingFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, GenerativeBackend.DEVELOPER_API, block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
@@ -177,9 +197,10 @@ internal fun goldenVertexStreamingFile(
 internal fun goldenUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  backend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
   block: CommonTest,
 ) =
-  commonTest(httpStatusCode) {
+  commonTest(httpStatusCode, backend = backend) {
     val goldenFile = loadGoldenFile(name)
     val message = goldenFile.readText()
 
@@ -201,7 +222,22 @@ internal fun goldenVertexUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenUnaryFile("vertexai/$name", httpStatusCode, block)
+) = goldenUnaryFile("vertexai/$name", httpStatusCode, block = block)
+
+/**
+ * A variant of [goldenUnaryFile] for developer api tests Loads the *Golden File* and automatically
+ * provides it to the channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenUnaryFile
+ */
+internal fun goldenDevAPIUnaryFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenUnaryFile("developerapi/$name", httpStatusCode, GenerativeBackend.DEVELOPER_API, block)
 
 /**
  * Loads a *Golden File* from the resource directory.
