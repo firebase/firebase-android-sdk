@@ -16,15 +16,16 @@
 
 set -euo pipefail
 
-export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
-echo "[$0] export FIREBASE_DATACONNECT_POSTGRESQL_STRING='$FIREBASE_DATACONNECT_POSTGRESQL_STRING'"
+readonly PROJECT_ROOT_DIR="$(dirname "$0")/../.."
 
-readonly FIREBASE_ARGS=(
-  firebase
-  --debug
-  emulators:start
-  --only auth,dataconnect
+readonly args=(
+  "${PROJECT_ROOT_DIR}/gradlew"
+  "-p"
+  "${PROJECT_ROOT_DIR}"
+  "--configure-on-demand"
+  "$@"
+  ":firebase-dataconnect:generateApiTxtFile"
 )
 
-echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
-exec "${FIREBASE_ARGS[@]}"
+echo "${args[*]}"
+exec "${args[@]}"
