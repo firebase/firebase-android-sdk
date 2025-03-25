@@ -18,6 +18,7 @@
 
 package com.google.firebase.vertexai.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
@@ -35,6 +36,7 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
 
@@ -100,6 +102,9 @@ internal fun commonTest(
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val apiController =
     APIController(
       "super_cool_test_key",
@@ -109,6 +114,7 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)

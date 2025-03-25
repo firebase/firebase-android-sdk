@@ -18,6 +18,7 @@ package com.google.firebase.vertexai.common
 
 import android.util.Log
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.options
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
@@ -91,6 +92,7 @@ internal constructor(
   private val requestOptions: RequestOptions,
   httpEngine: HttpClientEngine,
   private val apiClient: String,
+  private val firebaseApp: FirebaseApp,
   private val headerProvider: HeaderProvider?,
 ) {
 
@@ -99,8 +101,9 @@ internal constructor(
     model: String,
     requestOptions: RequestOptions,
     apiClient: String,
+    firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
-  ) : this(key, model, requestOptions, OkHttp.create(), apiClient, headerProvider)
+  ) : this(key, model, requestOptions, OkHttp.create(), apiClient, firebaseApp, headerProvider)
 
   private val model = fullModelName(model)
 
@@ -175,6 +178,20 @@ internal constructor(
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
+    if (firebaseApp.isDataCollectionDefaultEnabled) {
+      header("X-Firebase-AppId", firebaseApp.options.applicationId)
+      header("X-Firebase-AppVersion", getVersionNumber())
+    }
+  }
+
+  private fun getVersionNumber(): Int {
+    try {
+      val context = firebaseApp.applicationContext
+      return context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+    } catch (e: Exception) {
+      Log.d(TAG, "Error while getting app version: ${e.message}")
+      return 0
+    }
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {

@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.common
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.BuildConfig
 import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
@@ -49,9 +50,11 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
 
@@ -87,6 +90,14 @@ internal class APIControllerTests {
 
 @OptIn(ExperimentalSerializationApi::class)
 internal class RequestFormatTests {
+
+  private val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+
+  @Before
+  fun setup() {
+    Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+  }
+
   @Test
   fun `using default endpoint`() = doBlocking {
     val channel = ByteChannel(autoFlush = true)
@@ -101,6 +112,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         "genai-android/${BuildConfig.VERSION_NAME}",
+        mockFirebaseApp,
         null,
       )
 
@@ -128,6 +140,7 @@ internal class RequestFormatTests {
         RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         null,
       )
 
@@ -155,6 +168,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         null,
       )
 
@@ -178,6 +192,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         null,
       )
 
@@ -229,6 +244,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         testHeaderProvider,
       )
 
@@ -263,6 +279,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         testHeaderProvider,
       )
 
@@ -286,6 +303,7 @@ internal class RequestFormatTests {
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         null,
       )
 
@@ -309,6 +327,12 @@ internal class RequestFormatTests {
 
 @RunWith(Parameterized::class)
 internal class ModelNamingTests(private val modelName: String, private val actualName: String) {
+  private val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+
+  @Before
+  fun setup() {
+    Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+  }
 
   @Test
   fun `request should include right model name`() = doBlocking {
@@ -324,6 +348,7 @@ internal class ModelNamingTests(private val modelName: String, private val actua
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
+        mockFirebaseApp,
         null,
       )
 
