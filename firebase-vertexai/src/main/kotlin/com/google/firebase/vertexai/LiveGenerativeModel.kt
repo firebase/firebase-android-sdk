@@ -48,7 +48,6 @@ internal constructor(
   private val modelName: String,
   private val config: LiveGenerationConfig? = null,
   private val tools: List<Tool>? = null,
-  private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val location: String,
   private val controller: APIController
@@ -69,7 +68,6 @@ internal constructor(
     modelName,
     config,
     tools,
-    toolConfig,
     systemInstruction,
     location,
     APIController(
@@ -96,7 +94,6 @@ internal constructor(
           this.modelName,
           this.config?.toInternal(),
           this.tools?.map { it.toInternal() },
-          this.toolConfig?.toInternal(),
           this.systemInstruction?.toInternal()
         )
         .toInternal()
