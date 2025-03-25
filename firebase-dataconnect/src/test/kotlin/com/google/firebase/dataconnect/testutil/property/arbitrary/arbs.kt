@@ -18,20 +18,22 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.DataConnectError
-import com.google.firebase.dataconnect.DataConnectError.PathSegment
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
+import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl
+import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
 import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
+import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -40,11 +42,12 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
@@ -75,36 +78,39 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
   )
 }
 
-internal fun DataConnectArb.fieldPathSegment(
-  string: Arb<String> = string()
-): Arb<PathSegment.Field> = arbitrary { PathSegment.Field(string.bind()) }
-
-internal fun DataConnectArb.listIndexPathSegment(
-  int: Arb<Int> = Arb.int()
-): Arb<PathSegment.ListIndex> = arbitrary { PathSegment.ListIndex(int.bind()) }
-
-internal fun DataConnectArb.pathSegment(): Arb<PathSegment> =
-  Arb.choice(fieldPathSegment(), listIndexPathSegment())
-
-internal fun DataConnectArb.sourceLocation(
-  line: Arb<Int> = Arb.int(),
-  column: Arb<Int> = Arb.int()
-): Arb<DataConnectError.SourceLocation> = arbitrary {
-  DataConnectError.SourceLocation(line = line.bind(), column = column.bind())
-}
-
-internal fun DataConnectArb.dataConnectError(
+internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
-  path: Arb<List<PathSegment>> = Arb.list(pathSegment(), 0..5),
-  locations: Arb<List<DataConnectError.SourceLocation>> = Arb.list(sourceLocation(), 0..5)
-): Arb<DataConnectError> = arbitrary {
-  DataConnectError(message = message.bind(), path = path.bind(), locations = locations.bind())
-}
+  path: Arb<List<DataConnectPathSegment>> = errorPath(),
+): Arb<ErrorInfoImpl> =
+  Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
+
+internal fun DataConnectArb.operationRawData(): Arb<Map<String, Any?>?> =
+  Arb.proto.struct().map { it.toMap() }.orNull(nullProbability = 0.33)
+
+internal data class SampleOperationData(val value: String)
+
+internal fun DataConnectArb.operationData(): Arb<SampleOperationData?> =
+  string().map { SampleOperationData(it) }.orNull(nullProbability = 0.33)
+
+internal fun DataConnectArb.operationErrors(
+  errorInfoImpl: Arb<ErrorInfoImpl> = operationErrorInfo(),
+  range: IntRange = 0..10,
+): Arb<List<ErrorInfoImpl>> = Arb.list(errorInfoImpl, range)
+
+internal fun DataConnectArb.operationFailureResponseImpl(
+  rawData: Arb<Map<String, Any?>?> = operationRawData(),
+  data: Arb<SampleOperationData?> = operationData(),
+  errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
+): Arb<DataConnectOperationFailureResponseImpl<SampleOperationData>> =
+  Arb.bind(rawData, data, errors) { rawData0, data0, errors0 ->
+    DataConnectOperationFailureResponseImpl(rawData0, data0, errors0)
+  }
 
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
-  errors: Arb<List<DataConnectError>> = Arb.list(dataConnectError(), 0..3),
-) = arbitrary { DataConnectGrpcClient.OperationResult(data.bind(), errors.bind()) }
+  errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
+) =
+  Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,

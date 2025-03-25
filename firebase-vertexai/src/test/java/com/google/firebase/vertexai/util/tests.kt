@@ -18,6 +18,7 @@
 
 package com.google.firebase.vertexai.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
@@ -35,8 +36,11 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+private val TEST_APP_ID = "1:android:12345"
+private val TEST_VERSION = 1
 
 /** String separator used in SSE communication to signal the end of a message. */
 internal const val SSE_SEPARATOR = "\r\n\r\n"
@@ -100,6 +104,9 @@ internal fun commonTest(
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val apiController =
     APIController(
       "super_cool_test_key",
@@ -109,6 +116,9 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
@@ -125,7 +135,7 @@ internal fun commonTest(
  * @param name The name of the *Golden File* to load
  * @param httpStatusCode An optional [HttpStatusCode] to return as a response
  * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenUnaryFile
+ * @see goldenVertexUnaryFile
  */
 internal fun goldenStreamingFile(
   name: String,
@@ -146,6 +156,23 @@ internal fun goldenStreamingFile(
     block()
   }
 }
+
+/**
+ * A variant of [goldenStreamingFile] for testing vertexAI
+ *
+ * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexStreamingFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
@@ -170,6 +197,21 @@ internal fun goldenUnaryFile(
 
     block()
   }
+
+/**
+ * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically
+ * provides it to the channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenUnaryFile
+ */
+internal fun goldenVertexUnaryFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenUnaryFile("vertexai/$name", httpStatusCode, block)
 
 /**
  * Loads a *Golden File* from the resource directory.

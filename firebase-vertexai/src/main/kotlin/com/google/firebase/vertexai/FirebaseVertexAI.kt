@@ -72,6 +72,7 @@ internal constructor(
     return GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       safetySettings,
       tools,
@@ -144,6 +145,7 @@ internal constructor(
     return ImagenModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       safetySettings,
       requestOptions,
