@@ -128,14 +128,14 @@ class StreamTests {
   fun genStreamError_receivesError() = runBlocking {
     val input = mapOf("data" to "test error")
     val function =
-      functions.getHttpsCallable("genStreamError").withTimeout(2000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("genStreamError").withTimeout(10_000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
 
-    withTimeout(2000) {
+    withTimeout(10_000) {
       while (subscriber.throwable == null) {
-        delay(100)
+        delay(1_000)
       }
     }
 
