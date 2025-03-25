@@ -112,6 +112,30 @@ private constructor(
     @JvmField public var responseModalities: List<ContentModality>? = null
     @JvmField public var speechConfig: SpeechConfig? = null
 
+    public fun setTemperature(temperature: Float?): Builder = apply {
+      this.temperature = temperature
+    }
+    public fun setTopK(topK: Int?): Builder = apply { this.topK = topK }
+    public fun setTopP(topP: Float?): Builder = apply { this.topP = topP }
+    public fun setCandidateCount(candidateCount: Int?): Builder = apply {
+      this.candidateCount = candidateCount
+    }
+    public fun setMaxOutputTokens(maxOutputTokens: Int?): Builder = apply {
+      this.maxOutputTokens = maxOutputTokens
+    }
+    public fun setPresencePenalty(presencePenalty: Float?): Builder = apply {
+      this.presencePenalty = presencePenalty
+    }
+    public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
+      this.frequencyPenalty = frequencyPenalty
+    }
+    public fun setResponseModalities(responseModalities: List<ContentModality>?): Builder = apply {
+      this.responseModalities = responseModalities
+    }
+    public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
+      this.speechConfig = speechConfig
+    }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(

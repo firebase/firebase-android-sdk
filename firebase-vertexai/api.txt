@@ -594,6 +594,15 @@ package com.google.firebase.vertexai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.vertexai.type.LiveGenerationConfig build();
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setCandidateCount(Integer? candidateCount);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.vertexai.type.ContentModality>? responseModalities);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.vertexai.type.SpeechConfig? speechConfig);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
