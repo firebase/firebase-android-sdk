@@ -25,6 +25,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/mini_chromium/base/posix/safe_strerror.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/process/memory.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/rand_util.cc \
+    $(THIRD_PARTY_PATH)/mini_chromium/base/strings/pattern.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/string_number_conversions.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/string_util.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/stringprintf.cc \
