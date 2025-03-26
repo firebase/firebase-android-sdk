@@ -639,7 +639,7 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class MediaData {
-    ctor public MediaData(String mimeType, byte[] data);
+    ctor public MediaData(byte[] data, String mimeType);
     method public byte[] getData();
     method public String getMimeType();
     property public final byte[] data;
