@@ -156,7 +156,7 @@ internal constructor(
       receivedAudio.copyInto(audioBuffer, offset)
       offset += receivedAudio.size
       if (offset >= MIN_BUFFER_SIZE) {
-        sendMediaStream(listOf(MediaData("audio/pcm", audioBuffer)))
+        sendMediaStream(listOf(MediaData( audioBuffer, "audio/pcm")))
         audioBuffer.fill(0)
         offset = 0
       }
