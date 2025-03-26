@@ -818,14 +818,6 @@ package com.google.firebase.vertexai.type {
     property public final com.google.firebase.vertexai.type.Voices voice;
   }
 
-  public final class StreamOutput {
-    ctor public StreamOutput(boolean interrupted, com.google.firebase.vertexai.type.Content? data);
-    method public com.google.firebase.vertexai.type.Content? getData();
-    method public boolean getInterrupted();
-    property public final com.google.firebase.vertexai.type.Content? data;
-    property public final boolean interrupted;
-  }
-
   public abstract class StringFormat {
   }
 

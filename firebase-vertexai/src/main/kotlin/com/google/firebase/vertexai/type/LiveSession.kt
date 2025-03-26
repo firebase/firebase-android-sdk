@@ -18,11 +18,13 @@ package com.google.firebase.vertexai.type
 
 import android.media.AudioFormat
 import android.media.AudioTrack
+import com.google.firebase.annotations.concurrent.Background
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -42,6 +44,7 @@ import kotlinx.serialization.json.JsonNull
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession?,
+  @Background private val backgroundDispatcher: CoroutineContext,
   private var isRecording: Boolean,
   private var audioHelper: AudioHelper? = null
 ) {
@@ -133,7 +136,7 @@ internal constructor(
   }
 
   private fun fillRecordedAudioQueue() {
-    CoroutineScope(Dispatchers.IO).launch {
+    CoroutineScope(backgroundDispatcher).launch {
       audioHelper!!.startRecording().collect {
         if (!isRecording) {
           cancel()
@@ -159,7 +162,7 @@ internal constructor(
   }
 
   private fun fillServerResponseAudioQueue() {
-    CoroutineScope(Dispatchers.Default).launch {
+    CoroutineScope(backgroundDispatcher).launch {
       receive(listOf(ContentModality.AUDIO)).collect {
         if (!isRecording) {
           cancel()
@@ -182,7 +185,7 @@ internal constructor(
   }
 
   private fun playServerResponseAudio() {
-    CoroutineScope(Dispatchers.IO).launch {
+    CoroutineScope(backgroundDispatcher).launch {
       while (isRecording) {
         val x = playBackQueue.poll() ?: continue
         audioHelper?.playAudio(x)
@@ -202,7 +205,6 @@ internal constructor(
     isRecording = true
     audioHelper = AudioHelper()
     audioHelper!!.setupAudioTrack()
-    val scope = CoroutineScope(Dispatchers.Default)
     fillRecordedAudioQueue()
     CoroutineScope(Dispatchers.Default).launch { sendAudioDataToServer() }
     fillServerResponseAudioQueue()

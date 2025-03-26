@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
@@ -31,6 +32,7 @@ import com.google.firebase.vertexai.type.Tool
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
+import kotlin.coroutines.CoroutineContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -41,6 +43,7 @@ import kotlinx.serialization.json.Json
 public class LiveGenerativeModel
 internal constructor(
   private val modelName: String,
+  @Background private val backgroundDispatcher: CoroutineContext,
   private val config: LiveGenerationConfig? = null,
   private val tools: List<Tool>? = null,
   private val systemInstruction: Content? = null,
@@ -51,6 +54,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
+    backgroundDispatcher: CoroutineContext,
     config: LiveGenerationConfig? = null,
     tools: List<Tool>? = null,
     systemInstruction: Content? = null,
@@ -60,6 +64,7 @@ internal constructor(
     internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
     modelName,
+    backgroundDispatcher,
     config,
     tools,
     systemInstruction,
@@ -94,7 +99,11 @@ internal constructor(
     val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
     // TODO: Try to decode the json instead of string matching.
     return if (receivedJson.contains("setupComplete")) {
-      LiveSession(session = webSession, isRecording = false)
+      LiveSession(
+        session = webSession,
+        backgroundDispatcher = backgroundDispatcher,
+        isRecording = false
+      )
     } else {
       webSession.close()
       throw GeminiConnectionHandshakeFailed()
