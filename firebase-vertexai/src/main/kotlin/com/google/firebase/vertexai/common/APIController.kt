@@ -37,6 +37,7 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
@@ -128,6 +129,7 @@ internal constructor(
         socketTimeoutMillis =
           max(180.seconds.inWholeMilliseconds, requestOptions.timeout.inWholeMilliseconds)
       }
+      install(WebSockets)
       install(ContentNegotiation) { json(JSON) }
     }
 

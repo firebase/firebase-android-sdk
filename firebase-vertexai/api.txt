@@ -29,11 +29,11 @@ package com.google.firebase.vertexai {
     method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null);
     method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null);
     method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
-    method public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.vertexai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
     property public static final com.google.firebase.vertexai.FirebaseVertexAI instance;
     field public static final com.google.firebase.vertexai.FirebaseVertexAI.Companion Companion;
   }
@@ -148,15 +148,7 @@ package com.google.firebase.vertexai.java {
 package com.google.firebase.vertexai.type {
 
   public final class AudioRecordInitializationFailedException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
-    ctor public AudioRecordInitializationFailedException();
-  }
-
-  public final class AudioRecordInvalidBufferSizeException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
-    ctor public AudioRecordInvalidBufferSizeException();
-  }
-
-  public final class BidiServerHandshakeFailed extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
-    ctor public BidiServerHandshakeFailed();
+    ctor public AudioRecordInitializationFailedException(String message);
   }
 
   public final class BlockReason {
@@ -332,6 +324,10 @@ package com.google.firebase.vertexai.type {
     method public kotlinx.serialization.json.JsonObject getResponse();
     property public final String name;
     property public final kotlinx.serialization.json.JsonObject response;
+  }
+
+  public final class GeminiConnectionHandshakeFailed extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
+    ctor public GeminiConnectionHandshakeFailed();
   }
 
   public final class GenerateContentResponse {
@@ -573,18 +569,25 @@ package com.google.firebase.vertexai.type {
   public final class LiveContentResponse {
     method public com.google.firebase.vertexai.type.Content? getData();
     method public java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>? getFunctionCalls();
-    method public com.google.firebase.vertexai.type.LiveContentResponse.Status getStatus();
+    method public int getStatus();
     method public String? getText();
     property public final com.google.firebase.vertexai.type.Content? data;
     property public final java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>? functionCalls;
-    property public final com.google.firebase.vertexai.type.LiveContentResponse.Status status;
+    property public final int status;
     property public final String? text;
   }
 
-  public enum LiveContentResponse.Status {
-    enum_constant public static final com.google.firebase.vertexai.type.LiveContentResponse.Status INTERRUPTED;
-    enum_constant public static final com.google.firebase.vertexai.type.LiveContentResponse.Status NORMAL;
-    enum_constant public static final com.google.firebase.vertexai.type.LiveContentResponse.Status TURN_COMPLETE;
+  @kotlin.jvm.JvmInline public static final value class LiveContentResponse.Status {
+    field public static final com.google.firebase.vertexai.type.LiveContentResponse.Status.Companion Companion;
+  }
+
+  public static final class LiveContentResponse.Status.Companion {
+    method public int getINTERRUPTED();
+    method public int getNORMAL();
+    method public int getTURN_COMPLETE();
+    property public final int INTERRUPTED;
+    property public final int NORMAL;
+    property public final int TURN_COMPLETE;
   }
 
   public final class LiveGenerationConfig {
@@ -813,6 +816,14 @@ package com.google.firebase.vertexai.type {
     ctor public SpeechConfig(com.google.firebase.vertexai.type.Voices voice);
     method public com.google.firebase.vertexai.type.Voices getVoice();
     property public final com.google.firebase.vertexai.type.Voices voice;
+  }
+
+  public final class StreamOutput {
+    ctor public StreamOutput(boolean interrupted, com.google.firebase.vertexai.type.Content? data);
+    method public com.google.firebase.vertexai.type.Content? getData();
+    method public boolean getInterrupted();
+    property public final com.google.firebase.vertexai.type.Content? data;
+    property public final boolean interrupted;
   }
 
   public abstract class StringFormat {
