@@ -27,6 +27,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -117,7 +118,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
       Provider<UserAgentPublisher> userAgentProvider,
       Executor backgroundExecutor) {
     this(
-        () -> new HeartBeatInfoStorage(context, persistenceKey),
+        new Lazy<>(() -> new HeartBeatInfoStorage(context, persistenceKey)),
         consumers,
         backgroundExecutor,
         userAgentProvider,
