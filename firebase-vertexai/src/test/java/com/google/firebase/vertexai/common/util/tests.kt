@@ -18,6 +18,7 @@
 
 package com.google.firebase.vertexai.common.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.type.Candidate
@@ -33,8 +34,11 @@ import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
+private val TEST_APP_ID = "1:android:12345"
+private val TEST_VERSION = 1
 
 internal fun prepareStreamingResponse(
   response: List<GenerateContentResponse.Internal>
@@ -90,6 +94,9 @@ internal fun commonTest(
   requestOptions: RequestOptions = RequestOptions(),
   block: CommonTest,
 ) = doBlocking {
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val channel = ByteChannel(autoFlush = true)
   val apiController =
     APIController(
@@ -100,6 +107,9 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   CommonTestScope(channel, apiController).block()

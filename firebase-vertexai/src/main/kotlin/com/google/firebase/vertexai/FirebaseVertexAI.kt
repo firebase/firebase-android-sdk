@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai
 
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
@@ -68,9 +69,19 @@ internal constructor(
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
+    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Gemini model "${modelName}"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      """
+          .trimIndent()
+      )
+    }
     return GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       safetySettings,
       tools,
@@ -102,9 +113,19 @@ internal constructor(
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
+    if (!modelName.startsWith(IMAGEN_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Imagen model "${modelName}"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
+      """
+          .trimIndent()
+      )
+    }
     return ImagenModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       safetySettings,
       requestOptions,
@@ -134,6 +155,12 @@ internal constructor(
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
       return multiResourceComponent.get(location)
     }
+
+    private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
+
+    private const val IMAGEN_MODEL_NAME_PREFIX = "imagen-"
+
+    private val TAG = FirebaseVertexAI::class.java.simpleName
   }
 }
 
