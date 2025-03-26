@@ -31,6 +31,7 @@ open class BaseActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     FirebaseApp.initializeApp(this)
     logProcessDetails()
+    logFirebaseDetails()
     Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
   }
 
@@ -72,7 +73,18 @@ open class BaseActivity : AppCompatActivity() {
     val pid = android.os.Process.myPid()
     val uid = android.os.Process.myUid()
     val activity = javaClass.name
-    Log.i(TAG, "activity: $activity pid: $pid, uid: $uid")
+    val process = getProcessName()
+    Log.i(TAG, "activity: $activity process: $process, pid: $pid, uid: $uid")
+  }
+
+  private fun logFirebaseDetails() {
+    val activity = javaClass.name
+    val firebaseApps = FirebaseApp.getApps(this)
+    val defaultFirebaseApp = FirebaseApp.getInstance()
+    Log.i(
+      TAG,
+      "activity: $activity firebase: ${defaultFirebaseApp.name} appsCount: ${firebaseApps.count()}"
+    )
   }
 
   companion object {
