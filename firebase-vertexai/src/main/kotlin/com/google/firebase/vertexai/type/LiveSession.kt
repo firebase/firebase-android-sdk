@@ -38,9 +38,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 
-/**
- * Represents a live WebSocket session capable of streaming content to and from the server.
- */
+/** Represents a live WebSocket session capable of streaming content to and from the server. */
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession?,
@@ -53,6 +51,15 @@ internal constructor(
   private var startedReceiving = false
   private var receiveChannel: Channel<Frame> = Channel()
   private var functionCallChannel: Channel<List<FunctionCallPart>> = Channel()
+
+  private companion object {
+    val MIN_BUFFER_SIZE =
+      AudioTrack.getMinBufferSize(
+        24000,
+        AudioFormat.CHANNEL_OUT_MONO,
+        AudioFormat.ENCODING_PCM_16BIT
+      )
+  }
 
   internal class ClientContentSetup(val turns: List<Content.Internal>, val turnComplete: Boolean) {
     @Serializable
@@ -136,32 +143,17 @@ internal constructor(
     }
   }
 
-  private fun sendAudioDataToServer() {
-    CoroutineScope(Dispatchers.Default).launch {
-      val minBufferSize =
-        AudioTrack.getMinBufferSize(
-          24000,
-          AudioFormat.CHANNEL_OUT_MONO,
-          AudioFormat.ENCODING_PCM_16BIT
-        )
-      var bytesRead = 0
-      var recordedData = ByteArray(minBufferSize * 2)
-      while (true) {
-        if (!isRecording) {
-          break
-        }
-        val byteArr = audioQueue.poll()
-        if (byteArr != null) {
-          bytesRead += byteArr.size
-          recordedData += byteArr
-          if (bytesRead >= minBufferSize) {
-            sendMediaStream(listOf(MediaData("audio/pcm", recordedData)))
-            bytesRead = 0
-            recordedData = byteArrayOf()
-          }
-        } else {
-          continue
-        }
+  private suspend fun sendAudioDataToServer() {
+    var offset = 0
+    val audioBuffer = ByteArray(MIN_BUFFER_SIZE * 2)
+    while (isRecording) {
+      val receivedAudio = audioQueue.poll() ?: continue
+      receivedAudio.copyInto(audioBuffer, offset)
+      offset += receivedAudio.size
+      if (offset >= MIN_BUFFER_SIZE) {
+        sendMediaStream(listOf(MediaData("audio/pcm", audioBuffer)))
+        audioBuffer.fill(0)
+        offset = 0
       }
     }
   }
@@ -172,14 +164,18 @@ internal constructor(
         if (!isRecording) {
           cancel()
         }
-        if (it.status == LiveContentResponse.Status.INTERRUPTED) {
-          while (!playBackQueue.isEmpty()) playBackQueue.poll()
-        } else if (it.status == LiveContentResponse.Status.NORMAL) {
-          if (!it.functionCalls.isNullOrEmpty()) {
-            functionCallChannel.send(it.functionCalls)
-          } else {
-            playBackQueue.add(it.data!!.parts[0].asInlineDataPartOrNull()!!.inlineData)
-          }
+        when (it.status) {
+          LiveContentResponse.Status.INTERRUPTED ->
+            while (!playBackQueue.isEmpty()) playBackQueue.poll()
+          LiveContentResponse.Status.NORMAL ->
+            if (!it.functionCalls.isNullOrEmpty()) {
+              functionCallChannel.send(it.functionCalls)
+            } else {
+              val audioData = it.data?.parts?.get(0)?.asInlineDataPartOrNull()?.inlineData
+              if (audioData != null) {
+                playBackQueue.add(audioData)
+              }
+            }
         }
       }
     }
@@ -187,14 +183,9 @@ internal constructor(
 
   private fun playServerResponseAudio() {
     CoroutineScope(Dispatchers.IO).launch {
-      while (true) {
-        if (!isRecording) {
-          break
-        }
-        val x = playBackQueue.poll()
-        if (x != null) {
-          audioHelper!!.playAudio(x)
-        }
+      while (isRecording) {
+        val x = playBackQueue.poll() ?: continue
+        audioHelper?.playAudio(x)
       }
     }
   }
@@ -213,7 +204,7 @@ internal constructor(
     audioHelper!!.setupAudioTrack()
     val scope = CoroutineScope(Dispatchers.Default)
     fillRecordedAudioQueue()
-    sendAudioDataToServer()
+    CoroutineScope(Dispatchers.Default).launch { sendAudioDataToServer() }
     fillServerResponseAudioQueue()
     playServerResponseAudio()
     delay(1000)
@@ -223,12 +214,12 @@ internal constructor(
   public fun stopAudioConversation() {
     stopReceiving()
     isRecording = false
-    if (audioHelper != null) {
-      while (!playBackQueue.isEmpty()) playBackQueue.poll()
-      while (!audioQueue.isEmpty()) audioQueue.poll()
-      audioHelper!!.release()
-      audioHelper = null
+    audioHelper?.let {
+      while (playBackQueue.isNotEmpty()) playBackQueue.poll()
+      while (audioQueue.isNotEmpty()) audioQueue.poll()
+      it.release()
     }
+    audioHelper = null
   }
 
   /**
