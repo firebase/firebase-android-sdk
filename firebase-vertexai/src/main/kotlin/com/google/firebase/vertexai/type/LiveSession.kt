@@ -208,7 +208,7 @@ internal constructor(
     audioHelper = AudioHelper()
     audioHelper!!.setupAudioTrack()
     fillRecordedAudioQueue()
-    CoroutineScope(Dispatchers.Default).launch { sendAudioDataToServer() }
+    CoroutineScope(backgroundDispatcher).launch { sendAudioDataToServer() }
     fillServerResponseAudioQueue()
     playServerResponseAudio()
     delay(1000)
