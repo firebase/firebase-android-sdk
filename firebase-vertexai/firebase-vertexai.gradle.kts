@@ -63,7 +63,10 @@ android {
       isReturnDefaultValues = true
     }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    targetSdk = targetSdkVersion
+    baseline = file("lint-baseline.xml")
+  }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any

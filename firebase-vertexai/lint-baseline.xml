@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.3.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.2)" variant="all" version="8.3.2">
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by AudioRecord.AudioRecord: android.permission.RECORD_AUDIO"
+        errorLine1="      AudioRecord("
+        errorLine2="      ^">
+        <location
+            file="src/main/kotlin/com/google/firebase/vertexai/type/AudioHelper.kt"
+            line="85"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="UnsafeOptInUsageWarning"
+        message="This declaration is opt-in and its usage should be marked with `@kotlinx.serialization.ExperimentalSerializationApi` or `@OptIn(markerClass = kotlinx.serialization.ExperimentalSerializationApi.class)`">
+        <location
+            file="src/main/kotlin/com/google/firebase/vertexai/type/LiveSession.kt"/>
+    </issue>
+
+</issues>
