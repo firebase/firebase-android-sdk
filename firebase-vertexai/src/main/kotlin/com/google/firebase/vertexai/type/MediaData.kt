@@ -17,15 +17,23 @@
 package com.google.firebase.vertexai.type
 
 import android.util.Base64
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/* Represent the media data that needs to be sent to the server. */
-public class MediaData(public val mimeType: String, public val data: ByteArray) {
+/**
+ * Represents the media data to be sent to the server
+ *
+ * @param data Byte array representing the data to be sent.
+ * @param mimeType an IANA standard MIME type. For supported MIME type values see the
+ * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+ */
+public class MediaData(public val data: ByteArray, public val mimeType: String) {
   @Serializable
-  internal class Internal(@SerialName("mimeType") val mimeType: String, val data: String)
+  internal class Internal(
+    val data: String,
+    val mimeType: String,
+  )
 
   internal fun toInternal(): Internal {
-    return Internal(mimeType, Base64.encodeToString(data, BASE_64_FLAGS))
+    return Internal(Base64.encodeToString(data, BASE_64_FLAGS), mimeType)
   }
 }
