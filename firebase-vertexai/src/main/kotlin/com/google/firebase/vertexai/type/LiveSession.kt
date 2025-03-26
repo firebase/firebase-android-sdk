@@ -18,6 +18,7 @@ package com.google.firebase.vertexai.type
 
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.util.Log
 import com.google.firebase.annotations.concurrent.Background
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -56,6 +57,7 @@ internal constructor(
   private var functionCallChannel: Channel<List<FunctionCallPart>> = Channel()
 
   private companion object {
+    val TAG = LiveSession::class.java.simpleName
     val MIN_BUFFER_SIZE =
       AudioTrack.getMinBufferSize(
         24000,
@@ -279,7 +281,9 @@ internal constructor(
             )
           )
           continue
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+          Log.i(TAG, "Failed to decode function calling: ${e.message}")
+        }
         try {
 
           val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
@@ -294,7 +298,9 @@ internal constructor(
               emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
             }
           }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+          Log.i(TAG, "Failed to decode server content: ${e.message}")
+        }
       }
     }
   }
