@@ -77,6 +77,7 @@ public class JavaCompileTests {
             .addImage(Bitmap.createBitmap(0, 0, Bitmap.Config.HARDWARE))
             .addPart(new FunctionCallPart("fakeFunction", Map.of("fakeArg", JsonNull.INSTANCE)))
             .build();
+    // TODO b/406558430 Content.Builder.setParts and Content.Builder.setRole return void
     Executor executor = FirebaseExecutors.directExecutor();
     ListenableFuture<CountTokensResponse> countResponse = futures.countTokens(content);
     validateCountTokensResponse(countResponse.get());
