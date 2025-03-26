@@ -175,7 +175,7 @@ public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
-/** Bidi session already receiving. */
+/** Streaming session already receiving. */
 public class SessionAlreadyReceivingException :
   FirebaseVertexAIException(
     "This session is already receiving. Please call stopReceiving() before calling this again."

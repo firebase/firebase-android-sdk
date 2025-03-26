@@ -627,7 +627,7 @@ package com.google.firebase.vertexai.type {
 
   public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities, kotlin.coroutines.Continuation<? super kotlinx.coroutines.flow.Flow<? extends com.google.firebase.vertexai.type.LiveContentResponse>>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
     method public kotlinx.coroutines.flow.Flow<java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>> receiveAudioConversationFunctionCalls();
     method public suspend Object? send(com.google.firebase.vertexai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);

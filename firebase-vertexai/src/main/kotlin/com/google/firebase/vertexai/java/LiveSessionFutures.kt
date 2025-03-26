@@ -31,9 +31,9 @@ import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
 /**
- * Wrapper class providing Java compatible methods for [GenerativeModel].
+ * Wrapper class providing Java compatible methods for [LiveSession].
  *
- * @see [GenerativeModel]
+ * @see [LiveSession]
  */
 public abstract class LiveSessionFutures internal constructor() {
 
@@ -94,7 +94,7 @@ public abstract class LiveSessionFutures internal constructor() {
    */
   public abstract fun receive(
     outputModalities: List<ContentModality>
-  ): ListenableFuture<Publisher<LiveContentResponse>>
+  ): Publisher<LiveContentResponse>
 
   /**
    * Receives all function call responses from the server for the audio conversation feature..
@@ -106,10 +106,8 @@ public abstract class LiveSessionFutures internal constructor() {
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
-    override fun receive(
-      outputModalities: List<ContentModality>
-    ): ListenableFuture<Publisher<LiveContentResponse>> =
-      SuspendToFutureAdapter.launchFuture { session.receive(outputModalities).asPublisher() }
+    override fun receive(outputModalities: List<ContentModality>): Publisher<LiveContentResponse> =
+      session.receive(outputModalities).asPublisher()
 
     override fun receiveAudioConversationFunctionCalls(): Publisher<List<FunctionCallPart>> =
       session.receiveAudioConversationFunctionCalls().asPublisher()

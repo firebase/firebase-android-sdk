@@ -27,7 +27,6 @@ import io.ktor.websocket.readBytes
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -156,7 +155,7 @@ internal constructor(
       receivedAudio.copyInto(audioBuffer, offset)
       offset += receivedAudio.size
       if (offset >= MIN_BUFFER_SIZE) {
-        sendMediaStream(listOf(MediaData( audioBuffer, "audio/pcm")))
+        sendMediaStream(listOf(MediaData(audioBuffer, "audio/pcm")))
         audioBuffer.fill(0)
         offset = 0
       }
@@ -248,13 +247,13 @@ internal constructor(
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    */
-  public suspend fun receive(outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
+  public fun receive(outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
     if (startedReceiving) {
       throw SessionAlreadyReceivingException()
     }
 
     val flowReceive = session!!.incoming.receiveAsFlow()
-    CoroutineScope(Dispatchers.IO).launch { flowReceive.collect { receiveChannel.send(it) } }
+    CoroutineScope(backgroundDispatcher).launch { flowReceive.collect { receiveChannel.send(it) } }
     return flow {
       startedReceiving = true
       while (true) {
