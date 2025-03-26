@@ -39,8 +39,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 
 /**
- * Represents a live WebSocket session capable of streaming bidirectional content to and from the
- * server.
+ * Represents a live WebSocket session capable of streaming content to and from the server.
  */
 public class LiveSession
 internal constructor(
@@ -60,7 +59,7 @@ internal constructor(
     internal class Internal(@SerialName("client_content") val clientContent: ClientContent) {
       @Serializable
       internal data class ClientContent(
-        @SerialName("turns") val turns: List<Content.Internal>,
+        val turns: List<Content.Internal>,
         @SerialName("turn_complete") val turnComplete: Boolean
       )
     }
@@ -232,7 +231,10 @@ internal constructor(
     }
   }
 
-  /** Stop receiving from the server. */
+  /**
+   * Stops receiving from the server. If this function is called during an ongoing audio
+   * conversation, the server's response will not be received, and no audio will be played.
+   */
   public fun stopReceiving() {
     if (!startedReceiving) {
       return
@@ -305,7 +307,7 @@ internal constructor(
   }
 
   /**
-   * Sends the function response from the client to the server.
+   * Sends the function calling responses to the server.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.

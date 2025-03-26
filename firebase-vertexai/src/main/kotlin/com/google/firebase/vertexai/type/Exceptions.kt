@@ -181,16 +181,12 @@ public class SessionAlreadyReceivingException :
     "This session is already receiving. Please call stopReceiving() before calling this again."
   )
 
-/** Audio record initialization failed for audio streaming */
-public class AudioRecordInitializationFailedException :
-  FirebaseVertexAIException("Audio Record initialization failed exception")
-
-/** Audio record buffer size invalid for audio streaming */
-public class AudioRecordInvalidBufferSizeException :
-  FirebaseVertexAIException("Audio Record buffer size is invalid")
+/** Audio record initialization failures for audio streaming */
+public class AudioRecordInitializationFailedException(message: String) :
+  FirebaseVertexAIException(message)
 
 /** Handshake failed with the server */
-public class BidiServerHandshakeFailed :
+public class GeminiConnectionHandshakeFailed :
   FirebaseVertexAIException("Handshake failed with the server.")
 
 /** Catch all case for exceptions not explicitly expected. */

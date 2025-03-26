@@ -30,10 +30,12 @@ internal constructor(
   public val text: String? =
     data?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
 
-  /* Represents the status of the server's response. */
-  public enum class Status {
-    NORMAL,
-    INTERRUPTED,
-    TURN_COMPLETE
+  @JvmInline
+  public value class Status private constructor(private val value: Int) {
+    public companion object {
+      public val NORMAL: Status = Status(0)
+      public val INTERRUPTED: Status = Status(1)
+      public val TURN_COMPLETE: Status = Status(2)
+    }
   }
 }

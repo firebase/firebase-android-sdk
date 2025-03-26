@@ -22,16 +22,12 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
-import com.google.firebase.vertexai.type.BidiServerHandshakeFailed
 import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GeminiConnectionHandshakeFailed
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Tool
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
@@ -84,35 +80,24 @@ internal constructor(
    * @throws [BidiServerHandshakeFailed] if the handshake with the server failed.
    */
   public suspend fun connect(): LiveSession {
-    val client = HttpClient(OkHttp) { install(WebSockets) }
-
-    val bidiEndPoint = this.controller.getBidiEndpoint(location)
     val clientMessage =
       BidiGenerateContentClientMessage(
-          this.modelName,
-          this.config?.toInternal(),
-          this.tools?.map { it.toInternal() },
-          this.systemInstruction?.toInternal()
+          modelName,
+          config?.toInternal(),
+          tools?.map { it.toInternal() },
+          systemInstruction?.toInternal()
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
-    val webSession = client.webSocketSession(bidiEndPoint)
+    val webSession = controller.getWebSocketSession(location)
     webSession.send(Frame.Text(data))
-    var shouldReturn = false
-    webSession.let {
-      val serverMessage = it.incoming.receive()
-      val receivedBytes = (serverMessage as Frame.Binary).readBytes()
-      val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-      // TODO: Try to decode the json instead of string matching.
-      if ("setupComplete" in receivedJson) {
-        shouldReturn = true
-      }
-    }
-    return if (shouldReturn) {
+    val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+    // TODO: Try to decode the json instead of string matching.
+    return if (receivedJson.contains("setupComplete")) {
       LiveSession(session = webSession, isRecording = false)
     } else {
       webSession.close()
-      throw BidiServerHandshakeFailed()
+      throw GeminiConnectionHandshakeFailed()
     }
   }
 

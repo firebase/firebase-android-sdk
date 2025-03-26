@@ -36,6 +36,8 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -50,6 +52,7 @@ import io.ktor.http.contentType
 import io.ktor.http.withCharset
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.charsets.Charset
+import io.ktor.websocket.WebSocketSession
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -156,9 +159,11 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
-  fun getBidiEndpoint(location: String): String =
+  private fun getBidiEndpoint(location: String): String =
     "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
 
+  suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
+    client.webSocketSession(getBidiEndpoint(location))
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =

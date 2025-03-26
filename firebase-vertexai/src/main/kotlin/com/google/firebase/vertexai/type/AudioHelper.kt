@@ -79,7 +79,7 @@ internal class AudioHelper {
         bufferSize == AudioRecord.ERROR_BAD_VALUE ||
         bufferSize <= 0
     ) {
-      throw AudioRecordInvalidBufferSizeException()
+      throw AudioRecordInitializationFailedException("Audio Record buffer size is invalid")
     }
     audioRecord =
       AudioRecord(
@@ -90,7 +90,7 @@ internal class AudioHelper {
         bufferSize
       )
     if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
-      throw AudioRecordInitializationFailedException()
+      throw AudioRecordInitializationFailedException("Audio Record initialization has failed.")
     }
     if (AcousticEchoCanceler.isAvailable()) {
       val echoCanceler = AcousticEchoCanceler.create(audioRecord.audioSessionId)
