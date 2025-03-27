@@ -38,8 +38,6 @@ public class PerfSession implements Parcelable {
    * Creates a PerfSession object and decides what metrics to collect.
    */
   public static PerfSession createWithId(@NonNull String sessionId) {
-    // For testing retain session ID.
-    sessionId = "b007cc71-7582-4655-8e82-cbb2407a6bf4";
     String prunedSessionId = sessionId.replace("-", "");
     PerfSession session = new PerfSession(prunedSessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
@@ -166,12 +164,10 @@ public class PerfSession implements Parcelable {
 
   /** If true, Session Gauge collection is enabled. */
   public static boolean shouldCollectGaugesAndEvents() {
-    return true;
+    ConfigResolver configResolver = ConfigResolver.getInstance();
 
-//    ConfigResolver configResolver = ConfigResolver.getInstance();
-//
-//    return configResolver.isPerformanceMonitoringEnabled()
-//        && Math.random() < configResolver.getSessionsSamplingRate();
+    return configResolver.isPerformanceMonitoringEnabled()
+        && Math.random() < configResolver.getSessionsSamplingRate();
   }
 
   /**
