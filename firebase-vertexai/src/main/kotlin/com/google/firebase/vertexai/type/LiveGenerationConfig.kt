@@ -73,7 +73,7 @@ private constructor(
   internal val maxOutputTokens: Int?,
   internal val presencePenalty: Float?,
   internal val frequencyPenalty: Float?,
-  internal val responseModality: ContentModality?,
+  internal val responseModality: ResponseModality?,
   internal val speechConfig: SpeechConfig?
 ) {
 
@@ -109,7 +109,7 @@ private constructor(
     @JvmField public var maxOutputTokens: Int? = null
     @JvmField public var presencePenalty: Float? = null
     @JvmField public var frequencyPenalty: Float? = null
-    @JvmField public var responseModality: ContentModality? = null
+    @JvmField public var responseModality: ResponseModality? = null
     @JvmField public var speechConfig: SpeechConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
@@ -129,7 +129,7 @@ private constructor(
     public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
       this.frequencyPenalty = frequencyPenalty
     }
-    public fun setResponseModalities(responseModalities: ContentModality?): Builder = apply {
+    public fun setResponseModalities(responseModalities: ResponseModality?): Builder = apply {
       this.responseModality = responseModalities
     }
     public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
