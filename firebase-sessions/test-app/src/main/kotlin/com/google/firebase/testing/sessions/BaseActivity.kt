@@ -24,12 +24,14 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
+import com.google.firebase.perf.FirebasePerformance
 
 open class BaseActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     FirebaseApp.initializeApp(this)
+    setProcessAttributes()
     logProcessDetails()
     logFirebaseDetails()
     Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
@@ -85,6 +87,13 @@ open class BaseActivity : AppCompatActivity() {
       TAG,
       "activity: $activity firebase: ${defaultFirebaseApp.name} appsCount: ${firebaseApps.count()}"
     )
+  }
+
+  private fun setProcessAttributes() {
+    val processName = getProcessName()
+    val pid = android.os.Process.myPid()
+    FirebasePerformance.getInstance().putAttribute("process_name", processName)
+    FirebasePerformance.getInstance().putAttribute("process_id", pid.toString())
   }
 
   companion object {
