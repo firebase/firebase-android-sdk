@@ -40,8 +40,13 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Starts an audio conversation with the Gemini server, which can only be stopped using
    * stopAudioConversation.
+   *
+   * @param functionCallsHandler A callback function that is invoked whenever the server receives a
+   * function call.
    */
-  public abstract fun startAudioConversation(): ListenableFuture<Unit>
+  public abstract fun startAudioConversation(
+    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)?
+  ): ListenableFuture<Unit>
 
   /** Stops the audio conversation with the Gemini Server. */
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
@@ -96,21 +101,10 @@ public abstract class LiveSessionFutures internal constructor() {
     outputModalities: List<ContentModality>
   ): Publisher<LiveContentResponse>
 
-  /**
-   * Receives all function call responses from the server for the audio conversation feature..
-   *
-   * @return A [Publisher] which will emit list of [FunctionCallPart] as they are returned by the
-   * model.
-   */
-  public abstract fun receiveAudioConversationFunctionCalls(): Publisher<List<FunctionCallPart>>
-
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
     override fun receive(outputModalities: List<ContentModality>): Publisher<LiveContentResponse> =
       session.receive(outputModalities).asPublisher()
-
-    override fun receiveAudioConversationFunctionCalls(): Publisher<List<FunctionCallPart>> =
-      session.receiveAudioConversationFunctionCalls().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }
@@ -126,8 +120,9 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
-    override fun startAudioConversation() =
-      SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
+    override fun startAudioConversation(
+      functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)?
+    ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallsHandler) }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }

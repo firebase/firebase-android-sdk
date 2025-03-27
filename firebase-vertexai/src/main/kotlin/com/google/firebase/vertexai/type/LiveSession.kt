@@ -29,7 +29,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -53,7 +52,6 @@ internal constructor(
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
   private var startedReceiving = false
   private var receiveChannel: Channel<Frame> = Channel()
-  private var functionCallChannel: Channel<List<FunctionCallPart>> = Channel()
 
   private companion object {
     val TAG = LiveSession::class.java.simpleName
@@ -127,16 +125,6 @@ internal constructor(
     }
   }
 
-  /**
-   * Receives all function call responses from the server for the audio conversation feature. This
-   * can be called only after calling [startAudioConversation] function.
-   *
-   * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
-   */
-  public fun receiveAudioConversationFunctionCalls(): Flow<List<FunctionCallPart>> {
-    return functionCallChannel.receiveAsFlow()
-  }
-
   private fun fillRecordedAudioQueue() {
     CoroutineScope(backgroundDispatcher).launch {
       audioHelper!!.startRecording().collect {
@@ -163,7 +151,9 @@ internal constructor(
     }
   }
 
-  private fun fillServerResponseAudioQueue() {
+  private fun fillServerResponseAudioQueue(
+    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)? = null
+  ) {
     CoroutineScope(backgroundDispatcher).launch {
       receive(listOf(ContentModality.AUDIO)).collect {
         if (!isRecording) {
@@ -173,8 +163,8 @@ internal constructor(
           LiveContentResponse.Status.INTERRUPTED ->
             while (!playBackQueue.isEmpty()) playBackQueue.poll()
           LiveContentResponse.Status.NORMAL ->
-            if (!it.functionCalls.isNullOrEmpty()) {
-              functionCallChannel.send(it.functionCalls)
+            if (!it.functionCalls.isNullOrEmpty() && functionCallsHandler != null) {
+              sendFunctionResponse(functionCallsHandler(it.functionCalls))
             } else {
               val audioData = it.data?.parts?.get(0)?.asInlineDataPartOrNull()?.inlineData
               if (audioData != null) {
@@ -198,22 +188,24 @@ internal constructor(
   /**
    * Starts an audio conversation with the Gemini server, which can only be stopped using
    * [stopAudioConversation].
+   *
+   * @param functionCallsHandler A callback function that is invoked whenever the server receives a
+   * function call.
    */
-  public suspend fun startAudioConversation() {
+  public suspend fun startAudioConversation(
+    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)? = null
+  ) {
     if (isRecording) {
       Log.w(TAG, "startAudioConversation called after the recording has already started.")
       return
     }
-    functionCallChannel = Channel()
     isRecording = true
     audioHelper = AudioHelper()
     audioHelper!!.setupAudioTrack()
     fillRecordedAudioQueue()
     CoroutineScope(backgroundDispatcher).launch { sendAudioDataToServer() }
-    fillServerResponseAudioQueue()
+    fillServerResponseAudioQueue(functionCallsHandler)
     playServerResponseAudio()
-    // This delay is necessary to ensure that all threads have started.
-    delay(1000)
   }
 
   /**
