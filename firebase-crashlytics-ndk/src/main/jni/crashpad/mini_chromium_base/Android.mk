@@ -10,7 +10,7 @@ LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/mini_chromium
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -flto \
