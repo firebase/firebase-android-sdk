@@ -83,6 +83,7 @@ internal constructor(
    * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created
    * @throws [BidiServerHandshakeFailed] if the handshake with the server failed.
+   * @throws [ClosedReceiveChannelException] if the channel was closed by the server.
    */
   public suspend fun connect(): LiveSession {
     val clientMessage =

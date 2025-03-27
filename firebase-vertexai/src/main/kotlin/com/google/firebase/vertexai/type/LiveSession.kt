@@ -129,6 +129,7 @@ internal constructor(
 
   /**
    * Receives all function call responses from the server for the audio conversation feature.
+   * This can be called only after calling [startAudioConversation] function.
    *
    * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
    */
@@ -196,10 +197,11 @@ internal constructor(
 
   /**
    * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * stopAudioConversation.
+   * [stopAudioConversation].
    */
   public suspend fun startAudioConversation() {
     if (isRecording) {
+      Log.w(TAG, "startAudioConversation called after the recording has already started.")
       return
     }
     functionCallChannel = Channel()
@@ -210,10 +212,13 @@ internal constructor(
     CoroutineScope(backgroundDispatcher).launch { sendAudioDataToServer() }
     fillServerResponseAudioQueue()
     playServerResponseAudio()
+    // This delay is necessary to ensure that all threads have started.
     delay(1000)
   }
 
-  /** Stops the audio conversation with the Gemini Server. */
+  /** Stops the audio conversation with the Gemini Server. This needs to be called only after
+   * calling [startAudioConversation]
+   * */
   public fun stopAudioConversation() {
     stopReceiving()
     isRecording = false
@@ -239,7 +244,8 @@ internal constructor(
   }
 
   /**
-   * Receives responses from the server for both streaming and standard requests.
+   * Receives responses from the server for both streaming and standard requests. Call
+   * [stopReceiving] to stop receiving responses from the server.
    *
    * @param outputModalities The list of output formats to receive from the server.
    *
@@ -298,7 +304,7 @@ internal constructor(
           )
           continue
         } catch (e: Exception) {
-          Log.i(TAG, "Failed to decode function calling: ${e.message}")
+          Log.w(TAG, "Failed to decode function calling: ${e.message}")
         }
       }
     }
@@ -319,7 +325,8 @@ internal constructor(
   }
 
   /**
-   * Streams client data to the server.
+   * Streams client data to the server. Calling this after [startAudioConversation] will play the
+   * response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
@@ -332,7 +339,8 @@ internal constructor(
   }
 
   /**
-   * Sends data to the server
+   * Sends data to the server. Calling this after [startAudioConversation] will play the response
+   * audio immediately.
    *
    * @param content Client [Content] to be sent to the server.
    */
@@ -343,7 +351,8 @@ internal constructor(
   }
 
   /**
-   * Sends text to the server
+   * Sends text to the server. Calling this after [startAudioConversation] will play the response
+   * audio immediately.
    *
    * @param text Text to be sent to the server.
    */

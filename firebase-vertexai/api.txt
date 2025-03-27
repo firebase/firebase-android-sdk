@@ -127,7 +127,7 @@ package com.google.firebase.vertexai.java {
   public abstract class LiveSessionFutures {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.vertexai.java.LiveSessionFutures from(com.google.firebase.vertexai.type.LiveSession session);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse>> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
     method public abstract org.reactivestreams.Publisher<java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>> receiveAudioConversationFunctionCalls();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.vertexai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
