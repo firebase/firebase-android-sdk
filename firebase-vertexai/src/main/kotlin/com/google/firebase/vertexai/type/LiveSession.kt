@@ -128,8 +128,8 @@ internal constructor(
   }
 
   /**
-   * Receives all function call responses from the server for the audio conversation feature.
-   * This can be called only after calling [startAudioConversation] function.
+   * Receives all function call responses from the server for the audio conversation feature. This
+   * can be called only after calling [startAudioConversation] function.
    *
    * @return A [Flow] which will emit list of [FunctionCallPart] as they are returned by the model.
    */
@@ -216,9 +216,10 @@ internal constructor(
     delay(1000)
   }
 
-  /** Stops the audio conversation with the Gemini Server. This needs to be called only after
-   * calling [startAudioConversation]
-   * */
+  /**
+   * Stops the audio conversation with the Gemini Server. This needs to be called only after calling
+   * [startAudioConversation]
+   */
   public fun stopAudioConversation() {
     stopReceiving()
     isRecording = false
