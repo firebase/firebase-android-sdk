@@ -276,6 +276,23 @@ internal constructor(
           continue
         }
         try {
+          val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
+          val data = serverContent.serverContent.modelTurn.toPublic()
+          if (outputModalities.contains(ContentModality.AUDIO)) {
+            if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
+              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
+            }
+          }
+          if (outputModalities.contains(ContentModality.TEXT)) {
+            if (data.parts[0] is TextPart) {
+              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
+            }
+          }
+          continue
+        } catch (e: Exception) {
+          Log.i(TAG, "Failed to decode server content: ${e.message}")
+        }
+        try {
           val functionContent = Json.decodeFromString<ToolCallSetup.Internal>(receivedJson)
           emit(
             LiveContentResponse(
@@ -289,23 +306,6 @@ internal constructor(
           continue
         } catch (e: Exception) {
           Log.w(TAG, "Failed to decode function calling: ${e.message}")
-        }
-        try {
-
-          val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
-          val data = serverContent.serverContent.modelTurn.toPublic()
-          if (outputModalities.contains(ContentModality.AUDIO)) {
-            if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-            }
-          }
-          if (outputModalities.contains(ContentModality.TEXT)) {
-            if (data.parts[0] is TextPart) {
-              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-            }
-          }
-        } catch (e: Exception) {
-          Log.w(TAG, "Failed to decode server content: ${e.message}")
         }
       }
     }

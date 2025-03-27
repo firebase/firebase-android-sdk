@@ -100,8 +100,8 @@ internal class AudioHelper {
     audioRecord.startRecording()
 
     return flow {
+      val buffer = ByteArray(bufferSize)
       while (!stopRecording) {
-        val buffer = ByteArray(bufferSize)
         val bytesRead = audioRecord.read(buffer, 0, buffer.size)
         if (bytesRead > 0) {
           emit(buffer.copyOf(bytesRead))
