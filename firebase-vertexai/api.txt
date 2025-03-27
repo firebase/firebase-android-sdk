@@ -128,12 +128,11 @@ package com.google.firebase.vertexai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.vertexai.java.LiveSessionFutures from(com.google.firebase.vertexai.type.LiveSession session);
     method public abstract org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
-    method public abstract org.reactivestreams.Publisher<java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>> receiveAudioConversationFunctionCalls();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.vertexai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.vertexai.type.MediaData> mediaChunks);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>,? extends java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart>>? functionCallsHandler);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.vertexai.java.LiveSessionFutures.Companion Companion;
@@ -601,7 +600,7 @@ package com.google.firebase.vertexai.type {
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
-    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.vertexai.type.ContentModality>? responseModalities);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setResponseModalities(com.google.firebase.vertexai.type.ContentModality? responseModalities);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.vertexai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
@@ -610,7 +609,7 @@ package com.google.firebase.vertexai.type {
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
-    field public java.util.List<com.google.firebase.vertexai.type.ContentModality>? responseModalities;
+    field public com.google.firebase.vertexai.type.ContentModality? responseModality;
     field public com.google.firebase.vertexai.type.SpeechConfig? speechConfig;
     field public Float? temperature;
     field public Integer? topK;
@@ -628,12 +627,11 @@ package com.google.firebase.vertexai.type {
   public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
-    method public kotlinx.coroutines.flow.Flow<java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>> receiveAudioConversationFunctionCalls();
     method public suspend Object? send(com.google.firebase.vertexai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.vertexai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? startAudioConversation(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>,? extends java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart>>? functionCallsHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
