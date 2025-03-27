@@ -16,7 +16,6 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.datastore.preferences.core.*;
@@ -62,11 +61,6 @@ class HeartBeatInfoStorage {
   private final DataStorage firebaseDataStore;
 
   public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
-    Log.i(
-        "DataStorage",
-        String.format(
-            "Creating a DataStorage instance for context %s (%s) with name %s",
-            applicationContext, applicationContext.getPackageName(), persistenceKey));
     this.firebaseDataStore =
         new DataStorage(applicationContext, HEARTBEAT_PREFERENCES_NAME + persistenceKey);
   }
@@ -74,7 +68,6 @@ class HeartBeatInfoStorage {
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
   HeartBeatInfoStorage(DataStorage dataStorage) {
-    Log.i("DataStorage", "New test storage created");
     this.firebaseDataStore = dataStorage;
   }
 

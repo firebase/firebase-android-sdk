@@ -17,7 +17,6 @@
 package com.google.firebase.datastore
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.MutablePreferences
@@ -56,13 +55,6 @@ class DataStorage(val context: Context, val name: String) {
       name = name,
       produceMigrations = { listOf(SharedPreferencesMigration(it, name)) }
     )
-
-  init {
-    Log.i(
-      "DataStorage",
-      "Datastore instance created for context $context (${context.packageName}) with name $name"
-    )
-  }
 
   private val dataStore = context.dataStore
 

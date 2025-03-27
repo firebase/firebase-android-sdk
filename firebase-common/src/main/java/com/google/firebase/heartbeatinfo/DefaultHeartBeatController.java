@@ -17,7 +17,6 @@ package com.google.firebase.heartbeatinfo;
 import android.content.Context;
 import android.util.Base64;
 import android.util.Base64OutputStream;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
@@ -132,11 +131,6 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
       Executor executor,
       Provider<UserAgentPublisher> userAgentProvider,
       Context context) {
-    Log.i(
-        "DefHeartBeatController",
-        String.format(
-            "[DAYMON] Constructor called with context %s and testStorage %s",
-            context.toString(), testStorage.toString()));
     storageProvider = testStorage;
     this.consumers = consumers;
     this.backgroundExecutor = executor;
@@ -146,7 +140,6 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
 
   public static @NonNull Component<DefaultHeartBeatController> component() {
     Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
-    Log.i("DefHeartBeatController", "[DAYMON] component() called");
     return Component.builder(
             DefaultHeartBeatController.class, HeartBeatController.class, HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
@@ -155,15 +148,13 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         .add(Dependency.requiredProvider(UserAgentPublisher.class))
         .add(Dependency.required(backgroundExecutor))
         .factory(
-            c -> {
-              Log.i("DefHeartBeatController", "[DAYMON] Factory called");
-              return new DefaultHeartBeatController(
-                  c.get(Context.class),
-                  c.get(FirebaseApp.class).getPersistenceKey(),
-                  c.setOf(HeartBeatConsumer.class),
-                  c.getProvider(UserAgentPublisher.class),
-                  c.get(backgroundExecutor));
-            })
+            c ->
+                new DefaultHeartBeatController(
+                    c.get(Context.class),
+                    c.get(FirebaseApp.class).getPersistenceKey(),
+                    c.setOf(HeartBeatConsumer.class),
+                    c.getProvider(UserAgentPublisher.class),
+                    c.get(backgroundExecutor)))
         .build();
   }
 
