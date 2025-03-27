@@ -55,7 +55,7 @@ import kotlinx.serialization.Serializable
  * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
  * (unbounded).
  *
- * @property responseModalities Specifies the format of the data in which the server responds to
+ * @property responseModality Specifies the format of the data in which the server responds to
  * requests
  *
  * @property speechConfig Specifies the voice configuration of the audio response from the server.
@@ -73,7 +73,7 @@ private constructor(
   internal val maxOutputTokens: Int?,
   internal val presencePenalty: Float?,
   internal val frequencyPenalty: Float?,
-  internal val responseModalities: List<ContentModality>?,
+  internal val responseModality: ContentModality?,
   internal val speechConfig: SpeechConfig?
 ) {
 
@@ -97,7 +97,7 @@ private constructor(
    *
    * @property maxOutputTokens See [LiveGenerationConfig.maxOutputTokens].
    *
-   * @property responseModalities See [LiveGenerationConfig.responseModalities]
+   * @property responseModality See [LiveGenerationConfig.responseModality]
    *
    * @property speechConfig See [LiveGenerationConfig.speechConfig]
    */
@@ -109,7 +109,7 @@ private constructor(
     @JvmField public var maxOutputTokens: Int? = null
     @JvmField public var presencePenalty: Float? = null
     @JvmField public var frequencyPenalty: Float? = null
-    @JvmField public var responseModalities: List<ContentModality>? = null
+    @JvmField public var responseModality: ContentModality? = null
     @JvmField public var speechConfig: SpeechConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
@@ -129,8 +129,8 @@ private constructor(
     public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
       this.frequencyPenalty = frequencyPenalty
     }
-    public fun setResponseModalities(responseModalities: List<ContentModality>?): Builder = apply {
-      this.responseModalities = responseModalities
+    public fun setResponseModalities(responseModalities: ContentModality?): Builder = apply {
+      this.responseModality = responseModalities
     }
     public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
       this.speechConfig = speechConfig
@@ -147,7 +147,7 @@ private constructor(
         presencePenalty = presencePenalty,
         frequencyPenalty = frequencyPenalty,
         speechConfig = speechConfig,
-        responseModalities = responseModalities
+        responseModality = responseModality
       )
   }
 
@@ -161,7 +161,8 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       speechConfig = speechConfig?.toInternal(),
-      responseModalities = responseModalities?.map { it.toInternal() }
+      responseModalities =
+        if (responseModality != null) listOf(responseModality.toInternal()) else null
     )
   }
 
