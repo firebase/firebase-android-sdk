@@ -34,7 +34,7 @@ import kotlinx.coroutines.runBlocking
  *
  * There should only ever be _one_ instance of this class per context and name variant.
  *
- * > Do **NOT** use this _unless_ you're bridging Java code. If you're writing new code, or your >
+ * > Do **NOT** use this _unless_ you're bridging Java code. If you're writing new code, or your
  * code is in Kotlin, then you should create your own singleton that uses [DataStore] directly.
  *
  * Example:
