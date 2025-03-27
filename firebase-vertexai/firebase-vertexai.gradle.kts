@@ -67,6 +67,7 @@ android {
     targetSdk = targetSdkVersion
     baseline = file("lint-baseline.xml")
   }
+  sourceSets { getByName("test").java.srcDirs("src/testUtil") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
