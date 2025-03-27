@@ -26,7 +26,6 @@ public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable
   internal enum class InternalEnum {
-    @SerialName("VOICES_UNSPECIFIED") UNSPECIFIED,
     CHARON,
     AOEDE,
     FENRIR,
@@ -38,8 +37,7 @@ public class Voices private constructor(public val ordinal: Int) {
         AOEDE -> Voices.AOEDE
         FENRIR -> Voices.FENRIR
         KORE -> Voices.KORE
-        PUCK -> Voices.PUCK
-        else -> Voices.UNSPECIFIED
+        else -> Voices.PUCK
       }
   }
 
@@ -49,8 +47,7 @@ public class Voices private constructor(public val ordinal: Int) {
       AOEDE -> Internal(InternalEnum.AOEDE.name)
       FENRIR -> Internal(InternalEnum.FENRIR.name)
       KORE -> Internal(InternalEnum.KORE.name)
-      PUCK -> Internal(InternalEnum.PUCK.name)
-      else -> Internal(InternalEnum.UNSPECIFIED.name)
+      else -> Internal(InternalEnum.PUCK.name)
     }
   }
 
