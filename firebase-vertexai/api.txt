@@ -127,7 +127,7 @@ package com.google.firebase.vertexai.java {
   public abstract class LiveSessionFutures {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.vertexai.java.LiveSessionFutures from(com.google.firebase.vertexai.type.LiveSession session);
-    method public abstract org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.vertexai.type.LiveContentResponse> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.vertexai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList);
@@ -626,7 +626,7 @@ package com.google.firebase.vertexai.type {
 
   public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.LiveContentResponse> receive(java.util.List<com.google.firebase.vertexai.type.ContentModality> outputModalities);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.vertexai.type.LiveContentResponse> receive();
     method public suspend Object? send(com.google.firebase.vertexai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);

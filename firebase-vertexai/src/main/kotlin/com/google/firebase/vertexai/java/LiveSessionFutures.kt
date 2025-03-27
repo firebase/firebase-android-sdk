@@ -20,7 +20,6 @@ import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.type.Content
-import com.google.firebase.vertexai.type.ContentModality
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.LiveContentResponse
@@ -91,20 +90,15 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Receives responses from the server for both streaming and standard requests.
    *
-   * @param outputModalities The list of output formats to receive from the server.
-   *
    * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    */
-  public abstract fun receive(
-    outputModalities: List<ContentModality>
-  ): Publisher<LiveContentResponse>
+  public abstract fun receive(): Publisher<LiveContentResponse>
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
-    override fun receive(outputModalities: List<ContentModality>): Publisher<LiveContentResponse> =
-      session.receive(outputModalities).asPublisher()
+    override fun receive(): Publisher<LiveContentResponse> = session.receive().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }

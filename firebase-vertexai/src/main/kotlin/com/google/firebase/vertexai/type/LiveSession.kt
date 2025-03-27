@@ -155,7 +155,7 @@ internal constructor(
     functionCallsHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
     CoroutineScope(backgroundDispatcher).launch {
-      receive(listOf(ContentModality.AUDIO)).collect {
+      receive().collect {
         if (!isRecording) {
           cancel()
         }
@@ -240,13 +240,11 @@ internal constructor(
    * Receives responses from the server for both streaming and standard requests. Call
    * [stopReceiving] to stop receiving responses from the server.
    *
-   * @param outputModalities The list of output formats to receive from the server.
-   *
    * @return A [Flow] which will emit [LiveContentResponse] as and when it receives it
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    */
-  public fun receive(outputModalities: List<ContentModality>): Flow<LiveContentResponse> {
+  public fun receive(): Flow<LiveContentResponse> {
     if (startedReceiving) {
       throw SessionAlreadyReceivingException()
     }
@@ -270,15 +268,11 @@ internal constructor(
         try {
           val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
           val data = serverContent.serverContent.modelTurn.toPublic()
-          if (outputModalities.contains(ContentModality.AUDIO)) {
-            if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-            }
+          if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
+            emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
           }
-          if (outputModalities.contains(ContentModality.TEXT)) {
-            if (data.parts[0] is TextPart) {
-              emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-            }
+          if (data.parts[0] is TextPart) {
+            emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
           }
           continue
         } catch (e: Exception) {
