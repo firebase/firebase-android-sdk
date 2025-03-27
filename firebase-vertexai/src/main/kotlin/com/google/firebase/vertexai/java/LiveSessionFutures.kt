@@ -41,11 +41,11 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the Gemini server, which can only be stopped using
    * stopAudioConversation.
    *
-   * @param functionCallsHandler A callback function that is invoked whenever the server receives a
+   * @param functionCallHandler A callback function that is invoked whenever the server receives a
    * function call.
    */
   public abstract fun startAudioConversation(
-    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)?
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
 
   /** Stops the audio conversation with the Gemini Server. */
@@ -121,8 +121,8 @@ public abstract class LiveSessionFutures internal constructor() {
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
     override fun startAudioConversation(
-      functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)?
-    ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallsHandler) }
+      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
+    ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }

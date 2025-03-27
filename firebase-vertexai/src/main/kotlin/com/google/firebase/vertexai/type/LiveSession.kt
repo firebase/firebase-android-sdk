@@ -152,7 +152,7 @@ internal constructor(
   }
 
   private fun fillServerResponseAudioQueue(
-    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)? = null
+    functionCallsHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
     CoroutineScope(backgroundDispatcher).launch {
       receive(listOf(ContentModality.AUDIO)).collect {
@@ -164,7 +164,7 @@ internal constructor(
             while (!playBackQueue.isEmpty()) playBackQueue.poll()
           LiveContentResponse.Status.NORMAL ->
             if (!it.functionCalls.isNullOrEmpty() && functionCallsHandler != null) {
-              sendFunctionResponse(functionCallsHandler(it.functionCalls))
+              sendFunctionResponse(it.functionCalls.map(functionCallsHandler).toList())
             } else {
               val audioData = it.data?.parts?.get(0)?.asInlineDataPartOrNull()?.inlineData
               if (audioData != null) {
@@ -189,11 +189,11 @@ internal constructor(
    * Starts an audio conversation with the Gemini server, which can only be stopped using
    * [stopAudioConversation].
    *
-   * @param functionCallsHandler A callback function that is invoked whenever the server receives a
+   * @param functionCallHandler A callback function that is invoked whenever the server receives a
    * function call.
    */
   public suspend fun startAudioConversation(
-    functionCallsHandler: ((List<FunctionCallPart>) -> List<FunctionResponsePart>)? = null
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
     if (isRecording) {
       Log.w(TAG, "startAudioConversation called after the recording has already started.")
@@ -204,7 +204,7 @@ internal constructor(
     audioHelper!!.setupAudioTrack()
     fillRecordedAudioQueue()
     CoroutineScope(backgroundDispatcher).launch { sendAudioDataToServer() }
-    fillServerResponseAudioQueue(functionCallsHandler)
+    fillServerResponseAudioQueue(functionCallHandler)
     playServerResponseAudio()
   }
 
