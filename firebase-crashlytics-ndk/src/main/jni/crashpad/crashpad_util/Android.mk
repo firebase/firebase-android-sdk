@@ -18,7 +18,7 @@ LOCAL_CPPFLAGS := \
     -DZLIB_CONST \
     -DCRASHPAD_ZLIB_SOURCE_SYSTEM \
     -DCRASHPAD_LSS_SOURCE_EXTERNAL \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -flto \
