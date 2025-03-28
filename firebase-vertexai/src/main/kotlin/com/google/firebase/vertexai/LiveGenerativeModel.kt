@@ -24,10 +24,10 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
 import com.google.firebase.vertexai.type.Content
-import com.google.firebase.vertexai.type.GeminiConnectionHandshakeFailed
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 import com.google.firebase.vertexai.type.Tool
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
@@ -103,7 +103,7 @@ internal constructor(
       LiveSession(session = webSession, backgroundDispatcher = backgroundDispatcher)
     } else {
       webSession.close()
-      throw GeminiConnectionHandshakeFailed()
+      throw ServiceConnectionHandshakeFailedException()
     }
   }
 
