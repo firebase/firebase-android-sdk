@@ -25,7 +25,7 @@ import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 
 /**
- * Wrapper class providing Java compatible methods for [GenerativeModel].
+ * Wrapper class providing Java compatible methods for [LiveGenerativeModel].
  *
  * @see [GenerativeModel]
  */
