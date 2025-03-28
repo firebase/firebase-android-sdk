@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 25.1.3
 * [fixed] Use lazy encoding in UTF-8 encoded byte comparison for strings to solve performance issues. [#6706](//github.com/firebase/firebase-android-sdk/pull/6706)
