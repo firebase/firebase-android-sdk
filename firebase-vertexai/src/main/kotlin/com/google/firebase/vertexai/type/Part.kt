@@ -57,11 +57,11 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
+  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
+    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
   }
 }
 
@@ -94,6 +94,10 @@ public class FunctionResponsePart(public val name: String, public val response: 
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
     @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+  }
+
+  internal fun toInternalFunctionCall(): Internal.FunctionResponse {
+    return Internal.FunctionResponse(this.name, this.response)
   }
 }
 
