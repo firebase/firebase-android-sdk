@@ -120,7 +120,7 @@ internal constructor(
     if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
       Log.w(
         TAG,
-        """Unsupported Gemini model "${modelName}"; see
+        """Unsupported Gemini model "$modelName"; see
       https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
       """
           .trimIndent()
