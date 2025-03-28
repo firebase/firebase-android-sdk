@@ -40,7 +40,7 @@ public abstract class LiveSessionFutures internal constructor() {
 
   /**
    * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * stopAudioConversation.
+   * [stopAudioConversation].
    *
    * @param functionCallHandler A callback function to map function calls from the server to their
    * response parts.
@@ -49,7 +49,12 @@ public abstract class LiveSessionFutures internal constructor() {
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
 
-  /** Stops the audio conversation with the Gemini Server. */
+  /**
+   * Stops the audio conversation with the Gemini Server.
+   *
+   * @see [startAudioConversation]
+   * @see [stopReceiving]
+   */
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
   /** Stop receiving from the server. */
@@ -94,7 +99,7 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it.
    *
-   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   * @throws [SessionAlreadyReceivingException] When the session is already receiving.
    */
   public abstract fun receive(): Publisher<LiveContentResponse>
 
@@ -128,7 +133,7 @@ public abstract class LiveSessionFutures internal constructor() {
 
   public companion object {
 
-    /** @return a [GenerativeModelFutures] created around the provided [GenerativeModel] */
+    /** @return a [LiveSessionFutures] created around the provided [LiveSession] */
     @JvmStatic public fun from(session: LiveSession): LiveSessionFutures = FuturesImpl(session)
   }
 }
