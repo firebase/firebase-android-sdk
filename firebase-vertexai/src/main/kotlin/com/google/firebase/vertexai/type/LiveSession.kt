@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -40,6 +41,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
+@PublicPreviewAPI
+@OptIn(ExperimentalSerializationApi::class)
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession?,
@@ -76,6 +79,7 @@ internal constructor(
     fun toInternal() = Internal(Internal.ClientContent(turns, turnComplete))
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   internal class ToolResponseSetup(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
   ) {

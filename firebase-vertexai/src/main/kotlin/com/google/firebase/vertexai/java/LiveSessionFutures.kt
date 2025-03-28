@@ -25,6 +25,7 @@ import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.LiveContentResponse
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.MediaData
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
@@ -34,6 +35,7 @@ import org.reactivestreams.Publisher
  *
  * @see [LiveSession]
  */
+@PublicPreviewAPI
 public abstract class LiveSessionFutures internal constructor() {
 
   /**

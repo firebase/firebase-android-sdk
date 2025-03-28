@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 import com.google.firebase.vertexai.type.Tool
@@ -41,6 +42,7 @@ import kotlinx.serialization.json.Json
  * Represents a multimodal model (like Gemini) capable of real-time content generation based on
  * various input types, supporting bidirectional streaming.
  */
+@PublicPreviewAPI
 public class LiveGenerativeModel
 internal constructor(
   private val modelName: String,

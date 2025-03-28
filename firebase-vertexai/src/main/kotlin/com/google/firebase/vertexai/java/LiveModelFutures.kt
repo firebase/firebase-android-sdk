@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.LiveGenerativeModel
 import com.google.firebase.vertexai.type.LiveSession
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 
 /**
@@ -28,6 +29,7 @@ import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedExcepti
  *
  * @see [GenerativeModel]
  */
+@PublicPreviewAPI
 public abstract class LiveModelFutures internal constructor() {
 
   /**

@@ -20,6 +20,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalSerializationApi::class)
+@PublicPreviewAPI
 internal class BidiGenerateContentClientMessage(
   val model: String,
   val generationConfig: LiveGenerationConfig.Internal?,

@@ -27,6 +27,7 @@ import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+@PublicPreviewAPI
 internal class AudioHelper {
 
   private lateinit var audioRecord: AudioRecord

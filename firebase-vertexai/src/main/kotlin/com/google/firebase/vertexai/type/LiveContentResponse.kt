@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /* Represents the response from the server. */
+@PublicPreviewAPI
 public class LiveContentResponse
 internal constructor(
   public val data: Content?,

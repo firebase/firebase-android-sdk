@@ -26,6 +26,7 @@ import kotlinx.serialization.Serializable
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
+@PublicPreviewAPI
 public class MediaData(public val data: ByteArray, public val mimeType: String) {
   @Serializable
   internal class Internal(

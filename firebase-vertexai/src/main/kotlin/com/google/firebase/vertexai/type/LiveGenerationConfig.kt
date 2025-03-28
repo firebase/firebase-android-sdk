@@ -64,6 +64,7 @@ import kotlinx.serialization.Serializable
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
+@PublicPreviewAPI
 public class LiveGenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -206,6 +207,7 @@ private constructor(
  * }
  * ```
  */
+@OptIn(PublicPreviewAPI::class)
 public fun liveGenerationConfig(
   init: LiveGenerationConfig.Builder.() -> Unit
 ): LiveGenerationConfig {

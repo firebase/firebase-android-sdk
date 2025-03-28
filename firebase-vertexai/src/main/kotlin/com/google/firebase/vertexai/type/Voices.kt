@@ -20,6 +20,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Various voices supported by the server */
+@PublicPreviewAPI
 public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
