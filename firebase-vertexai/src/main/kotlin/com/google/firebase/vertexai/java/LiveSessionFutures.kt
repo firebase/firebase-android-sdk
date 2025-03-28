@@ -92,7 +92,7 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Receives responses from the server for both streaming and standard requests.
    *
-   * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it
+   * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it.
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    */
