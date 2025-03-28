@@ -186,8 +186,8 @@ public class AudioRecordInitializationFailedException(message: String) :
   FirebaseVertexAIException(message)
 
 /** Handshake failed with the server */
-public class ServiceConnectionHandshakeFailedException :
-  FirebaseVertexAIException("Handshake failed with the server.")
+public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :

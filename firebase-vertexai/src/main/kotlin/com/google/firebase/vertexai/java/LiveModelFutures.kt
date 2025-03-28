@@ -21,7 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.LiveGenerativeModel
 import com.google.firebase.vertexai.type.LiveSession
-import java.nio.channels.ClosedChannelException
+import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 
 /**
  * Wrapper class providing Java compatible methods for [GenerativeModel].
@@ -33,7 +33,8 @@ public abstract class LiveModelFutures internal constructor() {
   /**
    * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created. Returns null if the object cannot be created.
-   * @throws [ClosedChannelException] if channel was closed before creating a websocket connection.
+   * @throws [ServiceConnectionHandshakeFailedException] if the client was not able to establish a
+   * connection with the server.
    */
   public abstract fun connect(): ListenableFuture<LiveSession>
 

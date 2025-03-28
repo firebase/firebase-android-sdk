@@ -325,10 +325,6 @@ package com.google.firebase.vertexai.type {
     property public final kotlinx.serialization.json.JsonObject response;
   }
 
-  public final class GeminiConnectionHandshakeFailed extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
-    ctor public GeminiConnectionHandshakeFailed();
-  }
-
   public final class GenerateContentResponse {
     ctor public GenerateContentResponse(java.util.List<com.google.firebase.vertexai.type.Candidate> candidates, com.google.firebase.vertexai.type.PromptFeedback? promptFeedback, com.google.firebase.vertexai.type.UsageMetadata? usageMetadata);
     method public java.util.List<com.google.firebase.vertexai.type.Candidate> getCandidates();
@@ -814,6 +810,10 @@ package com.google.firebase.vertexai.type {
   }
 
   public final class ServerException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
+  }
+
+  public final class ServiceConnectionHandshakeFailedException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {
+    ctor public ServiceConnectionHandshakeFailedException(String message, Throwable? cause = null);
   }
 
   public final class ServiceDisabledException extends com.google.firebase.vertexai.type.FirebaseVertexAIException {

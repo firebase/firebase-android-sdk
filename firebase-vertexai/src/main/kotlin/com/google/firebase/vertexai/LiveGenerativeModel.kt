@@ -33,6 +33,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -82,8 +83,8 @@ internal constructor(
   /**
    * Returns a LiveSession object using which you could send/receive messages from the server
    * @return LiveSession object created
-   * @throws [BidiServerHandshakeFailed] if the handshake with the server failed.
-   * @throws [ClosedReceiveChannelException] if the channel was closed by the server.
+   * @throws [ServiceConnectionHandshakeFailedException] if the client was not able to establish a
+   * connection with the server.
    */
   public suspend fun connect(): LiveSession {
     val clientMessage =
@@ -95,15 +96,19 @@ internal constructor(
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
-    val webSession = controller.getWebSocketSession(location)
-    webSession.send(Frame.Text(data))
-    val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-    // TODO: Try to decode the json instead of string matching.
-    return if (receivedJson.contains("setupComplete")) {
-      LiveSession(session = webSession, backgroundDispatcher = backgroundDispatcher)
-    } else {
-      webSession.close()
-      throw ServiceConnectionHandshakeFailedException()
+    try {
+      val webSession = controller.getWebSocketSession(location)
+      webSession.send(Frame.Text(data))
+      val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+      // TODO: Try to decode the json instead of string matching.
+      return if (receivedJson.contains("setupComplete")) {
+        LiveSession(session = webSession, backgroundDispatcher = backgroundDispatcher)
+      } else {
+        webSession.close()
+        throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+      }
+    } catch (e: ClosedReceiveChannelException) {
+      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server", e)
     }
   }
 
