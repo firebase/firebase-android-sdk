@@ -48,7 +48,7 @@ public abstract class LiveModelFutures internal constructor() {
 
   public companion object {
 
-    /** @return a [GenerativeModelFutures] created around the provided [GenerativeModel] */
+    /** @return a [LiveModelFutures] created around the provided [LiveGenerativeModel] */
     @JvmStatic public fun from(model: LiveGenerativeModel): LiveModelFutures = FuturesImpl(model)
   }
 }
