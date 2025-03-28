@@ -100,7 +100,7 @@ internal constructor(
   /**
    * Instantiates a new [LiveGenerationConfig] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-1.5-pro"`.
+   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
    * @param generationConfig The configuration parameters to use for content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
    * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
