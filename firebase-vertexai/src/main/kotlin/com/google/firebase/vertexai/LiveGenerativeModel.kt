@@ -84,7 +84,7 @@ internal constructor(
 
   /**
    * Returns a [LiveSession] object using which you could send/receive messages from the server
-   * @return LiveSession object created
+   * @return A [LiveSession] that you can use to stream messages to and from the server.
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
