@@ -83,7 +83,8 @@ internal constructor(
   )
 
   /**
-   * Returns a [LiveSession] object using which you could send/receive messages from the server
+   * Start a [LiveSession] with the server for bidirectional streaming.
+   *
    * @return A [LiveSession] that you can use to stream messages to and from the server.
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
