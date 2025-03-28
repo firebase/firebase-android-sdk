@@ -35,6 +35,7 @@ import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
