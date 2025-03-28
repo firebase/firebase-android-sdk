@@ -89,6 +89,7 @@ internal constructor(
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
+  @OptIn(ExperimentalSerializationApi::class)
   public suspend fun connect(): LiveSession {
     val clientMessage =
       BidiGenerateContentClientMessage(
