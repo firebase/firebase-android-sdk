@@ -73,7 +73,7 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
-   * Sends data to the server
+   * Sends [data][Content] to the server.
    *
    * @param content Client [Content] to be sent to the server.
    */
