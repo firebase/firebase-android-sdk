@@ -18,7 +18,6 @@ package com.google.firebase.vertexai.java
 
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
