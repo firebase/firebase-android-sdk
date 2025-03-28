@@ -101,6 +101,7 @@ public class FirebaseMessagingServiceRoboTest {
 
   // Extra for the token within a NEW_TOKEN event
   private static final String EXTRA_TOKEN = "token";
+  private static final String EXTRA_TOKEN_APP_NAME = "firebaseAppName";
 
   // blank activity
   public static class MyTestActivity extends Activity {}
@@ -346,15 +347,29 @@ public class FirebaseMessagingServiceRoboTest {
   }
 
   @Test
-  public void testOnNewToken() throws Exception {
+  public void testOnNewTokenDefault() throws Exception {
     Intent intent = new Intent(ACTION_NEW_TOKEN);
     intent.putExtra(EXTRA_TOKEN, "token123");
+    intent.putExtra(EXTRA_TOKEN_APP_NAME, "[DEFAULT]");
 
     ServiceStarter.getInstance().startMessagingService(context, intent);
     processInternalStartService(context);
     flushTasks();
 
     verify(service).onNewToken("token123");
+  }
+
+  @Test
+  public void testOnNewToken() throws Exception {
+    Intent intent = new Intent(ACTION_NEW_TOKEN);
+    intent.putExtra(EXTRA_TOKEN, "token123");
+    intent.putExtra(EXTRA_TOKEN_APP_NAME, "customappname");
+
+    ServiceStarter.getInstance().startMessagingService(context, intent);
+    processInternalStartService(context);
+    flushTasks();
+
+    verify(service).onNewToken("token123", "customappname");
   }
 
   /**
