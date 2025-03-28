@@ -83,7 +83,7 @@ internal constructor(
   )
 
   /**
-   * Returns a LiveSession object using which you could send/receive messages from the server
+   * Returns a [LiveSession] object using which you could send/receive messages from the server
    * @return LiveSession object created
    * @throws [ServiceConnectionHandshakeFailedException] if the client was not able to establish a
    * connection with the server.
