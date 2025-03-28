@@ -64,6 +64,7 @@ android {
     }
   }
   lint { targetSdk = targetSdkVersion }
+  sourceSets { getByName("test").java.srcDirs("src/testUtil") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -115,6 +116,7 @@ dependencies {
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
+  testImplementation(libs.mockito.core)
 
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)

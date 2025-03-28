@@ -116,11 +116,11 @@ class StreamTests {
       throwable = e
     }
 
+    assertThat(throwable).isNull()
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly("hello", "world", "this", "is", "cool")
     assertThat(result).isNotNull()
     assertThat(result!!.result.data.toString()).isEqualTo("hello world this is cool")
-    assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }
 
@@ -128,10 +128,28 @@ class StreamTests {
   fun genStreamError_receivesError() = runBlocking {
     val input = mapOf("data" to "test error")
     val function =
-      functions.getHttpsCallable("genStreamError").withTimeout(2000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("genStreamError").withTimeout(10_000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
+
+    withTimeout(10_000) {
+      while (subscriber.throwable == null) {
+        delay(1_000)
+      }
+    }
+
+    assertThat(subscriber.throwable).isNotNull()
+    assertThat(subscriber.throwable).isInstanceOf(FirebaseFunctionsException::class.java)
+  }
+
+  @Test
+  fun nonExistentFunction_receivesError() = runBlocking {
+    val function =
+      functions.getHttpsCallable("nonexistentFunction").withTimeout(2000, TimeUnit.MILLISECONDS)
+    val subscriber = StreamSubscriber()
+
+    function.stream().subscribe(subscriber)
 
     withTimeout(2000) {
       while (subscriber.throwable == null) {
@@ -141,6 +159,8 @@ class StreamTests {
 
     assertThat(subscriber.throwable).isNotNull()
     assertThat(subscriber.throwable).isInstanceOf(FirebaseFunctionsException::class.java)
+    assertThat((subscriber.throwable as FirebaseFunctionsException).code)
+      .isEqualTo(FirebaseFunctionsException.Code.NOT_FOUND)
   }
 
   @Test
@@ -176,6 +196,7 @@ class StreamTests {
     function.stream(mapOf("data" to "test")).subscribe(subscriber)
 
     withTimeout(2000) { delay(500) }
+    assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.messages).isEmpty()
     assertThat(subscriber.result).isNull()
   }
