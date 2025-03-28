@@ -102,8 +102,7 @@ internal constructor(
     return if (receivedJson.contains("setupComplete")) {
       LiveSession(
         session = webSession,
-        backgroundDispatcher = backgroundDispatcher,
-        isRecording = false
+        backgroundDispatcher = backgroundDispatcher
       )
     } else {
       webSession.close()
