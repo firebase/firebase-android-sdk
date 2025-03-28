@@ -33,7 +33,7 @@ import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedExcepti
 public abstract class LiveModelFutures internal constructor() {
 
   /**
-   * Returns a LiveSession object using which you could send/receive messages from the server
+   * Start a [LiveSession] with the server for bidirectional streaming.
    * @return LiveSession object created. Returns null if the object cannot be created.
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
