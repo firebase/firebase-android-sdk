@@ -42,8 +42,8 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the Gemini server, which can only be stopped using
    * stopAudioConversation.
    *
-   * @param functionCallHandler A callback function that is invoked whenever the server receives a
-   * function call.
+   * @param functionCallHandler A callback function to map function calls from the server to their
+   * response parts.
    */
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
