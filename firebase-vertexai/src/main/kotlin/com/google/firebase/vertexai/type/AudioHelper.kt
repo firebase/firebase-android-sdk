@@ -16,12 +16,14 @@
 
 package com.google.firebase.vertexai.type
 
+import android.Manifest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.media.audiofx.AcousticEchoCanceler
+import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -66,7 +68,8 @@ internal class AudioHelper {
     }
   }
 
-  suspend fun startRecording(): Flow<ByteArray> {
+  @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+  fun startRecording(): Flow<ByteArray> {
 
     val bufferSize =
       AudioRecord.getMinBufferSize(
@@ -79,7 +82,9 @@ internal class AudioHelper {
         bufferSize == AudioRecord.ERROR_BAD_VALUE ||
         bufferSize <= 0
     ) {
-      throw AudioRecordInitializationFailedException("Audio Record buffer size is invalid")
+      throw AudioRecordInitializationFailedException(
+        "Audio Record buffer size is invalid (${bufferSize})"
+      )
     }
     audioRecord =
       AudioRecord(
@@ -90,7 +95,9 @@ internal class AudioHelper {
         bufferSize
       )
     if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
-      throw AudioRecordInitializationFailedException("Audio Record initialization has failed.")
+      throw AudioRecordInitializationFailedException(
+        "Audio Record initialization has failed. State: ${audioRecord.state}"
+      )
     }
     if (AcousticEchoCanceler.isAvailable()) {
       val echoCanceler = AcousticEchoCanceler.create(audioRecord.audioSessionId)
