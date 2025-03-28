@@ -44,7 +44,6 @@ public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession?,
   @Background private val backgroundDispatcher: CoroutineContext,
-  private var isRecording: Boolean,
   private var audioHelper: AudioHelper? = null
 ) {
 
@@ -52,6 +51,7 @@ internal constructor(
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
   private var startedReceiving = false
   private var receiveChannel: Channel<Frame> = Channel()
+  private var isRecording: Boolean = false
 
   private companion object {
     val TAG = LiveSession::class.java.simpleName

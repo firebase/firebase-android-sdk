@@ -100,11 +100,7 @@ internal constructor(
     val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
     // TODO: Try to decode the json instead of string matching.
     return if (receivedJson.contains("setupComplete")) {
-      LiveSession(
-        session = webSession,
-        backgroundDispatcher = backgroundDispatcher,
-        isRecording = false
-      )
+      LiveSession(session = webSession, backgroundDispatcher = backgroundDispatcher)
     } else {
       webSession.close()
       throw GeminiConnectionHandshakeFailed()
