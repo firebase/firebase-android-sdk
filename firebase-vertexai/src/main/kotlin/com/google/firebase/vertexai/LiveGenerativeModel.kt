@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai
 
+import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -97,10 +98,10 @@ internal constructor(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },
-          systemInstruction?.toInternal()
-        )
+          systemInstruction?.toInternal())
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
+    Log.w(TAG, data)
     try {
       val webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
