@@ -38,6 +38,7 @@ internal class BidiGenerateContentClientMessage(
       val systemInstruction: Content.Internal?
     )
   }
+
   fun toInternal() =
     Internal(Internal.BidiGenerateContentSetup(model, generationConfig, tools, systemInstruction))
 }
