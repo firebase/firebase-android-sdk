@@ -164,7 +164,8 @@ internal constructor(
           cancel()
         }
         when (it.status) {
-          LiveContentResponse.Status.INTERRUPTED -> while(!playBackQueue.isEmpty()) playBackQueue.poll()
+          LiveContentResponse.Status.INTERRUPTED ->
+            while (!playBackQueue.isEmpty()) playBackQueue.poll()
           LiveContentResponse.Status.NORMAL ->
             if (!it.functionCalls.isNullOrEmpty() && functionCallsHandler != null) {
               sendFunctionResponse(it.functionCalls.map(functionCallsHandler).toList())
@@ -183,7 +184,7 @@ internal constructor(
     CoroutineScope(backgroundDispatcher).launch {
       while (isRecording) {
         val x = playBackQueue.poll()
-        if(x == null) {
+        if (x == null) {
           audioHelper?.start()
           continue
         }

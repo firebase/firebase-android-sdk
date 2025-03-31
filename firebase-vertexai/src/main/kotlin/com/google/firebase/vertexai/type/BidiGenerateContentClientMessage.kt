@@ -17,7 +17,6 @@
 package com.google.firebase.vertexai.type
 
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -38,9 +37,7 @@ internal class BidiGenerateContentClientMessage(
       val tools: List<Tool.Internal>?,
       val systemInstruction: Content.Internal?
     )
-
   }
   fun toInternal() =
     Internal(Internal.BidiGenerateContentSetup(model, generationConfig, tools, systemInstruction))
 }
-
