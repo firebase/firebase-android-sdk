@@ -171,7 +171,6 @@ internal constructor(
             } else {
               val audioData = it.data?.parts?.get(0)?.asInlineDataPartOrNull()?.inlineData
               if (audioData != null) {
-                Log.w(TAG, "Received response from server ${audioData.size}")
                 playBackQueue.add(audioData)
               }
             }
