@@ -124,10 +124,12 @@ internal class AudioHelper {
         if(audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
           continue
         }
-        val bytesRead = audioRecord.read(buffer, 0, buffer.size)
-        if (bytesRead > 0) {
-          emit(buffer.copyOf(bytesRead))
-        }
+        try {
+          val bytesRead = audioRecord.read(buffer, 0, buffer.size)
+          if (bytesRead > 0) {
+            emit(buffer.copyOf(bytesRead))
+          }
+        } catch (_: Exception) {}
       }
     }
   }
