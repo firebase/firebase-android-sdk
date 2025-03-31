@@ -69,6 +69,21 @@ internal class AudioHelper {
     }
   }
 
+  fun stopRecording() {
+    if (
+      ::audioRecord.isInitialized && audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING
+    ) {
+      audioRecord.stop()
+    }
+  }
+
+  fun start() {
+    if (
+      ::audioRecord.isInitialized && audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING
+    ) {
+      audioRecord.startRecording()
+    }
+  }
   @RequiresPermission(Manifest.permission.RECORD_AUDIO)
   fun startRecording(): Flow<ByteArray> {
 
@@ -110,10 +125,16 @@ internal class AudioHelper {
     return flow {
       val buffer = ByteArray(bufferSize)
       while (!stopRecording) {
-        val bytesRead = audioRecord.read(buffer, 0, buffer.size)
-        if (bytesRead > 0) {
-          emit(buffer.copyOf(bytesRead))
+        if (audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+          buffer.fill(0x00)
+          continue
         }
+        try {
+          val bytesRead = audioRecord.read(buffer, 0, buffer.size)
+          if (bytesRead > 0) {
+            emit(buffer.copyOf(bytesRead))
+          }
+        } catch (_: Exception) {}
       }
     }
   }
