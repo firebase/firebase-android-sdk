@@ -1,0 +1,9 @@
+{
+    "name": "m162",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-vertexai"
+    ]
+}
