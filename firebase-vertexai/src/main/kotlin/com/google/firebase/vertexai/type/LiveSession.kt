@@ -148,7 +148,6 @@ internal constructor(
       receivedAudio.copyInto(audioBuffer, offset)
       offset += receivedAudio.size
       if (offset >= MIN_BUFFER_SIZE) {
-        Log.w(TAG, "Sending ${audioBuffer.size} to server")
         sendMediaStream(listOf(MediaData(audioBuffer, "audio/pcm")))
         audioBuffer.fill(0)
         offset = 0
@@ -267,7 +266,6 @@ internal constructor(
         val message = receiveChannel.receive()
         val receivedBytes = (message as Frame.Binary).readBytes()
         val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-        Log.w(TAG, receivedJson)
         if (receivedJson.contains("interrupted")) {
           emit(LiveContentResponse(null, LiveContentResponse.Status.INTERRUPTED, null))
           continue

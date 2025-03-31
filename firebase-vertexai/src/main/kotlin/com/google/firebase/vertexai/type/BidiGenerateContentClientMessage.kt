@@ -26,7 +26,7 @@ internal class BidiGenerateContentClientMessage(
   val model: String,
   val generationConfig: LiveGenerationConfig.Internal?,
   val tools: List<Tool.Internal>?,
-  val systemInstruction: Content.Internal?,
+  val systemInstruction: Content.Internal?
 ) {
 
   @Serializable
@@ -36,35 +36,10 @@ internal class BidiGenerateContentClientMessage(
       val model: String,
       val generationConfig: LiveGenerationConfig.Internal?,
       val tools: List<Tool.Internal>?,
-      val systemInstruction: Content.Internal?,
+      val systemInstruction: Content.Internal?
     )
 
   }
-  @Serializable
-  internal enum class StartSensitivity {
-    START_SENSITIVITY_UNSPECIFIED,
-    START_SENSITIVITY_HIGH,
-    START_SENSITIVITY_LOW
-  }
-
-  @Serializable
-  internal enum class EndSensitivity {
-    END_SENSITIVITY_UNSPECIFIED,
-    END_SENSITIVITY_HIGH,
-    END_SENSITIVITY_LOW
-  }
-
-  @Serializable
-  internal data class AutomaticActivityDetection(
-    val prefixPaddingMs: Int,
-    val silenceDurationMs: Int,
-    val  startOfSpeechSensitivity: StartSensitivity,
-  )
-
-  @Serializable
-  internal data class RealtimeInputConfig(
-    val automaticActivityDetection: AutomaticActivityDetection
-  )
   fun toInternal() =
     Internal(Internal.BidiGenerateContentSetup(model, generationConfig, tools, systemInstruction))
 }

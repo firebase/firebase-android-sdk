@@ -127,7 +127,6 @@ internal class AudioHelper {
         }
         try {
           val bytesRead = audioRecord.read(buffer, 0, buffer.size)
-          println(bytesRead)
           if (bytesRead > 0) {
             emit(buffer.copyOf(bytesRead))
           }
