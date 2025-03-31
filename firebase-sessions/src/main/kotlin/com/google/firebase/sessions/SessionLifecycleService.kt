@@ -193,6 +193,7 @@ internal class SessionLifecycleService : Service() {
     handlerThread.start()
     messageHandler = MessageHandler(handlerThread.looper)
     messenger = Messenger(messageHandler)
+    Log.d(TAG, "Service created on process ${android.os.Process.myPid()}")
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
