@@ -20,7 +20,11 @@
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.INTERNET" />
 
-  <application>
+  <!-- To use the audio conversation feature of Live Sessions, update your app's manifest -->
+  <!-- to request audio recording permission -->
+  <!-- <uses-permission android:name="android.permission.RECORD_AUDIO" /> -->
+
+    <application>
     <service android:name="com.google.firebase.components.ComponentDiscoveryService"
       android:exported="false">
       <meta-data

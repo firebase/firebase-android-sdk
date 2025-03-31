@@ -21,28 +21,25 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Content part modality. */
-public class ContentModality private constructor(public val ordinal: Int) {
+/** Modality for bidirectional streaming. */
+@PublicPreviewAPI
+public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
     @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
     TEXT,
     IMAGE,
-    VIDEO,
-    AUDIO,
-    DOCUMENT;
+    AUDIO;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
     internal fun toPublic() =
       when (this) {
-        TEXT -> ContentModality.TEXT
-        IMAGE -> ContentModality.IMAGE
-        VIDEO -> ContentModality.VIDEO
-        AUDIO -> ContentModality.AUDIO
-        DOCUMENT -> ContentModality.DOCUMENT
-        else -> ContentModality.UNSPECIFIED
+        TEXT -> ResponseModality.TEXT
+        IMAGE -> ResponseModality.IMAGE
+        AUDIO -> ResponseModality.AUDIO
+        else -> ResponseModality.UNSPECIFIED
       }
   }
 
@@ -50,28 +47,20 @@ public class ContentModality private constructor(public val ordinal: Int) {
     when (this) {
       TEXT -> "TEXT"
       IMAGE -> "IMAGE"
-      VIDEO -> "VIDEO"
       AUDIO -> "AUDIO"
-      DOCUMENT -> "DOCUMENT"
       else -> "UNSPECIFIED"
     }
   public companion object {
     /** Unspecified modality. */
-    @JvmField public val UNSPECIFIED: ContentModality = ContentModality(0)
+    @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
 
     /** Plain text. */
-    @JvmField public val TEXT: ContentModality = ContentModality(1)
+    @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
     /** Image. */
-    @JvmField public val IMAGE: ContentModality = ContentModality(2)
-
-    /** Video. */
-    @JvmField public val VIDEO: ContentModality = ContentModality(3)
+    @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
     /** Audio. */
-    @JvmField public val AUDIO: ContentModality = ContentModality(4)
-
-    /** Document, e.g. PDF. */
-    @JvmField public val DOCUMENT: ContentModality = ContentModality(5)
+    @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }

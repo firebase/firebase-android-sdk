@@ -175,6 +175,20 @@ public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
+/** Streaming session already receiving. */
+public class SessionAlreadyReceivingException :
+  FirebaseVertexAIException(
+    "This session is already receiving. Please call stopReceiving() before calling this again."
+  )
+
+/** Audio record initialization failures for audio streaming */
+public class AudioRecordInitializationFailedException(message: String) :
+  FirebaseVertexAIException(message)
+
+/** Handshake failed with the server */
+public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
