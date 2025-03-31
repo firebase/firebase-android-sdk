@@ -70,11 +70,13 @@ internal class AudioHelper {
   }
 
   fun stopRecording() {
-    audioRecord.stop()
+    if(::audioRecord.isInitialized && audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+      audioRecord.stop()
+    }
   }
 
   fun start() {
-    if (::audioRecord.isInitialized) {
+    if (::audioRecord.isInitialized && audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
       audioRecord.startRecording()
     }
   }
