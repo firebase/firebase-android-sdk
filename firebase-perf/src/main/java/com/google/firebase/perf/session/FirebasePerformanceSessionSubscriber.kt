@@ -17,6 +17,7 @@
 package com.google.firebase.perf.session
 
 import com.google.firebase.perf.session.gauges.GaugeManager
+import com.google.firebase.perf.util.Constants
 import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.sessions.api.SessionSubscriber
 import java.util.UUID
@@ -27,22 +28,24 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
   override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.PERFORMANCE
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
-    val currentPerfSession = SessionManager.getInstance().perfSession()
+    val sessionManager = SessionManager.getInstance()
+    val currentPerfSession = sessionManager.perfSession()
     val gaugeManager = GaugeManager.getInstance()
 
     // A [PerfSession] was created before a session was started.
-    if (currentPerfSession.aqsSessionId() == null) {
+    if (currentPerfSession.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID)) {
       currentPerfSession.setAQSId(sessionDetails)
-      gaugeManager
-        .logGaugeMetadata(currentPerfSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
+      gaugeManager.logGaugeMetadata(
+        currentPerfSession.aqsSessionId(),
+        ApplicationProcessState.FOREGROUND
+      )
       gaugeManager.updateGaugeCollection(ApplicationProcessState.FOREGROUND)
       return
     }
 
     val updatedSession = PerfSession.createWithId(UUID.randomUUID().toString())
     updatedSession.setAQSId(sessionDetails)
-    SessionManager.getInstance().updatePerfSession(updatedSession)
-    GaugeManager.getInstance()
-      .logGaugeMetadata(updatedSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
+    sessionManager.updatePerfSession(updatedSession)
+    gaugeManager.logGaugeMetadata(updatedSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
   }
 }

@@ -24,6 +24,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -112,7 +113,7 @@ public class GaugeManager {
 
     if (session == null
         || !session.isGaugeAndEventCollectionEnabled()
-        || session.aqsSessionId() == null) {
+        || session.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID)) {
       logger.warn("Not starting gauge collection.");
       stopCollectingGauges();
       return;
@@ -268,7 +269,6 @@ public class GaugeManager {
     }
 
     // Adding Session ID info.
-    // TODO(b/394127311): Switch to using AQS.
     gaugeMetricBuilder.setSessionId(sessionId);
 
     transportManager.log(gaugeMetricBuilder.build(), appState);
