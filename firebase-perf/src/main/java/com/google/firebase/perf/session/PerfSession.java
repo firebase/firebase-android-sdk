@@ -23,6 +23,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,7 @@ public class PerfSession implements Parcelable {
   private static final String SESSION_ID_PREFIX = "fireperf-session";
   private final String sessionId;
   private final Timer creationTime;
+  @Nullable private String aqsSessionId;
 
   private boolean isGaugeAndEventCollectionEnabled = false;
 
@@ -65,7 +67,7 @@ public class PerfSession implements Parcelable {
     creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
-  /** Returns the sessionId of the object. */
+  /** Returns the sessionId of the session. */
   public String sessionId() {
     return this.sessionId;
   }
@@ -73,6 +75,19 @@ public class PerfSession implements Parcelable {
   private String aqsSessionId() {
     return FirebasePerformanceSessionSubscriber.Companion.getInstance()
         .getAqsMappedToPerfSession(this.sessionId);
+  }
+
+  /** Returns the AQS sessionId for the given session. */
+  @Nullable
+  public String aqsSessionId() {
+    return aqsSessionId;
+  }
+
+  /** Sets the AQS sessionId for the given session. */
+  public void setAQSId(SessionSubscriber.SessionDetails aqs) {
+    if (aqsSessionId == null) {
+      aqsSessionId = aqs.getSessionId();
+    }
   }
 
   /**
@@ -124,6 +139,7 @@ public class PerfSession implements Parcelable {
 
   /** Creates and returns the proto object for PerfSession object. */
   public com.google.firebase.perf.v1.PerfSession build() {
+    // TODO(b/394127311): Switch to using AQS.
     com.google.firebase.perf.v1.PerfSession.Builder sessionMetric =
         com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(aqsSessionId());
 
