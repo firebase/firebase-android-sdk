@@ -22,7 +22,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -55,6 +54,7 @@ public class FirebasePerfEarly {
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.
     // Uploading the gauges however only starts once AQS is initialized.
+    // TODO(b/394127311): Update this to use changes in AQS initialization,
     SessionManager.getInstance().initializeGaugeCollection();
   }
 }

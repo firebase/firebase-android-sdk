@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.util.Clock;
+import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
 import com.google.firebase.sessions.api.SessionSubscriber;
@@ -32,7 +33,8 @@ public class PerfSession implements Parcelable {
 
   private final String sessionId;
   private final Timer creationTime;
-  @Nullable private String aqsSessionId;
+  // TODO(b/394127311): Remove this once this isn't needed.
+  private String aqsSessionId = Constants.UNDEFINED_AQS_ID;
 
   private boolean isGaugeAndEventCollectionEnabled = false;
 
@@ -67,14 +69,13 @@ public class PerfSession implements Parcelable {
   }
 
   /** Returns the AQS sessionId for the given session. */
-  @Nullable
   public String aqsSessionId() {
     return aqsSessionId;
   }
 
   /** Sets the AQS sessionId for the given session. */
   public void setAQSId(SessionSubscriber.SessionDetails aqs) {
-    if (aqsSessionId == null) {
+    if (aqsSessionId.equals(Constants.UNDEFINED_AQS_ID)) {
       aqsSessionId = aqs.getSessionId();
     }
   }

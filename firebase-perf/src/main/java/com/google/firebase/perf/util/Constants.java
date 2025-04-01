@@ -22,6 +22,8 @@ public class Constants {
   public static final String PREFS_NAME = "FirebasePerfSharedPrefs";
   public static final String ENABLE_DISABLE = "isEnabled";
 
+  public static final String UNDEFINED_AQS_ID = "_uaqsid";
+
   public static final double MIN_SAMPLING_RATE = 0.0;
   public static final double MAX_SAMPLING_RATE = 1.0;
 
