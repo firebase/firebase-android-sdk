@@ -124,6 +124,7 @@ public class GaugeManager {
             getMemoryGaugeCollectionFrequencyMs(applicationProcessState));
     String sessionIdForScheduledTask = session.aqsSessionId();
 
+    // TODO(b/394127311): Switch to using AQS.
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
@@ -233,6 +234,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
+    // TODO(b/394127311): Switch to using AQS.
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture<?> unusedFuture =

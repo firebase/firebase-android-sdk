@@ -56,7 +56,9 @@ public class BlockReason private constructor(public val name: String, public val
     UNKNOWN,
     @SerialName("BLOCKED_REASON_UNSPECIFIED") UNSPECIFIED,
     SAFETY,
-    OTHER;
+    OTHER,
+    BLOCKLIST,
+    PROHIBITED_CONTENT;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
@@ -64,6 +66,8 @@ public class BlockReason private constructor(public val name: String, public val
       when (this) {
         SAFETY -> BlockReason.SAFETY
         OTHER -> BlockReason.OTHER
+        BLOCKLIST -> BlockReason.BLOCKLIST
+        PROHIBITED_CONTENT -> BlockReason.PROHIBITED_CONTENT
         else -> BlockReason.UNKNOWN
       }
   }
@@ -76,5 +80,11 @@ public class BlockReason private constructor(public val name: String, public val
 
     /** Content was blocked for another reason. */
     @JvmField public val OTHER: BlockReason = BlockReason("OTHER", 2)
+
+    /** Content was blocked for another reason. */
+    @JvmField public val BLOCKLIST: BlockReason = BlockReason("BLOCKLIST", 3)
+
+    /** Candidates blocked due to the terms which are included from the terminology blocklist. */
+    @JvmField public val PROHIBITED_CONTENT: BlockReason = BlockReason("PROHIBITED_CONTENT", 4)
   }
 }

@@ -17,13 +17,16 @@
 package com.google.firebase.sessions.settings
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.dataStoreFile
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeTimeProvider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -33,13 +36,24 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SettingsCacheTest {
-  private val Context.dataStore: DataStore<Preferences> by
-    preferencesDataStore(name = SESSION_TEST_CONFIGS_NAME)
+  private val appContext: Context = ApplicationProvider.getApplicationContext()
 
   @Test
   fun sessionCache_returnsEmptyCache() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
+
+    runCurrent()
 
     assertThat(settingsCache.sessionSamplingRate()).isNull()
     assertThat(settingsCache.sessionsEnabled()).isNull()
@@ -49,14 +63,28 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsReturnsCachedValue() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionRestartTimeout(600)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = 600,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     assertThat(settingsCache.sessionsEnabled()).isFalse()
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
@@ -69,17 +97,40 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsReturnsPreviouslyStoredValue() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val sessionConfigsDataStore =
+      DataStoreFactory.create(
+        serializer = SessionConfigsSerializer,
+        scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+        produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionRestartTimeout(600)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore = sessionConfigsDataStore,
+      )
+
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = 600,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     // Create a new instance to imitate a second app launch.
-    val newSettingsCache = SettingsCache(context.dataStore)
+    val newSettingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore = sessionConfigsDataStore,
+      )
+
+    runCurrent()
 
     assertThat(newSettingsCache.sessionsEnabled()).isFalse()
     assertThat(newSettingsCache.sessionSamplingRate()).isEqualTo(0.25)
@@ -93,14 +144,28 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsReturnsCacheExpiredWithShortCacheDuration() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionRestartTimeout(600)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(0)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = 600,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 0,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
@@ -112,13 +177,28 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsReturnsCachedValueWithPartialConfigs() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = null,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
@@ -130,25 +210,43 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsAllowsUpdateConfigsAndCachesValues() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionRestartTimeout(600)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = 600,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
     assertThat(settingsCache.sessionRestartTimeout()).isEqualTo(600)
     assertThat(settingsCache.hasCacheExpired()).isFalse()
 
-    settingsCache.updateSettingsEnabled(true)
-    settingsCache.updateSamplingRate(0.33)
-    settingsCache.updateSessionRestartTimeout(100)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(0)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = true,
+        sessionSamplingRate = 0.33,
+        sessionTimeoutSeconds = 100,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 0,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.33)
     assertThat(settingsCache.sessionsEnabled()).isTrue()
@@ -160,25 +258,43 @@ class SettingsCacheTest {
 
   @Test
   fun settingConfigsCleansCacheForNullValues() = runTest {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settingsCache = SettingsCache(context.dataStore)
+    val fakeTimeProvider = FakeTimeProvider()
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = fakeTimeProvider,
+        sessionConfigsDataStore =
+          DataStoreFactory.create(
+            serializer = SessionConfigsSerializer,
+            scope = CoroutineScope(StandardTestDispatcher(testScheduler, "blocking")),
+            produceFile = { appContext.dataStoreFile("sessionConfigsDataStore.data") },
+          ),
+      )
 
-    settingsCache.updateSettingsEnabled(false)
-    settingsCache.updateSamplingRate(0.25)
-    settingsCache.updateSessionRestartTimeout(600)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = false,
+        sessionSamplingRate = 0.25,
+        sessionTimeoutSeconds = 600,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
     assertThat(settingsCache.sessionRestartTimeout()).isEqualTo(600)
     assertThat(settingsCache.hasCacheExpired()).isFalse()
 
-    settingsCache.updateSettingsEnabled(null)
-    settingsCache.updateSamplingRate(0.33)
-    settingsCache.updateSessionRestartTimeout(null)
-    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-    settingsCache.updateSessionCacheDuration(1000)
+    settingsCache.updateConfigs(
+      SessionConfigs(
+        sessionsEnabled = null,
+        sessionSamplingRate = 0.33,
+        sessionTimeoutSeconds = null,
+        cacheUpdatedTimeSeconds = fakeTimeProvider.currentTime().seconds,
+        cacheDurationSeconds = 1000,
+      )
+    )
 
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.33)
     assertThat(settingsCache.sessionsEnabled()).isNull()
@@ -191,9 +307,5 @@ class SettingsCacheTest {
   @After
   fun cleanUp() {
     FirebaseApp.clearInstancesForTest()
-  }
-
-  private companion object {
-    const val SESSION_TEST_CONFIGS_NAME = "firebase_test_session_settings"
   }
 }

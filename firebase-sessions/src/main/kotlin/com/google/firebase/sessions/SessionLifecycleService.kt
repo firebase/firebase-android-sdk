@@ -127,10 +127,16 @@ internal class SessionLifecycleService : Service() {
 
     /** Generates a new session id and sends it everywhere it's needed */
     private fun newSession() {
-      SessionGenerator.instance.generateNewSession()
-      Log.d(TAG, "Generated new session.")
-      broadcastSession()
-      SessionDatastore.instance.updateSessionId(SessionGenerator.instance.currentSession.sessionId)
+      try {
+        SessionGenerator.instance.generateNewSession()
+        Log.d(TAG, "Generated new session.")
+        broadcastSession()
+        SessionDatastore.instance.updateSessionId(
+          SessionGenerator.instance.currentSession.sessionId
+        )
+      } catch (ex: IllegalStateException) {
+        Log.w(TAG, "Failed to generate new session.", ex)
+      }
     }
 
     /**
@@ -146,13 +152,17 @@ internal class SessionLifecycleService : Service() {
     }
 
     private fun maybeSendSessionToClient(client: Messenger) {
-      if (hasForegrounded) {
-        sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
-      } else {
-        // Send the value from the datastore before the first foregrounding it exists
-        val storedSession = SessionDatastore.instance.getCurrentSessionId()
-        Log.d(TAG, "App has not yet foregrounded. Using previously stored session.")
-        storedSession?.let { sendSessionToClient(client, it) }
+      try {
+        if (hasForegrounded) {
+          sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
+        } else {
+          // Send the value from the datastore before the first foregrounding it exists
+          val storedSession = SessionDatastore.instance.getCurrentSessionId()
+          Log.d(TAG, "App has not yet foregrounded. Using previously stored session.")
+          storedSession?.let { sendSessionToClient(client, it) }
+        }
+      } catch (ex: IllegalStateException) {
+        Log.w(TAG, "Failed to send session to client.", ex)
       }
     }
 
@@ -183,6 +193,7 @@ internal class SessionLifecycleService : Service() {
     handlerThread.start()
     messageHandler = MessageHandler(handlerThread.looper)
     messenger = Messenger(messageHandler)
+    Log.d(TAG, "Service created on process ${android.os.Process.myPid()}")
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */

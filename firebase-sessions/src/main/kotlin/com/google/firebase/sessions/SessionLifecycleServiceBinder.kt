@@ -21,7 +21,8 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Messenger
 import android.util.Log
-import com.google.firebase.FirebaseApp
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Interface for binding with the [SessionLifecycleService]. */
 internal fun interface SessionLifecycleServiceBinder {
@@ -32,11 +33,12 @@ internal fun interface SessionLifecycleServiceBinder {
   fun bindToService(callback: Messenger, serviceConnection: ServiceConnection)
 }
 
-internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: FirebaseApp) :
-  SessionLifecycleServiceBinder {
+@Singleton
+internal class SessionLifecycleServiceBinderImpl
+@Inject
+constructor(private val appContext: Context) : SessionLifecycleServiceBinder {
 
   override fun bindToService(callback: Messenger, serviceConnection: ServiceConnection) {
-    val appContext: Context = firebaseApp.applicationContext.applicationContext
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
       Log.d(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process

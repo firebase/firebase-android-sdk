@@ -61,6 +61,8 @@ import org.gradle.kotlin.dsl.register
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
+ *   [registerGenerateBomTask]
+ * - [BUILD_BOM_BUNDLE_ZIP_TASK] -> Creates a zip file of the contents of [BUILD_BOM_ZIP_TASK]
  *   [registerGenerateBomTask],
  *   [GENERATE_BOM_RELEASE_NOTES_TASK][registerGenerateBomReleaseNotesTask] and
  *   [GENERATE_TUTORIAL_BUNDLE_TASK][registerGenerateTutorialBundleTask]
@@ -140,9 +142,16 @@ abstract class PublishingPlugin : Plugin<Project> {
           destinationDirectory.set(project.layout.buildDirectory)
         }
 
-      project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
-        from(generateBom, generateBomReleaseNotes, generateTutorialBundle)
-        archiveFileName.set("bom.zip")
+      val buildBomZip =
+        project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
+          from(generateBom)
+          archiveFileName.set("bom.zip")
+          destinationDirectory.set(project.layout.buildDirectory)
+        }
+
+      project.tasks.register<Zip>(BUILD_BOM_BUNDLE_ZIP_TASK) {
+        from(buildBomZip, generateBomReleaseNotes, generateTutorialBundle)
+        archiveFileName.set("bomBundle.zip")
         destinationDirectory.set(project.layout.projectDirectory)
       }
 
@@ -337,7 +346,6 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-database-connection",
           "com.google.firebase:firebase-database-connection-license",
           "com.google.firebase:firebase-database-license",
-          "com.google.firebase:firebase-dataconnect",
           "com.google.firebase:firebase-datatransport",
           "com.google.firebase:firebase-appdistribution-ktx",
           "com.google.firebase:firebase-appdistribution",
@@ -757,6 +765,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BUILD_KOTLINDOC_ZIP_TASK = "buildKotlindocZip"
     const val BUILD_RELEASE_NOTES_ZIP_TASK = "buildReleaseNotesZip"
     const val BUILD_BOM_ZIP_TASK = "buildBomZip"
+    const val BUILD_BOM_BUNDLE_ZIP_TASK = "buildBomBundleZip"
     const val FIREBASE_PUBLISH_TASK = "firebasePublish"
     const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
 
@@ -782,6 +791,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-crashlytics-ktx",
         "com.google.firebase:firebase-crashlytics-ndk",
         "com.google.firebase:firebase-database",
+        "com.google.firebase:firebase-dataconnect",
         "com.google.firebase:firebase-database-ktx",
         "com.google.firebase:firebase-dynamic-links",
         "com.google.firebase:firebase-dynamic-links-ktx",
@@ -810,7 +820,13 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     /** Artifacts that we use in the tutorial bundle, but _not_ in the bom. */
     val EXTRA_TUTORIAL_ARTIFACTS =
-      listOf("com.google.android.gms:play-services-ads", "com.google.firebase:firebase-ml-vision")
+      listOf(
+        "com.google.android.gms:play-services-ads",
+        "com.google.firebase:firebase-ml-vision",
+        "androidx.credentials:credentials",
+        "androidx.credentials:credentials-play-services-auth",
+        "com.google.android.libraries.identity.googleid:googleid",
+      )
   }
 }
 

@@ -51,16 +51,16 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
@@ -73,27 +73,35 @@ jobs:
           npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
       - name: Restore Gradle cache
-        uses: actions/cache/restore@v4
+        id: restore-gradle-cache
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name != 'schedule'
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-jqnvfzw6w7
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          restore-keys: |
+            gradle-cache-jqnvfzw6w7-
 
       - name: tool versions
         continue-on-error: true
         run: |
-          set +e -v
-          uname -a
-          which java
-          java -version
-          which javac
-          javac -version
-          which node
-          node --version
-          ${{ env.FDC_FIREBASE_COMMAND }} --version
-          ./gradlew --version
+          function run_cmd {
+            echo "==============================================================================="
+            echo "Running Command: $*"
+            ("$@" 2>&1) || echo "WARNING: command failed with non-zero exit code $?: $*"
+          }
+
+          run_cmd uname -a
+          run_cmd which java
+          run_cmd java -version
+          run_cmd which javac
+          run_cmd javac -version
+          run_cmd which node
+          run_cmd node --version
+          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
         run: |
@@ -110,13 +118,13 @@ jobs:
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name == 'schedule'
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-jqnvfzw6w7
+          key: ${{ steps.restore-gradle-cache.outputs.cache-primary-key }}
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -126,36 +134,36 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Restore AVD cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name != 'schedule'
-        id: avd-cache
+        id: restore-avd-cache
         with:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
-
-      - run: echo "github.event_name == '${{ github.event_name }}' steps.avd-cache.outputs.cache-hit == '${{ steps.avd-cache.outputs.cache-hit }}'"
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+          restore-keys: |
+            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD
-        if: github.event_name == 'schedule' || steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
+          disable-animations: true
           script: echo "Generated AVD snapshot for caching."
 
       - name: Save AVD cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name == 'schedule'
         with:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          key: ${{ steps.restore-avd-cache.outputs.cache-primary-key }}
 
       - name: Data Connect Emulator
         run: |
@@ -179,7 +187,7 @@ jobs:
 
       - name: Gradle connectedCheck
         id: connectedCheck
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
         # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
         # A later step in this "job" will fail the job if this step fails
@@ -194,7 +202,7 @@ jobs:
             set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload log file artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: integration_test_logs
           path: "**/*.log"
@@ -202,17 +210,17 @@ jobs:
           compression-level: 9
 
       - name: Upload Gradle build report artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: integration_test_gradle_build_reports
           path: firebase-dataconnect/**/build/reports/
           if-no-files-found: warn
           compression-level: 9
 
-      - name: Check test result
+      - name: Verify "Gradle connectedCheck" step was successful
         if: steps.connectedCheck.outcome != 'success'
         run: |
-          echo "Failing the job since the connectedCheck step failed"
+          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
           exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
@@ -222,7 +230,7 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
       - uses: docker://rhysd/actionlint:1.7.7

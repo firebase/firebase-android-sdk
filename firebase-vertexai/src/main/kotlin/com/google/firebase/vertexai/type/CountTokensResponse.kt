@@ -30,21 +30,33 @@ import kotlinx.serialization.Serializable
  * to the model as a prompt. **Important:** this property does not include billable image, video or
  * other non-text input. See
  * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
+ * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
+ * prompt.
  */
 public class CountTokensResponse(
   public val totalTokens: Int,
-  public val totalBillableCharacters: Int? = null
+  public val totalBillableCharacters: Int? = null,
+  public val promptTokensDetails: List<ModalityTokenCount> = emptyList(),
 ) {
   public operator fun component1(): Int = totalTokens
 
   public operator fun component2(): Int? = totalBillableCharacters
 
+  public operator fun component3(): List<ModalityTokenCount>? = promptTokensDetails
+
   @Serializable
-  internal data class Internal(val totalTokens: Int, val totalBillableCharacters: Int? = null) :
-    Response {
+  internal data class Internal(
+    val totalTokens: Int,
+    val totalBillableCharacters: Int? = null,
+    val promptTokensDetails: List<ModalityTokenCount.Internal>? = null
+  ) : Response {
 
     internal fun toPublic(): CountTokensResponse {
-      return CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
+      return CountTokensResponse(
+        totalTokens,
+        totalBillableCharacters ?: 0,
+        promptTokensDetails?.map { it.toPublic() } ?: emptyList()
+      )
     }
   }
 }
