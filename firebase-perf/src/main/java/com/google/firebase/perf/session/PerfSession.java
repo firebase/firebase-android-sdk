@@ -70,6 +70,11 @@ public class PerfSession implements Parcelable {
 
   /** Returns the AQS sessionId for the given session. */
   public String aqsSessionId() {
+    // This is a fallback for if/when the AQS ID is undefined.
+    if (aqsSessionId.equals(Constants.UNDEFINED_AQS_ID)) {
+      // TODO(b/394127311): Explore returning a valid - but different ID.
+      return Constants.UNDEFINED_AQS_ID;
+    }
     return aqsSessionId;
   }
 

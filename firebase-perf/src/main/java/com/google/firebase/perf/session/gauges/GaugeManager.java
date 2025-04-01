@@ -111,9 +111,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    if (session == null
-        || !session.isGaugeAndEventCollectionEnabled()
-        || session.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID)) {
+    if (shouldStopCollectingGauges()) {
       logger.warn("Not starting gauge collection.");
       stopCollectingGauges();
       return;
@@ -431,6 +429,12 @@ public class GaugeManager {
     } else {
       return memoryGaugeCollectionFrequency;
     }
+  }
+
+  private boolean shouldStopCollectingGauges() {
+    return session == null
+        || !session.isGaugeAndEventCollectionEnabled()
+        || session.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID);
   }
 
   @VisibleForTesting
