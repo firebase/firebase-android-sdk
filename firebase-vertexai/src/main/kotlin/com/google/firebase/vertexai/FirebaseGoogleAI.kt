@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,30 +19,18 @@ package com.google.firebase.vertexai
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
-import com.google.firebase.auth.internal.InternalAuthProvider
-import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
-import com.google.firebase.vertexai.type.InvalidLocationException
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
-/** Entry point for all _Vertex AI for Firebase_ functionality. */
-public class FirebaseVertexAI
-internal constructor(
-  private val firebaseApp: FirebaseApp,
-  private val backend: GenerativeBackend,
-  private val location: String,
-  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
-  private val internalAuthProvider: Provider<InternalAuthProvider>,
-) {
+public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVertexAI) {
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
@@ -66,31 +54,16 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
-  ): GenerativeModel {
-    if (location.trim().isEmpty() || location.contains("/")) {
-      throw InvalidLocationException(location)
-    }
-    val modelUri =
-      when (backend) {
-        GenerativeBackend.VERTEX_AI ->
-          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
-        GenerativeBackend.GOOGLE_AI ->
-          "projects/${firebaseApp.options.projectId}/models/${modelName}"
-      }
-    return GenerativeModel(
-      modelUri,
-      firebaseApp.options.apiKey,
+  ): GenerativeModel =
+    proxy.generativeModel(
+      modelName,
       generationConfig,
       safetySettings,
       tools,
       toolConfig,
       systemInstruction,
       requestOptions,
-      backend,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
     )
-  }
 
   /**
    * Instantiates a new [ImagenModel] given the provided parameters.
@@ -108,49 +81,19 @@ internal constructor(
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
-  ): ImagenModel {
-    if (location.trim().isEmpty() || location.contains("/")) {
-      throw InvalidLocationException(location)
-    }
-    return ImagenModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
-      firebaseApp.options.apiKey,
-      generationConfig,
-      safetySettings,
-      requestOptions,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
-  }
+  ): ImagenModel = proxy.imagenModel(modelName, generationConfig, safetySettings, requestOptions)
 
   public companion object {
-    /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
+    /** The [FirebaseGoogleAI] instance for the default [FirebaseApp] */
     @JvmStatic
-    public val instance: FirebaseVertexAI
-      get() = getInstance(Firebase.app)
+    public val instance: FirebaseGoogleAI
+      get() = getInstance()
 
-    /**
-     * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
-     *
-     * @param location location identifier, defaults to `us-central1`; see available
-     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
-     * .
-     */
+    /** Returns the [FirebaseGoogleAI] instance for the provided [FirebaseApp]. */
     @JvmStatic
-    @JvmOverloads
-    public fun getInstance(app: FirebaseApp, location: String = "us-central1"): FirebaseVertexAI {
+    public fun getInstance(app: FirebaseApp = Firebase.app): FirebaseGoogleAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.get(GenerativeBackend.VERTEX_AI, location)
+      return FirebaseGoogleAI(multiResourceComponent.get(GenerativeBackend.GOOGLE_AI, ""))
     }
   }
 }
-
-/** Returns the [FirebaseVertexAI] instance of the default [FirebaseApp]. */
-public val Firebase.vertexAI: FirebaseVertexAI
-  get() = FirebaseVertexAI.instance
-
-/** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
-public fun Firebase.vertexAI(
-  app: FirebaseApp = Firebase.app,
-  location: String = "us-central1",
-): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)

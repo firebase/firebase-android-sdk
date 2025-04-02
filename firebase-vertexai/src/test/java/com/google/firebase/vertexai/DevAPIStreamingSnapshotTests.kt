@@ -18,18 +18,12 @@ package com.google.firebase.vertexai
 
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.FinishReason
-import com.google.firebase.vertexai.type.HarmCategory
-import com.google.firebase.vertexai.type.InvalidAPIKeyException
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.ResponseStoppedException
-import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
-import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.util.goldenDevAPIStreamingFile
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect

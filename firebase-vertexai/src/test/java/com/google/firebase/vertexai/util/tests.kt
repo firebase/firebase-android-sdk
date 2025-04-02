@@ -113,7 +113,8 @@ internal fun commonTest(
       TEST_CLIENT_ID,
       null,
     )
-  val model = GenerativeModel("cool-model-name", generativeBackend = backend, controller = apiController)
+  val model =
+    GenerativeModel("cool-model-name", generativeBackend = backend, controller = apiController)
   val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
   CommonTestScope(channel, model, imagenModel).block()
 }

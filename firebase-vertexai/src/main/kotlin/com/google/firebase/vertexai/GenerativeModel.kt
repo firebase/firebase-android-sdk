@@ -218,7 +218,7 @@ internal constructor(
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
     when (generativeBackend) {
-      GenerativeBackend.DEVELOPER_API -> CountTokensRequest.forGenAI(constructRequest(*prompt))
+      GenerativeBackend.GOOGLE_AI -> CountTokensRequest.forGenAI(constructRequest(*prompt))
       GenerativeBackend.VERTEX_AI -> CountTokensRequest.forVertexAI(constructRequest(*prompt))
     }
 

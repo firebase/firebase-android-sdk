@@ -16,25 +16,21 @@
 
 package com.google.firebase.vertexai
 
-import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.InvalidAPIKeyException
-import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.ServerException
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.ktor.http.HttpStatusCode
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
-import java.util.Calendar
-import kotlin.time.Duration.Companion.seconds
 
 internal class DevAPIUnarySnapshotTests {
   private val testTimeout = 5.seconds
@@ -76,7 +72,6 @@ internal class DevAPIUnarySnapshotTests {
       }
     }
 
-
   @Test
   fun `prompt blocked for safety`() =
     goldenDevAPIUnaryFile("unary-failure-prompt-blocked-safety.txt") {
@@ -93,9 +88,9 @@ internal class DevAPIUnarySnapshotTests {
     goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.txt") {
       withTimeout(testTimeout) {
         shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
-                {
-                  it.response.candidates[0].finishReason shouldBe FinishReason.MAX_TOKENS
-                }
+          {
+            it.response.candidates[0].finishReason shouldBe FinishReason.MAX_TOKENS
+          }
       }
     }
 
