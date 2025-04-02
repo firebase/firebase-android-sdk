@@ -189,6 +189,7 @@ internal interface FirebaseSessionsComponent {
         }
 
       /** This native library in unavailable in some conditions, for example, Robolectric tests */
+      // TODO(mrober): Remove this when b/392626815 is resolved
       private fun loadDataStoreSharedCounter(): Boolean =
         try {
           System.loadLibrary("datastore_shared_counter")
