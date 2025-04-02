@@ -727,29 +727,37 @@ public final class RemoteSerializer {
 
   @VisibleForTesting
   StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
-    if (filter.getOperator() == FieldFilter.Operator.EQUAL
-        || filter.getOperator() == FieldFilter.Operator.NOT_EQUAL) {
-      UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
-      unaryProto.setField(encodeFieldPath(filter.getField()));
-      if (Values.isNanValue(filter.getValue())) {
-        unaryProto.setOp(
-            filter.getOperator() == FieldFilter.Operator.EQUAL
-                ? UnaryFilter.Operator.IS_NAN
-                : UnaryFilter.Operator.IS_NOT_NAN);
-        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
-      } else if (Values.isNullValue(filter.getValue())) {
-        unaryProto.setOp(
-            filter.getOperator() == FieldFilter.Operator.EQUAL
-                ? UnaryFilter.Operator.IS_NULL
-                : UnaryFilter.Operator.IS_NOT_NULL);
-        return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
+    FieldFilter.Operator op = filter.getOperator();
+    Value value = filter.getValue();
+    FieldReference fieldReference = encodeFieldPath(filter.getField());
+    if (op == FieldFilter.Operator.EQUAL) {
+      if (Values.isNanValue(value)) {
+        return encodeUnaryFilter(fieldReference, UnaryFilter.Operator.IS_NAN);
+      }
+      if (Values.isNullValue(value)) {
+        return encodeUnaryFilter(fieldReference, UnaryFilter.Operator.IS_NULL);
+      }
+    } else if (op == FieldFilter.Operator.NOT_EQUAL) {
+      if (Values.isNanValue(value)) {
+        return encodeUnaryFilter(fieldReference, UnaryFilter.Operator.IS_NOT_NAN);
+      }
+      if (Values.isNullValue(value)) {
+        return encodeUnaryFilter(fieldReference, UnaryFilter.Operator.IS_NOT_NULL);
       }
     }
     StructuredQuery.FieldFilter.Builder proto = StructuredQuery.FieldFilter.newBuilder();
-    proto.setField(encodeFieldPath(filter.getField()));
-    proto.setOp(encodeFieldFilterOperator(filter.getOperator()));
-    proto.setValue(filter.getValue());
+    proto.setField(fieldReference);
+    proto.setOp(encodeFieldFilterOperator(op));
+    proto.setValue(value);
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
+  }
+
+  private StructuredQuery.Filter encodeUnaryFilter(
+      FieldReference fieldReference, UnaryFilter.Operator op) {
+    UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
+    unaryProto.setField(fieldReference);
+    unaryProto.setOp(op);
+    return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
   }
 
   StructuredQuery.CompositeFilter.Operator encodeCompositeFilterOperator(

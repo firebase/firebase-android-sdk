@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Transaction;
@@ -43,6 +44,7 @@ import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ExecutePipelineRequest;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
@@ -773,6 +775,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       return datastore.runAggregateQuery(query, aggregateFields);
     } else {
       return Tasks.forException(
+          new FirebaseFirestoreException(
+              "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
+    }
+  }
+
+  public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    if (canUseNetwork()) {
+      datastore.executePipeline(request, observer);
+    } else {
+      observer.onError(
           new FirebaseFirestoreException(
               "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
     }
