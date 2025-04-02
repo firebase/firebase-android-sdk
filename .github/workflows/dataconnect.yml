@@ -124,7 +124,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ steps.restore-gradle-cache.outputs.cache-primary-key }}
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -146,7 +146,7 @@ jobs:
             avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD
-        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-matched-key == ''
         uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
@@ -154,7 +154,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: echo "Generated AVD snapshot for caching."
+          script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
 
       - name: Save AVD cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
@@ -163,7 +163,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: ${{ steps.restore-avd-cache.outputs.cache-primary-key }}
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
       - name: Data Connect Emulator
         run: |
