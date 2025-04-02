@@ -52,7 +52,7 @@ private constructor(private val name: String, private val params: Array<out Expr
     @JvmStatic fun max(expr: Expr) = AggregateExpr("max", expr)
   }
 
-  fun `as`(alias: String) = AggregateWithAlias(alias, this)
+  fun alias(alias: String) = AggregateWithAlias(alias, this)
 
   internal fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()

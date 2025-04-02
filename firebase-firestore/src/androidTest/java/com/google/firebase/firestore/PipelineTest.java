@@ -25,7 +25,6 @@ import static com.google.firebase.firestore.pipeline.Function.eq;
 import static com.google.firebase.firestore.pipeline.Function.euclideanDistance;
 import static com.google.firebase.firestore.pipeline.Function.gt;
 import static com.google.firebase.firestore.pipeline.Function.logicalMax;
-import static com.google.firebase.firestore.pipeline.Function.logicalMin;
 import static com.google.firebase.firestore.pipeline.Function.lt;
 import static com.google.firebase.firestore.pipeline.Function.lte;
 import static com.google.firebase.firestore.pipeline.Function.mapGet;
@@ -227,7 +226,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .aggregate(AggregateExpr.countAll().as("count"))
+            .aggregate(AggregateExpr.countAll().alias("count"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -243,9 +242,9 @@ public class PipelineTest {
             .collection(randomCol)
             .where(Function.eq("genre", "Science Fiction"))
             .aggregate(
-                AggregateExpr.countAll().as("count"),
-                AggregateExpr.avg("rating").as("avgRating"),
-                Field.of("rating").max().as("maxRating"))
+                AggregateExpr.countAll().alias("count"),
+                AggregateExpr.avg("rating").alias("avgRating"),
+                Field.of("rating").max().alias("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -261,7 +260,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(lt(Field.of("published"), 1984))
             .aggregate(
-                AggregateStage.withAccumulators(AggregateExpr.avg("rating").as("avgRating"))
+                AggregateStage.withAccumulators(AggregateExpr.avg("rating").alias("avgRating"))
                     .withGroups("genre"))
             .where(gt("avgRating", 4.3))
             .sort(Field.of("avgRating").descending())
@@ -304,9 +303,9 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .aggregate(
-                AggregateExpr.countAll().as("count"),
-                Field.of("rating").max().as("maxRating"),
-                Field.of("published").min().as("minPublished"))
+                AggregateExpr.countAll().alias("count"),
+                Field.of("rating").max().alias("maxRating"),
+                Field.of("published").min().alias("minPublished"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -443,9 +442,10 @@ public class PipelineTest {
   @Test
   public void arrayLengthWorks() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("tags").arrayLength().as("tagsCount"))
+            .collection(randomCol)
+            .select(Field.of("tags").arrayLength().alias("tagsCount"))
             .where(eq("tagsCount", 3))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(10);
@@ -462,7 +462,7 @@ public class PipelineTest {
             .select(
                 Field.of("tags")
                     .arrayConcat(ImmutableList.of("newTag1", "newTag2"))
-                    .as("modifiedTags"))
+                    .alias("modifiedTags"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -476,9 +476,10 @@ public class PipelineTest {
   @Test
   public void testStrConcat() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("author").strConcat(" - ", Field.of("title")).as("bookInfo"))
+            .collection(randomCol)
+            .select(Field.of("author").strConcat(" - ", Field.of("title")).alias("bookInfo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -490,8 +491,9 @@ public class PipelineTest {
   @Test
   public void testStartsWith() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(startsWith("title", "The"))
             .select("title")
             .sort(Field.of("title").ascending())
@@ -508,8 +510,9 @@ public class PipelineTest {
   @Test
   public void testEndsWith() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(endsWith("title", "y"))
             .select("title")
             .sort(Field.of("title").descending())
@@ -524,9 +527,10 @@ public class PipelineTest {
   @Test
   public void testLength() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("title").charLength().as("titleLength"), Field.of("title"))
+            .collection(randomCol)
+            .select(Field.of("title").charLength().alias("titleLength"), Field.of("title"))
             .where(gt("titleLength", 20))
             .sort(Field.of("title").ascending())
             .execute();
@@ -543,9 +547,10 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testToLowercase() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("title").toLower().as("lowercaseTitle"))
+            .collection(randomCol)
+            .select(Field.of("title").toLower().alias("lowercaseTitle"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -557,9 +562,10 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testToUppercase() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("author").toLower().as("uppercaseAuthor"))
+            .collection(randomCol)
+            .select(Field.of("author").toLower().alias("uppercaseAuthor"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -571,10 +577,11 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testTrim() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .addFields(strConcat(" ", Field.of("title"), " ").as("spacedTitle"))
-            .select(Field.of("spacedTitle").trim().as("trimmedTitle"))
+            .collection(randomCol)
+            .addFields(strConcat(" ", Field.of("title"), " ").alias("spacedTitle"))
+            .select(Field.of("spacedTitle").trim().alias("trimmedTitle"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -590,7 +597,12 @@ public class PipelineTest {
   @Test
   public void testLike() {
     Task<PipelineSnapshot> execute =
-        randomCol.pipeline().where(Function.like("title", "%Guide%")).select("title").execute();
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(Function.like("title", "%Guide%"))
+            .select("title")
+            .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy"));
@@ -599,27 +611,36 @@ public class PipelineTest {
   @Test
   public void testRegexContains() {
     Task<PipelineSnapshot> execute =
-        randomCol.pipeline().where(Function.regexContains("title", "(?i)(the|of)")).execute();
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(Function.regexContains("title", "(?i)(the|of)"))
+            .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
 
   @Test
   public void testRegexMatches() {
     Task<PipelineSnapshot> execute =
-        randomCol.pipeline().where(Function.regexContains("title", ".*(?i)(the|of).*")).execute();
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(Function.regexContains("title", ".*(?i)(the|of).*"))
+            .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
 
   @Test
   public void testArithmeticOperations() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .select(
-                add(Field.of("rating"), 1).as("ratingPlusOne"),
-                subtract(Field.of("published"), 1900).as("yearsSince1900"),
-                Field.of("rating").multiply(10).as("ratingTimesTen"),
-                Field.of("rating").divide(2).as("ratingDividedByTwo"))
+                add(Field.of("rating"), 1).alias("ratingPlusOne"),
+                subtract(Field.of("published"), 1900).alias("yearsSince1900"),
+                Field.of("rating").multiply(10).alias("ratingTimesTen"),
+                Field.of("rating").divide(2).alias("ratingDividedByTwo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -635,8 +656,9 @@ public class PipelineTest {
   @Test
   public void testComparisonOperators() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(
                 and(
                     gt("rating", 4.2),
@@ -656,8 +678,9 @@ public class PipelineTest {
   @Test
   public void testLogicalOperators() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(
                 or(
                     and(gt("rating", 4.5), eq("genre", "Science Fiction")),
@@ -676,13 +699,14 @@ public class PipelineTest {
   @Test
   public void testChecks() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(not(Field.of("rating").isNan()))
             .select(
-                Field.of("rating").isNull().as("ratingIsNull"),
-                Field.of("rating").eq(Constant.nullValue()).as("ratingEqNull"),
-                not(Field.of("rating").isNan()).as("ratingIsNotNan"))
+                Field.of("rating").isNull().alias("ratingIsNull"),
+                Field.of("rating").eq(Constant.nullValue()).alias("ratingEqNull"),
+                not(Field.of("rating").isNan()).alias("ratingIsNotNan"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -698,12 +722,13 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testLogicalMax() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(Field.of("author").eq("Douglas Adams"))
             .select(
-                Field.of("rating").logicalMax(4.5).as("max_rating"),
-                logicalMax(Field.of("published"), 1900).as("max_published"))
+                Field.of("rating").logicalMax(4.5).alias("max_rating"),
+                logicalMax(Field.of("published"), 1900).alias("max_published"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -714,12 +739,7 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testLogicalMin() {
     Task<PipelineSnapshot> execute =
-        randomCol
-            .pipeline()
-            .select(
-                Field.of("rating").logicalMin(4.5).as("min_rating"),
-                logicalMin(Field.of("published"), 1900).as("min_published"))
-            .execute();
+        firestore.pipeline().collection(randomCol).sort(Field.of("rating").ascending()).execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("min_rating", 4.2, "min_published", 1900));
@@ -728,9 +748,10 @@ public class PipelineTest {
   @Test
   public void testMapGet() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
-            .select(Field.of("awards").mapGet("hugo").as("hugoAward"), Field.of("title"))
+            .collection(randomCol)
+            .select(Field.of("awards").mapGet("hugo").alias("hugoAward"), Field.of("title"))
             .where(eq("hugoAward", true))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -745,14 +766,15 @@ public class PipelineTest {
     double[] sourceVector = {0.1, 0.1};
     double[] targetVector = {0.5, 0.8};
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .select(
-                cosineDistance(Constant.vector(sourceVector), targetVector).as("cosineDistance"),
+                cosineDistance(Constant.vector(sourceVector), targetVector).alias("cosineDistance"),
                 Function.dotProduct(Constant.vector(sourceVector), targetVector)
-                    .as("dotProductDistance"),
+                    .alias("dotProductDistance"),
                 euclideanDistance(Constant.vector(sourceVector), targetVector)
-                    .as("euclideanDistance"))
+                    .alias("euclideanDistance"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -767,8 +789,9 @@ public class PipelineTest {
   @Test
   public void testNestedFields() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(eq("awards.hugo", true))
             .select("title", "awards.hugo")
             .execute();
@@ -782,13 +805,14 @@ public class PipelineTest {
   @Test
   public void testMapGetWithFieldNameIncludingNotation() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(eq("awards.hugo", true))
             .select(
                 "title",
                 Field.of("nestedField.level.1"),
-                mapGet("nestedField", "level.1").mapGet("level.2").as("nested"))
+                mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -806,8 +830,9 @@ public class PipelineTest {
   @Test
   public void testListEquals() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(eq("tags", ImmutableList.of("philosophy", "crime", "redemption")))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -818,8 +843,9 @@ public class PipelineTest {
   @Test
   public void testMapEquals() {
     Task<PipelineSnapshot> execute =
-        randomCol
+        firestore
             .pipeline()
+            .collection(randomCol)
             .where(eq("awards", ImmutableMap.of("nobel", true, "nebula", false)))
             .execute();
     assertThat(waitFor(execute).getResults())

@@ -57,12 +57,14 @@ abstract class Expr internal constructor() {
         is VectorValue -> of(value)
         is Value -> of(value)
         is Map<*, *> ->
-          MapOfExpr(
-            value.entries.associate {
-              val key = it.key
-              if (key is String) key to toExpr(it.value)
-              else throw IllegalArgumentException("Maps with non-string keys are not supported")
-            }
+          Function.map(
+            value
+              .flatMap {
+                val key = it.key
+                if (key is String) listOf(of(key), toExpr(it.value))
+                else throw IllegalArgumentException("Maps with non-string keys are not supported")
+              }
+              .toTypedArray()
           )
         is List<*> -> ListOfExprs(value.map(toExpr).toTypedArray())
         else -> null
@@ -116,7 +118,7 @@ abstract class Expr internal constructor() {
    *     expression and associates it with the provided alias.
    * ```
    */
-  open fun `as`(alias: String) = ExprWithAlias(alias, this)
+  open fun alias(alias: String) = ExprWithAlias(alias, this)
 
   /**
    * Creates an expression that this expression to another expression.
@@ -233,6 +235,13 @@ abstract class Expr internal constructor() {
   fun mapGet(key: Expr) = Function.mapGet(this, key)
 
   fun mapGet(key: String) = Function.mapGet(this, key)
+
+  fun mapMerge(secondMap: Expr, vararg otherMaps: Expr) =
+    Function.mapMerge(this, secondMap, *otherMaps)
+
+  fun mapRemove(key: Expr) = Function.mapRemove(this, key)
+
+  fun mapRemove(key: String) = Function.mapRemove(this, key)
 
   fun cosineDistance(vector: Expr) = Function.cosineDistance(this, vector)
 
@@ -376,16 +385,6 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
 
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
-}
-
-internal class MapOfExpr(private val expressions: Map<String, Expr>) : Expr() {
-  override fun toProto(userDataReader: UserDataReader): Value {
-    val builder = MapValue.newBuilder()
-    for ((key, value) in expressions) {
-      builder.putFields(key, value.toProto(userDataReader))
-    }
-    return Value.newBuilder().setMapValue(builder).build()
-  }
 }
 
 internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
@@ -704,6 +703,12 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic
     fun strConcat(fieldName: String, vararg rest: Any) = Function("str_concat", fieldName, *rest)
 
+    internal fun map(elements: Array<out Expr>) = Function("map", elements)
+
+    @JvmStatic
+    fun map(elements: Map<String, Any>) =
+      map(elements.flatMap { listOf(of(it.key), toExprOrConstant(it.value)) }.toTypedArray())
+
     @JvmStatic fun mapGet(map: Expr, key: Expr) = Function("map_get", map, key)
 
     @JvmStatic fun mapGet(map: Expr, key: String) = Function("map_get", map, key)
@@ -711,6 +716,22 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun mapGet(fieldName: String, key: Expr) = Function("map_get", fieldName, key)
 
     @JvmStatic fun mapGet(fieldName: String, key: String) = Function("map_get", fieldName, key)
+
+    @JvmStatic
+    fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr) =
+      Function("map_merge", firstMap, secondMap, otherMaps)
+
+    @JvmStatic
+    fun mapMerge(mapField: String, secondMap: Expr, vararg otherMaps: Expr) =
+      Function("map_merge", mapField, secondMap, otherMaps)
+
+    @JvmStatic fun mapRemove(firstMap: Expr, key: Expr) = Function("map_remove", firstMap, key)
+
+    @JvmStatic fun mapRemove(mapField: String, key: Expr) = Function("map_remove", mapField, key)
+
+    @JvmStatic fun mapRemove(firstMap: Expr, key: String) = Function("map_remove", firstMap, key)
+
+    @JvmStatic fun mapRemove(mapField: String, key: String) = Function("map_remove", mapField, key)
 
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: Expr) = Function("cosine_distance", vector1, vector2)
@@ -950,19 +971,12 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun arrayLength(fieldName: String) = Function("array_length", fieldName)
 
     @JvmStatic
-    fun ifThen(condition: BooleanExpr, then: Expr) =
-      Function("cond", condition, then, Constant.NULL)
+    fun cond(condition: BooleanExpr, then: Expr, otherwise: Expr) =
+      Function("cond", condition, then, otherwise)
 
     @JvmStatic
-    fun ifThen(condition: BooleanExpr, then: Any) = Function("cond", condition, then, Constant.NULL)
-
-    @JvmStatic
-    fun ifThenElse(condition: BooleanExpr, then: Expr, `else`: Expr) =
-      Function("cond", condition, then, `else`)
-
-    @JvmStatic
-    fun ifThenElse(condition: BooleanExpr, then: Any, `else`: Any) =
-      Function("cond", condition, then, `else`)
+    fun cond(condition: BooleanExpr, then: Any, otherwise: Any) =
+      Function("cond", condition, then, otherwise)
 
     @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
   }
@@ -1003,13 +1017,9 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
 
   fun countIf(): AggregateExpr = AggregateExpr.countIf(this)
 
-  fun ifThen(then: Expr) = ifThen(this, then)
+  fun cond(then: Expr, otherwise: Expr) = cond(this, then, otherwise)
 
-  fun ifThen(then: Any) = ifThen(this, then)
-
-  fun ifThenElse(then: Expr, `else`: Expr) = ifThenElse(this, then, `else`)
-
-  fun ifThenElse(then: Any, `else`: Any) = ifThenElse(this, then, `else`)
+  fun cond(then: Any, otherwise: Any) = cond(this, then, otherwise)
 }
 
 class Ordering private constructor(val expr: Expr, private val dir: Direction) {

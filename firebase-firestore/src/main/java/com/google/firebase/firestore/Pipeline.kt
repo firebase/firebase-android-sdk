@@ -165,10 +165,10 @@ internal constructor(
 
   fun union(other: Pipeline): Pipeline = append(UnionStage(other))
 
-  fun unnest(field: String, alias: String): Pipeline = unnest(Field.of(field).`as`(alias))
+  fun unnest(field: String, alias: String): Pipeline = unnest(Field.of(field).alias(alias))
 
   fun unnest(field: String, alias: String, options: UnnestOptions): Pipeline =
-    unnest(Field.of(field).`as`(alias), options)
+    unnest(Field.of(field).alias(alias), options)
 
   fun unnest(selectable: Selectable): Pipeline = append(UnnestStage(selectable))
 
@@ -206,10 +206,22 @@ internal constructor(
 }
 
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
-  fun collection(path: String): Pipeline {
-    // Validate path by converting to CollectionReference
-    return collection(firestore.collection(path))
+  fun createFrom(query: Query): Pipeline {
+    if (query.firestore.databaseId != firestore.databaseId) {
+      throw IllegalArgumentException("Provided query is from a different Firestore instance.")
+    }
+    return query.query.toPipeline(firestore, firestore.userDataReader)
   }
+
+  fun createFrom(query: AggregateQuery): Pipeline =
+    createFrom(query.query)
+      .aggregate(
+        *query.aggregateFields.map(AggregateField::toPipeline).toTypedArray<AggregateWithAlias>()
+      )
+
+  fun collection(path: String): Pipeline =
+    // Validate path by converting to CollectionReference
+    collection(firestore.collection(path))
 
   fun collection(ref: CollectionReference): Pipeline {
     if (ref.firestore.databaseId != firestore.databaseId) {
@@ -230,10 +242,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
 
   fun database(): Pipeline = Pipeline(firestore, firestore.userDataReader, DatabaseSource())
 
-  fun documents(vararg documents: String): Pipeline {
+  fun documents(vararg documents: String): Pipeline =
     // Validate document path by converting to DocumentReference
-    return documents(*documents.map(firestore::document).toTypedArray())
-  }
+    documents(*documents.map(firestore::document).toTypedArray())
 
   fun documents(vararg documents: DocumentReference): Pipeline {
     val databaseId = firestore.databaseId
