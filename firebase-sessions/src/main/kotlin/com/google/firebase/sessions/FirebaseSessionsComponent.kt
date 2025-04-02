@@ -18,8 +18,11 @@ package com.google.firebase.sessions
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.MultiProcessDataStoreFactory
+import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
 import com.google.android.datatransport.TransportFactory
@@ -43,6 +46,7 @@ import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
 import dagger.Provides
+import java.io.File
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
@@ -137,7 +141,7 @@ internal interface FirebaseSessionsComponent {
         appContext: Context,
         @Blocking blockingDispatcher: CoroutineContext,
       ): DataStore<SessionConfigs> =
-        MultiProcessDataStoreFactory.create(
+        createDataStore(
           serializer = SessionConfigsSerializer,
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
@@ -154,7 +158,7 @@ internal interface FirebaseSessionsComponent {
         appContext: Context,
         @Blocking blockingDispatcher: CoroutineContext,
       ): DataStore<SessionData> =
-        MultiProcessDataStoreFactory.create(
+        createDataStore(
           serializer = SessionDataSerializer,
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
@@ -164,6 +168,37 @@ internal interface FirebaseSessionsComponent {
           scope = CoroutineScope(blockingDispatcher),
           produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data") },
         )
+
+      private fun <T> createDataStore(
+        serializer: Serializer<T>,
+        corruptionHandler: ReplaceFileCorruptionHandler<T>,
+        migrations: List<DataMigration<T>> = listOf(),
+        scope: CoroutineScope,
+        produceFile: () -> File,
+      ): DataStore<T> =
+        if (loadDataStoreSharedCounter()) {
+          MultiProcessDataStoreFactory.create(
+            serializer,
+            corruptionHandler,
+            migrations,
+            scope,
+            produceFile,
+          )
+        } else {
+          DataStoreFactory.create(serializer, corruptionHandler, migrations, scope, produceFile)
+        }
+
+      /** This native library in unavailable in some conditions, for example, Robolectric tests */
+      // TODO(mrober): Remove this when b/392626815 is resolved
+      private fun loadDataStoreSharedCounter(): Boolean =
+        try {
+          System.loadLibrary("datastore_shared_counter")
+          true
+        } catch (_: UnsatisfiedLinkError) {
+          false
+        } catch (_: SecurityException) {
+          false
+        }
     }
   }
 }
