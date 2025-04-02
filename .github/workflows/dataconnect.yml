@@ -27,8 +27,6 @@ env:
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
-  FDC_GRADLE_CACHE_KEY: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
-  FDC_AVD_CACHE_KEY: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -81,7 +79,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ env.FDC_GRADLE_CACHE_KEY }}
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
           restore-keys: |
             gradle-cache-jqnvfzw6w7-
 
@@ -124,7 +122,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ env.FDC_GRADLE_CACHE_KEY }}
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
 
       - name: Enable KVM group permissions for Android Emulator
         run: |
@@ -140,7 +138,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: ${{ env.FDC_AVD_CACHE_KEY }}
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
           restore-keys: |
             avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
@@ -161,7 +159,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: ${{ env.FDC_AVD_CACHE_KEY }}
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
       - name: Data Connect Emulator
         run: |
