@@ -75,6 +75,7 @@ jobs:
       - name: Restore Gradle cache
         id: restore-gradle-cache
         uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name != 'schedule'
         with:
           path: |
             ~/.gradle/caches
@@ -118,6 +119,7 @@ jobs:
 
       - name: Save Gradle cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name == 'schedule'
         with:
           path: |
             ~/.gradle/caches
@@ -133,6 +135,7 @@ jobs:
 
       - name: Restore AVD cache
         uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name != 'schedule'
         id: restore-avd-cache
         with:
           path: |
@@ -143,7 +146,7 @@ jobs:
             avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
 
       - name: Create AVD
-        if: steps.restore-avd-cache.outputs.cache-hit != 'true'
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
@@ -155,6 +158,7 @@ jobs:
 
       - name: Save AVD cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name == 'schedule'
         with:
           path: |
             ~/.android/avd/*
