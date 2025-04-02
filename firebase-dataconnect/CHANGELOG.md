@@ -1,4 +1,10 @@
 # Unreleased
+
+
+# 16.0.0
+* [changed] Removed the "beta" suffix from the version of the Firebase Data
+  Connect Android SDK, thus graduating it from "beta" to "generally available".
+  ([#6792](https://github.com/firebase/firebase-android-sdk/pull/6792))
 * [changed] DataConnectOperationException added, enabling support for partial
   errors; that is, any data that was received and/or was able to be decoded is
   now available via the "response" property of the exception thrown when a
@@ -77,3 +83,4 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 * [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+
