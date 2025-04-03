@@ -19,6 +19,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -29,13 +30,10 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
-public class SessionManager {
+public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
@@ -45,7 +43,6 @@ public class SessionManager {
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
-  private Future syncInitFuture;
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
@@ -189,10 +186,5 @@ public class SessionManager {
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
     this.perfSession = perfSession;
-  }
-
-  @VisibleForTesting
-  public Future getSyncInitFuture() {
-    return this.syncInitFuture;
   }
 }

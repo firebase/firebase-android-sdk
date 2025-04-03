@@ -25,7 +25,6 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
 import com.google.firebase.sessions.api.SessionSubscriber;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
