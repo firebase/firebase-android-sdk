@@ -21,10 +21,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 
 public class FirebaseGenAI {
-  public fun vertexAI(app: FirebaseApp, location: String): FirebaseVertexAI =
+  public fun vertexAI(app: FirebaseApp = Firebase.app, location: String = "us-central1"): FirebaseVertexAI =
     FirebaseVertexAI.getInstance(app, location)
 
-  public fun googleAI(app: FirebaseApp): FirebaseGoogleAI = FirebaseGoogleAI.getInstance(app)
+  public fun googleAI(app: FirebaseApp = Firebase.app): FirebaseGoogleAI = FirebaseGoogleAI.getInstance(app)
 }
 
 /** Returns the [FirebaseGenAI] instance. */

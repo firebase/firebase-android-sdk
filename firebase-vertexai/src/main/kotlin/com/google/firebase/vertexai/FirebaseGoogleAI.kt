@@ -93,7 +93,7 @@ public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVe
     @JvmStatic
     public fun getInstance(app: FirebaseApp = Firebase.app): FirebaseGoogleAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return FirebaseGoogleAI(multiResourceComponent.get(GenerativeBackend.GOOGLE_AI, ""))
+      return FirebaseGoogleAI(multiResourceComponent.get(GenerativeBackend.GOOGLE_AI, "UNUSED"))
     }
   }
 }
