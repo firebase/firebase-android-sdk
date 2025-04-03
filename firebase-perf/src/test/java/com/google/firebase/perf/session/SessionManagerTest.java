@@ -66,7 +66,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   public void testInstanceCreation() {
     assertThat(SessionManager.getInstance()).isNotNull();
     assertThat(SessionManager.getInstance()).isEqualTo(SessionManager.getInstance());
-    assertThat(SessionManager.getInstance().perfSession().sessionId()).isNotNull();
   }
 
   @Test
@@ -113,7 +112,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     Timer mockTimer = mock(Timer.class);
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock);
+    PerfSession session = new PerfSession("sessionId", mockClock, true);
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
@@ -132,10 +131,10 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     when(mockClock.getTime()).thenReturn(mockTimer);
     when(mockAppStateMonitor.getAppState()).thenReturn(ApplicationProcessState.FOREGROUND);
 
-    PerfSession previousSession = new PerfSession("previousSession", mockClock);
+    PerfSession previousSession = new PerfSession("previousSession", mockClock, true);
     previousSession.setGaugeAndEventCollectionEnabled(false);
 
-    PerfSession newSession = new PerfSession("newSession", mockClock);
+    PerfSession newSession = new PerfSession("newSession", mockClock, true);
     newSession.setGaugeAndEventCollectionEnabled(true);
 
     SessionManager testSessionManager =
