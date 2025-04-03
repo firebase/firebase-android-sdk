@@ -19,6 +19,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -28,7 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
+import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
@@ -42,6 +43,7 @@ public class SessionManager {
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
+  private Future syncInitFuture;
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
@@ -55,10 +57,7 @@ public class SessionManager {
 
   private SessionManager() {
     // Generate a new sessionID for every cold start.
-    this(
-        GaugeManager.getInstance(),
-        PerfSession.createWithId(UUID.randomUUID().toString()),
-        AppStateMonitor.getInstance());
+    this(GaugeManager.getInstance(), PerfSession.createNewSession(), AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting
@@ -74,7 +73,7 @@ public class SessionManager {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    gaugeManager.initializeGaugeMetadataManager(appContext);
+    gaugeManager.initializeGaugeMetadataManager(appContext, ApplicationProcessState.FOREGROUND);
   }
 
   /**
@@ -101,6 +100,8 @@ public class SessionManager {
     if (Objects.equals(perfSession.sessionId(), this.perfSession.sessionId())) {
       return;
     }
+
+    AndroidLogger.getInstance().debug("Perf Session Changed: " + perfSession);
 
     this.perfSession = perfSession;
 
@@ -166,5 +167,10 @@ public class SessionManager {
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
     this.perfSession = perfSession;
+  }
+
+  @VisibleForTesting
+  public Future getSyncInitFuture() {
+    return this.syncInitFuture;
   }
 }
