@@ -39,6 +39,8 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
         currentPerfSession.aqsSessionId(),
         ApplicationProcessState.FOREGROUND
       )
+      // Gauge collection is started in [FirebasePerfEarly] - but it's not scheduled to be
+      // uploaded. This starts uploading the gauges if it's verbose.
       gaugeManager.updateGaugeCollection(ApplicationProcessState.FOREGROUND)
       return
     }
