@@ -55,8 +55,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param functionCallHandler A callback function to map function calls from the server to their
    * response parts.
    */
-  public abstract fun startAudioConversation(
-  ): ListenableFuture<Unit>
+  public abstract fun startAudioConversation(): ListenableFuture<Unit>
 
   /**
    * Stops the audio conversation with the Gemini Server.
@@ -134,7 +133,8 @@ public abstract class LiveSessionFutures internal constructor() {
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
-    override fun startAudioConversation() = SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
+    override fun startAudioConversation() =
+      SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
