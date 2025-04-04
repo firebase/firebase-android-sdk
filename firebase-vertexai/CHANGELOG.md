@@ -1,5 +1,6 @@
 # Unreleased
-
+* [feature] Public Preview: Added support for streaming input and output (including audio) using the [Live API](/docs/vertex-ai/live-api?platform=android)
+**Note**: This feature is in Public Preview, which means that it is not subject to any SLA or deprecation policy and could change in backwards-incompatible ways.
 
 # 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
