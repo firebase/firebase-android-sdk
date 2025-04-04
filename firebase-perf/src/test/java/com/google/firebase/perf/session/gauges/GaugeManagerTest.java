@@ -451,7 +451,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
     assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
 
-
     fakeSession.setAQSId(new SessionSubscriber.SessionDetails("aqsSessionId"));
     testGaugeManager.updateGaugeCollection(ApplicationProcessState.FOREGROUND);
 
@@ -461,8 +460,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
   }
-
-
 
   @Test
   public void testLogGaugeMetadataSendDataToTransport() {

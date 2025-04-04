@@ -256,8 +256,7 @@ public class GaugeManager {
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
     if (sessionId.equals(Constants.UNDEFINED_AQS_ID)) {
       // TODO(b/394127311): Use DebugEnforcementCheck.
-      // This will currently log those sessions to Constants.UNDEFINED_AQS_ID)
-      logger.debug("Flushing app start gauge metrics to an undefined session ID.");
+      logger.debug("Flushing gauge metrics to an undefined session ID.");
     }
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
 
