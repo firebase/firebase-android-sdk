@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
 internal sealed class DataConnectCredentialsTokenManager<T : Any>(
@@ -86,49 +85,39 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     }
   }
 
-  private interface ProviderProvider<T> {
-    val provider: T?
-  }
-
   private sealed interface State<out T> {
 
     /** State indicating that [close] has been invoked. */
     object Closed : State<Nothing>
 
-    /** State indicating that there is no outstanding "get token" request. */
-    class Idle<T>(
-
-      /**
-       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider]; may be null if the deferred
-       * has not yet given us a provider.
-       */
-      override val provider: T?,
-
+    sealed interface StateWithForceTokenRefresh<out T> : State<T> {
       /** The value to specify for `forceRefresh` on the next invocation of [getToken]. */
       val forceTokenRefresh: Boolean
-    ) : State<T>, ProviderProvider<T>
+    }
+
+    /** State indicating that the token provider is not (yet?) available. */
+    data class New(override val forceTokenRefresh: Boolean) : StateWithForceTokenRefresh<Nothing>
+
+    sealed interface StateWithProvider<out T> : State<T> {
+      /** The token provider, [InternalAuthProvider] or [InteropAppCheckTokenProvider] */
+      val provider: T
+    }
+
+    /** State indicating that there is no outstanding "get token" request. */
+    data class Idle<T>(override val provider: T, override val forceTokenRefresh: Boolean) :
+      StateWithProvider<T>, StateWithForceTokenRefresh<T>
 
     /** State indicating that there _is_ an outstanding "get token" request. */
-    class Active<T>(
-
-      /**
-       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider] that is performing the "get
-       * token" request.
-       */
+    data class Active<out T>(
       override val provider: T,
 
       /** The job that is performing the "get token" request. */
       val job: Deferred<SequencedReference<Result<GetTokenResult>>>
-    ) : State<T>, ProviderProvider<T>
+    ) : StateWithProvider<T>
   }
 
-  /**
-   * The current state of this object. The value should only be changed in a compare-and-swap loop
-   * in order to be thread-safe. Such a loop should call `yield()` on each iteration to allow other
-   * coroutines to run on the thread.
-   */
-  private val state =
-    MutableStateFlow<State<T>>(State.Idle(provider = null, forceTokenRefresh = false))
+  /** The current state of this object. */
+  private val state = MutableStateFlow<State<T>>(State.New(forceTokenRefresh = false))
 
   /**
    * Adds the token listener to the given provider.
@@ -171,15 +160,16 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   private fun setClosedState() {
     while (true) {
       val oldState = state.value
-      val providerProvider: ProviderProvider<T> =
+      val provider: T? =
         when (oldState) {
           is State.Closed -> return
-          is State.Idle -> oldState
-          is State.Active -> oldState
+          is State.New -> null
+          is State.Idle -> oldState.provider
+          is State.Active -> oldState.provider
         }
 
       if (state.compareAndSet(oldState, State.Closed)) {
-        providerProvider.provider?.let { removeTokenListener(it) }
+        provider?.let { removeTokenListener(it) }
         break
       }
     }
@@ -190,27 +180,28 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    *
    * If [close] has been called, this method does nothing.
    */
-  suspend fun forceRefresh() {
+  fun forceRefresh() {
     logger.debug { "forceRefresh()" }
     while (true) {
       val oldState = state.value
-      val oldStateProviderProvider =
+      val newState: State.StateWithForceTokenRefresh<T> =
         when (oldState) {
           is State.Closed -> return
-          is State.Idle -> oldState
+          is State.New -> oldState.copy(forceTokenRefresh = true)
+          is State.Idle -> oldState.copy(forceTokenRefresh = true)
           is State.Active -> {
             val message = "needs token refresh (wgrwbrvjxt)"
             oldState.job.cancel(message, ForceRefresh(message))
-            oldState
+            State.Idle(oldState.provider, forceTokenRefresh = true)
           }
         }
 
-      val newState = State.Idle(oldStateProviderProvider.provider, forceTokenRefresh = true)
+      check(newState.forceTokenRefresh) {
+        "newState.forceTokenRefresh should be true (error code gnvr2wx7nz)"
+      }
       if (state.compareAndSet(oldState, newState)) {
         break
       }
-
-      yield()
     }
   }
 
@@ -256,13 +247,13 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
             }
             throw CredentialsTokenManagerClosedException(this)
           }
-          is State.Idle -> {
-            if (oldState.provider === null) {
-              logger.debug {
-                "$invocationId getToken() returns null (token provider is not (yet?) available)"
-              }
-              return null
+          is State.New -> {
+            logger.debug {
+              "$invocationId getToken() returns null (token provider is not (yet?) available)"
             }
+            return null
+          }
+          is State.Idle -> {
             newActiveState(invocationId, oldState.provider, oldState.forceTokenRefresh)
           }
           is State.Active -> {
@@ -352,6 +343,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
             removeTokenListener(newProvider)
             break
           }
+          is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
           is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
           is State.Active -> {
             val newProviderClassName = newProvider::class.qualifiedName
