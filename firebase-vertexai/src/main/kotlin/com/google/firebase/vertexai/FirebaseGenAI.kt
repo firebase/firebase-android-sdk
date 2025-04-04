@@ -21,10 +21,25 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 
 public class FirebaseGenAI {
-  public fun vertexAI(app: FirebaseApp = Firebase.app, location: String = "us-central1"): FirebaseVertexAI =
-    FirebaseVertexAI.getInstance(app, location)
+  @JvmOverloads
+  public fun vertexAI(
+    app: FirebaseApp = Firebase.app,
+    location: String = "us-central1",
+  ): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)
 
-  public fun googleAI(app: FirebaseApp = Firebase.app): FirebaseGoogleAI = FirebaseGoogleAI.getInstance(app)
+  @JvmOverloads
+  public fun googleAI(app: FirebaseApp = Firebase.app): FirebaseGoogleAI =
+    FirebaseGoogleAI.getInstance(app)
+
+  public val googleAI: FirebaseGoogleAI
+    get() = FirebaseGoogleAI.instance
+
+  public val vertexAI: FirebaseVertexAI
+    get() = FirebaseVertexAI.instance
+
+  internal companion object {
+    internal val INSTANCE = FirebaseGenAI()
+  }
 }
 
 /** Returns the [FirebaseGenAI] instance. */
@@ -32,4 +47,4 @@ public val Firebase.genAI: FirebaseGenAI
   get() = FirebaseGenAI()
 
 /** Returns the [FirebaseGenAI] instance. */
-public fun Firebase.genAI(): FirebaseGenAI = FirebaseGenAI()
+public fun Firebase.genAI(): FirebaseGenAI = FirebaseGenAI.INSTANCE
