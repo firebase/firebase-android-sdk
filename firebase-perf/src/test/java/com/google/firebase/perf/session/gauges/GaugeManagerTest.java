@@ -145,6 +145,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     PerfSession fakeSession = createTestPerfSession();
     testGaugeManager.startCollectingGaugeMetrics(fakeSession);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+    assertThatNothingWasLoggedToTransport();
   }
 
   @Test
@@ -380,7 +381,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    assertThatNothingWasLoggedToTransport(ApplicationProcessState.FOREGROUND);
+    assertThatNothingWasLoggedToTransport();
   }
 
   @Test
@@ -581,12 +582,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   /**
    * Asserts that no metric was logged to transport.
-   *
-   * @param applicationProcessState The {@link ApplicationProcessState} that it was collected for.
    */
-  private void assertThatNothingWasLoggedToTransport(
-      ApplicationProcessState applicationProcessState) {
-    verify(mockTransportManager, never()).log((GaugeMetric) any(), eq(applicationProcessState));
+  private void assertThatNothingWasLoggedToTransport() {
+    verify(mockTransportManager, never())
+        .log((GaugeMetric) any(), any(ApplicationProcessState.class));
   }
 
   private void assertThatCpuGaugeMetricWasSentToTransport(
