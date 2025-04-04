@@ -6,7 +6,7 @@
   `GenerativeModel` or `ImagenModel`.
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
-* [feature] Public Preview: Added support for streaming input and output (including audio) using the [Live API](/docs/vertex-ai/live-api?platform=android)
+* [feature] **Public Preview:** Added support for streaming input and output (including audio) using the [Gemini Live API](/docs/vertex-ai/live-api?platform=android)
   **Note**: This feature is in Public Preview, which means that it is not subject to any SLA or deprecation policy and could change in backwards-incompatible ways.
 * [changed] **Breaking Change**: `ImagenInlineImage.data` now returns the raw
   image bytes (in JPEG or PNG format, as specified in
