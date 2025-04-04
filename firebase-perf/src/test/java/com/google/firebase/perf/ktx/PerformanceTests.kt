@@ -31,6 +31,7 @@ import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 import com.google.firebase.perf.metrics.getTraceCounter
 import com.google.firebase.perf.metrics.getTraceCounterCount
+import com.google.firebase.perf.performance
 import com.google.firebase.perf.transport.TransportManager
 import com.google.firebase.perf.util.Clock
 import com.google.firebase.perf.util.Timer

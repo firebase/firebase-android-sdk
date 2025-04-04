@@ -138,4 +138,5 @@ dependencies {
     testImplementation libs.mockito.core
     testImplementation libs.mockito.mockito.inline
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
+    testImplementation "androidx.arch.core:core-testing:2.1.0"
 }
