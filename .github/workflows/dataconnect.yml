@@ -230,7 +230,7 @@ jobs:
           loop_count=0
           while kill -0 ${{ steps.logcat-capture.outputs.LOGCAT_PID }} ; do
             loop_count=$((loop_count+1))
-            if [[ $loop_count == 60 ]] ; then
+            if [[ $loop_count -eq 60 ]] ; then
               echo "ERROR: timeout waiting for logcat process to terminate" >&2
               exit 1
             fi
@@ -249,7 +249,7 @@ jobs:
           loop_count=0
           while kill -0 ${{ steps.firebase-auth-emulator.outputs.FIREBASE_AUTH_EMULATOR_PID }} ; do
             loop_count=$((loop_count+1))
-            if [[ $loop_count == 60 ]] ; then
+            if [[ $loop_count -eq 60 ]] ; then
               echo "ERROR: timeout waiting for Firebase Auth Emulator process to terminate" >&2
               exit 1
             fi
@@ -268,7 +268,7 @@ jobs:
           loop_count=0
           while kill -0 ${{ steps.data-connect-emulator.outputs.FIREBASE_DATA_CONNECT_EMULATOR_PID }} ; do
             loop_count=$((loop_count+1))
-            if [[ $loop_count == 60 ]] ; then
+            if [[ $loop_count -eq 60 ]] ; then
               echo "ERROR: timeout waiting for Firebase Data Connect Emulator process to terminate" >&2
               exit 1
             fi
