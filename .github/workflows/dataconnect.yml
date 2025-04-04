@@ -64,15 +64,16 @@ jobs:
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
-      - name: install firebase-tools
+      - name: Install Firebase Tools ("firebase" command-line tool)
         run: |
+          set -euo pipefail
           set -v
           mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           echo '{}' > package.json
           npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
-      - name: Restore Gradle cache
+      - name: Restore Gradle Cache
         id: restore-gradle-cache
         uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name != 'schedule'
@@ -84,9 +85,11 @@ jobs:
           restore-keys: |
             gradle-cache-jqnvfzw6w7-
 
-      - name: tool versions
+      - name: Print Command-Line Tool Versions
         continue-on-error: true
         run: |
+          set -euo pipefail
+
           function run_cmd {
             echo "==============================================================================="
             echo "Running Command: $*"
@@ -105,6 +108,7 @@ jobs:
 
       - name: Gradle assembleDebugAndroidTest
         run: |
+          set -euo pipefail
           set -v
 
           # Speed up build times and also avoid configuring firebase-crashlytics-ndk
@@ -117,7 +121,7 @@ jobs:
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
-      - name: Save Gradle cache
+      - name: Save Gradle Cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name == 'schedule'
         with:
@@ -126,14 +130,15 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
 
-      - name: Enable KVM group permissions for Android Emulator
+      - name: Enable KVM Group Permissions for Android Emulator
         run: |
+          set -euo pipefail
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Restore AVD cache
+      - name: Restore AVD Cache
         uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name != 'schedule'
         id: restore-avd-cache
@@ -156,7 +161,7 @@ jobs:
           disable-animations: true
           script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
 
-      - name: Save AVD cache
+      - name: Save AVD Cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
         if: github.event_name == 'schedule'
         with:
@@ -165,8 +170,10 @@ jobs:
             ~/.android/adb*
           key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
-      - name: Data Connect Emulator
+      - name: Data Connect Emulator Start
+        id: data-connect-emulator
         run: |
+          set -euo pipefail
           set -x
 
           echo 'emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable' > firebase-dataconnect/dataconnect.local.properties
@@ -175,15 +182,27 @@ jobs:
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             >firebase.emulator.dataconnect.log 2>&1 &
+          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$!" >> "$GITHUB_OUTPUT"
 
-      - name: Firebase Auth Emulator
+      - name: Firebase Auth Emulator Start
+        id: firebase-auth-emulator
         run: |
+          set -euo pipefail
           set -x
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
+          echo "FIREBASE_AUTH_EMULATOR_PID=$!" >> "$GITHUB_OUTPUT"
 
-      - name: Capture Logcat Logs
-        run: adb logcat >logcat.log &
+      - name: Logcat Log Capture Start
+        id: logcat-capture
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          set -v
+
+          "$ANDROID_HOME/platform-tools/adb" logcat -c
+          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log &
+          echo "LOGCAT_PID=$!" >> "$GITHUB_OUTPUT"
 
       - name: Gradle connectedCheck
         id: connectedCheck
@@ -201,7 +220,64 @@ jobs:
           script: |
             set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
-      - name: Upload log file artifacts
+      - name: Logcat Log Capture Stop
+        if: steps.logcat-capture.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          set -v
+
+          kill -s SIGINT ${{ steps.logcat-capture.outputs.LOGCAT_PID }}
+          loop_count=0
+          while kill -0 ${{ steps.logcat-capture.outputs.LOGCAT_PID }} ; do
+            loop_count=$((loop_count+1))
+            if [[ $loop_count == 60 ]] ; then
+              echo "ERROR: timeout waiting for logcat process to terminate" >&2
+              exit 1
+            fi
+            echo "Waiting for logcat process to terminate"
+            sleep 1
+          done
+
+      - name: Firebase Auth Emulator Stop
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          set -v
+
+          kill -s SIGINT ${{ steps.firebase-auth-emulator.outputs.FIREBASE_AUTH_EMULATOR_PID }}
+
+          loop_count=0
+          while kill -0 ${{ steps.firebase-auth-emulator.outputs.FIREBASE_AUTH_EMULATOR_PID }} ; do
+            loop_count=$((loop_count+1))
+            if [[ $loop_count == 60 ]] ; then
+              echo "ERROR: timeout waiting for Firebase Auth Emulator process to terminate" >&2
+              exit 1
+            fi
+            echo "Waiting for Firebase Auth Emulator process to terminate"
+            sleep 1
+          done
+
+      - name: Data Connect Emulator Stop
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          set -v
+
+          kill -s SIGINT ${{ steps.data-connect-emulator.outputs.FIREBASE_DATA_CONNECT_EMULATOR_PID }}
+
+          loop_count=0
+          while kill -0 ${{ steps.data-connect-emulator.outputs.FIREBASE_DATA_CONNECT_EMULATOR_PID }} ; do
+            loop_count=$((loop_count+1))
+            if [[ $loop_count == 60 ]] ; then
+              echo "ERROR: timeout waiting for Firebase Data Connect Emulator process to terminate" >&2
+              exit 1
+            fi
+            echo "Waiting for Firebase Data Connect Emulator process to terminate"
+            sleep 1
+          done
+
+      - name: Upload Log Files
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: integration_test_logs
@@ -209,7 +285,7 @@ jobs:
           if-no-files-found: warn
           compression-level: 9
 
-      - name: Upload Gradle build report artifacts
+      - name: Upload Gradle Build Reports
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: integration_test_gradle_build_reports
@@ -217,9 +293,10 @@ jobs:
           if-no-files-found: warn
           compression-level: 9
 
-      - name: Verify "Gradle connectedCheck" step was successful
+      - name: Verify "Gradle connectedCheck" Step Was Successful
         if: steps.connectedCheck.outcome != 'success'
         run: |
+          set -euo pipefail
           echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
           exit 1
 
