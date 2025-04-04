@@ -63,8 +63,8 @@ public class GaugeManager {
   @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
   @Nullable private PerfSession session = null;
 
-  // The default value for application process state is Foreground. This will be updated based on
-  // app state changes.
+  // The default value for application process state is Foreground. This is used to start collecting
+  // gauge metrics by default.
   private ApplicationProcessState applicationProcessState = ApplicationProcessState.FOREGROUND;
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
