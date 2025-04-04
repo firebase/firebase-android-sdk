@@ -54,6 +54,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -407,34 +408,37 @@ internal class FirebaseDataConnectImpl(
     dataConnectAppCheck.close()
 
     // Start the job to asynchronously close the gRPC client.
-    while (true) {
-      val oldCloseJob = closeJob.value
-
-      oldCloseJob.ref?.let {
-        if (!it.isCancelled) {
-          return it
-        }
-      }
-
-      @OptIn(DelicateCoroutinesApi::class)
-      val newCloseJob =
-        GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcRPCs.initializedValueOrNull?.close()
+    val newCloseJobRef =
+      closeJob.updateAndGet { oldCloseJob ->
+        oldCloseJob.ref?.let {
+          if (!it.isCancelled) {
+            return it
+          }
         }
 
-      newCloseJob.invokeOnCompletion { exception ->
-        if (exception === null) {
-          logger.debug { "close() completed successfully" }
-        } else {
-          logger.warn(exception) { "close() failed" }
+        @OptIn(DelicateCoroutinesApi::class)
+        val newCloseJob =
+          GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
+            lazyGrpcRPCs.initializedValueOrNull?.close()
+          }
+
+        newCloseJob.invokeOnCompletion { exception ->
+          if (exception === null) {
+            logger.debug { "close() completed successfully" }
+          } else {
+            logger.warn(exception) { "close() failed" }
+          }
         }
+
+        NullableReference(newCloseJob)
       }
 
-      if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
-        newCloseJob.start()
-        return newCloseJob
+    val newCloseJob =
+      checkNotNull(newCloseJobRef.ref) {
+        "newCloseJobRef.ref should not be null (error code j3gbhd6e4j)"
       }
-    }
+    newCloseJob.start()
+    return newCloseJob
   }
 
   // The generated SDK relies on equals() and hashCode() using object identity.

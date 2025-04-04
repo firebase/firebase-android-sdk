@@ -47,6 +47,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -177,20 +180,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
 
   // This function must ONLY be called from close().
   private fun setClosedState() {
-    while (true) {
-      val oldState = state.value
-      val provider: T? =
-        when (oldState) {
-          is State.Closed -> return
-          is State.New -> null
-          is State.Idle -> oldState.provider
-          is State.Active -> oldState.provider
-        }
-
-      if (state.compareAndSet(oldState, State.Closed)) {
-        provider?.let { removeTokenListener(it) }
-        break
-      }
+    val oldState = state.getAndUpdate { State.Closed }
+    if (oldState is State.StateWithProvider<T>) {
+      removeTokenListener(oldState.provider)
     }
   }
 
@@ -201,9 +193,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    */
   fun forceRefresh() {
     logger.debug { "forceRefresh()" }
-    while (true) {
-      val oldState = state.value
-      val newState: State.StateWithForceTokenRefresh<T> =
+    val newState =
+      state.updateAndGet { oldState ->
         when (oldState) {
           is State.Closed -> return
           is State.New -> oldState.copy(forceTokenRefresh = true)
@@ -214,13 +205,10 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
             State.Idle(oldState.provider, forceTokenRefresh = true)
           }
         }
+      }
 
-      check(newState.forceTokenRefresh) {
-        "newState.forceTokenRefresh should be true (error code gnvr2wx7nz)"
-      }
-      if (state.compareAndSet(oldState, newState)) {
-        break
-      }
+    check(newState is State.StateWithForceTokenRefresh<T> && newState.forceTokenRefresh) {
+      "newState.forceTokenRefresh should be true: $newState (error code gnvr2wx7nz)"
     }
   }
 
@@ -350,30 +338,24 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "onProviderAvailable(newProvider=$newProvider)" }
     addTokenListener(newProvider)
 
-    while (true) {
-      val oldState = state.value
-      val newState =
-        when (oldState) {
-          is State.Closed -> {
-            logger.debug {
-              "onProviderAvailable(newProvider=$newProvider)" +
-                " unregistering token listener that was just added"
-            }
-            removeTokenListener(newProvider)
-            break
+    state.update { oldState ->
+      when (oldState) {
+        is State.Closed -> {
+          logger.debug {
+            "onProviderAvailable(newProvider=$newProvider)" +
+              " unregistering token listener that was just added"
           }
-          is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
-          is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
-          is State.Active -> {
-            val newProviderClassName = newProvider::class.qualifiedName
-            val message = "a new provider $newProviderClassName is available (symhxtmazy)"
-            oldState.job.cancel(message, NewProvider(message))
-            State.Idle(newProvider, forceTokenRefresh = false)
-          }
+          removeTokenListener(newProvider)
+          oldState
         }
-
-      if (state.compareAndSet(oldState, newState)) {
-        break
+        is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
+        is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
+        is State.Active -> {
+          val newProviderClassName = newProvider::class.qualifiedName
+          val message = "a new provider $newProviderClassName is available (symhxtmazy)"
+          oldState.job.cancel(message, NewProvider(message))
+          State.Idle(newProvider, forceTokenRefresh = false)
+        }
       }
     }
   }
