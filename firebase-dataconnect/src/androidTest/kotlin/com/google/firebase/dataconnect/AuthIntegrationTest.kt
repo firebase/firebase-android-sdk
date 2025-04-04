@@ -127,6 +127,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef =
       dataConnect.query(operationName, Unit, serializer<TestData>(), serializer<Unit>())
@@ -155,6 +156,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<TestData>(), serializer<Unit>())
