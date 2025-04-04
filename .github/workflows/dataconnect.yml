@@ -200,7 +200,6 @@ jobs:
           set -euo pipefail
           set -v
 
-          "$ANDROID_HOME/platform-tools/adb" logcat -c
           "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log &
           echo "LOGCAT_PID=$!" >> "$GITHUB_OUTPUT"
 
