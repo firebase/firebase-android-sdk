@@ -45,8 +45,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -58,9 +58,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
 ) {
   val instanceId: String
     get() = logger.nameWithId
-
-  private val _providerAvailable = MutableStateFlow(false)
-  val providerAvailable: StateFlow<Boolean> = _providerAvailable.asStateFlow()
 
   @Suppress("LeakingThis") private val weakThis = WeakReference(this)
 
@@ -154,6 +151,28 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     weakThis.clear()
     coroutineScope.cancel()
     setClosedState()
+  }
+
+  /**
+   * Suspends until the token provider becomes available to this object.
+   *
+   * If [close] has been invoked, or is invoked _before_ a token provider becomes available, then
+   * this method returns normally, as if a token provider _had_ become available.
+   */
+  suspend fun awaitTokenProvider() {
+    logger.debug { "awaitTokenProvider() start" }
+    val currentState =
+      state
+        .filter {
+          when (it) {
+            State.Closed -> true
+            is State.New -> false
+            is State.Idle -> true
+            is State.Active -> true
+          }
+        }
+        .first()
+    logger.debug { "awaitTokenProvider() done: currentState=$currentState" }
   }
 
   // This function must ONLY be called from close().
@@ -357,8 +376,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
         break
       }
     }
-
-    _providerAvailable.value = true
   }
 
   /**
