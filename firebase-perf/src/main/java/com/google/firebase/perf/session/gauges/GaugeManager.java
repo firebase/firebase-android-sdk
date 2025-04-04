@@ -221,8 +221,6 @@ public class GaugeManager {
 
     // This is needed, otherwise the Runnable might use a stale value.
 
-    // AQS is guaranteed to be available when stopping gauge collection.
-    final String sessionIdForScheduledTask = session.aqsSessionId();
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     cpuGaugeCollector.get().stopCollecting();
@@ -230,6 +228,14 @@ public class GaugeManager {
 
     if (gaugeManagerDataCollectionJob != null) {
       gaugeManagerDataCollectionJob.cancel(false);
+    }
+
+
+    final String sessionIdForScheduledTask = session.aqsSessionId();
+    this.session = null;
+    if (sessionIdForScheduledTask.equals(Constants.UNDEFINED_AQS_ID)) {
+      // TODO(b/394127311): Use DebugEnforcementCheck.
+      return;
     }
 
     // Flush any data that was collected for this session one last time.
@@ -244,7 +250,6 @@ public class GaugeManager {
                 TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
                 TimeUnit.MILLISECONDS);
 
-    this.session = null;
   }
 
   /**
@@ -270,7 +275,6 @@ public class GaugeManager {
 
     // Adding Session ID info.
     gaugeMetricBuilder.setSessionId(sessionId);
-
     transportManager.log(gaugeMetricBuilder.build(), appState);
   }
 
