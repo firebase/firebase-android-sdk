@@ -230,13 +230,8 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-
     final String sessionIdForScheduledTask = session.aqsSessionId();
     this.session = null;
-    if (sessionIdForScheduledTask.equals(Constants.UNDEFINED_AQS_ID)) {
-      // TODO(b/394127311): Use DebugEnforcementCheck.
-      return;
-    }
 
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
@@ -249,7 +244,6 @@ public class GaugeManager {
                 },
                 TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
                 TimeUnit.MILLISECONDS);
-
   }
 
   /**
@@ -260,6 +254,11 @@ public class GaugeManager {
    * @param appState The app state for which these gauges are collected.
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
+    if (sessionId.equals(Constants.UNDEFINED_AQS_ID)) {
+      // TODO(b/394127311): Use DebugEnforcementCheck.
+      // This will currently log those sessions to Constants.UNDEFINED_AQS_ID)
+      logger.debug("Flushing app start gauge metrics to an undefined session ID.");
+    }
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
 
     // Adding CPU metric readings.
