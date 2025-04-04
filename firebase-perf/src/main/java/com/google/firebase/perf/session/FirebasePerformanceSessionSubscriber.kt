@@ -47,7 +47,7 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
     val updatedSession = PerfSession.createWithId(UUID.randomUUID().toString())
     updatedSession.setAQSId(sessionDetails)
-    sessionManager.updatePerfSession(updatedSession)
     gaugeManager.logGaugeMetadata(updatedSession.aqsSessionId(), ApplicationProcessState.FOREGROUND)
+    sessionManager.updatePerfSession(updatedSession)
   }
 }
