@@ -101,9 +101,13 @@ class LocalDateSerializerUnitTest {
   @Test
   fun `deserialize() should throw IllegalArgumentException when given unparseable strings`() =
     runTest {
-      checkAll(propTestConfig, Arb.unparseableDate()) { encodedDate ->
+      val seededPropTestConfig = propTestConfig.copy(seed=-7108070269336260794)
+      checkAll(seededPropTestConfig, Arb.unparseableDate()) { encodedDate ->
         val decoder: Decoder = mockk { every { decodeString() } returns encodedDate }
-        shouldThrow<IllegalArgumentException> { LocalDateSerializer.deserialize(decoder) }
+        shouldThrow<IllegalArgumentException> {
+          val deserializedDate = LocalDateSerializer.deserialize(decoder)
+          println("zzyzx deserializedDate=$deserializedDate")
+        }
       }
     }
 
@@ -205,7 +209,11 @@ class LocalDateSerializerUnitTest {
     }
 
     fun Arb.Companion.unparseableDash(): Arb<String> {
-      val invalidString = string(1..5, codepoints.filterNot { it.value == '-'.code })
+      val invalidString =
+        string(
+          1..5,
+          codepoints.filterNot { it.value == '-'.code || it.value in '0'.code..'9'.code }
+        )
       return arbitrary { rs ->
         val flags = Array(3) { rs.random.nextBoolean() }
         if (!flags[0]) {
@@ -225,7 +233,10 @@ class LocalDateSerializerUnitTest {
       val unparseableNumber = unparseableNumber()
       val unparseableDash = unparseableDash()
       val booleanArray = booleanArray(Arb.constant(5), Arb.boolean())
+      var count = 0
       return arbitrary(edgecases = listOf("", "-", "--", "---")) { rs ->
+        count++
+        println("count=$count")
         val invalidCharFlags = booleanArray.bind()
         if (invalidCharFlags.count { it } == 0) {
           invalidCharFlags[rs.random.nextInt(invalidCharFlags.indices)] = true
