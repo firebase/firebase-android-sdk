@@ -20,20 +20,32 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 
+/** Entry point for all Firebase Generative AI functionality. */
 public class FirebaseGenAI {
+
+  /**
+   * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
+   *
+   * @param location location identifier, defaults to `us-central1`; see available
+   * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+   * .
+   */
   @JvmOverloads
   public fun vertexAI(
     app: FirebaseApp = Firebase.app,
     location: String = "us-central1",
   ): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)
 
+  /** Returns the [FirebaseGoogleAI] instance for the provided [FirebaseApp]. */
   @JvmOverloads
   public fun googleAI(app: FirebaseApp = Firebase.app): FirebaseGoogleAI =
     FirebaseGoogleAI.getInstance(app)
 
+  /** Returns the [FirebaseGoogleAI] instance of the default [FirebaseApp]. */
   public val googleAI: FirebaseGoogleAI
     get() = FirebaseGoogleAI.instance
 
+  /** Returns the [FirebaseVertexAI] instance of the default [FirebaseApp]. */
   public val vertexAI: FirebaseVertexAI
     get() = FirebaseVertexAI.instance
 

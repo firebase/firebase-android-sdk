@@ -109,11 +109,18 @@ internal constructor(
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): ImagenModel {
+    val modelUri =
+      when (backend) {
+        GenerativeBackend.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
+        GenerativeBackend.GOOGLE_AI ->
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
+      }
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
     return ImagenModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
+      modelUri,
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
