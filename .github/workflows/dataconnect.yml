@@ -174,7 +174,7 @@ jobs:
         id: data-connect-emulator
         run: |
           set -euo pipefail
-          set -x
+          set -xv
 
           echo 'emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable' > firebase-dataconnect/dataconnect.local.properties
 
@@ -183,33 +183,29 @@ jobs:
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             >firebase.emulator.dataconnect.log 2>&1 &
 
-          readonly FIREBASE_DATA_CONNECT_EMULATOR_PID=$!
-          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$FIREBASE_DATA_CONNECT_EMULATOR_PID"
-          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$FIREBASE_DATA_CONNECT_EMULATOR_PID" >> "$GITHUB_ENV"
+          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$!" >> "$GITHUB_ENV"
 
       - name: Firebase Auth Emulator Start
         id: firebase-auth-emulator
         run: |
           set -euo pipefail
-          set -x
+          set -xv
+
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
 
-          readonly FIREBASE_AUTH_EMULATOR_PID=$!
-          echo "FIREBASE_AUTH_EMULATOR_PID=$FIREBASE_AUTH_EMULATOR_PID"
-          echo "FIREBASE_AUTH_EMULATOR_PID=$FIREBASE_AUTH_EMULATOR_PID" >> "$GITHUB_ENV"
+          echo "FIREBASE_AUTH_EMULATOR_PID=$!" >> "$GITHUB_ENV"
 
       - name: Logcat Log Capture Start
         id: logcat-capture
         continue-on-error: true
         run: |
           set -euo pipefail
-          set -v
+          set -xv
 
           "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
-          readonly LOGCAT_PID=$!
-          echo "LOGCAT_PID=$LOGCAT_PID"
-          echo "LOGCAT_PID=$LOGCAT_PID" >> "$GITHUB_ENV"
+
+          echo "LOGCAT_PID=$!" >> "$GITHUB_ENV"
 
       - name: Gradle connectedCheck
         id: connectedCheck
