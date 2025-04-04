@@ -162,7 +162,7 @@ public class GaugeManager {
    * @note: This method is NOT thread safe - {@link this.startCollectingGauges()} and {@link
    *     this.stopCollectingGauges()} should always be called from the same thread.
    */
-  public void startCollectingGauges(PerfSession session) {
+  public void startCollectingGaugeMetrics(PerfSession session) {
     if (this.session != null) {
       stopCollectingGauges();
     }

@@ -173,7 +173,7 @@ public class SessionManager extends AppStateUpdateHandler {
 
   private void startOrStopCollectingGauges() {
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.startCollectingGauges(perfSession);
+      gaugeManager.startCollectingGaugeMetrics(perfSession);
     } else {
       gaugeManager.stopCollectingGauges();
     }
