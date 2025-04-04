@@ -31,21 +31,39 @@ import com.google.firebase.vertexai.type.GenerativeBackend
 internal class FirebaseVertexAIMultiResourceComponent(
   private val app: FirebaseApp,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
-  private val internalAuthProvider: Provider<InternalAuthProvider>
+  private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
-  @GuardedBy("this") private val instances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  @GuardedBy("this")
+  private val vertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
-  fun get(generativeBackend: GenerativeBackend, location: String): FirebaseVertexAI =
+  @GuardedBy("this") private val googleInstance: MutableList<FirebaseGoogleAI> = mutableListOf()
+
+  fun getVertex(location: String): FirebaseVertexAI =
     synchronized(this) {
-      instances[location]
+      vertexInstances[location]
         ?: FirebaseVertexAI(
             app,
-            generativeBackend,
+            GenerativeBackend.VERTEX_AI,
             location,
             appCheckProvider,
-            internalAuthProvider
+            internalAuthProvider,
           )
-          .also { instances[location] = it }
+          .also { vertexInstances[location] = it }
+    }
+
+  fun getGoogle(): FirebaseGoogleAI =
+    synchronized(this) {
+      googleInstance.getOrNull(0)
+        ?: FirebaseGoogleAI(
+            FirebaseVertexAI(
+              app,
+              GenerativeBackend.GOOGLE_AI,
+              "UNUSED",
+              appCheckProvider,
+              internalAuthProvider,
+            )
+          )
+          .also { googleInstance.add(it) }
     }
 }

@@ -21,7 +21,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
-import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -94,7 +93,7 @@ public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVe
     @JvmStatic
     public fun getInstance(app: FirebaseApp = Firebase.app): FirebaseGoogleAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return FirebaseGoogleAI(multiResourceComponent.get(GenerativeBackend.GOOGLE_AI, "UNUSED"))
+      return multiResourceComponent.getGoogle()
     }
   }
 }

@@ -147,7 +147,7 @@ internal constructor(
     @JvmOverloads
     public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.get(GenerativeBackend.VERTEX_AI, location)
+      return multiResourceComponent.getVertex(location)
     }
   }
 }
