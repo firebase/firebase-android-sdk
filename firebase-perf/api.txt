@@ -3,7 +3,6 @@ package com.google.firebase.perf {
 
   @javax.inject.Singleton public class FirebasePerformance {
     method public static com.google.firebase.perf.FirebasePerformance getInstance();
-    method @VisibleForTesting protected com.google.firebase.sessions.api.SessionSubscriber getSessionSubscriber();
     method public boolean isPerformanceCollectionEnabled();
     method public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(String, @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
     method public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(java.net.URL, @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
