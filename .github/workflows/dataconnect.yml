@@ -182,7 +182,10 @@ jobs:
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             >firebase.emulator.dataconnect.log 2>&1 &
-          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$!" >> "$GITHUB_OUTPUT"
+
+          readonly FIREBASE_DATA_CONNECT_EMULATOR_PID=$!
+          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$FIREBASE_DATA_CONNECT_EMULATOR_PID"
+          echo "FIREBASE_DATA_CONNECT_EMULATOR_PID=$FIREBASE_DATA_CONNECT_EMULATOR_PID" >> "$GITHUB_ENV"
 
       - name: Firebase Auth Emulator Start
         id: firebase-auth-emulator
@@ -191,7 +194,10 @@ jobs:
           set -x
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth >firebase.emulator.auth.log 2>&1 &
-          echo "FIREBASE_AUTH_EMULATOR_PID=$!" >> "$GITHUB_OUTPUT"
+
+          readonly FIREBASE_AUTH_EMULATOR_PID=$!
+          echo "FIREBASE_AUTH_EMULATOR_PID=$FIREBASE_AUTH_EMULATOR_PID"
+          echo "FIREBASE_AUTH_EMULATOR_PID=$FIREBASE_AUTH_EMULATOR_PID" >> "$GITHUB_ENV"
 
       - name: Logcat Log Capture Start
         id: logcat-capture
@@ -200,8 +206,10 @@ jobs:
           set -euo pipefail
           set -v
 
-          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log &
-          echo "LOGCAT_PID=$!" >> "$GITHUB_OUTPUT"
+          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
+          readonly LOGCAT_PID=$!
+          echo "LOGCAT_PID=$LOGCAT_PID"
+          echo "LOGCAT_PID=$LOGCAT_PID" >> "$GITHUB_ENV"
 
       - name: Gradle connectedCheck
         id: connectedCheck
@@ -224,57 +232,67 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          set -v
 
-          kill -s SIGINT ${{ steps.logcat-capture.outputs.LOGCAT_PID }}
+          echo "Sending SIGINT to logcat process $LOGCAT_PID"
+          kill -s SIGINT "$LOGCAT_PID"
+
           loop_count=0
-          while kill -0 ${{ steps.logcat-capture.outputs.LOGCAT_PID }} ; do
+          while kill -0 "$LOGCAT_PID" ; do
             loop_count=$((loop_count+1))
             if [[ $loop_count -eq 60 ]] ; then
-              echo "ERROR: timeout waiting for logcat process to terminate" >&2
+              echo "ERROR: timeout waiting for logcat process $LOGCAT_PID to terminate" >&2
               exit 1
             fi
-            echo "Waiting for logcat process to terminate"
+
+            echo "Waiting for logcat process $LOGCAT_PID to terminate"
             sleep 1
           done
+
+          echo "logcat process $LOGCAT_PID has been successfully terminated"
 
       - name: Firebase Auth Emulator Stop
         continue-on-error: true
         run: |
           set -euo pipefail
-          set -v
 
-          kill -s SIGINT ${{ steps.firebase-auth-emulator.outputs.FIREBASE_AUTH_EMULATOR_PID }}
+          echo "Sending SIGINT to Firebase Auth Emulator process $FIREBASE_AUTH_EMULATOR_PID"
+          kill -s SIGINT "$FIREBASE_AUTH_EMULATOR_PID"
 
           loop_count=0
-          while kill -0 ${{ steps.firebase-auth-emulator.outputs.FIREBASE_AUTH_EMULATOR_PID }} ; do
+          while kill -0 "$FIREBASE_AUTH_EMULATOR_PID" ; do
             loop_count=$((loop_count+1))
             if [[ $loop_count -eq 60 ]] ; then
-              echo "ERROR: timeout waiting for Firebase Auth Emulator process to terminate" >&2
+              echo "ERROR: timeout waiting for Firebase Auth Emulator process $FIREBASE_AUTH_EMULATOR_PID to terminate" >&2
               exit 1
             fi
-            echo "Waiting for Firebase Auth Emulator process to terminate"
+
+            echo "Waiting for Firebase Auth Emulator process $FIREBASE_AUTH_EMULATOR_PID to terminate"
             sleep 1
           done
+
+          echo "Firebase Auth Emulator process $FIREBASE_AUTH_EMULATOR_PID has been successfully terminated"
 
       - name: Data Connect Emulator Stop
         continue-on-error: true
         run: |
           set -euo pipefail
-          set -v
 
-          kill -s SIGINT ${{ steps.data-connect-emulator.outputs.FIREBASE_DATA_CONNECT_EMULATOR_PID }}
+          echo "Sending SIGINT to Firebase Data Connect Emulator process $FIREBASE_DATA_CONNECT_EMULATOR_PID"
+          kill -s SIGINT "$FIREBASE_DATA_CONNECT_EMULATOR_PID"
 
           loop_count=0
-          while kill -0 ${{ steps.data-connect-emulator.outputs.FIREBASE_DATA_CONNECT_EMULATOR_PID }} ; do
+          while kill -0 "$FIREBASE_DATA_CONNECT_EMULATOR_PID" ; do
             loop_count=$((loop_count+1))
             if [[ $loop_count -eq 60 ]] ; then
-              echo "ERROR: timeout waiting for Firebase Data Connect Emulator process to terminate" >&2
+              echo "ERROR: timeout waiting for Firebase Data Connect Emulator process $FIREBASE_DATA_CONNECT_EMULATOR_PID to terminate" >&2
               exit 1
             fi
-            echo "Waiting for Firebase Data Connect Emulator process to terminate"
+
+            echo "Waiting for Firebase Data Connect Emulator process $FIREBASE_DATA_CONNECT_EMULATOR_PID to terminate"
             sleep 1
           done
+
+          echo "Firebase Data Connect Emulator process $FIREBASE_DATA_CONNECT_EMULATOR_PID has been successfully terminated"
 
       - name: Upload Log Files
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
