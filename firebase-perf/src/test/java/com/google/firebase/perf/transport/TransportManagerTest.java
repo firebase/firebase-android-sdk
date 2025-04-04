@@ -28,7 +28,6 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
@@ -91,8 +90,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   @Mock private FlgTransport mockFlgTransport;
   @Captor private ArgumentCaptor<PerfMetric> perfMetricArgumentCaptor;
 
-  @Rule
-  public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+  @Rule public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
   @Before
   public void setUp() {
