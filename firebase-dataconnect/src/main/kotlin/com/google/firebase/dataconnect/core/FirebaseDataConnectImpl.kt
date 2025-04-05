@@ -54,8 +54,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -120,9 +118,6 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
-  private val authProviderAvailable = MutableStateFlow(false)
-  private val appCheckProviderAvailable = MutableStateFlow(false)
-
   // Protects `closed`, `grpcClient`, `emulatorSettings`, and `queryManager`.
   private val mutex = Mutex()
 
@@ -141,17 +136,7 @@ internal class FirebaseDataConnectImpl(
     )
 
   override suspend fun awaitAuthReady() {
-    authProviderAvailable.first { it }
-  }
-
-  init {
-    val name = CoroutineName("DataConnectAuth isProviderAvailable pipe for $instanceId")
-    coroutineScope.launch(name) {
-      dataConnectAuth.providerAvailable.collect { isProviderAvailable ->
-        logger.debug { "authProviderAvailable=$isProviderAvailable" }
-        authProviderAvailable.value = isProviderAvailable
-      }
-    }
+    dataConnectAuth.awaitTokenProvider()
   }
 
   private val dataConnectAppCheck: DataConnectAppCheck =
@@ -163,17 +148,7 @@ internal class FirebaseDataConnectImpl(
     )
 
   override suspend fun awaitAppCheckReady() {
-    appCheckProviderAvailable.first { it }
-  }
-
-  init {
-    val name = CoroutineName("DataConnectAppCheck isProviderAvailable pipe for $instanceId")
-    coroutineScope.launch(name) {
-      dataConnectAppCheck.providerAvailable.collect { isProviderAvailable ->
-        logger.debug { "appCheckProviderAvailable=$isProviderAvailable" }
-        appCheckProviderAvailable.value = isProviderAvailable
-      }
-    }
+    dataConnectAppCheck.awaitTokenProvider()
   }
 
   private val lazyGrpcRPCs =
