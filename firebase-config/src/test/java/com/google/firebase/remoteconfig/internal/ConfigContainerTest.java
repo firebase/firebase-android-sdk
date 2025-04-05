@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
 import static com.google.firebase.remoteconfig.internal.Personalization.ARM_INDEX;
@@ -138,21 +139,100 @@ public class ConfigContainerTest {
   }
 
   @Test
-  public void getChangedParams_changedExperimentsMetadata_returnsNoParamKeys() throws Exception {
+  public void getChangedParams_sameExperimentsMetadata_returnsEmptySet() throws Exception {
+    JSONArray activeExperiments = generateAbtExperiments(1);
+    JSONArray fetchedExperiments = generateAbtExperiments(1);
+
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-            .withAbtExperiments(generateAbtExperiments(1))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(fetchedExperiments)
             .build();
 
     Set<String> changedParams = config.getChangedParams(other);
 
     assertThat(changedParams).isEmpty();
+  }
+
+  @Test
+  public void getChangedParams_changedExperimentsMetadata_returnsUpdatedKey() throws Exception {
+    JSONArray activeExperiments = generateAbtExperiments(1);
+    JSONArray fetchedExperiments = generateAbtExperiments(1);
+
+    activeExperiments.getJSONObject(0).put(VARIANT_ID, "32");
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(activeExperiments)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(fetchedExperiments)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("abt_test_key_1");
+  }
+
+  @Test
+  public void getChangedParams_deletedExperiment_returnsUpdatedKey() throws Exception {
+    JSONArray activeExperiments = generateAbtExperiments(1);
+    JSONArray fetchedExperiments = new JSONArray();
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(activeExperiments)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
+            .withAbtExperiments(fetchedExperiments)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("abt_test_key_1");
+  }
+
+  @Test
+  public void getChangedParams_changedExperimentsKeys_returnsUpdatedKey() throws Exception {
+    JSONArray activeExperiments = generateAbtExperiments(1);
+    JSONArray fetchedExperiments = generateAbtExperiments(1);
+
+    fetchedExperiments
+        .getJSONObject(0)
+        .getJSONArray(AFFECTED_PARAMETER_KEYS)
+        .put(0, "abt_test_key_2");
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(
+                ImmutableMap.of("abt_test_key_1", "value_1", "abt_test_key_2", "value_2"))
+            .withAbtExperiments(activeExperiments)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(
+                ImmutableMap.of("abt_test_key_1", "value_1", "abt_test_key_2", "value_2"))
+            .withAbtExperiments(fetchedExperiments)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("abt_test_key_1", "abt_test_key_2");
   }
 
   @Test
@@ -452,9 +532,14 @@ public class ConfigContainerTest {
 
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
     JSONArray experiments = new JSONArray();
+    JSONArray experimentKeys = new JSONArray();
+    experimentKeys.put("abt_test_key_1");
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
       experiments.put(
-          new JSONObject().put(EXPERIMENT_ID, "exp" + experimentNum).put(VARIANT_ID, "var1"));
+          new JSONObject()
+              .put(EXPERIMENT_ID, "exp_" + experimentNum)
+              .put(VARIANT_ID, "var1")
+              .put(AFFECTED_PARAMETER_KEYS, experimentKeys));
     }
     return experiments;
   }
