@@ -130,8 +130,8 @@ private constructor(
     public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
       this.frequencyPenalty = frequencyPenalty
     }
-    public fun setResponseModalities(responseModalities: ResponseModality?): Builder = apply {
-      this.responseModality = responseModalities
+    public fun setResponseModality(responseModality: ResponseModality?): Builder = apply {
+      this.responseModality = responseModality
     }
     public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
       this.speechConfig = speechConfig

@@ -37,11 +37,11 @@ public abstract class LiveModelFutures internal constructor() {
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
-  public abstract fun connect(): ListenableFuture<LiveSession>
+  public abstract fun connect(): ListenableFuture<LiveSessionFutures>
 
   private class FuturesImpl(private val model: LiveGenerativeModel) : LiveModelFutures() {
-    override fun connect(): ListenableFuture<LiveSession> {
-      return SuspendToFutureAdapter.launchFuture { model.connect() }
+    override fun connect(): ListenableFuture<LiveSessionFutures> {
+      return SuspendToFutureAdapter.launchFuture { LiveSessionFutures.from(model.connect()) }
     }
   }
 
