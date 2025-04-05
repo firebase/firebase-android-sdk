@@ -122,8 +122,10 @@ public class CompositeIndexTestHelper {
   // actual document IDs created by the test helper.
   @NonNull
   public void assertOnlineAndOfflineResultsMatch(
-      @NonNull Query query, @NonNull String... expectedDocs) {
-    checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
+      @NonNull CollectionReference collection,
+      @NonNull Query query,
+      @NonNull String... expectedDocs) {
+    checkOnlineAndOfflineResultsMatch(collection, query, toHashedIds(expectedDocs));
   }
 
   // Asserts that the IDs in the query snapshot matches the expected Ids. The expected document
