@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Added support for `HarmBlockThreshold.OFF`.
 
 # 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
