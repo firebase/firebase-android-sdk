@@ -13,6 +13,48 @@ package com.google.firebase.vertexai {
     property public final java.util.List<com.google.firebase.vertexai.type.Content> history;
   }
 
+  public final class FirebaseGenAI {
+    ctor public FirebaseGenAI();
+    method public com.google.firebase.vertexai.FirebaseGoogleAI getGoogleAI();
+    method public com.google.firebase.vertexai.FirebaseVertexAI getVertexAI();
+    method public com.google.firebase.vertexai.FirebaseGoogleAI googleAI();
+    method public com.google.firebase.vertexai.FirebaseGoogleAI googleAI(com.google.firebase.FirebaseApp app = Firebase.app);
+    method public com.google.firebase.vertexai.FirebaseVertexAI vertexAI();
+    method public com.google.firebase.vertexai.FirebaseVertexAI vertexAI(com.google.firebase.FirebaseApp app = Firebase.app);
+    method public com.google.firebase.vertexai.FirebaseVertexAI vertexAI(com.google.firebase.FirebaseApp app = Firebase.app, String location = "us-central1");
+    property public final com.google.firebase.vertexai.FirebaseGoogleAI googleAI;
+    property public final com.google.firebase.vertexai.FirebaseVertexAI vertexAI;
+  }
+
+  public final class FirebaseGenAIKt {
+    method public static com.google.firebase.vertexai.FirebaseGenAI genAI(com.google.firebase.Firebase);
+    method public static com.google.firebase.vertexai.FirebaseGenAI getGenAI(com.google.firebase.Firebase);
+  }
+
+  public final class FirebaseGoogleAI {
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
+    method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
+    method public static com.google.firebase.vertexai.FirebaseGoogleAI getInstance();
+    method public static com.google.firebase.vertexai.FirebaseGoogleAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null);
+    method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName, com.google.firebase.vertexai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.vertexai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
+    property public static final com.google.firebase.vertexai.FirebaseGoogleAI instance;
+    field public static final com.google.firebase.vertexai.FirebaseGoogleAI.Companion Companion;
+  }
+
+  public static final class FirebaseGoogleAI.Companion {
+    method public com.google.firebase.vertexai.FirebaseGoogleAI getInstance();
+    method public com.google.firebase.vertexai.FirebaseGoogleAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app);
+    property public final com.google.firebase.vertexai.FirebaseGoogleAI instance;
+  }
+
   public final class FirebaseVertexAI {
     method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName);
     method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null);
@@ -22,7 +64,6 @@ package com.google.firebase.vertexai {
     method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null);
     method public com.google.firebase.vertexai.GenerativeModel generativeModel(String modelName, com.google.firebase.vertexai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.vertexai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.vertexai.type.Tool>? tools = null, com.google.firebase.vertexai.type.ToolConfig? toolConfig = null, com.google.firebase.vertexai.type.Content? systemInstruction = null, com.google.firebase.vertexai.type.RequestOptions requestOptions = com.google.firebase.vertexai.type.RequestOptions());
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance();
-    method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app);
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, String location);
     method public static com.google.firebase.vertexai.FirebaseVertexAI getInstance(String location);
     method @com.google.firebase.vertexai.type.PublicPreviewAPI public com.google.firebase.vertexai.ImagenModel imagenModel(String modelName);
@@ -35,7 +76,6 @@ package com.google.firebase.vertexai {
 
   public static final class FirebaseVertexAI.Companion {
     method public com.google.firebase.vertexai.FirebaseVertexAI getInstance();
-    method public com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app);
     method public com.google.firebase.vertexai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, String location);
     method public com.google.firebase.vertexai.FirebaseVertexAI getInstance(String location);
     property public final com.google.firebase.vertexai.FirebaseVertexAI instance;
