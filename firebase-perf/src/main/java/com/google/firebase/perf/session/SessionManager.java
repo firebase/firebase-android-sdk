@@ -19,6 +19,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.logging.DebugEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -28,12 +29,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
 public class SessionManager {
-
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
 
@@ -50,15 +49,15 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
+    DebugEnforcementCheck.Companion.checkSession(
+        perfSession.isAqsReady, "Access perf session from manger without aqs ready");
+
     return perfSession;
   }
 
   private SessionManager() {
-    // Generate a new sessionID for every cold start.
-    this(
-        GaugeManager.getInstance(),
-        PerfSession.createWithId(UUID.randomUUID().toString()),
-        AppStateMonitor.getInstance());
+    // session should quickly updated by session subscriber.
+    this(GaugeManager.getInstance(), PerfSession.createWithId(null), AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting
@@ -83,6 +82,10 @@ public class SessionManager {
    * @see PerfSession#isSessionRunningTooLong()
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
+    DebugEnforcementCheck.Companion.checkSession(
+        perfSession.isAqsReady,
+        "Session is not ready while trying to stopGaugeCollectionIfSessionRunningTooLong");
+
     if (perfSession.isSessionRunningTooLong()) {
       gaugeManager.stopCollectingGauges();
     }
@@ -156,6 +159,9 @@ public class SessionManager {
   }
 
   private void startOrStopCollectingGauges(ApplicationProcessState appState) {
+    DebugEnforcementCheck.Companion.checkSession(
+        perfSession.isAqsReady, "Session is not ready while trying to startOrStopCollectingGauges");
+
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.startCollectingGauges(perfSession, appState);
     } else {
