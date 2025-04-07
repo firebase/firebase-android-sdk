@@ -13,27 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectError
-import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.DataConnectOperationException
+import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
+import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
+import com.google.firebase.dataconnect.testutil.shouldSatisfy
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.ListValue
+import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -43,50 +49,57 @@ import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.SourceLocation
 import io.grpc.Status
 import io.grpc.StatusException
-import io.kotest.assertions.asClue
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
-import io.kotest.property.arbs.firstName
-import io.kotest.property.arbs.travel.airline
+import io.kotest.property.assume
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.reflect.KClass
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 
+private val propTestConfig =
+  PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.25))
+
 class DataConnectGrpcClientUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
 
-  private val rs = RandomSource.default()
+  private val rs: RandomSource by randomSeedTestRule.rs
   private val projectId = Arb.dataConnect.projectId().next(rs)
   private val connectorConfig = Arb.dataConnect.connectorConfig().next(rs)
   private val requestId = Arb.dataConnect.requestId().next(rs)
@@ -192,7 +205,7 @@ class DataConnectGrpcClientUnitTest {
       dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
-      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
+      OperationResult(data = responseData, errors = responseErrors.map { it.errorInfo })
   }
 
   @Test
@@ -209,7 +222,7 @@ class DataConnectGrpcClientUnitTest {
       dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
-      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
+      OperationResult(data = responseData, errors = responseErrors.map { it.errorInfo })
   }
 
   @Test
@@ -492,7 +505,7 @@ class DataConnectGrpcClientUnitTest {
 
   private data class GraphqlErrorInfo(
     val graphqlError: GraphqlError,
-    val dataConnectError: DataConnectError,
+    val errorInfo: ErrorInfoImpl,
   ) {
     companion object {
       private val randomPathComponents =
@@ -510,28 +523,24 @@ class DataConnectGrpcClientUnitTest {
 
       fun random(rs: RandomSource): GraphqlErrorInfo {
 
-        val dataConnectErrorPath = mutableListOf<DataConnectError.PathSegment>()
+        val dataConnectErrorPath = mutableListOf<DataConnectPathSegment>()
         val graphqlErrorPath = ListValue.newBuilder()
         repeat(6) {
           if (rs.random.nextFloat() < 0.33f) {
             val pathComponent = randomInts.next(rs)
-            dataConnectErrorPath.add(DataConnectError.PathSegment.ListIndex(pathComponent))
+            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathComponent.toDouble()))
           } else {
             val pathComponent = randomPathComponents.next(rs)
-            dataConnectErrorPath.add(DataConnectError.PathSegment.Field(pathComponent))
+            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathComponent))
             graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathComponent))
           }
         }
 
-        val dataConnectErrorLocations = mutableListOf<DataConnectError.SourceLocation>()
         val graphqlErrorLocations = mutableListOf<SourceLocation>()
         repeat(3) {
           val line = randomInts.next(rs)
           val column = randomInts.next(rs)
-          dataConnectErrorLocations.add(
-            DataConnectError.SourceLocation(line = line, column = column)
-          )
           graphqlErrorLocations.add(
             SourceLocation.newBuilder().setLine(line).setColumn(column).build()
           )
@@ -547,14 +556,13 @@ class DataConnectGrpcClientUnitTest {
             }
             .build()
 
-        val dataConnectError =
-          DataConnectError(
+        val errorInfo =
+          ErrorInfoImpl(
             message = message,
             path = dataConnectErrorPath.toList(),
-            locations = dataConnectErrorLocations.toList()
           )
 
-        return GraphqlErrorInfo(graphqlError, dataConnectError)
+        return GraphqlErrorInfo(graphqlError, errorInfo)
       }
     }
   }
@@ -563,69 +571,147 @@ class DataConnectGrpcClientUnitTest {
 @Suppress("IMPLICIT_NOTHING_TYPE_ARGUMENT_AGAINST_NOT_NOTHING_EXPECTED_TYPE")
 class DataConnectGrpcClientOperationResultUnitTest {
 
-  private val rs = RandomSource.default()
-
   @Test
   fun `deserialize() should ignore the module given with DataConnectUntypedData`() {
-    val errors = listOf(Arb.dataConnect.dataConnectError().next())
-    val operationResult = OperationResult(buildStructProto { put("foo", 42.0) }, errors)
+    val data = buildStructProto { put("foo", 42.0) }
+    val errors = Arb.dataConnect.operationErrors().next()
+    val operationResult = OperationResult(data, errors)
     val result = operationResult.deserialize(DataConnectUntypedData, mockk<SerializersModule>())
-    result shouldBe DataConnectUntypedData(mapOf("foo" to 42.0), errors)
+    result.shouldHaveDataAndErrors(data, errors)
   }
 
   @Test
-  fun `deserialize() should treat DataConnectUntypedData specially`() = runTest {
-    checkAll(iterations = 20, Arb.dataConnect.operationResult()) { operationResult ->
+  fun `deserialize() with null data should treat DataConnectUntypedData specially`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.operationErrors()) { errors ->
+      val operationResult = OperationResult(null, errors)
       val result = operationResult.deserialize(DataConnectUntypedData, serializersModule = null)
+      result.shouldHaveDataAndErrors(null, errors)
+    }
+  }
 
-      result.asClue {
-        if (operationResult.data === null) {
-          it.data.shouldBeNull()
-        } else {
-          it.data shouldBe operationResult.data.toMap()
-        }
-        it.errors shouldContainExactly operationResult.errors
-      }
+  @Test
+  fun `deserialize() with non-null data should treat DataConnectUntypedData specially`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.dataConnect.operationErrors()) { data, errors
+      ->
+      val operationResult = OperationResult(data, errors)
+      val result = operationResult.deserialize(DataConnectUntypedData, serializersModule = null)
+      result.shouldHaveDataAndErrors(data, errors)
+    }
+  }
+
+  @Test
+  fun `deserialize() successfully deserializes`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { fooValue ->
+      val dataStruct = buildStructProto { put("foo", fooValue) }
+      val operationResult = OperationResult(dataStruct, emptyList())
+
+      val deserializedData = operationResult.deserialize(serializer<TestData>(), null)
+
+      deserializedData shouldBe TestData(fooValue)
     }
   }
 
   @Test
   fun `deserialize() should throw if one or more errors and data is null`() = runTest {
-    val arb =
-      Arb.dataConnect
-        .operationResult()
-        .filter { it.errors.isNotEmpty() }
-        .map { it.copy(data = null) }
-    checkAll(iterations = 5, arb) { operationResult ->
-      val exception =
-        shouldThrow<DataConnectException> {
+    checkAll(propTestConfig, Arb.dataConnect.operationErrors(range = 1..10)) { errors ->
+      val operationResult = OperationResult(null, errors)
+      val exception: DataConnectOperationException =
+        shouldThrow<DataConnectOperationException> {
           operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
         }
-      exception.message shouldContain "${operationResult.errors}"
+      exception.shouldSatisfy(
+        expectedMessageSubstringCaseInsensitive = "operation encountered errors",
+        expectedMessageSubstringCaseSensitive = errors.toString(),
+        expectedCause = null,
+        expectedRawData = null,
+        expectedData = null,
+        expectedErrors = errors,
+      )
     }
   }
 
   @Test
-  fun `deserialize() should throw if one or more errors and data is _not_ null`() = runTest {
-    val arb =
-      Arb.dataConnect.operationResult().filter { it.data !== null && it.errors.isNotEmpty() }
-    checkAll(iterations = 5, arb) { operationResult ->
-      val exception =
-        shouldThrow<DataConnectException> {
-          operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
-        }
-      exception.message shouldContain "${operationResult.errors}"
+  fun `deserialize() should throw if one or more errors, data is NOT null, and decoding fails`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.proto.struct(),
+        Arb.dataConnect.operationErrors(range = 1..10)
+      ) { dataStruct, errors ->
+        val operationResult = OperationResult(dataStruct, errors)
+        val exception: DataConnectOperationException =
+          shouldThrow<DataConnectOperationException> {
+            operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
+          }
+        exception.shouldSatisfy(
+          expectedMessageSubstringCaseInsensitive = "operation encountered errors",
+          expectedMessageSubstringCaseSensitive = errors.toString(),
+          expectedCause = null,
+          expectedRawData = dataStruct,
+          expectedData = null,
+          expectedErrors = errors,
+        )
+      }
     }
-  }
+
+  @Test
+  fun `deserialize() should throw if one or more errors, data is NOT null, and decoding succeeds`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.string(),
+        Arb.dataConnect.operationErrors(range = 1..10)
+      ) { fooValue, errors ->
+        val dataStruct = buildStructProto { put("foo", fooValue) }
+        val operationResult = OperationResult(dataStruct, errors)
+        val exception: DataConnectOperationException =
+          shouldThrow<DataConnectOperationException> {
+            operationResult.deserialize(serializer<TestData>(), serializersModule = null)
+          }
+        exception.shouldSatisfy(
+          expectedMessageSubstringCaseInsensitive = "operation encountered errors",
+          expectedMessageSubstringCaseSensitive = errors.toString(),
+          expectedCause = null,
+          expectedRawData = dataStruct,
+          expectedData = TestData(fooValue),
+          expectedErrors = errors,
+        )
+      }
+    }
 
   @Test
   fun `deserialize() should throw if data is null and errors is empty`() {
-    val operationResult = OperationResult(data = null, errors = emptyList())
-    val exception =
-      shouldThrow<DataConnectException> {
-        operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
+    val operationResult = OperationResult(null, emptyList())
+    val exception: DataConnectOperationException =
+      shouldThrow<DataConnectOperationException> {
+        operationResult.deserialize(serializer<TestData>(), serializersModule = null)
       }
-    exception.message shouldContain "no data"
+    exception.shouldSatisfy(
+      expectedMessageSubstringCaseInsensitive = "no data was included",
+      expectedCause = null,
+      expectedRawData = null,
+      expectedData = null,
+      expectedErrors = emptyList(),
+    )
+  }
+
+  @Test
+  fun `deserialize() should throw if decoding fails and error list is empty`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { dataStruct ->
+      assume(!dataStruct.containsFields("foo"))
+      val operationResult = OperationResult(dataStruct, emptyList())
+      val exception: DataConnectOperationException =
+        shouldThrow<DataConnectOperationException> {
+          operationResult.deserialize(serializer<TestData>(), serializersModule = null)
+        }
+      exception.shouldSatisfy(
+        expectedMessageSubstringCaseInsensitive = "decoding data from the server's response failed",
+        expectedCause = SerializationException::class,
+        expectedRawData = dataStruct,
+        expectedData = null,
+        expectedErrors = emptyList(),
+      )
+    }
   }
 
   @Test
@@ -642,51 +728,50 @@ class DataConnectGrpcClientOperationResultUnitTest {
     slot.captured.serializersModule shouldBeSameInstanceAs serializersModule
   }
 
-  @Test
-  fun `deserialize() successfully deserializes`() = runTest {
-    val testData = TestData(Arb.firstName().next().name)
-    val operationResult = OperationResult(encodeToStruct(testData), errors = emptyList())
-
-    val deserializedData = operationResult.deserialize(serializer<TestData>(), null)
-
-    deserializedData shouldBe testData
-  }
-
-  @Test
-  fun `deserialize() throws if decoding fails`() = runTest {
-    val data = Arb.proto.struct().next(rs)
-    val operationResult = OperationResult(data, errors = emptyList())
-    shouldThrow<DataConnectException> { operationResult.deserialize(serializer<TestData>(), null) }
-  }
-
-  @Test
-  fun `deserialize() re-throws DataConnectException`() = runTest {
-    val data = encodeToStruct(TestData("fe45zhyd3m"))
-    val operationResult = OperationResult(data = data, errors = emptyList())
-    val deserializer: DeserializationStrategy<TestData> = spyk(serializer())
-    val exception = DataConnectException(message = Arb.airline().next().name)
-    every { deserializer.deserialize(any()) } throws (exception)
-
-    val thrownException =
-      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer, null) }
-
-    thrownException shouldBeSameInstanceAs exception
-  }
-
-  @Test
-  fun `deserialize() wraps non-DataConnectException in DataConnectException`() = runTest {
-    val data = encodeToStruct(TestData("rbmkny6b4r"))
-    val operationResult = OperationResult(data = data, errors = emptyList())
-    val deserializer: DeserializationStrategy<TestData> = spyk(serializer())
-    class MyException : Exception("y3cx44q43q")
-    val exception = MyException()
-    every { deserializer.deserialize(any()) } throws (exception)
-
-    val thrownException =
-      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer, null) }
-
-    thrownException.cause shouldBeSameInstanceAs exception
-  }
-
   @Serializable data class TestData(val foo: String)
+
+  private companion object {
+
+    fun <T> DataConnectOperationException.shouldSatisfy(
+      expectedMessageSubstringCaseInsensitive: String,
+      expectedMessageSubstringCaseSensitive: String? = null,
+      expectedCause: KClass<*>?,
+      expectedRawData: Struct?,
+      expectedData: T?,
+      expectedErrors: List<ErrorInfo>,
+    ) =
+      shouldSatisfy(
+        expectedMessageSubstringCaseInsensitive = expectedMessageSubstringCaseInsensitive,
+        expectedMessageSubstringCaseSensitive = expectedMessageSubstringCaseSensitive,
+        expectedCause = expectedCause,
+        expectedRawData = expectedRawData?.toMap(),
+        expectedData = expectedData,
+        expectedErrors = expectedErrors,
+      )
+
+    fun DataConnectUntypedData.shouldHaveDataAndErrors(
+      expectedData: Map<String, Any?>,
+      expectedErrors: List<ErrorInfo>,
+    ) {
+      assertSoftly {
+        withClue("data") { data.shouldNotBeNull().shouldContainExactly(expectedData) }
+        withClue("errors") { errors shouldContainExactly expectedErrors }
+      }
+    }
+
+    fun DataConnectUntypedData.shouldHaveDataAndErrors(
+      expectedData: Struct,
+      expectedErrors: List<ErrorInfo>,
+    ) = shouldHaveDataAndErrors(expectedData.toMap(), expectedErrors)
+
+    fun DataConnectUntypedData.shouldHaveDataAndErrors(
+      @Suppress("UNUSED_PARAMETER") expectedData: Nothing?,
+      expectedErrors: List<ErrorInfo>,
+    ) {
+      assertSoftly {
+        withClue("data") { data.shouldBeNull() }
+        withClue("errors") { errors shouldContainExactly expectedErrors }
+      }
+    }
+  }
 }

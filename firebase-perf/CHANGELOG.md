@@ -1,7 +1,15 @@
 # Unreleased
+
+
+# 21.0.5
 * [changed] Updated `protolite-well-known-types` dependency to v18.0.1 [#6716]
 * [fixed] Fixed a bug that allowed invalid payload bytes value in network request metrics [#6721]
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.4
 * [fixed] Fixed a performance issue with shared preferences

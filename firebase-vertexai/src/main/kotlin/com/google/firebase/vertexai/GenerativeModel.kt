@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
+import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
@@ -61,6 +62,7 @@ internal constructor(
   internal constructor(
     modelName: String,
     apiKey: String,
+    firebaseApp: FirebaseApp,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
@@ -83,6 +85,7 @@ internal constructor(
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
+      firebaseApp,
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
   )

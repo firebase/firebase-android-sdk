@@ -18,10 +18,12 @@ package com.google.firebase.vertexai
 
 import androidx.annotation.GuardedBy
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.GenerativeBackend
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Multi-resource container for Firebase Vertex AI.
@@ -30,6 +32,7 @@ import com.google.firebase.vertexai.type.GenerativeBackend
  */
 internal class FirebaseVertexAIMultiResourceComponent(
   private val app: FirebaseApp,
+  @Background val backgroundDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
@@ -45,6 +48,7 @@ internal class FirebaseVertexAIMultiResourceComponent(
         ?: FirebaseVertexAI(
             app,
             GenerativeBackend.VERTEX_AI,
+            backgroundDispatcher,
             location,
             appCheckProvider,
             internalAuthProvider,
@@ -59,6 +63,7 @@ internal class FirebaseVertexAIMultiResourceComponent(
             FirebaseVertexAI(
               app,
               GenerativeBackend.GOOGLE_AI,
+              backgroundDispatcher,
               "UNUSED",
               appCheckProvider,
               internalAuthProvider,
