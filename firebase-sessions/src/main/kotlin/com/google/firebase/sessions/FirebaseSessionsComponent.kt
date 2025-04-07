@@ -19,24 +19,23 @@ package com.google.firebase.sessions
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.MultiProcessDataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import androidx.datastore.dataStoreFile
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.RemoteSettings
 import com.google.firebase.sessions.settings.RemoteSettingsFetcher
-import com.google.firebase.sessions.settings.SessionConfigs
-import com.google.firebase.sessions.settings.SessionConfigsSerializer
 import com.google.firebase.sessions.settings.SessionsSettings
-import com.google.firebase.sessions.settings.SettingsCache
-import com.google.firebase.sessions.settings.SettingsCacheImpl
 import com.google.firebase.sessions.settings.SettingsProvider
 import dagger.Binds
 import dagger.BindsInstance
@@ -46,7 +45,10 @@ import dagger.Provides
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineScope
+
+@Qualifier internal annotation class SessionConfigsDataStore
+
+@Qualifier internal annotation class SessionDetailsDataStore
 
 @Qualifier internal annotation class LocalOverrideSettingsProvider
 
@@ -117,8 +119,6 @@ internal interface FirebaseSessionsComponent {
     @RemoteSettingsProvider
     fun remoteSettings(impl: RemoteSettings): SettingsProvider
 
-    @Binds @Singleton fun settingsCache(impl: SettingsCacheImpl): SettingsCache
-
     companion object {
       private const val TAG = "FirebaseSessions"
 
@@ -133,37 +133,31 @@ internal interface FirebaseSessionsComponent {
 
       @Provides
       @Singleton
-      fun sessionConfigsDataStore(
-        appContext: Context,
-        @Blocking blockingDispatcher: CoroutineContext,
-      ): DataStore<SessionConfigs> =
-        MultiProcessDataStoreFactory.create(
-          serializer = SessionConfigsSerializer,
+      @SessionConfigsDataStore
+      fun sessionConfigsDataStore(appContext: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
-              Log.w(TAG, "CorruptionException in session configs DataStore", ex)
-              SessionConfigsSerializer.defaultValue
-            },
-          scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionConfigsDataStore.data") },
-        )
+              Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)
+              emptyPreferences()
+            }
+        ) {
+          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SETTINGS_CONFIG_NAME)
+        }
 
       @Provides
       @Singleton
-      fun sessionDataStore(
-        appContext: Context,
-        @Blocking blockingDispatcher: CoroutineContext,
-      ): DataStore<SessionData> =
-        MultiProcessDataStoreFactory.create(
-          serializer = SessionDataSerializer,
+      @SessionDetailsDataStore
+      fun sessionDetailsDataStore(appContext: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
-              Log.w(TAG, "CorruptionException in session data DataStore", ex)
-              SessionDataSerializer.defaultValue
-            },
-          scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data") },
-        )
+              Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
+              emptyPreferences()
+            }
+        ) {
+          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME)
+        }
     }
   }
 }

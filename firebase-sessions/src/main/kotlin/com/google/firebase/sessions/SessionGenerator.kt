@@ -60,7 +60,7 @@ constructor(private val timeProvider: TimeProvider, private val uuidGenerator: U
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
         sessionIndex,
-        sessionStartTimestampUs = timeProvider.currentTime().us,
+        sessionStartTimestampUs = timeProvider.currentTimeUs(),
       )
     return currentSession
   }
