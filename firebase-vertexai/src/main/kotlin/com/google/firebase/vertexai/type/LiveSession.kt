@@ -183,8 +183,13 @@ internal constructor(
   private fun playServerResponseAudio() {
     CoroutineScope(backgroundDispatcher).launch {
       while (isRecording) {
-        val x = playBackQueue.poll() ?: continue
-        audioHelper?.playAudio(x)
+        val data = playBackQueue.poll()
+        if (data == null) {
+          audioHelper?.start()
+          continue
+        }
+        audioHelper?.stopRecording()
+        audioHelper?.playAudio(data)
       }
     }
   }

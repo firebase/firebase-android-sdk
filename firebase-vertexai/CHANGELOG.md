@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
   `GenerativeModel` or `ImagenModel`.
 * [changed] Added new exception type for quota exceeded scenarios.
@@ -79,3 +82,4 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
+
