@@ -74,8 +74,8 @@ public class SessionManager extends AppStateUpdateHandler {
   public void onUpdateAppState(ApplicationProcessState newAppState) {
     super.onUpdateAppState(newAppState);
     if (appStateMonitor.isColdStart()) {
-      // We want the Session to remain unchanged if this is a cold start of the app since we already
-      // update the PerfSession in FirebasePerfProvider#onAttachInfo().
+      // Ignore the app state change if it's a cold start. [FirebasePerformanceSessionSubscriber]
+      // handles any change that's needed.
       return;
     }
 
