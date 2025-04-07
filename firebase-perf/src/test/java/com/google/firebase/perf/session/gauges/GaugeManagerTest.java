@@ -124,7 +124,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartCollectingGaugesStartsCollectingMetricsInBackgroundState() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
     verify(fakeCpuGaugeCollector)
         .startCollecting(
@@ -138,7 +138,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartCollectingGaugesStartsCollectingMetricsInForegroundState() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
     verify(fakeCpuGaugeCollector)
         .startCollecting(
@@ -153,7 +153,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void
       testStartCollectingGaugesDoesNotStartCollectingMetricsWithUnknownApplicationProcessState() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(
         fakeSession, ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     verify(fakeCpuGaugeCollector, never())
@@ -167,7 +167,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
       stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequencyInBackground() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyBackgroundMs();
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.BACKGROUND);
 
     // Verify that Cpu metric collection is not started
@@ -180,7 +180,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyBackgroundMs();
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.BACKGROUND);
 
     // Verify that Cpu metric collection is not started
@@ -197,7 +197,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
       startCollectingGaugesOnBackground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyBackgroundMs();
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.BACKGROUND);
 
     // Verify that Memory metric collection is not started
@@ -210,7 +210,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyBackgroundMs();
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.BACKGROUND);
 
     // Verify that Memory metric collection is not started
@@ -226,7 +226,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   public void stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequency() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.FOREGROUND);
 
     // Verify that Cpu metric collection is not started
@@ -239,7 +239,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);
 
     // Verify that Cpu metric collection is not started
@@ -256,7 +256,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
       startCollectingGaugesOnForeground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.FOREGROUND);
 
     // Verify that Memory metric collection is not started
@@ -269,7 +269,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);
 
     // Verify that Memory metric collection is not started
@@ -283,7 +283,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartCollectingGaugesDoesNotStartAJobToConsumeMetricsWithUnknownAppState() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(
         fakeSession, ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -294,14 +294,14 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
   }
@@ -311,14 +311,14 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
 
     // PASS 2: Test with -ve value
     doReturn(-25L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
   }
@@ -329,7 +329,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
@@ -337,7 +337,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     doReturn(-25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
     doReturn(-25L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
   }
@@ -347,7 +347,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     doReturn(25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
     doReturn(15L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
 
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
@@ -357,7 +357,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartCollectingGaugesStartsAJobToConsumeTheGeneratedMetrics() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
@@ -391,7 +391,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStopCollectingGaugesStopsCollectingAllGaugeMetrics() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
 
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
     verify(fakeCpuGaugeCollector)
@@ -405,7 +405,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStopCollectingGaugesCreatesOneLastJobToConsumeAnyPendingMetrics() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
 
@@ -433,7 +433,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testGaugeManagerClearsTheQueueEachRun() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
 
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
 
@@ -465,7 +465,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartingGaugeManagerWithNewSessionIdButSameAppState() {
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
 
     // Start collecting Gauges.
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.BACKGROUND);
@@ -490,7 +490,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345);
     fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
 
-    PerfSession fakeSession2 = new PerfSession("sessionId2", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId2", new Clock(), true);
 
     // Start collecting gauges for new session, but same app state.
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.BACKGROUND);
@@ -523,7 +523,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartGaugeManagerWithSameSessionIdButDifferentAppState() {
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock(), true);
 
     // Start collecting Gauges.
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
@@ -579,7 +579,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartGaugeManagerWithNewSessionIdAndNewAppState() {
-    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock());
+    PerfSession fakeSession1 = new PerfSession("sessionId", new Clock(), true);
 
     // Start collecting Gauges.
     testGaugeManager.startCollectingGauges(fakeSession1, ApplicationProcessState.BACKGROUND);
@@ -604,7 +604,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345);
     fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
 
-    PerfSession fakeSession2 = new PerfSession("sessionId2", new Clock());
+    PerfSession fakeSession2 = new PerfSession("sessionId2", new Clock(), true);
 
     // Start collecting gauges for new session and new app state
     testGaugeManager.startCollectingGauges(fakeSession2, ApplicationProcessState.FOREGROUND);

@@ -34,6 +34,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
+import com.google.firebase.perf.logging.DebugEnforcementCheck;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
@@ -43,6 +44,7 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.BuildConfig;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -169,6 +171,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
+    DebugEnforcementCheck.setEnforcement(BuildConfig.DEBUG);
 
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
