@@ -30,3 +30,8 @@ the [spotless plugin]([https://plugins.jetbrains.com/plugin/14912-ktfmt](https:/
 by running:
 
 `./gradlew firebase-vertexai:spotlessApply`
+
+## Proto definitions
+
+You can find the actual proto definitions that we translate to on the
+[googleapis repo](https://github.com/googleapis/googleapis/tree/master/google/ai/generativelanguage).
