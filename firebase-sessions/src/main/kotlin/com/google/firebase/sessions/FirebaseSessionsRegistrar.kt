@@ -19,7 +19,7 @@ package com.google.firebase.sessions
 import android.content.Context
 import android.util.Log
 import androidx.annotation.Keep
-import androidx.datastore.core.MultiProcessDataStoreFactory
+import androidx.datastore.preferences.preferencesDataStore
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
@@ -84,7 +84,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
 
     init {
       try {
-        MultiProcessDataStoreFactory.javaClass
+        ::preferencesDataStore.javaClass
       } catch (ex: NoClassDefFoundError) {
         Log.w(
           TAG,

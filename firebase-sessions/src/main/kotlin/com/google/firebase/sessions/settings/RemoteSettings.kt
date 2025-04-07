@@ -19,15 +19,18 @@ package com.google.firebase.sessions.settings
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.InstallationId
-import com.google.firebase.sessions.TimeProvider
+import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONException
@@ -37,12 +40,15 @@ import org.json.JSONObject
 internal class RemoteSettings
 @Inject
 constructor(
-  private val timeProvider: TimeProvider,
+  @Background private val backgroundDispatcher: CoroutineContext,
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher,
-  private val settingsCache: SettingsCache,
+  private val lazySettingsCache: Lazy<SettingsCache>,
 ) : SettingsProvider {
+  private val settingsCache: SettingsCache
+    get() = lazySettingsCache.get()
+
   private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?
@@ -84,9 +90,10 @@ constructor(
       val options =
         mapOf(
           "X-Crashlytics-Installation-ID" to installationId,
-          "X-Crashlytics-Device-Model" to sanitize("${Build.MANUFACTURER}${Build.MODEL}"),
-          "X-Crashlytics-OS-Build-Version" to sanitize(Build.VERSION.INCREMENTAL),
-          "X-Crashlytics-OS-Display-Version" to sanitize(Build.VERSION.RELEASE),
+          "X-Crashlytics-Device-Model" to
+            removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
+          "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
+          "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
           "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion,
         )
 
@@ -122,19 +129,22 @@ constructor(
             }
           }
 
-          settingsCache.updateConfigs(
-            SessionConfigs(
-              sessionsEnabled = sessionsEnabled,
-              sessionTimeoutSeconds = sessionTimeoutSeconds,
-              sessionSamplingRate = sessionSamplingRate,
-              cacheDurationSeconds = cacheDuration ?: defaultCacheDuration,
-              cacheUpdatedTimeSeconds = timeProvider.currentTime().seconds,
-            )
-          )
+          sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
+
+          sessionTimeoutSeconds?.let {
+            settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
+          }
+
+          sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
+
+          cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
+            ?: let { settingsCache.updateSessionCacheDuration(86400) }
+
+          settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
         },
         onFailure = { msg ->
           // Network request failed here.
-          Log.e(TAG, "Error failed to fetch the remote configs: $msg")
+          Log.e(TAG, "Error failing to fetch the remote configs: $msg")
         },
       )
     }
@@ -143,17 +153,18 @@ constructor(
   override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
 
   @VisibleForTesting
-  internal suspend fun clearCachedSettings() {
-    settingsCache.updateConfigs(SessionConfigsSerializer.defaultValue)
+  internal fun clearCachedSettings() {
+    val scope = CoroutineScope(backgroundDispatcher)
+    scope.launch { settingsCache.removeConfigs() }
   }
 
-  private fun sanitize(s: String) = s.replace(sanitizeRegex, "")
+  private fun removeForwardSlashesIn(s: String): String {
+    return s.replace(FORWARD_SLASH_STRING.toRegex(), "")
+  }
 
   private companion object {
     const val TAG = "SessionConfigFetcher"
 
-    val defaultCacheDuration = 24.hours.inWholeSeconds.toInt()
-
-    val sanitizeRegex = "/".toRegex()
+    const val FORWARD_SLASH_STRING: String = "/"
   }
 }

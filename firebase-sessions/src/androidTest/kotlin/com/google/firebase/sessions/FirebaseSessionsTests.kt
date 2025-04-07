@@ -20,10 +20,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.initialize
 import com.google.firebase.sessions.settings.SessionsSettings
-import org.junit.BeforeClass
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -34,6 +36,23 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class FirebaseSessionsTests {
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId(PROJECT_ID)
+        .build()
+    )
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
+
   @Test
   fun firebaseSessionsDoesInitialize() {
     assertThat(FirebaseSessions.instance).isNotNull()
@@ -50,18 +69,5 @@ class FirebaseSessionsTests {
     private const val APP_ID = "1:1:android:1a"
     private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"
     private const val PROJECT_ID = "PROJECT-ID"
-
-    @BeforeClass
-    @JvmStatic
-    fun setUp() {
-      Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
-        FirebaseOptions.Builder()
-          .setApplicationId(APP_ID)
-          .setApiKey(API_KEY)
-          .setProjectId(PROJECT_ID)
-          .build(),
-      )
-    }
   }
 }

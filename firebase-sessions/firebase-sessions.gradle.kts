@@ -21,7 +21,6 @@ plugins {
   id("firebase-vendor")
   id("kotlin-android")
   id("kotlin-kapt")
-  id("kotlinx-serialization")
 }
 
 firebaseLibrary {
@@ -77,8 +76,7 @@ dependencies {
   implementation("com.google.android.datatransport:transport-api:3.2.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
-  implementation(libs.androidx.datastore)
-  implementation(libs.kotlinx.serialization.json)
+  implementation(libs.androidx.datastore.preferences)
 
   vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
 

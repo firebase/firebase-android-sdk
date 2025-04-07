@@ -16,15 +16,12 @@
 
 package com.google.firebase.sessions
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeUuidGenerator
-import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class SessionGeneratorTest {
   private fun isValidSessionId(sessionId: String): Boolean {
     if (sessionId.length != 32) {
@@ -99,7 +96,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }
@@ -122,7 +119,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -138,7 +135,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_2,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 1,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -154,7 +151,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_3,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 2,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }

@@ -30,24 +30,23 @@ import com.google.firebase.sessions.ProcessDetails
 import com.google.firebase.sessions.SessionDetails
 import com.google.firebase.sessions.SessionEvent
 import com.google.firebase.sessions.SessionInfo
-import com.google.firebase.sessions.Time
 
 internal object TestSessionEventData {
-  val TEST_SESSION_TIMESTAMP: Time = Time(ms = 12340)
+  const val TEST_SESSION_TIMESTAMP_US: Long = 12340000
 
   val TEST_SESSION_DETAILS =
     SessionDetails(
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
       sessionIndex = 3,
-      sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
+      sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US
     )
 
   val TEST_DATA_COLLECTION_STATUS =
     DataCollectionStatus(
       performance = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
       crashlytics = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
-      sessionSamplingRate = 1.0,
+      sessionSamplingRate = 1.0
     )
 
   val TEST_SESSION_DATA =
@@ -55,14 +54,19 @@ internal object TestSessionEventData {
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
       sessionIndex = 3,
-      eventTimestampUs = TEST_SESSION_TIMESTAMP.us,
+      eventTimestampUs = TEST_SESSION_TIMESTAMP_US,
       dataCollectionStatus = TEST_DATA_COLLECTION_STATUS,
       firebaseInstallationId = "",
       firebaseAuthenticationToken = "",
     )
 
   val TEST_PROCESS_DETAILS =
-    ProcessDetails(processName = "com.google.firebase.sessions.test", 0, 100, false)
+    ProcessDetails(
+      processName = "com.google.firebase.sessions.test",
+      0,
+      100,
+      false,
+    )
 
   val TEST_APP_PROCESS_DETAILS = listOf(TEST_PROCESS_DETAILS)
 
