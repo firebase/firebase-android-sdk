@@ -1169,7 +1169,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     TraceMetric.Builder validTrace = createValidTraceMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
     perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
+        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
+            .build());
     validTrace.addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validTrace.build());
@@ -1187,7 +1188,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
     perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
+        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
+            .build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validNetworkRequest.build());
