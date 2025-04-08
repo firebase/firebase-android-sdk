@@ -115,6 +115,7 @@ public class ConfigRealtimeHttpClient {
   private final Random random;
   private final Clock clock;
   private final ConfigSharedPrefsClient sharedPrefsClient;
+  private final Object backgroundLock;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -149,6 +150,7 @@ public class ConfigRealtimeHttpClient {
     this.sharedPrefsClient = sharedPrefsClient;
     this.isRealtimeDisabled = false;
     this.isInBackground = false;
+    this.backgroundLock = new Object();
   }
 
   private static String extractProjectNumberFromAppId(String gmpAppId) {
@@ -395,22 +397,20 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  public void setRealtimeBackgroundState(boolean backgroundState) {
+  public void setIsInBackground(boolean isInBackground) {
     // Make changes in synchronized block so only one thread sets the background state and calls
     // disconnect.
-    synchronized (isInBackground) {
-      isInBackground = backgroundState;
+    synchronized (backgroundLock) {
+      this.isInBackground = isInBackground;
 
       // Propagate to ConfigAutoFetch as well.
       if (configAutoFetch != null) {
-        configAutoFetch.setBackgroundState(backgroundState);
+        configAutoFetch.setIsInBackground(isInBackground);
       }
-      // Close the connection if the app is in the background and their is an active
+      // Close the connection if the app is in the background and there is an active
       // HttpUrlConnection.
-      if (isInBackground) {
-        if (httpURLConnection != null) {
-          httpURLConnection.disconnect();
-        }
+      if (isInBackground && httpURLConnection != null) {
+        httpURLConnection.disconnect();
       }
     }
   }

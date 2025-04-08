@@ -352,7 +352,7 @@ public final class FirebaseRemoteConfigTest {
             listeners,
             mockRetryListener,
             scheduledExecutorService);
-    configAutoFetch.setBackgroundState(false);
+    configAutoFetch.setIsInBackground(false);
     realtimeSharedPrefsClient =
         new ConfigSharedPrefsClient(
             context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
@@ -1528,7 +1528,7 @@ public final class FirebaseRemoteConfigTest {
         .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    configRealtimeHttpClientSpy.setRealtimeBackgroundState(true);
+    configRealtimeHttpClientSpy.setIsInBackground(true);
     flushScheduledTasks();
 
     verify(mockHttpURLConnection, times(1)).disconnect();

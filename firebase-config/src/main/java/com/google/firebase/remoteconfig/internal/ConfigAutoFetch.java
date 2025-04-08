@@ -89,8 +89,8 @@ public class ConfigAutoFetch {
     return this.eventListeners.isEmpty();
   }
 
-  public void setBackgroundState(boolean backgroundState) {
-    isInBackground = backgroundState;
+  public void setIsInBackground(boolean isInBackground) {
+    this.isInBackground = isInBackground;
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
