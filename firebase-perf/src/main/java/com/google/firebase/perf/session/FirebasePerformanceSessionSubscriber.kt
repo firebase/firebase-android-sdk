@@ -31,8 +31,8 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
     DebugEnforcementCheck.checkSession(currentPerfSession, "onSessionChanged")
 
     // A [PerfSession] was created before a session was started.
-    // Since these was gauge collection with app startup, it logs them to the updated session ID.
-    if (currentPerfSession.isLegacy()) {
+    // Since these were verbose gauge collection at app startup, it logs them to the updated session ID.
+    if (currentPerfSession.isLegacy() && currentPerfSession.isVerbose) {
       GaugeManager.getInstance()
         .logGaugeMetadata(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
       GaugeManager.getInstance()
