@@ -44,7 +44,6 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.BuildConfig;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.lang.annotation.Retention;
@@ -175,7 +174,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.sessionSubscriber = new FirebasePerformanceSessionSubscriber(false);
       return;
     }
-    DebugEnforcementCheck.setEnforcement(BuildConfig.DEBUG);
+    DebugEnforcementCheck.setEnforcement(BuildConfig.ENFORCE_LEGACY_SESSIONS);
 
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
