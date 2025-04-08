@@ -74,7 +74,10 @@ constructor(
     Log.d(TAG, "App backgrounded on ${getProcessName()} - $sessionData")
 
     CoroutineScope(backgroundDispatcher).launch {
-      updateSessionData(sessionData.copy(backgroundTime = timeProvider.currentTime()))
+      sessionDataStore.updateData {
+        // TODO(mrober): Double check time makes sense?
+        sessionData.copy(backgroundTime = timeProvider.currentTime())
+      }
     }
   }
 
@@ -86,14 +89,19 @@ constructor(
     val sessionData = localSessionData
     Log.d(TAG, "App foregrounded on ${getProcessName()} - $sessionData")
 
-    val interval = timeProvider.currentTime() - sessionData.backgroundTime
-    Log.d(TAG, "Interval: $interval")
-    if (interval > sessionsSettings.sessionRestartTimeout) {
+    if (shouldInitiateNewSession(sessionData)) {
       // Generate new session details on main thread so the timestamp is as current as possible
       val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
 
       CoroutineScope(backgroundDispatcher).launch {
-        updateSessionData(sessionData.copy(sessionDetails = newSessionDetails))
+        sessionDataStore.updateData { currentSessionData ->
+          // Double-check pattern
+          if (shouldInitiateNewSession(currentSessionData)) {
+            currentSessionData.copy(sessionDetails = newSessionDetails)
+          } else {
+            currentSessionData
+          }
+        }
       }
 
       // TODO(mrober): If data collection is enabled for at least one subscriber...
@@ -102,12 +110,9 @@ constructor(
     }
   }
 
-  private suspend fun updateSessionData(sessionData: SessionData) {
-    sessionDataStore.updateData {
-      // TODO(mrober): Do double-check pattern, might need two update methods
-      Log.d(TAG, "Update data to: $sessionData")
-      sessionData
-    }
+  private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {
+    val interval = timeProvider.currentTime() - sessionData.backgroundTime
+    return interval > sessionsSettings.sessionRestartTimeout
   }
 
   private companion object {
