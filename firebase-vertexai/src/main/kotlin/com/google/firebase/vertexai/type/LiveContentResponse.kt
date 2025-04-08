@@ -54,7 +54,12 @@ internal constructor(
     public companion object {
       /** Indicates that server has sent data and will continue to send data. */
       public val NORMAL: Status = Status(0)
-      /** Indicates that the server was interrupted. */
+      /**
+       * The server was interrupted while generating data.
+       *
+       * An interruption occurs when the client sends a message while the server is
+       * [actively][NORMAL] sending data.
+       */
       public val INTERRUPTED: Status = Status(1)
       /** Indicates that a turn in the interaction has been completed. */
       public val TURN_COMPLETE: Status = Status(2)
