@@ -54,7 +54,7 @@ internal constructor(
   @JvmInline
   public value class Status private constructor(private val value: Int) {
     public companion object {
-      /** Indicates that the server has sent data and will continue to send data. */
+      /** The server is actively sending data for the current interaction. */
       public val NORMAL: Status = Status(0)
       /**
        * The server was interrupted while generating data.
