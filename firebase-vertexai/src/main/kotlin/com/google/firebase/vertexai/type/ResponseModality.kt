@@ -21,10 +21,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Represents the modality of a response. This indicates the type of content being returned (e.g.,
- * text, image, audio).
- */
+/** Represents the type of content present in a response (e.g., text, image, audio). */
 @PublicPreviewAPI
 public class ResponseModality private constructor(public val ordinal: Int) {
 
