@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.logging.DebugEnforcementCheck;
 import com.google.firebase.perf.session.FirebaseSessionsHelperKt;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
@@ -287,10 +288,7 @@ public class GaugeManager {
    * @param appState The app state for which these gauges are collected.
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
-    if (sessionId.contains(Constants.UNDEFINED_AQS_ID_PREFIX)) {
-      // TODO(b/394127311): Use DebugEnforcementCheck.
-      logger.debug("Flushing gauge metrics to a legacy session ID.");
-    }
+    DebugEnforcementCheck.Companion.checkSession(sessionId, "syncFlush");
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
 
     // Adding CPU metric readings.

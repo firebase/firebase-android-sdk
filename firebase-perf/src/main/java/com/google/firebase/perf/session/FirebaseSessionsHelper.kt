@@ -5,7 +5,12 @@ import java.util.UUID
 
 /** Identifies whether the [PerfSession] is legacy or not. */
 fun PerfSession.isLegacy(): Boolean {
-  return this.sessionId().startsWith(Constants.UNDEFINED_AQS_ID_PREFIX)
+  return this.sessionId().isLegacy()
+}
+
+/** Identifies whether the string is from a legacy [PerfSession]. */
+fun String.isLegacy(): Boolean {
+  return this.startsWith(Constants.UNDEFINED_AQS_ID_PREFIX)
 }
 
 /** Creates a valid session ID for [PerfSession] that can be predictably identified as legacy. */

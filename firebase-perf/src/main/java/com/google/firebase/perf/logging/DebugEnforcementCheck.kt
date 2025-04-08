@@ -25,9 +25,16 @@ class DebugEnforcementCheck {
     @JvmStatic var enforcement: Boolean = false
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
-    public fun checkSession(session: PerfSession, failureMessage: String) {
+    fun checkSession(session: PerfSession, failureMessage: String) {
       if (session.isLegacy()) {
         logger.debug("legacy session ${session.sessionId()}: $failureMessage")
+        assert(!enforcement) { failureMessage }
+      }
+    }
+
+    fun checkSession(sessionId: String, failureMessage: String) {
+      if (sessionId.isLegacy()) {
+        logger.debug("legacy session ${sessionId}: $failureMessage")
         assert(!enforcement) { failureMessage }
       }
     }
