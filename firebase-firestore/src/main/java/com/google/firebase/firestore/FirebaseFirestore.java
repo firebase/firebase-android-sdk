@@ -884,6 +884,11 @@ public class FirebaseFirestore {
     FirestoreChannel.setClientLanguage(languageToken);
   }
 
+  /**
+   * Build a new Pipeline
+   *
+   * @return {@code PipelineSource} for this Firestore instance.
+   */
   @NonNull
   public PipelineSource pipeline() {
     clientProvider.ensureConfigured();

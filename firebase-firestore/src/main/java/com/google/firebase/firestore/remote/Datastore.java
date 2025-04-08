@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.base.Strings;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.PipelineResultObserver;
@@ -248,17 +249,24 @@ public class Datastore {
         request,
         new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
 
-          private SnapshotVersion executionTime = SnapshotVersion.NONE;
+          private Timestamp executionTime = null;
 
           @Override
           public void onMessage(ExecutePipelineResponse message) {
-            setExecutionTime(serializer.decodeVersion(message.getExecutionTime()));
+            if (message.hasExecutionTime()) {
+              executionTime = serializer.decodeTimestamp(message.getExecutionTime());
+            }
             for (Document document : message.getResultsList()) {
               String documentName = document.getName();
               observer.onDocument(
                   Strings.isNullOrEmpty(documentName) ? null : serializer.decodeKey(documentName),
                   document.getFieldsMap(),
-                  serializer.decodeVersion(document.getUpdateTime()));
+                  document.hasCreateTime()
+                      ? serializer.decodeTimestamp(document.getCreateTime())
+                      : null,
+                  document.hasUpdateTime()
+                      ? serializer.decodeTimestamp(document.getUpdateTime())
+                      : null);
             }
           }
 
@@ -273,13 +281,6 @@ public class Datastore {
               }
               observer.onError(exception);
             }
-          }
-
-          private void setExecutionTime(SnapshotVersion executionTime) {
-            if (executionTime.equals(SnapshotVersion.NONE)) {
-              return;
-            }
-            this.executionTime = executionTime;
           }
         });
   }

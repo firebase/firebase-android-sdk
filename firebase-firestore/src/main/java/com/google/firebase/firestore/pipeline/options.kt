@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.collect.ImmutableMap
-import com.google.firebase.firestore.model.Values
 import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
@@ -46,7 +45,11 @@ internal constructor(private val options: ImmutableMap<String, Value>) {
     return with(key, value.toValue())
   }
 
-  internal fun forEach(f: (String, Value) -> Unit) = options.forEach(f)
+  internal fun forEach(f: (String, Value) -> Unit) {
+    for (entry in options.entries) {
+      f(entry.key, entry.value)
+    }
+  }
 
   private fun toValue(): Value {
     val mapValue = MapValue.newBuilder().putAllFields(options).build()
@@ -60,22 +63,4 @@ internal constructor(private val options: ImmutableMap<String, Value>) {
       return InternalOptions(ImmutableMap.of(key, value))
     }
   }
-}
-
-abstract class AbstractOptions<T : AbstractOptions<T>>
-internal constructor(internal val options: InternalOptions) {
-
-  internal abstract fun self(options: InternalOptions): T
-
-  protected fun with(key: String, value: Value): T = self(options.with(key, value))
-
-  fun with(key: String, value: String): T = with(key, Values.encodeValue(value))
-
-  fun with(key: String, value: Boolean): T = with(key, Values.encodeValue(value))
-
-  fun with(key: String, value: Long): T = with(key, Values.encodeValue(value))
-
-  fun with(key: String, value: Double): T = with(key, Values.encodeValue(value))
-
-  fun with(key: String, value: Field): T = with(key, value.toProto())
 }

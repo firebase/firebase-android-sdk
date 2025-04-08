@@ -568,7 +568,8 @@ public class IntegrationTestUtil {
    */
   public static void checkQueryAndPipelineResultsMatch(Query query, String... expectedDocs) {
     QuerySnapshot docsFromQuery = waitFor(query.get(Source.SERVER));
-    PipelineSnapshot docsFromPipeline = waitFor(query.pipeline().execute());
+    PipelineSnapshot docsFromPipeline =
+        waitFor(query.getFirestore().pipeline().createFrom(query).execute());
 
     assertEquals(querySnapshotToIds(docsFromQuery), pipelineSnapshotToIds(docsFromPipeline));
     List<String> expected = asList(expectedDocs);
