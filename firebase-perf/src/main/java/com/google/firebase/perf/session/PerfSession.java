@@ -32,31 +32,26 @@ public class PerfSession implements Parcelable {
   private final Timer creationTime;
   private final String sessionId;
   private boolean isGaugeAndEventCollectionEnabled = false;
-  public final boolean isAqsReady;
 
   /*
    * Creates a PerfSession object and decides what metrics to collect.
    */
   public static PerfSession createWithId(@Nullable String aqsSessionId) {
     String sessionId;
-    Boolean isAqsReady;
-    if (aqsSessionId != null) {
-      sessionId = aqsSessionId;
-      isAqsReady = true;
+    if (aqsSessionId == null) {
+      sessionId = AqsUtilsKt.createSessionId();
     } else {
-      sessionId = UUID.randomUUID().toString().replace("-", "");
-      isAqsReady = false;
+      sessionId = AqsUtilsKt.createSessionId(aqsSessionId);
     }
-    PerfSession session = new PerfSession(sessionId, new Clock(), isAqsReady);
-    session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents(sessionId));
+    PerfSession session = new PerfSession(sessionId, new Clock());
+    session.setGaugeAndEventCollectionEnabled(session.shouldCollectGaugesAndEvents());
     return session;
   }
 
   /** Creates a PerfSession with the provided {@code sessionId} and {@code clock}. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-  public PerfSession(String sessionId, Clock clock, boolean isAqsReady) {
+  public PerfSession(String sessionId, Clock clock) {
     this.sessionId = sessionId;
-    this.isAqsReady = isAqsReady;
     creationTime = clock.getTime();
   }
 
@@ -64,7 +59,6 @@ public class PerfSession implements Parcelable {
     super();
     sessionId = in.readString();
     isGaugeAndEventCollectionEnabled = in.readByte() != 0;
-    isAqsReady = in.readByte() != 0;
     creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
@@ -160,10 +154,10 @@ public class PerfSession implements Parcelable {
   }
 
   /** If true, Session Gauge collection is enabled. */
-  public static boolean shouldCollectGaugesAndEvents(String sessionId) {
+  public boolean shouldCollectGaugesAndEvents() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     return configResolver.isPerformanceMonitoringEnabled()
-        && (Math.abs(sessionId.hashCode() % 100) < configResolver.getSessionsSamplingRate() * 100);
+        && (Math.abs(this.sessionId.hashCode() % 100) < configResolver.getSessionsSamplingRate() * 100);
   }
 
   /**
@@ -187,7 +181,6 @@ public class PerfSession implements Parcelable {
   public void writeToParcel(@NonNull Parcel out, int flags) {
     out.writeString(sessionId);
     out.writeByte((byte) (isGaugeAndEventCollectionEnabled ? 1 : 0));
-    out.writeByte((byte) (isAqsReady ? 1 : 0));
     out.writeParcelable(creationTime, 0);
   }
 

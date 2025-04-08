@@ -30,7 +30,7 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
     val currentPerfSession = SessionManager.getInstance().perfSession()
 
     // A [PerfSession] was created before a session was started.
-    if (!currentPerfSession.isAqsReady) {
+    if (!currentPerfSession.isAQS()) {
       GaugeManager.getInstance()
         .logGaugeMetadata(currentPerfSession.sessionId(), ApplicationProcessState.FOREGROUND)
       return

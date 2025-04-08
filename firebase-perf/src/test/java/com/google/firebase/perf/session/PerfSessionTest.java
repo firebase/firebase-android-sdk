@@ -76,19 +76,20 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", 100);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    PerfSession testSession = PerfSession.createWithId("aqsSessionId");
 
     // By default, session is verbose if developer has set 100% of session verbosity.
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isTrue();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isTrue();
 
     // Case #1: developer has disabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(false);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
 
     // Case #2: developer has enabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(true);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isTrue();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isTrue();
   }
 
   @Test
@@ -99,20 +100,21 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_enabled", false);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    PerfSession testSession = PerfSession.createWithId("aqsSessionId");
 
     // By default, session is not verbose if developer disabled performance monitoring at build
     // time.
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
 
     // Case #1: developer has enabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(true);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isTrue();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isTrue();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(false);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
   }
 
   @Test
@@ -122,19 +124,20 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    PerfSession testSession = PerfSession.createWithId("aqsSessionId");
 
     // Session will never be verbose if developer deactivated performance monitoring at build time.
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
 
     // Case #1: developer has enabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(true);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(false);
 
-    assertThat(PerfSession.shouldCollectGaugesAndEvents("sessionId")).isFalse();
+    assertThat(testSession.shouldCollectGaugesAndEvents()).isFalse();
   }
 
   @Test

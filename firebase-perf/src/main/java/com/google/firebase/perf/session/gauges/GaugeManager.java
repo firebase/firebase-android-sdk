@@ -113,7 +113,7 @@ public class GaugeManager {
 
     if (session == null
         || !session.isGaugeAndEventCollectionEnabled()
-        || session.aqsSessionId().equals(Constants.UNDEFINED_AQS_ID)) {
+        || session.sessionId().equals(Constants.UNDEFINED_AQS_ID_PREFIX)) {
       logger.warn("Not starting gauge collection.");
       stopCollectingGauges();
       return;
@@ -230,7 +230,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    final String sessionIdForScheduledTask = session.aqsSessionId();
+    final String sessionIdForScheduledTask = session.sessionId();
     this.session = null;
 
     // Flush any data that was collected for this session one last time.
@@ -254,7 +254,7 @@ public class GaugeManager {
    * @param appState The app state for which these gauges are collected.
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
-    if (sessionId.equals(Constants.UNDEFINED_AQS_ID)) {
+    if (sessionId.equals(Constants.UNDEFINED_AQS_ID_PREFIX)) {
       // TODO(b/394127311): Use DebugEnforcementCheck.
       logger.debug("Flushing gauge metrics to an undefined session ID.");
     }
