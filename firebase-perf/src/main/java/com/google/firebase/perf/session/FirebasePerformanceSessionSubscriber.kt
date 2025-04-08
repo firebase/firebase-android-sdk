@@ -16,10 +16,10 @@
 
 package com.google.firebase.perf.session
 
+import com.google.firebase.perf.logging.DebugEnforcementCheck
 import com.google.firebase.perf.session.gauges.GaugeManager
 import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.sessions.api.SessionSubscriber
-import java.util.UUID
 
 class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled: Boolean) :
   SessionSubscriber {
@@ -28,15 +28,21 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
+    DebugEnforcementCheck.checkSession(currentPerfSession, "onSessionChanged")
 
     // A [PerfSession] was created before a session was started.
-    if (!currentPerfSession.isAQS()) {
+    // Since these was gauge collection with app startup, it logs them to the updated session ID.
+    if (currentPerfSession.isLegacy()) {
       GaugeManager.getInstance()
-        .logGaugeMetadata(currentPerfSession.sessionId(), ApplicationProcessState.FOREGROUND)
-      return
+        .logGaugeMetadata(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
+      GaugeManager.getInstance()
+        .stopCollectingGaugesForLegacySession(
+          sessionDetails.sessionId,
+          ApplicationProcessState.FOREGROUND
+        )
     }
 
-    val updatedSession = PerfSession.createWithId(UUID.randomUUID().toString())
+    val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
     SessionManager.getInstance().updatePerfSession(updatedSession)
     GaugeManager.getInstance()
       .logGaugeMetadata(updatedSession.sessionId(), ApplicationProcessState.FOREGROUND)

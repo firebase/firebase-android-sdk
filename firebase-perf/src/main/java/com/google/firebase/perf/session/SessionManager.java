@@ -20,6 +20,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
+import com.google.firebase.perf.logging.DebugEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -29,7 +30,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
@@ -51,15 +51,13 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
+    DebugEnforcementCheck.Companion.checkSession(perfSession, "SessionManager.perfSession()");
     return perfSession;
   }
 
   private SessionManager() {
     // Generate a new sessionID for every cold start.
-    this(
-        GaugeManager.getInstance(),
-        PerfSession.createWithId(UUID.randomUUID().toString()),
-        AppStateMonitor.getInstance());
+    this(GaugeManager.getInstance(), PerfSession.createWithId(null), AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting

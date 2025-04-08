@@ -16,15 +16,18 @@
 
 package com.google.firebase.perf.logging
 
+import com.google.firebase.perf.session.PerfSession
+import com.google.firebase.perf.session.isLegacy
+
 class DebugEnforcementCheck {
   companion object {
     /** When enabled, failed preconditions will cause assertion errors for debugging. */
     @JvmStatic var enforcement: Boolean = false
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
-    public fun checkSession(isAqsAvailable: Boolean, failureMessage: String) {
-      if (!isAqsAvailable) {
-        Companion.logger.debug(failureMessage)
+    public fun checkSession(session: PerfSession, failureMessage: String) {
+      if (session.isLegacy()) {
+        logger.debug("legacy session ${session.sessionId()}: $failureMessage")
         assert(!enforcement) { failureMessage }
       }
     }

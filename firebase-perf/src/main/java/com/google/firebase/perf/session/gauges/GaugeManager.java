@@ -246,6 +246,40 @@ public class GaugeManager {
   }
 
   /**
+   * Stops the collection of gauges if it was currently collecting them for a legacy session.
+   *
+   * @note: This method is NOT thread safe - {@link this.startCollectingGauges()} and {@link
+   *     this.stopCollectingGauges()} should always be called from the same thread.
+   */
+  public void stopCollectingGaugesForLegacySession(
+      String updatedSessionId, ApplicationProcessState flushToApplicationProcessState) {
+    final ApplicationProcessState applicationProcessStateForScheduledTask =
+        flushToApplicationProcessState;
+
+    cpuGaugeCollector.get().stopCollecting();
+    memoryGaugeCollector.get().stopCollecting();
+
+    if (gaugeManagerDataCollectionJob != null) {
+      gaugeManagerDataCollectionJob.cancel(false);
+    }
+
+    final String sessionIdForScheduledTask = updatedSessionId;
+    this.session = null;
+
+    // Flush any data that was collected for this session one last time.
+    @SuppressWarnings("FutureReturnValueIgnored")
+    ScheduledFuture<?> unusedFuture =
+        gaugeManagerExecutor
+            .get()
+            .schedule(
+                () -> {
+                  syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
+                },
+                TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                TimeUnit.MILLISECONDS);
+  }
+
+  /**
    * This method reads any pending data points from all the Gauge's queues, assembles a GaugeMetric
    * proto and logs it to transport.
    *
@@ -433,7 +467,7 @@ public class GaugeManager {
 
   private boolean isValidSessionForLogging() {
     if (session == null) return false;
-    return session.isGaugeAndEventCollectionEnabled() && FirebaseSessionsHelperKt.isAQS(session);
+    return session.isGaugeAndEventCollectionEnabled() && FirebaseSessionsHelperKt.isLegacy(session);
   }
 
   @VisibleForTesting
