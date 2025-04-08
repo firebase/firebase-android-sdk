@@ -35,8 +35,9 @@ internal constructor(
   public val status: Status,
 
   /**
-   * A list of function call parts included in the response, if any. This list can be null or empty
-   * if no function calls are present.
+   * A list of function call parts included in the response, if any. 
+   * 
+   * This list can be null or empty if no function calls are present.
    */
   public val functionCalls: List<FunctionCallPart>?
 ) {
