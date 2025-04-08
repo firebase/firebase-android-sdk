@@ -407,38 +407,41 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    // Start the job to asynchronously close the gRPC client.
-    val newCloseJobRef =
-      closeJob.updateAndGet { oldCloseJob ->
-        oldCloseJob.ref?.let {
-          if (!it.isCancelled) {
-            return it
-          }
-        }
-
-        @OptIn(DelicateCoroutinesApi::class)
-        val newCloseJob =
-          GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-            lazyGrpcRPCs.initializedValueOrNull?.close()
-          }
-
-        newCloseJob.invokeOnCompletion { exception ->
-          if (exception === null) {
-            logger.debug { "close() completed successfully" }
-          } else {
-            logger.warn(exception) { "close() failed" }
-          }
-        }
-
-        NullableReference(newCloseJob)
-      }
-
+    // Create the "close job" to asynchronously close the gRPC client.
+    @OptIn(DelicateCoroutinesApi::class)
     val newCloseJob =
-      checkNotNull(newCloseJobRef.ref) {
-        "newCloseJobRef.ref should not be null (error code j3gbhd6e4j)"
+      GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
+        lazyGrpcRPCs.initializedValueOrNull?.close()
       }
-    newCloseJob.start()
-    return newCloseJob
+    newCloseJob.invokeOnCompletion { exception ->
+      if (exception === null) {
+        logger.debug { "close() completed successfully" }
+      } else {
+        logger.warn(exception) { "close() failed" }
+      }
+    }
+
+    // Register the new "close job", unless there is a "close job" already in progress or one that
+    // completed successfully.
+    val updatedCloseJob =
+      closeJob.updateAndGet { oldCloseJob ->
+        if (oldCloseJob.ref !== null && !oldCloseJob.ref.isCancelled) {
+          oldCloseJob
+        } else {
+          NullableReference(newCloseJob)
+        }
+      }
+
+    // If the update "close job" was the one that we created, then start it!
+    if (updatedCloseJob.ref === newCloseJob) {
+      newCloseJob.start()
+    }
+
+    // Return the job "close job" that is active or already completed so that the caller can await
+    // its result.
+    return checkNotNull(updatedCloseJob.ref) {
+      "updatedCloseJob.ref should not have been null (error code y5fk4ntdnd)"
+    }
   }
 
   // The generated SDK relies on equals() and hashCode() using object identity.

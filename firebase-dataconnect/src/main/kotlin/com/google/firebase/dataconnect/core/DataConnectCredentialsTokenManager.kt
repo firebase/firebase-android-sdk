@@ -48,8 +48,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -151,9 +149,18 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    */
   fun close() {
     logger.debug { "close()" }
+
     weakThis.clear()
     coroutineScope.cancel()
-    setClosedState()
+
+    val oldState = state.getAndUpdate { State.Closed }
+    when (oldState) {
+      is State.Closed -> {}
+      is State.New -> {}
+      is State.StateWithProvider -> {
+        removeTokenListener(oldState.provider)
+      }
+    }
   }
 
   /**
@@ -178,14 +185,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "awaitTokenProvider() done: currentState=$currentState" }
   }
 
-  // This function must ONLY be called from close().
-  private fun setClosedState() {
-    val oldState = state.getAndUpdate { State.Closed }
-    if (oldState is State.StateWithProvider<T>) {
-      removeTokenListener(oldState.provider)
-    }
-  }
-
   /**
    * Sets a flag to force-refresh the token upon the next call to [getToken].
    *
@@ -193,22 +192,24 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    */
   fun forceRefresh() {
     logger.debug { "forceRefresh()" }
-    val newState =
-      state.updateAndGet { oldState ->
+    val oldState =
+      state.getAndUpdate { oldState ->
         when (oldState) {
-          is State.Closed -> return
+          is State.Closed -> State.Closed
           is State.New -> oldState.copy(forceTokenRefresh = true)
           is State.Idle -> oldState.copy(forceTokenRefresh = true)
-          is State.Active -> {
-            val message = "needs token refresh (wgrwbrvjxt)"
-            oldState.job.cancel(message, ForceRefresh(message))
-            State.Idle(oldState.provider, forceTokenRefresh = true)
-          }
+          is State.Active -> State.Idle(oldState.provider, forceTokenRefresh = true)
         }
       }
 
-    check(newState is State.StateWithForceTokenRefresh<T> && newState.forceTokenRefresh) {
-      "newState.forceTokenRefresh should be true: $newState (error code gnvr2wx7nz)"
+    when (oldState) {
+      is State.Closed -> {}
+      is State.New -> {}
+      is State.Idle -> {}
+      is State.Active -> {
+        val message = "needs token refresh (wgrwbrvjxt)"
+        oldState.job.cancel(message, ForceRefresh(message))
+      }
     }
   }
 
@@ -338,24 +339,30 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "onProviderAvailable(newProvider=$newProvider)" }
     addTokenListener(newProvider)
 
-    state.update { oldState ->
-      when (oldState) {
-        is State.Closed -> {
-          logger.debug {
-            "onProviderAvailable(newProvider=$newProvider)" +
-              " unregistering token listener that was just added"
-          }
-          removeTokenListener(newProvider)
-          oldState
+    val oldState =
+      state.getAndUpdate { oldState ->
+        when (oldState) {
+          is State.Closed -> State.Closed
+          is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
+          is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
+          is State.Active -> State.Idle(newProvider, forceTokenRefresh = false)
         }
-        is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
-        is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
-        is State.Active -> {
-          val newProviderClassName = newProvider::class.qualifiedName
-          val message = "a new provider $newProviderClassName is available (symhxtmazy)"
-          oldState.job.cancel(message, NewProvider(message))
-          State.Idle(newProvider, forceTokenRefresh = false)
+      }
+
+    when (oldState) {
+      is State.Closed -> {
+        logger.debug {
+          "onProviderAvailable(newProvider=$newProvider)" +
+            " unregistering token listener that was just added"
         }
+        removeTokenListener(newProvider)
+      }
+      is State.New -> {}
+      is State.Idle -> {}
+      is State.Active -> {
+        val newProviderClassName = newProvider::class.qualifiedName
+        val message = "a new provider $newProviderClassName is available (symhxtmazy)"
+        oldState.job.cancel(message, NewProvider(message))
       }
     }
   }
