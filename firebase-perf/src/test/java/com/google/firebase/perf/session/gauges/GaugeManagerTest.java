@@ -41,7 +41,6 @@ import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.CpuMetricReading;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import com.google.testing.timing.FakeScheduledExecutorService;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -408,8 +407,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // It's not currently logging to transport.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    // An AQS session ID is expected when stopping Gauge collection.
-    fakeSession.setAQSId(new SessionSubscriber.SessionDetails("aqsSessionId"));
     testGaugeManager.stopCollectingGauges();
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
 
@@ -427,9 +424,9 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
     assertThatCpuGaugeMetricWasSentToTransport(
-        fakeSession.aqsSessionId(), recordedGaugeMetric, fakeCpuMetricReading);
+        fakeSession.sessionId(), recordedGaugeMetric, fakeCpuMetricReading);
     assertThatMemoryGaugeMetricWasSentToTransport(
-        fakeSession.aqsSessionId(), recordedGaugeMetric, fakeMemoryMetricReading);
+        fakeSession.sessionId(), recordedGaugeMetric, fakeMemoryMetricReading);
   }
 
   @Test
@@ -451,7 +448,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
     assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
 
-    fakeSession.setAQSId(new SessionSubscriber.SessionDetails("aqsSessionId"));
     testGaugeManager.updateGaugeCollection(ApplicationProcessState.FOREGROUND);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();

@@ -231,7 +231,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
                 - TimeUnit.MINUTES.toMicros(1)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = PerfSession.createWithId("sessionId");
+    PerfSession session = new PerfSession("sessionId", mockClock);
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -242,7 +242,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(4)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = PerfSession.createWithId("sessionId");
+    PerfSession session = new PerfSession("sessionId", mockClock);
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -253,7 +253,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = PerfSession.createWithId("sessionId");
+    PerfSession session = new PerfSession("sessionId", mockClock);
     assertThat(session.isSessionRunningTooLong()).isTrue();
   }
 }
