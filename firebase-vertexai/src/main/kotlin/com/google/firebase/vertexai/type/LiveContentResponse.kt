@@ -25,7 +25,7 @@ package com.google.firebase.vertexai.type
 public class LiveContentResponse
 internal constructor(
 
-  /** The main content data of the response. This can be null if there is no content. */
+  /** The main content data of the response. This can be `null` if there is no content. */
   public val data: Content?,
 
   /**
