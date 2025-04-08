@@ -16,14 +16,31 @@
 
 package com.google.firebase.vertexai.type
 
-/* Represents the response from the server. */
+/**
+ * Represents the response from the server for live content updates. This class encapsulates the
+ * content data, the status of the response, and any function calls included in the response.
+ * @param data
+ */
 @PublicPreviewAPI
 public class LiveContentResponse
 internal constructor(
+
+  /** The main content data of the response. This can be null if there is no content. */
   public val data: Content?,
+
+  /**
+   * The status of the live content response. Indicates whether the response is normal, was
+   * interrupted, or signifies the completion of a turn.
+   */
   public val status: Status,
+
+  /**
+   * A list of function call parts included in the response, if any. This list can be null or empty
+   * if no function calls are present.
+   */
   public val functionCalls: List<FunctionCallPart>?
 ) {
+
   /**
    * Convenience field representing all the text parts in the response as a single string, if they
    * exists.
@@ -31,11 +48,15 @@ internal constructor(
   public val text: String? =
     data?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
 
+  /** Represents the status of a [LiveContentResponse]. */
   @JvmInline
   public value class Status private constructor(private val value: Int) {
     public companion object {
+      /** Indicates that server has sent data and will continue to send data. */
       public val NORMAL: Status = Status(0)
+      /** Indicates that the server was interrupted. */
       public val INTERRUPTED: Status = Status(1)
+      /** Indicates that a turn in the interaction has been completed. */
       public val TURN_COMPLETE: Status = Status(2)
     }
   }

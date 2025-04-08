@@ -21,15 +21,22 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Modality for bidirectional streaming. */
+/**
+ * Represents the modality of a response. This indicates the type of content being returned (e.g.,
+ * text, image, audio).
+ */
 @PublicPreviewAPI
 public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
+    /** Represents an unspecified response modality. */
     @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
+    /** Represents a plain text response modality. */
     TEXT,
+    /** Represents an image response modality. */
     IMAGE,
+    /** Represents an audio response modality. */
     AUDIO;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
