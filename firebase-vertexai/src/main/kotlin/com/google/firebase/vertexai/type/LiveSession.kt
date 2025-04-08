@@ -361,9 +361,10 @@ internal constructor(
   }
 
   /**
-   * Closes the client session. After this is called, the session object becomes unusable. To
-   * interact with the Gemini server again, you must create a new session using
-   * [LiveGenerativeModel].
+   * Closes the client session.
+   *
+   * After this is called, the session object becomes unusable. To interact with the server again,
+   * you must create a new session using [LiveGenerativeModel].
    */
   public suspend fun close() {
     session?.close()
