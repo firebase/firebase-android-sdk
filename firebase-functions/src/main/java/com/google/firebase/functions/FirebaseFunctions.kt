@@ -349,6 +349,7 @@ internal constructor(
         if (providerInstallStarted) {
           return
         }
+        // Test comment, do not merge
         providerInstallStarted = true
       }
 
