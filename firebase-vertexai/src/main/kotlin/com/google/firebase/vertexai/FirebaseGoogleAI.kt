@@ -29,13 +29,13 @@ import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
-/** Entry point for all _Google AI in Vertex for Firebase_ functionality. */
+/** Entry point for all _Google AI_ functionality. */
 public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVertexAI) {
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-1.5-pro"`.
+   * @param modelName The name of the model to use, for example `"gemini-2.0-pro"`.
    * @param generationConfig The configuration parameters to use for content generation.
    * @param safetySettings The safety bounds the model will abide to during content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
@@ -93,7 +93,7 @@ public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVe
     @JvmStatic
     public fun getInstance(app: FirebaseApp = Firebase.app): FirebaseGoogleAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.getGoogle()
+      return multiResourceComponent.getGoogleAI()
     }
   }
 }

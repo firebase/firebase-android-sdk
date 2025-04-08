@@ -42,7 +42,7 @@ internal class FirebaseVertexAIMultiResourceComponent(
 
   @GuardedBy("this") private val googleInstance: MutableList<FirebaseGoogleAI> = mutableListOf()
 
-  fun getVertex(location: String): FirebaseVertexAI =
+  fun getVertexAI(location: String): FirebaseVertexAI =
     synchronized(this) {
       vertexInstances[location]
         ?: FirebaseVertexAI(
@@ -56,7 +56,7 @@ internal class FirebaseVertexAIMultiResourceComponent(
           .also { vertexInstances[location] = it }
     }
 
-  fun getGoogle(): FirebaseGoogleAI =
+  fun getGoogleAI(): FirebaseGoogleAI =
     synchronized(this) {
       googleInstance.getOrNull(0)
         ?: FirebaseGoogleAI(

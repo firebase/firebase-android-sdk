@@ -88,7 +88,7 @@ internal constructor(
         """Unsupported Gemini model "${modelName}"; see
       https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
       """
-          .trimIndent()
+          .trimIndent(),
       )
     }
     return GenerativeModel(
@@ -133,7 +133,7 @@ internal constructor(
         """Unsupported Gemini model "$modelName"; see
       https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
       """
-          .trimIndent()
+          .trimIndent(),
       )
     }
     if (location.trim().isEmpty() || location.contains("/")) {
@@ -187,7 +187,7 @@ internal constructor(
         """Unsupported Imagen model "${modelName}"; see
       https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
       """
-          .trimIndent()
+          .trimIndent(),
       )
     }
     return ImagenModel(
@@ -219,8 +219,11 @@ internal constructor(
     @JvmOverloads
     public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.getVertex(location)
+      return multiResourceComponent.getVertexAI(location)
     }
+
+    /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] */
+    @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
 
     private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
 
