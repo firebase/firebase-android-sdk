@@ -17,9 +17,10 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Represents the response from the server for live content updates. This class encapsulates the
- * content data, the status of the response, and any function calls included in the response.
- * @param data
+ * Represents the response from the model for live content updates.
+ *
+ * This class encapsulates the content data, the status of the response, and any function calls
+ * included in the response.
  */
 @PublicPreviewAPI
 public class LiveContentResponse
@@ -35,7 +36,7 @@ internal constructor(
   public val status: Status,
 
   /**
-   * A list of function call parts included in the response, if any. 
+   * A list of [FunctionCallPart] included in the response, if any.
    * 
    * This list can be null or empty if no function calls are present.
    */
@@ -63,7 +64,7 @@ internal constructor(
        */
       public val INTERRUPTED: Status = Status(1)
       /**
-       * The server is finished sending data in the current interaction.
+       * The model has finished sending data in the current interaction.
        *
        * Can be set alongside content, signifying that the content is the last in the turn.
        */
