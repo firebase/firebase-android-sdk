@@ -48,7 +48,7 @@ internal constructor(
   public val text: String? =
     data?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
 
-  /** Represents the status of a [LiveContentResponse]. */
+  /** Represents the status of a [LiveContentResponse], within a single interaction. */
   @JvmInline
   public value class Status private constructor(private val value: Int) {
     public companion object {
