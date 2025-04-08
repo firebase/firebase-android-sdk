@@ -37,7 +37,7 @@ internal constructor(
 
   /**
    * A list of [FunctionCallPart] included in the response, if any.
-   * 
+   *
    * This list can be null or empty if no function calls are present.
    */
   public val functionCalls: List<FunctionCallPart>?
@@ -59,8 +59,8 @@ internal constructor(
       /**
        * The server was interrupted while generating data.
        *
-       * An interruption occurs when the client sends a message while the server is
-       * [actively][NORMAL] sending data.
+       * An interruption occurs when the client sends a message while the server is [actively]
+       * [NORMAL] sending data.
        */
       public val INTERRUPTED: Status = Status(1)
       /**

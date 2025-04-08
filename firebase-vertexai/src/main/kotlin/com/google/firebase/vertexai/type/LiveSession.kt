@@ -234,19 +234,13 @@ internal constructor(
   }
 
   /**
-   * Stops receiving from the server. 
-   * 
-   * If this function is called during an ongoing audio conversation, the server's response will not
+   * Stops receiving from the model.
+   *
+   * If this function is called during an ongoing audio conversation, the model's response will not
    * be received, and no audio will be played; the live session object will no longer receive data
    * from the server.
-   * 
+   *
    * To resume receiving data, you must either handle it directly using [receive], or indirectly by
-   * using [startAudioConversation].
-   */
-   * Stops receiving from the server. If this function is called during an ongoing audio
-   * conversation, the server's response will not be received, and no audio will be played. By
-   * stopping receiving, the live session object will no longer receive data from the server. To
-   * resume receiving data, you must either handle it directly using [receive], or indirectly by
    * using [startAudioConversation].
    */
   public fun stopReceiving() {

@@ -27,15 +27,10 @@ public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable
   internal enum class InternalEnum {
-    /** Represents the Charon voice. */
     CHARON,
-    /** Represents the Aoede voice. */
     AOEDE,
-    /** Represents the Fenrir voice. */
     FENRIR,
-    /** Represents the Kore voice. */
     KORE,
-    /** Represents the Puck voice. */
     PUCK;
     internal fun toPublic() =
       when (this) {
@@ -58,9 +53,9 @@ public class Voices private constructor(public val ordinal: Int) {
   }
 
   public companion object {
-    /** 
-     * Unspecified voice. 
-     * 
+    /**
+     * Unspecified voice.
+     *
      * Will use the default voice of the model.
      */
     @JvmField public val UNSPECIFIED: Voices = Voices(0)

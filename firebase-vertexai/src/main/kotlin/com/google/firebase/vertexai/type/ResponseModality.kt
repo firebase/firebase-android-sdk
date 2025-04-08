@@ -27,13 +27,9 @@ public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
-    /** Represents an unspecified response modality. */
     @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
-    /** Represents a plain text response modality. */
     TEXT,
-    /** Represents an image response modality. */
     IMAGE,
-    /** Represents an audio response modality. */
     AUDIO;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
@@ -58,13 +54,13 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
 
-    /** Plain text. */
+    /** Represents a plain text response modality. */
     @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
-    /** Image. */
+    /** Represents an image response modality. */
     @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
-    /** Audio. */
+    /** Represents an audio response modality. */
     @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }
