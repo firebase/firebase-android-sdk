@@ -34,6 +34,7 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -214,6 +215,81 @@ public class UserDataWriterTest {
   public void testConvertsGeoPointValue() {
     List<GeoPoint> testCases = asList(new GeoPoint(1.24, 4.56), new GeoPoint(-20, 100));
     for (GeoPoint p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsBsonObjectIdValue() {
+    List<BsonObjectId> testCases = asList(new BsonObjectId("foo"), FieldValue.bsonObjectId("bar"));
+    for (BsonObjectId p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsBsonTimestampValue() {
+    List<BsonTimestamp> testCases = asList(new BsonTimestamp(1, 2), FieldValue.bsonTimestamp(3, 4));
+    for (BsonTimestamp p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsBsonBinaryValue() {
+    List<BsonBinaryData> testCases =
+        asList(
+            BsonBinaryData.fromBytes(1, new byte[] {1, 2}),
+            BsonBinaryData.fromByteString(1, ByteString.EMPTY),
+            FieldValue.bsonBinaryData(1, new byte[] {1, 2}));
+    for (BsonBinaryData p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsRegexValue() {
+    List<RegexValue> testCases = asList(new RegexValue("^foo", "i"), FieldValue.regex("^bar", "g"));
+    for (RegexValue p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsInt32Value() {
+    List<Int32Value> testCases =
+        asList(new Int32Value(1), new Int32Value(-1), new Int32Value(0), FieldValue.int32(123));
+    for (Int32Value p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsMinKey() {
+    List<MinKey> testCases = asList(FieldValue.minKey(), MinKey.instance());
+    for (MinKey p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
+  public void testConvertsMaxKey() {
+    List<MaxKey> testCases = asList(FieldValue.maxKey(), MaxKey.instance());
+    for (MaxKey p : testCases) {
       Value value = wrap(p);
       Object convertedValue = convertValue(value);
       assertEquals(p, convertedValue);

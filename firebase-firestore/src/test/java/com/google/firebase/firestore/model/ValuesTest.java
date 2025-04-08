@@ -26,11 +26,19 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Int32Value;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -64,6 +72,28 @@ public class ValuesTest {
     GeoPoint geoPoint2 = new GeoPoint(0, 2);
     Timestamp timestamp1 = new Timestamp(date1);
     Timestamp timestamp2 = new Timestamp(date2);
+
+    BsonObjectId objectId1 = new BsonObjectId("507f191e810c19729de860ea");
+    BsonObjectId objectId2 = new BsonObjectId("507f191e810c19729de860eb");
+
+    BsonBinaryData binaryData1 = BsonBinaryData.fromBytes(1, new byte[] {1, 2});
+    BsonBinaryData binaryData2 = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
+    BsonBinaryData binaryData3 = BsonBinaryData.fromBytes(2, new byte[] {1, 2});
+
+    BsonTimestamp bsonTimestamp1 = new BsonTimestamp(1, 2);
+    BsonTimestamp bsonTimestamp2 = new BsonTimestamp(1, 3);
+    BsonTimestamp bsonTimestamp3 = new BsonTimestamp(2, 2);
+
+    Int32Value int32Value1 = FieldValue.int32(1);
+    Int32Value int32Value2 = FieldValue.int32(2);
+
+    RegexValue regexValue1 = FieldValue.regex("^foo", "i");
+    RegexValue regexValue2 = FieldValue.regex("^foo", "m");
+    RegexValue regexValue3 = FieldValue.regex("^bar", "i");
+
+    MinKey minKey = FieldValue.minKey();
+    MaxKey maxKey = FieldValue.maxKey();
+
     new EqualsTester()
         .addEqualityGroup(wrap(true), wrap(true))
         .addEqualityGroup(wrap(false), wrap(false))
@@ -108,6 +138,22 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("bar", 2, "foo", 1)))
         .addEqualityGroup(wrap(map("bar", 1)))
         .addEqualityGroup(wrap(map("foo", 1)))
+        .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860ea")), wrap(objectId1))
+        .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860eb")), wrap(objectId2))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2})), wrap(binaryData1))
+        .addEqualityGroup(
+            wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})), wrap(binaryData2))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(2, new byte[] {1, 2})), wrap(binaryData3))
+        .addEqualityGroup(wrap(new BsonTimestamp(1, 2)), wrap(bsonTimestamp1))
+        .addEqualityGroup(wrap(new BsonTimestamp(1, 3)), wrap(bsonTimestamp2))
+        .addEqualityGroup(wrap(new BsonTimestamp(2, 2)), wrap(bsonTimestamp3))
+        .addEqualityGroup(wrap(FieldValue.int32(1)), wrap(int32Value1))
+        .addEqualityGroup(wrap(FieldValue.int32(2)), wrap(int32Value2))
+        .addEqualityGroup(wrap(FieldValue.regex("^foo", "i")), wrap(regexValue1))
+        .addEqualityGroup(wrap(FieldValue.regex("^foo", "m")), wrap(regexValue2))
+        .addEqualityGroup(wrap(FieldValue.regex("^bar", "i")), wrap(regexValue3))
+        .addEqualityGroup(wrap(FieldValue.minKey()), wrap(minKey))
+        .addEqualityGroup(wrap(FieldValue.maxKey()), wrap(maxKey))
         .testEquals();
   }
 
@@ -120,27 +166,39 @@ public class ValuesTest {
         // null first
         .addEqualityGroup(wrap((Object) null))
 
+        // MinKey is after null
+        .addEqualityGroup(wrap(FieldValue.minKey()), wrap(MinKey.instance()))
+
         // booleans
         .addEqualityGroup(wrap(false))
         .addEqualityGroup(wrap(true))
 
-        // numbers
+        // 64-bit and 32-bit numbers order together numerically.
         .addEqualityGroup(wrap(Double.NaN))
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(-Double.MAX_VALUE))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
+        .addEqualityGroup(
+            wrap(new Int32Value(-2147483648)),
+            wrap(FieldValue.int32(-2147483648)),
+            wrap(Integer.MIN_VALUE))
         .addEqualityGroup(wrap(-1.1))
         .addEqualityGroup(wrap(-1.0))
         .addEqualityGroup(wrap(-Double.MIN_NORMAL))
         .addEqualityGroup(wrap(-Double.MIN_VALUE))
         // Zeros all compare the same.
-        .addEqualityGroup(wrap(-0.0), wrap(0.0), wrap(0L))
+        .addEqualityGroup(
+            wrap(-0.0), wrap(0.0), wrap(0L), wrap(new Int32Value(0)), wrap(FieldValue.int32(0)))
         .addEqualityGroup(wrap(Double.MIN_VALUE))
         .addEqualityGroup(wrap(Double.MIN_NORMAL))
         .addEqualityGroup(wrap(0.1))
-        // Doubles and Longs compareTo() the same.
-        .addEqualityGroup(wrap(1.0), wrap(1L))
+        // Doubles, Longs, Int32Values compareTo() the same.
+        .addEqualityGroup(wrap(1.0), wrap(1L), wrap(new Int32Value(1)))
         .addEqualityGroup(wrap(1.1))
+        .addEqualityGroup(
+            wrap(new Int32Value(2147483647)),
+            wrap(FieldValue.int32(2147483647)),
+            wrap(Integer.MAX_VALUE))
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.MAX_VALUE))
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
@@ -148,6 +206,11 @@ public class ValuesTest {
         // dates
         .addEqualityGroup(wrap(date1))
         .addEqualityGroup(wrap(date2))
+
+        // bson timestamps
+        .addEqualityGroup(wrap(new BsonTimestamp(123, 4)), wrap(FieldValue.bsonTimestamp(123, 4)))
+        .addEqualityGroup(wrap(new BsonTimestamp(123, 5)))
+        .addEqualityGroup(wrap(new BsonTimestamp(124, 0)))
 
         // server timestamps come after all concrete timestamps.
         .addEqualityGroup(wrap(ServerTimestamps.valueOf(new Timestamp(date1), null)))
@@ -172,6 +235,16 @@ public class ValuesTest {
         .addEqualityGroup(wrap(blob(0, 1, 2, 4, 3)))
         .addEqualityGroup(wrap(blob(255)))
 
+        // bson binary data
+        .addEqualityGroup(
+            wrap(BsonBinaryData.fromBytes(1, new byte[] {})),
+            wrap(BsonBinaryData.fromByteString(1, ByteString.EMPTY)),
+            wrap(FieldValue.bsonBinaryData(1, new byte[] {})))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(1, new byte[] {0})))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2})))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2, 3})))
+        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(7, new byte[] {1})))
+
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
         .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
@@ -179,6 +252,17 @@ public class ValuesTest {
         .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
         .addEqualityGroup(wrap(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
         .addEqualityGroup(wrap(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
+
+        // bson object id
+        .addEqualityGroup(
+            wrap(new BsonObjectId("507f191e810c19729de860ea")),
+            wrap(FieldValue.bsonObjectId("507f191e810c19729de860ea")))
+        .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860eb")))
+        // latin small letter e + combining acute accent + latin small letter b
+        .addEqualityGroup(wrap(new BsonObjectId("e\u0301b")))
+        .addEqualityGroup(wrap(new BsonObjectId("æ")))
+        // latin small letter e with acute accent + latin small letter a
+        .addEqualityGroup(wrap(new BsonObjectId("\u00e9a")))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -193,6 +277,16 @@ public class ValuesTest {
         .addEqualityGroup(wrap(new GeoPoint(90, -180)))
         .addEqualityGroup(wrap(new GeoPoint(90, 0)))
         .addEqualityGroup(wrap(new GeoPoint(90, 180)))
+
+        // regex
+        .addEqualityGroup(wrap(new RegexValue("^foo", "i")), wrap(FieldValue.regex("^foo", "i")))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "m")))
+        .addEqualityGroup(wrap(new RegexValue("^zoo", "i")))
+        // latin small letter e + combining acute accent + latin small letter b
+        .addEqualityGroup(wrap(new RegexValue("e\u0301b", "i")))
+        .addEqualityGroup(wrap(new RegexValue("æ", "i")))
+        // latin small letter e with acute accent + latin small letter a
+        .addEqualityGroup(wrap(new RegexValue("\u00e9a", "i")))
 
         // arrays
         .addEqualityGroup(wrap(Arrays.asList("bar")))
@@ -212,11 +306,15 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("foo", 1)))
         .addEqualityGroup(wrap(map("foo", 2)))
         .addEqualityGroup(wrap(map("foo", "0")))
+
+        // MaxKey is last
+        .addEqualityGroup(wrap(FieldValue.maxKey()), wrap(MaxKey.instance()))
         .testCompare();
   }
 
   @Test
   public void testLowerBound() {
+    // TODO(mila/BSON): add new bson types
     new ComparatorTester()
         // null first
         .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap((Object) null))), wrap((Object) null))
@@ -276,6 +374,7 @@ public class ValuesTest {
 
   @Test
   public void testUpperBound() {
+    // TODO(mila/BSON): add new bson types
     new ComparatorTester()
         // null first
         .addEqualityGroup(wrap((Object) null))
@@ -346,6 +445,22 @@ public class ValuesTest {
     assertCanonicalId(
         TestUtil.wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
         "{a:[b,{c:geo(30.0,60.0)}]}");
+
+    assertCanonicalId(
+        TestUtil.wrap(FieldValue.regex("a", "b")), "{__regex__:{options:b,pattern:a}}");
+
+    assertCanonicalId(TestUtil.wrap(FieldValue.bsonObjectId("foo")), "{__oid__:foo}");
+    assertCanonicalId(
+        TestUtil.wrap(FieldValue.bsonTimestamp(1, 2)),
+        "{__request_timestamp__:{increment:2,seconds:1}}");
+    assertCanonicalId((TestUtil.wrap(FieldValue.int32(1))), "{__int__:1}");
+    assertCanonicalId(
+        TestUtil.wrap(FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
+    assertCanonicalId(
+        TestUtil.wrap(FieldValue.bsonBinaryData(128, new byte[] {1, 2, 3})),
+        "{__binary__:80010203}");
+    assertCanonicalId(TestUtil.wrap(FieldValue.minKey()), "{__min__:null}");
+    assertCanonicalId(TestUtil.wrap(FieldValue.maxKey()), "{__max__:null}");
   }
 
   @Test

@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
-import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -38,18 +37,49 @@ import java.util.TreeMap;
 
 public class Values {
   public static final String TYPE_KEY = "__type__";
+
+  public static final String RESERVED_VECTOR_KEY = "__vector__";
+  // For MinKey type
+  public static final String RESERVED_MIN_KEY = "__min__";
+
+  // For MaxKey type
+  public static final String RESERVED_MAX_KEY = "__max__";
+
+  // For Regex type
+  public static final String RESERVED_REGEX_KEY = "__regex__";
+  public static final String RESERVED_REGEX_PATTERN_KEY = "pattern";
+  public static final String RESERVED_REGEX_OPTIONS_KEY = "options";
+
+  // For ObjectId type
+  public static final String RESERVED_OBJECT_ID_KEY = "__oid__";
+
+  // For Int32 type
+  public static final String RESERVED_INT32_KEY = "__int__";
+
+  // For RequestTimestamp
+  public static final String RESERVED_BSON_TIMESTAMP_KEY = "__request_timestamp__";
+
+  public static final String RESERVED_BSON_TIMESTAMP_SECONDS_KEY = "seconds";
+  public static final String RESERVED_BSON_TIMESTAMP_INCREMENT_KEY = "increment";
+
+  // For BSON Binary Data
+  public static final String RESERVED_BSON_BINARY_KEY = "__binary__";
+
+  public static final String RESERVED_SERVER_TIMESTAMP_KEY = "server_timestamp";
+
   public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
   public static final Value MIN_VALUE = NULL_VALUE;
-  public static final Value MAX_VALUE_TYPE = Value.newBuilder().setStringValue("__max__").build();
+  public static final Value MAX_VALUE_TYPE =
+      Value.newBuilder().setStringValue(RESERVED_MAX_KEY).build();
   public static final Value MAX_VALUE =
       Value.newBuilder()
           .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
           .build();
 
   public static final Value VECTOR_VALUE_TYPE =
-      Value.newBuilder().setStringValue("__vector__").build();
+      Value.newBuilder().setStringValue(RESERVED_VECTOR_KEY).build();
   public static final String VECTOR_MAP_VECTORS_KEY = "value";
   private static final Value MIN_VECTOR_VALUE =
       Value.newBuilder()
@@ -67,17 +97,23 @@ public class Values {
    */
   public static final int TYPE_ORDER_NULL = 0;
 
-  public static final int TYPE_ORDER_BOOLEAN = 1;
-  public static final int TYPE_ORDER_NUMBER = 2;
-  public static final int TYPE_ORDER_TIMESTAMP = 3;
-  public static final int TYPE_ORDER_SERVER_TIMESTAMP = 4;
-  public static final int TYPE_ORDER_STRING = 5;
-  public static final int TYPE_ORDER_BLOB = 6;
-  public static final int TYPE_ORDER_REFERENCE = 7;
-  public static final int TYPE_ORDER_GEOPOINT = 8;
-  public static final int TYPE_ORDER_ARRAY = 9;
-  public static final int TYPE_ORDER_VECTOR = 10;
-  public static final int TYPE_ORDER_MAP = 11;
+  public static final int TYPE_ORDER_MIN_KEY = 1;
+  public static final int TYPE_ORDER_BOOLEAN = 2;
+  public static final int TYPE_ORDER_NUMBER = 3;
+  public static final int TYPE_ORDER_TIMESTAMP = 4;
+  public static final int TYPE_ORDER_BSON_TIMESTAMP = 5;
+  public static final int TYPE_ORDER_SERVER_TIMESTAMP = 6;
+  public static final int TYPE_ORDER_STRING = 7;
+  public static final int TYPE_ORDER_BLOB = 8;
+  public static final int TYPE_ORDER_BSON_BINARY = 9;
+  public static final int TYPE_ORDER_REFERENCE = 10;
+  public static final int TYPE_ORDER_BSON_OBJECT_ID = 11;
+  public static final int TYPE_ORDER_GEOPOINT = 12;
+  public static final int TYPE_ORDER_REGEX = 13;
+  public static final int TYPE_ORDER_ARRAY = 14;
+  public static final int TYPE_ORDER_VECTOR = 15;
+  public static final int TYPE_ORDER_MAP = 16;
+  public static final int TYPE_ORDER_MAX_KEY = 17;
 
   public static final int TYPE_ORDER_MAX_VALUE = Integer.MAX_VALUE;
 
@@ -89,7 +125,6 @@ public class Values {
       case BOOLEAN_VALUE:
         return TYPE_ORDER_BOOLEAN;
       case INTEGER_VALUE:
-        return TYPE_ORDER_NUMBER;
       case DOUBLE_VALUE:
         return TYPE_ORDER_NUMBER;
       case TIMESTAMP_VALUE:
@@ -105,12 +140,27 @@ public class Values {
       case ARRAY_VALUE:
         return TYPE_ORDER_ARRAY;
       case MAP_VALUE:
-        if (isServerTimestamp(value)) {
+        MapRepresentation mapType = detectMapRepresentation(value);
+        if (mapType.equals(MapRepresentation.SERVER_TIMESTAMP)) {
           return TYPE_ORDER_SERVER_TIMESTAMP;
-        } else if (isMaxValue(value)) {
+        } else if (mapType.equals(MapRepresentation.INTERNAL_MAX)) {
           return TYPE_ORDER_MAX_VALUE;
-        } else if (isVectorValue(value)) {
+        } else if (mapType.equals(MapRepresentation.VECTOR)) {
           return TYPE_ORDER_VECTOR;
+        } else if (mapType.equals(MapRepresentation.MIN_KEY)) {
+          return TYPE_ORDER_MIN_KEY;
+        } else if (mapType.equals(MapRepresentation.MAX_KEY)) {
+          return TYPE_ORDER_MAX_KEY;
+        } else if (mapType.equals(MapRepresentation.REGEX)) {
+          return TYPE_ORDER_REGEX;
+        } else if (mapType.equals(MapRepresentation.BSON_TIMESTAMP)) {
+          return TYPE_ORDER_BSON_TIMESTAMP;
+        } else if (mapType.equals(MapRepresentation.BSON_OBJECT_ID)) {
+          return TYPE_ORDER_BSON_OBJECT_ID;
+        } else if (mapType.equals(MapRepresentation.BSON_BINARY)) {
+          return TYPE_ORDER_BSON_BINARY;
+        } else if (mapType.equals(MapRepresentation.INT32)) {
+          return TYPE_ORDER_NUMBER;
         } else {
           return TYPE_ORDER_MAP;
         }
@@ -145,6 +195,9 @@ public class Values {
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return getLocalWriteTime(left).equals(getLocalWriteTime(right));
       case TYPE_ORDER_MAX_VALUE:
+      case TYPE_ORDER_NULL:
+      case TYPE_ORDER_MAX_KEY:
+      case TYPE_ORDER_MIN_KEY:
         return true;
       default:
         return left.equals(right);
@@ -154,14 +207,31 @@ public class Values {
   private static boolean numberEquals(Value left, Value right) {
     if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
         && right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      return left.getIntegerValue() == right.getIntegerValue();
+      return getIntegerValue(left) == getIntegerValue(right);
     } else if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE
         && right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
       return Double.doubleToLongBits(left.getDoubleValue())
           == Double.doubleToLongBits(right.getDoubleValue());
+    } else if (detectMapRepresentation(left).equals(MapRepresentation.INT32)
+        && detectMapRepresentation(right).equals(MapRepresentation.INT32)) {
+      return getIntegerValue(left) == getIntegerValue(right);
     }
 
     return false;
+  }
+
+  /**
+   * Returns a long from a 32-bit or 64-bit proto integer value. Throws an exception if the value is
+   * not an integer.
+   */
+  private static long getIntegerValue(Value value) {
+    if (value.hasIntegerValue()) {
+      return value.getIntegerValue();
+    }
+    if (value.hasMapValue() && value.getMapValue().getFieldsMap().containsKey(RESERVED_INT32_KEY)) {
+      return value.getMapValue().getFieldsMap().get(RESERVED_INT32_KEY).getIntegerValue();
+    }
+    throw new IllegalArgumentException("getIntegerValue was called with a non-integer argument");
   }
 
   private static boolean arrayEquals(Value left, Value right) {
@@ -220,6 +290,8 @@ public class Values {
     switch (leftType) {
       case TYPE_ORDER_NULL:
       case TYPE_ORDER_MAX_VALUE:
+      case TYPE_ORDER_MAX_KEY:
+      case TYPE_ORDER_MIN_KEY:
         return 0;
       case TYPE_ORDER_BOOLEAN:
         return Util.compareBooleans(left.getBooleanValue(), right.getBooleanValue());
@@ -243,6 +315,14 @@ public class Values {
         return compareMaps(left.getMapValue(), right.getMapValue());
       case TYPE_ORDER_VECTOR:
         return compareVectors(left.getMapValue(), right.getMapValue());
+      case TYPE_ORDER_REGEX:
+        return compareRegex(left.getMapValue(), right.getMapValue());
+      case TYPE_ORDER_BSON_OBJECT_ID:
+        return compareBsonObjectId(left.getMapValue(), right.getMapValue());
+      case TYPE_ORDER_BSON_TIMESTAMP:
+        return compareBsonTimestamp(left.getMapValue(), right.getMapValue());
+      case TYPE_ORDER_BSON_BINARY:
+        return compareBsonBinary(left.getMapValue(), right.getMapValue());
       default:
         throw fail("Invalid value type: " + leftType);
     }
@@ -284,15 +364,22 @@ public class Values {
     if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
       double leftDouble = left.getDoubleValue();
       if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
+        // left and right are both doubles.
         return Util.compareDoubles(leftDouble, right.getDoubleValue());
-      } else if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareMixed(leftDouble, right.getIntegerValue());
+      } else if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
+          || detectMapRepresentation(right) == MapRepresentation.INT32) {
+        // left is a double and right is a 32/64-bit integer.
+        return Util.compareMixed(leftDouble, getIntegerValue(right));
       }
-    } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      long leftLong = left.getIntegerValue();
-      if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(leftLong, right.getIntegerValue());
+    } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
+        || detectMapRepresentation(left) == MapRepresentation.INT32) {
+      long leftLong = getIntegerValue(left);
+      if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
+          || detectMapRepresentation(right) == MapRepresentation.INT32) {
+        // left and right both a 32/64-bit integer.
+        return Util.compareLongs(leftLong, getIntegerValue(right));
       } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
+        // left is a 32/64-bit integer and right is a double .
         return -1 * Util.compareMixed(right.getDoubleValue(), leftLong);
       }
     }
@@ -363,6 +450,54 @@ public class Values {
     return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
   }
 
+  private static int compareRegex(MapValue left, MapValue right) {
+    Map<String, Value> leftMap =
+        left.getFieldsMap().get(RESERVED_REGEX_KEY).getMapValue().getFieldsMap();
+    Map<String, Value> rightMap =
+        right.getFieldsMap().get(RESERVED_REGEX_KEY).getMapValue().getFieldsMap();
+
+    String leftPattern = leftMap.get(RESERVED_REGEX_PATTERN_KEY).getStringValue();
+    String rightPattern = rightMap.get(RESERVED_REGEX_PATTERN_KEY).getStringValue();
+
+    int comp = Util.compareUtf8Strings(leftPattern, rightPattern);
+    if (comp != 0) return comp;
+
+    String leftOption = leftMap.get(RESERVED_REGEX_OPTIONS_KEY).getStringValue();
+    String rightOption = rightMap.get(RESERVED_REGEX_OPTIONS_KEY).getStringValue();
+
+    return leftOption.compareTo(rightOption);
+  }
+
+  private static int compareBsonObjectId(MapValue left, MapValue right) {
+    String lhs = left.getFieldsMap().get(RESERVED_OBJECT_ID_KEY).getStringValue();
+    String rhs = right.getFieldsMap().get(RESERVED_OBJECT_ID_KEY).getStringValue();
+    return Util.compareUtf8Strings(lhs, rhs);
+  }
+
+  private static int compareBsonTimestamp(MapValue left, MapValue right) {
+    Map<String, Value> leftMap =
+        left.getFieldsMap().get(RESERVED_BSON_TIMESTAMP_KEY).getMapValue().getFieldsMap();
+    Map<String, Value> rightMap =
+        right.getFieldsMap().get(RESERVED_BSON_TIMESTAMP_KEY).getMapValue().getFieldsMap();
+
+    long leftSeconds = leftMap.get(RESERVED_BSON_TIMESTAMP_SECONDS_KEY).getIntegerValue();
+    long rightSeconds = rightMap.get(RESERVED_BSON_TIMESTAMP_SECONDS_KEY).getIntegerValue();
+
+    int comp = Util.compareLongs(leftSeconds, rightSeconds);
+    if (comp != 0) return comp;
+
+    long leftIncrement = leftMap.get(RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).getIntegerValue();
+    long rightIncrement = rightMap.get(RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).getIntegerValue();
+
+    return Util.compareLongs(leftIncrement, rightIncrement);
+  }
+
+  private static int compareBsonBinary(MapValue left, MapValue right) {
+    ByteString lhs = left.getFieldsMap().get(RESERVED_BSON_BINARY_KEY).getBytesValue();
+    ByteString rhs = right.getFieldsMap().get(RESERVED_BSON_BINARY_KEY).getBytesValue();
+    return Util.compareByteStrings(lhs, rhs);
+  }
+
   private static int compareVectors(MapValue left, MapValue right) {
     Map<String, Value> leftMap = left.getFieldsMap();
     Map<String, Value> rightMap = right.getFieldsMap();
@@ -396,7 +531,7 @@ public class Values {
         builder.append(value.getBooleanValue());
         break;
       case INTEGER_VALUE:
-        builder.append(value.getIntegerValue());
+        builder.append(getIntegerValue(value));
         break;
       case DOUBLE_VALUE:
         builder.append(value.getDoubleValue());
@@ -611,5 +746,75 @@ public class Values {
   /** Returns true if the Value represents a VectorValue . */
   public static boolean isVectorValue(Value value) {
     return VECTOR_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  }
+
+  public enum MapRepresentation {
+    REGEX,
+    BSON_OBJECT_ID,
+    INT32,
+    BSON_TIMESTAMP,
+    BSON_BINARY,
+    MIN_KEY,
+    MAX_KEY,
+    INTERNAL_MAX,
+    VECTOR,
+    SERVER_TIMESTAMP,
+    REGULAR_MAP
+  }
+
+  public static MapRepresentation detectMapRepresentation(Value value) {
+    if (value == null
+        || value.getMapValue() == null
+        || value.getMapValue().getFieldsMap() == null) {
+      return MapRepresentation.REGULAR_MAP;
+    }
+
+    Map<String, Value> fields = value.getMapValue().getFieldsMap();
+
+    // Check for type-based mappings
+    if (fields.containsKey(TYPE_KEY)) {
+      String typeString = fields.get(TYPE_KEY).getStringValue();
+
+      if (typeString.equals(RESERVED_VECTOR_KEY)) {
+        return MapRepresentation.VECTOR;
+      }
+      if (typeString.equals(RESERVED_MAX_KEY)) {
+        return MapRepresentation.INTERNAL_MAX;
+      }
+      if (typeString.equals(RESERVED_SERVER_TIMESTAMP_KEY)) {
+        return MapRepresentation.SERVER_TIMESTAMP;
+      }
+    }
+
+    if (fields.size() != 1) {
+      // All BSON types have 1 key in the map. To improve performance, we can
+      // return early if the number of keys in the map is not 1.
+      return MapRepresentation.REGULAR_MAP;
+    }
+
+    // Check for BSON-related mappings
+    if (fields.containsKey(RESERVED_REGEX_KEY)) {
+      return MapRepresentation.REGEX;
+    }
+    if (fields.containsKey(RESERVED_OBJECT_ID_KEY)) {
+      return MapRepresentation.BSON_OBJECT_ID;
+    }
+    if (fields.containsKey(RESERVED_INT32_KEY)) {
+      return MapRepresentation.INT32;
+    }
+    if (fields.containsKey(RESERVED_BSON_TIMESTAMP_KEY)) {
+      return MapRepresentation.BSON_TIMESTAMP;
+    }
+    if (fields.containsKey(RESERVED_BSON_BINARY_KEY)) {
+      return MapRepresentation.BSON_BINARY;
+    }
+    if (fields.containsKey(RESERVED_MIN_KEY)) {
+      return MapRepresentation.MIN_KEY;
+    }
+    if (fields.containsKey(RESERVED_MAX_KEY)) {
+      return MapRepresentation.MAX_KEY;
+    }
+
+    return MapRepresentation.REGULAR_MAP;
   }
 }

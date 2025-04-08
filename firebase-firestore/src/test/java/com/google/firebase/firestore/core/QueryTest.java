@@ -34,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -839,6 +840,29 @@ public class QueryTest {
         "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
     assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
     assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");
+
+    // BSON types
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.bsonObjectId("foo"))),
+        "collection|f:a<={__oid__:foo}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}))),
+        "collection|f:a<={__binary__:01010203}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.bsonTimestamp(1, 2))),
+        "collection|f:a<={__request_timestamp__:{increment:2,seconds:1}}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.regex("^foo", "i"))),
+        "collection|f:a<={__regex__:{options:i,pattern:^foo}}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.int32(1))),
+        "collection|f:a<={__int__:1}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.minKey())),
+        "collection|f:a<={__min__:null}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", FieldValue.maxKey())),
+        "collection|f:a<={__max__:null}|ob:aasc__name__asc");
   }
 
   private void assertCanonicalId(Query query, String expectedCanonicalId) {

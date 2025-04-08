@@ -330,6 +330,138 @@ public final class RemoteSerializerTest {
   }
 
   @Test
+  public void testEncodesBsonObjectIds() {
+    Value model = wrap(FieldValue.bsonObjectId("foo"));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__oid__", Value.newBuilder().setStringValue("foo").build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesBsonTimestamps() {
+    Value model = wrap(FieldValue.bsonTimestamp(12345, 67));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__request_timestamp__",
+                        Value.newBuilder()
+                            .setMapValue(
+                                MapValue.newBuilder()
+                                    .putFields(
+                                        "seconds",
+                                        Value.newBuilder().setIntegerValue(12345).build())
+                                    .putFields(
+                                        "increment", Value.newBuilder().setIntegerValue(67).build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesBsonBinaryData() {
+    Value model = wrap(FieldValue.bsonBinaryData(127, new byte[] {1, 2, 3}));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__binary__",
+                        Value.newBuilder()
+                            .setBytesValue(ByteString.copyFrom(new byte[] {127, 1, 2, 3}))
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesRegexValues() {
+    Value model = wrap(FieldValue.regex("^foo", "i"));
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__regex__",
+                        Value.newBuilder()
+                            .setMapValue(
+                                MapValue.newBuilder()
+                                    .putFields(
+                                        "pattern",
+                                        Value.newBuilder().setStringValue("^foo").build())
+                                    .putFields(
+                                        "options", Value.newBuilder().setStringValue("i").build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesInt32Values() {
+    Value model = wrap(FieldValue.int32(12345));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__int__", Value.newBuilder().setIntegerValue(12345).build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesMinKey() {
+    Value model = wrap(FieldValue.minKey());
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__min__", Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesMaxKey() {
+    Value model = wrap(FieldValue.maxKey());
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__max__", Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
   public void testEncodeDeleteMutation() {
     Mutation mutation = deleteMutation("docs/1");
 

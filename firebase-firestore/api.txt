@@ -47,6 +47,28 @@ package com.google.firebase.firestore {
     method public byte[] toBytes();
   }
 
+  public final class BsonBinaryData implements java.lang.Comparable<com.google.firebase.firestore.BsonBinaryData!> {
+    method public int compareTo(com.google.firebase.firestore.BsonBinaryData);
+    method public com.google.protobuf.ByteString dataAsByteString();
+    method public byte[] dataAsBytes();
+    method public static com.google.firebase.firestore.BsonBinaryData fromByteString(int, com.google.protobuf.ByteString);
+    method public static com.google.firebase.firestore.BsonBinaryData fromBytes(int, byte[]);
+    method public int subtype();
+  }
+
+  public final class BsonObjectId implements java.lang.Comparable<com.google.firebase.firestore.BsonObjectId!> {
+    ctor public BsonObjectId(String);
+    method public int compareTo(com.google.firebase.firestore.BsonObjectId);
+    field public final String! value;
+  }
+
+  public final class BsonTimestamp implements java.lang.Comparable<com.google.firebase.firestore.BsonTimestamp!> {
+    ctor public BsonTimestamp(long, long);
+    method public int compareTo(com.google.firebase.firestore.BsonTimestamp);
+    field public final long increment;
+    field public final long seconds;
+  }
+
   public class CollectionReference extends com.google.firebase.firestore.Query {
     method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentReference!> add(Object);
     method public com.google.firebase.firestore.DocumentReference document();
@@ -109,6 +131,9 @@ package com.google.firebase.firestore {
     method public <T> T? get(String, Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public com.google.firebase.firestore.Blob? getBlob(String);
     method public Boolean? getBoolean(String);
+    method public com.google.firebase.firestore.BsonBinaryData? getBsonBinaryData(String);
+    method public com.google.firebase.firestore.BsonObjectId? getBsonObjectId(String);
+    method public com.google.firebase.firestore.BsonTimestamp? getBsonTimestamp(String);
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData();
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public java.util.Date? getDate(String);
@@ -117,9 +142,13 @@ package com.google.firebase.firestore {
     method public Double? getDouble(String);
     method public com.google.firebase.firestore.GeoPoint? getGeoPoint(String);
     method public String getId();
+    method public com.google.firebase.firestore.Int32Value? getInt32Value(String);
     method public Long? getLong(String);
+    method public com.google.firebase.firestore.MaxKey? getMaxKey(String);
     method public com.google.firebase.firestore.SnapshotMetadata getMetadata();
+    method public com.google.firebase.firestore.MinKey? getMinKey(String);
     method public com.google.firebase.firestore.DocumentReference getReference();
+    method public com.google.firebase.firestore.RegexValue? getRegexValue(String);
     method public String? getString(String);
     method public com.google.firebase.Timestamp? getTimestamp(String);
     method public com.google.firebase.Timestamp? getTimestamp(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
@@ -149,9 +178,16 @@ package com.google.firebase.firestore {
   public abstract class FieldValue {
     method public static com.google.firebase.firestore.FieldValue arrayRemove(java.lang.Object!...!);
     method public static com.google.firebase.firestore.FieldValue arrayUnion(java.lang.Object!...!);
+    method public static com.google.firebase.firestore.BsonBinaryData bsonBinaryData(int, byte[]);
+    method public static com.google.firebase.firestore.BsonObjectId bsonObjectId(String);
+    method public static com.google.firebase.firestore.BsonTimestamp bsonTimestamp(long, long);
     method public static com.google.firebase.firestore.FieldValue delete();
     method public static com.google.firebase.firestore.FieldValue increment(double);
     method public static com.google.firebase.firestore.FieldValue increment(long);
+    method public static com.google.firebase.firestore.Int32Value int32(int);
+    method public static com.google.firebase.firestore.MaxKey maxKey();
+    method public static com.google.firebase.firestore.MinKey minKey();
+    method public static com.google.firebase.firestore.RegexValue regex(String, String);
     method public static com.google.firebase.firestore.FieldValue serverTimestamp();
     method public static com.google.firebase.firestore.VectorValue vector(double[]);
   }
@@ -303,6 +339,12 @@ package com.google.firebase.firestore {
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
+  public final class Int32Value implements java.lang.Comparable<com.google.firebase.firestore.Int32Value!> {
+    ctor public Int32Value(int);
+    method public int compareTo(com.google.firebase.firestore.Int32Value);
+    field public final int value;
+  }
+
   public enum ListenSource {
     enum_constant public static final com.google.firebase.firestore.ListenSource CACHE;
     enum_constant public static final com.google.firebase.firestore.ListenSource DEFAULT;
@@ -360,6 +402,10 @@ package com.google.firebase.firestore {
   public interface LocalCacheSettings {
   }
 
+  public final class MaxKey {
+    method public static com.google.firebase.firestore.MaxKey instance();
+  }
+
   public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
     method public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
@@ -394,6 +440,10 @@ package com.google.firebase.firestore {
   public enum MetadataChanges {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges EXCLUDE;
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
+  }
+
+  public final class MinKey {
+    method public static com.google.firebase.firestore.MinKey instance();
   }
 
   public interface OnProgressListener<ProgressT> {
@@ -489,6 +539,13 @@ package com.google.firebase.firestore {
     method public int size();
     method public <T> java.util.List<T!> toObjects(Class<T!>);
     method public <T> java.util.List<T!> toObjects(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+  }
+
+  public final class RegexValue implements java.lang.Comparable<com.google.firebase.firestore.RegexValue!> {
+    ctor public RegexValue(String, String);
+    method public int compareTo(com.google.firebase.firestore.RegexValue);
+    field public final String! options;
+    field public final String! pattern;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface ServerTimestamp {
