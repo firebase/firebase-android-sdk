@@ -33,8 +33,6 @@ abstract class SemVerTask : DefaultTask() {
   @get:Input abstract val currentVersionString: Property<String>
   @get:Input abstract val previousVersionString: Property<String>
 
-  @get:OutputFile abstract val outputApiFile: RegularFileProperty
-
   @TaskAction
   fun run() {
     val previous = ModuleVersion.fromStringOrNull(previousVersionString.get()) ?: return
