@@ -61,7 +61,11 @@ internal constructor(
        * [actively][NORMAL] sending data.
        */
       public val INTERRUPTED: Status = Status(1)
-      /** Indicates that a turn in the interaction has been completed. */
+      /**
+       * The server is finished sending data in the current interaction.
+       *
+       * Can be set alongside content, signifying that the content is the last in the turn.
+       */
       public val TURN_COMPLETE: Status = Status(2)
     }
   }
