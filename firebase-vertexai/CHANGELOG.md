@@ -1,8 +1,12 @@
 # Unreleased
+
+
+# 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
   `GenerativeModel` or `ImagenModel`.
 * [changed] Added new exception type for quota exceeded scenarios.
 * [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
+* [feature] Added preliminary support for bidirectional streaming. This feature is not yet fully supported.
 * [changed] **Breaking Change**: `ImagenInlineImage.data` now returns the raw
   image bytes (in JPEG or PNG format, as specified in
   `ImagenInlineImage.mimeType`) instead of Base64-encoded data. (#6800)
@@ -78,3 +82,4 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
+
