@@ -62,12 +62,24 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void instanceCreation() {
-    PerfSession session = new PerfSession("sessionId", mockClock, true);
+    PerfSession session = PerfSession.createWithId("sessionId");
     assertThat(session).isNotNull();
     session.setGaugeAndEventCollectionEnabled(true);
-    Assert.assertTrue(session.isGaugeAndEventCollectionEnabled());
+    assertThat(session.isVerbose()).isTrue();
     session.setGaugeAndEventCollectionEnabled(false);
-    Assert.assertFalse(session.isGaugeAndEventCollectionEnabled());
+    assertThat(session.isVerbose()).isFalse();
+    assertThat(FirebaseSessionsHelperKt.isAQS(session)).isTrue();
+  }
+
+  @Test
+  public void legacyInstanceCreation() {
+    PerfSession perfSession = PerfSession.createWithId(null);
+    assertThat(perfSession).isNotNull();
+    perfSession.setGaugeAndEventCollectionEnabled(true);
+    assertThat(perfSession.isVerbose()).isTrue();
+    perfSession.setGaugeAndEventCollectionEnabled(false);
+    assertThat(perfSession.isVerbose()).isFalse();
+    assertThat(FirebaseSessionsHelperKt.isAQS(perfSession)).isFalse();
   }
 
   @Test
@@ -142,7 +154,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSessionConversion() {
-    PerfSession session1 = new PerfSession("sessionId", mockClock, true);
+    PerfSession session1 = PerfSession.createWithId("aqsSessionId");
     session1.setGaugeAndEventCollectionEnabled(true);
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
@@ -153,7 +165,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSessionConversionWithoutVerbosity() {
-    PerfSession session1 = new PerfSession("sessionId", mockClock, true);
+    PerfSession session1 = PerfSession.createWithId("sessionId");
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
     Assert.assertEquals(session1.sessionId(), perfSession.getSessionId());
@@ -219,7 +231,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
                 - TimeUnit.MINUTES.toMicros(1)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock, true);
+    PerfSession session = PerfSession.createWithId("sessionId");
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -230,7 +242,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(4)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock, true);
+    PerfSession session = PerfSession.createWithId("sessionId");
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -241,7 +253,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock, true);
+    PerfSession session = PerfSession.createWithId("sessionId");
     assertThat(session.isSessionRunningTooLong()).isTrue();
   }
 }

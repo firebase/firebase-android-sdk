@@ -53,7 +53,6 @@ import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
 import com.google.firebase.perf.v1.PerfMetric;
 import com.google.firebase.perf.v1.PerfSession;
 import com.google.firebase.perf.v1.TraceMetric;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import com.google.testing.timing.FakeScheduledExecutorService;
 import java.util.ArrayList;
 import java.util.List;
@@ -1175,7 +1174,6 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     List<PerfSession> perfSessions = new ArrayList<>();
     com.google.firebase.perf.session.PerfSession testSession =
         com.google.firebase.perf.session.PerfSession.createWithId("fakeSessionId");
-    testSession.setAQSId(new SessionSubscriber.SessionDetails("fakeAqsSessionId"));
     perfSessions.add(testSession.build());
     validTrace.addAllPerfSessions(perfSessions);
 
@@ -1185,7 +1183,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeAqsSessionId");
+        .isEqualTo("fakeSessionId");
   }
 
   @Test
@@ -1195,7 +1193,6 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     List<PerfSession> perfSessions = new ArrayList<>();
     com.google.firebase.perf.session.PerfSession testSession =
         com.google.firebase.perf.session.PerfSession.createWithId("fakeSessionId");
-    testSession.setAQSId(new SessionSubscriber.SessionDetails("fakeAqsSessionId"));
     perfSessions.add(testSession.build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
@@ -1205,7 +1202,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeAqsSessionId");
+        .isEqualTo("fakeSessionId");
   }
 
   @Test

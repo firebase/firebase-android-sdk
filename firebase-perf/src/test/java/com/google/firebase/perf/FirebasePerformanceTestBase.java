@@ -96,8 +96,7 @@ public class FirebasePerformanceTestBase {
   }
 
   protected static void forceAppQualitySession() {
-    PerfSession existingPerfSession = PerfSession.createWithId(UUID.randomUUID().toString());
-    existingPerfSession.setAQSId(new SessionSubscriber.SessionDetails("notnull"));
+    PerfSession existingPerfSession = createPerfSession(false);
     SessionManager.getInstance().setPerfSession(existingPerfSession);
     SessionSubscriber sessionSubscriber = FirebasePerformance.getInstance().getSessionSubscriber();
     sessionSubscriber.onSessionChanged(new SessionSubscriber.SessionDetails("fakeAQS"));
@@ -108,5 +107,14 @@ public class FirebasePerformanceTestBase {
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
     forceAppQualitySession();
+  }
+
+  private static PerfSession createPerfSession(boolean isLegacy) {
+    if (isLegacy) {
+      return PerfSession.createWithId(null);
+    }
+
+    String aqsId = UUID.randomUUID().toString().replace("-", "");
+    return PerfSession.createWithId(aqsId);
   }
 }

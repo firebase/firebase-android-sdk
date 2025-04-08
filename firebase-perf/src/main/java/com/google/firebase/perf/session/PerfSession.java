@@ -24,7 +24,6 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /** Details of a session including a unique Id and related information. */
@@ -37,11 +36,9 @@ public class PerfSession implements Parcelable {
    * Creates a PerfSession object and decides what metrics to collect.
    */
   public static PerfSession createWithId(@Nullable String aqsSessionId) {
-    String sessionId;
-    if (aqsSessionId == null) {
-      sessionId = AqsUtilsKt.createSessionId();
-    } else {
-      sessionId = AqsUtilsKt.createSessionId(aqsSessionId);
+    String sessionId = aqsSessionId;
+    if (sessionId == null) {
+      sessionId = FirebaseSessionsHelperKt.createLegacySessionId();
     }
     PerfSession session = new PerfSession(sessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(session.shouldCollectGaugesAndEvents());
@@ -63,6 +60,7 @@ public class PerfSession implements Parcelable {
   }
 
   /** Returns the sessionId for the given session. */
+  @NonNull
   public String sessionId() {
     return sessionId;
   }
@@ -157,7 +155,8 @@ public class PerfSession implements Parcelable {
   public boolean shouldCollectGaugesAndEvents() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     return configResolver.isPerformanceMonitoringEnabled()
-        && (Math.abs(this.sessionId.hashCode() % 100) < configResolver.getSessionsSamplingRate() * 100);
+        && (Math.abs(this.sessionId.hashCode() % 100)
+            < configResolver.getSessionsSamplingRate() * 100);
   }
 
   /**

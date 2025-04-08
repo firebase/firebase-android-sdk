@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.session.FirebaseSessionsHelperKt;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
@@ -111,9 +112,7 @@ public class GaugeManager {
       gaugeManagerDataCollectionJob.cancel(false);
     }
 
-    if (session == null
-        || !session.isGaugeAndEventCollectionEnabled()
-        || session.sessionId().equals(Constants.UNDEFINED_AQS_ID_PREFIX)) {
+    if (!isValidSessionForLogging()) {
       logger.warn("Not starting gauge collection.");
       stopCollectingGauges();
       return;
@@ -123,7 +122,7 @@ public class GaugeManager {
         Math.min(
             getCpuGaugeCollectionFrequencyMs(applicationProcessState),
             getMemoryGaugeCollectionFrequencyMs(applicationProcessState));
-    String sessionIdForScheduledTask = session.aqsSessionId();
+    String sessionIdForScheduledTask = session.sessionId();
 
     try {
       gaugeManagerDataCollectionJob =
@@ -254,9 +253,9 @@ public class GaugeManager {
    * @param appState The app state for which these gauges are collected.
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
-    if (sessionId.equals(Constants.UNDEFINED_AQS_ID_PREFIX)) {
+    if (sessionId.contains(Constants.UNDEFINED_AQS_ID_PREFIX)) {
       // TODO(b/394127311): Use DebugEnforcementCheck.
-      logger.debug("Flushing gauge metrics to an undefined session ID.");
+      logger.debug("Flushing gauge metrics to a legacy session ID.");
     }
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
 
@@ -279,16 +278,16 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param aqsSessionId The {@link PerfSession#aqsSessionId()} ()} to which the collected Gauge Metrics
+   * @param sessionId The {@link PerfSession#sessionId()} ()} to which the collected Gauge Metrics
    *     should be associated with.
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String aqsSessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
-              .setSessionId(aqsSessionId)
+              .setSessionId(sessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
       transportManager.log(gaugeMetric, appState);
@@ -430,6 +429,11 @@ public class GaugeManager {
     } else {
       return memoryGaugeCollectionFrequency;
     }
+  }
+
+  private boolean isValidSessionForLogging() {
+    if (session == null) return false;
+    return session.isGaugeAndEventCollectionEnabled() && FirebaseSessionsHelperKt.isAQS(session);
   }
 
   @VisibleForTesting

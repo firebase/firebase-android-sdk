@@ -46,6 +46,7 @@ import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.BuildConfig;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -95,6 +96,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // Extracting the metadata from the application context is expensive and so we only extract it
   // once during initialization and cache it.
   private final ImmutableBundle mMetadataBundle;
+
+  private final SessionSubscriber sessionSubscriber;
 
   /** Valid HttpMethods for manual network APIs */
   @StringDef({
@@ -169,6 +172,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
+      this.sessionSubscriber = new FirebasePerformanceSessionSubscriber(false);
       return;
     }
     DebugEnforcementCheck.setEnforcement(BuildConfig.DEBUG);
@@ -186,8 +190,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-    FirebaseSessionsDependencies.register(
-        new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled()));
+    sessionSubscriber = new FirebasePerformanceSessionSubscriber(isPerformanceCollectionEnabled());
+    FirebaseSessionsDependencies.register(sessionSubscriber);
 
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
@@ -462,5 +466,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @VisibleForTesting
   Boolean getPerformanceCollectionForceEnabledState() {
     return mPerformanceCollectionForceEnabledState;
+  }
+
+  @VisibleForTesting
+  SessionSubscriber getSessionSubscriber() {
+    return sessionSubscriber;
   }
 }
