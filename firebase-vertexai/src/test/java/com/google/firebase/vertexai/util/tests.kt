@@ -193,7 +193,7 @@ internal fun goldenDevAPIStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenStreamingFile("vertexai/$name", httpStatusCode, GenerativeBackend.DEVELOPER_API, block)
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, GenerativeBackend.GOOGLE_AI, block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
@@ -248,7 +248,7 @@ internal fun goldenDevAPIUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenUnaryFile("developerapi/$name", httpStatusCode, GenerativeBackend.DEVELOPER_API, block)
+) = goldenUnaryFile("developerapi/$name", httpStatusCode, GenerativeBackend.GOOGLE_AI, block)
 
 /**
  * Loads a *Golden File* from the resource directory.
