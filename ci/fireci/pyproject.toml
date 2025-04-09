@@ -28,7 +28,7 @@ fireci = "fireci.main:cli"
 packages = ["fireci", "fireciplugins"]
 
 [tool.mypy]
-strict_ooptional = false
+strict_optional = false
 
 [[tool.mypy.overrides]]
   module = [
