@@ -19,11 +19,15 @@ package com.google.firebase.sessions
 import android.os.SystemClock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.serialization.Serializable
 
 /** Time with accessors for microseconds, milliseconds, and seconds. */
+@Serializable
 internal data class Time(val ms: Long) {
   val us = ms * 1_000
   val seconds = ms / 1_000
+
+  operator fun minus(time: Time): Duration = (ms - time.ms).milliseconds
 }
 
 /** Time provider interface, for testing purposes. */
