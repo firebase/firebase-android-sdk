@@ -464,7 +464,8 @@ public class GaugeManager {
 
   private boolean isValidSessionForLogging() {
     if (session == null) return false;
-    return session.isGaugeAndEventCollectionEnabled() && FirebaseSessionsHelperKt.isLegacy(session);
+    return session.isGaugeAndEventCollectionEnabled()
+        && !FirebaseSessionsHelperKt.isLegacy(session);
   }
 
   @VisibleForTesting

@@ -68,7 +68,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     assertThat(session.isVerbose()).isTrue();
     session.setGaugeAndEventCollectionEnabled(false);
     assertThat(session.isVerbose()).isFalse();
-    assertThat(FirebaseSessionsHelperKt.isLegacy(session)).isTrue();
+    assertThat(FirebaseSessionsHelperKt.isLegacy(session)).isFalse();
   }
 
   @Test
@@ -79,7 +79,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     assertThat(perfSession.isVerbose()).isTrue();
     perfSession.setGaugeAndEventCollectionEnabled(false);
     assertThat(perfSession.isVerbose()).isFalse();
-    assertThat(FirebaseSessionsHelperKt.isLegacy(perfSession)).isFalse();
+    assertThat(FirebaseSessionsHelperKt.isLegacy(perfSession)).isTrue();
   }
 
   @Test

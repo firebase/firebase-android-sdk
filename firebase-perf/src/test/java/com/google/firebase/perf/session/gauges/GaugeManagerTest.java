@@ -34,7 +34,6 @@ import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
-import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -534,7 +533,8 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   private PerfSession createTestPerfSession() {
-    PerfSession testSession = new PerfSession(UUID.randomUUID().toString(), new Clock());
+    PerfSession testSession =
+        PerfSession.createWithId(UUID.randomUUID().toString().replace("-", ""));
     testSession.setGaugeAndEventCollectionEnabled(true);
     return testSession;
   }
