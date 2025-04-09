@@ -28,6 +28,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
@@ -40,7 +41,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.shadows.ShadowPreconditions;
-import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -88,6 +89,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   @Mock private FlgTransport mockFlgTransport;
   @Captor private ArgumentCaptor<PerfMetric> perfMetricArgumentCaptor;
 
+  @Rule public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+
   @Before
   public void setUp() {
     initMocks(this);
@@ -105,7 +108,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   @After
   public void tearDown() {
     reset(mockFirebaseInstallationsApi);
-    FirebaseApp.clearInstancesForTest();
+    reset(mockConfigResolver);
+    reset(mockRateLimiter);
   }
 
   // region Transport Initialization
@@ -1168,9 +1172,9 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   public void logTraceMetric_sessionEnabled_doesNotStripOffSessionId() {
     TraceMetric.Builder validTrace = createValidTraceMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
-            .build());
+    com.google.firebase.perf.session.PerfSession testSession =
+        com.google.firebase.perf.session.PerfSession.createWithId("fakeSessionId");
+    perfSessions.add(testSession.build());
     validTrace.addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validTrace.build());
@@ -1187,9 +1191,9 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     NetworkRequestMetric.Builder validNetworkRequest =
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
-            .build());
+    com.google.firebase.perf.session.PerfSession testSession =
+        com.google.firebase.perf.session.PerfSession.createWithId("fakeSessionId");
+    perfSessions.add(testSession.build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validNetworkRequest.build());
