@@ -38,14 +38,14 @@ constructor(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   @Background backgroundDispatcher: CoroutineContext,
-  lifecycleServiceBinder: SessionLifecycleServiceBinder,
+  sessionsActivityLifecycleCallbacks: SessionsActivityLifecycleCallbacks,
 ) {
 
   init {
     Log.d(TAG, "Initializing Firebase Sessions SDK.")
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
-      appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+      appContext.registerActivityLifecycleCallbacks(sessionsActivityLifecycleCallbacks)
 
       CoroutineScope(backgroundDispatcher).launch {
         val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
@@ -56,16 +56,12 @@ constructor(
           if (!settings.sessionsEnabled) {
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
           } else {
-            val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-            lifecycleClient.bindToService(lifecycleServiceBinder)
-            SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
-
             firebaseApp.addLifecycleEventListener { _, _ ->
-              Log.w(
-                TAG,
-                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
-              )
-              SessionsActivityLifecycleCallbacks.lifecycleClient = null
+              // Log.w(
+              //   TAG,
+              //   "FirebaseApp instance deleted. Sessions library will stop collecting data.",
+              // )
+              // TODO(mrober): Clean up on firebase app delete
             }
           }
         }

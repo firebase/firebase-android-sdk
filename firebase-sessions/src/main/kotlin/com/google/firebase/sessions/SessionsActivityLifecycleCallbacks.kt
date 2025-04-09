@@ -19,34 +19,22 @@ package com.google.firebase.sessions
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
-import androidx.annotation.VisibleForTesting
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
- * Lifecycle callbacks that will inform the [SessionLifecycleClient] whenever an [Activity] in this
+ * Lifecycle callbacks that will inform the [SharedSessionRepository] whenever an [Activity] in this
  * application process goes foreground or background.
  */
-internal object SessionsActivityLifecycleCallbacks : ActivityLifecycleCallbacks {
-  @VisibleForTesting internal var hasPendingForeground: Boolean = false
+@Singleton
+internal class SessionsActivityLifecycleCallbacks
+@Inject
+constructor(private val sharedSessionRepository: SharedSessionRepository) :
+  ActivityLifecycleCallbacks {
 
-  var lifecycleClient: SessionLifecycleClient? = null
-    /** Sets the client and calls [SessionLifecycleClient.foregrounded] for pending foreground. */
-    set(lifecycleClient) {
-      field = lifecycleClient
-      lifecycleClient?.let {
-        if (hasPendingForeground) {
-          hasPendingForeground = false
-          it.foregrounded()
-        }
-      }
-    }
+  override fun onActivityResumed(activity: Activity) = sharedSessionRepository.appForeground()
 
-  override fun onActivityResumed(activity: Activity) {
-    lifecycleClient?.foregrounded() ?: run { hasPendingForeground = true }
-  }
-
-  override fun onActivityPaused(activity: Activity) {
-    lifecycleClient?.backgrounded()
-  }
+  override fun onActivityPaused(activity: Activity) = sharedSessionRepository.appBackground()
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
