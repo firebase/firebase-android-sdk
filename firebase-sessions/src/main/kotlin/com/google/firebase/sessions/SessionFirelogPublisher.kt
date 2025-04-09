@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 internal fun interface SessionFirelogPublisher {
 
   /** Asynchronously logs the session represented by the given [SessionDetails] to Firelog. */
-  fun logSession(sessionDetails: SessionDetails)
+  fun mayLogSession(sessionDetails: SessionDetails)
 
   companion object {
     val instance: SessionFirelogPublisher
@@ -64,7 +64,7 @@ constructor(
    * This will pull all the necessary information about the device in order to create a full
    * [SessionEvent], and then upload that through the Firelog interface.
    */
-  override fun logSession(sessionDetails: SessionDetails) {
+  override fun mayLogSession(sessionDetails: SessionDetails) {
     CoroutineScope(backgroundDispatcher).launch {
       if (shouldLogSession()) {
         val installationId = InstallationId.create(firebaseInstallations)
@@ -94,13 +94,16 @@ constructor(
 
   /** Determines if the SDK should log a session to Firelog. */
   private suspend fun shouldLogSession(): Boolean {
-    Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
-
+    val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
+    if (subscribers.values.none { it.isDataCollectionEnabled }) {
+      Log.d(TAG, "Sessions SDK disabled through data collection. Events will not be sent.")
+      return false
+    }
     // This will cause remote settings to be fetched if the cache is expired.
     sessionSettings.updateSettings()
 
     if (!sessionSettings.sessionsEnabled) {
-      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
+      Log.d(TAG, "Sessions SDK disabled through settings API. Events will not be sent.")
       return false
     }
 
