@@ -39,47 +39,21 @@ class SessionGeneratorTest {
     return true
   }
 
-  // This test case isn't important behavior. Nothing should access
-  // currentSession before generateNewSession has been called.
-  @Test(expected = UninitializedPropertyAccessException::class)
-  fun currentSession_beforeGenerate_throwsUninitialized() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    sessionGenerator.currentSession
-  }
-
-  @Test
-  fun hasGenerateSession_beforeGenerate_returnsFalse() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    assertThat(sessionGenerator.hasGenerateSession).isFalse()
-  }
-
-  @Test
-  fun hasGenerateSession_afterGenerate_returnsTrue() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    sessionGenerator.generateNewSession()
-
-    assertThat(sessionGenerator.hasGenerateSession).isTrue()
-  }
-
   @Test
   fun generateNewSession_generatesValidSessionIds() {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
-    sessionGenerator.generateNewSession()
+    val sessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
-    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
-    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.firstSessionId)).isTrue()
 
     // Validate several random session ids.
+    var currentSession = sessionDetails
     repeat(16) {
-      assertThat(isValidSessionId(sessionGenerator.generateNewSession().sessionId)).isTrue()
+      currentSession = sessionGenerator.generateNewSession(currentSession)
+      assertThat(isValidSessionId(currentSession.sessionId)).isTrue()
     }
   }
 
@@ -88,12 +62,12 @@ class SessionGeneratorTest {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
-    sessionGenerator.generateNewSession()
+    val sessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
-    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
-    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.firstSessionId)).isTrue()
 
-    assertThat(sessionGenerator.currentSession)
+    assertThat(sessionDetails)
       .isEqualTo(
         SessionDetails(
           sessionId = SESSION_ID_1,
@@ -111,7 +85,7 @@ class SessionGeneratorTest {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
-    val firstSessionDetails = sessionGenerator.generateNewSession()
+    val firstSessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
     assertThat(isValidSessionId(firstSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(firstSessionDetails.firstSessionId)).isTrue()
@@ -126,7 +100,8 @@ class SessionGeneratorTest {
         )
       )
 
-    val secondSessionDetails = sessionGenerator.generateNewSession()
+    val secondSessionDetails =
+      sessionGenerator.generateNewSession(currentSession = firstSessionDetails)
 
     assertThat(isValidSessionId(secondSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(secondSessionDetails.firstSessionId)).isTrue()
@@ -143,7 +118,8 @@ class SessionGeneratorTest {
       )
 
     // Do a third round just in case
-    val thirdSessionDetails = sessionGenerator.generateNewSession()
+    val thirdSessionDetails =
+      sessionGenerator.generateNewSession(currentSession = secondSessionDetails)
 
     assertThat(isValidSessionId(thirdSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(thirdSessionDetails.firstSessionId)).isTrue()

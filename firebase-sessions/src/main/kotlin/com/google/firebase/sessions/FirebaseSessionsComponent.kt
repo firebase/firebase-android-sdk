@@ -66,7 +66,6 @@ import kotlinx.coroutines.CoroutineScope
 internal interface FirebaseSessionsComponent {
   val firebaseSessions: FirebaseSessions
 
-  val sessionDatastore: SessionDatastore
   val sessionFirelogPublisher: SessionFirelogPublisher
   val sessionGenerator: SessionGenerator
   val sessionsSettings: SessionsSettings
@@ -95,17 +94,9 @@ internal interface FirebaseSessionsComponent {
   interface MainModule {
     @Binds @Singleton fun eventGDTLoggerInterface(impl: EventGDTLogger): EventGDTLoggerInterface
 
-    @Binds @Singleton fun sessionDatastore(impl: SessionDatastoreImpl): SessionDatastore
-
     @Binds
     @Singleton
     fun sessionFirelogPublisher(impl: SessionFirelogPublisherImpl): SessionFirelogPublisher
-
-    @Binds
-    @Singleton
-    fun sessionLifecycleServiceBinder(
-      impl: SessionLifecycleServiceBinderImpl
-    ): SessionLifecycleServiceBinder
 
     @Binds
     @Singleton
@@ -122,6 +113,10 @@ internal interface FirebaseSessionsComponent {
     fun remoteSettings(impl: RemoteSettings): SettingsProvider
 
     @Binds @Singleton fun settingsCache(impl: SettingsCacheImpl): SettingsCache
+
+    @Binds
+    @Singleton
+    fun sharedSessionRepository(impl: SharedSessionRepositoryImpl): SharedSessionRepository
 
     companion object {
       private const val TAG = "FirebaseSessions"
@@ -157,13 +152,14 @@ internal interface FirebaseSessionsComponent {
       fun sessionDataStore(
         appContext: Context,
         @Blocking blockingDispatcher: CoroutineContext,
+        sessionDataSerializer: SessionDataSerializer,
       ): DataStore<SessionData> =
         createDataStore(
-          serializer = SessionDataSerializer,
+          serializer = sessionDataSerializer,
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
               Log.w(TAG, "CorruptionException in session data DataStore", ex)
-              SessionDataSerializer.defaultValue
+              sessionDataSerializer.defaultValue
             },
           scope = CoroutineScope(blockingDispatcher),
           produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data") },
