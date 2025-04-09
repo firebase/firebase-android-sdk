@@ -26,3 +26,19 @@ fireci = "fireci.main:cli"
 
 [tool.setuptools]
 packages = ["fireci", "fireciplugins"]
+
+[tool.mypy]
+strict_ooptional = false
+
+[[tool.mypy.overrides]]
+  module = [
+	"google.cloud",
+	"matplotlib",
+	"matplotlib.pyplot",
+	"pandas",
+	"pystache",
+	"requests",
+	"seaborn",
+	"yaml"
+  ]
+  ignore_missing_imports = true
