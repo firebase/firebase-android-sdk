@@ -56,13 +56,13 @@ class ApplicationInfoTest {
             deviceManufacturer = Build.MANUFACTURER,
             actualCurrentProcessDetails,
             actualAppProcessDetails,
-          )
+          ),
         )
       )
   }
 
   @Test
-  fun applicationInfo_missiongVersionCode_populatesInfoCorrectly() {
+  fun applicationInfo_missingVersionCode_populatesInfoCorrectly() {
     // Initialize Firebase with no version code set.
     val firebaseApp =
       Firebase.initialize(
@@ -71,7 +71,7 @@ class ApplicationInfoTest {
           .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
           .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
           .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
 
     val actualCurrentProcessDetails =
@@ -96,7 +96,7 @@ class ApplicationInfoTest {
             deviceManufacturer = Build.MANUFACTURER,
             actualCurrentProcessDetails,
             actualAppProcessDetails,
-          )
+          ),
         )
       )
   }
