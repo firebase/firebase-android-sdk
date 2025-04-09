@@ -284,4 +284,4 @@ jobs:
 
           echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/6857:"
           cat message.txt
-          gh issue comment 6857 --body-file message.txt
+          gh issue comment 6857 --body-file message.txt -R ${{ github.repository }}
