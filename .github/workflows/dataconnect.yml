@@ -277,7 +277,7 @@ jobs:
           cat >message.txt <<EOF
           Result of workflow ${{ github.workflow }} at ${{ github.ref }}: ${{ job.status }}
           ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
-          job=${{ github.job }} run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }} 
+          job=${{ github.job }} run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }}
           EOF
 
           echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/6857:"
