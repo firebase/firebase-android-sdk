@@ -1568,11 +1568,10 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_get_inputstream_exception_handling() throws Exception {
-    ConfigAutoFetch configAutoFetchSpy = spy(configAutoFetch);
     InputStream inputStream = mock(InputStream.class);
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
-    configAutoFetchSpy.listenForNotifications();
+    configAutoFetch.listenForNotifications();
 
     verify(mockHttpURLConnection, times(1)).getInputStream();
     verify(inputStream, never()).close();
