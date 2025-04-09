@@ -103,10 +103,7 @@ constructor(
           }
         }
       }
-
-      // TODO(mrober): If data collection is enabled for at least one subscriber...
-      // https://github.com/firebase/firebase-android-sdk/blob/a53ab64150608c2eb3eafb17d81dfe217687d955/firebase-sessions/src/main/kotlin/com/google/firebase/sessions/FirebaseSessions.kt#L110
-      sessionFirelogPublisher.logSession(sessionDetails = newSessionDetails)
+      sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
     }
   }
 
