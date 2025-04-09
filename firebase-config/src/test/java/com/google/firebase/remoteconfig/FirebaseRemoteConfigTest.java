@@ -1567,6 +1567,18 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtime_stream_listen_get_inputstream_exception_handling() throws Exception {
+    ConfigAutoFetch configAutoFetchSpy = spy(configAutoFetch);
+    InputStream inputStream = mock(InputStream.class);
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    configAutoFetchSpy.listenForNotifications();
+
+    verify(mockHttpURLConnection, times(1)).getInputStream();
+    verify(inputStream, never()).close();
+  }
+
+  @Test
   public void realtime_stream_autofetch_success() throws Exception {
     // Setup activated configs with keys "string_param", "long_param"
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);

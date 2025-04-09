@@ -119,7 +119,7 @@ public class ConfigAutoFetch {
       handleNotifications(inputStream);
     } catch (IOException ex) {
       // If the real-time connection is at an unexpected lifecycle state when the app is
-      // backgrounded, it's expected closing the InputStream will throw an exception.
+      // backgrounded, it's expected closing the httpURLConnection will throw an exception.
       if (!isInBackground) {
         // Otherwise, the real-time server connection was closed due to a transient issue.
         Log.d(TAG, "Real-time connection was closed due to an exception.", ex);
