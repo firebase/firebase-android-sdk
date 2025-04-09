@@ -266,10 +266,11 @@ jobs:
 
   email-notification:
     needs: [integration-test, actionlint-dataconnect-yml]
-    if: true || github.event_name == 'schedule'
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Post Comment on Issue #6857
+        if: true || github.event_name == 'schedule'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
