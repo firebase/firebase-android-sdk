@@ -54,7 +54,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
-  private Boolean isInBackground;
+  private boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -204,6 +204,8 @@ public class ConfigAutoFetch {
         currentConfigUpdateMessage = "";
       }
     }
+
+    reader.close();
   }
 
   private void autoFetch(int remainingAttempts, long targetVersion) {

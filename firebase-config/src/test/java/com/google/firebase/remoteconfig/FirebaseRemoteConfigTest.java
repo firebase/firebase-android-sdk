@@ -1288,7 +1288,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(inputStreamSpy, times(1)).close();
+    verify(inputStreamSpy, times(2)).close();
   }
 
   @Test
