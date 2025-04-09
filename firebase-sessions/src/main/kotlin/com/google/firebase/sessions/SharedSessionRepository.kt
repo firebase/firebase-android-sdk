@@ -90,20 +90,18 @@ constructor(
     Log.d(TAG, "App foregrounded on ${getProcessName()} - $sessionData")
 
     if (shouldInitiateNewSession(sessionData)) {
-      // Generate new session details on main thread so the timestamp is as current as possible
-      val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
-
       CoroutineScope(backgroundDispatcher).launch {
         sessionDataStore.updateData { currentSessionData ->
           // Double-check pattern
           if (shouldInitiateNewSession(currentSessionData)) {
+            val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
+            sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
             currentSessionData.copy(sessionDetails = newSessionDetails)
           } else {
             currentSessionData
           }
         }
       }
-      sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
     }
   }
 
