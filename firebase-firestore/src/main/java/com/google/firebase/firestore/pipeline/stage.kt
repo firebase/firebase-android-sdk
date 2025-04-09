@@ -18,7 +18,6 @@ import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Field.Companion.of
-import com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
@@ -55,7 +54,7 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<GenericStage>(name, options) {
   companion object {
-    @JvmStatic fun of(name: String) = GenericStage(name, emptyList(), InternalOptions.EMPTY)
+    @JvmStatic fun ofName(name: String) = GenericStage(name, emptyList(), InternalOptions.EMPTY)
   }
 
   override fun self(options: InternalOptions) = GenericStage(name, arguments, options)
@@ -71,7 +70,7 @@ internal sealed class GenericArg {
   companion object {
     fun from(arg: Any?): GenericArg =
       when (arg) {
-        is AggregateExpr -> AggregateArg(arg)
+        is AggregateFunction -> AggregateArg(arg)
         is Ordering -> OrderingArg(arg)
         is Map<*, *> ->
           MapArg(arg.asIterable().associate { (key, value) -> key as String to from(value) })
@@ -81,7 +80,7 @@ internal sealed class GenericArg {
   }
   abstract fun toProto(userDataReader: UserDataReader): Value
 
-  data class AggregateArg(val aggregate: AggregateExpr) : GenericArg() {
+  data class AggregateArg(val aggregate: AggregateFunction) : GenericArg() {
     override fun toProto(userDataReader: UserDataReader) = aggregate.toProto(userDataReader)
   }
 
@@ -156,11 +155,11 @@ internal constructor(
 
 class AggregateStage
 internal constructor(
-  private val accumulators: Map<String, AggregateExpr>,
+  private val accumulators: Map<String, AggregateFunction>,
   private val groups: Map<String, Expr>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AggregateStage>("aggregate", options) {
-  private constructor(accumulators: Map<String, AggregateExpr>) : this(accumulators, emptyMap())
+  private constructor(accumulators: Map<String, AggregateFunction>) : this(accumulators, emptyMap())
   companion object {
     @JvmStatic
     fun withAccumulators(vararg accumulators: AggregateWithAlias): AggregateStage {

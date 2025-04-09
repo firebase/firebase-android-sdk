@@ -17,7 +17,7 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.firestore.pipeline.AggregateExpr;
+import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateWithAlias;
 import com.google.firebase.firestore.pipeline.Field;
 import java.util.Objects;
@@ -205,7 +205,7 @@ public abstract class AggregateField {
     @NonNull
     @Override
     AggregateWithAlias toPipeline() {
-      return AggregateExpr.countAll().alias(getAlias());
+      return AggregateFunction.countAll().alias(getAlias());
     }
   }
 

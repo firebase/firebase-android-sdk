@@ -15,25 +15,25 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.pipeline.Function.add;
-import static com.google.firebase.firestore.pipeline.Function.and;
-import static com.google.firebase.firestore.pipeline.Function.arrayContains;
-import static com.google.firebase.firestore.pipeline.Function.arrayContainsAny;
-import static com.google.firebase.firestore.pipeline.Function.cosineDistance;
-import static com.google.firebase.firestore.pipeline.Function.endsWith;
-import static com.google.firebase.firestore.pipeline.Function.eq;
-import static com.google.firebase.firestore.pipeline.Function.euclideanDistance;
-import static com.google.firebase.firestore.pipeline.Function.gt;
-import static com.google.firebase.firestore.pipeline.Function.logicalMax;
-import static com.google.firebase.firestore.pipeline.Function.lt;
-import static com.google.firebase.firestore.pipeline.Function.lte;
-import static com.google.firebase.firestore.pipeline.Function.mapGet;
-import static com.google.firebase.firestore.pipeline.Function.neq;
-import static com.google.firebase.firestore.pipeline.Function.not;
-import static com.google.firebase.firestore.pipeline.Function.or;
-import static com.google.firebase.firestore.pipeline.Function.startsWith;
-import static com.google.firebase.firestore.pipeline.Function.strConcat;
-import static com.google.firebase.firestore.pipeline.Function.subtract;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.add;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.and;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.arrayContains;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.cosineDistance;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.endsWith;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.eq;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.euclideanDistance;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.gt;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.logicalMax;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.lt;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.lte;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.mapGet;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.neq;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.not;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.or;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.startsWith;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.strConcat;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.subtract;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
@@ -42,11 +42,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Correspondence;
-import com.google.firebase.firestore.pipeline.AggregateExpr;
+import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.Constant;
 import com.google.firebase.firestore.pipeline.Field;
-import com.google.firebase.firestore.pipeline.Function;
+import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.GenericStage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
@@ -226,7 +226,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .aggregate(AggregateExpr.countAll().alias("count"))
+            .aggregate(AggregateFunction.countAll().alias("count"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -240,10 +240,10 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Function.eq("genre", "Science Fiction"))
+            .where(FunctionExpr.eq("genre", "Science Fiction"))
             .aggregate(
-                AggregateExpr.countAll().alias("count"),
-                AggregateExpr.avg("rating").alias("avgRating"),
+                AggregateFunction.countAll().alias("count"),
+                AggregateFunction.avg("rating").alias("avgRating"),
                 Field.of("rating").max().alias("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -260,7 +260,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(lt(Field.of("published"), 1984))
             .aggregate(
-                AggregateStage.withAccumulators(AggregateExpr.avg("rating").alias("avgRating"))
+                AggregateStage.withAccumulators(AggregateFunction.avg("rating").alias("avgRating"))
                     .withGroups("genre"))
             .where(gt("avgRating", 4.3))
             .sort(Field.of("avgRating").descending())
@@ -282,9 +282,9 @@ public class PipelineTest {
             .genericStage("where", lt(Field.of("published"), 1984))
             .genericStage(
                 "aggregate",
-                ImmutableMap.of("avgRating", AggregateExpr.avg("rating")),
+                ImmutableMap.of("avgRating", AggregateFunction.avg("rating")),
                 ImmutableMap.of("genre", Field.of("genre")))
-            .genericStage(GenericStage.of("where").withArguments(gt("avgRating", 4.3)))
+            .genericStage(GenericStage.ofName("where").withArguments(gt("avgRating", 4.3)))
             .genericStage("sort", Field.of("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -303,7 +303,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .aggregate(
-                AggregateExpr.countAll().alias("count"),
+                AggregateFunction.countAll().alias("count"),
                 Field.of("rating").max().alias("maxRating"),
                 Field.of("published").min().alias("minPublished"))
             .execute();
@@ -600,7 +600,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Function.like("title", "%Guide%"))
+            .where(FunctionExpr.like("title", "%Guide%"))
             .select("title")
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -614,7 +614,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Function.regexContains("title", "(?i)(the|of)"))
+            .where(FunctionExpr.regexContains("title", "(?i)(the|of)"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
@@ -625,7 +625,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Function.regexContains("title", ".*(?i)(the|of).*"))
+            .where(FunctionExpr.regexContains("title", ".*(?i)(the|of).*"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
@@ -771,7 +771,7 @@ public class PipelineTest {
             .collection(randomCol)
             .select(
                 cosineDistance(Constant.vector(sourceVector), targetVector).alias("cosineDistance"),
-                Function.dotProduct(Constant.vector(sourceVector), targetVector)
+                FunctionExpr.dotProduct(Constant.vector(sourceVector), targetVector)
                     .alias("dotProductDistance"),
                 euclideanDistance(Constant.vector(sourceVector), targetVector)
                     .alias("euclideanDistance"))

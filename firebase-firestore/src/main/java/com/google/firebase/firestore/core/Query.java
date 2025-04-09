@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.pipeline.Function.and;
-import static com.google.firebase.firestore.pipeline.Function.or;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.and;
+import static com.google.firebase.firestore.pipeline.FunctionExpr.or;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
@@ -34,7 +34,7 @@ import com.google.firebase.firestore.pipeline.CollectionSource;
 import com.google.firebase.firestore.pipeline.DocumentsSource;
 import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.pipeline.Field;
-import com.google.firebase.firestore.pipeline.Function;
+import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.Stage;
 import com.google.firestore.v1.Value;
@@ -552,11 +552,11 @@ public final class Query {
     }
 
     if (startAt != null) {
-      p = p.where(whereConditionsFromCursor(startAt, fields, Function::gt));
+      p = p.where(whereConditionsFromCursor(startAt, fields, FunctionExpr::gt));
     }
 
     if (endAt != null) {
-      p = p.where(whereConditionsFromCursor(endAt, fields, Function::lt));
+      p = p.where(whereConditionsFromCursor(endAt, fields, FunctionExpr::lt));
     }
 
     // Cursors, Limit, Offset
@@ -585,7 +585,7 @@ public final class Query {
     int last = size - 1;
     BooleanExpr condition = cmp.apply(fields.get(last), boundPosition.get(last));
     if (bound.isInclusive()) {
-      condition = or(condition, Function.eq(fields.get(last), boundPosition.get(last)));
+      condition = or(condition, FunctionExpr.eq(fields.get(last), boundPosition.get(last)));
     }
     for (int i = size - 2; i >= 0; i--) {
       final Field field = fields.get(i);

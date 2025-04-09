@@ -18,38 +18,41 @@ import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Value
 
 class AggregateWithAlias
-internal constructor(internal val alias: String, internal val expr: AggregateExpr)
+internal constructor(internal val alias: String, internal val expr: AggregateFunction)
 
-class AggregateExpr
+class AggregateFunction
 private constructor(private val name: String, private val params: Array<out Expr>) {
   private constructor(name: String) : this(name, emptyArray())
   private constructor(name: String, expr: Expr) : this(name, arrayOf(expr))
   private constructor(name: String, fieldName: String) : this(name, Field.of(fieldName))
 
   companion object {
-    @JvmStatic fun countAll() = AggregateExpr("count")
 
-    @JvmStatic fun count(fieldName: String) = AggregateExpr("count", fieldName)
+    @JvmStatic fun generic(name: String, vararg expr: Expr) = AggregateFunction(name, expr)
 
-    @JvmStatic fun count(expr: Expr) = AggregateExpr("count", expr)
+    @JvmStatic fun countAll() = AggregateFunction("count")
 
-    @JvmStatic fun countIf(condition: BooleanExpr) = AggregateExpr("countIf", condition)
+    @JvmStatic fun count(fieldName: String) = AggregateFunction("count", fieldName)
 
-    @JvmStatic fun sum(fieldName: String) = AggregateExpr("sum", fieldName)
+    @JvmStatic fun count(expr: Expr) = AggregateFunction("count", expr)
 
-    @JvmStatic fun sum(expr: Expr) = AggregateExpr("sum", expr)
+    @JvmStatic fun countIf(condition: BooleanExpr) = AggregateFunction("countIf", condition)
 
-    @JvmStatic fun avg(fieldName: String) = AggregateExpr("avg", fieldName)
+    @JvmStatic fun sum(fieldName: String) = AggregateFunction("sum", fieldName)
 
-    @JvmStatic fun avg(expr: Expr) = AggregateExpr("avg", expr)
+    @JvmStatic fun sum(expr: Expr) = AggregateFunction("sum", expr)
 
-    @JvmStatic fun min(fieldName: String) = AggregateExpr("min", fieldName)
+    @JvmStatic fun avg(fieldName: String) = AggregateFunction("avg", fieldName)
 
-    @JvmStatic fun min(expr: Expr) = AggregateExpr("min", expr)
+    @JvmStatic fun avg(expr: Expr) = AggregateFunction("avg", expr)
 
-    @JvmStatic fun max(fieldName: String) = AggregateExpr("max", fieldName)
+    @JvmStatic fun min(fieldName: String) = AggregateFunction("min", fieldName)
 
-    @JvmStatic fun max(expr: Expr) = AggregateExpr("max", expr)
+    @JvmStatic fun min(expr: Expr) = AggregateFunction("min", expr)
+
+    @JvmStatic fun max(fieldName: String) = AggregateFunction("max", fieldName)
+
+    @JvmStatic fun max(expr: Expr) = AggregateFunction("max", expr)
   }
 
   fun alias(alias: String) = AggregateWithAlias(alias, this)
