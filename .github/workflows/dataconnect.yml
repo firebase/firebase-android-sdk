@@ -51,10 +51,6 @@ jobs:
           - 5432:5432
 
     steps:
-      - run: |
-          echo "FORCED FAILURE gxppygj343"
-          exit 1
-
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
@@ -272,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post Comment on Issue #6857
-        if: true || github.event_name == 'schedule'
+        if: github.event_name == 'schedule'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
