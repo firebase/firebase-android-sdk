@@ -32,6 +32,8 @@ abstract class SemVerTask : DefaultTask() {
   @get:Input abstract val currentVersionString: Property<String>
   @get:Input abstract val previousVersionString: Property<String>
 
+  // TODO cache output
+
   @TaskAction
   fun run() {
     val previous = ModuleVersion.fromStringOrNull(previousVersionString.get()) ?: return
