@@ -175,7 +175,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
     DebugEnforcementCheck.setEnforcement(BuildConfig.ENFORCE_LEGACY_SESSIONS);
-    logger.debug("");
 
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
