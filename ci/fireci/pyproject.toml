@@ -17,7 +17,8 @@ dependencies = [
   "requests==2.31.0",
   "seaborn==0.12.2",
   "PyYAML==6.0.1",
-  "termcolor==2.4.0"
+  "termcolor==2.4.0",
+  "pytest"
 ]
 
 [project.scripts]
@@ -25,6 +26,3 @@ fireci = "fireci.main:cli"
 
 [tool.setuptools]
 packages = ["fireci", "fireciplugins"]
-
-[project.optional-dependencies]
-tests = ["pytest"]
