@@ -267,6 +267,8 @@ jobs:
   email-notification:
     needs: [integration-test, actionlint-dataconnect-yml]
     if: always()
+    permissions:
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Post Comment on Issue #6857
