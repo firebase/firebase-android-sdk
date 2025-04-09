@@ -260,7 +260,7 @@ jobs:
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
-  email-notification:
+  send-notifications:
     needs: [integration-test, actionlint-dataconnect-yml]
     if: always()
     permissions:
