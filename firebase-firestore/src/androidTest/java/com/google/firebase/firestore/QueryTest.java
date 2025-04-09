@@ -1630,4 +1630,56 @@ public class QueryTest {
     Query query2 = collection.where(inArray("a", asList(2, 3))).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
   }
+
+  @Test
+  public void testSDKUsesNotEqualFiltersSameAsServer() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a", map("zip", Double.NaN),
+            "b", map("zip", 91102L),
+            "c", map("zip", 98101L),
+            "d", map("zip", "98101"),
+            "e", map("zip", asList(98101L)),
+            "f", map("zip", asList(98101L, 98102L)),
+            "g", map("zip", asList("98101", map("zip", 98101L))),
+            "h", map("zip", map("code", 500L)),
+            "i", map("zip", null),
+            "j", map("code", 500L));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // populate cache with all documents first to ensure getDocsFromCache() scans all docs
+    waitFor(testCollectionWithDocs(testDocs).get());
+
+    Query query = collection.whereNotEqualTo("zip", 98101L);
+    checkOnlineAndOfflineResultsMatch(query, "a", "b", "d", "e", "f", "g", "h");
+
+    query = collection.whereNotEqualTo("zip", Double.NaN);
+    checkOnlineAndOfflineResultsMatch(query, "b", "c", "d", "e", "f", "g", "h");
+  }
+
+  @Test
+  public void testSDKUsesNotInFiltersSameAsServer() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a", map("zip", Double.NaN),
+            "b", map("zip", 91102L),
+            "c", map("zip", 98101L),
+            "d", map("zip", "98101"),
+            "e", map("zip", asList(98101L)),
+            "f", map("zip", asList(98101L, 98102L)),
+            "g", map("zip", asList("98101", map("zip", 98101L))),
+            "h", map("zip", map("code", 500L)),
+            "i", map("zip", null),
+            "j", map("code", 500L));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // populate cache with all documents first to ensure getDocsFromCache() scans all docs
+    waitFor(testCollectionWithDocs(testDocs).get());
+
+    Query query = collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L)));
+    checkOnlineAndOfflineResultsMatch(query, "a", "b", "d", "e", "g", "h");
+
+    query = collection.whereNotIn("zip", nullList());
+    checkOnlineAndOfflineResultsMatch(query);
+  }
 }
