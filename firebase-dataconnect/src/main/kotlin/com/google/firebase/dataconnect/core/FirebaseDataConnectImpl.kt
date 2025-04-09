@@ -432,7 +432,7 @@ internal class FirebaseDataConnectImpl(
         }
       }
 
-    // If the update "close job" was the one that we created, then start it!
+    // If the updated "close job" was the one that we created, then start it!
     if (updatedCloseJob.ref === newCloseJob) {
       newCloseJob.start()
     }
