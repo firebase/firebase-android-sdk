@@ -23,7 +23,6 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.generated.GeneratedConnector
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
@@ -32,6 +31,8 @@ import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckToken
 import com.google.firebase.dataconnect.testutil.FirebaseAuthBackend
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
+import com.google.firebase.dataconnect.testutil.awaitAppCheckReady
+import com.google.firebase.dataconnect.testutil.awaitAuthReady
 import com.google.firebase.dataconnect.testutil.getFirebaseAppIdFromStrings
 import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.util.SuspendingLazy
@@ -138,7 +139,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldNotSendAuthMetadataWhenNotLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val queryRef = dataConnect.query("qryfyk7yfppfe", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
 
@@ -151,7 +152,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldNotSendAuthMetadataWhenNotLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutckjpte9v9j", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -165,7 +166,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldSendAuthMetadataWhenLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     firebaseAuthSignIn(dataConnect)
@@ -179,7 +180,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldSendAuthMetadataWhenLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutayn7as5k7d", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -194,7 +195,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldNotSendAuthMetadataAfterLogout() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob1 = async { grpcServer.metadatas.first() }
     val metadatasJob2 = async { grpcServer.metadatas.take(2).last() }
@@ -212,7 +213,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldNotSendAuthMetadataAfterLogout() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    dataConnect.awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutvw945ag3vv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob1 = async { grpcServer.metadatas.first() }
@@ -233,7 +234,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
+    dataConnect.awaitAppCheckReady()
     val queryRef = dataConnect.query("qrybbeekpkkck", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
 
@@ -248,7 +249,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
+    dataConnect.awaitAppCheckReady()
     val mutationRef =
       dataConnect.mutation("mutbs7hhxk39c", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -262,7 +263,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
+    dataConnect.awaitAppCheckReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
@@ -277,7 +278,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
+    dataConnect.awaitAppCheckReady()
     val mutationRef =
       dataConnect.mutation("mutz4hzqzpgb4", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }

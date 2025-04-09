@@ -190,7 +190,7 @@ data class ProtoField(
 
   val lowerCamelCaseName: String
     get() {
-      return SNAKE_CASE_REGEX.replace(name) { it.value.replace("_", "").toUpperCase() }
+      return SNAKE_CASE_REGEX.replace(name) { it.value.replace("_", "").uppercase() }
     }
 
   val camelCaseName: String
