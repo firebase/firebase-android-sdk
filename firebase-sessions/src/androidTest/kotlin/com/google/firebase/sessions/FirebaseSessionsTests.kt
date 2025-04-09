@@ -42,7 +42,6 @@ class FirebaseSessionsTests {
   @Test
   fun firebaseSessionsDependenciesDoInitialize() {
     assertThat(SessionFirelogPublisher.instance).isNotNull()
-    assertThat(SessionGenerator.instance).isNotNull()
     assertThat(SessionsSettings.instance).isNotNull()
   }
 

@@ -27,14 +27,12 @@ import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLE
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_EVENT
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionEventTest {
   @Test

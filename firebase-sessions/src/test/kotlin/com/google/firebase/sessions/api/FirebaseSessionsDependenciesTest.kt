@@ -23,7 +23,6 @@ import com.google.firebase.sessions.api.SessionSubscriber.Name.MATT_SAYS_HI
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -34,7 +33,6 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class FirebaseSessionsDependenciesTest {
   @After
