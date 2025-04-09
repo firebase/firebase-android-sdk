@@ -24,4 +24,4 @@ jobs:
       - run: |
           pytest ci/fireci
       - run: |
-          mypy --config-file ci/fireci/setup.cfg ci/fireci/
+          mypy --config-file ci/fireci/pyproject.toml ci/fireci/
