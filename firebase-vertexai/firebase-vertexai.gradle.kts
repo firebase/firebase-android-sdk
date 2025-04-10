@@ -63,7 +63,10 @@ android {
       isReturnDefaultValues = true
     }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    targetSdk = targetSdkVersion
+    baseline = file("lint-baseline.xml")
+  }
   sourceSets { getByName("test").java.srcDirs("src/testUtil") }
 }
 
@@ -84,6 +87,7 @@ tasks.withType<KotlinCompile>().all {
 dependencies {
   implementation(libs.ktor.client.okhttp)
   implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.websockets)
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.ktor.client.logging)

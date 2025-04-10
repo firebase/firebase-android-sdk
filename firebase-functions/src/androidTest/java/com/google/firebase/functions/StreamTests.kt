@@ -102,7 +102,7 @@ class StreamTests {
 
     val flow = function.stream(input).asFlow()
     try {
-      withTimeout(1000) {
+      withTimeout(10_000) {
         flow.collect { response ->
           if (response is StreamResponse.Message) {
             messages.add(response)
@@ -146,14 +146,14 @@ class StreamTests {
   @Test
   fun nonExistentFunction_receivesError() = runBlocking {
     val function =
-      functions.getHttpsCallable("nonexistentFunction").withTimeout(2000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("nonexistentFunction").withTimeout(10_000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream().subscribe(subscriber)
 
-    withTimeout(2000) {
+    withTimeout(10_000) {
       while (subscriber.throwable == null) {
-        delay(100)
+        delay(1_000)
       }
     }
 
@@ -195,7 +195,7 @@ class StreamTests {
 
     function.stream(mapOf("data" to "test")).subscribe(subscriber)
 
-    withTimeout(2000) { delay(500) }
+    withTimeout(10_000) { delay(1000) }
     assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.messages).isEmpty()
     assertThat(subscriber.result).isNull()

@@ -23,6 +23,7 @@
   <string name="crash_button_text">Crash!</string>
   <string name="non_fatal_button_text">Non Fatal</string>
   <string name="button_anr_text">ANR</string>
+  <string name="create_trace">Create New Trace: test_trace</string>
   <string name="start_foreground_service_text">Start Foreground Service</string>
   <string name="start_splitcreen_text">Start splitscreen - Different activity</string>
   <string name="start_splitcreen_same_text">Start splitscreen - Same activity</string>
