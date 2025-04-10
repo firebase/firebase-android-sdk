@@ -160,16 +160,15 @@ internal constructor(
  * This stage allows you to calculate aggregate values over a set of documents, optionally grouped
  * by one or more fields or functions. You can specify:
  *
- * - **Grouping Fields or Expressions:** One or more fields or functions to group the documents
- * by. For each distinct combination of values in these fields, a separate group is created. If no
+ * - **Grouping Fields or Expressions:** One or more fields or functions to group the documents by.
+ * For each distinct combination of values in these fields, a separate group is created. If no
  * grouping fields are provided, a single group containing all documents is used. Not specifying
  * groups is the same as putting the entire inputs into one group.
  *
- * - **AggregateFunctions:** One or more accumulation operations to perform within each group.
- * These are defined using [AggregateWithAlias] expressions, which are typically created by
- * calling [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates
- * a value (e.g., sum, average, count) based on the documents within its
- * group.
+ * - **AggregateFunctions:** One or more accumulation operations to perform within each group. These
+ * are defined using [AggregateWithAlias] expressions, which are typically created by calling
+ * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
+ * (e.g., sum, average, count) based on the documents within its group.
  */
 class AggregateStage
 internal constructor(
@@ -207,25 +206,27 @@ internal constructor(
    * Add one or more groups to [AggregateStage]
    *
    * @param groupField The [String] representing field name.
-   * @param additionalGroups The [Selectable] expressions to consider when determining
-   * group value combinations or [String]s representing field names.
+   * @param additionalGroups The [Selectable] expressions to consider when determining group value
+   * combinations or [String]s representing field names.
    * @return Aggregate Stage with specified groups.
    */
-  fun withGroups(groupField: String, vararg additionalGroups: Any) = withGroups(Field.of(groupField), additionalGroups)
+  fun withGroups(groupField: String, vararg additionalGroups: Any) =
+    withGroups(Field.of(groupField), additionalGroups)
 
   /**
    * Add one or more groups to [AggregateStage]
    *
    * @param groupField The [Selectable] expression to consider when determining group value
    * combinations.
-   * @param additionalGroups The [Selectable] expressions to consider when determining
-   * group value combinations or [String]s representing field names.
+   * @param additionalGroups The [Selectable] expressions to consider when determining group value
+   * combinations or [String]s representing field names.
    * @return Aggregate Stage with specified groups.
    */
   fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
       accumulators,
-      mapOf(group.getAlias() to group.getExpr()).plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
+      mapOf(group.getAlias() to group.getExpr())
+        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
     )
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -246,8 +247,8 @@ internal constructor(
 }
 
 /**
- * Performs a vector similarity search, ordering the result set by most similar to least
- * similar, and returning the first N documents in the result set.
+ * Performs a vector similarity search, ordering the result set by most similar to least similar,
+ * and returning the first N documents in the result set.
  */
 class FindNearestStage
 internal constructor(
@@ -265,8 +266,8 @@ internal constructor(
      * @param vectorField A [Field] that contains vector to search on.
      * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values
      * in the documents.
-     * @param distanceMeasure specifies what type of distance is calculated.
-     * when performing the search.
+     * @param distanceMeasure specifies what type of distance is calculated. when performing the
+     * search.
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
@@ -279,8 +280,8 @@ internal constructor(
      * @param vectorField A [Field] that contains vector to search on.
      * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
      * [vectorField] values in the documents.
-     * @param distanceMeasure specifies what type of distance is calculated
-     * when performing the search.
+     * @param distanceMeasure specifies what type of distance is calculated when performing the
+     * search.
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
@@ -293,8 +294,8 @@ internal constructor(
      * @param vectorField A [String] specifying the vector field to search on.
      * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values
      * in the documents.
-     * @param distanceMeasure specifies what type of distance is calculated
-     * when performing the search.
+     * @param distanceMeasure specifies what type of distance is calculated when performing the
+     * search.
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
@@ -307,8 +308,8 @@ internal constructor(
      * @param vectorField A [String] specifying the vector field to search on.
      * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
      * [vectorField] values in the documents.
-     * @param distanceMeasure specifies what type of distance is calculated
-     * when performing the search.
+     * @param distanceMeasure specifies what type of distance is calculated when performing the
+     * search.
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic

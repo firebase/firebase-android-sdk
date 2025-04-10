@@ -115,8 +115,8 @@ internal constructor(
    * The added fields are defined using [Selectable]s, which can be:
    *
    * - [Field]: References an existing document field.
-   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
-   * using [Expr.alias]
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name using
+   * [Expr.alias]
    *
    * @param field The first field to add to the documents, specified as a [Selectable].
    * @param additionalFields The fields to add to the documents, specified as [Selectable]s.
@@ -137,8 +137,8 @@ internal constructor(
    *
    * - [String]: Name of an existing field
    * - [Field]: Reference to an existing field.
-   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
-   * using [Expr.alias]
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name using
+   * [Expr.alias]
    *
    * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
    * instead if only additions are desired.
@@ -163,8 +163,8 @@ internal constructor(
    *
    * - [String]: Name of an existing field
    * - [Field]: Reference to an existing field.
-   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
-   * using [Expr.alias]
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name using
+   * [Expr.alias]
    *
    * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
    * instead if only additions are desired.
@@ -193,8 +193,8 @@ internal constructor(
    *
    * This stage allows you to apply conditions to the data, similar to a "WHERE" clause in SQL.
    *
-   * You can filter documents based on their field values, using implementations of
-   * [BooleanExpr], typically including but not limited to:
+   * You can filter documents based on their field values, using implementations of [BooleanExpr],
+   * typically including but not limited to:
    *
    * - field comparators: [FunctionExpr.eq], [FunctionExpr.lt] (less than), [FunctionExpr.gt]
    * (greater than), etc.
@@ -210,8 +210,8 @@ internal constructor(
    * Skips the first `offset` number of documents from the results of previous stages.
    *
    * This stage is useful for implementing pagination in your pipelines, allowing you to retrieve
-   * results in chunks. It is typically used in conjunction with [limit] to control the size
-   * of each page.
+   * results in chunks. It is typically used in conjunction with [limit] to control the size of each
+   * page.
    *
    * @param offset The number of documents to skip.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -221,8 +221,8 @@ internal constructor(
   /**
    * Limits the maximum number of documents returned by previous stages to `limit`.
    *
-   * This stage is particularly useful when you want to retrieve a controlled subset of data
-   * from a potentially large result set. It's often used for:
+   * This stage is particularly useful when you want to retrieve a controlled subset of data from a
+   * potentially large result set. It's often used for:
    *
    * - **Pagination:** In combination with [offset] to retrieve specific pages of results.
    * - **Limiting Data Retrieval:** To prevent excessive data transfer and improve performance,
@@ -248,8 +248,8 @@ internal constructor(
    *
    * @param group The [Selectable] expression to consider when determining distinct value
    * combinations.
-   * @param additionalGroups The [Selectable] expressions to consider when determining
-   * distinct value combinations or [String]s representing field names.
+   * @param additionalGroups The [Selectable] expressions to consider when determining distinct
+   * value combinations or [String]s representing field names.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun distinct(group: Selectable, vararg additionalGroups: Any): Pipeline =
@@ -271,8 +271,8 @@ internal constructor(
    * [Expr.alias]
    *
    * @param groupField The [String] representing field name.
-   * @param additionalGroups The [Selectable] expressions to consider when determining
-   * distinct value combinations or [String]s representing field names.
+   * @param additionalGroups The [Selectable] expressions to consider when determining distinct
+   * value combinations or [String]s representing field names.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun distinct(groupField: String, vararg additionalGroups: Any): Pipeline =
@@ -289,11 +289,11 @@ internal constructor(
    * Performs aggregation operations on the documents from previous stages.
    *
    * This stage allows you to calculate aggregate values over a set of documents. You define the
-   * aggregations to perform using [AggregateWithAlias] expressions which are typically
-   * results of calling [AggregateFunction.alias] on [AggregateFunction] instances.
+   * aggregations to perform using [AggregateWithAlias] expressions which are typically results of
+   * calling [AggregateFunction.alias] on [AggregateFunction] instances.
    *
-   * @param accumulator The first [AggregateWithAlias] expression, wrapping an
-   * [AggregateFunction] with an alias for the accumulated results.
+   * @param accumulator The first [AggregateWithAlias] expression, wrapping an [AggregateFunction]
+   * with an alias for the accumulated results.
    * @param additionalAccumulators The [AggregateWithAlias] expressions, each wrapping an
    * [AggregateFunction] with an alias for the accumulated results.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -326,14 +326,14 @@ internal constructor(
   fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)
 
   /**
-   * Performs a vector similarity search, ordering the result set by most similar to least
-   * similar, and returning the first N documents in the result set.
+   * Performs a vector similarity search, ordering the result set by most similar to least similar,
+   * and returning the first N documents in the result set.
    *
    * @param vectorField A [Field] that contains vector to search on.
    * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
    * [vectorField] values in the documents.
-   * @param distanceMeasure specifies what type of distance is calculated
-   * when performing the search.
+   * @param distanceMeasure specifies what type of distance is calculated when performing the
+   * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun findNearest(
@@ -343,14 +343,14 @@ internal constructor(
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
   /**
-   * Performs a vector similarity search, ordering the result set by most similar to least
-   * similar, and returning the first N documents in the result set.
+   * Performs a vector similarity search, ordering the result set by most similar to least similar,
+   * and returning the first N documents in the result set.
    *
    * @param vectorField A [String] specifying the vector field to search on.
    * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
    * [vectorField] values in the documents.
-   * @param distanceMeasure specifies what type of distance is calculated
-   * when performing the search.
+   * @param distanceMeasure specifies what type of distance is calculated when performing the
+   * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun findNearest(
@@ -360,14 +360,14 @@ internal constructor(
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
   /**
-   * Performs a vector similarity search, ordering the result set by most similar to least
-   * similar, and returning the first N documents in the result set.
+   * Performs a vector similarity search, ordering the result set by most similar to least similar,
+   * and returning the first N documents in the result set.
    *
    * @param vectorField A [Field] that contains vector to search on.
    * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
    * the documents.
-   * @param distanceMeasure specifies what type of distance is calculated.
-   * when performing the search.
+   * @param distanceMeasure specifies what type of distance is calculated. when performing the
+   * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun findNearest(
@@ -377,14 +377,14 @@ internal constructor(
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
   /**
-   * Performs a vector similarity search, ordering the result set by most similar to least
-   * similar, and returning the first N documents in the result set.
+   * Performs a vector similarity search, ordering the result set by most similar to least similar,
+   * and returning the first N documents in the result set.
    *
    * @param vectorField A [String] specifying the vector field to search on.
    * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
    * the documents.
-   * @param distanceMeasure specifies what type of distance is calculated
-   * when performing the search.
+   * @param distanceMeasure specifies what type of distance is calculated when performing the
+   * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun findNearest(
@@ -394,8 +394,8 @@ internal constructor(
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
   /**
-   * Performs a vector similarity search, ordering the result set by most similar to least
-   * similar, and returning the first N documents in the result set.
+   * Performs a vector similarity search, ordering the result set by most similar to least similar,
+   * and returning the first N documents in the result set.
    *
    * @param stage An [FindNearestStage] object that specifies the search parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -486,10 +486,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     return createFrom(aggregateQuery.query)
       .aggregate(
         aggregateFields.first().toPipeline(),
-        *aggregateFields
-          .drop(1)
-          .map(AggregateField::toPipeline)
-          .toTypedArray<AggregateWithAlias>()
+        *aggregateFields.drop(1).map(AggregateField::toPipeline).toTypedArray<AggregateWithAlias>()
       )
   }
 
