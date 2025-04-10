@@ -49,7 +49,7 @@ internal class QueryRefImpl<Data, Variables>(
     variablesSerializersModule = variablesSerializersModule,
   ) {
   override suspend fun execute(): QueryResultImpl =
-    dataConnect.lazyQueryManager.get().execute(this).let { QueryResultImpl(it.ref.getOrThrow()) }
+    dataConnect.queryManager.execute(this).let { QueryResultImpl(it.ref.getOrThrow()) }
 
   override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
 
