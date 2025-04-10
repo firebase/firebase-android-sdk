@@ -22,6 +22,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AddFieldsStage
+import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AggregateWithAlias
 import com.google.firebase.firestore.pipeline.BooleanExpr
@@ -31,8 +32,10 @@ import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expr
+import com.google.firebase.firestore.pipeline.ExprWithAlias
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
+import com.google.firebase.firestore.pipeline.FunctionExpr
 import com.google.firebase.firestore.pipeline.GenericArg
 import com.google.firebase.firestore.pipeline.GenericStage
 import com.google.firebase.firestore.pipeline.LimitStage
@@ -103,67 +106,301 @@ internal constructor(
 
   fun genericStage(stage: GenericStage): Pipeline = append(stage)
 
-  fun addFields(vararg fields: Selectable): Pipeline = append(AddFieldsStage(fields))
+  /**
+   * Adds new fields to outputs from previous stages.
+   *
+   * This stage allows you to compute values on-the-fly based on existing data from previous stages
+   * or constants. You can use this to create new fields or overwrite existing ones.
+   *
+   * The added fields are defined using [Selectable]s, which can be:
+   *
+   * - [Field]: References an existing document field.
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
+   * using [Expr.alias]
+   *
+   * @param field The first field to add to the documents, specified as a [Selectable].
+   * @param additionalFields The fields to add to the documents, specified as [Selectable]s.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addFields(field: Selectable, vararg additionalFields: Selectable): Pipeline =
+    append(AddFieldsStage(arrayOf(field, *additionalFields)))
 
   fun removeFields(vararg fields: Field): Pipeline = append(RemoveFieldsStage(fields))
 
   fun removeFields(vararg fields: String): Pipeline =
     append(RemoveFieldsStage(fields.map(Field::of).toTypedArray()))
 
-  fun select(vararg fields: Selectable): Pipeline = append(SelectStage(fields))
+  /**
+   * Selects or creates a set of fields from the outputs of previous stages.
+   *
+   * The selected fields are defined using [Selectable] expressions, which can be:
+   *
+   * - [String]: Name of an existing field
+   * - [Field]: Reference to an existing field.
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
+   * using [Expr.alias]
+   *
+   * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
+   * instead if only additions are desired.
+   *
+   * @param selection The first field to include in the output documents, specified as a
+   * [Selectable] expression.
+   * @param additionalSelections Optional additional fields to include in the output documents,
+   * specified as [Selectable] expressions or string values representing field names.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun select(selection: Selectable, vararg additionalSelections: Any): Pipeline =
+    append(
+      SelectStage(
+        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray())
+      )
+    )
 
-  fun select(vararg fields: String): Pipeline =
-    append(SelectStage(fields.map(Field::of).toTypedArray()))
-
-  fun select(vararg fields: Any): Pipeline =
-    append(SelectStage(fields.map(Selectable::toSelectable).toTypedArray()))
+  /**
+   * Selects or creates a set of fields from the outputs of previous stages.
+   *
+   * The selected fields are defined using [Selectable] expressions, which can be:
+   *
+   * - [String]: Name of an existing field
+   * - [Field]: Reference to an existing field.
+   * - [ExprWithAlias]: Represents the result of a expression with an assigned alias name
+   * using [Expr.alias]
+   *
+   * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
+   * instead if only additions are desired.
+   *
+   * @param fieldName The first field to include in the output documents, specified as a string
+   * value representing a field names.
+   * @param additionalSelections Optional additional fields to include in the output documents,
+   * specified as [Selectable] expressions or string values representing field names.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun select(fieldName: String, vararg additionalSelections: Any): Pipeline =
+    append(
+      SelectStage(
+        arrayOf(
+          Field.of(fieldName),
+          *additionalSelections.map(Selectable::toSelectable).toTypedArray()
+        )
+      )
+    )
 
   fun sort(vararg orders: Ordering): Pipeline = append(SortStage(orders))
 
+  /**
+   * Filters the documents from previous stages to only include those matching the specified
+   * [BooleanExpr].
+   *
+   * This stage allows you to apply conditions to the data, similar to a "WHERE" clause in SQL.
+   *
+   * You can filter documents based on their field values, using implementations of
+   * [BooleanExpr], typically including but not limited to:
+   *
+   * - field comparators: [FunctionExpr.eq], [FunctionExpr.lt] (less than), [FunctionExpr.gt]
+   * (greater than), etc.
+   * - logical operators: [FunctionExpr.and], [FunctionExpr.or], [FunctionExpr.not], etc.
+   * - advanced functions: [FunctionExpr.regexMatch], [FunctionExpr.arrayContains[], etc.
+   *
+   * @param condition The [BooleanExpr] to apply.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun where(condition: BooleanExpr): Pipeline = append(WhereStage(condition))
 
+  /**
+   * Skips the first `offset` number of documents from the results of previous stages.
+   *
+   * This stage is useful for implementing pagination in your pipelines, allowing you to retrieve
+   * results in chunks. It is typically used in conjunction with [limit] to control the size
+   * of each page.
+   *
+   * @param offset The number of documents to skip.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun offset(offset: Int): Pipeline = append(OffsetStage(offset))
 
+  /**
+   * Limits the maximum number of documents returned by previous stages to `limit`.
+   *
+   * This stage is particularly useful when you want to retrieve a controlled subset of data
+   * from a potentially large result set. It's often used for:
+   *
+   * - **Pagination:** In combination with [offset] to retrieve specific pages of results.
+   * - **Limiting Data Retrieval:** To prevent excessive data transfer and improve performance,
+   * especially when dealing with large collections.
+   *
+   * @param limit The maximum number of documents to return.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun limit(limit: Int): Pipeline = append(LimitStage(limit))
 
-  fun distinct(vararg groups: Selectable): Pipeline = append(DistinctStage(groups))
+  /**
+   * Returns a set of distinct values from the inputs to this stage.
+   *
+   * This stage runs through the results from previous stages to include only results with unique
+   * combinations of [Expr] values [Field], [FunctionExpr], etc).
+   *
+   * The parameters to this stage are defined using [Selectable] expressions or strings:
+   *
+   * - [String]: Name of an existing field
+   * - [Field]: References an existing document field.
+   * - [ExprWithAlias]: Represents the result of a function with an assigned alias name using
+   * [Expr.alias]
+   *
+   * @param group The [Selectable] expression to consider when determining distinct value
+   * combinations.
+   * @param additionalGroups The [Selectable] expressions to consider when determining
+   * distinct value combinations or [String]s representing field names.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun distinct(group: Selectable, vararg additionalGroups: Any): Pipeline =
+    append(
+      DistinctStage(arrayOf(group, *additionalGroups.map(Selectable::toSelectable).toTypedArray()))
+    )
 
-  fun distinct(vararg groups: String): Pipeline =
-    append(DistinctStage(groups.map(Field::of).toTypedArray()))
+  /**
+   * Returns a set of distinct values from the inputs to this stage.
+   *
+   * This stage runs through the results from previous stages to include only results with unique
+   * combinations of [Expr] values ([Field], [FunctionExpr], etc).
+   *
+   * The parameters to this stage are defined using [Selectable] expressions or strings:
+   *
+   * - [String]: Name of an existing field
+   * - [Field]: References an existing document field.
+   * - [ExprWithAlias]: Represents the result of a function with an assigned alias name using
+   * [Expr.alias]
+   *
+   * @param groupField The [String] representing field name.
+   * @param additionalGroups The [Selectable] expressions to consider when determining
+   * distinct value combinations or [String]s representing field names.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun distinct(groupField: String, vararg additionalGroups: Any): Pipeline =
+    append(
+      DistinctStage(
+        arrayOf(
+          Field.of(groupField),
+          *additionalGroups.map(Selectable::toSelectable).toTypedArray()
+        )
+      )
+    )
 
-  fun distinct(vararg groups: Any): Pipeline =
-    append(DistinctStage(groups.map(Selectable::toSelectable).toTypedArray()))
+  /**
+   * Performs aggregation operations on the documents from previous stages.
+   *
+   * This stage allows you to calculate aggregate values over a set of documents. You define the
+   * aggregations to perform using [AggregateWithAlias] expressions which are typically
+   * results of calling [AggregateFunction.alias] on [AggregateFunction] instances.
+   *
+   * @param accumulator The first [AggregateWithAlias] expression, wrapping an
+   * [AggregateFunction] with an alias for the accumulated results.
+   * @param additionalAccumulators The [AggregateWithAlias] expressions, each wrapping an
+   * [AggregateFunction] with an alias for the accumulated results.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun aggregate(
+    accumulator: AggregateWithAlias,
+    vararg additionalAccumulators: AggregateWithAlias
+  ): Pipeline = append(AggregateStage.withAccumulators(accumulator, *additionalAccumulators))
 
-  fun aggregate(vararg accumulators: AggregateWithAlias): Pipeline =
-    append(AggregateStage.withAccumulators(*accumulators))
-
+  /**
+   * Performs optionally grouped aggregation operations on the documents from previous stages.
+   *
+   * This stage allows you to calculate aggregate values over a set of documents, optionally grouped
+   * by one or more fields or functions. You can specify:
+   *
+   * - **Grouping Fields or Expressions:** One or more fields or functions to group the documents
+   * by. For each distinct combination of values in these fields, a separate group is created. If no
+   * grouping fields are provided, a single group containing all documents is used. Not specifying
+   * groups is the same as putting the entire inputs into one group.
+   *
+   * - **AggregateFunctions:** One or more accumulation operations to perform within each group.
+   * These are defined using [AggregateWithAlias] expressions, which are typically created by
+   * calling [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates
+   * a value (e.g., sum, average, count) based on the documents within its group.
+   *
+   * @param aggregateStage An [AggregateStage] object that specifies the grouping fields (if any)
+   * and the aggregation operations to perform.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun aggregate(aggregateStage: AggregateStage): Pipeline = append(aggregateStage)
 
+  /**
+   * Performs a vector similarity search, ordering the result set by most similar to least
+   * similar, and returning the first N documents in the result set.
+   *
+   * @param vectorField A [Field] that contains vector to search on.
+   * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
+   * [vectorField] values in the documents.
+   * @param distanceMeasure specifies what type of distance is calculated
+   * when performing the search.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun findNearest(
-    property: Expr,
-    vector: DoubleArray,
+    vectorField: Field,
+    vectorValue: DoubleArray,
     distanceMeasure: FindNearestStage.DistanceMeasure,
-  ) = append(FindNearestStage.of(property, vector, distanceMeasure))
+  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
+  /**
+   * Performs a vector similarity search, ordering the result set by most similar to least
+   * similar, and returning the first N documents in the result set.
+   *
+   * @param vectorField A [String] specifying the vector field to search on.
+   * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
+   * [vectorField] values in the documents.
+   * @param distanceMeasure specifies what type of distance is calculated
+   * when performing the search.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun findNearest(
-    propertyField: String,
-    vector: DoubleArray,
+    vectorField: String,
+    vectorValue: DoubleArray,
     distanceMeasure: FindNearestStage.DistanceMeasure,
-  ) = append(FindNearestStage.of(propertyField, vector, distanceMeasure))
+  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
+  /**
+   * Performs a vector similarity search, ordering the result set by most similar to least
+   * similar, and returning the first N documents in the result set.
+   *
+   * @param vectorField A [Field] that contains vector to search on.
+   * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
+   * the documents.
+   * @param distanceMeasure specifies what type of distance is calculated.
+   * when performing the search.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun findNearest(
-    property: Expr,
-    vector: Expr,
+    vectorField: Field,
+    vectorValue: VectorValue,
     distanceMeasure: FindNearestStage.DistanceMeasure,
-  ) = append(FindNearestStage.of(property, vector, distanceMeasure))
+  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
+  /**
+   * Performs a vector similarity search, ordering the result set by most similar to least
+   * similar, and returning the first N documents in the result set.
+   *
+   * @param vectorField A [String] specifying the vector field to search on.
+   * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
+   * the documents.
+   * @param distanceMeasure specifies what type of distance is calculated
+   * when performing the search.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun findNearest(
-    propertyField: String,
-    vector: Expr,
+    vectorField: String,
+    vectorValue: VectorValue,
     distanceMeasure: FindNearestStage.DistanceMeasure,
-  ) = append(FindNearestStage.of(propertyField, vector, distanceMeasure))
+  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
-  fun findNearest(stage: FindNearestStage) = append(stage)
+  /**
+   * Performs a vector similarity search, ordering the result set by most similar to least
+   * similar, and returning the first N documents in the result set.
+   *
+   * @param stage An [FindNearestStage] object that specifies the search parameters.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun findNearest(stage: FindNearestStage): Pipeline = append(stage)
 
   fun replace(field: String): Pipeline = replace(Field.of(field))
 
@@ -244,13 +481,17 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [aggregateQuery] provided targets a different
    * project or database than the pipeline.
    */
-  fun createFrom(aggregateQuery: AggregateQuery): Pipeline =
-    createFrom(aggregateQuery.query)
+  fun createFrom(aggregateQuery: AggregateQuery): Pipeline {
+    val aggregateFields = aggregateQuery.aggregateFields
+    return createFrom(aggregateQuery.query)
       .aggregate(
-        *aggregateQuery.aggregateFields
+        aggregateFields.first().toPipeline(),
+        *aggregateFields
+          .drop(1)
           .map(AggregateField::toPipeline)
           .toTypedArray<AggregateWithAlias>()
       )
+  }
 
   /**
    * Set the pipeline's source to the collection specified by the given path.

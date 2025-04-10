@@ -342,6 +342,7 @@ abstract class Expr internal constructor() {
 
 abstract class Selectable : Expr() {
   internal abstract fun getAlias(): String
+  internal abstract fun getExpr(): Expr
 
   internal companion object {
     fun toSelectable(o: Any): Selectable {
@@ -358,6 +359,7 @@ abstract class Selectable : Expr() {
 class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
   Selectable() {
   override fun getAlias() = alias
+  override fun getExpr() = expr
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 }
 
@@ -380,6 +382,7 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
   }
 
   override fun getAlias(): String = fieldPath.canonicalString()
+  override fun getExpr(): Expr = this
 
   override fun toProto(userDataReader: UserDataReader) = toProto()
 
@@ -426,7 +429,8 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun bitAnd(left: Expr, right: Any) = FunctionExpr("bit_and", left, right)
 
-    @JvmStatic fun bitAnd(fieldName: String, right: Expr) = FunctionExpr("bit_and", fieldName, right)
+    @JvmStatic
+    fun bitAnd(fieldName: String, right: Expr) = FunctionExpr("bit_and", fieldName, right)
 
     @JvmStatic fun bitAnd(fieldName: String, right: Any) = FunctionExpr("bit_and", fieldName, right)
 
@@ -442,7 +446,8 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun bitXor(left: Expr, right: Any) = FunctionExpr("bit_xor", left, right)
 
-    @JvmStatic fun bitXor(fieldName: String, right: Expr) = FunctionExpr("bit_xor", fieldName, right)
+    @JvmStatic
+    fun bitXor(fieldName: String, right: Expr) = FunctionExpr("bit_xor", fieldName, right)
 
     @JvmStatic fun bitXor(fieldName: String, right: Any) = FunctionExpr("bit_xor", fieldName, right)
 
@@ -451,19 +456,23 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun bitNot(fieldName: String) = FunctionExpr("bit_not", fieldName)
 
     @JvmStatic
-    fun bitLeftShift(left: Expr, numberExpr: Expr) = FunctionExpr("bit_left_shift", left, numberExpr)
+    fun bitLeftShift(left: Expr, numberExpr: Expr) =
+      FunctionExpr("bit_left_shift", left, numberExpr)
 
-    @JvmStatic fun bitLeftShift(left: Expr, number: Int) = FunctionExpr("bit_left_shift", left, number)
+    @JvmStatic
+    fun bitLeftShift(left: Expr, number: Int) = FunctionExpr("bit_left_shift", left, number)
 
     @JvmStatic
     fun bitLeftShift(fieldName: String, numberExpr: Expr) =
       FunctionExpr("bit_left_shift", fieldName, numberExpr)
 
     @JvmStatic
-    fun bitLeftShift(fieldName: String, number: Int) = FunctionExpr("bit_left_shift", fieldName, number)
+    fun bitLeftShift(fieldName: String, number: Int) =
+      FunctionExpr("bit_left_shift", fieldName, number)
 
     @JvmStatic
-    fun bitRightShift(left: Expr, numberExpr: Expr) = FunctionExpr("bit_right_shift", left, numberExpr)
+    fun bitRightShift(left: Expr, numberExpr: Expr) =
+      FunctionExpr("bit_right_shift", left, numberExpr)
 
     @JvmStatic
     fun bitRightShift(left: Expr, number: Int) = FunctionExpr("bit_right_shift", left, number)
@@ -488,17 +497,21 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun subtract(left: Expr, right: Any) = FunctionExpr("subtract", left, right)
 
-    @JvmStatic fun subtract(fieldName: String, other: Expr) = FunctionExpr("subtract", fieldName, other)
+    @JvmStatic
+    fun subtract(fieldName: String, other: Expr) = FunctionExpr("subtract", fieldName, other)
 
-    @JvmStatic fun subtract(fieldName: String, other: Any) = FunctionExpr("subtract", fieldName, other)
+    @JvmStatic
+    fun subtract(fieldName: String, other: Any) = FunctionExpr("subtract", fieldName, other)
 
     @JvmStatic fun multiply(left: Expr, right: Expr) = FunctionExpr("multiply", left, right)
 
     @JvmStatic fun multiply(left: Expr, right: Any) = FunctionExpr("multiply", left, right)
 
-    @JvmStatic fun multiply(fieldName: String, other: Expr) = FunctionExpr("multiply", fieldName, other)
+    @JvmStatic
+    fun multiply(fieldName: String, other: Expr) = FunctionExpr("multiply", fieldName, other)
 
-    @JvmStatic fun multiply(fieldName: String, other: Any) = FunctionExpr("multiply", fieldName, other)
+    @JvmStatic
+    fun multiply(fieldName: String, other: Any) = FunctionExpr("multiply", fieldName, other)
 
     @JvmStatic fun divide(left: Expr, right: Expr) = FunctionExpr("divide", left, right)
 
@@ -693,15 +706,19 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun trim(fieldName: String) = FunctionExpr("trim", fieldName)
 
-    @JvmStatic fun strConcat(first: Expr, vararg rest: Expr) = FunctionExpr("str_concat", first, *rest)
-
-    @JvmStatic fun strConcat(first: Expr, vararg rest: Any) = FunctionExpr("str_concat", first, *rest)
+    @JvmStatic
+    fun strConcat(first: Expr, vararg rest: Expr) = FunctionExpr("str_concat", first, *rest)
 
     @JvmStatic
-    fun strConcat(fieldName: String, vararg rest: Expr) = FunctionExpr("str_concat", fieldName, *rest)
+    fun strConcat(first: Expr, vararg rest: Any) = FunctionExpr("str_concat", first, *rest)
 
     @JvmStatic
-    fun strConcat(fieldName: String, vararg rest: Any) = FunctionExpr("str_concat", fieldName, *rest)
+    fun strConcat(fieldName: String, vararg rest: Expr) =
+      FunctionExpr("str_concat", fieldName, *rest)
+
+    @JvmStatic
+    fun strConcat(fieldName: String, vararg rest: Any) =
+      FunctionExpr("str_concat", fieldName, *rest)
 
     internal fun map(elements: Array<out Expr>) = FunctionExpr("map", elements)
 
@@ -727,14 +744,18 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun mapRemove(firstMap: Expr, key: Expr) = FunctionExpr("map_remove", firstMap, key)
 
-    @JvmStatic fun mapRemove(mapField: String, key: Expr) = FunctionExpr("map_remove", mapField, key)
-
-    @JvmStatic fun mapRemove(firstMap: Expr, key: String) = FunctionExpr("map_remove", firstMap, key)
-
-    @JvmStatic fun mapRemove(mapField: String, key: String) = FunctionExpr("map_remove", mapField, key)
+    @JvmStatic
+    fun mapRemove(mapField: String, key: Expr) = FunctionExpr("map_remove", mapField, key)
 
     @JvmStatic
-    fun cosineDistance(vector1: Expr, vector2: Expr) = FunctionExpr("cosine_distance", vector1, vector2)
+    fun mapRemove(firstMap: Expr, key: String) = FunctionExpr("map_remove", firstMap, key)
+
+    @JvmStatic
+    fun mapRemove(mapField: String, key: String) = FunctionExpr("map_remove", mapField, key)
+
+    @JvmStatic
+    fun cosineDistance(vector1: Expr, vector2: Expr) =
+      FunctionExpr("cosine_distance", vector1, vector2)
 
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: DoubleArray) =
@@ -764,7 +785,8 @@ protected constructor(private val name: String, private val params: Array<out Ex
       FunctionExpr("dot_product", vector1, Constant.vector(vector2))
 
     @JvmStatic
-    fun dotProduct(vector1: Expr, vector2: VectorValue) = FunctionExpr("dot_product", vector1, vector2)
+    fun dotProduct(vector1: Expr, vector2: VectorValue) =
+      FunctionExpr("dot_product", vector1, vector2)
 
     @JvmStatic
     fun dotProduct(fieldName: String, vector: Expr) = FunctionExpr("dot_product", fieldName, vector)
@@ -805,37 +827,47 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic fun vectorLength(fieldName: String) = FunctionExpr("vector_length", fieldName)
 
-    @JvmStatic fun unixMicrosToTimestamp(input: Expr) = FunctionExpr("unix_micros_to_timestamp", input)
+    @JvmStatic
+    fun unixMicrosToTimestamp(input: Expr) = FunctionExpr("unix_micros_to_timestamp", input)
 
     @JvmStatic
-    fun unixMicrosToTimestamp(fieldName: String) = FunctionExpr("unix_micros_to_timestamp", fieldName)
-
-    @JvmStatic fun timestampToUnixMicros(input: Expr) = FunctionExpr("timestamp_to_unix_micros", input)
-
-    @JvmStatic
-    fun timestampToUnixMicros(fieldName: String) = FunctionExpr("timestamp_to_unix_micros", fieldName)
-
-    @JvmStatic fun unixMillisToTimestamp(input: Expr) = FunctionExpr("unix_millis_to_timestamp", input)
+    fun unixMicrosToTimestamp(fieldName: String) =
+      FunctionExpr("unix_micros_to_timestamp", fieldName)
 
     @JvmStatic
-    fun unixMillisToTimestamp(fieldName: String) = FunctionExpr("unix_millis_to_timestamp", fieldName)
-
-    @JvmStatic fun timestampToUnixMillis(input: Expr) = FunctionExpr("timestamp_to_unix_millis", input)
+    fun timestampToUnixMicros(input: Expr) = FunctionExpr("timestamp_to_unix_micros", input)
 
     @JvmStatic
-    fun timestampToUnixMillis(fieldName: String) = FunctionExpr("timestamp_to_unix_millis", fieldName)
+    fun timestampToUnixMicros(fieldName: String) =
+      FunctionExpr("timestamp_to_unix_micros", fieldName)
+
+    @JvmStatic
+    fun unixMillisToTimestamp(input: Expr) = FunctionExpr("unix_millis_to_timestamp", input)
+
+    @JvmStatic
+    fun unixMillisToTimestamp(fieldName: String) =
+      FunctionExpr("unix_millis_to_timestamp", fieldName)
+
+    @JvmStatic
+    fun timestampToUnixMillis(input: Expr) = FunctionExpr("timestamp_to_unix_millis", input)
+
+    @JvmStatic
+    fun timestampToUnixMillis(fieldName: String) =
+      FunctionExpr("timestamp_to_unix_millis", fieldName)
 
     @JvmStatic
     fun unixSecondsToTimestamp(input: Expr) = FunctionExpr("unix_seconds_to_timestamp", input)
 
     @JvmStatic
-    fun unixSecondsToTimestamp(fieldName: String) = FunctionExpr("unix_seconds_to_timestamp", fieldName)
+    fun unixSecondsToTimestamp(fieldName: String) =
+      FunctionExpr("unix_seconds_to_timestamp", fieldName)
 
     @JvmStatic
     fun timestampToUnixSeconds(input: Expr) = FunctionExpr("timestamp_to_unix_seconds", input)
 
     @JvmStatic
-    fun timestampToUnixSeconds(fieldName: String) = FunctionExpr("timestamp_to_unix_seconds", fieldName)
+    fun timestampToUnixSeconds(fieldName: String) =
+      FunctionExpr("timestamp_to_unix_seconds", fieldName)
 
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr) =

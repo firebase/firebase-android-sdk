@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.UserDataReader
+import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Field.Companion.of
@@ -153,6 +154,23 @@ internal constructor(
     sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
 }
 
+/**
+ * Performs optionally grouped aggregation operations on the documents from previous stages.
+ *
+ * This stage allows you to calculate aggregate values over a set of documents, optionally grouped
+ * by one or more fields or functions. You can specify:
+ *
+ * - **Grouping Fields or Expressions:** One or more fields or functions to group the documents
+ * by. For each distinct combination of values in these fields, a separate group is created. If no
+ * grouping fields are provided, a single group containing all documents is used. Not specifying
+ * groups is the same as putting the entire inputs into one group.
+ *
+ * - **AggregateFunctions:** One or more accumulation operations to perform within each group.
+ * These are defined using [AggregateWithAlias] expressions, which are typically created by
+ * calling [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates
+ * a value (e.g., sum, average, count) based on the documents within its
+ * group.
+ */
 class AggregateStage
 internal constructor(
   private val accumulators: Map<String, AggregateFunction>,
@@ -161,29 +179,53 @@ internal constructor(
 ) : Stage<AggregateStage>("aggregate", options) {
   private constructor(accumulators: Map<String, AggregateFunction>) : this(accumulators, emptyMap())
   companion object {
+
+    /**
+     * Create [AggregateStage] with one or more accumulators.
+     *
+     * @param accumulator The first [AggregateWithAlias] expression, wrapping an {@link
+     * AggregateFunction} with an alias for the accumulated results.
+     * @param additionalAccumulators The [AggregateWithAlias] expressions, each wrapping an
+     * [AggregateFunction] with an alias for the accumulated results.
+     * @return Aggregate Stage with specified accumulators.
+     */
     @JvmStatic
-    fun withAccumulators(vararg accumulators: AggregateWithAlias): AggregateStage {
-      if (accumulators.isEmpty()) {
-        throw IllegalArgumentException(
-          "Must specify at least one accumulator for aggregate() stage. There is a distinct() stage if only distinct group values are needed."
-        )
-      }
-      return AggregateStage(accumulators.associate { it.alias to it.expr })
+    fun withAccumulators(
+      accumulator: AggregateWithAlias,
+      vararg additionalAccumulators: AggregateWithAlias
+    ): AggregateStage {
+      return AggregateStage(
+        mapOf(accumulator.alias to accumulator.expr)
+          .plus(additionalAccumulators.associate { it.alias to it.expr })
+      )
     }
   }
 
   override fun self(options: InternalOptions) = AggregateStage(accumulators, groups, options)
 
-  fun withGroups(vararg groups: Selectable) =
-    AggregateStage(accumulators, groups.associateBy(Selectable::getAlias))
+  /**
+   * Add one or more groups to [AggregateStage]
+   *
+   * @param groupField The [String] representing field name.
+   * @param additionalGroups The [Selectable] expressions to consider when determining
+   * group value combinations or [String]s representing field names.
+   * @return Aggregate Stage with specified groups.
+   */
+  fun withGroups(groupField: String, vararg additionalGroups: Any) = withGroups(Field.of(groupField), additionalGroups)
 
-  fun withGroups(vararg fields: String) =
-    AggregateStage(accumulators, fields.associateWith(Field::of))
-
-  fun withGroups(vararg selectable: Any) =
+  /**
+   * Add one or more groups to [AggregateStage]
+   *
+   * @param groupField The [Selectable] expression to consider when determining group value
+   * combinations.
+   * @param additionalGroups The [Selectable] expressions to consider when determining
+   * group value combinations or [String]s representing field names.
+   * @return Aggregate Stage with specified groups.
+   */
+  fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
       accumulators,
-      selectable.map(Selectable::toSelectable).associateBy(Selectable::getAlias)
+      mapOf(group.getAlias() to group.getExpr()).plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
     )
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -203,6 +245,10 @@ internal constructor(
     sequenceOf(condition.toProto(userDataReader))
 }
 
+/**
+ * Performs a vector similarity search, ordering the result set by most similar to least
+ * similar, and returning the first N documents in the result set.
+ */
 class FindNearestStage
 internal constructor(
   private val property: Expr,
@@ -212,21 +258,62 @@ internal constructor(
 ) : Stage<FindNearestStage>("find_nearest", options) {
 
   companion object {
-    @JvmStatic
-    fun of(property: Expr, vector: Expr, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(property, vector, distanceMeasure)
 
+    /**
+     * Create [FindNearestStage].
+     *
+     * @param vectorField A [Field] that contains vector to search on.
+     * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values
+     * in the documents.
+     * @param distanceMeasure specifies what type of distance is calculated.
+     * when performing the search.
+     * @return [FindNearestStage] with specified parameters.
+     */
     @JvmStatic
-    fun of(property: Expr, vector: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(property, Constant.vector(vector), distanceMeasure)
+    fun of(vectorField: Field, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
+      FindNearestStage(vectorField, Constant.of(vectorValue), distanceMeasure)
 
+    /**
+     * Create [FindNearestStage].
+     *
+     * @param vectorField A [Field] that contains vector to search on.
+     * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
+     * [vectorField] values in the documents.
+     * @param distanceMeasure specifies what type of distance is calculated
+     * when performing the search.
+     * @return [FindNearestStage] with specified parameters.
+     */
     @JvmStatic
-    fun of(fieldName: String, vector: Expr, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(Constant.of(fieldName), vector, distanceMeasure)
+    fun of(vectorField: Field, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
+      FindNearestStage(vectorField, Constant.vector(vectorValue), distanceMeasure)
 
+    /**
+     * Create [FindNearestStage].
+     *
+     * @param vectorField A [String] specifying the vector field to search on.
+     * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values
+     * in the documents.
+     * @param distanceMeasure specifies what type of distance is calculated
+     * when performing the search.
+     * @return [FindNearestStage] with specified parameters.
+     */
     @JvmStatic
-    fun of(fieldName: String, vector: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(Constant.of(fieldName), Constant.vector(vector), distanceMeasure)
+    fun of(vectorField: String, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
+      FindNearestStage(Constant.of(vectorField), Constant.of(vectorValue), distanceMeasure)
+
+    /**
+     * Create [FindNearestStage].
+     *
+     * @param vectorField A [String] specifying the vector field to search on.
+     * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
+     * [vectorField] values in the documents.
+     * @param distanceMeasure specifies what type of distance is calculated
+     * when performing the search.
+     * @return [FindNearestStage] with specified parameters.
+     */
+    @JvmStatic
+    fun of(vectorField: String, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
+      FindNearestStage(Constant.of(vectorField), Constant.vector(vectorValue), distanceMeasure)
   }
 
   class DistanceMeasure private constructor(internal val proto: Value) {
@@ -251,11 +338,29 @@ internal constructor(
       distanceMeasure.proto
     )
 
+  /**
+   * Specifies the upper bound of documents to return.
+   *
+   * @param limit must be a positive integer.
+   * @return [FindNearestStage] with specified [limit].
+   */
   fun withLimit(limit: Long): FindNearestStage = with("limit", limit)
 
+  /**
+   * Add a field containing the distance to the result.
+   *
+   * @param distanceField The [Field] that will be added to the result.
+   * @return [FindNearestStage] with specified [distanceField].
+   */
   fun withDistanceField(distanceField: Field): FindNearestStage =
     with("distance_field", distanceField)
 
+  /**
+   * Add a field containing the distance to the result.
+   *
+   * @param distanceField The name of the field that will be added to the result.
+   * @return [FindNearestStage] with specified [distanceField].
+   */
   fun withDistanceField(distanceField: String): FindNearestStage =
     withDistanceField(of(distanceField))
 }
