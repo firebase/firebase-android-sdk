@@ -1655,6 +1655,9 @@ public class QueryTest {
 
     query = collection.whereNotEqualTo("zip", Double.NaN);
     checkOnlineAndOfflineResultsMatch(query, "b", "c", "d", "e", "f", "g", "h");
+
+    query = collection.whereNotEqualTo("zip", null);
+    checkOnlineAndOfflineResultsMatch(query, "a", "b", "c", "d", "e", "f", "g", "h");
   }
 
   @Test
