@@ -563,15 +563,17 @@ public final class Query {
     if (hasLimit()) {
       // TODO: Handle situation where user enters limit larger than integer.
       if (limitType == LimitType.LIMIT_TO_FIRST) {
-        p = p.sort(orderings.toArray(Ordering[]::new));
+        p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
         p = p.limit((int) limit);
       } else {
-        p = p.sort(orderings.stream().map(Ordering::reverse).toArray(Ordering[]::new));
+        p = p.sort(
+            orderings.get(0).reverse(),
+            orderings.stream().skip(1).map(Ordering::reverse).toArray(Ordering[]::new));
         p = p.limit((int) limit);
-        p = p.sort(orderings.toArray(Ordering[]::new));
+        p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
       }
     } else {
-      p = p.sort(orderings.toArray(Ordering[]::new));
+      p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
     }
 
     return p;
