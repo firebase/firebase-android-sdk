@@ -106,13 +106,12 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.tasks.register<CopyApiTask>("copyApiTxtFile") {
       apiTxtFile.set(project.file("api.txt"))
-      output.set(project.file("previous_api.txt"))
+      output.set(project.file("new_api.txt"))
     }
 
     project.tasks.register<SemVerTask>("metalavaSemver") {
-      apiTxtFile.set(project.file("api.txt"))
-      otherApiFile.set(project.file("previous_api.txt"))
-      outputApiFile.set(project.file("opi.txt"))
+      apiTxtFile.set(project.file("new_api.txt"))
+      otherApiFile.set(project.file("api.txt"))
       currentVersionString.value(firebaseLibrary.version)
       previousVersionString.value(firebaseLibrary.previousVersion)
     }
