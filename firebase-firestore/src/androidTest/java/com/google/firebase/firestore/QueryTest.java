@@ -1664,17 +1664,14 @@ public class QueryTest {
             "j", map("code", 500L));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    // populate cache with all documents first to ensure getDocsFromCache() scans all docs
-    waitFor(testCollectionWithDocs(testDocs).get());
-
     Query query = collection.whereNotEqualTo("zip", 98101L);
-    checkOnlineAndOfflineResultsMatch(query, "a", "b", "d", "e", "f", "g", "h");
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "d", "e", "f", "g", "h");
 
     query = collection.whereNotEqualTo("zip", Double.NaN);
-    checkOnlineAndOfflineResultsMatch(query, "b", "c", "d", "e", "f", "g", "h");
+    checkOnlineAndOfflineResultsMatch(collection, query, "b", "c", "d", "e", "f", "g", "h");
 
     query = collection.whereNotEqualTo("zip", null);
-    checkOnlineAndOfflineResultsMatch(query, "a", "b", "c", "d", "e", "f", "g", "h");
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "c", "d", "e", "f", "g", "h");
   }
 
   @Test
@@ -1693,13 +1690,10 @@ public class QueryTest {
             "j", map("code", 500L));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    // populate cache with all documents first to ensure getDocsFromCache() scans all docs
-    waitFor(testCollectionWithDocs(testDocs).get());
-
     Query query = collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L)));
-    checkOnlineAndOfflineResultsMatch(query, "a", "b", "d", "e", "g", "h");
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "d", "e", "g", "h");
 
     query = collection.whereNotIn("zip", nullList());
-    checkOnlineAndOfflineResultsMatch(query);
+    checkOnlineAndOfflineResultsMatch(collection, query);
   }
 }
