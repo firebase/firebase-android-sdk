@@ -58,7 +58,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
         }
 
       collectJob = launch {
-        val queryManager = query.dataConnect.lazyQueryManager.get()
+        val queryManager = query.dataConnect.queryManager
         queryManager.subscribe(query, executeQuery = shouldExecuteQuery) { sequencedResult ->
           val querySubscriptionResult = QuerySubscriptionResultImpl(query, sequencedResult)
           send(querySubscriptionResult)
@@ -70,7 +70,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
 
   override suspend fun reload() {
     val query = query // save query to a local variable in case it changes.
-    val sequencedResult = query.dataConnect.lazyQueryManager.get().execute(query)
+    val sequencedResult = query.dataConnect.queryManager.execute(query)
     updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
     sequencedResult.ref.getOrThrow()
   }
