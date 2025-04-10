@@ -101,9 +101,34 @@ internal constructor(
       .addAllStages(stages.map { it.toProtoStage(userDataReader) })
       .build()
 
+  /**
+   * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
+   * any type safety on the stage params and requires the caller to know the order (and optionally
+   * names) of parameters accepted by the stage.
+   *
+   * This method provides a way to call stages that are supported by the Firestore backend but that
+   * are not implemented in the SDK version being used.
+   *
+   * For stages with named parameters, use the [GenericStage] class instead.
+   *
+   * @param name The unique name of the stage to add.
+   * @param arguments A list of ordered parameters to configure the stage's behavior.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun genericStage(name: String, vararg arguments: Any): Pipeline =
     append(GenericStage(name, arguments.map(GenericArg::from)))
 
+  /**
+   * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
+   * any type safety on the stage params and requires the caller to know the order (and optionally
+   * names) of parameters accepted by the stage.
+   *
+   * This method provides a way to call stages that are supported by the Firestore backend but that
+   * are not implemented in the SDK version being used.
+   *
+   * @param stage An [GenericStage] object that specifies stage name and parameters.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun genericStage(stage: GenericStage): Pipeline = append(stage)
 
   /**
@@ -125,10 +150,27 @@ internal constructor(
   fun addFields(field: Selectable, vararg additionalFields: Selectable): Pipeline =
     append(AddFieldsStage(arrayOf(field, *additionalFields)))
 
-  fun removeFields(vararg fields: Field): Pipeline = append(RemoveFieldsStage(fields))
+  /**
+   * Remove fields from outputs of previous stages.
+   *
+   * @param field The first [Field] to remove.
+   * @param additionalFields Optional additional [Field]s to remove.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun removeFields(field: Field, vararg additionalFields: Field): Pipeline =
+    append(RemoveFieldsStage(arrayOf(field, *additionalFields)))
 
-  fun removeFields(vararg fields: String): Pipeline =
-    append(RemoveFieldsStage(fields.map(Field::of).toTypedArray()))
+  /**
+   * Remove fields from outputs of previous stages.
+   *
+   * @param field The first [String] name of field to remove.
+   * @param additionalFields Optional additional [String] name of fields to remove.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun removeFields(field: String, vararg additionalFields: String): Pipeline =
+    append(
+      RemoveFieldsStage(arrayOf(Field.of(field), *additionalFields.map(Field::of).toTypedArray()))
+    )
 
   /**
    * Selects or creates a set of fields from the outputs of previous stages.
@@ -185,7 +227,22 @@ internal constructor(
       )
     )
 
-  fun sort(vararg orders: Ordering): Pipeline = append(SortStage(orders))
+  /**
+   * Sorts the documents from previous stages based on one or more [Ordering] criteria.
+   *
+   * This stage allows you to order the results of your pipeline. You can specify multiple
+   * [Ordering] instances to sort by multiple fields in ascending or descending order. If documents
+   * have the same value for a field used for sorting, the next specified ordering will be used. If
+   * all orderings result in equal comparison, the documents are considered equal and the order is
+   * unspecified.
+   *
+   * @param order The first [Ordering] instance specifying the sorting criteria.
+   * @param additionalOrders Optional additional [Ordering] instances specifying the sorting
+   * criteria.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun sort(order: Ordering, vararg additionalOrders: Ordering): Pipeline =
+    append(SortStage(arrayOf(order, *additionalOrders)))
 
   /**
    * Filters the documents from previous stages to only include those matching the specified
@@ -402,22 +459,112 @@ internal constructor(
    */
   fun findNearest(stage: FindNearestStage): Pipeline = append(stage)
 
+  /**
+   * Fully overwrites all fields in a document with those coming from a nested map.
+   *
+   * This stage allows you to emit a map value as a document. Each key of the map becomes a field on
+   * the document that contains the corresponding value.
+   *
+   * @param field The [String] specifying the field name containing the nested map.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun replace(field: String): Pipeline = replace(Field.of(field))
 
-  fun replace(field: Selectable): Pipeline =
-    append(ReplaceStage(field, ReplaceStage.Mode.FULL_REPLACE))
+  /**
+   * Fully overwrites all fields in a document with those coming from a nested map.
+   *
+   * This stage allows you to emit a map value as a document. Each key of the map becomes a field on
+   * the document that contains the corresponding value.
+   *
+   * @param mapValue The [Expr] or [Field] containing the nested map.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun replace(mapValue: Expr): Pipeline =
+    append(ReplaceStage(mapValue, ReplaceStage.Mode.FULL_REPLACE))
 
+  /**
+   * Performs a pseudo-random sampling of the input documents.
+   *
+   * The [documents] parameter represents the target number of documents to produce and must be a
+   * non-negative integer value. If the previous stage produces less than size documents, the entire
+   * previous results are returned. If the previous stage produces more than size, this outputs a
+   * sample of exactly size entries where any sample is equally likely.
+   *
+   * @param documents The number of documents to emit.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun sample(documents: Int): Pipeline = append(SampleStage.withDocLimit(documents))
 
+  /**
+   * Performs a pseudo-random sampling of the input documents.
+   *
+   * @param sample An [SampleStage] object that specifies how sampling is performed.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun sample(sample: SampleStage): Pipeline = append(sample)
 
+  /**
+   * Performs union of all documents from two pipelines, including duplicates.
+   *
+   * This stage will pass through documents from previous stage, and also pass through documents
+   * from previous stage of the `other` Pipeline given in parameter. The order of documents emitted
+   * from this stage is undefined.
+   *
+   * @param other The other [Pipeline] that is part of union.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun union(other: Pipeline): Pipeline = append(UnionStage(other))
 
-  fun unnest(field: String, alias: String): Pipeline = unnest(UnnestStage.withField(field, alias))
+  /**
+   * Takes a specified array from the input documents and outputs a document for each element with
+   * the element stored in a field with name specified by the alias.
+   *
+   * For each document emitted by the prior stage, this stage will emit zero or more augmented
+   * documents. The input array found in the previous stage document field specified by the
+   * [arrayField] parameter, will for each element of the input array produce an augmented document.
+   * The element of the input array will be stored in a field with name specified by [alias]
+   * parameter on the augmented document.
+   *
+   * @param arrayField The name of the field containing the array.
+   * @param alias The name of field to store emitted element of array.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun unnest(arrayField: String, alias: String): Pipeline =
+    unnest(Field.of(arrayField).alias(alias))
 
-  fun unnest(selectable: Selectable): Pipeline = append(UnnestStage(selectable))
+  /**
+   * Takes a specified array from the input documents and outputs a document for each element with
+   * the element stored in a field with name specified by the alias.
+   *
+   * For each document emitted by the prior stage, this stage will emit zero or more augmented
+   * documents. The input array is found in parameter [arrayWithAlias], which can be an [Expr] with
+   * an alias specified via [Expr.alias], or a [Field] that can also have alias specified. For each
+   * element of the input array, an augmented document will be produced. The element of input array
+   * will be stored in a field with name specified by the alias of the [arrayWithAlias] parameter.
+   * If the [arrayWithAlias] is a [Field] with no alias, then the original array field will be
+   * replaced with the individual element.
+   *
+   * @param arrayWithAlias The input array with field alias to store output element of array.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun unnest(arrayWithAlias: Selectable): Pipeline = append(UnnestStage(arrayWithAlias))
 
-  fun unnest(stage: UnnestStage): Pipeline = append(stage)
+  /**
+   * Takes a specified array from the input documents and outputs a document for each element with
+   * the element stored in a field with name specified by the alias.
+   *
+   * For each document emitted by the prior stage, this stage will emit zero or more augmented
+   * documents. The input array specified in the [unnestStage] parameter will for each element of
+   * the input array produce an augmented document. The element of the input array will be stored in
+   * a field with a name specified by the [unnestStage] parameter.
+   *
+   * Optionally, an index field can also be added to emitted documents. See [UnnestStage] for
+   * further information.
+   *
+   * @param unnestStage An [UnnestStage] object that specifies the search parameters.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
 
   private inner class ObserverSnapshotTask : PipelineResultObserver {
     private val userDataWriter =
@@ -466,7 +613,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [query] provided targets a different project
    * or database than the pipeline.
    */
-  fun createFrom(query: Query): Pipeline {
+  fun convertFrom(query: Query): Pipeline {
     if (query.firestore.databaseId != firestore.databaseId) {
       throw IllegalArgumentException("Provided query is from a different Firestore instance.")
     }
@@ -481,9 +628,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [aggregateQuery] provided targets a different
    * project or database than the pipeline.
    */
-  fun createFrom(aggregateQuery: AggregateQuery): Pipeline {
+  fun convertFrom(aggregateQuery: AggregateQuery): Pipeline {
     val aggregateFields = aggregateQuery.aggregateFields
-    return createFrom(aggregateQuery.query)
+    return convertFrom(aggregateQuery.query)
       .aggregate(
         aggregateFields.first().toPipeline(),
         *aggregateFields.drop(1).map(AggregateField::toPipeline).toTypedArray<AggregateWithAlias>()

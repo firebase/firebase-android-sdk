@@ -19,6 +19,7 @@ import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
@@ -31,6 +32,20 @@ import com.google.firestore.v1.Value
 import java.util.Date
 import kotlin.reflect.KFunction1
 
+/**
+ * Represents an expression that can be evaluated to a value within the execution of a [Pipeline].
+ *
+ * Expressions are the building blocks for creating complex queries and transformations in Firestore
+ * pipelines. They can represent:
+ *
+ * - **Field references:** Access values from document fields.
+ * - **Literals:** Represent constant values (strings, numbers, booleans).
+ * - **Function calls:** Apply functions to one or more expressions.
+ * - **Aggregations:** Calculate aggregate values (e.g., sum, average) over a set of documents.
+ *
+ * The [Expr] class provides a fluent API for building expressions. You can chain together method
+ * calls to create complex expressions.
+ */
 abstract class Expr internal constructor() {
 
   internal companion object {
@@ -108,15 +123,14 @@ abstract class Expr internal constructor() {
    *
    * <p>Example:
    *
-   * <pre>{@code // Calculate the total price and assign it the alias "totalPrice" and add it to the
+   * <pre> // Calculate the total price and assign it the alias "totalPrice" and add it to the
+   *
    * output. firestore.pipeline().collection("items")
-   * .addFields(Field.of("price").multiply(Field.of("quantity")).as("totalPrice")); }</pre>
+   * .addFields(Field.of("price").multiply(Field.of("quantity")).as("totalPrice")); </pre>
    *
    * @param alias The alias to assign to this expression.
-   * @return A new {@code Selectable} (typically an {@link ExprWithAlias}) that wraps this
-   * ```
-   *     expression and associates it with the provided alias.
-   * ```
+   * @return A new [Selectable] (typically an [ExprWithAlias]) that wraps this expression and
+   * associates it with the provided alias.
    */
   open fun alias(alias: String) = ExprWithAlias(alias, this)
 
@@ -340,6 +354,7 @@ abstract class Expr internal constructor() {
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
 
+/** Expressions that have an alias are [Selectable] */
 abstract class Selectable : Expr() {
   internal abstract fun getAlias(): String
   internal abstract fun getExpr(): Expr
@@ -356,6 +371,7 @@ abstract class Selectable : Expr() {
   }
 }
 
+/** Represents an expression that will be given the alias in the output document. */
 class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
   Selectable() {
   override fun getAlias() = alias
@@ -363,10 +379,33 @@ class ExprWithAlias internal constructor(private val alias: String, private val 
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 }
 
+/**
+ * Represents a reference to a field in a Firestore document.
+ *
+ * [Field] references are used to access document field values in expressions and to specify fields
+ * for sorting, filtering, and projecting data in Firestore pipelines.
+ *
+ * You can create a [Field] instance using the static [of] method:
+ */
 class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
+
+    /**
+     * An expression that returns the document ID.
+     *
+     * @return An [Field] representing the document ID.
+     */
     @JvmField val DOCUMENT_ID: Field = of(FieldPath.documentId())
 
+    /**
+     * Creates a [Field] instance representing the field at the given path.
+     *
+     * The path can be a simple field name (e.g., "name") or a dot-separated path to a nested field
+     * (e.g., "address.city").
+     *
+     * @param name The path to the field.
+     * @return A new [Field] instance representing the specified path.
+     */
     @JvmStatic
     fun of(name: String): Field {
       if (name == DocumentKey.KEY_FIELD_NAME) {
@@ -375,6 +414,15 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
       return Field(FieldPath.fromDotSeparatedPath(name).internalPath)
     }
 
+    /**
+     * Creates a [Field] instance representing the field at the given path.
+     *
+     * The path can be a simple field name (e.g., "name") or a dot-separated path to a nested field
+     * (e.g., "address.city").
+     *
+     * @param fieldPath The [FieldPath] to the field.
+     * @return A new [Field] instance representing the specified path.
+     */
     @JvmStatic
     fun of(fieldPath: FieldPath): Field {
       return Field(fieldPath.internalPath)
@@ -382,6 +430,7 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
   }
 
   override fun getAlias(): String = fieldPath.canonicalString()
+
   override fun getExpr(): Expr = this
 
   override fun toProto(userDataReader: UserDataReader) = toProto()
@@ -395,6 +444,14 @@ internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
     encodeValue(expressions.map { it.toProto(userDataReader) })
 }
 
+/**
+ * This class defines the base class for Firestore [Pipeline] functions, which can be evaluated
+ * within pipeline execution.
+ *
+ * Typically, you would not use this class or its children directly. Use either the functions like
+ * [and], [eq], or the methods on [Expr] ([Expr.eq]), [Expr.lt], etc) to construct new
+ * [FunctionExpr] instances.
+ */
 open class FunctionExpr
 protected constructor(private val name: String, private val params: Array<out Expr>) : Expr() {
   private constructor(
@@ -1023,6 +1080,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
   }
 }
 
+/** An interface that represents a filter condition. */
 class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   FunctionExpr(name, params) {
   internal constructor(
@@ -1054,19 +1112,50 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   fun cond(then: Any, otherwise: Any) = cond(this, then, otherwise)
 }
 
+/**
+ * Represents an ordering criterion for sorting documents in a Firestore pipeline.
+ *
+ * You create [Ordering] instances using the [ascending] and [descending] helper methods.
+ */
 class Ordering private constructor(val expr: Expr, private val dir: Direction) {
   companion object {
+
+    /**
+     * Create an [Ordering] that sorts documents in ascending order based on value of [expr].
+     *
+     * @param expr The order is based on the evaluation of the [Expr].
+     * @return A new [Ordering] object with ascending sort by [expr].
+     */
     @JvmStatic fun ascending(expr: Expr): Ordering = Ordering(expr, Direction.ASCENDING)
 
+    /**
+     * Creates an [Ordering] that sorts documents in ascending order based on field.
+     *
+     * @param fieldName The name of field to sort documents.
+     * @return A new [Ordering] object with ascending sort by field.
+     */
     @JvmStatic
     fun ascending(fieldName: String): Ordering = Ordering(Field.of(fieldName), Direction.ASCENDING)
 
+    /**
+     * Create an [Ordering] that sorts documents in descending order based on value of [expr].
+     *
+     * @param expr The order is based on the evaluation of the [Expr].
+     * @return A new [Ordering] object with descending sort by [expr].
+     */
     @JvmStatic fun descending(expr: Expr): Ordering = Ordering(expr, Direction.DESCENDING)
 
+    /**
+     * Creates an [Ordering] that sorts documents in descending order based on field.
+     *
+     * @param fieldName The name of field to sort documents.
+     * @return A new [Ordering] object with descending sort by field.
+     */
     @JvmStatic
     fun descending(fieldName: String): Ordering =
       Ordering(Field.of(fieldName), Direction.DESCENDING)
   }
+
   private class Direction private constructor(val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
@@ -1074,6 +1163,7 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
       val DESCENDING = Direction("descending")
     }
   }
+
   internal fun toProto(userDataReader: UserDataReader): Value =
     Value.newBuilder()
       .setMapValue(
@@ -1083,6 +1173,14 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
       )
       .build()
 
+  /**
+   * Create an order that is in reverse.
+   *
+   * If the previous [Ordering] was ascending, then the new [Ordering] will be descending. Likewise,
+   * if the previous [Ordering] was descending, then the new [Ordering] will be ascending.
+   *
+   * @return New [Ordering] object that is has order reversed.
+   */
   fun reverse(): Ordering =
     Ordering(expr, if (dir == Direction.ASCENDING) Direction.DESCENDING else Direction.ASCENDING)
 }

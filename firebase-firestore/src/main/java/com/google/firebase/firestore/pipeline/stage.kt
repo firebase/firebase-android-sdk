@@ -37,17 +37,60 @@ internal constructor(protected val name: String, internal val options: InternalO
 
   protected fun with(key: String, value: Value): T = self(options.with(key, value))
 
+  /**
+   * Specify named [String] parameter
+   *
+   * @param key The name of parameter
+   * @param value The [String] value of parameter
+   * @return New stage with named parameter.
+   */
   fun with(key: String, value: String): T = with(key, Values.encodeValue(value))
 
+  /**
+   * Specify named [Boolean] parameter
+   *
+   * @param key The name of parameter
+   * @param value The [Boolean] value of parameter
+   * @return New stage with named parameter.
+   */
   fun with(key: String, value: Boolean): T = with(key, Values.encodeValue(value))
 
+  /**
+   * Specify named [Long] parameter
+   *
+   * @param key The name of parameter
+   * @param value The [Long] value of parameter
+   * @return New stage with named parameter.
+   */
   fun with(key: String, value: Long): T = with(key, Values.encodeValue(value))
 
+  /**
+   * Specify named [Double] parameter
+   *
+   * @param key The name of parameter
+   * @param value The [Double] value of parameter
+   * @return New stage with named parameter.
+   */
   fun with(key: String, value: Double): T = with(key, Values.encodeValue(value))
 
+  /**
+   * Specify named [Field] parameter
+   *
+   * @param key The name of parameter
+   * @param value The [Field] value of parameter
+   * @return New stage with named parameter.
+   */
   fun with(key: String, value: Field): T = with(key, value.toProto())
 }
 
+/**
+ * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer any
+ * type safety on the stage params and requires the caller to know the order (and optionally names)
+ * of parameters accepted by the stage.
+ *
+ * This class provides a way to call stages that are supported by the Firestore backend but that are
+ * not implemented in the SDK version being used.
+ */
 class GenericStage
 internal constructor(
   name: String,
@@ -55,11 +98,23 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<GenericStage>(name, options) {
   companion object {
+    /**
+     * Specify name of stage
+     *
+     * @param name The unique name of the stage to add.
+     * @return [GenericStage] with specified parameters.
+     */
     @JvmStatic fun ofName(name: String) = GenericStage(name, emptyList(), InternalOptions.EMPTY)
   }
 
   override fun self(options: InternalOptions) = GenericStage(name, arguments, options)
 
+  /**
+   * Specify arguments to stage.
+   *
+   * @param arguments A list of ordered parameters to configure the stage's behavior.
+   * @return [GenericStage] with specified parameters.
+   */
   fun withArguments(vararg arguments: Any): GenericStage =
     GenericStage(name, arguments.map(GenericArg::from), options)
 
@@ -186,7 +241,7 @@ internal constructor(
      * AggregateFunction} with an alias for the accumulated results.
      * @param additionalAccumulators The [AggregateWithAlias] expressions, each wrapping an
      * [AggregateFunction] with an alias for the accumulated results.
-     * @return Aggregate Stage with specified accumulators.
+     * @return [AggregateStage] with specified accumulators.
      */
     @JvmStatic
     fun withAccumulators(
@@ -208,7 +263,7 @@ internal constructor(
    * @param groupField The [String] representing field name.
    * @param additionalGroups The [Selectable] expressions to consider when determining group value
    * combinations or [String]s representing field names.
-   * @return Aggregate Stage with specified groups.
+   * @return [AggregateStage] with specified groups.
    */
   fun withGroups(groupField: String, vararg additionalGroups: Any) =
     withGroups(Field.of(groupField), additionalGroups)
@@ -220,7 +275,7 @@ internal constructor(
    * combinations.
    * @param additionalGroups The [Selectable] expressions to consider when determining group value
    * combinations or [String]s representing field names.
-   * @return Aggregate Stage with specified groups.
+   * @return [AggregateStage] with specified groups.
    */
   fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
@@ -424,7 +479,7 @@ internal constructor(
 
 internal class ReplaceStage
 internal constructor(
-  private val field: Selectable,
+  private val mapValue: Expr,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<ReplaceStage>("replace", options) {
@@ -436,11 +491,19 @@ internal constructor(
       val MERGE_PREFER_PARENT = Mode("merge_prefer_parent")
     }
   }
-  override fun self(options: InternalOptions) = ReplaceStage(field, mode, options)
+  override fun self(options: InternalOptions) = ReplaceStage(mapValue, mode, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(field.toProto(userDataReader), mode.proto)
+    sequenceOf(mapValue.toProto(userDataReader), mode.proto)
 }
 
+/**
+ * Performs a pseudo-random sampling of the input documents.
+ *
+ * The documents produced from this stage are non-deterministic, running the same query over the
+ * same dataset multiple times will produce different results. There are two different ways to
+ * dictate how the sample is calculated either by specifying a target output size, or by specifying
+ * a target percentage of the input size.
+ */
 class SampleStage
 private constructor(
   private val size: Number,
@@ -456,8 +519,29 @@ private constructor(
     }
   }
   companion object {
+    /**
+     * Creates [SampleStage] with size limited to percentage of prior stages results.
+     *
+     * The [percentage] parameter is the target percentage (between 0.0 & 1.0) of the number of
+     * input documents to produce. Each input document is independently selected against the given
+     * percentage. As a result the output size will be approximately documents * [percentage].
+     *
+     * @param percentage The percentage of the prior stages documents to emit.
+     * @return [SampleStage] with specified [percentage].
+     */
     @JvmStatic fun withPercentage(percentage: Double) = SampleStage(percentage, Mode.PERCENT)
 
+    /**
+     * Creates [SampleStage] with size limited to number of documents.
+     *
+     * The [documents] parameter represents the target number of documents to produce and must be a
+     * non-negative integer value. If the previous stage produces less than size documents, the
+     * entire previous results are returned. If the previous stage produces more than size, this
+     * outputs a sample of exactly size entries where any sample is equally likely.
+     *
+     * @param documents The number of documents to emit.
+     * @return [SampleStage] with specified [documents].
+     */
     @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -474,20 +558,60 @@ internal constructor(
     sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
 }
 
+/**
+ * Takes a specified array from the input documents and outputs a document for each element with the
+ * element stored in a field with name specified by the alias.
+ */
 class UnnestStage
 internal constructor(
   private val selectable: Selectable,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<UnnestStage>("unnest", options) {
   companion object {
-    @JvmStatic fun withField(selectable: Selectable) = UnnestStage(selectable)
+
+    /**
+     * Creates [UnnestStage] with input array and alias specified.
+     *
+     * For each document emitted by the prior stage, this stage will emit zero or more augmented
+     * documents. The input array is found in parameter [arrayWithAlias], which can be an [Expr]
+     * with an alias specified via [Expr.alias], or a [Field] that can also have alias specified.
+     * For each element of the input array, an augmented document will be produced. The element of
+     * input array will be stored in a field with name specified by the alias of the
+     * [arrayWithAlias] parameter. If the [arrayWithAlias] is a [Field] with no alias, then the
+     * original array field will be replaced with the individual element.
+     *
+     * @param arrayWithAlias The input array with field alias to store output element of array.
+     * @return [SampleStage] with input array and alias specified.
+     */
+    @JvmStatic fun withField(arrayWithAlias: Selectable) = UnnestStage(arrayWithAlias)
+
+    /**
+     * Creates [UnnestStage] with input array and alias specified.
+     *
+     * For each document emitted by the prior stage, this stage will emit zero or more augmented
+     * documents. The input array found in the previous stage document field specified by the
+     * [arrayField] parameter, will for each element of the input array produce an augmented
+     * document. The element of the input array will be stored in a field with name specified by
+     * [alias] parameter on the augmented document.
+     *
+     * @return [SampleStage] with input array and alias specified.
+     */
     @JvmStatic
-    fun withField(field: String, alias: String): UnnestStage =
-      UnnestStage(Field.of(field).alias(alias))
+    fun withField(arrayField: String, alias: String): UnnestStage =
+      UnnestStage(Field.of(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto(userDataReader))
 
+  /**
+   * Adds index field to emitted documents
+   *
+   * A field with name specified in [indexField] will be added to emitted document. The index is a
+   * numeric value that corresponds to array index of the element from input array.
+   *
+   * @param indexField The field name of index field.
+   * @return [SampleStage] that includes specified index field.
+   */
   fun withIndexField(indexField: String): UnnestStage = with("index_field", indexField)
 }

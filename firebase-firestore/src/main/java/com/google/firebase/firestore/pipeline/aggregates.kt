@@ -20,6 +20,7 @@ import com.google.firestore.v1.Value
 class AggregateWithAlias
 internal constructor(internal val alias: String, internal val expr: AggregateFunction)
 
+/** A class that represents an aggregate function. */
 class AggregateFunction
 private constructor(private val name: String, private val params: Array<out Expr>) {
   private constructor(name: String) : this(name, emptyArray())
@@ -55,6 +56,13 @@ private constructor(private val name: String, private val params: Array<out Expr
     @JvmStatic fun max(expr: Expr) = AggregateFunction("max", expr)
   }
 
+  /**
+   * Assigns an alias to this aggregate.
+   *
+   * @param alias The alias to assign to this aggregate.
+   * @return A new [AggregateWithAlias] that wraps this aggregate and associates it with the
+   * provided alias.
+   */
   fun alias(alias: String) = AggregateWithAlias(alias, this)
 
   internal fun toProto(userDataReader: UserDataReader): Value {

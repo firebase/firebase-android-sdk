@@ -68,7 +68,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.limit(2);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    PipelineSnapshot set = waitFor(db.pipeline().convertFrom(query).execute());
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(asList(map("k", "a"), map("k", "b")), data);
   }
@@ -85,7 +85,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.limit(2).orderBy("sort", Direction.DESCENDING);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    PipelineSnapshot set = waitFor(db.pipeline().convertFrom(query).execute());
 
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L), map("k", "c", "sort", 1L)), data);
@@ -98,7 +98,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.limitToLast(2);
     expectError(
-        () -> waitFor(db.pipeline().createFrom(query).execute()),
+        () -> waitFor(db.pipeline().convertFrom(query).execute()),
         "limitToLast() queries require specifying at least one orderBy() clause");
   }
 
@@ -115,33 +115,33 @@ public class QueryToPipelineTest {
     Query query = collection.limitToLast(3).orderBy("sort").endBefore(2);
     FirebaseFirestore db = collection.firestore;
 
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    PipelineSnapshot set = waitFor(db.pipeline().convertFrom(query).execute());
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(
         asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 1L)),
         data);
 
     query = collection.limitToLast(3).orderBy("sort").endAt(1);
-    set = waitFor(db.pipeline().createFrom(query).execute());
+    set = waitFor(db.pipeline().convertFrom(query).execute());
     data = pipelineSnapshotToValues(set);
     assertEquals(
         asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 1L)),
         data);
 
     query = collection.limitToLast(3).orderBy("sort").startAt(2);
-    set = waitFor(db.pipeline().createFrom(query).execute());
+    set = waitFor(db.pipeline().convertFrom(query).execute());
     data = pipelineSnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L)), data);
 
     query = collection.limitToLast(3).orderBy("sort").startAfter(0);
-    set = waitFor(db.pipeline().createFrom(query).execute());
+    set = waitFor(db.pipeline().convertFrom(query).execute());
     data = pipelineSnapshotToValues(set);
     assertEquals(
         asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 1L), map("k", "d", "sort", 2L)),
         data);
 
     query = collection.limitToLast(3).orderBy("sort").startAfter(-1);
-    set = waitFor(db.pipeline().createFrom(query).execute());
+    set = waitFor(db.pipeline().convertFrom(query).execute());
     data = pipelineSnapshotToValues(set);
     assertEquals(
         asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 1L), map("k", "d", "sort", 2L)),
@@ -163,7 +163,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.whereGreaterThan("foo", 21.0).orderBy("foo", Direction.DESCENDING);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot result = waitFor(db.pipeline().createFrom(query).execute());
+    PipelineSnapshot result = waitFor(db.pipeline().convertFrom(query).execute());
     assertEquals(asList("g", "f", "c", "b", "a"), pipelineSnapshotToIds(result));
   }
 
@@ -179,7 +179,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot results =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereEqualTo("null", null).whereEqualTo("nan", Double.NaN))
+                .convertFrom(collection.whereEqualTo("null", null).whereEqualTo("nan", Double.NaN))
                 .execute());
     assertEquals(1, results.getResults().size());
     PipelineResult result = results.getResults().get(0);
@@ -199,7 +199,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot results =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereEqualTo("inf", Double.POSITIVE_INFINITY))
+                .convertFrom(collection.whereEqualTo("inf", Double.POSITIVE_INFINITY))
                 .execute());
     assertEquals(1, results.getResults().size());
     assertEquals(asList(map("inf", Double.POSITIVE_INFINITY)), pipelineSnapshotToValues(results));
@@ -217,7 +217,7 @@ public class QueryToPipelineTest {
     // Ideally this would be descending to validate it's different than
     // the default, but that requires an extra index
     PipelineSnapshot docs =
-        waitFor(db.pipeline().createFrom(collection.orderBy(FieldPath.documentId())).execute());
+        waitFor(db.pipeline().convertFrom(collection.orderBy(FieldPath.documentId())).execute());
     assertEquals(
         asList(testDocs.get("a"), testDocs.get("b"), testDocs.get("c")),
         pipelineSnapshotToValues(docs));
@@ -236,14 +236,14 @@ public class QueryToPipelineTest {
     PipelineSnapshot docs =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereEqualTo(FieldPath.documentId(), "ab"))
+                .convertFrom(collection.whereEqualTo(FieldPath.documentId(), "ab"))
                 .execute());
     assertEquals(singletonList(testDocs.get("ab")), pipelineSnapshotToValues(docs));
 
     docs =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     collection
                         .whereGreaterThan(FieldPath.documentId(), "aa")
                         .whereLessThanOrEqualTo(FieldPath.documentId(), "ba"))
@@ -264,7 +264,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot docs =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     collection.whereEqualTo(FieldPath.documentId(), collection.document("ab")))
                 .execute());
     assertEquals(singletonList(testDocs.get("ab")), pipelineSnapshotToValues(docs));
@@ -272,7 +272,7 @@ public class QueryToPipelineTest {
     docs =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     collection
                         .whereGreaterThan(FieldPath.documentId(), collection.document("aa"))
                         .whereLessThanOrEqualTo(FieldPath.documentId(), collection.document("ba")))
@@ -287,9 +287,9 @@ public class QueryToPipelineTest {
     collection.add(map());
     Task<PipelineSnapshot> query1 =
         db.pipeline()
-            .createFrom(collection.orderBy(FieldPath.documentId(), Direction.ASCENDING))
+            .convertFrom(collection.orderBy(FieldPath.documentId(), Direction.ASCENDING))
             .execute();
-    Task<PipelineSnapshot> query2 = db.pipeline().createFrom(collection).execute();
+    Task<PipelineSnapshot> query2 = db.pipeline().convertFrom(collection).execute();
 
     waitFor(query1);
     waitFor(query2);
@@ -327,7 +327,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("j");
 
     PipelineSnapshot snapshot =
-        waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", 98101L)).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereNotEqualTo("zip", 98101L)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
     // With objects.
@@ -338,7 +338,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereNotEqualTo("zip", map("code", 500)))
+                .convertFrom(collection.whereNotEqualTo("zip", map("code", 500)))
                 .execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
@@ -346,7 +346,8 @@ public class QueryToPipelineTest {
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
-    snapshot = waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", null)).execute());
+    snapshot =
+        waitFor(db.pipeline().convertFrom(collection.whereNotEqualTo("zip", null)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
     // With NaN.
@@ -355,7 +356,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot =
-        waitFor(db.pipeline().createFrom(collection.whereEqualTo("zip", Double.NaN)).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereEqualTo("zip", Double.NaN)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
   }
 
@@ -376,7 +377,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot docs =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereNotEqualTo(FieldPath.documentId(), "aa"))
+                .convertFrom(collection.whereNotEqualTo(FieldPath.documentId(), "aa"))
                 .execute());
     assertEquals(asList(docB, docC, docD), pipelineSnapshotToValues(docs));
   }
@@ -396,14 +397,16 @@ public class QueryToPipelineTest {
 
     // Search for "array" to contain 42
     PipelineSnapshot snapshot =
-        waitFor(db.pipeline().createFrom(collection.whereArrayContains("array", 42L)).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereArrayContains("array", 42L)).execute());
     assertEquals(asList(docA, docB, docD), pipelineSnapshotToValues(snapshot));
 
     // Note: whereArrayContains() requires a non-null value parameter, so no null test is needed.
     // With NaN.
     snapshot =
         waitFor(
-            db.pipeline().createFrom(collection.whereArrayContains("array", Double.NaN)).execute());
+            db.pipeline()
+                .convertFrom(collection.whereArrayContains("array", Double.NaN))
+                .execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
   }
 
@@ -430,7 +433,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     collection.whereIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))))
                 .execute());
     assertEquals(asList(docA, docC, docG), pipelineSnapshotToValues(snapshot));
@@ -439,30 +442,30 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereIn("zip", asList(map("code", 500L))))
+                .convertFrom(collection.whereIn("zip", asList(map("code", 500L))))
                 .execute());
     assertEquals(asList(docF), pipelineSnapshotToValues(snapshot));
 
     // With null.
-    snapshot = waitFor(db.pipeline().createFrom(collection.whereIn("zip", nullList())).execute());
+    snapshot = waitFor(db.pipeline().convertFrom(collection.whereIn("zip", nullList())).execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
     // With null and a value.
     List<Object> inputList = nullList();
     inputList.add(98101L);
-    snapshot = waitFor(db.pipeline().createFrom(collection.whereIn("zip", inputList)).execute());
+    snapshot = waitFor(db.pipeline().convertFrom(collection.whereIn("zip", inputList)).execute());
     assertEquals(asList(docA), pipelineSnapshotToValues(snapshot));
 
     // With NaN.
     snapshot =
-        waitFor(db.pipeline().createFrom(collection.whereIn("zip", asList(Double.NaN))).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereIn("zip", asList(Double.NaN))).execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
     // With NaN and a value.
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereIn("zip", asList(Double.NaN, 98101L)))
+                .convertFrom(collection.whereIn("zip", asList(Double.NaN, 98101L)))
                 .execute());
     assertEquals(asList(docA), pipelineSnapshotToValues(snapshot));
   }
@@ -484,7 +487,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot docs =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")))
+                .convertFrom(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")))
                 .execute());
     assertEquals(asList(docA, docB), pipelineSnapshotToValues(docs));
   }
@@ -522,7 +525,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))))
                 .execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
@@ -535,13 +538,13 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereNotIn("zip", asList(map("code", 500L))))
+                .convertFrom(collection.whereNotIn("zip", asList(map("code", 500L))))
                 .execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
     // With Null.
     snapshot =
-        waitFor(db.pipeline().createFrom(collection.whereNotIn("zip", nullList())).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereNotIn("zip", nullList())).execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
     // With NaN.
@@ -551,7 +554,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("j");
     snapshot =
         waitFor(
-            db.pipeline().createFrom(collection.whereNotIn("zip", asList(Double.NaN))).execute());
+            db.pipeline().convertFrom(collection.whereNotIn("zip", asList(Double.NaN))).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
     // With NaN and a number.
@@ -563,7 +566,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereNotIn("zip", asList(Float.NaN, 98101L)))
+                .convertFrom(collection.whereNotIn("zip", asList(Float.NaN, 98101L)))
                 .execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
   }
@@ -585,7 +588,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot docs =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereNotIn(FieldPath.documentId(), asList("aa", "ab")))
+                .convertFrom(collection.whereNotIn(FieldPath.documentId(), asList("aa", "ab")))
                 .execute());
     assertEquals(asList(docC, docD), pipelineSnapshotToValues(docs));
   }
@@ -613,7 +616,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", asList(42L, 43L)))
+                .convertFrom(collection.whereArrayContainsAny("array", asList(42L, 43L)))
                 .execute());
     assertEquals(asList(docA, docB, docD, docE), pipelineSnapshotToValues(snapshot));
 
@@ -621,7 +624,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", asList(map("a", 42L))))
+                .convertFrom(collection.whereArrayContainsAny("array", asList(map("a", 42L))))
                 .execute());
     assertEquals(asList(docF), pipelineSnapshotToValues(snapshot));
 
@@ -629,7 +632,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", nullList()))
+                .convertFrom(collection.whereArrayContainsAny("array", nullList()))
                 .execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
@@ -639,7 +642,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", inputList))
+                .convertFrom(collection.whereArrayContainsAny("array", inputList))
                 .execute());
     assertEquals(asList(docE), pipelineSnapshotToValues(snapshot));
 
@@ -647,7 +650,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", asList(Double.NaN)))
+                .convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN)))
                 .execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
@@ -655,7 +658,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(collection.whereArrayContainsAny("array", asList(Double.NaN, 43L)))
+                .convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN, 43L)))
                 .execute());
     assertEquals(asList(docE), pipelineSnapshotToValues(snapshot));
   }
@@ -688,7 +691,7 @@ public class QueryToPipelineTest {
     waitFor(batch.commit());
 
     PipelineSnapshot snapshot =
-        waitFor(db.pipeline().createFrom(db.collectionGroup(collectionGroup)).execute());
+        waitFor(db.pipeline().convertFrom(db.collectionGroup(collectionGroup)).execute());
     assertEquals(
         asList("cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5"),
         pipelineSnapshotToIds(snapshot));
@@ -720,7 +723,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     db.collectionGroup(collectionGroup)
                         .orderBy(FieldPath.documentId())
                         .startAt("a/b")
@@ -731,7 +734,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     db.collectionGroup(collectionGroup)
                         .orderBy(FieldPath.documentId())
                         .startAfter("a/b")
@@ -766,7 +769,7 @@ public class QueryToPipelineTest {
     PipelineSnapshot snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     db.collectionGroup(collectionGroup)
                         .whereGreaterThanOrEqualTo(FieldPath.documentId(), "a/b")
                         .whereLessThanOrEqualTo(FieldPath.documentId(), "a/b0"))
@@ -776,7 +779,7 @@ public class QueryToPipelineTest {
     snapshot =
         waitFor(
             db.pipeline()
-                .createFrom(
+                .convertFrom(
                     db.collectionGroup(collectionGroup)
                         .whereGreaterThan(FieldPath.documentId(), "a/b")
                         .whereLessThan(
