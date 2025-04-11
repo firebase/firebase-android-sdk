@@ -191,7 +191,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   @Test
   public void testPerfSessionsCreateEnablesGaugeCollectionWhenVerboseSessionForceEnabled() {
     forceVerboseSession();
-    PerfSession testPerfSession = createTestSession(1);
+    PerfSession testPerfSession = PerfSession.createWithId(testSessionId(1));
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isTrue();
   }
 
@@ -202,16 +202,16 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
     // Next, create 3 non-verbose sessions
     List<PerfSession> sessions = new ArrayList<>();
-    sessions.add(createTestSession(1));
-    sessions.add(createTestSession(2));
-    sessions.add(createTestSession(3));
+    sessions.add(PerfSession.createWithId(testSessionId(1)));
+    sessions.add(PerfSession.createWithId(testSessionId(2)));
+    sessions.add(PerfSession.createWithId(testSessionId(3)));
 
     // Force all the sessions from now onwards to be verbose
     forceVerboseSession();
 
     // Next, create 2 verbose sessions
-    sessions.add(createTestSession(4));
-    sessions.add(createTestSession(5));
+    sessions.add(PerfSession.createWithId(testSessionId(4)));
+    sessions.add(PerfSession.createWithId(testSessionId(5)));
 
     // Verify that the first session in the list of sessions was not verbose
     assertThat(sessions.get(0).isVerbose()).isFalse();
