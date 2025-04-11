@@ -1,4 +1,5 @@
 import java.io.File
+import java.io.IOException
 import org.gradle.kotlin.dsl.*
 
 plugins { alias(libs.plugins.spotless) }
@@ -59,15 +60,68 @@ abstract class InstallFirebaseToolsTask : DefaultTask() {
   }
 }
 
-val installFirebaseToolsTask =
-  tasks.register<InstallFirebaseToolsTask>("installFirebaseTools") {
-    group = "Data Connect CI"
-    description = "Install the firebase-tools npm package"
-    initializeProperties(
-      version = providers.requiredGradleProperty("firebaseToolsVersion"),
-      destDir = layout.buildDirectory.dir("firebase-tools"),
-    )
+abstract class PrintToolVersions : DefaultTask() {
+
+  @get:InputFile abstract val gradlewExecutable: RegularFileProperty
+
+  @get:InputFile abstract val firebaseExecutable: RegularFileProperty
+
+  @get:Inject abstract val execOperations: ExecOperations
+
+  fun initializeProperties(
+    firebaseExecutable: Provider<RegularFile>,
+    gradlewExecutable: Provider<RegularFile>
+  ) {
+    this.firebaseExecutable.set(firebaseExecutable)
+    this.gradlewExecutable.set(gradlewExecutable)
   }
+
+  @TaskAction
+  fun execute() {
+    val firebaseExecutable: File = firebaseExecutable.get().asFile
+    val gradlewFile: File = gradlewExecutable.get().asFile
+
+    runCommandIgnoringExitCode("uname", "-a")
+    runCommandIgnoringExitCode("which", "java")
+    runCommandIgnoringExitCode("java", "-version")
+    runCommandIgnoringExitCode("which", "javac")
+    runCommandIgnoringExitCode("javac", "-version")
+    runCommandIgnoringExitCode("which", "node")
+    runCommandIgnoringExitCode("node", "--version")
+    runCommandIgnoringExitCode(firebaseExecutable.path, "--version")
+    runCommandIgnoringExitCode(gradlewFile.path, "--version")
+  }
+
+  private fun runCommandIgnoringExitCode(vararg args: String) {
+    val argsStr = args.joinToString(" ")
+    logger.lifecycle("Running command: $argsStr")
+
+    val execResult =
+      try {
+        execOperations.exec {
+          commandLine(*args)
+          isIgnoreExitValue = true
+        }
+      } catch (e: Exception) {
+        var ioException: Throwable? = e
+        while (ioException !== null && ioException !is IOException) {
+          ioException = ioException.cause
+        }
+        if (ioException !== null) {
+          logger.warn("WARNING: unable to start process: $argsStr (${e.message})")
+          return
+        } else {
+          throw e
+        }
+      }
+
+    if (execResult.exitValue != 0) {
+      logger.warn(
+        "WARNING: command completed with non-zero exit code " + "${execResult.exitValue}: $argsStr"
+      )
+    }
+  }
+}
 
 fun ProviderFactory.requiredGradleProperty(propertyName: String) =
   gradleProperty(propertyName)
@@ -83,3 +137,26 @@ fun ProviderFactory.requiredGradleProperty(propertyName: String) =
     )
 
 class RequiredPropertyMissing(message: String) : Exception(message)
+
+val ciTaskGroup = "Data Connect CI"
+
+val installFirebaseToolsTask =
+  tasks.register<InstallFirebaseToolsTask>("installFirebaseTools") {
+    group = ciTaskGroup
+    description = "Install the firebase-tools npm package"
+    initializeProperties(
+      version = providers.requiredGradleProperty("firebaseToolsVersion"),
+      destDir = layout.buildDirectory.dir("firebase-tools"),
+    )
+  }
+
+val printToolVersionsTask =
+  tasks.register<PrintToolVersions>("printToolVersions") {
+    group = ciTaskGroup
+    description = "Print versions of notable command-line tools"
+    val gradlewExecutable = layout.projectDirectory.file("../../gradlew")
+    initializeProperties(
+      firebaseExecutable = installFirebaseToolsTask.flatMap { it.firebaseExecutable },
+      gradlewExecutable = providers.provider { gradlewExecutable },
+    )
+  }
