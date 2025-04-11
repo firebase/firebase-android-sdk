@@ -25,6 +25,7 @@ import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -120,7 +121,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val srcDirs =
       project.files(
         project.extensions
-          .getByType(JavaPluginExtension::class.java)
+          .getByType<JavaPluginExtension>()
           .sourceSets
           .getByName("main")
           .java
