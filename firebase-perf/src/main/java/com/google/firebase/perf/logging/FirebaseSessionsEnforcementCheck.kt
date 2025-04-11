@@ -31,12 +31,5 @@ class FirebaseSessionsEnforcementCheck {
         assert(!enforcement) { failureMessage }
       }
     }
-
-    fun checkSession(sessionId: String, failureMessage: String) {
-      if (sessionId.isLegacy()) {
-        logger.debug("legacy session ${sessionId}: $failureMessage")
-        assert(!enforcement) { failureMessage }
-      }
-    }
   }
 }
