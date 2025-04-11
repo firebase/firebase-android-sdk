@@ -54,6 +54,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -406,34 +407,40 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    // Start the job to asynchronously close the gRPC client.
-    while (true) {
-      val oldCloseJob = closeJob.value
-
-      oldCloseJob.ref?.let {
-        if (!it.isCancelled) {
-          return it
-        }
+    // Create the "close job" to asynchronously close the gRPC client.
+    @OptIn(DelicateCoroutinesApi::class)
+    val newCloseJob =
+      GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
+        lazyGrpcRPCs.initializedValueOrNull?.close()
       }
+    newCloseJob.invokeOnCompletion { exception ->
+      if (exception === null) {
+        logger.debug { "close() completed successfully" }
+      } else {
+        logger.warn(exception) { "close() failed" }
+      }
+    }
 
-      @OptIn(DelicateCoroutinesApi::class)
-      val newCloseJob =
-        GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcRPCs.initializedValueOrNull?.close()
-        }
-
-      newCloseJob.invokeOnCompletion { exception ->
-        if (exception === null) {
-          logger.debug { "close() completed successfully" }
+    // Register the new "close job", unless there is a "close job" already in progress or one that
+    // completed successfully.
+    val updatedCloseJob =
+      closeJob.updateAndGet { oldCloseJob ->
+        if (oldCloseJob.ref !== null && !oldCloseJob.ref.isCancelled) {
+          oldCloseJob
         } else {
-          logger.warn(exception) { "close() failed" }
+          NullableReference(newCloseJob)
         }
       }
 
-      if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
-        newCloseJob.start()
-        return newCloseJob
-      }
+    // If the updated "close job" was the one that we created, then start it!
+    if (updatedCloseJob.ref === newCloseJob) {
+      newCloseJob.start()
+    }
+
+    // Return the job "close job" that is active or already completed so that the caller can await
+    // its result.
+    return checkNotNull(updatedCloseJob.ref) {
+      "updatedCloseJob.ref should not have been null (error code y5fk4ntdnd)"
     }
   }
 

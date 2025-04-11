@@ -31,6 +31,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -84,17 +85,14 @@ internal class RegisteredDataDeserializer<T>(
         lazyDeserialize(requestId, sequencedResult)
       )
 
-    // Use a compare-and-swap ("CAS") loop to ensure that an old update never clobbers a newer one.
-    while (true) {
-      val currentUpdate = latestUpdate.value
+    latestUpdate.update { currentUpdate ->
       if (
         currentUpdate.ref !== null &&
           currentUpdate.ref.sequenceNumber > sequencedResult.sequenceNumber
       ) {
-        break // don't clobber a newer update with an older one
-      }
-      if (latestUpdate.compareAndSet(currentUpdate, NullableReference(newUpdate))) {
-        break
+        currentUpdate // don't clobber a newer update with an older one
+      } else {
+        NullableReference(newUpdate)
       }
     }
 
