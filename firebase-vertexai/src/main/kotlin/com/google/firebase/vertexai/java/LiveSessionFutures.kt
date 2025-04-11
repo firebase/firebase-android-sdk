@@ -44,9 +44,11 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param functionCallHandler A callback function to map function calls from the server to their
    * response parts.
    */
+  @JvmOverloads
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
+
 
   /**
    * Stops the audio conversation with the Gemini Server.
