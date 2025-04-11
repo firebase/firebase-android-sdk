@@ -17,6 +17,11 @@
 package com.google.firebase.vertexai.common.util
 
 import java.lang.reflect.Field
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -75,3 +80,21 @@ internal fun Flow<ByteArray>.accumulateUntil(
     emit(buffer.toByteArray())
   }
 }
+
+/**
+ * Create a [Job] that is a child of the [currentCoroutineContext], if any.
+ *
+ * This is useful when you want a coroutine scope to be canceled when its parent scope is canceled,
+ * and you don't have full control over the parent scope, but you don't want the cancellation of the
+ * child to impact the parent.
+ *
+ * If the parent coroutine context does not have a job, an empty one will be created.
+ */
+internal suspend inline fun childJob() = Job(currentCoroutineContext()[Job] ?: Job())
+
+/**
+ * A constant value pointing to a cancelled [CoroutineScope].
+ *
+ * Useful when you want to initialize a mutable [CoroutineScope] in a canceled state.
+ */
+internal val CancelledCoroutineScope = CoroutineScope(EmptyCoroutineContext).apply { cancel() }

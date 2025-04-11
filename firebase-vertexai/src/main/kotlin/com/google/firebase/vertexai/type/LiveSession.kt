@@ -23,7 +23,9 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.vertexai.common.JSON
+import com.google.firebase.vertexai.common.util.CancelledCoroutineScope
 import com.google.firebase.vertexai.common.util.accumulateUntil
+import com.google.firebase.vertexai.common.util.childJob
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
@@ -31,12 +33,9 @@ import io.ktor.websocket.readBytes
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
@@ -492,7 +491,3 @@ internal constructor(
       )
   }
 }
-
-internal suspend inline fun childJob() = Job(currentCoroutineContext()[Job] ?: Job())
-
-internal val CancelledCoroutineScope = CoroutineScope(EmptyCoroutineContext).apply { cancel() }
