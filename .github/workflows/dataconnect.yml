@@ -63,9 +63,12 @@ jobs:
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
+      - run: |
+          sudo apt install zsh
+          /bin/zsh --version
+
       - name: Install Firebase Tools ("firebase" command-line tool)
         run: |
-          /bin/zsh --version
           ./firebase-dataconnect/ci.zsh \
           install_firebase_tools \
           -install_dir '${{ env.FDC_FIREBASE_TOOLS_DIR }}' \
