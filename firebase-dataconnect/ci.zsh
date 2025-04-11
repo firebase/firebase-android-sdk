@@ -134,7 +134,7 @@ function subcommand/start_firebase_emulators {
   )
 
   set -xv
-  cd firebase-dataconnect/emulators
+  cd firebase-dataconnect/emulator
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="$postgres_connection_url"
   "${firebase_args[@]}" >"$log_file" 2>&1 &
 }
