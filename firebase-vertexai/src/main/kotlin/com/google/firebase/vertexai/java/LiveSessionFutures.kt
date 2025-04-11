@@ -71,7 +71,8 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Streams client data to the server.
    *
-   * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be sent.
+   * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
+   * sent.
    */
   public abstract fun sendMediaStream(mediaChunks: List<InlineDataPart>): ListenableFuture<Unit>
 

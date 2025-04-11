@@ -81,10 +81,7 @@ public class FunctionCallPart(
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
     @Serializable
-    internal data class FunctionCall(
-      val name: String,
-      val args: Map<String, JsonElement?>? = null
-    )
+    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
   }
 }
 
@@ -95,19 +92,12 @@ public class FunctionCallPart(
  * @param response the response produced by the function as a [JSONObject]
  */
 // TODO(b/410040441): Support id property
-public class FunctionResponsePart(
-  public val name: String,
-  public val response: JsonObject
-) : Part {
+public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable
-    internal data class FunctionResponse(
-      val name: String,
-      val response: JsonObject
-    )
+    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {

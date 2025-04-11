@@ -32,13 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
@@ -117,7 +114,7 @@ internal constructor(
     }
 
     scope = CoroutineScope(backgroundDispatcher + childJob())
-    audioHelper = AudioHelper.Build()
+    audioHelper = AudioHelper.build()
 
     recordUserAudio()
     processModelResponses(functionCallHandler)
@@ -129,7 +126,7 @@ internal constructor(
    * [startAudioConversation]
    */
   public fun stopAudioConversation() {
-    if(!startedReceiving.get()) return
+    if (!startedReceiving.get()) return
 
     scope.cancel()
     playBackQueue.clear()
@@ -156,9 +153,7 @@ internal constructor(
 
     return flow.transform { frame ->
       val response = frameToLiveContentResponse(frame)
-      response?.let {
-        emit(it)
-      }
+      response?.let { emit(it) }
     }
   }
 
@@ -188,7 +183,10 @@ internal constructor(
   ) {
     val jsonString =
       Json.encodeToString(
-        LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal() as InlineDataPart.Internal).inlineData }).toInternal()
+        LiveClientRealtimeInputSetup(
+            mediaChunks.map { (it.toInternal() as InlineDataPart.Internal).inlineData }
+          )
+          .toInternal()
       )
     session.send(Frame.Text(jsonString))
   }
@@ -313,7 +311,7 @@ internal constructor(
   private fun frameToLiveContentResponse(frame: Frame): LiveContentResponse? {
     val jsonMessage = Json.parseToJsonElement(frame.readBytes().toString(Charsets.UTF_8))
 
-    if(jsonMessage !is JsonObject) {
+    if (jsonMessage !is JsonObject) {
       Log.w(TAG, "Server response was not a JsonObject: $jsonMessage")
       return null
     }
@@ -330,17 +328,15 @@ internal constructor(
         )
       }
       "serverContent" in jsonMessage -> {
-        val serverContent = JSON.decodeFromJsonElement<LiveServerContentSetup.Internal>(jsonMessage).serverContent
-        val status = when {
-          serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
-          serverContent.interrupted == true -> LiveContentResponse.Status.INTERRUPTED
-          else -> LiveContentResponse.Status.NORMAL
-        }
-        LiveContentResponse(
-          serverContent.modelTurn?.toPublic(),
-          status,
-          null
-        )
+        val serverContent =
+          JSON.decodeFromJsonElement<LiveServerContentSetup.Internal>(jsonMessage).serverContent
+        val status =
+          when {
+            serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
+            serverContent.interrupted == true -> LiveContentResponse.Status.INTERRUPTED
+            else -> LiveContentResponse.Status.NORMAL
+          }
+        LiveContentResponse(serverContent.modelTurn?.toPublic(), status, null)
       }
       else -> {
         Log.w(TAG, "Failed to decode the server response: $jsonMessage")
@@ -433,11 +429,15 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class LiveClientRealtimeInputSetup(val mediaChunks: List<InlineDataPart.Internal.InlineData>) {
+  internal class LiveClientRealtimeInputSetup(
+    val mediaChunks: List<InlineDataPart.Internal.InlineData>
+  ) {
     @Serializable
     internal class Internal(val realtimeInput: LiveClientRealtimeInput) {
       @Serializable
-      internal data class LiveClientRealtimeInput(val mediaChunks: List<InlineDataPart.Internal.InlineData>)
+      internal data class LiveClientRealtimeInput(
+        val mediaChunks: List<InlineDataPart.Internal.InlineData>
+      )
     }
     fun toInternal() = Internal(Internal.LiveClientRealtimeInput(mediaChunks))
   }
