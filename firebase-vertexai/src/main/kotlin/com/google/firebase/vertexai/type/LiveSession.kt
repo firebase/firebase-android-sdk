@@ -87,10 +87,10 @@ internal constructor(
   private val startedReceiving = AtomicBoolean(false)
 
   /**
-   * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * [stopAudioConversation].
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
    *
-   * @param functionCallHandler A callback function that is invoked whenever the server receives a
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
    * function call.
    */
   @RequiresPermission(RECORD_AUDIO)
@@ -115,8 +115,11 @@ internal constructor(
   }
 
   /**
-   * Stops the audio conversation with the Gemini Server. This needs to be called only after calling
-   * [startAudioConversation]
+   * Stops the audio conversation with the model.
+   *
+   * This only needs to be called after a previous call to [startAudioConversation].
+   *
+   * If there is no audio conversation currently active, this function does nothing.
    */
   public fun stopAudioConversation() {
     if (!startedReceiving.getAndSet(false)) return
@@ -133,9 +136,10 @@ internal constructor(
    *
    * Call [close] to stop receiving responses from the model.
    *
-   * @return A [Flow] which will emit [LiveContentResponse] as and when it receives it
+   * @return A [Flow] which will emit [LiveContentResponse] from the model.
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   * @see stopReceiving
    */
   public fun receive(): Flow<LiveContentResponse> {
     if (startedReceiving.getAndSet(true)) {
@@ -187,7 +191,7 @@ internal constructor(
   }
 
   /**
-   * Sends the function calling responses to the server.
+   * Sends function calling responses to the model.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.
@@ -201,8 +205,9 @@ internal constructor(
   }
 
   /**
-   * Streams client data to the server. Calling this after [startAudioConversation] will play the
-   * response audio immediately.
+   * Streams client data to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
    * sent.
@@ -221,10 +226,11 @@ internal constructor(
   }
 
   /**
-   * Sends data to the server. Calling this after [startAudioConversation] will play the response
-   * audio immediately.
+   * Sends data to the model.
    *
-   * @param content Client [Content] to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
     val jsonString =
@@ -233,16 +239,22 @@ internal constructor(
   }
 
   /**
-   * Sends text to the server. Calling this after [startAudioConversation] will play the response
-   * audio immediately.
+   * Sends text to the model.
    *
-   * @param text Text to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param text Text to be sent to the model.
    */
   public suspend fun send(text: String) {
     send(Content.Builder().text(text).build())
   }
 
-  /** Closes the client session. */
+  /**
+   * Closes the client session.
+   *
+   * Once a [LiveSession] is closed, it can not be reopened; you'll need to start a new
+   * [LiveSession].
+   */
   public suspend fun close() {
     session.close()
     stopAudioConversation()
