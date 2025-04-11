@@ -109,7 +109,7 @@ internal constructor(
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
-      return if(receivedJson is JsonObject && "setupComplete" in receivedJson) {
+      return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
         LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
       } else {
         webSession.close()

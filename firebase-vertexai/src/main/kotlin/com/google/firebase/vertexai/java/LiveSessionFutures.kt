@@ -29,7 +29,6 @@ import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
 import io.ktor.websocket.close
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
