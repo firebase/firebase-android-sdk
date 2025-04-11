@@ -113,7 +113,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     Timer mockTimer = mock(Timer.class);
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = createTestSession(1);
+    PerfSession session = new PerfSession(testSessionId(1), mockClock);
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
