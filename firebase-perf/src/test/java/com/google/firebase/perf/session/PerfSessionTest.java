@@ -15,6 +15,8 @@
 package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 import static com.google.firebase.perf.util.Constants.PREFS_NAME;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -154,7 +156,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSessionConversion() {
-    PerfSession session1 = PerfSession.createWithId("aqsSessionId");
+    PerfSession session1 = createTestSession(1);
     session1.setGaugeAndEventCollectionEnabled(true);
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
@@ -165,7 +167,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSessionConversionWithoutVerbosity() {
-    PerfSession session1 = PerfSession.createWithId("sessionId");
+    PerfSession session1 = createTestSession(1);
 
     com.google.firebase.perf.v1.PerfSession perfSession = session1.build();
     Assert.assertEquals(session1.sessionId(), perfSession.getSessionId());
@@ -175,21 +177,21 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   @Test
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenVerboseSessionForceDisabled() {
     forceNonVerboseSession();
-    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
+    PerfSession testPerfSession = createTestSession(1);
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenSessionsFeatureDisabled() {
     forceSessionsFeatureDisabled();
-    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
+    PerfSession testPerfSession = createTestSession(1);
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateEnablesGaugeCollectionWhenVerboseSessionForceEnabled() {
     forceVerboseSession();
-    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
+    PerfSession testPerfSession = createTestSession(1);
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isTrue();
   }
 
@@ -200,16 +202,16 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
     // Next, create 3 non-verbose sessions
     List<PerfSession> sessions = new ArrayList<>();
-    sessions.add(PerfSession.createWithId("sessionId1"));
-    sessions.add(PerfSession.createWithId("sessionId2"));
-    sessions.add(PerfSession.createWithId("sessionId3"));
+    sessions.add(createTestSession(1));
+    sessions.add(createTestSession(2));
+    sessions.add(createTestSession(3));
 
     // Force all the sessions from now onwards to be verbose
     forceVerboseSession();
 
     // Next, create 2 verbose sessions
-    sessions.add(PerfSession.createWithId("sessionId4"));
-    sessions.add(PerfSession.createWithId("sessionId5"));
+    sessions.add(createTestSession(4));
+    sessions.add(createTestSession(5));
 
     // Verify that the first session in the list of sessions was not verbose
     assertThat(sessions.get(0).isVerbose()).isFalse();
@@ -231,7 +233,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
                 - TimeUnit.MINUTES.toMicros(1)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock);
+    PerfSession session = new PerfSession(testSessionId(1), mockClock);
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -242,7 +244,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(4)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock);
+    PerfSession session = new PerfSession(testSessionId(1), mockClock);
     assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
@@ -253,7 +255,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
     when(mockClock.getTime()).thenReturn(mockTimer);
 
-    PerfSession session = new PerfSession("sessionId", mockClock);
+    PerfSession session = new PerfSession(testSessionId(1), mockClock);
     assertThat(session.isSessionRunningTooLong()).isTrue();
   }
 }
