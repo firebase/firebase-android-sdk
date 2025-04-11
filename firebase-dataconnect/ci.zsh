@@ -167,11 +167,11 @@ function subcommand/verify_connected_check_success {
 
 function subcommand/send_notifications {
   zparseopts -F -A args - \
-    github_issue_number: github_workflow_name: github_repository: \
+    github_notification_issue: github_workflow_name: github_repository: \
     job_status: git_commit_hash: run_url: \
     run_id: run_number: run_attempt:
 
-    fail_if_missing_arg -github_issue_number
+    fail_if_missing_arg -github_notification_issue
     fail_if_missing_arg -github_workflow_name
     fail_if_missing_arg -github_repository
     fail_if_missing_arg -job_status
@@ -181,7 +181,7 @@ function subcommand/send_notifications {
     fail_if_missing_arg -run_number
     fail_if_missing_arg -run_attempt
 
-    local -r github_issue_number="${args[-github_issue_number]}"
+    local -r github_notification_issue="${args[-github_notification_issue]}"
     local -r github_workflow_name="${args[-github_workflow_name]}"
     local -r github_repository="${args[-github_repository]}"
     local -r job_status="${args[-job_status]}"
@@ -196,10 +196,10 @@ function subcommand/send_notifications {
     echo "$run_url" >>"$message_file"
     echo "run_id=$run_id run_number=$run_number run_attempt=$run_attempt" >>"$message_file"
 
-    echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/$github_issue_number:"
+    echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/$github_notification_issue:"
     cat "$message_file"
     set -xv
-    gh issue comment "$github_issue_number" --body-file "$message_file" -R "$github_repository"
+    gh issue comment "$github_notification_issue" --body-file "$message_file" -R "$github_repository"
 }
 
 function fail_if_missing_arg {
