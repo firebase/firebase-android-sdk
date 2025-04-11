@@ -9,5 +9,5 @@ fun createTestSession(suffix: Int): PerfSession {
 }
 
 fun testSessionId(suffix: Int): String {
-    return "abc$suffix"
+  return "abc$suffix"
 }

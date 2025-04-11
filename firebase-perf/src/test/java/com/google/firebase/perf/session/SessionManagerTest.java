@@ -16,6 +16,7 @@ package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -58,7 +59,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   @Before
   public void setUp() {
     initMocks(this);
-    when(mockPerfSession.sessionId()).thenReturn("sessionId");
+    when(mockPerfSession.sessionId()).thenReturn(testSessionId(5));
     when(mockAppStateMonitor.isColdStart()).thenReturn(false);
     AppStateMonitor.getInstance().setIsColdStart(false);
   }
@@ -122,7 +123,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
         .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
     assertThat(session.isSessionRunningTooLong()).isTrue();
 
-    assertThat(testSessionManager.perfSession().sessionId()).isEqualTo(session.sessionId());
+    assertThat(testSessionManager.perfSession().sessionId()).isEqualTo(testSessionId(1));
   }
 
   @Test

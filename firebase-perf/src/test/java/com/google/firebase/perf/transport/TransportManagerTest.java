@@ -15,6 +15,8 @@
 package com.google.firebase.perf.transport;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -25,8 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.Shadows.shadowOf;
-import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
-import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -42,7 +42,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.shadows.ShadowPreconditions;
-import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
@@ -1187,8 +1186,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     NetworkRequestMetric.Builder validNetworkRequest =
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(createTestSession(1)
-            .build());
+    perfSessions.add(createTestSession(1).build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validNetworkRequest.build());
