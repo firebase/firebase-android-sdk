@@ -23,7 +23,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.type.Content
-import com.google.firebase.vertexai.type.LiveClientSetup
+import com.google.firebase.vertexai.type.LiveClientSetupMessage
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -93,7 +93,7 @@ internal constructor(
   @OptIn(ExperimentalSerializationApi::class)
   public suspend fun connect(): LiveSession {
     val clientMessage =
-      LiveClientSetup(
+      LiveClientSetupMessage(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },

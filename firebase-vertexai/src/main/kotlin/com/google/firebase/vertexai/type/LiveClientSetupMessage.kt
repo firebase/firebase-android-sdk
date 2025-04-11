@@ -26,7 +26,7 @@ import kotlinx.serialization.Serializable
  */
 @OptIn(ExperimentalSerializationApi::class)
 @PublicPreviewAPI
-internal class LiveClientSetup(
+internal class LiveClientSetupMessage(
   val model: String,
   // Some config options are supported in generateContent but not in bidi and vise versa; so bidi
   // needs its own config class
