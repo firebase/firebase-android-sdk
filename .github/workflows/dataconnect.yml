@@ -68,7 +68,7 @@ jobs:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
       - name: Install Firebase Tools ("firebase" command-line tool)
-        run: ./gradlew -P firebase-dataconnect/ci installFirebaseTools
+        run: ./gradlew -p firebase-dataconnect/ci installFirebaseTools
 
       - name: Restore Gradle Cache
         id: restore-gradle-cache
@@ -84,10 +84,10 @@ jobs:
 
       - name: Print Command-Line Tool Versions
         continue-on-error: true
-        run: ./gradlew -P firebase-dataconnect/ci printToolVersions
+        run: ./gradlew -p firebase-dataconnect/ci printToolVersions
 
       - name: Gradle assembleDebugAndroidTest
-        run: ./gradlew -P firebase-dataconnect/ci buildIntegrationTests
+        run: ./gradlew -p firebase-dataconnect/ci buildIntegrationTests
 
       - name: Save Gradle Cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
@@ -166,7 +166,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew -P firebase-dataconnect/ci runIntegrationTests
+          script: ./gradlew -p firebase-dataconnect/ci runIntegrationTests
 
       - name: Upload Log Files
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
