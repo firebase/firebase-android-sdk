@@ -105,15 +105,13 @@ internal constructor(
    * [startAudioConversation]
    */
   public fun stopAudioConversation() {
-    if (!startedReceiving.get()) return
+    if (!startedReceiving.getAndSet(false)) return
 
     scope.cancel()
     playBackQueue.clear()
 
     audioHelper?.release()
     audioHelper = null
-
-    startedReceiving.set(false)
   }
 
   /**
@@ -130,10 +128,48 @@ internal constructor(
       throw SessionAlreadyReceivingException()
     }
 
-    return flow.transform { frame ->
-      val response = frameToLiveContentResponse(frame)
-      response?.let { emit(it) }
-    }
+    // TODO(b/410059569): Remove when fixed
+    return flow {
+        while (true) {
+          val response = session.incoming.tryReceive()
+          if (response.isClosed || !startedReceiving.get()) break
+
+          val frame = response.getOrNull()
+          frame?.let { frameToLiveContentResponse(it) }?.let { emit(it) }
+
+          yield()
+        }
+      }
+      .onCompletion { stopAudioConversation() }
+
+    // TODO(b/410059569): Add back when fixed
+    //    return session.incoming.receiveAsFlow().transform { frame ->
+    //      val response = frameToLiveContentResponse(frame)
+    //      response?.let { emit(it) }
+    //    }.onCompletion {
+    //      stopAudioConversation()
+    //    }
+  }
+
+  /**
+   * Stops receiving from the model.
+   *
+   * If this function is called during an ongoing audio conversation, the model's response will not
+   * be received, and no audio will be played; the live session object will no longer receive data
+   * from the server.
+   *
+   * To resume receiving data, you must either handle it directly using [receive], or indirectly by
+   * using [startAudioConversation].
+   */
+  // TODO(b/410059569): Remove when fixed
+  public fun stopReceiving() {
+    if (!startedReceiving.getAndSet(false)) return
+
+    scope.cancel()
+    playBackQueue.clear()
+
+    audioHelper?.release()
+    audioHelper = null
   }
 
   /**
