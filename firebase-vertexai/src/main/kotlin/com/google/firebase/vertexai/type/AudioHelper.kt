@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.emptyFlow
  * Helper class for recording audio and playing back a separate audio track at the same time.
  *
  * @see AudioHelper.build
+ * @see LiveSession.startAudioConversation
  */
 @PublicPreviewAPI
 internal class AudioHelper(
