@@ -2,6 +2,8 @@
 * [feature] Added support for `HarmBlockThreshold.OFF`. See the
   [model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/configure-safety-filters#how_to_configure_content_filters){: .external}
   for more information.
+* [changed] **Breaking Change**: Removed `MediaData` in favor of `InlineDataPart`. (#6870)
+* [fixed] Improved thread usage when using a `LiveGenerativeModel`. (#6870)
 
 # 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
