@@ -41,8 +41,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.isActive
@@ -63,13 +63,27 @@ public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,
   @Blocking private val backgroundDispatcher: CoroutineContext,
-  // TODO: might need to be AtomicRef
   private var audioHelper: AudioHelper? = null
 ) {
-  private val flow = session.incoming.receiveAsFlow()
+  /**
+   * Coroutine scope that we batch data on for [startAudioConversation].
+   *
+   * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
+   */
   private var scope = CancelledCoroutineScope
 
+  /**
+   * Playback audio data sent from the model.
+   *
+   * Effectively, this is what the model is saying.
+   */
   private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
+
+  /**
+   * Toggled whenever [receive] and [stopReceiving] are called.
+   *
+   * Used to ensure only one flow is consuming the playback at once.
+   */
   private val startedReceiving = AtomicBoolean(false)
 
   /**
