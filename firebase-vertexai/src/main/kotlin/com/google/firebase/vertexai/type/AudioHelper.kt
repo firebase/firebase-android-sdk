@@ -54,13 +54,13 @@ internal class AudioHelper(
   }
 
   fun pauseRecording() {
-    if (released || recorder.state == AudioRecord.RECORDSTATE_STOPPED) return
+    if (released || recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED) return
 
     recorder.stop()
   }
 
   fun resumeRecording() {
-    if (released || recorder.state == AudioRecord.RECORDSTATE_RECORDING) return
+    if (released || recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) return
 
     recorder.startRecording()
   }
