@@ -25,6 +25,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.Shadows.shadowOf;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -1168,9 +1170,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   public void logTraceMetric_sessionEnabled_doesNotStripOffSessionId() {
     TraceMetric.Builder validTrace = createValidTraceMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
-            .build());
+    perfSessions.add(createTestSession(1).build());
     validTrace.addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validTrace.build());
@@ -1179,7 +1179,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeSessionId");
+        .isEqualTo(testSessionId(1));
   }
 
   @Test
@@ -1187,8 +1187,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     NetworkRequestMetric.Builder validNetworkRequest =
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock(), true)
+    perfSessions.add(createTestSession(1)
             .build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
@@ -1198,7 +1197,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeSessionId");
+        .isEqualTo(testSessionId(1));
   }
 
   @Test
