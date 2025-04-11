@@ -119,8 +119,6 @@ internal constructor(
     scope = CoroutineScope(backgroundDispatcher + childJob())
     audioHelper = AudioHelper.Build()
 
-    Log.d(TAG, "Starting audio conversation")
-
     recordUserAudio()
     processModelResponses(functionCallHandler)
     listenForModelPlayback()
@@ -151,12 +149,10 @@ internal constructor(
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    */
-  @OptIn(DelicateCoroutinesApi::class)
   public fun receive(): Flow<LiveContentResponse> {
     if (startedReceiving.getAndSet(true)) {
       throw SessionAlreadyReceivingException()
     }
-    Log.d(TAG, "Starting receive connection.")
 
     return flow.transform { frame ->
       val response = frameToLiveContentResponse(frame)
@@ -187,20 +183,14 @@ internal constructor(
    * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
    * sent.
    */
-  private var sent = false
   public suspend fun sendMediaStream(
     mediaChunks: List<InlineDataPart>,
   ) {
-    Log.d(TAG, "Sending data to server")
     val jsonString =
       Json.encodeToString(
-        LiveClientRealtimeInputSetup(mediaChunks.map { it.toInternal() }).toInternal()
+        LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal() as InlineDataPart.Internal).inlineData }).toInternal()
       )
-    Log.d(TAG, "Calling send for: $jsonString")
-    if(sent) return
-    sent = true
     session.send(Frame.Text(jsonString))
-    Log.d(TAG, "Sent")
   }
 
   /**
@@ -257,7 +247,6 @@ internal constructor(
   ) {
     receive()
       .transform {
-        Log.d(TAG, "Processing model response")
         if (it.status == LiveContentResponse.Status.INTERRUPTED) {
           playBackQueue.clear()
         } else {
@@ -280,7 +269,6 @@ internal constructor(
 
         val audioParts = it.data?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
         for (part in audioParts) {
-          Log.d(TAG, "Sending model audio response")
           playBackQueue.add(part.inlineData)
         }
       }
@@ -323,11 +311,7 @@ internal constructor(
    * @return The corresponding [LiveContentResponse] or null if it couldn't be converted.
    */
   private fun frameToLiveContentResponse(frame: Frame): LiveContentResponse? {
-    // TODO(b/xxx): Add support for LiveServerToolCallCancellation
-    // TODO: idk where I started crashing, but it crashes in emulator too. gonna need to work backwards
-
     val jsonMessage = Json.parseToJsonElement(frame.readBytes().toString(Charsets.UTF_8))
-    Log.d(TAG, "Decoding frame from the server: $jsonMessage")
 
     if(jsonMessage !is JsonObject) {
       Log.w(TAG, "Server response was not a JsonObject: $jsonMessage")
@@ -363,40 +347,6 @@ internal constructor(
         null
       }
     }
-//
-//    val jsonMessage = frame.readBytes().toString(Charsets.UTF_8)
-//
-//    if (jsonMessage.contains("interrupted")) {
-//      return LiveContentResponse(null, LiveContentResponse.Status.INTERRUPTED, null)
-//    }
-//    if (jsonMessage.contains("turnComplete")) {
-//      // TODO(daymxn): There can still be data present, we should use it
-//      return LiveContentResponse(null, LiveContentResponse.Status.TURN_COMPLETE, null)
-//    }
-//
-//    try {
-//      val serverContent = Json.decodeFromString<LiveServerContentSetup.Internal>(jsonMessage)
-//      val data = serverContent.serverContent.modelTurn?.toPublic()
-//
-//      return LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null)
-//    } catch (e: Exception) {
-//      Log.i(TAG, "Failed to decode server content: ${e.message}")
-//    }
-//
-//    try {
-//      val functionContent = Json.decodeFromString<LiveServerToolCall.Internal>(jsonMessage)
-//      return LiveContentResponse(
-//        null,
-//        LiveContentResponse.Status.NORMAL,
-//        functionContent.toolCall.functionCalls.map {
-//          FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
-//        }
-//      )
-//    } catch (e: Exception) {
-//      Log.w(TAG, "Failed to decode function calling: ${e.message}")
-//    }
-//
-//    return null
   }
 
   /**
@@ -483,11 +433,11 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class LiveClientRealtimeInputSetup(val mediaChunks: List<InternalPart>) {
+  internal class LiveClientRealtimeInputSetup(val mediaChunks: List<InlineDataPart.Internal.InlineData>) {
     @Serializable
     internal class Internal(val realtimeInput: LiveClientRealtimeInput) {
       @Serializable
-      internal data class LiveClientRealtimeInput(val mediaChunks: List<InternalPart>)
+      internal data class LiveClientRealtimeInput(val mediaChunks: List<InlineDataPart.Internal.InlineData>)
     }
     fun toInternal() = Internal(Internal.LiveClientRealtimeInput(mediaChunks))
   }
@@ -501,24 +451,6 @@ internal constructor(
         AudioFormat.ENCODING_PCM_16BIT
       )
   }
-}
-
-@OptIn(DelicateCoroutinesApi::class)
-internal fun <T> Channel<T>.duplicate(): Pair<Channel<T>, Flow<T>> {
-  val newChannel = Channel<T>()
-  val newFlow = flow {
-    while (!newChannel.isClosedForSend) {
-      if (isClosedForReceive) {
-        newChannel.close()
-        continue
-      }
-      val data = receive()
-      // should we check for close here too?
-      emit(data)
-    }
-  }
-
-  return newChannel to newFlow
 }
 
 internal suspend inline fun childJob() = Job(currentCoroutineContext()[Job] ?: Job())
