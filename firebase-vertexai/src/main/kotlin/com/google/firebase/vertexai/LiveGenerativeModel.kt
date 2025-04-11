@@ -22,6 +22,7 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
+import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.LiveClientSetupMessage
 import com.google.firebase.vertexai.type.LiveGenerationConfig
@@ -38,6 +39,7 @@ import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Represents a multimodal model (like Gemini) capable of real-time content generation based on
@@ -104,9 +106,10 @@ internal constructor(
     try {
       val webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
-      val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-      // TODO: Try to decode the json instead of string matching.
-      return if (receivedJson.contains("setupComplete")) {
+      val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+      val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+
+      return if(receivedJson is JsonObject && "setupComplete" in receivedJson) {
         LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
       } else {
         webSession.close()
