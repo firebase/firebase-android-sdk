@@ -16,10 +16,10 @@
 
 package com.google.firebase.perf.session
 
+import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck
 import com.google.firebase.perf.session.gauges.GaugeManager
 import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.sessions.api.SessionSubscriber
-import java.util.UUID
 
 class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled: Boolean) :
   SessionSubscriber {
@@ -28,15 +28,10 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
+    // TODO(b/394127311): Add logic to deal with app start gauges.
+    FirebaseSessionsEnforcementCheck.checkSession(currentPerfSession, "onSessionChanged")
 
-    // A [PerfSession] was created before a session was started.
-    if (!currentPerfSession.isAqsReady) {
-      GaugeManager.getInstance()
-        .logGaugeMetadata(currentPerfSession.sessionId(), ApplicationProcessState.FOREGROUND)
-      return
-    }
-
-    val updatedSession = PerfSession.createWithId(UUID.randomUUID().toString())
+    val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
     SessionManager.getInstance().updatePerfSession(updatedSession)
     GaugeManager.getInstance()
       .logGaugeMetadata(updatedSession.sessionId(), ApplicationProcessState.FOREGROUND)
