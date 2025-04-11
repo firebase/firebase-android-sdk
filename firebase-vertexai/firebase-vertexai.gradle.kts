@@ -121,15 +121,6 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.mockito.core)
-  testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-  testImplementation(project(":integ-testing"))
-  testImplementation("io.ktor:ktor-server-websockets:2.3.2") {
-    // only needed for UI tests. Junit this could be ignored.
-    exclude("org.eclipse.jetty")
-  }
-  testImplementation("io.ktor:ktor-server-test-host:2.3.2") {
-    exclude("org.eclipse.jetty")
-  }
 
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)
