@@ -17,6 +17,8 @@
 package com.google.firebase.vertexai.common.util
 
 import java.lang.reflect.Field
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Removes the last character from the [StringBuilder].
@@ -39,3 +41,37 @@ internal fun StringBuilder.removeLast(): StringBuilder =
  * ```
  */
 internal inline fun <reified T : Annotation> Field.getAnnotation() = getAnnotation(T::class.java)
+
+/**
+ * Collects bytes from this flow and doesn't emit them back until [minSize] is reached.
+ *
+ * For example:
+ * ```
+ * val byteArr = flowOf(byteArrayOf(1), byteArrayOf(2, 3, 4), byteArrayOf(5, 6, 7, 8))
+ * val expectedResult = listOf(byteArrayOf(1, 2, 3, 4), byteArrayOf( 5, 6, 7, 8))
+ *
+ * byteArr.accumulateUntil(4).toList() shouldContainExactly expectedResult
+ * ```
+ *
+ * @param minSize The minimum about of bytes the array should have before being sent down-stream
+ * @param emitLeftOvers If the flow completes and there are bytes left over that don't meet the
+ * [minSize], send them anyways.
+ */
+internal fun Flow<ByteArray>.accumulateUntil(
+  minSize: Int,
+  emitLeftOvers: Boolean = false
+): Flow<ByteArray> = flow {
+  val buffer = mutableListOf<Byte>()
+
+  collect {
+    buffer.addAll(it.asSequence())
+    if (buffer.size >= minSize) {
+      emit(buffer.toByteArray())
+      buffer.clear()
+    }
+  }
+
+  if (emitLeftOvers && buffer.isNotEmpty()) {
+    emit(buffer.toByteArray())
+  }
+}

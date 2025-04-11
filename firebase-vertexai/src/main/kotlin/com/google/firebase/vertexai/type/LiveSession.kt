@@ -23,6 +23,7 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.vertexai.common.JSON
+import com.google.firebase.vertexai.common.util.accumulateUntil
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
@@ -42,6 +43,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -53,29 +55,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
-
-// TODO: maybe dont use a bytearray, maybe use a channel or list to avoid accidental overflow
-internal fun Flow<ByteArray>.accumulateUntil(
-  minSize: Int,
-  emitLeftOvers: Boolean = false
-): Flow<ByteArray> = flow {
-  var offset = 0
-  val audioBuffer = ByteArray(minSize * 2)
-
-  collect {
-    it.copyInto(audioBuffer, offset)
-    offset += it.size
-    if (offset >= minSize) {
-      emit(audioBuffer.clone())
-      audioBuffer.fill(0)
-      offset = 0
-    }
-  }
-  // Emit any leftover bytes (optional)
-  if (emitLeftOvers && offset > 0) {
-    emit(audioBuffer.clone())
-  }
-}
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
