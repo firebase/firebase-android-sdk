@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -62,7 +61,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,
-  @Blocking private val backgroundDispatcher: CoroutineContext,
+  @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null
 ) {
   /**
@@ -106,7 +105,7 @@ internal constructor(
       return
     }
 
-    scope = CoroutineScope(backgroundDispatcher + childJob())
+    scope = CoroutineScope(blockingDispatcher + childJob())
     audioHelper = AudioHelper.build()
 
     recordUserAudio()
