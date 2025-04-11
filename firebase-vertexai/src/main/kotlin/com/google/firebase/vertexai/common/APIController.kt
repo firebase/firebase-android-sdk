@@ -160,7 +160,7 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
-  internal fun getBidiEndpoint(location: String): String =
+  private fun getBidiEndpoint(location: String): String =
     "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
