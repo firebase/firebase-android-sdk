@@ -31,7 +31,7 @@ public abstract class PerfMetricValidator {
 
   // Regex to validate Attribute key
   private static final Pattern ATTRIBUTE_KEY_PATTERN =
-          Pattern.compile("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*");
+      Pattern.compile("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*");
 
   /**
    * Creates a list of PerfMetricValidator classes based on the contents of PerfMetric
