@@ -147,7 +147,7 @@ jobs:
           echo 'emulator.postgresConnectionUrl=postgresql://postgres:password@127.0.0.1:5432?sslmode=disable' > firebase-dataconnect/dataconnect.local.properties
 
           ./gradlew \
-            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            ${{ (runner.debug && '--info') || '' }} \
             :firebase-dataconnect:connectors:runDebugDataConnectEmulator \
             >firebase.emulator.dataconnect.log 2>&1 &
 
