@@ -176,6 +176,8 @@ internal constructor(
    *
    * To resume receiving data, you must either handle it directly using [receive], or indirectly by
    * using [startAudioConversation].
+   *
+   * @see close
    */
   // TODO(b/410059569): Remove when fixed
   public fun stopReceiving() {
@@ -224,7 +226,7 @@ internal constructor(
   }
 
   /**
-   * Sends data to the model.
+   * Sends [data][Content] to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
@@ -252,6 +254,8 @@ internal constructor(
    *
    * Once a [LiveSession] is closed, it can not be reopened; you'll need to start a new
    * [LiveSession].
+   *
+   * @see stopReceiving
    */
   public suspend fun close() {
     session.close()
