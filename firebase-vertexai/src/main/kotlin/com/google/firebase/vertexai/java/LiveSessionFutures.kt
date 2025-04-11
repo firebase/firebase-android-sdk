@@ -28,10 +28,11 @@ import com.google.firebase.vertexai.type.LiveContentResponse
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
+import io.ktor.websocket.close
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
-// TODO(daymxn): Make sure the javadocs here match the kotlin ones
 /**
  * Wrapper class providing Java compatible methods for [LiveSession].
  *
@@ -41,25 +42,42 @@ import org.reactivestreams.Publisher
 public abstract class LiveSessionFutures internal constructor() {
 
   /**
-   * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * [stopAudioConversation].
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
    *
-   * @param functionCallHandler A callback function to map function calls from the server to their
-   * response parts.
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call.
    */
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
 
   /**
-   * Stops the audio conversation with the Gemini Server.
+   * Stops the audio conversation with the model.
    *
-   * @see [startAudioConversation]
+   * This only needs to be called after a previous call to [startAudioConversation].
+   *
+   * If there is no audio conversation currently active, this function does nothing.
    */
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
   /**
-   * Sends the function response from the client to the server.
+   * Stops receiving from the model.
+   *
+   * If this function is called during an ongoing audio conversation, the model's response will not
+   * be received, and no audio will be played; the live session object will no longer receive data
+   * from the server.
+   *
+   * To resume receiving data, you must either handle it directly using [receive], or indirectly by
+   * using [startAudioConversation].
+   *
+   * @see close
+   */
+  // TODO(b/410059569): Remove when fixed
+  public abstract fun stopReceiving()
+
+  /**
+   * Sends function calling responses to the model.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.
@@ -69,7 +87,9 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
-   * Streams client data to the server.
+   * Streams client data to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
    * sent.
@@ -77,28 +97,42 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendMediaStream(mediaChunks: List<InlineDataPart>): ListenableFuture<Unit>
 
   /**
-   * Sends [data][Content] to the server.
+   * Sends [data][Content] to the model.
    *
-   * @param content Client [Content] to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
    */
   public abstract fun send(content: Content): ListenableFuture<Unit>
 
   /**
-   * Sends text to the server
+   * Sends text to the model.
    *
-   * @param text Text to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param text Text to be sent to the model.
    */
   public abstract fun send(text: String): ListenableFuture<Unit>
 
-  /** Closes the client session. */
+  /**
+   * Closes the client session.
+   *
+   * Once a [LiveSession] is closed, it can not be reopened; you'll need to start a new
+   * [LiveSession].
+   *
+   * @see stopReceiving
+   */
   public abstract fun close(): ListenableFuture<Unit>
 
   /**
-   * Receives responses from the server for both streaming and standard requests.
+   * Receives responses from the model for both streaming and standard requests.
    *
-   * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it.
+   * Call [close] to stop receiving responses from the model.
    *
-   * @throws [SessionAlreadyReceivingException] When the session is already receiving.
+   * @return A [Publisher] which will emit [LiveContentResponse] from the model.
+   *
+   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   * @see stopReceiving
    */
   public abstract fun receive(): Publisher<LiveContentResponse>
 
@@ -127,6 +161,8 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
+
+    override fun stopReceiving() = session.stopReceiving()
   }
 
   public companion object {
