@@ -122,7 +122,7 @@ public class FirebaseRemoteConfigIntegrationTest {
     ConfigContainer goodDefaultsXmlContainer = newDefaultsContainer(DEFAULTS_MAP);
     cachePutReturnsConfig(mockDefaultsCache, goodDefaultsXmlContainer);
 
-    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_good_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_good_defaults", "xml"));
     Tasks.await(task);
 
     // Assert defaults were set correctly.
@@ -136,7 +136,7 @@ public class FirebaseRemoteConfigIntegrationTest {
     ConfigContainer emptyDefaultsXmlContainer = newDefaultsContainer(ImmutableMap.of());
     cachePutReturnsConfig(mockDefaultsCache, emptyDefaultsXmlContainer);
 
-    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_empty_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_empty_defaults", "xml"));
     Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
@@ -150,12 +150,51 @@ public class FirebaseRemoteConfigIntegrationTest {
         newDefaultsContainer(ImmutableMap.of("second_default_key", "second_default_value"));
     cachePutReturnsConfig(mockDefaultsCache, badDefaultsXmlContainer);
 
-    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_bad_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_bad_defaults", "xml"));
     Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
     verify(mockDefaultsCache).put(captor.capture());
     assertThat(captor.getValue()).isEqualTo(badDefaultsXmlContainer);
+  }
+
+  @Test
+  public void setDefaultsAsyncJson_goodJson_setsDefaults() throws Exception {
+    ConfigContainer goodDefaultsJsonContainer = newDefaultsContainer(DEFAULTS_MAP);
+    cachePutReturnsConfig(mockDefaultsCache, goodDefaultsJsonContainer);
+
+    Task<Void> task = frc.setDefaultsAsyncJson(getResourceId("frc_good_defaults_json", "raw"));
+    Tasks.await(task);
+
+    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
+    verify(mockDefaultsCache).put(captor.capture());
+    assertThat(captor.getValue()).isEqualTo(goodDefaultsJsonContainer);
+  }
+
+  @Test
+  public void setDefaultsAsyncJson_emptyJson_setsEmptyDefaults() throws Exception {
+    ConfigContainer emptyDefaultsJsonContainer = newDefaultsContainer(ImmutableMap.of());
+    cachePutReturnsConfig(mockDefaultsCache, emptyDefaultsJsonContainer);
+
+    Task<Void> task = frc.setDefaultsAsyncJson(getResourceId("frc_empty_defaults_json", "raw"));
+    Tasks.await(task);
+
+    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
+    verify(mockDefaultsCache).put(captor.capture());
+    assertThat(captor.getValue()).isEqualTo(emptyDefaultsJsonContainer);
+  }
+
+  @Test
+  public void setDefaultsAsyncJson_invalidJson_setsEmptyDefaults() throws Exception {
+    ConfigContainer emptyDefaultsJsonContainer = newDefaultsContainer(ImmutableMap.of());
+    cachePutReturnsConfig(mockDefaultsCache, emptyDefaultsJsonContainer);
+
+    Task<Void> task = frc.setDefaultsAsyncJson(getResourceId("frc_invalid_json_format", "raw"));
+    Tasks.await(task);
+
+    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
+    verify(mockDefaultsCache).put(captor.capture());
+    assertThat(captor.getValue()).isEqualTo(emptyDefaultsJsonContainer);
   }
 
   private static void cachePutReturnsConfig(
@@ -171,9 +210,9 @@ public class FirebaseRemoteConfigIntegrationTest {
         .build();
   }
 
-  private static int getResourceId(String xmlResourceName) {
+  private static int getResourceId(String xmlResourceName, String defType) {
     Resources r = getInstrumentation().getTargetContext().getResources();
     return r.getIdentifier(
-        xmlResourceName, "xml", getInstrumentation().getTargetContext().getPackageName());
+        xmlResourceName, defType, getInstrumentation().getTargetContext().getPackageName());
   }
 }
