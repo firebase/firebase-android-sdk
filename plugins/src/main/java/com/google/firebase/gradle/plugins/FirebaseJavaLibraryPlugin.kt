@@ -125,7 +125,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
           .sourceSets
           .getByName("main")
           .java
-          .srcDirs()
+          .srcDirs
       )
 
     val apiInfo = getApiInfo(project, srcDirs)
