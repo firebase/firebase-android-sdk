@@ -16,19 +16,22 @@
 
 package com.google.firebase.vertexai.java
 
+import android.Manifest.permission.RECORD_AUDIO
+import androidx.annotation.RequiresPermission
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.LiveContentResponse
 import com.google.firebase.vertexai.type.LiveSession
-import com.google.firebase.vertexai.type.MediaData
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
+// TODO(daymxn): Make sure the javadocs here match the kotlin ones
 /**
  * Wrapper class providing Java compatible methods for [LiveSession].
  *
@@ -52,12 +55,8 @@ public abstract class LiveSessionFutures internal constructor() {
    * Stops the audio conversation with the Gemini Server.
    *
    * @see [startAudioConversation]
-   * @see [stopReceiving]
    */
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
-
-  /** Stop receiving from the server. */
-  public abstract fun stopReceiving()
 
   /**
    * Sends the function response from the client to the server.
@@ -72,9 +71,9 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Streams client data to the server.
    *
-   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
+   * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be sent.
    */
-  public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
+  public abstract fun sendMediaStream(mediaChunks: List<InlineDataPart>): ListenableFuture<Unit>
 
   /**
    * Sends [data][Content] to the server.
@@ -117,17 +116,16 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
 
-    override fun sendMediaStream(mediaChunks: List<MediaData>) =
+    override fun sendMediaStream(mediaChunks: List<InlineDataPart>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
+    @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
-
-    override fun stopReceiving() = session.stopReceiving()
   }
 
   public companion object {

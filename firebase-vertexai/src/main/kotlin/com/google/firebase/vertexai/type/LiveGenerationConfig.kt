@@ -20,7 +20,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Configuration parameters to use for content generation.
+ * Configuration parameters to use for live content generation.
  *
  * @property temperature A parameter controlling the degree of randomness in token selection. A
  * temperature of 0 means that the highest probability tokens are always selected. In this case,

@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 import android.Manifest
+import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
@@ -24,118 +25,127 @@ import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.media.audiofx.AcousticEchoCanceler
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 
 @PublicPreviewAPI
-internal class AudioHelper {
+internal class AudioHelper(
+  // Record for recording the user's mic
+  private val recorder: AudioRecord,
+  // Track for playing back what the model says
+  private val playbackTrack: AudioTrack,
+) {
+  private var released: Boolean = false
 
-  private lateinit var audioRecord: AudioRecord
-  private lateinit var audioTrack: AudioTrack
-  private var stopRecording: Boolean = false
+  fun release() {
+    if (released) return
+    released = true
 
-  internal fun release() {
-    stopRecording = true
-    if (::audioRecord.isInitialized) {
-      audioRecord.stop()
-      audioRecord.release()
-    }
-    if (::audioTrack.isInitialized) {
-      audioTrack.stop()
-      audioTrack.release()
-    }
+    recorder.release()
+    playbackTrack.release()
   }
 
-  internal fun setupAudioTrack() {
-    audioTrack =
-      AudioTrack(
-        AudioManager.STREAM_MUSIC,
-        24000,
-        AudioFormat.CHANNEL_OUT_MONO,
-        AudioFormat.ENCODING_PCM_16BIT,
-        AudioTrack.getMinBufferSize(
-          24000,
-          AudioFormat.CHANNEL_OUT_MONO,
+  fun playAudio(data: ByteArray) {
+    if (released) return
+
+    playbackTrack.write(data, 0, data.size)
+  }
+
+  fun pauseRecording() {
+    if (released || recorder.state == AudioRecord.RECORDSTATE_STOPPED) return
+
+    recorder.stop()
+  }
+
+  fun resumeRecording() {
+    if (released || recorder.state == AudioRecord.RECORDSTATE_RECORDING) return
+
+    recorder.startRecording()
+  }
+
+  fun listenToRecording(): Flow<ByteArray> {
+    if (released) return emptyFlow()
+
+    resumeRecording()
+
+    return recorder.readAsFlow()
+  }
+
+  companion object {
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    fun Build(): AudioHelper {
+      val playbackTrack =
+        AudioTrack(
+          AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build(),
+          AudioFormat.Builder()
+            .setSampleRate(24000)
+            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+            .build(),
+          AudioTrack.getMinBufferSize(
+            24000,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+          ),
+          AudioTrack.MODE_STREAM,
+          AudioManager.AUDIO_SESSION_ID_GENERATE
+        )
+
+      playbackTrack.play()
+
+      val bufferSize =
+        AudioRecord.getMinBufferSize(
+          16000,
+          AudioFormat.CHANNEL_IN_MONO,
           AudioFormat.ENCODING_PCM_16BIT
-        ),
-        AudioTrack.MODE_STREAM
-      )
-    audioTrack.play()
-  }
+        )
 
-  internal fun playAudio(data: ByteArray) {
-    if (!stopRecording) {
-      audioTrack.write(data, 0, data.size)
-    }
-  }
+      if (bufferSize <= 0)
+        throw AudioRecordInitializationFailedException(
+          "Audio Record buffer size is invalid ($bufferSize)"
+        )
 
-  fun stopRecording() {
-    if (
-      ::audioRecord.isInitialized && audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING
-    ) {
-      audioRecord.stop()
-    }
-  }
+      val recorder =
+        AudioRecord(
+          MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+          16000,
+          AudioFormat.CHANNEL_IN_MONO,
+          AudioFormat.ENCODING_PCM_16BIT,
+          bufferSize
+        )
+      if (recorder.state != AudioRecord.STATE_INITIALIZED)
+        throw AudioRecordInitializationFailedException(
+          "Audio Record initialization has failed. State: ${recorder.state}"
+        )
 
-  fun start() {
-    if (
-      ::audioRecord.isInitialized && audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING
-    ) {
-      audioRecord.startRecording()
-    }
-  }
-  @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-  fun startRecording(): Flow<ByteArray> {
-
-    val bufferSize =
-      AudioRecord.getMinBufferSize(
-        16000,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT
-      )
-    if (
-      bufferSize == AudioRecord.ERROR ||
-        bufferSize == AudioRecord.ERROR_BAD_VALUE ||
-        bufferSize <= 0
-    ) {
-      throw AudioRecordInitializationFailedException(
-        "Audio Record buffer size is invalid (${bufferSize})"
-      )
-    }
-    audioRecord =
-      AudioRecord(
-        MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-        16000,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT,
-        bufferSize
-      )
-    if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
-      throw AudioRecordInitializationFailedException(
-        "Audio Record initialization has failed. State: ${audioRecord.state}"
-      )
-    }
-    if (AcousticEchoCanceler.isAvailable()) {
-      val echoCanceler = AcousticEchoCanceler.create(audioRecord.audioSessionId)
-      echoCanceler?.enabled = true
-    }
-
-    audioRecord.startRecording()
-
-    return flow {
-      val buffer = ByteArray(bufferSize)
-      while (!stopRecording) {
-        if (audioRecord.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-          buffer.fill(0x00)
-          continue
-        }
-        try {
-          val bytesRead = audioRecord.read(buffer, 0, buffer.size)
-          if (bytesRead > 0) {
-            emit(buffer.copyOf(bytesRead))
-          }
-        } catch (_: Exception) {}
+      if (AcousticEchoCanceler.isAvailable()) {
+        AcousticEchoCanceler.create(recorder.audioSessionId)?.enabled = true
       }
+
+      return AudioHelper(recorder, playbackTrack)
+    }
+  }
+}
+
+internal val AudioRecord.minBufferSize: Int
+  get() = AudioRecord.getMinBufferSize(sampleRate, channelConfiguration, audioFormat)
+
+internal fun AudioRecord.readAsFlow() = flow {
+  val buffer = ByteArray(minBufferSize)
+
+  while (true) {
+    if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+      delay(1)
+      continue
+    }
+
+    val bytesRead = read(buffer, 0, buffer.size)
+    if (bytesRead > 0) {
+      emit(buffer.copyOf(bytesRead))
+    } else {
+      delay(1)
     }
   }
 }

@@ -75,7 +75,7 @@ public class JavaCompileTests {
             .addFileData("fakeuri", "image/png")
             .addInlineData(new byte[] {}, "text/json")
             .addImage(Bitmap.createBitmap(0, 0, Bitmap.Config.HARDWARE))
-            .addPart(new FunctionCallPart("fakeFunction", Map.of("fakeArg", JsonNull.INSTANCE)))
+            .addPart(new FunctionCallPart("fakeFunction", Map.of("fakeArg", JsonNull.INSTANCE), null))
             .build();
     // TODO b/406558430 Content.Builder.setParts and Content.Builder.setRole return void
     Executor executor = FirebaseExecutors.directExecutor();

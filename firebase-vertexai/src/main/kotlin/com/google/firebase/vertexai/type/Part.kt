@@ -70,15 +70,24 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  *
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
+ * @param id unique id of the function call. If populated, the returned [FunctionResponsePart]
+ * should have a matching `id` field.
  */
-public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
-  Part {
+public class FunctionCallPart(
+  public val name: String,
+  public val args: Map<String, JsonElement>,
+  public val id: String? = null
+) : Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
+    internal data class FunctionCall(
+      val name: String,
+      val args: Map<String, JsonElement?>? = null,
+      val id: String? = null
+    )
   }
 }
 
@@ -87,13 +96,23 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
  *
  * @param name the name of the called function
  * @param response the response produced by the function as a [JSONObject]
+ * @param id unique id matching the [FunctionCallPart], if one was present.
  */
-public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
+public class FunctionResponsePart(
+  public val name: String,
+  public val response: JsonObject,
+  public val id: String? = null
+) : Part {
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable
+    internal data class FunctionResponse(
+      val name: String,
+      val response: JsonObject,
+      val id: String? = null
+    )
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {

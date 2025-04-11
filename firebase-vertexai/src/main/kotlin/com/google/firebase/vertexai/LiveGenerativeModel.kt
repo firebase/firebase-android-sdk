@@ -22,8 +22,8 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
-import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
 import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.LiveClientSetup
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -93,7 +93,7 @@ internal constructor(
   @OptIn(ExperimentalSerializationApi::class)
   public suspend fun connect(): LiveSession {
     val clientMessage =
-      BidiGenerateContentClientMessage(
+      LiveClientSetup(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },
