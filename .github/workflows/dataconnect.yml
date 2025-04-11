@@ -24,8 +24,7 @@ env:
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
-  FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
-  FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
+  FDC_FIREBASE_COMMAND: firebase-dataconnect/ci/build/firebase-tools/node_modules/.bin/firebase
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -50,6 +49,11 @@ jobs:
           - 5432:5432
 
     steps:
+      - name: Set environment variables
+        run: |
+          echo "ORG_GRADLE_PROJECT_firebaseToolsVersion=$FDC_FIREBASE_TOOLS_VERSION" >>"$GITHUB_ENV"
+          echo "ORG_GRADLE_PROJECT_debugLoggingEnabled=${{ runner.debug || '0' }}" >>"$GITHUB_ENV"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
@@ -63,16 +67,8 @@ jobs:
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
-      - run: |
-          sudo apt install zsh
-          /bin/zsh --version
-
       - name: Install Firebase Tools ("firebase" command-line tool)
-        run: |
-          ./firebase-dataconnect/ci.zsh \
-          install_firebase_tools \
-          -install_dir '${{ env.FDC_FIREBASE_TOOLS_DIR }}' \
-          -firebase_tools_version '${{ env.FDC_FIREBASE_TOOLS_VERSION }}'
+        run: ./gradlew -P firebase-dataconnect/ci installFirebaseTools
 
       - name: Restore Gradle Cache
         id: restore-gradle-cache
@@ -88,16 +84,10 @@ jobs:
 
       - name: Print Command-Line Tool Versions
         continue-on-error: true
-        run: |
-          ./firebase-dataconnect/ci.zsh \
-          print_tool_versions \
-          -firebase_command '${{ env.FDC_FIREBASE_COMMAND }}'
+        run: ./gradlew -P firebase-dataconnect/ci printToolVersions
 
       - name: Gradle assembleDebugAndroidTest
-        run: |
-          ./firebase-dataconnect/ci.zsh \
-          gradle_assemble \
-          ${{ (runner.debug == '1' && '--info') || '' }}
+        run: ./gradlew -P firebase-dataconnect/ci buildIntegrationTests
 
       - name: Save Gradle Cache
         uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
@@ -176,8 +166,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            ./firebase-dataconnect/ci.zsh gradle_connected_check ${{ (runner.debug == '1' && '--info') || '' }}
+          script: ./gradlew -P firebase-dataconnect/ci runIntegrationTests
 
       - name: Upload Log Files
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1

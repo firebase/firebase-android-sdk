@@ -79,7 +79,7 @@ abstract class PrintToolVersions : DefaultTask() {
   @TaskAction
   fun execute() {
     val firebaseExecutable: File = firebaseExecutable.get().asFile
-    val gradlewFile: File = gradlewExecutable.get().asFile
+    val gradlewExecutable: File = gradlewExecutable.get().asFile
 
     runCommandIgnoringExitCode("uname", "-a")
     runCommandIgnoringExitCode("which", "java")
@@ -89,7 +89,7 @@ abstract class PrintToolVersions : DefaultTask() {
     runCommandIgnoringExitCode("which", "node")
     runCommandIgnoringExitCode("node", "--version")
     runCommandIgnoringExitCode(firebaseExecutable.path, "--version")
-    runCommandIgnoringExitCode(gradlewFile.path, "--version")
+    runCommandIgnoringExitCode(gradlewExecutable.path, "--version")
   }
 
   private fun runCommandIgnoringExitCode(vararg args: String) {
@@ -123,6 +123,70 @@ abstract class PrintToolVersions : DefaultTask() {
   }
 }
 
+abstract class BaseGradleTask(@get:Internal val gradleTasks: List<String>) : DefaultTask() {
+
+  @get:Internal abstract val gradleInfoLogsEnabled: Property<Boolean>
+
+  @get:Input abstract val gradleWorkingDir: Property<File>
+
+  @get:InputFile abstract val gradlewExecutable: RegularFileProperty
+
+  @get:Inject abstract val execOperations: ExecOperations
+
+  fun initializeProperties(
+    gradleWorkingDir: Provider<Directory>,
+    gradlewExecutable: Provider<RegularFile>,
+    gradleInfoLogsEnabled: Provider<Boolean>,
+  ) {
+    this.gradleWorkingDir.set(gradleWorkingDir.map { it.asFile })
+    this.gradlewExecutable.set(gradlewExecutable)
+    this.gradleInfoLogsEnabled.set(gradleInfoLogsEnabled)
+  }
+
+  @TaskAction
+  fun execute() {
+    val gradleWorkingDir: File = gradleWorkingDir.get()
+    val gradlewExecutable: File = gradlewExecutable.get().asFile
+    val gradleInfoLogsEnabled: Boolean = gradleInfoLogsEnabled.get()
+
+    val gradleArgs = buildList {
+      add(gradlewExecutable.path)
+      if (gradleInfoLogsEnabled) {
+        add("--info")
+      }
+      add("--profile")
+      add("--configure-on-demand")
+      addAll(gradleTasks)
+    }
+
+    execOperations.exec {
+      workingDir = gradleWorkingDir
+      commandLine(gradleArgs)
+      logger.lifecycle("Running command in directory $workingDir: ${commandLine.joinToString(" ")}")
+    }
+  }
+}
+
+abstract class BuildDataConnectIntegrationTests : BaseGradleTask(assembleTasks) {
+  companion object {
+    val assembleTasks =
+      listOf(
+        ":firebase-dataconnect:assembleDebugAndroidTest",
+        ":firebase-dataconnect:connectors:assembleDebugAndroidTest",
+      )
+  }
+}
+
+abstract class RunDataConnectIntegrationTests : BaseGradleTask(connectedCheckTasks) {
+  companion object {
+    val connectedCheckTasks =
+      listOf(
+        ":firebase-dataconnect:connectedCheck",
+        ":firebase-dataconnect:connectors:connectedCheck",
+      )
+  }
+}
+
 fun ProviderFactory.requiredGradleProperty(propertyName: String) =
   gradleProperty(propertyName)
     .orElse(
@@ -150,13 +214,47 @@ val installFirebaseToolsTask =
     )
   }
 
-val printToolVersionsTask =
-  tasks.register<PrintToolVersions>("printToolVersions") {
-    group = ciTaskGroup
-    description = "Print versions of notable command-line tools"
-    val gradlewExecutable = layout.projectDirectory.file("../../gradlew")
-    initializeProperties(
-      firebaseExecutable = installFirebaseToolsTask.flatMap { it.firebaseExecutable },
-      gradlewExecutable = providers.provider { gradlewExecutable },
-    )
+val gradleWorkingDirProvider = providers.provider { layout.projectDirectory.dir("../..") }
+
+val gradlewExecutableProvider = providers.provider { layout.projectDirectory.file("../../gradlew") }
+
+val gradlewInfoLogsEnabledProvider =
+  providers.requiredGradleProperty("debugLoggingEnabled").map {
+    when (it) {
+      "1" -> true
+      "0" -> false
+      else ->
+        throw IllegalArgumentException(
+          "invalid value for debugLoggingEnabled property: $it (must be either 0 or 1)"
+        )
+    }
   }
+
+tasks.register<PrintToolVersions>("printToolVersions") {
+  group = ciTaskGroup
+  description = "Print versions of notable command-line tools"
+  initializeProperties(
+    firebaseExecutable = installFirebaseToolsTask.flatMap { it.firebaseExecutable },
+    gradlewExecutable = gradlewExecutableProvider,
+  )
+}
+
+tasks.register<BuildDataConnectIntegrationTests>("buildIntegrationTests") {
+  group = ciTaskGroup
+  description = "Build the Data Connect integration tests"
+  initializeProperties(
+    gradleWorkingDir = gradleWorkingDirProvider,
+    gradlewExecutable = gradlewExecutableProvider,
+    gradleInfoLogsEnabled = gradlewInfoLogsEnabledProvider,
+  )
+}
+
+tasks.register<RunDataConnectIntegrationTests>("runIntegrationTests") {
+  group = ciTaskGroup
+  description = "Run the Data Connect integration tests"
+  initializeProperties(
+    gradleWorkingDir = gradleWorkingDirProvider,
+    gradlewExecutable = gradlewExecutableProvider,
+    gradleInfoLogsEnabled = gradlewInfoLogsEnabledProvider,
+  )
+}
