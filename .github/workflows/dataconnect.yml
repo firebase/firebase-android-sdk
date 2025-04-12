@@ -235,26 +235,48 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - name: Post Comment on Issue
-        #if: github.event_name == 'schedule'
+      - id: issue-id
+        name: Determine GitHub Issue For Commenting
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          set -xv
+
+          readonly pr_number
+          pr_number=$(echo '${{ github.ref }}' | sed -En 's#^refs/pull/([0-9]+)/merge$#\1#p')
+          if [[ -n $pr_number ]] ; then
+            readonly issue_from_pr_body
+            issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
+          fi
+
+          if [[ -v $issue_from_pr_body ]] ; then
+            readonly issue="$issue_from_pr_body"
+          elif [[ '${{ github.event_name }}' == 'schedule' ]] ; then
+            readonly issue=6857
+          else
+            readonly issue=
+          fi
+
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+      - name: Post Comment on GitHub Issue
+        if: steps.issue-id.outputs.issue != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          if [[ '${{ github.event_name }}' == 'schedule' ]] ; then
-            readonly github_notification_issue=6857
-          else
-            # Use the "testing" issue for non-scheduled jobs to avoid spamming the other issue
-            readonly github_notification_issue=6863
-          fi
-
           cat >message.txt <<EOF
-          Result of workflow ${{ github.workflow }} at ${{ github.ref }}: ${{ job.status }}
+          Result of workflows at ${{ github.sha }}:
+          - integration-test: ${{ (needs.integration-test.result == 'success' && '✅') || '❌' }} ${{ needs.integration-test.result }}
+          - actionlint-dataconnect-yml: ${{ (needs.actionlint-dataconnect-yml.result == 'success' && '✅') || '❌' }} ${{ needs.actionlint-dataconnect-yml.result }}
+
           ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
+
           job=${{ github.job }} run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }}
           EOF
 
-          echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/$github_notification_issue:"
+          echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/${{ steps.issue-id.outputs.issue }}"
           cat message.txt
-          gh issue comment $github_notification_issue --body-file message.txt -R ${{ github.repository }}
+          gh issue comment ${{ steps.issue-id.outputs.issue }} --body-file message.txt -R ${{ github.repository }}
