@@ -59,8 +59,10 @@ public class GaugeManager {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
+  @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
   @Nullable private String sessionId = null;
+
+  private boolean isCollectingGauges = false;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
 
@@ -101,6 +103,32 @@ public class GaugeManager {
   /** Returns the singleton instance of this class. */
   public static synchronized GaugeManager getInstance() {
     return instance;
+  }
+
+  public void updateGaugeLogging(String sessionId, ApplicationProcessState applicationProcessState, long collectionFrequency) {
+    try {
+      gaugeManagerDataCollectionJob =
+              gaugeManagerExecutor
+                      .get()
+                      .scheduleWithFixedDelay(
+                              () -> {
+                                syncFlush(sessionId, applicationProcessState);
+                              },
+                              /* initialDelay= */ collectionFrequency
+                                      * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                              /* period= */ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                              TimeUnit.MILLISECONDS);
+
+    } catch (RejectedExecutionException e) {
+      logger.warn("Unable to start collecting Gauges: " + e.getMessage());
+    }
+  }
+
+  public long updateGaugeCollection(ApplicationProcessState applicationProcessState, Timer gaugeCollectionTimer) {
+    if (isCollectingGauges) {
+      stopCollectingGauges();
+    }
+    return startCollectingGauges(applicationProcessState, gaugeCollectionTimer);
   }
 
   /**
@@ -190,7 +218,7 @@ public class GaugeManager {
    *     this.stopCollectingGauges()} should always be called from the same thread.
    */
   public void stopCollectingGauges() {
-    if (this.sessionId == null) {
+    if (!this.isCollectingGauges) {
       return;
     }
 
@@ -219,6 +247,7 @@ public class GaugeManager {
                 TimeUnit.MILLISECONDS);
 
     this.sessionId = null;
+    this.isCollectingGauges = false;
     this.applicationProcessState = ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
   }
 
@@ -253,16 +282,16 @@ public class GaugeManager {
   /**
    * Log the Gauge Metadata information to the transport.
    *
-   * @param aqsSessionId The {@link PerfSession#aqsSessionId()} ()} to which the collected Gauge Metrics
+   * @param sessionId The {@link PerfSession#sessionId()} ()} to which the collected Gauge Metrics
    *     should be associated with.
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String aqsSessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
-              .setSessionId(aqsSessionId)
+              .setSessionId(sessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
       transportManager.log(gaugeMetric, appState);
@@ -335,6 +364,22 @@ public class GaugeManager {
     collectGaugeMetricOnce(cpuGaugeCollector.get(), memoryGaugeCollector.get(), referenceTime);
   }
 
+  public void logExistingGaugeMetrics(String sessionId, ApplicationProcessState applicationProcessState) {
+    // Flush any data that was collected and associate it with the given session ID and
+    // applicationProcessState.
+    @SuppressWarnings("FutureReturnValueIgnored")
+    ScheduledFuture<?> unusedFuture =
+            gaugeManagerExecutor
+                    .get()
+                    .schedule(
+                            () -> {
+                              syncFlush(sessionId, applicationProcessState);
+                            },
+                            TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                            TimeUnit.MILLISECONDS);
+
+  }
+
   private static void collectGaugeMetricOnce(
       CpuGaugeCollector cpuGaugeCollector,
       MemoryGaugeCollector memoryGaugeCollector,
@@ -404,5 +449,9 @@ public class GaugeManager {
     } else {
       return memoryGaugeCollectionFrequency;
     }
+  }
+
+  private long getGaugeLoggingFrequency(ApplicationProcessState applicationProcessState) {
+    return Math.min(getMemoryGaugeCollectionFrequencyMs(applicationProcessState), getCpuGaugeCollectionFrequencyMs(applicationProcessState));
   }
 }

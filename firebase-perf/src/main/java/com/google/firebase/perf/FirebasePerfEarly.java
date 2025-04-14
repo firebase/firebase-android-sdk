@@ -51,12 +51,8 @@ public class FirebasePerfEarly {
       uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
 
-    // TODO: Bring back Firebase Sessions dependency to watch for updates to sessions.
+    // In the case of a cold start, we initialize gauge collection with a legacy PerfSession.
 
-    // In the case of cold start, we create a session and start collecting gauges as early as
-    // possible.
-    // There is code in SessionManager that prevents us from resetting the session twice in case
-    // of app cold start.
     SessionManager.getInstance().initializeGaugeCollection();
   }
 }
