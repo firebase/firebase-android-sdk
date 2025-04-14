@@ -19,7 +19,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
-import com.google.firebase.perf.logging.DebugEnforcementCheck;
+import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -49,8 +49,8 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
-    DebugEnforcementCheck.Companion.checkSession(
-        perfSession.isAqsReady, "Access perf session from manger without aqs ready");
+    FirebaseSessionsEnforcementCheck.checkSession(
+        perfSession, "Access perf session from manger without aqs ready");
 
     return perfSession;
   }
@@ -82,8 +82,8 @@ public class SessionManager {
    * @see PerfSession#isSessionRunningTooLong()
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
-    DebugEnforcementCheck.Companion.checkSession(
-        perfSession.isAqsReady,
+    FirebaseSessionsEnforcementCheck.checkSession(
+        perfSession,
         "Session is not ready while trying to stopGaugeCollectionIfSessionRunningTooLong");
 
     if (perfSession.isSessionRunningTooLong()) {
@@ -106,6 +106,8 @@ public class SessionManager {
     }
 
     this.perfSession = perfSession;
+
+    // TODO(b/394127311): Update/verify behavior for Firebase Sessions.
 
     synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
@@ -159,8 +161,8 @@ public class SessionManager {
   }
 
   private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-    DebugEnforcementCheck.Companion.checkSession(
-        perfSession.isAqsReady, "Session is not ready while trying to startOrStopCollectingGauges");
+    FirebaseSessionsEnforcementCheck.checkSession(
+        perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
 
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.startCollectingGauges(perfSession, appState);
