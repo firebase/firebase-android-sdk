@@ -23,9 +23,9 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
-import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.LiveContentResponse
 import com.google.firebase.vertexai.type.LiveSession
+import com.google.firebase.vertexai.type.MediaData
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
 import io.ktor.websocket.close
@@ -90,10 +90,9 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
-   * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
-   * sent.
+   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
-  public abstract fun sendMediaStream(mediaChunks: List<InlineDataPart>): ListenableFuture<Unit>
+  public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
    * Sends [data][Content] to the model.
@@ -150,7 +149,7 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
 
-    override fun sendMediaStream(mediaChunks: List<InlineDataPart>) =
+    override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
     @RequiresPermission(RECORD_AUDIO)

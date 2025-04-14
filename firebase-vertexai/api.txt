@@ -131,7 +131,7 @@ package com.google.firebase.vertexai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.vertexai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.vertexai.type.InlineDataPart> mediaChunks);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.vertexai.type.MediaData> mediaChunks);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.vertexai.type.FunctionCallPart,com.google.firebase.vertexai.type.FunctionResponsePart>? functionCallHandler);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
@@ -627,10 +627,18 @@ package com.google.firebase.vertexai.type {
     method public suspend Object? send(com.google.firebase.vertexai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.vertexai.type.InlineDataPart> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.vertexai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.vertexai.type.FunctionCallPart,com.google.firebase.vertexai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
+  }
+
+  @com.google.firebase.vertexai.type.PublicPreviewAPI public final class MediaData {
+    ctor public MediaData(byte[] data, String mimeType);
+    method public byte[] getData();
+    method public String getMimeType();
+    property public final byte[] data;
+    property public final String mimeType;
   }
 
   public final class ModalityTokenCount {

@@ -209,18 +209,14 @@ internal constructor(
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
-   * @param mediaChunks The list of [InlineDataPart] instances representing the media data to be
-   * sent.
+   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
   public suspend fun sendMediaStream(
-    mediaChunks: List<InlineDataPart>,
+    mediaChunks: List<MediaData>,
   ) {
     val jsonString =
       Json.encodeToString(
-        LiveClientRealtimeInputSetup(
-            mediaChunks.map { (it.toInternal() as InlineDataPart.Internal).inlineData }
-          )
-          .toInternal()
+        LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
       )
     session.send(Frame.Text(jsonString))
   }
@@ -269,7 +265,7 @@ internal constructor(
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendMediaStream(listOf(InlineDataPart(it, "audio/pcm"))) }
+      ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
       ?.launchIn(scope)
   }
 
@@ -472,15 +468,11 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class LiveClientRealtimeInputSetup(
-    val mediaChunks: List<InlineDataPart.Internal.InlineData>
-  ) {
+  internal class LiveClientRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
     @Serializable
     internal class Internal(val realtimeInput: LiveClientRealtimeInput) {
       @Serializable
-      internal data class LiveClientRealtimeInput(
-        val mediaChunks: List<InlineDataPart.Internal.InlineData>
-      )
+      internal data class LiveClientRealtimeInput(val mediaChunks: List<MediaData.Internal>)
     }
     fun toInternal() = Internal(Internal.LiveClientRealtimeInput(mediaChunks))
   }
