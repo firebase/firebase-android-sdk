@@ -24,7 +24,6 @@ import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
-import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
@@ -39,13 +38,15 @@ constructor(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   @Background backgroundDispatcher: CoroutineContext,
-  sessionsActivityLifecycleCallbacks: Lazy<SessionsActivityLifecycleCallbacks>,
-  sessionsFallbackActivityLifecycleCallbacks: Lazy<SessionsFallbackActivityLifecycleCallbacks>,
+  sessionsActivityLifecycleCallbacks: SharedSessionRepository,
+  sessionsFallbackActivityLifecycleCallbacks: SessionsFallbackActivityLifecycleCallbacks,
 ) {
   init {
     Log.d(TAG, "Initializing Firebase Sessions SDK.")
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
+      SessionInitiator.lifecycleClient = sessionsActivityLifecycleCallbacks
+      appContext.registerActivityLifecycleCallbacks(SessionInitiator)
 
       CoroutineScope(backgroundDispatcher).launch {
         val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
@@ -55,11 +56,8 @@ constructor(
           settings.updateSettings()
           if (!settings.sessionsEnabled) {
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
-            appContext.registerActivityLifecycleCallbacks(
-              sessionsFallbackActivityLifecycleCallbacks.get().activityLifecycleCallbacks
-            )
-          } else {
-            appContext.registerActivityLifecycleCallbacks(sessionsActivityLifecycleCallbacks.get())
+            sessionsActivityLifecycleCallbacks.unregister()
+            SessionInitiator.lifecycleClient = sessionsFallbackActivityLifecycleCallbacks
           }
           firebaseApp.addLifecycleEventListener { _, _ ->
             // Log.w(

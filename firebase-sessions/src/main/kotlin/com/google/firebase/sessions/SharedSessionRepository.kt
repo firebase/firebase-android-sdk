@@ -27,17 +27,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.launch
 
-/** Repository to persist session data to be shared between all app processes. */
-internal interface SharedSessionRepository {
-  fun appBackground()
-
-  fun appForeground()
-}
-
 @Singleton
-internal class SharedSessionRepositoryImpl
+internal class SharedSessionRepository
 @Inject
 constructor(
   private val sessionsSettings: SessionsSettings,
@@ -46,26 +42,29 @@ constructor(
   private val timeProvider: TimeProvider,
   private val sessionDataStore: DataStore<SessionData>,
   @Background private val backgroundDispatcher: CoroutineContext,
-) : SharedSessionRepository {
+) : SessionLifecycleClient {
   /** Local copy of the session data. Can get out of sync, must be double-checked in datastore. */
-  private lateinit var localSessionData: SessionData
+  override lateinit var localSessionData: SessionData
+
+  private var jobForCancel: Job? = null
 
   init {
-    CoroutineScope(backgroundDispatcher).launch {
-      sessionDataStore.data.collect { sessionData ->
-        localSessionData = sessionData
-        val sessionId = sessionData.sessionDetails.sessionId
+    jobForCancel =
+      CoroutineScope(backgroundDispatcher).launch {
+        sessionDataStore.data.cancellable().collect { sessionData ->
+          localSessionData = sessionData
+          val sessionId = sessionData.sessionDetails.sessionId
 
-        FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
-          // Notify subscribers, regardless of sampling and data collection state
-          subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
-          Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
+          FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
+            // Notify subscribers, regardless of sampling and data collection state
+            subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
+            Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
+          }
         }
       }
-    }
   }
 
-  override fun appBackground() {
+  override fun appBackgrounded() {
     if (!::localSessionData.isInitialized) {
       Log.d(TAG, "App backgrounded, but local SessionData not initialized")
       return
@@ -81,7 +80,7 @@ constructor(
     }
   }
 
-  override fun appForeground() {
+  override fun appForegrounded() {
     if (!::localSessionData.isInitialized) {
       Log.d(TAG, "App foregrounded, but local SessionData not initialized")
       return
@@ -103,6 +102,10 @@ constructor(
         }
       }
     }
+  }
+
+  override fun unregister() {
+    jobForCancel?.cancel("Datastore turned off, stop flow")
   }
 
   private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {

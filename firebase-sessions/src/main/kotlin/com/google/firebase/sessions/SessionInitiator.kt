@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,31 @@ package com.google.firebase.sessions
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
-import javax.inject.Inject
-import javax.inject.Singleton
 
-/**
- * Lifecycle callbacks that will inform the [SharedSessionRepository] whenever an [Activity] in this
- * application process goes foreground or background.
- */
-@Singleton
-internal class SessionsActivityLifecycleCallbacks
-@Inject
-constructor(private val sharedSessionRepository: SharedSessionRepository) :
-  ActivityLifecycleCallbacks {
+internal interface SessionLifecycleClient {
+  var localSessionData: SessionData
+  fun appForegrounded()
+  fun appBackgrounded()
+  fun unregister() = Unit
+}
 
-  override fun onActivityResumed(activity: Activity) = sharedSessionRepository.appForeground()
+internal object SessionInitiator : ActivityLifecycleCallbacks {
+  var currentLocalSession: SessionDetails? = null
+    get() {
+      return lifecycleClient?.localSessionData?.sessionDetails
+    }
+  var lifecycleClient: SessionLifecycleClient? = null
+    set(lifecycleClient) {
+      field = lifecycleClient
+    }
 
-  override fun onActivityPaused(activity: Activity) = sharedSessionRepository.appBackground()
+  override fun onActivityResumed(activity: Activity) {
+    lifecycleClient?.appForegrounded()
+  }
+
+  override fun onActivityPaused(activity: Activity) {
+    lifecycleClient?.appBackgrounded()
+  }
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 

@@ -16,9 +16,6 @@
 
 package com.google.firebase.sessions
 
-import android.app.Activity
-import android.app.Application.ActivityLifecycleCallbacks
-import android.os.Bundle
 import android.util.Log
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
@@ -42,46 +39,29 @@ constructor(
   private val sessionGenerator: SessionGenerator,
   private val timeProvider: TimeProvider,
   @Background private val backgroundDispatcher: CoroutineContext,
-) {
-  private var localSessionData: SessionData
+) : SessionLifecycleClient {
+
+  override var localSessionData: SessionData =
+    SessionData(
+      sessionDetails = sessionGenerator.generateNewSession(null),
+      timeProvider.currentTime()
+    )
+
   init {
-    localSessionData =
-      SessionData(
-        sessionDetails = sessionGenerator.generateNewSession(null),
-        backgroundTime = timeProvider.currentTime()
-      )
-    val sessionId = localSessionData.sessionDetails.sessionId
-    notifySubscribers(sessionId)
+    notifySubscribers(localSessionData.sessionDetails.sessionId)
   }
 
-  fun appBackground() {
-    localSessionData.copy(backgroundTime = timeProvider.currentTime())
+  override fun appBackgrounded() {
+    localSessionData = localSessionData.copy(backgroundTime = timeProvider.currentTime())
   }
 
-  fun appForeground() {
+  override fun appForegrounded() {
     if (shouldInitiateNewSession(localSessionData)) {
       val newSessionDetails = sessionGenerator.generateNewSession(localSessionData.sessionDetails)
-      localSessionData.copy(sessionDetails = newSessionDetails)
+      localSessionData = localSessionData.copy(sessionDetails = newSessionDetails)
       notifySubscribers(localSessionData.sessionDetails.sessionId)
     }
   }
-
-  internal val activityLifecycleCallbacks =
-    object : ActivityLifecycleCallbacks {
-      override fun onActivityResumed(activity: Activity) = appForeground()
-
-      override fun onActivityPaused(activity: Activity) = appBackground()
-
-      override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
-
-      override fun onActivityStarted(activity: Activity) = Unit
-
-      override fun onActivityStopped(activity: Activity) = Unit
-
-      override fun onActivityDestroyed(activity: Activity) = Unit
-
-      override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
-    }
 
   private fun notifySubscribers(sessionId: String) {
     CoroutineScope(backgroundDispatcher).launch {

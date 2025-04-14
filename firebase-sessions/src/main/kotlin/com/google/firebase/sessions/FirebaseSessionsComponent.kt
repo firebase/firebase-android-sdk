@@ -114,10 +114,6 @@ internal interface FirebaseSessionsComponent {
 
     @Binds @Singleton fun settingsCache(impl: SettingsCacheImpl): SettingsCache
 
-    @Binds
-    @Singleton
-    fun sharedSessionRepository(impl: SharedSessionRepositoryImpl): SharedSessionRepository
-
     companion object {
       private const val TAG = "FirebaseSessions"
 
