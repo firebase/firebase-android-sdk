@@ -70,6 +70,7 @@ android {
         buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF\")")
         buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(false)")
         buildConfigField("String", "FIREPERF_VERSION_NAME", "String.valueOf(\"" + property("version") + "\")")
+        buildConfigField("Boolean", "ENFORCE_LEGACY_SESSIONS", "Boolean.valueOf(false)")
 
         if (project.hasProperty("fireperfBuildForAutopush")) {
             // This allows the SDK to be built for "Autopush" env when the mentioned flag
@@ -77,6 +78,7 @@ android {
             // SDK or the Test App).
             buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF_AUTOPUSH\")")
             buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(true)")
+            buildConfigField("Boolean", "ENFORCE_LEGACY_SESSIONS", "Boolean.valueOf(true)")
         }
 
         minSdkVersion project.minSdkVersion
