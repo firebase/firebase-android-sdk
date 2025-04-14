@@ -49,7 +49,7 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
-    FirebaseSessionsEnforcementCheck.Companion.checkSession(
+    FirebaseSessionsEnforcementCheck.checkSession(
         perfSession, "Access perf session from manger without aqs ready");
 
     return perfSession;
@@ -82,7 +82,7 @@ public class SessionManager {
    * @see PerfSession#isSessionRunningTooLong()
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
-    FirebaseSessionsEnforcementCheck.Companion.checkSession(
+    FirebaseSessionsEnforcementCheck.checkSession(
         perfSession,
         "Session is not ready while trying to stopGaugeCollectionIfSessionRunningTooLong");
 
@@ -161,7 +161,7 @@ public class SessionManager {
   }
 
   private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-    FirebaseSessionsEnforcementCheck.Companion.checkSession(
+    FirebaseSessionsEnforcementCheck.checkSession(
         perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
 
     if (perfSession.isGaugeAndEventCollectionEnabled()) {

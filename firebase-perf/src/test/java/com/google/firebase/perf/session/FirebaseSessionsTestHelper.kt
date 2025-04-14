@@ -24,6 +24,4 @@ fun createTestSession(suffix: Int): PerfSession {
   return PerfSession(testSessionId(suffix), Clock())
 }
 
-fun testSessionId(suffix: Int): String {
-  return "abc$suffix"
-}
+fun testSessionId(suffix: Int): String = "abc$suffix"

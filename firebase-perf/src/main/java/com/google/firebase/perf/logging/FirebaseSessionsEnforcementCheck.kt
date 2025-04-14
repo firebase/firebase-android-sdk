@@ -25,6 +25,7 @@ class FirebaseSessionsEnforcementCheck {
     @JvmStatic var enforcement: Boolean = false
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
+    @JvmStatic
     fun checkSession(session: PerfSession, failureMessage: String) {
       if (session.isLegacy()) {
         logger.debug("legacy session ${session.sessionId()}: $failureMessage")
