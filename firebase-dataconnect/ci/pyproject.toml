@@ -14,6 +14,10 @@ indent-width = 2
 select = ["ALL"]
 ignore = [
   "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class
+  "D103", # Missing docstring in public function
+  "D106", # Missing docstring in public nested class
+  "D107", # Missing docstring in `__init__`
   "D211", # no-blank-line-before-class
   "D212", # multi-line-summary-second-line
   "T201", # print` found
