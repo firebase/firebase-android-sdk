@@ -49,6 +49,12 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
+   * Starts an audio conversation with the Gemini server, which can only be stopped using
+   * [stopAudioConversation].
+   */
+  public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
    * Stops the audio conversation with the Gemini Server.
    *
    * @see [startAudioConversation]
@@ -123,6 +129,9 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun startAudioConversation(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
+
+    override fun startAudioConversation() =
+      SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
