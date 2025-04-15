@@ -23,8 +23,6 @@ import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
-import com.google.firebase.perf.v1.GaugeMetadata;
-import com.google.firebase.perf.v1.GaugeMetric;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;

@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class PerfSession implements Parcelable {
   private final Timer creationTime;
   private final String sessionId;
-  private boolean isGaugeAndEventCollectionEnabled = false;
+  private boolean isGaugeAndEventCollectionEnabled = true;
 
   /*
    * Creates a PerfSession object and decides what metrics to collect.
