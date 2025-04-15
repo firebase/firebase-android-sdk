@@ -1,6 +1,6 @@
 # Unreleased
 * [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
-    * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures. 
+    * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures object. 
     * **Action Required:** Change type of variable handling `LiveModelFutures.connect` to `ListenableFuture<LiveSessionsFutures>`
 * [changed] **Breaking Change**: Removed `UNSPECIFIED` value for enum class `ResponseModality`
     * **Action Required:** Remove all references to `ResponseModality.UNSPECIFIED`
