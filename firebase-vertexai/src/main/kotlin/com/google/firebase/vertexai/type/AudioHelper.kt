@@ -74,6 +74,8 @@ internal class AudioHelper(
     if (released) return
     if (data.isEmpty()) return
 
+    if (playbackTrack.playState == AudioTrack.PLAYSTATE_STOPPED) playbackTrack.play()
+
     val result = playbackTrack.write(data, 0, data.size)
     if (result > 0) return
     if (result == 0) {
@@ -175,8 +177,6 @@ internal class AudioHelper(
           AudioTrack.MODE_STREAM,
           AudioManager.AUDIO_SESSION_ID_GENERATE
         )
-
-      playbackTrack.play()
 
       val bufferSize =
         AudioRecord.getMinBufferSize(
