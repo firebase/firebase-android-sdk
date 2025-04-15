@@ -237,7 +237,7 @@ public class QueryTest {
 
     // Null match.
     document = doc("collection/1", 0, map("zip", null));
-    assertTrue(query.matches(document));
+    assertFalse(query.matches(document));
 
     // NaN match.
     document = doc("collection/1", 0, map("zip", Double.NaN));
@@ -333,7 +333,7 @@ public class QueryTest {
     assertTrue(query.matches(doc3));
     assertTrue(query.matches(doc4));
     assertTrue(query.matches(doc5));
-    assertTrue(query.matches(doc6));
+    assertFalse(query.matches(doc6));
   }
 
   @Test

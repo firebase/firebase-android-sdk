@@ -91,24 +91,27 @@ public class CompositeIndexQueryTest {
 
     Query query = collection.where(or(greaterThan("a", 2), equalTo("b", 1)));
     // with one inequality: a>2 || b==1.
-    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc5", "doc2", "doc3");
+    testHelper.assertOnlineAndOfflineResultsMatch(
+        collection, testHelper.query(query), "doc5", "doc2", "doc3");
 
     // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
     query = collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2);
-    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc1", "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(
+        collection, testHelper.query(query), "doc1", "doc2");
 
     // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
     // Note: The public query API does not allow implicit ordering when limitToLast is used.
     query = collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b");
-    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc3", "doc4");
+    testHelper.assertOnlineAndOfflineResultsMatch(
+        collection, testHelper.query(query), "doc3", "doc4");
 
     // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
     query = collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a");
-    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc5");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, testHelper.query(query), "doc5");
 
     // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
     query = collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a");
-    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, testHelper.query(query), "doc2");
   }
 
   @Test
@@ -771,17 +774,17 @@ public class CompositeIndexQueryTest {
 
     // implicit AND: a != 1 && b < 2
     Query query1 = testHelper.query(collection).whereNotEqualTo("a", 1).whereLessThan("b", 2);
-    testHelper.assertOnlineAndOfflineResultsMatch(query1, "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, query1, "doc2");
 
     // explicit AND: a != 1 && b < 2
     Query query2 = testHelper.query(collection).where(and(notEqualTo("a", 1), lessThan("b", 2)));
-    testHelper.assertOnlineAndOfflineResultsMatch(query2, "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, query2, "doc2");
 
     // explicit AND: a < 3 && b not-in [2, 3]
     // Implicitly ordered by: a asc, b asc, __name__ asc
     Query query3 =
         testHelper.query(collection).where(and(lessThan("a", 3), notInArray("b", asList(2, 3))));
-    testHelper.assertOnlineAndOfflineResultsMatch(query3, "doc1", "doc5", "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, query3, "doc1", "doc5", "doc2");
 
     // a <3 && b != 0, ordered by: b desc, a desc, __name__ desc
     Query query4 =
@@ -791,11 +794,11 @@ public class CompositeIndexQueryTest {
             .whereNotEqualTo("b", 0)
             .orderBy("b", Direction.DESCENDING)
             .limit(2);
-    testHelper.assertOnlineAndOfflineResultsMatch(query4, "doc4", "doc2");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, query4, "doc4", "doc2");
 
     // explicit OR: a>2 || b<1.
     Query query5 = testHelper.query(collection).where(or(greaterThan("a", 2), lessThan("b", 1)));
-    testHelper.assertOnlineAndOfflineResultsMatch(query5, "doc1", "doc3");
+    testHelper.assertOnlineAndOfflineResultsMatch(collection, query5, "doc1", "doc3");
   }
 
   @Test

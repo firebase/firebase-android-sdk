@@ -21,7 +21,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Modality for bidirectional streaming. */
+/** Represents the type of content present in a response (e.g., text, image, audio). */
 @PublicPreviewAPI
 public class ResponseModality private constructor(public val ordinal: Int) {
 
@@ -54,13 +54,13 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
 
-    /** Plain text. */
+    /** Represents a plain text response modality. */
     @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
-    /** Image. */
+    /** Represents an image response modality. */
     @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
-    /** Audio. */
+    /** Represents an audio response modality. */
     @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }
