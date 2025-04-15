@@ -180,7 +180,8 @@ public class SessionManager extends AppStateUpdateHandler {
     return gaugeManager.updateGaugeCollection(applicationProcessState, perfSession.getTimer());
   }
 
-  private void updateGaugeLogging(String sessionId, ApplicationProcessState applicationProcessState, long collectionFrequency) {
+  private void updateGaugeLogging(
+      String sessionId, ApplicationProcessState applicationProcessState, long collectionFrequency) {
     gaugeManager.updateGaugeLogging(sessionId, applicationProcessState, collectionFrequency);
   }
 
