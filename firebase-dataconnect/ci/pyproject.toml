@@ -16,6 +16,7 @@ ignore = [
   "D100", # Missing docstring in public module
   "D211", # no-blank-line-before-class
   "D212", # multi-line-summary-second-line
+  "T201", # print` found
 ]
 
 [tool.ruff.format]

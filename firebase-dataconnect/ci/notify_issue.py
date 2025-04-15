@@ -12,3 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+import typing
+from collections.abc import Sequence
+
+type ExitCode = int
+
+def main(args: Sequence[str], stdout: typing.TextIO, stderr: typing.TextIO) -> ExitCode:
+  return 0
+
+if __name__ == "__main__":
+  try:
+    exit_code = main(sys.argv, sys.stdout, sys.stderr)
+  except KeyboardInterrupt:
+    print("ERROR: application terminated by keyboard interrupt", file=sys.stderr)
+    exit_code = 1
+
+  sys.exit(exit_code)
