@@ -31,7 +31,7 @@ internal val AudioRecord.minBufferSize: Int
 /**
  * Reads from this [AudioRecord] and returns the data in a flow.
  *
- * Will emit a zeroed out buffer when this instance is not recording.
+ * Will yield when this instance is not recording.
  */
 internal fun AudioRecord.readAsFlow() = flow {
   val buffer = ByteArray(minBufferSize)
