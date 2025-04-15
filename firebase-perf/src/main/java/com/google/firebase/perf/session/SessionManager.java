@@ -144,6 +144,13 @@ public class SessionManager extends AppStateUpdateHandler {
     }
   }
 
+  public void updateGaugeCollectionOnNewSession() {
+    if (perfSession.isVerbose()) {
+      long frequency = updateGaugeCollection(ApplicationProcessState.FOREGROUND);
+      updateGaugeLogging(perfSession.sessionId(), ApplicationProcessState.FOREGROUND, frequency);
+    }
+  }
+
   /**
    * Registers an object to receive updates about changes in the globally active {@link
    * PerfSession}.

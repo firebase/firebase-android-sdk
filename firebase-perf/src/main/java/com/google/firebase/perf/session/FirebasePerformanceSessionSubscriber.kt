@@ -30,7 +30,7 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
     val currentPerfSession = SessionManager.getInstance().perfSession()
     FirebaseSessionsEnforcementCheck.checkSession(currentPerfSession, "onSessionChanged")
 
-    if (currentPerfSession.isLegacy()) {
+    if (currentPerfSession.isLegacy() && currentPerfSession.isVerbose) {
       GaugeManager.getInstance().logGaugeMetadata(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
       GaugeManager.getInstance().logExistingGaugeMetrics(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
     }
@@ -39,6 +39,6 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
     SessionManager.getInstance().updatePerfSession(updatedSession)
     GaugeManager.getInstance()
       .logGaugeMetadata(updatedSession.sessionId(), ApplicationProcessState.FOREGROUND)
-    // TODO(b/394127311): Update app state change and start logging if necessary.
+    SessionManager.getInstance().updateGaugeCollectionOnNewSession();
   }
 }
