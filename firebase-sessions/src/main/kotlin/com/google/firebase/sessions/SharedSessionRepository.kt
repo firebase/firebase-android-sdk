@@ -27,7 +27,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 
 /** Repository to persist session data to be shared between all app processes. */
 internal interface SharedSessionRepository {
@@ -48,20 +50,38 @@ constructor(
   @Background private val backgroundDispatcher: CoroutineContext,
 ) : SharedSessionRepository {
   /** Local copy of the session data. Can get out of sync, must be double-checked in datastore. */
-  private lateinit var localSessionData: SessionData
+  @VisibleForTesting lateinit var localSessionData: SessionData
+
+  /**
+   * Either notify the subscribers with general multi-process supported session or fallback local
+   * session
+   */
+  private enum class NotificationType {
+    GENERAL,
+    FALLBACK
+  }
 
   init {
+    println("session repo init")
     CoroutineScope(backgroundDispatcher).launch {
-      sessionDataStore.data.collect { sessionData ->
-        localSessionData = sessionData
-        val sessionId = sessionData.sessionDetails.sessionId
-
-        FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
-          // Notify subscribers, regardless of sampling and data collection state
-          subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
-          Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
+      sessionDataStore.data
+        .catch {
+          val newSession =
+            SessionData(
+              sessionDetails = sessionGenerator.generateNewSession(null),
+              backgroundTime = timeProvider.currentTime()
+            )
+          Log.d(
+            TAG,
+            "Init session datastore failed with exception message: ${it.message}. Emit fallback session ${newSession.sessionDetails.sessionId}"
+          )
+          emit(newSession)
         }
-      }
+        .collect { sessionData ->
+          localSessionData = sessionData
+          val sessionId = sessionData.sessionDetails.sessionId
+          notifySubscribers(sessionId, NotificationType.GENERAL)
+        }
     }
   }
 
@@ -74,9 +94,14 @@ constructor(
     Log.d(TAG, "App backgrounded on ${getProcessName()} - $sessionData")
 
     CoroutineScope(backgroundDispatcher).launch {
-      sessionDataStore.updateData {
-        // TODO(mrober): Double check time makes sense?
-        sessionData.copy(backgroundTime = timeProvider.currentTime())
+      try {
+        sessionDataStore.updateData {
+          // TODO(mrober): Double check time makes sense?
+          sessionData.copy(backgroundTime = timeProvider.currentTime())
+        }
+      } catch (ex: Exception) {
+        Log.d(TAG, "App backgrounded, failed to update data. Message: ${ex.message}")
+        localSessionData = localSessionData.copy(backgroundTime = timeProvider.currentTime())
       }
     }
   }
@@ -91,16 +116,43 @@ constructor(
 
     if (shouldInitiateNewSession(sessionData)) {
       CoroutineScope(backgroundDispatcher).launch {
-        sessionDataStore.updateData { currentSessionData ->
-          // Double-check pattern
-          if (shouldInitiateNewSession(currentSessionData)) {
-            val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
-            sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
-            currentSessionData.copy(sessionDetails = newSessionDetails)
-          } else {
-            currentSessionData
+        try {
+          sessionDataStore.updateData { currentSessionData ->
+            // Double-check pattern
+            if (shouldInitiateNewSession(currentSessionData)) {
+              val newSessionDetails =
+                sessionGenerator.generateNewSession(sessionData.sessionDetails)
+              sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
+              currentSessionData.copy(sessionDetails = newSessionDetails)
+            } else {
+              currentSessionData
+            }
           }
+        } catch (ex: Exception) {
+          Log.d(TAG, "App appForegrounded, failed to update data. Message: ${ex.message}")
+          val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
+          localSessionData = localSessionData.copy(sessionDetails = newSessionDetails)
+          sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
+
+          val sessionId = newSessionDetails.sessionId
+          notifySubscribers(sessionId, NotificationType.FALLBACK)
         }
+      }
+    }
+  }
+
+  private suspend fun notifySubscribers(sessionId: String, type: NotificationType) {
+    FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
+      // Notify subscribers, regardless of sampling and data collection state
+      subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
+      when (type) {
+        NotificationType.GENERAL ->
+          Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
+        NotificationType.FALLBACK ->
+          Log.d(
+            TAG,
+            "Notified ${subscriber.sessionSubscriberName} of new fallback session $sessionId"
+          )
       }
     }
   }
