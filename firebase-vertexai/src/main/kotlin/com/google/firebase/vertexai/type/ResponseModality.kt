@@ -48,12 +48,12 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     }
   public companion object {
     /** Plain text. */
-    @JvmField public val TEXT: ResponseModality = ResponseModality(0)
+    @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
     /** Image. */
-    @JvmField public val IMAGE: ResponseModality = ResponseModality(1)
+    @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
     /** Audio. */
-    @JvmField public val AUDIO: ResponseModality = ResponseModality(2)
+    @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }
