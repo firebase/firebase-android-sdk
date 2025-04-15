@@ -83,7 +83,8 @@ public class SessionManager extends AppStateUpdateHandler {
       // Ignore the app state change if it's a cold start.
       return;
     }
-    
+
+    // TODO(b/394127311): Verify if this is called after a new session.
     if (this.perfSession.isVerbose()) {
       long collectionFrequency = updateGaugeCollection(newAppState);
       updateGaugeLogging(perfSession.sessionId(), newAppState, collectionFrequency);
@@ -182,17 +183,6 @@ public class SessionManager extends AppStateUpdateHandler {
   private void updateGaugeLogging(String sessionId, ApplicationProcessState applicationProcessState, long collectionFrequency) {
     gaugeManager.updateGaugeLogging(sessionId, applicationProcessState, collectionFrequency);
   }
-
-//  private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-//    FirebaseSessionsEnforcementCheck.checkSession(
-//        perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
-//
-//    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-//      gaugeManager.startCollectingGauges(perfSession, appState);
-//    } else {
-//      gaugeManager.stopCollectingGauges();
-//    }
-//  }
 
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
