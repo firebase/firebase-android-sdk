@@ -55,6 +55,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation].
    */
+  @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
 
   /**
@@ -64,6 +65,7 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * If there is no audio conversation currently active, this function does nothing.
    */
+  @RequiresPermission(RECORD_AUDIO)
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
   /**
@@ -163,6 +165,7 @@ public abstract class LiveSessionFutures internal constructor() {
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
+    @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
