@@ -65,6 +65,10 @@ internal class AudioHelper(
    * Play the provided audio data on the playback track.
    *
    * Does nothing if this [AudioHelper] has been [released][release].
+   *
+   * @throws IllegalStateException If the playback track was not properly initialized.
+   * @throws IllegalArgumentException If the playback data is invalid.
+   * @throws RuntimeException If we fail to play the audio data for some unknown reason.
    */
   fun playAudio(data: ByteArray) {
     if (released) return
@@ -88,7 +92,7 @@ internal class AudioHelper(
         throw IllegalArgumentException("Playback data is somehow invalid.")
       AudioTrack.ERROR_DEAD_OBJECT -> {
         Log.w(TAG, "Attempted to playback some audio, but the track has been released.")
-        release()
+        release() // to ensure `released` is set and `record` is released too
       }
       AudioTrack.ERROR ->
         throw RuntimeException("Failed to play the audio data for some unknown reason.")
@@ -101,6 +105,8 @@ internal class AudioHelper(
    * Does nothing if this [AudioHelper] has been [released][release].
    *
    * @see resumeRecording
+   *
+   * @throws IllegalStateException If the playback track was not properly initialized.
    */
   fun pauseRecording() {
     if (released || recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED) return
