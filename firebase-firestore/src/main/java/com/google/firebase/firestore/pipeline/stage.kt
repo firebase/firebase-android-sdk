@@ -14,12 +14,16 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.constant
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
@@ -93,7 +97,7 @@ internal constructor(protected val name: String, internal val options: InternalO
  * not implemented in the SDK version being used.
  */
 class GenericStage
-internal constructor(
+private constructor(
   name: String,
   private val arguments: List<GenericArg>,
   options: InternalOptions = InternalOptions.EMPTY
@@ -168,24 +172,72 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
 }
 
-internal class CollectionSource
-@JvmOverloads
-internal constructor(val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+class CollectionSource
+internal constructor(
+  private val path: String,
+  // We validate [firestore.databaseId] when adding to pipeline.
+  internal val firestore: FirebaseFirestore?,
+  options: InternalOptions) :
   Stage<CollectionSource>("collection", options) {
-  override fun self(options: InternalOptions): CollectionSource = CollectionSource(path, options)
+  override fun self(options: InternalOptions): CollectionSource = CollectionSource(path, firestore, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
       Value.newBuilder().setReferenceValue(if (path.startsWith("/")) path else "/" + path).build()
     )
+  companion object {
+    /**
+     * Set the pipeline's source to the collection specified by the given path.
+     *
+     * @param path A path to a collection that will be the source of this pipeline.
+     * @return Pipeline with documents from target collection.
+     */
+    @JvmStatic
+    fun of(path: String): CollectionSource {
+      // Validate path by converting to ResourcePath
+      val resourcePath = ResourcePath.fromString(path)
+      return CollectionSource(resourcePath.canonicalString(), null, InternalOptions.EMPTY)
+    }
+
+    /**
+     * Set the pipeline's source to the collection specified by the given CollectionReference.
+     *
+     * @param ref A CollectionReference for a collection that will be the source of this pipeline.
+     * @return Pipeline with documents from target collection.
+     */
+    @JvmStatic
+    fun of(ref: CollectionReference): CollectionSource {
+      return CollectionSource(ref.path, ref.firestore, InternalOptions.EMPTY)
+    }
+  }
+
+  fun withForceIndex(value: String) = with("force_index", value)
 }
 
-internal class CollectionGroupSource
-@JvmOverloads
-internal constructor(val collectionId: String, options: InternalOptions = InternalOptions.EMPTY) :
+class CollectionGroupSource
+private constructor(private val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
+
+  companion object {
+
+    /**
+     * Set the pipeline's source to the collection group with the given id.
+     *
+     * @param collectionId The id of a collection group that will be the source of this pipeline.
+     */
+    @JvmStatic
+    fun of(collectionId: String): CollectionGroupSource {
+      Preconditions.checkNotNull(collectionId, "Provided collection ID must not be null.")
+      require(!collectionId.contains("/")) {
+        "Invalid collectionId '$collectionId'. Collection IDs must not contain '/'."
+      }
+      return CollectionGroupSource(collectionId, InternalOptions.EMPTY)
+    }
+  }
+
+  fun withForceIndex(value: String) = with("force_index", value)
 }
 
 internal class DocumentsSource

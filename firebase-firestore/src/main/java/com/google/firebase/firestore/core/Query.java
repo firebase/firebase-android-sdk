@@ -35,6 +35,7 @@ import com.google.firebase.firestore.pipeline.DocumentsSource;
 import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FunctionExpr;
+import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.Stage;
 import com.google.firestore.v1.Value;
@@ -521,7 +522,7 @@ public final class Query {
 
   @NonNull
   public Pipeline toPipeline(FirebaseFirestore firestore, UserDataReader userDataReader) {
-    Pipeline p = new Pipeline(firestore, userDataReader, pipelineSource());
+    Pipeline p = new Pipeline(firestore, userDataReader, pipelineSource(firestore));
 
     // Filters
     for (Filter filter : filters) {
@@ -598,13 +599,13 @@ public final class Query {
   }
 
   @NonNull
-  private Stage pipelineSource() {
+  private Stage<?> pipelineSource(FirebaseFirestore firestore) {
     if (isDocumentQuery()) {
       return new DocumentsSource(path.canonicalString());
     } else if (isCollectionGroupQuery()) {
-      return new CollectionGroupSource(collectionGroup);
+      return CollectionGroupSource.of(collectionGroup);
     } else {
-      return new CollectionSource(path.canonicalString());
+      return new CollectionSource(path.canonicalString(), firestore, InternalOptions.EMPTY);
     }
   }
 

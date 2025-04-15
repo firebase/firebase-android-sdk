@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.Values
-import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateStage
@@ -39,7 +38,6 @@ import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
 import com.google.firebase.firestore.pipeline.GenericArg
 import com.google.firebase.firestore.pipeline.GenericStage
-import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
@@ -54,7 +52,6 @@ import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
-import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
@@ -614,7 +611,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Convert the given Query into an equivalent Pipeline.
    *
    * @param query A Query to be converted into a Pipeline.
-   * @return Pipeline that is equivalent to [query]
+   * @return A new [Pipeline] object that is equivalent to [query]
    * @throws [IllegalArgumentException] Thrown if the [query] provided targets a different project
    * or database than the pipeline.
    */
@@ -629,7 +626,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Convert the given Aggregate Query into an equivalent Pipeline.
    *
    * @param aggregateQuery An Aggregate Query to be converted into a Pipeline.
-   * @return Pipeline that is equivalent to [aggregateQuery]
+   * @return A new [Pipeline] object that is equivalent to [aggregateQuery]
    * @throws [IllegalArgumentException] Thrown if the [aggregateQuery] provided targets a different
    * project or database than the pipeline.
    */
@@ -646,46 +643,50 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Set the pipeline's source to the collection specified by the given path.
    *
    * @param path A path to a collection that will be the source of this pipeline.
-   * @return Pipeline with documents from target collection.
+   * @return A new [Pipeline] object with documents from target collection.
    */
-  fun collection(path: String): Pipeline =
-    // Validate path by converting to CollectionReference
-    collection(firestore.collection(path))
+  fun collection(path: String): Pipeline = collection(CollectionSource.of(path))
 
   /**
-   * Set the pipeline's source to the collection specified by the given CollectionReference.
+   * Set the pipeline's source to the collection specified by the given [CollectionReference].
    *
-   * @param ref A CollectionReference for a collection that will be the source of this pipeline.
-   * @return Pipeline with documents from target collection.
+   * @param ref A [CollectionReference] for a collection that will be the source of this pipeline.
+   * @return A new [Pipeline] object with documents from target collection.
    * @throws [IllegalArgumentException] Thrown if the [ref] provided targets a different project or
    * database than the pipeline.
    */
-  fun collection(ref: CollectionReference): Pipeline {
-    if (ref.firestore.databaseId != firestore.databaseId) {
-      throw IllegalArgumentException(
-        "Provided collection reference is from a different Firestore instance."
-      )
+  fun collection(ref: CollectionReference): Pipeline = collection(CollectionSource.of(ref))
+
+  /**
+   * Set the pipeline's source to the collection specified by CollectionSource.
+   *
+   * @param stage A [CollectionSource] that will be the source of this pipeline.
+   * @return Pipeline with documents from target collection.
+   * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
+   * or database than the pipeline.
+   */
+  fun collection(stage: CollectionSource): Pipeline {
+    if (stage.firestore != null && stage.firestore.databaseId != firestore.databaseId) {
+      throw IllegalArgumentException("Provided collection is from a different Firestore instance.")
     }
-    return Pipeline(firestore, firestore.userDataReader, CollectionSource(ref.path))
+    return Pipeline(firestore, firestore.userDataReader, stage)
   }
 
   /**
    * Set the pipeline's source to the collection group with the given id.
    *
-   * @param collectionid The id of a collection group that will be the source of this pipeline.
+   * @param collectionId The id of a collection group that will be the source of this pipeline.
    */
-  fun collectionGroup(collectionId: String): Pipeline {
-    Preconditions.checkNotNull(collectionId, "Provided collection ID must not be null.")
-    require(!collectionId.contains("/")) {
-      "Invalid collectionId '$collectionId'. Collection IDs must not contain '/'."
-    }
-    return Pipeline(firestore, firestore.userDataReader, CollectionGroupSource(collectionId))
-  }
+  fun collectionGroup(collectionId: String): Pipeline =
+    pipeline(CollectionGroupSource.of((collectionId)))
+
+  fun pipeline(stage: CollectionGroupSource): Pipeline =
+    Pipeline(firestore, firestore.userDataReader, stage)
 
   /**
    * Set the pipeline's source to be all documents in this database.
    *
-   * @return Pipeline with all documents in this database.
+   * @return A new [Pipeline] object with all documents in this database.
    */
   fun database(): Pipeline = Pipeline(firestore, firestore.userDataReader, DatabaseSource())
 
@@ -694,7 +695,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    *
    * @param documents Paths specifying the individual documents that will be the source of this
    * pipeline.
-   * @return Pipeline with [documents].
+   * @return A new [Pipeline] object with [documents].
    */
   fun documents(vararg documents: String): Pipeline =
     // Validate document path by converting to DocumentReference
