@@ -535,7 +535,7 @@ public class IntegrationTestUtil {
    * @param expectedDocs Ordered list of document keys that are expected to match the query
    */
   public static void checkOnlineAndOfflineResultsMatch(
-      CollectionReference collection, Query query, String... expectedDocs) {
+      Query collection, Query query, String... expectedDocs) {
     // Note: Order matters. The following has to be done in the specific order:
 
     // 1- Pre-populate the cache with the entire collection.
