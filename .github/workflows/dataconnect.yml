@@ -279,7 +279,7 @@ jobs:
         working-directory: firebase-dataconnect/ci
         run: pytest --verbose --full-trace --color=no --strict-config
 
-  pytnon-ci-lint:
+  python-ci-lint:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -295,7 +295,7 @@ jobs:
         working-directory: firebase-dataconnect/ci
         run: ruff check --diff --verbose --no-cache --output-format=github --exit-non-zero-on-fix
 
-  pytnon-ci-format:
+  python-ci-format:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
