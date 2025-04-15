@@ -256,6 +256,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
+          sparse-checkout: '.github/'
       - uses: docker://rhysd/actionlint:1.7.7
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
@@ -285,7 +286,7 @@ jobs:
           # (see https://github.com/firebase/firebase-android-sdk/issues/6863)
           pr_number=$(echo '${{ github.ref }}' | sed -En 's#^refs/pull/([0-9]+)/merge$#\1#p')
           if [[ -n $pr_number ]] ; then
-            issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
+            issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' -R ${{ github.repository }} | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
           fi
 
           if [[ -v $issue_from_pr_body ]] && [[ -n $issue_from_pr_body ]] ; then
