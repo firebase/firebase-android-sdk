@@ -90,7 +90,8 @@ internal constructor(
    * [stopAudioConversation] or [close].
    *
    * @param functionCallHandler A callback function that is invoked whenever the model receives a
-   * function call.
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
    */
   @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
@@ -202,6 +203,9 @@ internal constructor(
 
   /**
    * Sends function calling responses to the model.
+   *
+   * **NOTE:** If you're using [startAudioConversation], the method will handle sending function
+   * responses to the model for you. You do _not_ need to call this method in that case.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.
