@@ -21,8 +21,11 @@ import android.os.Build;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.common.base.Strings;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -34,6 +37,9 @@ import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
+import com.google.firestore.v1.Document;
+import com.google.firestore.v1.ExecutePipelineRequest;
+import com.google.firestore.v1.ExecutePipelineResponse;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.RunAggregationQueryRequest;
 import com.google.firestore.v1.RunAggregationQueryResponse;
@@ -235,6 +241,48 @@ public class Datastore {
               }
               return result;
             });
+  }
+
+  public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    channel.runStreamingResponseRpc(
+        FirestoreGrpc.getExecutePipelineMethod(),
+        request,
+        new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
+
+          private Timestamp executionTime = null;
+
+          @Override
+          public void onMessage(ExecutePipelineResponse message) {
+            if (message.hasExecutionTime()) {
+              executionTime = serializer.decodeTimestamp(message.getExecutionTime());
+            }
+            for (Document document : message.getResultsList()) {
+              String documentName = document.getName();
+              observer.onDocument(
+                  Strings.isNullOrEmpty(documentName) ? null : serializer.decodeKey(documentName),
+                  document.getFieldsMap(),
+                  document.hasCreateTime()
+                      ? serializer.decodeTimestamp(document.getCreateTime())
+                      : null,
+                  document.hasUpdateTime()
+                      ? serializer.decodeTimestamp(document.getUpdateTime())
+                      : null);
+            }
+          }
+
+          @Override
+          public void onClose(Status status) {
+            if (status.isOk()) {
+              observer.onComplete(executionTime);
+            } else {
+              FirebaseFirestoreException exception = exceptionFromStatus(status);
+              if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                channel.invalidateToken();
+              }
+              observer.onError(exception);
+            }
+          }
+        });
   }
 
   /**
