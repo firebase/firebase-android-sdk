@@ -14,7 +14,7 @@ dependencies = [
   "pandas==1.5.3",
   "PyGithub==1.58.2",
   "pystache==0.6.0",
-  "requests==2.31.0",
+  "requests==2.32.2",
   "seaborn==0.12.2",
   "PyYAML==6.0.1",
   "termcolor==2.4.0",
