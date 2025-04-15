@@ -283,20 +283,18 @@ jobs:
           # debugging/development purposes of the comment-posting logic itself.
           # For example, issue number 6863 was specifically created for testing.
           # (see https://github.com/firebase/firebase-android-sdk/issues/6863)
-          readonly pr_number
           pr_number=$(echo '${{ github.ref }}' | sed -En 's#^refs/pull/([0-9]+)/merge$#\1#p')
           if [[ -n $pr_number ]] ; then
-            readonly issue_from_pr_body
             issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
           fi
 
           if [[ -v $issue_from_pr_body ]] && [[ -n $issue_from_pr_body ]] ; then
-            readonly issue="$issue_from_pr_body"
+            issue="$issue_from_pr_body"
           elif [[ '${{ github.event_name }}' == 'schedule' ]] ; then
             # See https://github.com/firebase/firebase-android-sdk/issues/6857
-            readonly issue=6857
+            issue=6857
           else
-            readonly issue=
+            issue=
           fi
 
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
