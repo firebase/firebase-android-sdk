@@ -267,19 +267,57 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - name: Post Comment on Issue #6857
-        if: github.event_name == 'schedule'
+      - id: issue-id
+        name: Determine GitHub Issue For Commenting
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          set -xv
+
+          # If this job was triggered by a pull request, then check to see if
+          # the description of the PR specifies a GitHub Issue to which to post
+          # a comment. The GitHub Issue number is specified by including a line
+          # of the form "trksmnkncd_notification_issue=6863" in the description.
+          # Specifying an issue number in this manner is primarily intended for
+          # debugging/development purposes of the comment-posting logic itself.
+          # For example, issue number 6863 was specifically created for testing.
+          # (see https://github.com/firebase/firebase-android-sdk/issues/6863)
+          readonly pr_number
+          pr_number=$(echo '${{ github.ref }}' | sed -En 's#^refs/pull/([0-9]+)/merge$#\1#p')
+          if [[ -n $pr_number ]] ; then
+            readonly issue_from_pr_body
+            issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
+          fi
+
+          if [[ -v $issue_from_pr_body ]] && [[ -n $issue_from_pr_body ]] ; then
+            readonly issue="$issue_from_pr_body"
+          elif [[ '${{ github.event_name }}' == 'schedule' ]] ; then
+            # See https://github.com/firebase/firebase-android-sdk/issues/6857
+            readonly issue=6857
+          else
+            readonly issue=
+          fi
+
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+      - name: Post Comment on GitHub Issue
+        if: steps.issue-id.outputs.issue != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
           cat >message.txt <<EOF
-          Result of workflow ${{ github.workflow }} at ${{ github.ref }}: ${{ job.status }}
+          Result of workflows at ${{ github.sha }}:
+          - integration-test: ${{ (needs.integration-test.result == 'success' && '✅') || '❌' }} ${{ needs.integration-test.result }}
+          - actionlint-dataconnect-yml: ${{ (needs.actionlint-dataconnect-yml.result == 'success' && '✅') || '❌' }} ${{ needs.actionlint-dataconnect-yml.result }}
+
           ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
-          job=${{ github.job }} run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }}
+
+          run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }}
           EOF
 
-          echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/6857:"
+          echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/${{ steps.issue-id.outputs.issue }}"
           cat message.txt
-          gh issue comment 6857 --body-file message.txt -R ${{ github.repository }}
+          gh issue comment ${{ steps.issue-id.outputs.issue }} --body-file message.txt -R ${{ github.repository }}
