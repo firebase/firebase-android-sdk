@@ -105,7 +105,12 @@ internal class AudioHelper(
   fun pauseRecording() {
     if (released || recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED) return
 
-    recorder.stop()
+    try {
+      recorder.stop()
+    } catch (e: IllegalStateException) {
+      release()
+      throw IllegalStateException("The playback track was not properly initialized.")
+    }
   }
 
   /**
