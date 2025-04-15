@@ -24,6 +24,7 @@ import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.media.audiofx.AcousticEchoCanceler
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.firebase.vertexai.common.util.readAsFlow
 import kotlinx.coroutines.flow.Flow
@@ -67,8 +68,31 @@ internal class AudioHelper(
    */
   fun playAudio(data: ByteArray) {
     if (released) return
+    if (data.isEmpty()) return
 
-    playbackTrack.write(data, 0, data.size)
+    val result = playbackTrack.write(data, 0, data.size)
+    if (result > 0) return
+    if (result == 0) {
+      Log.w(
+        TAG,
+        "Failed to write any audio bytes to the playback track. The audio track may have been stopped or paused."
+      )
+      return
+    }
+
+    // ERROR_INVALID_OPERATION and ERROR_BAD_VALUE should never occur
+    when (result) {
+      AudioTrack.ERROR_INVALID_OPERATION ->
+        throw IllegalStateException("The playback track was not properly initialized.")
+      AudioTrack.ERROR_BAD_VALUE ->
+        throw IllegalArgumentException("Playback data is somehow invalid.")
+      AudioTrack.ERROR_DEAD_OBJECT -> {
+        Log.w(TAG, "Attempted to playback some audio, but the track has been released.")
+        release()
+      }
+      AudioTrack.ERROR ->
+        throw RuntimeException("Failed to play the audio data for some unknown reason.")
+    }
   }
 
   /**
@@ -111,6 +135,8 @@ internal class AudioHelper(
   }
 
   companion object {
+    private val TAG = AudioHelper::class.simpleName
+
     /**
      * Creates an instance of [AudioHelper] with the track and record initialized.
      *
