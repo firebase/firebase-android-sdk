@@ -9,6 +9,7 @@ on:
       firebaseToolsVersion:
       gradleInfoLog:
         type: boolean
+      pythonVersion:
   pull_request:
     paths:
       - .github/workflows/dataconnect.yml
@@ -27,6 +28,7 @@ env:
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.29.1' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
+  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -254,11 +256,68 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        sparse-checkout: '.github/'
         with:
           show-progress: false
       - uses: docker://rhysd/actionlint:1.7.7
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
+
+  python-ci-unit-tests:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: pytest
+        working-directory: firebase-dataconnect/ci
+        run: pytest --verbose --full-trace --color=no --strict-config
+
+  pytnon-ci-lint:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: ruff check
+        working-directory: firebase-dataconnect/ci
+        run: ruff check --diff --verbose --no-cache --output-format=github --exit-non-zero-on-fix
+
+  pytnon-ci-format:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: ruff format
+        working-directory: firebase-dataconnect/ci
+        run: ruff format --diff --verbose --no-cache
+
+  python-ci-type-check:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: pyright
+        working-directory: firebase-dataconnect/ci
+        run: pyright --warnings --stats
 
   send-notifications:
     needs: [integration-test, actionlint-dataconnect-yml]

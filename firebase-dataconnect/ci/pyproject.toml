@@ -1,0 +1,25 @@
+[project]
+name = "Firebase Data Connect Android SDK Continuous Integration Tools"
+requires-python = ">= 3.13"
+
+[tool.pyright]
+include = ["**/*.py"]
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 100
+indent-width = 2
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D100", # Missing docstring in public module
+  "D211", # no-blank-line-before-class
+  "D212", # multi-line-summary-second-line
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
