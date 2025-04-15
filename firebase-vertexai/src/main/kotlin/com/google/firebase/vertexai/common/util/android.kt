@@ -35,7 +35,6 @@ internal val AudioRecord.minBufferSize: Int
  */
 internal fun AudioRecord.readAsFlow() = flow {
   val buffer = ByteArray(minBufferSize)
-  val emptyBuffer = ByteArray(minBufferSize)
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
@@ -46,8 +45,6 @@ internal fun AudioRecord.readAsFlow() = flow {
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
-    } else {
-      emit(emptyBuffer)
     }
   }
 }
