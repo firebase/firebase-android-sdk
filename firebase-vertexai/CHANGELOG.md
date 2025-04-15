@@ -9,6 +9,11 @@
 * [feature] Added support for `HarmBlockThreshold.OFF`. See the
   [model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/configure-safety-filters#how_to_configure_content_filters){: .external}
   for more information.
+* [fixed] Improved thread usage when using a `LiveGenerativeModel`. (#6870)
+* [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
+  interrupted or the turn completed. (#6870)
+* [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
+
 
 # 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
