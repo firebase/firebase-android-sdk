@@ -414,7 +414,15 @@ internal class FirebaseDataConnectImpl(
 
   override fun close() {
     logger.debug { "close() called" }
+    @Suppress("DeferredResultUnused") closeInternal()
+  }
 
+  override suspend fun suspendingClose() {
+    logger.debug { "suspendingClose() called" }
+    closeInternal()?.await()
+  }
+
+  private fun closeInternal(): Deferred<Unit>? {
     coroutineScope.cancel()
 
     // Remove the reference to this `FirebaseDataConnect` instance from the
@@ -437,10 +445,11 @@ internal class FirebaseDataConnectImpl(
           logger.debug { "close() completed successfully" }
           state.update { oldState ->
             check(oldState is State.Closing) {
-              "oldState is ${oldState}, but expected Closed (error code hsee7gfxvz)"
+              "oldState is ${oldState}, but expected Closing (error code hsee7gfxvz)"
             }
             check(oldState.closeJob === closeJob) {
-              "oldState.closeJob is ${oldState.closeJob}, but expected $closeJob (error code n3x86pr6qn)"
+              "oldState.closeJob is ${oldState.closeJob}, but expected $closeJob " +
+                "(error code n3x86pr6qn)"
             }
             State.Closed
           }
@@ -461,31 +470,19 @@ internal class FirebaseDataConnectImpl(
             } else {
               oldState
             }
-          is State.Closed -> oldState
+          is State.Closed -> State.Closed
         }
       }
 
-    if (newState is State.Closing) {
-      newState.closeJob.start()
-    }
-  }
-
-  override suspend fun suspendingClose() {
-    logger.debug { "suspendingClose() called" }
-
-    close()
-
-    when (val state = state.value) {
-      is State.Initialized ->
-        throw IllegalStateException(
-          "state.value should be Closed or Closing, but got Initialized (error code n3x86pr6qn)"
-        )
+    return when (newState) {
+      is State.Initialized,
       is State.New ->
         throw IllegalStateException(
-          "state.value should be Closed or Closing, but got New (error code mr6vccmvcf)"
+          "internal error: newState is $newState, but expected Closing or Closed " +
+            "(error code n3x86pr6qn)"
         )
-      is State.Closing -> state.closeJob.await()
-      State.Closed -> {}
+      is State.Closing -> newState.closeJob.apply { start() }
+      is State.Closed -> null
     }
   }
 
