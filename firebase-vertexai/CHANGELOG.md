@@ -1,5 +1,21 @@
 # Unreleased
+* [feature] Added support for `HarmBlockThreshold.OFF`. See the
+  [model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/configure-safety-filters#how_to_configure_content_filters){: .external}
+  for more information.
 
+# 16.3.0
+* [feature] Emits a warning when attempting to use an incompatible model with
+  `GenerativeModel` or `ImagenModel`.
+* [changed] Added new exception type for quota exceeded scenarios.
+* [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
+* [feature] **Public Preview:** Added support for streaming input and output (including audio) using the [Gemini Live API](/docs/vertex-ai/live-api?platform=android)
+  **Note**: This feature is in Public Preview, which means that it is not subject to any SLA or deprecation policy and could change in backwards-incompatible ways.
+* [changed] **Breaking Change**: `ImagenInlineImage.data` now returns the raw
+  image bytes (in JPEG or PNG format, as specified in
+  `ImagenInlineImage.mimeType`) instead of Base64-encoded data. (#6800)
+    * **Action Required:** Remove any Base64 decoding from your
+      `ImagenInlineImage.data` usage.
+    * The `asBitmap()` helper method is unaffected and requires no code changes.
 
 # 16.2.0
 * [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.

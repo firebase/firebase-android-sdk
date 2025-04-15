@@ -16,85 +16,30 @@
 
 package com.google.firebase.sessions.testing
 
-import androidx.annotation.Keep
-import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
-import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
-import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.sessions.BuildConfig
 import com.google.firebase.sessions.FirebaseSessions
 import com.google.firebase.sessions.FirebaseSessionsComponent
-import com.google.firebase.sessions.SessionDatastore
-import com.google.firebase.sessions.SessionFirelogPublisher
-import com.google.firebase.sessions.SessionGenerator
-import com.google.firebase.sessions.SessionLifecycleServiceBinder
-import com.google.firebase.sessions.WallClock
-import com.google.firebase.sessions.settings.SessionsSettings
-import kotlinx.coroutines.CoroutineDispatcher
 
 /**
  * [ComponentRegistrar] for setting up Fake components for [FirebaseSessions] and its internal
  * dependencies for unit tests.
- *
- * @hide
  */
-@Keep
 internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(SessionGenerator::class.java)
-        .name("session-generator")
-        .factory { SessionGenerator(timeProvider = WallClock) }
-        .build(),
-      Component.builder(FakeFirelogPublisher::class.java)
-        .name("fake-session-publisher")
-        .factory { FakeFirelogPublisher() }
-        .build(),
-      Component.builder(SessionFirelogPublisher::class.java)
-        .name("session-publisher")
-        .add(Dependency.required(fakeFirelogPublisher))
-        .factory { container -> container.get(fakeFirelogPublisher) }
-        .build(),
-      Component.builder(SessionsSettings::class.java)
-        .name("sessions-settings")
-        .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(backgroundDispatcher))
-        .factory { container ->
-          SessionsSettings(
-            container.get(firebaseApp),
-            container.get(blockingDispatcher),
-            container.get(backgroundDispatcher),
-            fakeFirebaseInstallations,
-          )
-        }
-        .build(),
       Component.builder(FirebaseSessionsComponent::class.java)
-        .name("fake-fire-sessions-component")
+        .name("fire-sessions-component")
+        .add(Dependency.required(firebaseSessionsFakeComponent))
+        .factory { container -> container.get(firebaseSessionsFakeComponent) }
+        .build(),
+      Component.builder(FirebaseSessionsFakeComponent::class.java)
+        .name("fire-sessions-fake-component")
         .factory { FirebaseSessionsFakeComponent() }
-        .build(),
-      Component.builder(FakeSessionDatastore::class.java)
-        .name("fake-sessions-datastore")
-        .factory { FakeSessionDatastore() }
-        .build(),
-      Component.builder(SessionDatastore::class.java)
-        .name("sessions-datastore")
-        .add(Dependency.required(fakeDatastore))
-        .factory { container -> container.get(fakeDatastore) }
-        .build(),
-      Component.builder(FakeSessionLifecycleServiceBinder::class.java)
-        .name("fake-sessions-service-binder")
-        .factory { FakeSessionLifecycleServiceBinder() }
-        .build(),
-      Component.builder(SessionLifecycleServiceBinder::class.java)
-        .name("sessions-service-binder")
-        .add(Dependency.required(fakeServiceBinder))
-        .factory { container -> container.get(fakeServiceBinder) }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
@@ -102,12 +47,6 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
   private companion object {
     const val LIBRARY_NAME = "fire-sessions"
 
-    val firebaseApp = unqualified(FirebaseApp::class.java)
-    val backgroundDispatcher = qualified(Background::class.java, CoroutineDispatcher::class.java)
-    val blockingDispatcher = qualified(Blocking::class.java, CoroutineDispatcher::class.java)
-    val fakeFirelogPublisher = unqualified(FakeFirelogPublisher::class.java)
-    val fakeDatastore = unqualified(FakeSessionDatastore::class.java)
-    val fakeServiceBinder = unqualified(FakeSessionLifecycleServiceBinder::class.java)
-    val fakeFirebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseSessionsFakeComponent = unqualified(FirebaseSessionsFakeComponent::class.java)
   }
 }

@@ -205,7 +205,11 @@ class LocalDateSerializerUnitTest {
     }
 
     fun Arb.Companion.unparseableDash(): Arb<String> {
-      val invalidString = string(1..5, codepoints.filterNot { it.value == '-'.code })
+      val invalidString =
+        string(
+          1..5,
+          codepoints.filterNot { it.value == '-'.code || it.value in '0'.code..'9'.code }
+        )
       return arbitrary { rs ->
         val flags = Array(3) { rs.random.nextBoolean() }
         if (!flags[0]) {

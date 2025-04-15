@@ -59,6 +59,8 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
               UnknownException(cause.message ?: "", cause.cause)
             is com.google.firebase.vertexai.common.ContentBlockedException ->
               ContentBlockedException(cause.message ?: "", cause.cause)
+            is com.google.firebase.vertexai.common.QuotaExceededException ->
+              QuotaExceededException(cause.message ?: "", cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
           }
         is TimeoutCancellationException ->
@@ -163,6 +165,28 @@ internal constructor(location: String, cause: Throwable? = null) :
  */
 public class ServiceDisabledException
 internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
+
+/**
+ * The request has hit a quota limit. Learn more about quotas in the
+ * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/quotas)
+ */
+public class QuotaExceededException
+internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
+
+/** Streaming session already receiving. */
+public class SessionAlreadyReceivingException :
+  FirebaseVertexAIException(
+    "This session is already receiving. Please call stopReceiving() before calling this again."
+  )
+
+/** Audio record initialization failures for audio streaming */
+public class AudioRecordInitializationFailedException(message: String) :
+  FirebaseVertexAIException(message)
+
+/** Handshake failed with the server */
+public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
