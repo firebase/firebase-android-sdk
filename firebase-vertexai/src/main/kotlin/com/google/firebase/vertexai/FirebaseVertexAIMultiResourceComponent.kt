@@ -22,6 +22,7 @@ import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.type.GenerativeBackend
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -36,18 +37,38 @@ internal class FirebaseVertexAIMultiResourceComponent(
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
-  @GuardedBy("this") private val instances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  @GuardedBy("this")
+  private val vertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
-  fun get(location: String): FirebaseVertexAI =
+  @GuardedBy("this") private val googleInstance: MutableList<FirebaseGoogleAI> = mutableListOf()
+
+  fun getVertexAI(location: String): FirebaseVertexAI =
     synchronized(this) {
-      instances[location]
+      vertexInstances[location]
         ?: FirebaseVertexAI(
             app,
+            GenerativeBackend.VERTEX_AI,
             backgroundDispatcher,
             location,
             appCheckProvider,
-            internalAuthProvider
+            internalAuthProvider,
           )
-          .also { instances[location] = it }
+          .also { vertexInstances[location] = it }
+    }
+
+  fun getGoogleAI(): FirebaseGoogleAI =
+    synchronized(this) {
+      googleInstance.getOrNull(0)
+        ?: FirebaseGoogleAI(
+            FirebaseVertexAI(
+              app,
+              GenerativeBackend.GOOGLE_AI,
+              backgroundDispatcher,
+              "UNUSED",
+              appCheckProvider,
+              internalAuthProvider,
+            )
+          )
+          .also { googleInstance.add(it) }
     }
 }
