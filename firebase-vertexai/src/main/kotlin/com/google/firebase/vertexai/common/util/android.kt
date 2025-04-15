@@ -17,8 +17,8 @@
 package com.google.firebase.vertexai.common.util
 
 import android.media.AudioRecord
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.yield
 
 /**
  * The minimum buffer size for this instance.
@@ -31,17 +31,14 @@ internal val AudioRecord.minBufferSize: Int
 /**
  * Reads from this [AudioRecord] and returns the data in a flow.
  *
- * Will emit a zeroed out buffer every 100ms when this instance is not recording.
+ * Will emit a zeroed out buffer when this instance is not recording.
  */
 internal fun AudioRecord.readAsFlow() = flow {
   val buffer = ByteArray(minBufferSize)
-  val emptyBuffer = ByteArray(minBufferSize)
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-      emit(emptyBuffer)
-      // The model will close the connection if you spam it too fast
-      delay(100)
+      yield()
       continue
     }
 
