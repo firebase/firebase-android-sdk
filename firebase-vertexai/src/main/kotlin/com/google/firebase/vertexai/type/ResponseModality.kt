@@ -18,7 +18,6 @@ package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Modality for bidirectional streaming. */
@@ -27,7 +26,6 @@ public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
-    @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
     TEXT,
     IMAGE,
     AUDIO;
@@ -38,8 +36,7 @@ public class ResponseModality private constructor(public val ordinal: Int) {
       when (this) {
         TEXT -> ResponseModality.TEXT
         IMAGE -> ResponseModality.IMAGE
-        AUDIO -> ResponseModality.AUDIO
-        else -> ResponseModality.UNSPECIFIED
+        else -> ResponseModality.AUDIO
       }
   }
 
@@ -47,20 +44,16 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     when (this) {
       TEXT -> "TEXT"
       IMAGE -> "IMAGE"
-      AUDIO -> "AUDIO"
-      else -> "UNSPECIFIED"
+      else -> "AUDIO"
     }
   public companion object {
-    /** Unspecified modality. */
-    @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
-
     /** Plain text. */
-    @JvmField public val TEXT: ResponseModality = ResponseModality(1)
+    @JvmField public val TEXT: ResponseModality = ResponseModality(0)
 
     /** Image. */
-    @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
+    @JvmField public val IMAGE: ResponseModality = ResponseModality(1)
 
     /** Audio. */
-    @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
+    @JvmField public val AUDIO: ResponseModality = ResponseModality(2)
   }
 }

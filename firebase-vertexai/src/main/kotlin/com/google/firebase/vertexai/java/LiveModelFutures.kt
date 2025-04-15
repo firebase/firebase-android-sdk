@@ -19,7 +19,6 @@ package com.google.firebase.vertexai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.LiveGenerativeModel
-import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 
@@ -32,8 +31,8 @@ import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedExcepti
 public abstract class LiveModelFutures internal constructor() {
 
   /**
-   * Start a [LiveSession] with the server for bidirectional streaming.
-   * @return A [LiveSession] that you can use to stream messages to and from the server.
+   * Start a [LiveSessionFutures] with the server for bidirectional streaming.
+   * @return A [LiveSessionFutures] that you can use to stream messages to and from the server.
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
