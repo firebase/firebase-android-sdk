@@ -93,6 +93,7 @@ internal class FakeDataStore<T>(
   /** Finish the test. */
   fun close() {
     // Close the channel to stop the flow from emitting more values
+    // This might be needed if tests fail with UncompletedCoroutinesError
     channel.close()
   }
 }

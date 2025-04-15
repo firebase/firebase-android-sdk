@@ -20,7 +20,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.testing.FakeDataStore
 import java.io.IOException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -41,7 +40,7 @@ internal class FakeDataStoreTest {
     val result = mutableListOf<Int>()
 
     // Collect data into result list
-    CoroutineScope(coroutineContext).launch { fakeDataStore.data.collect { result.add(it) } }
+    backgroundScope.launch { fakeDataStore.data.collect { result.add(it) } }
 
     fakeDataStore.updateData { 1 }
     fakeDataStore.updateData { 2 }
@@ -51,8 +50,6 @@ internal class FakeDataStoreTest {
     runCurrent()
 
     assertThat(result).containsExactly(23, 1, 2, 3, 4)
-
-    fakeDataStore.close()
   }
 
   @Test
@@ -60,7 +57,7 @@ internal class FakeDataStoreTest {
     val fakeDataStore = FakeDataStore(23)
 
     val result = mutableListOf<String>()
-    CoroutineScope(coroutineContext).launch {
+    backgroundScope.launch {
       fakeDataStore.data
         .catch { ex -> result.add(ex.message!!) }
         .collect { result.add(it.toString()) }
@@ -72,8 +69,6 @@ internal class FakeDataStoreTest {
     runCurrent()
 
     assertThat(result).containsExactly("23", "1", "oops")
-
-    fakeDataStore.close()
   }
 
   @Test(expected = IndexOutOfBoundsException::class)
@@ -108,9 +103,10 @@ internal class FakeDataStoreTest {
     val fakeDataStore = FakeDataStore(0)
 
     var collectResult = 0
-    CoroutineScope(coroutineContext).launch { fakeDataStore.data.collect { collectResult = it } }
+    backgroundScope.launch { fakeDataStore.data.collect { collectResult = it } }
 
     var updateResult = 0
+    // 100 is bigger than the channel buffer size so this will cause suspending
     repeat(100) { updateResult = fakeDataStore.updateData { it.inc() } }
 
     runCurrent()
