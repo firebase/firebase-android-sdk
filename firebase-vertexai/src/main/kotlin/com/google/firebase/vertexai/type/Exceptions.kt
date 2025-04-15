@@ -67,6 +67,38 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
       }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a
+     * [FirebaseVertexAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catch
+     */
+    internal suspend fun <T> catchAsync(callback: suspend () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a
+     * [FirebaseVertexAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catchAsync
+     */
+    internal fun <T> catch(callback: () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
   }
 }
 
