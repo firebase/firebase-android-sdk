@@ -25,6 +25,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.fold
 
 /**
  * Removes the last character from the [StringBuilder].
@@ -67,18 +68,19 @@ internal fun Flow<ByteArray>.accumulateUntil(
   minSize: Int,
   emitLeftOvers: Boolean = false
 ): Flow<ByteArray> = flow {
-  val buffer = ByteArrayOutputStream()
-
-  collect {
-    buffer.write(it, 0, it.size)
-    if (buffer.size() >= minSize) {
-      emit(buffer.toByteArray())
-      buffer.reset()
+  val remaining =
+    fold(ByteArrayOutputStream()) { buffer, it ->
+      buffer.apply {
+        write(it, 0, it.size)
+        if (size() >= minSize) {
+          emit(toByteArray())
+          reset()
+        }
+      }
     }
-  }
 
-  if (emitLeftOvers && buffer.size() > 0) {
-    emit(buffer.toByteArray())
+  if (emitLeftOvers && remaining.size() > 0) {
+    emit(remaining.toByteArray())
   }
 }
 
