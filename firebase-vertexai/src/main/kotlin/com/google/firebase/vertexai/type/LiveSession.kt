@@ -38,6 +38,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
@@ -95,21 +96,23 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    if (scope.isActive) {
-      Log.w(
-        TAG,
-        "startAudioConversation called after the recording has already started. " +
-          "Call stopAudioConversation to close the previous connection."
-      )
-      return
+    FirebaseVertexAIException.catchAsync {
+      if (scope.isActive) {
+        Log.w(
+          TAG,
+          "startAudioConversation called after the recording has already started. " +
+            "Call stopAudioConversation to close the previous connection."
+        )
+        return@catchAsync
+      }
+
+      scope = CoroutineScope(blockingDispatcher + childJob())
+      audioHelper = AudioHelper.build()
+
+      recordUserAudio()
+      processModelResponses(functionCallHandler)
+      listenForModelPlayback()
     }
-
-    scope = CoroutineScope(blockingDispatcher + childJob())
-    audioHelper = AudioHelper.build()
-
-    recordUserAudio()
-    processModelResponses(functionCallHandler)
-    listenForModelPlayback()
   }
 
   /**
@@ -120,13 +123,15 @@ internal constructor(
    * If there is no audio conversation currently active, this function does nothing.
    */
   public fun stopAudioConversation() {
-    if (!startedReceiving.getAndSet(false)) return
+    FirebaseVertexAIException.catch {
+      if (!startedReceiving.getAndSet(false)) return@catch
 
-    scope.cancel()
-    playBackQueue.clear()
+      scope.cancel()
+      playBackQueue.clear()
 
-    audioHelper?.release()
-    audioHelper = null
+      audioHelper?.release()
+      audioHelper = null
+    }
   }
 
   /**
@@ -140,31 +145,34 @@ internal constructor(
    * @see stopReceiving
    */
   public fun receive(): Flow<LiveContentResponse> {
-    if (startedReceiving.getAndSet(true)) {
-      throw SessionAlreadyReceivingException()
-    }
-
-    // TODO(b/410059569): Remove when fixed
-    return flow {
-        while (true) {
-          val response = session.incoming.tryReceive()
-          if (response.isClosed || !startedReceiving.get()) break
-
-          val frame = response.getOrNull()
-          frame?.let { frameToLiveContentResponse(it) }?.let { emit(it) }
-
-          yield()
-        }
+    return FirebaseVertexAIException.catch {
+      if (startedReceiving.getAndSet(true)) {
+        throw SessionAlreadyReceivingException()
       }
-      .onCompletion { stopAudioConversation() }
 
-    // TODO(b/410059569): Add back when fixed
-    //    return session.incoming.receiveAsFlow().transform { frame ->
-    //      val response = frameToLiveContentResponse(frame)
-    //      response?.let { emit(it) }
-    //    }.onCompletion {
-    //      stopAudioConversation()
-    //    }
+      // TODO(b/410059569): Remove when fixed
+      flow {
+          while (true) {
+            val response = session.incoming.tryReceive()
+            if (response.isClosed || !startedReceiving.get()) break
+
+            val frame = response.getOrNull()
+            frame?.let { frameToLiveContentResponse(it) }?.let { emit(it) }
+
+            yield()
+          }
+        }
+        .onCompletion { stopAudioConversation() }
+        .catch { throw FirebaseVertexAIException.from(it) }
+
+      // TODO(b/410059569): Add back when fixed
+      //    return session.incoming.receiveAsFlow().transform { frame ->
+      //      val response = frameToLiveContentResponse(frame)
+      //      response?.let { emit(it) }
+      //    }.onCompletion {
+      //      stopAudioConversation()
+      //    }.catch { throw FirebaseVertexAIException.from(it) }
+    }
   }
 
   /**
@@ -181,13 +189,15 @@ internal constructor(
    */
   // TODO(b/410059569): Remove when fixed
   public fun stopReceiving() {
-    if (!startedReceiving.getAndSet(false)) return
+    FirebaseVertexAIException.catch {
+      if (!startedReceiving.getAndSet(false)) return@catch
 
-    scope.cancel()
-    playBackQueue.clear()
+      scope.cancel()
+      playBackQueue.clear()
 
-    audioHelper?.release()
-    audioHelper = null
+      audioHelper?.release()
+      audioHelper = null
+    }
   }
 
   /**
@@ -197,11 +207,13 @@ internal constructor(
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    val jsonString =
-      Json.encodeToString(
-        LiveToolResponseSetup(functionList.map { it.toInternalFunctionCall() }).toInternal()
-      )
-    session.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(
+          LiveToolResponseSetup(functionList.map { it.toInternalFunctionCall() }).toInternal()
+        )
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
@@ -214,11 +226,13 @@ internal constructor(
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    val jsonString =
-      Json.encodeToString(
-        LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
-      )
-    session.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(
+          LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
+        )
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
@@ -229,9 +243,11 @@ internal constructor(
    * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
-    val jsonString =
-      Json.encodeToString(LiveClientContentSetup(listOf(content.toInternal()), true).toInternal())
-    session.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(LiveClientContentSetup(listOf(content.toInternal()), true).toInternal())
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
@@ -242,7 +258,7 @@ internal constructor(
    * @param text Text to be sent to the model.
    */
   public suspend fun send(text: String) {
-    send(Content.Builder().text(text).build())
+    FirebaseVertexAIException.catchAsync { send(Content.Builder().text(text).build()) }
   }
 
   /**
@@ -254,8 +270,10 @@ internal constructor(
    * @see stopReceiving
    */
   public suspend fun close() {
-    session.close()
-    stopAudioConversation()
+    FirebaseVertexAIException.catchAsync {
+      session.close()
+      stopAudioConversation()
+    }
   }
 
   /** Listen to the user's microphone and send the data to the model. */
@@ -266,6 +284,7 @@ internal constructor(
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
       ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
+      ?.catch { throw FirebaseVertexAIException.from(it) }
       ?.launchIn(scope)
   }
 

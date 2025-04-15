@@ -5,6 +5,7 @@
 * [fixed] Improved thread usage when using a `LiveGenerativeModel`. (#6870)
 * [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
   interrupted or the turn completed. (#6870)
+* [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
 
 
 # 16.3.0
