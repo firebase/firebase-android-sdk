@@ -25,7 +25,7 @@ class AggregateFunction
 private constructor(private val name: String, private val params: Array<out Expr>) {
   private constructor(name: String) : this(name, emptyArray())
   private constructor(name: String, expr: Expr) : this(name, arrayOf(expr))
-  private constructor(name: String, fieldName: String) : this(name, Field.of(fieldName))
+  private constructor(name: String, fieldName: String) : this(name, Expr.field(fieldName))
 
   companion object {
 

@@ -14,12 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.pipeline.Expr.field;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateWithAlias;
-import com.google.firebase.firestore.pipeline.Field;
 import java.util.Objects;
 
 /** Represents an aggregation that can be performed by Firestore. */
@@ -218,7 +219,7 @@ public abstract class AggregateField {
     @NonNull
     @Override
     AggregateWithAlias toPipeline() {
-      return Field.of(getFieldPath()).sum().alias(getAlias());
+      return field(getFieldPath()).sum().alias(getAlias());
     }
   }
 
@@ -231,7 +232,7 @@ public abstract class AggregateField {
     @NonNull
     @Override
     AggregateWithAlias toPipeline() {
-      return Field.of(getFieldPath()).avg().alias(getAlias());
+      return field(getFieldPath()).avg().alias(getAlias());
     }
   }
 }

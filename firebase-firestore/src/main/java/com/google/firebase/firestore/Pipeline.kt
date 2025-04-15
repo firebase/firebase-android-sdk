@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateStage
@@ -38,9 +39,11 @@ import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
 import com.google.firebase.firestore.pipeline.GenericArg
 import com.google.firebase.firestore.pipeline.GenericStage
+import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
+import com.google.firebase.firestore.pipeline.PipelineOptions
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
@@ -72,9 +75,11 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.append(stage))
   }
 
-  fun execute(): Task<PipelineSnapshot> {
+  fun execute(): Task<PipelineSnapshot> = execute(PipelineOptions.DEFAULT)
+
+  fun execute(options: PipelineOptions): Task<PipelineSnapshot> {
     val observerTask = ObserverSnapshotTask()
-    firestore.callClient { call -> call!!.executePipeline(toProto(), observerTask) }
+    firestore.callClient { call -> call!!.executePipeline(toProto(options), observerTask) }
     return observerTask.task
   }
 
@@ -82,7 +87,7 @@ internal constructor(
     return DocumentReference(key, firestore)
   }
 
-  private fun toProto(): ExecutePipelineRequest {
+  private fun toProto(options: PipelineOptions): ExecutePipelineRequest {
     val database = firestore.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
@@ -169,7 +174,7 @@ internal constructor(
    */
   fun removeFields(field: String, vararg additionalFields: String): Pipeline =
     append(
-      RemoveFieldsStage(arrayOf(Field.of(field), *additionalFields.map(Field::of).toTypedArray()))
+      RemoveFieldsStage(arrayOf(Expr.field(field), *additionalFields.map(Expr::field).toTypedArray()))
     )
 
   /**
@@ -221,7 +226,7 @@ internal constructor(
     append(
       SelectStage(
         arrayOf(
-          Field.of(fieldName),
+          Expr.field(fieldName),
           *additionalSelections.map(Selectable::toSelectable).toTypedArray()
         )
       )
@@ -253,10 +258,10 @@ internal constructor(
    * You can filter documents based on their field values, using implementations of [BooleanExpr],
    * typically including but not limited to:
    *
-   * - field comparators: [FunctionExpr.eq], [FunctionExpr.lt] (less than), [FunctionExpr.gt]
+   * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt]
    * (greater than), etc.
-   * - logical operators: [FunctionExpr.and], [FunctionExpr.or], [FunctionExpr.not], etc.
-   * - advanced functions: [FunctionExpr.regexMatch], [FunctionExpr.arrayContains[], etc.
+   * - logical operators: [Expr.and], [Expr.or], [Expr.not], etc.
+   * - advanced functions: [Expr.regexMatch], [Expr.arrayContains], etc.
    *
    * @param condition The [BooleanExpr] to apply.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -336,7 +341,7 @@ internal constructor(
     append(
       DistinctStage(
         arrayOf(
-          Field.of(groupField),
+          Expr.field(groupField),
           *additionalGroups.map(Selectable::toSelectable).toTypedArray()
         )
       )
@@ -468,7 +473,7 @@ internal constructor(
    * @param field The [String] specifying the field name containing the nested map.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun replace(field: String): Pipeline = replace(Field.of(field))
+  fun replace(field: String): Pipeline = replace(Expr.field(field))
 
   /**
    * Fully overwrites all fields in a document with those coming from a nested map.
@@ -530,7 +535,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(arrayField: String, alias: String): Pipeline =
-    unnest(Field.of(arrayField).alias(alias))
+    unnest(Expr.field(arrayField).alias(alias))
 
   /**
    * Takes a specified array from the input documents and outputs a document for each element with

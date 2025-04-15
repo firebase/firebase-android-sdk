@@ -18,7 +18,8 @@ import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Field.Companion.of
+import com.google.firebase.firestore.pipeline.Expr.Companion.constant
+import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
@@ -266,7 +267,7 @@ internal constructor(
    * @return [AggregateStage] with specified groups.
    */
   fun withGroups(groupField: String, vararg additionalGroups: Any) =
-    withGroups(Field.of(groupField), additionalGroups)
+    withGroups(Expr.field(groupField), additionalGroups)
 
   /**
    * Add one or more groups to [AggregateStage]
@@ -327,7 +328,7 @@ internal constructor(
      */
     @JvmStatic
     fun of(vectorField: Field, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(vectorField, Constant.of(vectorValue), distanceMeasure)
+      FindNearestStage(vectorField, constant(vectorValue), distanceMeasure)
 
     /**
      * Create [FindNearestStage].
@@ -341,7 +342,7 @@ internal constructor(
      */
     @JvmStatic
     fun of(vectorField: Field, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(vectorField, Constant.vector(vectorValue), distanceMeasure)
+      FindNearestStage(vectorField, Expr.vector(vectorValue), distanceMeasure)
 
     /**
      * Create [FindNearestStage].
@@ -355,7 +356,7 @@ internal constructor(
      */
     @JvmStatic
     fun of(vectorField: String, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(Constant.of(vectorField), Constant.of(vectorValue), distanceMeasure)
+      FindNearestStage(constant(vectorField), constant(vectorValue), distanceMeasure)
 
     /**
      * Create [FindNearestStage].
@@ -369,7 +370,7 @@ internal constructor(
      */
     @JvmStatic
     fun of(vectorField: String, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(Constant.of(vectorField), Constant.vector(vectorValue), distanceMeasure)
+      FindNearestStage(constant(vectorField), Expr.vector(vectorValue), distanceMeasure)
   }
 
   class DistanceMeasure private constructor(internal val proto: Value) {
@@ -418,7 +419,7 @@ internal constructor(
    * @return [FindNearestStage] with specified [distanceField].
    */
   fun withDistanceField(distanceField: String): FindNearestStage =
-    withDistanceField(of(distanceField))
+    withDistanceField(field(distanceField))
 }
 
 internal class LimitStage
@@ -598,7 +599,7 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Field.of(arrayField).alias(alias))
+      UnnestStage(Expr.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =

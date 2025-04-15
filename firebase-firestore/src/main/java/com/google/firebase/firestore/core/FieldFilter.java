@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.pipeline.FunctionExpr.and;
+import static com.google.firebase.firestore.pipeline.Expr.and;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.lang.Double.isNaN;
 

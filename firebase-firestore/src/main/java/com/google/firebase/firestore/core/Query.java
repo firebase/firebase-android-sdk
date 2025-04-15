@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.pipeline.FunctionExpr.and;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.or;
+import static com.google.firebase.firestore.pipeline.Expr.and;
+import static com.google.firebase.firestore.pipeline.Expr.or;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
@@ -547,7 +547,7 @@ public final class Query {
       p = p.where(fields.get(0).exists());
     } else {
       BooleanExpr[] conditions =
-          fields.stream().skip(1).map(Expr::exists).toArray(BooleanExpr[]::new);
+          fields.stream().skip(1).map(Expr.Companion::exists).toArray(BooleanExpr[]::new);
       p = p.where(and(fields.get(0).exists(), conditions));
     }
 
@@ -587,7 +587,7 @@ public final class Query {
     int last = size - 1;
     BooleanExpr condition = cmp.apply(fields.get(last), boundPosition.get(last));
     if (bound.isInclusive()) {
-      condition = or(condition, FunctionExpr.eq(fields.get(last), boundPosition.get(last)));
+      condition = or(condition, Expr.eq(fields.get(last), boundPosition.get(last)));
     }
     for (int i = size - 2; i >= 0; i--) {
       final Field field = fields.get(i);

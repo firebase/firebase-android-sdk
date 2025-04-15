@@ -15,25 +15,27 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.add;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.and;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.arrayContains;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.arrayContainsAny;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.cosineDistance;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.endsWith;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.eq;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.euclideanDistance;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.gt;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.logicalMax;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.lt;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.lte;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.mapGet;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.neq;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.not;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.or;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.startsWith;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.strConcat;
-import static com.google.firebase.firestore.pipeline.FunctionExpr.subtract;
+import static com.google.firebase.firestore.pipeline.Expr.add;
+import static com.google.firebase.firestore.pipeline.Expr.and;
+import static com.google.firebase.firestore.pipeline.Expr.arrayContains;
+import static com.google.firebase.firestore.pipeline.Expr.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expr.cosineDistance;
+import static com.google.firebase.firestore.pipeline.Expr.endsWith;
+import static com.google.firebase.firestore.pipeline.Expr.eq;
+import static com.google.firebase.firestore.pipeline.Expr.euclideanDistance;
+import static com.google.firebase.firestore.pipeline.Expr.field;
+import static com.google.firebase.firestore.pipeline.Expr.gt;
+import static com.google.firebase.firestore.pipeline.Expr.logicalMax;
+import static com.google.firebase.firestore.pipeline.Expr.lt;
+import static com.google.firebase.firestore.pipeline.Expr.lte;
+import static com.google.firebase.firestore.pipeline.Expr.mapGet;
+import static com.google.firebase.firestore.pipeline.Expr.neq;
+import static com.google.firebase.firestore.pipeline.Expr.not;
+import static com.google.firebase.firestore.pipeline.Expr.or;
+import static com.google.firebase.firestore.pipeline.Expr.startsWith;
+import static com.google.firebase.firestore.pipeline.Expr.strConcat;
+import static com.google.firebase.firestore.pipeline.Expr.subtract;
+import static com.google.firebase.firestore.pipeline.Expr.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
@@ -44,9 +46,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Correspondence;
 import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateStage;
-import com.google.firebase.firestore.pipeline.Constant;
-import com.google.firebase.firestore.pipeline.Field;
-import com.google.firebase.firestore.pipeline.FunctionExpr;
+import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.pipeline.GenericStage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
@@ -240,11 +240,11 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(FunctionExpr.eq("genre", "Science Fiction"))
+            .where(eq("genre", "Science Fiction"))
             .aggregate(
                 AggregateFunction.countAll().alias("count"),
                 AggregateFunction.avg("rating").alias("avgRating"),
-                Field.of("rating").max().alias("maxRating"))
+                field("rating").max().alias("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -258,12 +258,12 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(lt(Field.of("published"), 1984))
+            .where(lt(field("published"), 1984))
             .aggregate(
                 AggregateStage.withAccumulators(AggregateFunction.avg("rating").alias("avgRating"))
                     .withGroups("genre"))
             .where(gt("avgRating", 4.3))
-            .sort(Field.of("avgRating").descending())
+            .sort(field("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -279,13 +279,13 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .genericStage("where", lt(Field.of("published"), 1984))
+            .genericStage("where", lt(field("published"), 1984))
             .genericStage(
                 "aggregate",
                 ImmutableMap.of("avgRating", AggregateFunction.avg("rating")),
-                ImmutableMap.of("genre", Field.of("genre")))
+                ImmutableMap.of("genre", field("genre")))
             .genericStage(GenericStage.ofName("where").withArguments(gt("avgRating", 4.3)))
-            .genericStage("sort", Field.of("avgRating").descending())
+            .genericStage("sort", field("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -304,8 +304,8 @@ public class PipelineTest {
             .collection(randomCol)
             .aggregate(
                 AggregateFunction.countAll().alias("count"),
-                Field.of("rating").max().alias("maxRating"),
-                Field.of("published").min().alias("minPublished"))
+                field("rating").max().alias("maxRating"),
+                field("published").min().alias("minPublished"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -320,7 +320,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .select("title", "author")
-            .sort(Field.of("author").ascending())
+            .sort(field("author").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -431,7 +431,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Field.of("tags").arrayContainsAll(ImmutableList.of("adventure", "magic")))
+            .where(field("tags").arrayContainsAll(ImmutableList.of("adventure", "magic")))
             .select("title")
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -445,7 +445,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("tags").arrayLength().alias("tagsCount"))
+            .select(field("tags").arrayLength().alias("tagsCount"))
             .where(eq("tagsCount", 3))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(10);
@@ -460,7 +460,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
             .select(
-                Field.of("tags")
+                field("tags")
                     .arrayConcat(ImmutableList.of("newTag1", "newTag2"))
                     .alias("modifiedTags"))
             .limit(1)
@@ -479,7 +479,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("author").strConcat(" - ", Field.of("title")).alias("bookInfo"))
+            .select(field("author").strConcat(" - ", field("title")).alias("bookInfo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -496,7 +496,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(startsWith("title", "The"))
             .select("title")
-            .sort(Field.of("title").ascending())
+            .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -515,7 +515,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(endsWith("title", "y"))
             .select("title")
-            .sort(Field.of("title").descending())
+            .sort(field("title").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -530,9 +530,9 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("title").charLength().alias("titleLength"), Field.of("title"))
+            .select(field("title").charLength().alias("titleLength"), field("title"))
             .where(gt("titleLength", 20))
-            .sort(Field.of("title").ascending())
+            .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -550,7 +550,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("title").toLower().alias("lowercaseTitle"))
+            .select(field("title").toLower().alias("lowercaseTitle"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -565,7 +565,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("author").toLower().alias("uppercaseAuthor"))
+            .select(field("author").toLower().alias("uppercaseAuthor"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -580,8 +580,8 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .addFields(strConcat(" ", Field.of("title"), " ").alias("spacedTitle"))
-            .select(Field.of("spacedTitle").trim().alias("trimmedTitle"))
+            .addFields(strConcat(" ", field("title"), " ").alias("spacedTitle"))
+            .select(field("spacedTitle").trim().alias("trimmedTitle"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -600,7 +600,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(FunctionExpr.like("title", "%Guide%"))
+            .where(Expr.like("title", "%Guide%"))
             .select("title")
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -614,7 +614,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(FunctionExpr.regexContains("title", "(?i)(the|of)"))
+            .where(Expr.regexContains("title", "(?i)(the|of)"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
@@ -625,7 +625,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(FunctionExpr.regexContains("title", ".*(?i)(the|of).*"))
+            .where(Expr.regexContains("title", ".*(?i)(the|of).*"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
@@ -637,10 +637,10 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .select(
-                add(Field.of("rating"), 1).alias("ratingPlusOne"),
-                subtract(Field.of("published"), 1900).alias("yearsSince1900"),
-                Field.of("rating").multiply(10).alias("ratingTimesTen"),
-                Field.of("rating").divide(2).alias("ratingDividedByTwo"))
+                add(field("rating"), 1).alias("ratingPlusOne"),
+                subtract(field("published"), 1900).alias("yearsSince1900"),
+                field("rating").multiply(10).alias("ratingTimesTen"),
+                field("rating").divide(2).alias("ratingDividedByTwo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -662,10 +662,10 @@ public class PipelineTest {
             .where(
                 and(
                     gt("rating", 4.2),
-                    lte(Field.of("rating"), 4.5),
+                    lte(field("rating"), 4.5),
                     neq("genre", "Science Function")))
             .select("rating", "title")
-            .sort(Field.of("title").ascending())
+            .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -684,9 +684,9 @@ public class PipelineTest {
             .where(
                 or(
                     and(gt("rating", 4.5), eq("genre", "Science Fiction")),
-                    lt(Field.of("published"), 1900)))
+                    lt(field("published"), 1900)))
             .select("title")
-            .sort(Field.of("title").ascending())
+            .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -702,11 +702,11 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(not(Field.of("rating").isNan()))
+            .where(not(field("rating").isNan()))
             .select(
-                Field.of("rating").isNull().alias("ratingIsNull"),
-                Field.of("rating").eq(Constant.nullValue()).alias("ratingEqNull"),
-                not(Field.of("rating").isNan()).alias("ratingIsNotNan"))
+                field("rating").isNull().alias("ratingIsNull"),
+                field("rating").eq(Expr.nullValue()).alias("ratingEqNull"),
+                not(field("rating").isNan()).alias("ratingIsNotNan"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -725,10 +725,10 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Field.of("author").eq("Douglas Adams"))
+            .where(field("author").eq("Douglas Adams"))
             .select(
-                Field.of("rating").logicalMax(4.5).alias("max_rating"),
-                logicalMax(Field.of("published"), 1900).alias("max_published"))
+                field("rating").logicalMax(4.5).alias("max_rating"),
+                logicalMax(field("published"), 1900).alias("max_published"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -739,7 +739,7 @@ public class PipelineTest {
   @Ignore("Not supported yet")
   public void testLogicalMin() {
     Task<PipelineSnapshot> execute =
-        firestore.pipeline().collection(randomCol).sort(Field.of("rating").ascending()).execute();
+        firestore.pipeline().collection(randomCol).sort(field("rating").ascending()).execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("min_rating", 4.2, "min_published", 1900));
@@ -751,7 +751,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(Field.of("awards").mapGet("hugo").alias("hugoAward"), Field.of("title"))
+            .select(field("awards").mapGet("hugo").alias("hugoAward"), field("title"))
             .where(eq("hugoAward", true))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -770,10 +770,10 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .select(
-                cosineDistance(Constant.vector(sourceVector), targetVector).alias("cosineDistance"),
-                FunctionExpr.dotProduct(Constant.vector(sourceVector), targetVector)
+                cosineDistance(vector(sourceVector), targetVector).alias("cosineDistance"),
+                Expr.dotProduct(vector(sourceVector), targetVector)
                     .alias("dotProductDistance"),
-                euclideanDistance(Constant.vector(sourceVector), targetVector)
+                euclideanDistance(vector(sourceVector), targetVector)
                     .alias("euclideanDistance"))
             .limit(1)
             .execute();
@@ -811,7 +811,7 @@ public class PipelineTest {
             .where(eq("awards.hugo", true))
             .select(
                 "title",
-                Field.of("nestedField.level.1"),
+                field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
     assertThat(waitFor(execute).getResults())

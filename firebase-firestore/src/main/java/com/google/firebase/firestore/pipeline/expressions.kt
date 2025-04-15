@@ -23,9 +23,9 @@ import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
+import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Constant.Companion.of
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
@@ -41,14 +41,17 @@ import kotlin.reflect.KFunction1
  * - **Field references:** Access values from document fields.
  * - **Literals:** Represent constant values (strings, numbers, booleans).
  * - **Function calls:** Apply functions to one or more expressions.
- * - **Aggregations:** Calculate aggregate values (e.g., sum, average) over a set of documents.
  *
  * The [Expr] class provides a fluent API for building expressions. You can chain together method
  * calls to create complex expressions.
  */
 abstract class Expr internal constructor() {
 
-  internal companion object {
+  private class ValueConstant(val value: Value) : Expr() {
+    override fun toProto(userDataReader: UserDataReader): Value = value
+  }
+
+  companion object {
     internal fun toExprOrConstant(value: Any?): Expr =
       toExpr(value, ::toExprOrConstant)
         ?: pojoToExprOrConstant(CustomClassMapper.convertToPlainJavaTypes(value))
@@ -58,25 +61,25 @@ abstract class Expr internal constructor() {
         ?: throw IllegalArgumentException("Unknown type: $value")
 
     private fun toExpr(value: Any?, toExpr: KFunction1<Any?, Expr>): Expr? {
-      if (value == null) return Constant.nullValue()
+      if (value == null) return NULL
       return when (value) {
         is Expr -> value
-        is String -> of(value)
-        is Number -> of(value)
-        is Date -> of(value)
-        is Timestamp -> of(value)
-        is Boolean -> of(value)
-        is GeoPoint -> of(value)
-        is Blob -> of(value)
-        is DocumentReference -> of(value)
-        is VectorValue -> of(value)
-        is Value -> of(value)
+        is String -> constant(value)
+        is Number -> constant(value)
+        is Date -> constant(value)
+        is Timestamp -> constant(value)
+        is Boolean -> constant(value)
+        is GeoPoint -> constant(value)
+        is Blob -> constant(value)
+        is DocumentReference -> constant(value)
+        is VectorValue -> constant(value)
+        is Value -> ValueConstant(value)
         is Map<*, *> ->
-          FunctionExpr.map(
+          map(
             value
               .flatMap {
                 val key = it.key
-                if (key is String) listOf(of(key), toExpr(it.value))
+                if (key is String) listOf(constant(key), toExpr(it.value))
                 else throw IllegalArgumentException("Maps with non-string keys are not supported")
               }
               .toTypedArray()
@@ -91,311 +94,144 @@ abstract class Expr internal constructor() {
 
     internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<out Expr> =
       others.map(::toExprOrConstant).toTypedArray()
-  }
 
-  fun bitAnd(right: Expr) = FunctionExpr.bitAnd(this, right)
-
-  fun bitAnd(right: Any) = FunctionExpr.bitAnd(this, right)
-
-  fun bitOr(right: Expr) = FunctionExpr.bitOr(this, right)
-
-  fun bitOr(right: Any) = FunctionExpr.bitOr(this, right)
-
-  fun bitXor(right: Expr) = FunctionExpr.bitXor(this, right)
-
-  fun bitXor(right: Any) = FunctionExpr.bitXor(this, right)
-
-  fun bitNot() = FunctionExpr.bitNot(this)
-
-  fun bitLeftShift(numberExpr: Expr) = FunctionExpr.bitLeftShift(this, numberExpr)
-
-  fun bitLeftShift(number: Int) = FunctionExpr.bitLeftShift(this, number)
-
-  fun bitRightShift(numberExpr: Expr) = FunctionExpr.bitRightShift(this, numberExpr)
-
-  fun bitRightShift(number: Int) = FunctionExpr.bitRightShift(this, number)
-
-  /**
-   * Assigns an alias to this expression.
-   *
-   * <p>Aliases are useful for renaming fields in the output of a stage or for giving meaningful
-   * names to calculated values.
-   *
-   * <p>Example:
-   *
-   * <pre> // Calculate the total price and assign it the alias "totalPrice" and add it to the
-   *
-   * output. firestore.pipeline().collection("items")
-   * .addFields(Field.of("price").multiply(Field.of("quantity")).as("totalPrice")); </pre>
-   *
-   * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [ExprWithAlias]) that wraps this expression and
-   * associates it with the provided alias.
-   */
-  open fun alias(alias: String) = ExprWithAlias(alias, this)
-
-  /**
-   * Creates an expression that this expression to another expression.
-   *
-   * <p>Example:
-   *
-   * <pre>{@code // Add the value of the 'quantity' field and the 'reserve' field.
-   * Field.of("quantity").add(Field.of("reserve")); }</pre>
-   *
-   * @param other The expression to add to this expression.
-   * @return A new {@code Expr} representing the addition operation.
-   */
-  fun add(other: Expr) = FunctionExpr.add(this, other)
-
-  /**
-   * Creates an expression that this expression to another expression.
-   *
-   * <p>Example:
-   *
-   * <pre>{@code // Add the value of the 'quantity' field and the 'reserve' field.
-   * Field.of("quantity").add(Field.of("reserve")); }</pre>
-   *
-   * @param other The constant value to add to this expression.
-   * @return A new {@code Expr} representing the addition operation.
-   */
-  fun add(other: Any) = FunctionExpr.add(this, other)
-
-  fun subtract(other: Expr) = FunctionExpr.subtract(this, other)
-
-  fun subtract(other: Any) = FunctionExpr.subtract(this, other)
-
-  fun multiply(other: Expr) = FunctionExpr.multiply(this, other)
-
-  fun multiply(other: Any) = FunctionExpr.multiply(this, other)
-
-  fun divide(other: Expr) = FunctionExpr.divide(this, other)
-
-  fun divide(other: Any) = FunctionExpr.divide(this, other)
-
-  fun mod(other: Expr) = FunctionExpr.mod(this, other)
-
-  fun mod(other: Any) = FunctionExpr.mod(this, other)
-
-  fun eqAny(values: List<Any>) = FunctionExpr.eqAny(this, values)
-
-  fun notEqAny(values: List<Any>) = FunctionExpr.notEqAny(this, values)
-
-  fun isNan() = FunctionExpr.isNan(this)
-
-  fun isNotNan() = FunctionExpr.isNotNan(this)
-
-  fun isNull() = FunctionExpr.isNull(this)
-
-  fun isNotNull() = FunctionExpr.isNotNull(this)
-
-  fun replaceFirst(find: Expr, replace: Expr) = FunctionExpr.replaceFirst(this, find, replace)
-
-  fun replaceFirst(find: String, replace: String) = FunctionExpr.replaceFirst(this, find, replace)
-
-  fun replaceAll(find: Expr, replace: Expr) = FunctionExpr.replaceAll(this, find, replace)
-
-  fun replaceAll(find: String, replace: String) = FunctionExpr.replaceAll(this, find, replace)
-
-  fun charLength() = FunctionExpr.charLength(this)
-
-  fun byteLength() = FunctionExpr.byteLength(this)
-
-  fun like(pattern: Expr) = FunctionExpr.like(this, pattern)
-
-  fun like(pattern: String) = FunctionExpr.like(this, pattern)
-
-  fun regexContains(pattern: Expr) = FunctionExpr.regexContains(this, pattern)
-
-  fun regexContains(pattern: String) = FunctionExpr.regexContains(this, pattern)
-
-  fun regexMatch(pattern: Expr) = FunctionExpr.regexMatch(this, pattern)
-
-  fun regexMatch(pattern: String) = FunctionExpr.regexMatch(this, pattern)
-
-  fun logicalMax(other: Expr) = FunctionExpr.logicalMax(this, other)
-
-  fun logicalMax(other: Any) = FunctionExpr.logicalMax(this, other)
-
-  fun logicalMin(other: Expr) = FunctionExpr.logicalMin(this, other)
-
-  fun logicalMin(other: Any) = FunctionExpr.logicalMin(this, other)
-
-  fun reverse() = FunctionExpr.reverse(this)
-
-  fun strContains(substring: Expr) = FunctionExpr.strContains(this, substring)
-
-  fun strContains(substring: String) = FunctionExpr.strContains(this, substring)
-
-  fun startsWith(prefix: Expr) = FunctionExpr.startsWith(this, prefix)
-
-  fun startsWith(prefix: String) = FunctionExpr.startsWith(this, prefix)
-
-  fun endsWith(suffix: Expr) = FunctionExpr.endsWith(this, suffix)
-
-  fun endsWith(suffix: String) = FunctionExpr.endsWith(this, suffix)
-
-  fun toLower() = FunctionExpr.toLower(this)
-
-  fun toUpper() = FunctionExpr.toUpper(this)
-
-  fun trim() = FunctionExpr.trim(this)
-
-  fun strConcat(vararg expr: Expr) = FunctionExpr.strConcat(this, *expr)
-
-  fun strConcat(vararg string: String) = FunctionExpr.strConcat(this, *string)
-
-  fun strConcat(vararg string: Any) = FunctionExpr.strConcat(this, *string)
-
-  fun mapGet(key: Expr) = FunctionExpr.mapGet(this, key)
-
-  fun mapGet(key: String) = FunctionExpr.mapGet(this, key)
-
-  fun mapMerge(secondMap: Expr, vararg otherMaps: Expr) =
-    FunctionExpr.mapMerge(this, secondMap, *otherMaps)
-
-  fun mapRemove(key: Expr) = FunctionExpr.mapRemove(this, key)
-
-  fun mapRemove(key: String) = FunctionExpr.mapRemove(this, key)
-
-  fun cosineDistance(vector: Expr) = FunctionExpr.cosineDistance(this, vector)
-
-  fun cosineDistance(vector: DoubleArray) = FunctionExpr.cosineDistance(this, vector)
-
-  fun cosineDistance(vector: VectorValue) = FunctionExpr.cosineDistance(this, vector)
-
-  fun dotProduct(vector: Expr) = FunctionExpr.dotProduct(this, vector)
-
-  fun dotProduct(vector: DoubleArray) = FunctionExpr.dotProduct(this, vector)
-
-  fun dotProduct(vector: VectorValue) = FunctionExpr.dotProduct(this, vector)
-
-  fun euclideanDistance(vector: Expr) = FunctionExpr.euclideanDistance(this, vector)
-
-  fun euclideanDistance(vector: DoubleArray) = FunctionExpr.euclideanDistance(this, vector)
-
-  fun euclideanDistance(vector: VectorValue) = FunctionExpr.euclideanDistance(this, vector)
-
-  fun vectorLength() = FunctionExpr.vectorLength(this)
-
-  fun unixMicrosToTimestamp() = FunctionExpr.unixMicrosToTimestamp(this)
-
-  fun timestampToUnixMicros() = FunctionExpr.timestampToUnixMicros(this)
-
-  fun unixMillisToTimestamp() = FunctionExpr.unixMillisToTimestamp(this)
-
-  fun timestampToUnixMillis() = FunctionExpr.timestampToUnixMillis(this)
-
-  fun unixSecondsToTimestamp() = FunctionExpr.unixSecondsToTimestamp(this)
-
-  fun timestampToUnixSeconds() = FunctionExpr.timestampToUnixSeconds(this)
-
-  fun timestampAdd(unit: Expr, amount: Expr) = FunctionExpr.timestampAdd(this, unit, amount)
-
-  fun timestampAdd(unit: String, amount: Double) = FunctionExpr.timestampAdd(this, unit, amount)
-
-  fun timestampSub(unit: Expr, amount: Expr) = FunctionExpr.timestampSub(this, unit, amount)
-
-  fun timestampSub(unit: String, amount: Double) = FunctionExpr.timestampSub(this, unit, amount)
-
-  fun arrayConcat(vararg arrays: Expr) = FunctionExpr.arrayConcat(this, *arrays)
-
-  fun arrayConcat(arrays: List<Any>) = FunctionExpr.arrayConcat(this, arrays)
-
-  fun arrayReverse() = FunctionExpr.arrayReverse(this)
-
-  fun arrayContains(value: Expr) = FunctionExpr.arrayContains(this, value)
-
-  fun arrayContains(value: Any) = FunctionExpr.arrayContains(this, value)
-
-  fun arrayContainsAll(values: List<Any>) = FunctionExpr.arrayContainsAll(this, values)
-
-  fun arrayContainsAny(values: List<Any>) = FunctionExpr.arrayContainsAny(this, values)
-
-  fun arrayLength() = FunctionExpr.arrayLength(this)
-
-  fun sum() = AggregateFunction.sum(this)
-
-  fun avg() = AggregateFunction.avg(this)
-
-  fun min() = AggregateFunction.min(this)
-
-  fun max() = AggregateFunction.max(this)
-
-  fun ascending() = Ordering.ascending(this)
-
-  fun descending() = Ordering.descending(this)
-
-  fun eq(other: Expr) = FunctionExpr.eq(this, other)
-
-  fun eq(other: Any) = FunctionExpr.eq(this, other)
-
-  fun neq(other: Expr) = FunctionExpr.neq(this, other)
-
-  fun neq(other: Any) = FunctionExpr.neq(this, other)
-
-  fun gt(other: Expr) = FunctionExpr.gt(this, other)
-
-  fun gt(other: Any) = FunctionExpr.gt(this, other)
-
-  fun gte(other: Expr) = FunctionExpr.gte(this, other)
-
-  fun gte(other: Any) = FunctionExpr.gte(this, other)
-
-  fun lt(other: Expr) = FunctionExpr.lt(this, other)
-
-  fun lt(other: Any) = FunctionExpr.lt(this, other)
-
-  fun lte(other: Expr) = FunctionExpr.lte(this, other)
-
-  fun lte(other: Any) = FunctionExpr.lte(this, other)
-
-  fun exists() = FunctionExpr.exists(this)
-
-  internal abstract fun toProto(userDataReader: UserDataReader): Value
-}
-
-/** Expressions that have an alias are [Selectable] */
-abstract class Selectable : Expr() {
-  internal abstract fun getAlias(): String
-  internal abstract fun getExpr(): Expr
-
-  internal companion object {
-    fun toSelectable(o: Any): Selectable {
-      return when (o) {
-        is Selectable -> o
-        is String -> Field.of(o)
-        is FieldPath -> Field.of(o)
-        else -> throw IllegalArgumentException("Unknown Selectable type: $o")
-      }
-    }
-  }
-}
-
-/** Represents an expression that will be given the alias in the output document. */
-class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
-  Selectable() {
-  override fun getAlias() = alias
-  override fun getExpr() = expr
-  override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
-}
-
-/**
- * Represents a reference to a field in a Firestore document.
- *
- * [Field] references are used to access document field values in expressions and to specify fields
- * for sorting, filtering, and projecting data in Firestore pipelines.
- *
- * You can create a [Field] instance using the static [of] method:
- */
-class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
-  companion object {
+    private val NULL: Expr = ValueConstant(Values.NULL_VALUE)
 
     /**
-     * An expression that returns the document ID.
+     * Create a constant for a [String] value.
      *
-     * @return An [Field] representing the document ID.
+     * @param value The [String] value.
+     * @return A new [Expr] constant instance.
      */
-    @JvmField val DOCUMENT_ID: Field = of(FieldPath.documentId())
+    @JvmStatic
+    fun constant(value: String): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [Number] value.
+     *
+     * @param value The [Number] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: Number): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [Date] value.
+     *
+     * @param value The [Date] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: Date): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [Timestamp] value.
+     *
+     * @param value The [Timestamp] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: Timestamp): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [Boolean] value.
+     *
+     * @param value The [Boolean] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: Boolean): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [GeoPoint] value.
+     *
+     * @param value The [GeoPoint] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: GeoPoint): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [Blob] value.
+     *
+     * @param value The [Blob] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: Blob): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a [DocumentReference] value.
+     *
+     * @param ref The [DocumentReference] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(ref: DocumentReference): Expr {
+      return object : Expr() {
+        override fun toProto(userDataReader: UserDataReader): Value {
+          userDataReader.validateDocumentReference(ref, ::IllegalArgumentException)
+          return encodeValue(ref)
+        }
+      }
+    }
+
+    /**
+     * Create a constant for a [VectorValue] value.
+     *
+     * @param value The [VectorValue] value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: VectorValue): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Constant for a null value.
+     *
+     * @return A [Expr] constant instance.
+     */
+    @JvmStatic
+    fun nullValue(): Expr {
+      return NULL
+    }
+
+    /**
+     * Create a vector constant for a [DoubleArray] value.
+     *
+     * @param vector The [VectorValue] value.
+     * @return A [Expr] constant instance.
+     */
+    @JvmStatic
+    fun vector(vector: DoubleArray): Expr {
+      return ValueConstant(Values.encodeVectorValue(vector))
+    }
+
+    /**
+     * Create a vector constant for a [VectorValue] value.
+     *
+     * @param vector The [VectorValue] value.
+     * @return A [Expr] constant instance.
+     */
+    @JvmStatic
+    fun vector(vector: VectorValue): Expr {
+      return ValueConstant(encodeValue(vector))
+    }
 
     /**
      * Creates a [Field] instance representing the field at the given path.
@@ -407,7 +243,7 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
      * @return A new [Field] instance representing the specified path.
      */
     @JvmStatic
-    fun of(name: String): Field {
+    fun field(name: String): Field {
       if (name == DocumentKey.KEY_FIELD_NAME) {
         return Field(ModelFieldPath.KEY_PATH)
       }
@@ -424,47 +260,9 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
      * @return A new [Field] instance representing the specified path.
      */
     @JvmStatic
-    fun of(fieldPath: FieldPath): Field {
+    fun field(fieldPath: FieldPath): Field {
       return Field(fieldPath.internalPath)
     }
-  }
-
-  override fun getAlias(): String = fieldPath.canonicalString()
-
-  override fun getExpr(): Expr = this
-
-  override fun toProto(userDataReader: UserDataReader) = toProto()
-
-  internal fun toProto(): Value =
-    Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
-}
-
-internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
-  override fun toProto(userDataReader: UserDataReader): Value =
-    encodeValue(expressions.map { it.toProto(userDataReader) })
-}
-
-/**
- * This class defines the base class for Firestore [Pipeline] functions, which can be evaluated
- * within pipeline execution.
- *
- * Typically, you would not use this class or its children directly. Use either the functions like
- * [and], [eq], or the methods on [Expr] ([Expr.eq]), [Expr.lt], etc) to construct new
- * [FunctionExpr] instances.
- */
-open class FunctionExpr
-protected constructor(private val name: String, private val params: Array<out Expr>) : Expr() {
-  private constructor(
-    name: String,
-    param: Expr,
-    vararg params: Any
-  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
-  private constructor(
-    name: String,
-    fieldName: String,
-    vararg params: Any
-  ) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
-  companion object {
 
     @JvmStatic fun generic(name: String, vararg expr: Expr) = FunctionExpr(name, expr)
 
@@ -781,7 +579,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun map(elements: Map<String, Any>) =
-      map(elements.flatMap { listOf(of(it.key), toExprOrConstant(it.value)) }.toTypedArray())
+      map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     @JvmStatic fun mapGet(map: Expr, key: Expr) = FunctionExpr("map_get", map, key)
 
@@ -816,7 +614,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: DoubleArray) =
-      FunctionExpr("cosine_distance", vector1, Constant.vector(vector2))
+      FunctionExpr("cosine_distance", vector1, vector(vector2))
 
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: VectorValue) =
@@ -828,7 +626,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun cosineDistance(fieldName: String, vector: DoubleArray) =
-      FunctionExpr("cosine_distance", fieldName, Constant.vector(vector))
+      FunctionExpr("cosine_distance", fieldName, vector(vector))
 
     @JvmStatic
     fun cosineDistance(fieldName: String, vector: VectorValue) =
@@ -839,7 +637,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: DoubleArray) =
-      FunctionExpr("dot_product", vector1, Constant.vector(vector2))
+      FunctionExpr("dot_product", vector1, vector(vector2))
 
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: VectorValue) =
@@ -850,7 +648,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun dotProduct(fieldName: String, vector: DoubleArray) =
-      FunctionExpr("dot_product", fieldName, Constant.vector(vector))
+      FunctionExpr("dot_product", fieldName, vector(vector))
 
     @JvmStatic
     fun dotProduct(fieldName: String, vector: VectorValue) =
@@ -862,7 +660,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: DoubleArray) =
-      FunctionExpr("euclidean_distance", vector1, Constant.vector(vector2))
+      FunctionExpr("euclidean_distance", vector1, vector(vector2))
 
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: VectorValue) =
@@ -874,7 +672,7 @@ protected constructor(private val name: String, private val params: Array<out Ex
 
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: DoubleArray) =
-      FunctionExpr("euclidean_distance", fieldName, Constant.vector(vector))
+      FunctionExpr("euclidean_distance", fieldName, vector(vector))
 
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: VectorValue) =
@@ -1070,6 +868,348 @@ protected constructor(private val name: String, private val params: Array<out Ex
     @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
   }
 
+  fun bitAnd(right: Expr) = bitAnd(this, right)
+
+  fun bitAnd(right: Any) = bitAnd(this, right)
+
+  fun bitOr(right: Expr) = bitOr(this, right)
+
+  fun bitOr(right: Any) = bitOr(this, right)
+
+  fun bitXor(right: Expr) = bitXor(this, right)
+
+  fun bitXor(right: Any) = bitXor(this, right)
+
+  fun bitNot() = bitNot(this)
+
+  fun bitLeftShift(numberExpr: Expr) = bitLeftShift(this, numberExpr)
+
+  fun bitLeftShift(number: Int) = bitLeftShift(this, number)
+
+  fun bitRightShift(numberExpr: Expr) = bitRightShift(this, numberExpr)
+
+  fun bitRightShift(number: Int) = bitRightShift(this, number)
+
+  /**
+   * Assigns an alias to this expression.
+   *
+   * <p>Aliases are useful for renaming fields in the output of a stage or for giving meaningful
+   * names to calculated values.
+   *
+   * <p>Example:
+   *
+   * <pre> // Calculate the total price and assign it the alias "totalPrice" and add it to the
+   *
+   * output. firestore.pipeline().collection("items")
+   * .addFields(Expr.field("price").multiply(Expr.field("quantity")).as("totalPrice")); </pre>
+   *
+   * @param alias The alias to assign to this expression.
+   * @return A new [Selectable] (typically an [ExprWithAlias]) that wraps this expression and
+   * associates it with the provided alias.
+   */
+  open fun alias(alias: String) = ExprWithAlias(alias, this)
+
+  /**
+   * Creates an expression that this expression to another expression.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code // Add the value of the 'quantity' field and the 'reserve' field.
+   * Expr.field("quantity").add(Expr.field("reserve")); }</pre>
+   *
+   * @param other The expression to add to this expression.
+   * @return A new {@code Expr} representing the addition operation.
+   */
+  fun add(other: Expr) = add(this, other)
+
+  /**
+   * Creates an expression that this expression to another expression.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code // Add the value of the 'quantity' field and the 'reserve' field.
+   * Expr.field("quantity").add(Expr.field("reserve")); }</pre>
+   *
+   * @param other The constant value to add to this expression.
+   * @return A new {@code Expr} representing the addition operation.
+   */
+  fun add(other: Any) = add(this, other)
+
+  fun subtract(other: Expr) = subtract(this, other)
+
+  fun subtract(other: Any) = subtract(this, other)
+
+  fun multiply(other: Expr) = multiply(this, other)
+
+  fun multiply(other: Any) = multiply(this, other)
+
+  fun divide(other: Expr) = divide(this, other)
+
+  fun divide(other: Any) = divide(this, other)
+
+  fun mod(other: Expr) = mod(this, other)
+
+  fun mod(other: Any) = mod(this, other)
+
+  fun eqAny(values: List<Any>) = eqAny(this, values)
+
+  fun notEqAny(values: List<Any>) = notEqAny(this, values)
+
+  fun isNan() = isNan(this)
+
+  fun isNotNan() = isNotNan(this)
+
+  fun isNull() = isNull(this)
+
+  fun isNotNull() = isNotNull(this)
+
+  fun replaceFirst(find: Expr, replace: Expr) = replaceFirst(this, find, replace)
+
+  fun replaceFirst(find: String, replace: String) = replaceFirst(this, find, replace)
+
+  fun replaceAll(find: Expr, replace: Expr) = replaceAll(this, find, replace)
+
+  fun replaceAll(find: String, replace: String) = replaceAll(this, find, replace)
+
+  fun charLength() = charLength(this)
+
+  fun byteLength() = byteLength(this)
+
+  fun like(pattern: Expr) = like(this, pattern)
+
+  fun like(pattern: String) = like(this, pattern)
+
+  fun regexContains(pattern: Expr) = regexContains(this, pattern)
+
+  fun regexContains(pattern: String) = regexContains(this, pattern)
+
+  fun regexMatch(pattern: Expr) = regexMatch(this, pattern)
+
+  fun regexMatch(pattern: String) = regexMatch(this, pattern)
+
+  fun logicalMax(other: Expr) = logicalMax(this, other)
+
+  fun logicalMax(other: Any) = logicalMax(this, other)
+
+  fun logicalMin(other: Expr) = logicalMin(this, other)
+
+  fun logicalMin(other: Any) = logicalMin(this, other)
+
+  fun reverse() = reverse(this)
+
+  fun strContains(substring: Expr) = strContains(this, substring)
+
+  fun strContains(substring: String) = strContains(this, substring)
+
+  fun startsWith(prefix: Expr) = startsWith(this, prefix)
+
+  fun startsWith(prefix: String) = startsWith(this, prefix)
+
+  fun endsWith(suffix: Expr) = endsWith(this, suffix)
+
+  fun endsWith(suffix: String) = endsWith(this, suffix)
+
+  fun toLower() = toLower(this)
+
+  fun toUpper() = toUpper(this)
+
+  fun trim() = trim(this)
+
+  fun strConcat(vararg expr: Expr) = Companion.strConcat(this, *expr)
+
+  fun strConcat(vararg string: String) = strConcat(this, *string)
+
+  fun strConcat(vararg string: Any) = Companion.strConcat(this, *string)
+
+  fun mapGet(key: Expr) = mapGet(this, key)
+
+  fun mapGet(key: String) = mapGet(this, key)
+
+  fun mapMerge(secondMap: Expr, vararg otherMaps: Expr) =
+    Companion.mapMerge(this, secondMap, *otherMaps)
+
+  fun mapRemove(key: Expr) = mapRemove(this, key)
+
+  fun mapRemove(key: String) = mapRemove(this, key)
+
+  fun cosineDistance(vector: Expr) = cosineDistance(this, vector)
+
+  fun cosineDistance(vector: DoubleArray) = cosineDistance(this, vector)
+
+  fun cosineDistance(vector: VectorValue) = cosineDistance(this, vector)
+
+  fun dotProduct(vector: Expr) = dotProduct(this, vector)
+
+  fun dotProduct(vector: DoubleArray) = dotProduct(this, vector)
+
+  fun dotProduct(vector: VectorValue) = dotProduct(this, vector)
+
+  fun euclideanDistance(vector: Expr) = euclideanDistance(this, vector)
+
+  fun euclideanDistance(vector: DoubleArray) = euclideanDistance(this, vector)
+
+  fun euclideanDistance(vector: VectorValue) = euclideanDistance(this, vector)
+
+  fun vectorLength() = vectorLength(this)
+
+  fun unixMicrosToTimestamp() = unixMicrosToTimestamp(this)
+
+  fun timestampToUnixMicros() = timestampToUnixMicros(this)
+
+  fun unixMillisToTimestamp() = unixMillisToTimestamp(this)
+
+  fun timestampToUnixMillis() = timestampToUnixMillis(this)
+
+  fun unixSecondsToTimestamp() = unixSecondsToTimestamp(this)
+
+  fun timestampToUnixSeconds() = timestampToUnixSeconds(this)
+
+  fun timestampAdd(unit: Expr, amount: Expr) = timestampAdd(this, unit, amount)
+
+  fun timestampAdd(unit: String, amount: Double) = timestampAdd(this, unit, amount)
+
+  fun timestampSub(unit: Expr, amount: Expr) = timestampSub(this, unit, amount)
+
+  fun timestampSub(unit: String, amount: Double) = timestampSub(this, unit, amount)
+
+  fun arrayConcat(vararg arrays: Expr) = Companion.arrayConcat(this, *arrays)
+
+  fun arrayConcat(arrays: List<Any>) = arrayConcat(this, arrays)
+
+  fun arrayReverse() = arrayReverse(this)
+
+  fun arrayContains(value: Expr) = arrayContains(this, value)
+
+  fun arrayContains(value: Any) = arrayContains(this, value)
+
+  fun arrayContainsAll(values: List<Any>) = arrayContainsAll(this, values)
+
+  fun arrayContainsAny(values: List<Any>) = arrayContainsAny(this, values)
+
+  fun arrayLength() = arrayLength(this)
+
+  fun sum() = AggregateFunction.sum(this)
+
+  fun avg() = AggregateFunction.avg(this)
+
+  fun min() = AggregateFunction.min(this)
+
+  fun max() = AggregateFunction.max(this)
+
+  fun ascending() = Ordering.ascending(this)
+
+  fun descending() = Ordering.descending(this)
+
+  fun eq(other: Expr) = eq(this, other)
+
+  fun eq(other: Any) = eq(this, other)
+
+  fun neq(other: Expr) = neq(this, other)
+
+  fun neq(other: Any) = neq(this, other)
+
+  fun gt(other: Expr) = gt(this, other)
+
+  fun gt(other: Any) = gt(this, other)
+
+  fun gte(other: Expr) = gte(this, other)
+
+  fun gte(other: Any) = gte(this, other)
+
+  fun lt(other: Expr) = lt(this, other)
+
+  fun lt(other: Any) = lt(this, other)
+
+  fun lte(other: Expr) = lte(this, other)
+
+  fun lte(other: Any) = lte(this, other)
+
+  fun exists() = exists(this)
+
+  internal abstract fun toProto(userDataReader: UserDataReader): Value
+}
+
+/** Expressions that have an alias are [Selectable] */
+abstract class Selectable : Expr() {
+  internal abstract fun getAlias(): String
+  internal abstract fun getExpr(): Expr
+
+  internal companion object {
+    fun toSelectable(o: Any): Selectable {
+      return when (o) {
+        is Selectable -> o
+        is String -> Expr.field(o)
+        is FieldPath -> Expr.field(o)
+        else -> throw IllegalArgumentException("Unknown Selectable type: $o")
+      }
+    }
+  }
+}
+
+/** Represents an expression that will be given the alias in the output document. */
+class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+  Selectable() {
+  override fun getAlias() = alias
+  override fun getExpr() = expr
+  override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
+}
+
+/**
+ * Represents a reference to a field in a Firestore document.
+ *
+ * [Field] references are used to access document field values in expressions and to specify fields
+ * for sorting, filtering, and projecting data in Firestore pipelines.
+ *
+ * You can create a [Field] instance using the static [Expr.field] method:
+ */
+class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
+  companion object {
+
+    /**
+     * An expression that returns the document ID.
+     *
+     * @return An [Field] representing the document ID.
+     */
+    @JvmField val DOCUMENT_ID: Field = field(FieldPath.documentId())
+
+  }
+
+  override fun getAlias(): String = fieldPath.canonicalString()
+
+  override fun getExpr(): Expr = this
+
+  override fun toProto(userDataReader: UserDataReader) = toProto()
+
+  internal fun toProto(): Value =
+    Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
+}
+
+internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    encodeValue(expressions.map { it.toProto(userDataReader) })
+}
+
+/**
+ * This class defines the base class for Firestore [Pipeline] functions, which can be evaluated
+ * within pipeline execution.
+ *
+ * Typically, you would not use this class or its children directly. Use either the functions like
+ * [and], [eq], or the methods on [Expr] ([Expr.eq]), [Expr.lt], etc) to construct new
+ * [FunctionExpr] instances.
+ */
+open class FunctionExpr
+internal constructor(private val name: String, private val params: Array<out Expr>) : Expr() {
+  internal constructor(
+    name: String,
+    param: Expr,
+    vararg params: Any
+  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  internal constructor(
+    name: String,
+    fieldName: String,
+    vararg params: Any
+  ) : this(name, arrayOf(Expr.field(fieldName), *toArrayOfExprOrConstant(params)))
+
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
     builder.setName(name)
@@ -1096,7 +1236,7 @@ class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
     name: String,
     fieldName: String,
     vararg params: Any
-  ) : this(name, arrayOf(Field.of(fieldName), *toArrayOfExprOrConstant(params)))
+  ) : this(name, arrayOf(Expr.field(fieldName), *toArrayOfExprOrConstant(params)))
 
   companion object {
 
@@ -1135,7 +1275,7 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
      * @return A new [Ordering] object with ascending sort by field.
      */
     @JvmStatic
-    fun ascending(fieldName: String): Ordering = Ordering(Field.of(fieldName), Direction.ASCENDING)
+    fun ascending(fieldName: String): Ordering = Ordering(Expr.field(fieldName), Direction.ASCENDING)
 
     /**
      * Create an [Ordering] that sorts documents in descending order based on value of [expr].
@@ -1153,7 +1293,7 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
      */
     @JvmStatic
     fun descending(fieldName: String): Ordering =
-      Ordering(Field.of(fieldName), Direction.DESCENDING)
+      Ordering(Expr.field(fieldName), Direction.DESCENDING)
   }
 
   private class Direction private constructor(val proto: Value) {
