@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.
 
 # 25.1.3
 * [fixed] Use lazy encoding in UTF-8 encoded byte comparison for strings to solve performance issues. [#6706](//github.com/firebase/firebase-android-sdk/pull/6706)

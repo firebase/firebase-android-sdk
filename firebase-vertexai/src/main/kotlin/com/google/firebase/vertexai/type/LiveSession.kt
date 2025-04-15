@@ -20,10 +20,12 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.vertexai.LiveGenerativeModel
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -141,16 +143,14 @@ internal constructor(
   }
 
   private suspend fun sendAudioDataToServer() {
-    var offset = 0
-    val audioBuffer = ByteArray(MIN_BUFFER_SIZE * 2)
+
+    val audioBufferStream = ByteArrayOutputStream()
     while (isRecording) {
       val receivedAudio = audioQueue.poll() ?: continue
-      receivedAudio.copyInto(audioBuffer, offset)
-      offset += receivedAudio.size
-      if (offset >= MIN_BUFFER_SIZE) {
-        sendMediaStream(listOf(MediaData(audioBuffer, "audio/pcm")))
-        audioBuffer.fill(0)
-        offset = 0
+      audioBufferStream.write(receivedAudio)
+      if (audioBufferStream.size() >= MIN_BUFFER_SIZE) {
+        sendMediaStream(listOf(MediaData(audioBufferStream.toByteArray(), "audio/pcm")))
+        audioBufferStream.reset()
       }
     }
   }
@@ -233,8 +233,14 @@ internal constructor(
   }
 
   /**
-   * Stops receiving from the server. If this function is called during an ongoing audio
-   * conversation, the server's response will not be received, and no audio will be played.
+   * Stops receiving from the model.
+   *
+   * If this function is called during an ongoing audio conversation, the model's response will not
+   * be received, and no audio will be played; the live session object will no longer receive data
+   * from the server.
+   *
+   * To resume receiving data, you must either handle it directly using [receive], or indirectly by
+   * using [startAudioConversation].
    */
   public fun stopReceiving() {
     if (!startedReceiving) {
@@ -356,7 +362,12 @@ internal constructor(
     send(Content.Builder().text(text).build())
   }
 
-  /** Closes the client session. */
+  /**
+   * Closes the client session.
+   *
+   * After this is called, the session object becomes unusable. To interact with the server again,
+   * you must create a new session using [LiveGenerativeModel].
+   */
   public suspend fun close() {
     session?.close()
   }

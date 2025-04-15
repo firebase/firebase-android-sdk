@@ -115,7 +115,7 @@ package com.google.firebase.vertexai.java {
   }
 
   @com.google.firebase.vertexai.type.PublicPreviewAPI public abstract class LiveModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.vertexai.type.LiveSession> connect();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.vertexai.java.LiveSessionFutures> connect();
     method public static final com.google.firebase.vertexai.java.LiveModelFutures from(com.google.firebase.vertexai.LiveGenerativeModel model);
     field public static final com.google.firebase.vertexai.java.LiveModelFutures.Companion Companion;
   }
@@ -132,6 +132,7 @@ package com.google.firebase.vertexai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.vertexai.type.FunctionResponsePart> functionList);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.vertexai.type.MediaData> mediaChunks);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.vertexai.type.FunctionCallPart,com.google.firebase.vertexai.type.FunctionResponsePart>? functionCallHandler);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
@@ -384,6 +385,7 @@ package com.google.firebase.vertexai.type {
     field public static final com.google.firebase.vertexai.type.HarmBlockThreshold LOW_AND_ABOVE;
     field public static final com.google.firebase.vertexai.type.HarmBlockThreshold MEDIUM_AND_ABOVE;
     field public static final com.google.firebase.vertexai.type.HarmBlockThreshold NONE;
+    field public static final com.google.firebase.vertexai.type.HarmBlockThreshold OFF;
     field public static final com.google.firebase.vertexai.type.HarmBlockThreshold ONLY_HIGH;
   }
 
@@ -596,7 +598,7 @@ package com.google.firebase.vertexai.type {
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
-    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setResponseModalities(com.google.firebase.vertexai.type.ResponseModality? responseModalities);
+    method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.vertexai.type.ResponseModality? responseModality);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.vertexai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.vertexai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
@@ -695,7 +697,6 @@ package com.google.firebase.vertexai.type {
     field public static final com.google.firebase.vertexai.type.ResponseModality.Companion Companion;
     field public static final com.google.firebase.vertexai.type.ResponseModality IMAGE;
     field public static final com.google.firebase.vertexai.type.ResponseModality TEXT;
-    field public static final com.google.firebase.vertexai.type.ResponseModality UNSPECIFIED;
   }
 
   public static final class ResponseModality.Companion {
