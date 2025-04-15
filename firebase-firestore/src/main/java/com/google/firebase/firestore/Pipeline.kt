@@ -36,7 +36,6 @@ import com.google.firebase.firestore.pipeline.ExprWithAlias
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
-import com.google.firebase.firestore.pipeline.GenericArg
 import com.google.firebase.firestore.pipeline.GenericStage
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
@@ -118,7 +117,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun genericStage(name: String, vararg arguments: Any): Pipeline =
-    append(GenericStage(name, arguments.map(GenericArg::from)))
+    append(GenericStage.ofName(name).withArguments(arguments))
 
   /**
    * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
@@ -171,7 +170,9 @@ internal constructor(
    */
   fun removeFields(field: String, vararg additionalFields: String): Pipeline =
     append(
-      RemoveFieldsStage(arrayOf(Expr.field(field), *additionalFields.map(Expr::field).toTypedArray()))
+      RemoveFieldsStage(
+        arrayOf(Expr.field(field), *additionalFields.map(Expr::field).toTypedArray())
+      )
     )
 
   /**
@@ -255,8 +256,7 @@ internal constructor(
    * You can filter documents based on their field values, using implementations of [BooleanExpr],
    * typically including but not limited to:
    *
-   * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt]
-   * (greater than), etc.
+   * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt] (greater than), etc.
    * - logical operators: [Expr.and], [Expr.or], [Expr.not], etc.
    * - advanced functions: [Expr.regexMatch], [Expr.arrayContains], etc.
    *

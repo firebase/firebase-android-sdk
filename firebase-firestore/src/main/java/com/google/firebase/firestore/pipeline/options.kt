@@ -28,8 +28,7 @@ import com.google.firestore.v1.Value
  * `ImmutableMap<String></String>, Value>` is an implementation detail, not to be exposed, since
  * more efficient implementations are possible.
  */
-class InternalOptions
-internal constructor(private val options: ImmutableMap<String, Value>) {
+class InternalOptions internal constructor(private val options: ImmutableMap<String, Value>) {
   internal fun with(key: String, value: Value): InternalOptions {
     val builder = ImmutableMap.builderWithExpectedSize<String, Value>(options.size + 1)
     builder.putAll(options)
@@ -58,8 +57,7 @@ internal constructor(private val options: ImmutableMap<String, Value>) {
   }
 
   companion object {
-    @JvmField
-    val EMPTY: InternalOptions = InternalOptions(ImmutableMap.of())
+    @JvmField val EMPTY: InternalOptions = InternalOptions(ImmutableMap.of())
 
     fun of(key: String, value: Value): InternalOptions {
       return InternalOptions(ImmutableMap.of(key, value))
@@ -131,44 +129,42 @@ internal constructor(internal val options: InternalOptions) {
   fun with(key: String, value: GenericOptions): T = with(key, value.options)
 }
 
-class GenericOptions private constructor(options: InternalOptions) : AbstractOptions<GenericOptions>(options) {
+class GenericOptions private constructor(options: InternalOptions) :
+  AbstractOptions<GenericOptions>(options) {
   override fun self(options: InternalOptions) = GenericOptions(options)
 
   companion object {
-    @JvmField
-    val DEFAULT: GenericOptions = GenericOptions(InternalOptions.EMPTY)
+    @JvmField val DEFAULT: GenericOptions = GenericOptions(InternalOptions.EMPTY)
   }
 }
 
-class PipelineOptions private constructor(options: InternalOptions) : AbstractOptions<PipelineOptions>(options) {
+class PipelineOptions private constructor(options: InternalOptions) :
+  AbstractOptions<PipelineOptions>(options) {
 
   override fun self(options: InternalOptions) = PipelineOptions(options)
 
   companion object {
-    @JvmField
-    val DEFAULT: PipelineOptions = PipelineOptions(InternalOptions.EMPTY)
+    @JvmField val DEFAULT: PipelineOptions = PipelineOptions(InternalOptions.EMPTY)
   }
 
   class IndexMode private constructor(internal val value: String) {
     companion object {
-      @JvmField
-      val RECOMMENDED = IndexMode("recommended")
+      @JvmField val RECOMMENDED = IndexMode("recommended")
     }
   }
 
-  fun withIndexMode(indexMode: IndexMode): PipelineOptions =
-    with("index_mode", indexMode.value)
+  fun withIndexMode(indexMode: IndexMode): PipelineOptions = with("index_mode", indexMode.value)
 
   fun withExplainOptions(options: ExplainOptions): PipelineOptions =
     with("explain_options", options.options)
 }
 
-class ExplainOptions private constructor(options: InternalOptions) : AbstractOptions<ExplainOptions>(options) {
+class ExplainOptions private constructor(options: InternalOptions) :
+  AbstractOptions<ExplainOptions>(options) {
   override fun self(options: InternalOptions) = ExplainOptions(options)
 
   companion object {
-    @JvmField
-    val DEFAULT = ExplainOptions(InternalOptions.EMPTY)
+    @JvmField val DEFAULT = ExplainOptions(InternalOptions.EMPTY)
   }
 
   fun withMode(value: ExplainMode) = with("mode", value.value)
@@ -185,51 +181,39 @@ class ExplainOptions private constructor(options: InternalOptions) : AbstractOpt
 
   class ExplainMode private constructor(internal val value: String) {
     companion object {
-      @JvmField
-      val EXECUTE = ExplainMode("execute")
+      @JvmField val EXECUTE = ExplainMode("execute")
 
-      @JvmField
-      val EXPLAIN = ExplainMode("explain")
+      @JvmField val EXPLAIN = ExplainMode("explain")
 
-      @JvmField
-      val ANALYZE = ExplainMode("analyze")
+      @JvmField val ANALYZE = ExplainMode("analyze")
     }
   }
 
   class OutputFormat private constructor(internal val value: String) {
     companion object {
-      @JvmField
-      val TEXT = OutputFormat("text")
+      @JvmField val TEXT = OutputFormat("text")
 
-      @JvmField
-      val JSON = OutputFormat("json")
+      @JvmField val JSON = OutputFormat("json")
 
-      @JvmField
-      val STRUCT = OutputFormat("struct")
+      @JvmField val STRUCT = OutputFormat("struct")
     }
   }
 
   class Verbosity private constructor(internal val value: String) {
     companion object {
-      @JvmField
-      val SUMMARY_ONLY = Verbosity("summary_only")
+      @JvmField val SUMMARY_ONLY = Verbosity("summary_only")
 
-      @JvmField
-      val EXECUTION_TREE = Verbosity("execution_tree")
+      @JvmField val EXECUTION_TREE = Verbosity("execution_tree")
     }
   }
 
   class Profiles private constructor(internal val value: String) {
     companion object {
-      @JvmField
-      val LATENCY = Profiles("latency")
+      @JvmField val LATENCY = Profiles("latency")
 
-      @JvmField
-      val RECORDS_COUNT = Profiles("records_count")
+      @JvmField val RECORDS_COUNT = Profiles("records_count")
 
-      @JvmField
-      val BYTES_THROUGHPUT = Profiles("bytes_throughput")
+      @JvmField val BYTES_THROUGHPUT = Profiles("bytes_throughput")
     }
   }
 }
-

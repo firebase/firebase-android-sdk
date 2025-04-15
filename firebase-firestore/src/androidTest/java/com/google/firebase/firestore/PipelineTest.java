@@ -660,10 +660,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(
-                and(
-                    gt("rating", 4.2),
-                    lte(field("rating"), 4.5),
-                    neq("genre", "Science Function")))
+                and(gt("rating", 4.2), lte(field("rating"), 4.5), neq("genre", "Science Function")))
             .select("rating", "title")
             .sort(field("title").ascending())
             .execute();
@@ -771,10 +768,8 @@ public class PipelineTest {
             .collection(randomCol)
             .select(
                 cosineDistance(vector(sourceVector), targetVector).alias("cosineDistance"),
-                Expr.dotProduct(vector(sourceVector), targetVector)
-                    .alias("dotProductDistance"),
-                euclideanDistance(vector(sourceVector), targetVector)
-                    .alias("euclideanDistance"))
+                Expr.dotProduct(vector(sourceVector), targetVector).alias("dotProductDistance"),
+                euclideanDistance(vector(sourceVector), targetVector).alias("euclideanDistance"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())

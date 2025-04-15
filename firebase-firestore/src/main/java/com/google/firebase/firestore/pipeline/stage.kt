@@ -177,9 +177,10 @@ internal constructor(
   private val path: String,
   // We validate [firestore.databaseId] when adding to pipeline.
   internal val firestore: FirebaseFirestore?,
-  options: InternalOptions) :
-  Stage<CollectionSource>("collection", options) {
-  override fun self(options: InternalOptions): CollectionSource = CollectionSource(path, firestore, options)
+  options: InternalOptions
+) : Stage<CollectionSource>("collection", options) {
+  override fun self(options: InternalOptions): CollectionSource =
+    CollectionSource(path, firestore, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
       Value.newBuilder().setReferenceValue(if (path.startsWith("/")) path else "/" + path).build()

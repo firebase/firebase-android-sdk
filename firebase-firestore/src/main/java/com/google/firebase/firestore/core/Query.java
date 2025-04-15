@@ -567,9 +567,10 @@ public final class Query {
         p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
         p = p.limit((int) limit);
       } else {
-        p = p.sort(
-            orderings.get(0).reverse(),
-            orderings.stream().skip(1).map(Ordering::reverse).toArray(Ordering[]::new));
+        p =
+            p.sort(
+                orderings.get(0).reverse(),
+                orderings.stream().skip(1).map(Ordering::reverse).toArray(Ordering[]::new));
         p = p.limit((int) limit);
         p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
       }
