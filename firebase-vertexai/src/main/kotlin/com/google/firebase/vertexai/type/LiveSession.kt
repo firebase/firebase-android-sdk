@@ -214,7 +214,8 @@ internal constructor(
     FirebaseVertexAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          LiveToolResponseSetup(functionList.map { it.toInternalFunctionCall() }).toInternal()
+          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
+            .toInternal()
         )
       session.send(Frame.Text(jsonString))
     }
@@ -233,7 +234,7 @@ internal constructor(
     FirebaseVertexAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          LiveClientRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
+          BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
         )
       session.send(Frame.Text(jsonString))
     }
@@ -249,7 +250,9 @@ internal constructor(
   public suspend fun send(content: Content) {
     FirebaseVertexAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(LiveClientContentSetup(listOf(content.toInternal()), true).toInternal())
+        Json.encodeToString(
+          BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
+        )
       session.send(Frame.Text(jsonString))
     }
   }
@@ -380,7 +383,8 @@ internal constructor(
 
     return when {
       "toolCall" in jsonMessage -> {
-        val functionContent = JSON.decodeFromJsonElement<LiveServerToolCall.Internal>(jsonMessage)
+        val functionContent =
+          JSON.decodeFromJsonElement<BidiGenerateContentToolCallSetup.Internal>(jsonMessage)
         LiveContentResponse(
           null,
           LiveContentResponse.Status.NORMAL,
@@ -391,7 +395,8 @@ internal constructor(
       }
       "serverContent" in jsonMessage -> {
         val serverContent =
-          JSON.decodeFromJsonElement<LiveServerContentSetup.Internal>(jsonMessage).serverContent
+          JSON.decodeFromJsonElement<BidiGenerateContentServerContentSetup.Internal>(jsonMessage)
+            .serverContent
         val status =
           when {
             serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
@@ -412,20 +417,20 @@ internal constructor(
    *
    * Effectively, a message from the client to the model.
    */
-  internal class LiveClientContentSetup(
+  internal class BidiGenerateContentClientContentSetup(
     val turns: List<Content.Internal>,
     val turnComplete: Boolean
   ) {
     @Serializable
-    internal class Internal(val clientContent: LiveClientContent) {
+    internal class Internal(val clientContent: BidiGenerateContentClientContent) {
       @Serializable
-      internal data class LiveClientContent(
+      internal data class BidiGenerateContentClientContent(
         val turns: List<Content.Internal>,
         val turnComplete: Boolean
       )
     }
 
-    fun toInternal() = Internal(Internal.LiveClientContent(turns, turnComplete))
+    fun toInternal() = Internal(Internal.BidiGenerateContentClientContent(turns, turnComplete))
   }
 
   /**
@@ -433,57 +438,58 @@ internal constructor(
    *
    * Effectively, a message from the model to the client.
    */
-  internal class LiveServerContentSetup(
+  internal class BidiGenerateContentServerContentSetup(
     val modelTurn: Content.Internal?,
     val turnComplete: Boolean?,
     val interrupted: Boolean?
   ) {
     @Serializable
-    internal class Internal(val serverContent: LiveServerContent) {
+    internal class Internal(val serverContent: BidiGenerateContentServerContent) {
       @Serializable
-      internal data class LiveServerContent(
+      internal data class BidiGenerateContentServerContent(
         val modelTurn: Content.Internal?,
         val turnComplete: Boolean?,
         val interrupted: Boolean?
       )
     }
 
-    fun toInternal() = Internal(Internal.LiveServerContent(modelTurn, turnComplete, interrupted))
+    fun toInternal() =
+      Internal(Internal.BidiGenerateContentServerContent(modelTurn, turnComplete, interrupted))
   }
 
   /**
    * Request for the client to execute the provided function calls and return the responses with the
    * matched `id`s.
    */
-  internal data class LiveServerToolCall(
+  internal data class BidiGenerateContentToolCallSetup(
     val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
   ) {
     @Serializable
-    internal class Internal(val toolCall: LiveServerToolCall) {
+    internal class Internal(val toolCall: BidiGenerateContentToolCall) {
       @Serializable
-      internal data class LiveServerToolCall(
+      internal data class BidiGenerateContentToolCall(
         val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
       )
     }
 
     fun toInternal(): Internal {
-      return Internal(Internal.LiveServerToolCall(functionCalls))
+      return Internal(Internal.BidiGenerateContentToolCall(functionCalls))
     }
   }
 
-  /** Client generated responses to a [LiveServerToolCall]. */
-  internal class LiveToolResponseSetup(
+  /** Client generated responses to a [BidiGenerateContentToolCallSetup]. */
+  internal class BidiGenerateContentToolResponseSetup(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
   ) {
     @Serializable
-    internal data class Internal(val toolResponse: LiveToolResponse) {
+    internal data class Internal(val toolResponse: BidiGenerateContentToolResponse) {
       @Serializable
-      internal data class LiveToolResponse(
+      internal data class BidiGenerateContentToolResponse(
         val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
       )
     }
 
-    fun toInternal() = Internal(Internal.LiveToolResponse(functionResponses))
+    fun toInternal() = Internal(Internal.BidiGenerateContentToolResponse(functionResponses))
   }
 
   /**
@@ -491,13 +497,15 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class LiveClientRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
+  internal class BidiGenerateContentRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
     @Serializable
-    internal class Internal(val realtimeInput: LiveClientRealtimeInput) {
+    internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
       @Serializable
-      internal data class LiveClientRealtimeInput(val mediaChunks: List<MediaData.Internal>)
+      internal data class BidiGenerateContentRealtimeInput(
+        val mediaChunks: List<MediaData.Internal>
+      )
     }
-    fun toInternal() = Internal(Internal.LiveClientRealtimeInput(mediaChunks))
+    fun toInternal() = Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks))
   }
 
   private companion object {
