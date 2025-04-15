@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.common.util
 
+import java.io.ByteArrayOutputStream
 import java.lang.reflect.Field
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -66,17 +67,17 @@ internal fun Flow<ByteArray>.accumulateUntil(
   minSize: Int,
   emitLeftOvers: Boolean = false
 ): Flow<ByteArray> = flow {
-  val buffer = mutableListOf<Byte>()
+  val buffer = ByteArrayOutputStream()
 
   collect {
-    buffer.addAll(it.asSequence())
-    if (buffer.size >= minSize) {
+    buffer.write(it, 0, it.size)
+    if (buffer.size() >= minSize) {
       emit(buffer.toByteArray())
-      buffer.clear()
+      buffer.reset()
     }
   }
 
-  if (emitLeftOvers && buffer.isNotEmpty()) {
+  if (emitLeftOvers && buffer.size() > 0) {
     emit(buffer.toByteArray())
   }
 }
