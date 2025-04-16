@@ -31,10 +31,23 @@ internal class SessionsActivityLifecycleCallbacks
 @Inject
 constructor(private val sharedSessionRepository: SharedSessionRepository) :
   ActivityLifecycleCallbacks {
+  private var enabled = true
 
-  override fun onActivityResumed(activity: Activity) = sharedSessionRepository.appForeground()
+  fun onAppDelete() {
+    enabled = false
+  }
 
-  override fun onActivityPaused(activity: Activity) = sharedSessionRepository.appBackground()
+  override fun onActivityResumed(activity: Activity) {
+    if (enabled) {
+      sharedSessionRepository.appForeground()
+    }
+  }
+
+  override fun onActivityPaused(activity: Activity) {
+    if (enabled) {
+      sharedSessionRepository.appBackground()
+    }
+  }
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
