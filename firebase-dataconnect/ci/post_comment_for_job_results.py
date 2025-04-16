@@ -49,15 +49,14 @@ def main() -> None:
 
 
 def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
-  pr_str = data.triggering_pr.strip()
   pr: int | None
-  if len(pr) == 0:
+  if len(data.triggering_pr) == 0:
     pr = None
   else:
     try:
-      pr = int(pr)
+      pr = int(data.triggering_pr)
     except ValueError:
-      logging.warning("WARNING: unable to parse PR number as an int: %s", pr)
+      logging.warning("WARNING: unable to parse PR number as an int: %s", data.triggering_pr)
       pr = None
 
   yield f"Posting from Pull Request {pr}: {data.github_repository_html_url}/pull/{pr}"

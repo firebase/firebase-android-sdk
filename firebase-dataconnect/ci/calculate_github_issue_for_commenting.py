@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import logging
 import pathlib
 import re
@@ -29,7 +30,7 @@ def main() -> None:
   args = parse_args()
   logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-  github_issue = calculate_github_issue(
+  calculated_result = calculate_github_issue(
     github_event_name=args.github_event_name,
     github_issue_for_scheduled_run=args.github_issue_for_scheduled_run,
     github_ref=args.github_ref,
@@ -37,9 +38,22 @@ def main() -> None:
     pr_body_github_issue_key=args.pr_body_github_issue_key,
   )
 
-  file_text = "" if github_issue is None else str(github_issue)
-  logging.info("Writing '%s' to %s", file_text, args.issue_output_file)
-  args.issue_output_file.write_text(file_text, encoding="utf8", errors="replace")
+  github_issue = calculated_result.issue
+  github_pr = calculated_result.pr
+
+  issue_file_text = "" if github_issue is None else str(github_issue)
+  logging.info("Writing '%s' to %s", issue_file_text, args.issue_output_file)
+  args.issue_output_file.write_text(issue_file_text, encoding="utf8", errors="replace")
+
+  pr_file_text = "" if github_pr is None else str(github_pr)
+  logging.info("Writing '%s' to %s", pr_file_text, args.pr_output_file)
+  args.pr_output_file.write_text(pr_file_text, encoding="utf8", errors="replace")
+
+
+@dataclasses.dataclass(frozen=True)
+class CalculatedGitHubIssue:
+  issue: int | None
+  pr: int | None
 
 
 def calculate_github_issue(
@@ -48,21 +62,24 @@ def calculate_github_issue(
   github_ref: str,
   github_repository: str,
   pr_body_github_issue_key: str,
-) -> int | None:
+) -> CalculatedGitHubIssue:
   if github_event_name == "schedule":
     logging.info(
       "GitHub Event name is: %s; using GitHub Issue: %s",
       github_event_name,
       github_issue_for_scheduled_run,
     )
-    return github_issue_for_scheduled_run
+    return CalculatedGitHubIssue(
+      issue=github_issue_for_scheduled_run,
+      pr=None,  # scheduled runs are, by definition, not associated with a PR.
+    )
 
   logging.info("Extracting PR number from string: %s", github_ref)
-  pr_number: int | None = pr_number_from_github_ref(github_ref)
-
+  pr_number = pr_number_from_github_ref(github_ref)
   if pr_number is None:
     logging.info("No PR number extracted")
-    return None
+    return CalculatedGitHubIssue(None, None)
+  typing.assert_type(pr_number, int)
 
   logging.info("PR number extracted: %s", pr_number)
   logging.info("Loading body text of PR: %s", pr_number)
@@ -79,10 +96,11 @@ def calculate_github_issue(
 
   if github_issue is None:
     logging.info("No GitHub Issue key found in PR body")
-    return None
+    return CalculatedGitHubIssue(issue=None, pr=pr_number)
+  typing.assert_type(github_issue, int)
 
   logging.info("Found GitHub Issue key in PR body: %s", github_issue)
-  return github_issue
+  return CalculatedGitHubIssue(issue=github_issue, pr=pr_number)
 
 
 def pr_number_from_github_ref(github_ref: str) -> int | None:
