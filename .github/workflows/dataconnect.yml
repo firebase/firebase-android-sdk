@@ -361,7 +361,8 @@ jobs:
           args=(
             python
             calculate_github_issue_for_commenting.py
-            --output-file=github_issue_number.txt
+            --issue-output-file=github_issue_number.txt
+            --pr-output-file=github_pr_number.txt
             --github-repository='${{ github.repository }}'
             --github-ref='${{ github.ref }}'
             --github-event-name='${{ github.event_name }}'
@@ -374,6 +375,8 @@ jobs:
           set -xv
           issue="$(cat github_issue_number.txt)"
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
+          pr="$(cat github_pr_number.txt)"
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
       - name: Post Comment on GitHub Issue
         if: steps.issue-id.outputs.issue != ''
@@ -385,12 +388,14 @@ jobs:
             python
             post_comment_for_job_results.py
             --github-issue='${{ steps.issue-id.outputs.issue }}'
+            --github-workflow='${{ github.workflow }}'
             --github-repository='${{ github.repository }}'
             --github-sha='${{ github.sha }}'
             --github-repository-html-url='${{ github.event.repository.html_url }}'
             --github-run-id='${{ github.run_id }}'
             --github-run-number='${{ github.run_number }}'
             --github-run-attempt='${{ github.run_attempt }}'
+            --triggering-pr='${{ steps.issue-id.outputs.pr }}'
             'integration-test:${{ needs.integration-test.result }}'
             'actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}'
             'python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}'
