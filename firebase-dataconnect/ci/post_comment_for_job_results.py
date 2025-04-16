@@ -59,7 +59,7 @@ def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
       logging.warning("WARNING: unable to parse PR number as an int: %s", data.triggering_pr)
       pr = None
 
-  yield f"Posting from Pull Request {pr}: {data.github_repository_html_url}/pull/{pr}"
+  yield f"Posting from Pull Request {data.github_repository_html_url}/pull/{pr}"
 
   yield f"Result of workflow '{data.github_workflow}' at {data.github_sha}:"
 
