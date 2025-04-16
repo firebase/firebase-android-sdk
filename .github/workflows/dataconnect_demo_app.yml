@@ -8,6 +8,7 @@ on:
       javaVersion:
       gradleInfoLog:
         type: boolean
+      pythonVersion:
   pull_request:
     paths:
       - firebase-dataconnect/demo/**
@@ -21,6 +22,7 @@ env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
+  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
 
 defaults:
   run:
@@ -167,3 +169,69 @@ jobs:
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           spotlessCheck
+
+  send-notifications:
+    needs:
+      - 'test'
+      - 'spotlessCheck'
+    if: always()
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+
+      - run: pip install -r requirements.txt
+        working-directory: firebase-dataconnect/ci
+
+      - id: issue-id
+        name: Determine GitHub Issue For Commenting
+        working-directory: firebase-dataconnect/ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=(
+            python
+            calculate_github_issue_for_commenting.py
+            --output-file=github_issue_number.txt
+            --github-repository='${{ github.repository }}'
+            --github-ref='${{ github.ref }}'
+            --github-event-name='${{ github.event_name }}'
+            --pr-body-github-issue-key=trksmnkncd_notification_issue
+            --github-issue-for-scheduled-run=6891 # https://github.com/firebase/firebase-android-sdk/issues/6891
+          )
+          echo "${args[*]}"
+          "${args[@]}"
+
+          set -xv
+          issue="$(cat github_issue_number.txt)"
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+      - name: Post Comment on GitHub Issue
+        if: steps.issue-id.outputs.issue != ''
+        working-directory: firebase-dataconnect/ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=(
+            python
+            post_comment_for_job_results.py
+            --github-issue='${{ steps.issue-id.outputs.issue }}'
+            --github-repository='${{ github.repository }}'
+            --github-sha='${{ github.sha }}'
+            --github-repository-html-url='${{ github.event.repository.html_url }}'
+            --github-run-id='${{ github.run_id }}'
+            --github-run-number='${{ github.run_number }}'
+            --github-run-attempt='${{ github.run_attempt }}'
+            'test:${{ needs.test.result }}'
+            'spotlessCheck:${{ needs.spotlessCheck.result }}'
+          )
+          echo "${args[*]}"
+          exec "${args[@]}"
