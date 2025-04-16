@@ -16,220 +16,164 @@
 
 package com.google.firebase.vertexai.type
 
+import android.Manifest.permission.RECORD_AUDIO
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
-import com.google.firebase.annotations.concurrent.Background
-import com.google.firebase.vertexai.LiveGenerativeModel
+import androidx.annotation.RequiresPermission
+import com.google.firebase.annotations.concurrent.Blocking
+import com.google.firebase.vertexai.common.JSON
+import com.google.firebase.vertexai.common.util.CancelledCoroutineScope
+import com.google.firebase.vertexai.common.util.accumulateUntil
+import com.google.firebase.vertexai.common.util.childJob
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
-import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
 @OptIn(ExperimentalSerializationApi::class)
 public class LiveSession
 internal constructor(
-  private val session: ClientWebSocketSession?,
-  @Background private val backgroundDispatcher: CoroutineContext,
+  private val session: ClientWebSocketSession,
+  @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null
 ) {
-
-  private val audioQueue = ConcurrentLinkedQueue<ByteArray>()
-  private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
-  private var startedReceiving = false
-  private var receiveChannel: Channel<Frame> = Channel()
-  private var isRecording: Boolean = false
-
-  private companion object {
-    val TAG = LiveSession::class.java.simpleName
-    val MIN_BUFFER_SIZE =
-      AudioTrack.getMinBufferSize(
-        24000,
-        AudioFormat.CHANNEL_OUT_MONO,
-        AudioFormat.ENCODING_PCM_16BIT
-      )
-  }
-
-  internal class ClientContentSetup(val turns: List<Content.Internal>, val turnComplete: Boolean) {
-    @Serializable
-    internal class Internal(@SerialName("client_content") val clientContent: ClientContent) {
-      @Serializable
-      internal data class ClientContent(
-        val turns: List<Content.Internal>,
-        @SerialName("turn_complete") val turnComplete: Boolean
-      )
-    }
-
-    fun toInternal() = Internal(Internal.ClientContent(turns, turnComplete))
-  }
-
-  @OptIn(ExperimentalSerializationApi::class)
-  internal class ToolResponseSetup(
-    val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
-  ) {
-
-    @Serializable
-    internal data class Internal(val toolResponse: ToolResponse) {
-      @Serializable
-      internal data class ToolResponse(
-        val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
-      )
-    }
-
-    fun toInternal() = Internal(Internal.ToolResponse(functionResponses))
-  }
-
-  internal class ServerContentSetup(val modelTurn: Content.Internal) {
-    @Serializable
-    internal class Internal(@SerialName("serverContent") val serverContent: ServerContent) {
-      @Serializable
-      internal data class ServerContent(@SerialName("modelTurn") val modelTurn: Content.Internal)
-    }
-
-    fun toInternal() = Internal(Internal.ServerContent(modelTurn))
-  }
-
-  internal class MediaStreamingSetup(val mediaChunks: List<MediaData.Internal>) {
-    @Serializable
-    internal class Internal(val realtimeInput: MediaChunks) {
-      @Serializable internal data class MediaChunks(val mediaChunks: List<MediaData.Internal>)
-    }
-    fun toInternal() = Internal(Internal.MediaChunks(mediaChunks))
-  }
-
-  internal data class ToolCallSetup(
-    val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
-  ) {
-
-    @Serializable
-    internal class Internal(val toolCall: ToolCall) {
-
-      @Serializable
-      internal data class ToolCall(val functionCalls: List<FunctionCallPart.Internal.FunctionCall>)
-    }
-
-    fun toInternal(): Internal {
-      return Internal(Internal.ToolCall(functionCalls))
-    }
-  }
-
-  private fun fillRecordedAudioQueue() {
-    CoroutineScope(backgroundDispatcher).launch {
-      audioHelper!!.startRecording().collect {
-        if (!isRecording) {
-          cancel()
-        }
-        audioQueue.add(it)
-      }
-    }
-  }
-
-  private suspend fun sendAudioDataToServer() {
-
-    val audioBufferStream = ByteArrayOutputStream()
-    while (isRecording) {
-      val receivedAudio = audioQueue.poll() ?: continue
-      audioBufferStream.write(receivedAudio)
-      if (audioBufferStream.size() >= MIN_BUFFER_SIZE) {
-        sendMediaStream(listOf(MediaData(audioBufferStream.toByteArray(), "audio/pcm")))
-        audioBufferStream.reset()
-      }
-    }
-  }
-
-  private fun fillServerResponseAudioQueue(
-    functionCallsHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
-  ) {
-    CoroutineScope(backgroundDispatcher).launch {
-      receive().collect {
-        if (!isRecording) {
-          cancel()
-        }
-        when (it.status) {
-          LiveContentResponse.Status.INTERRUPTED ->
-            while (!playBackQueue.isEmpty()) playBackQueue.poll()
-          LiveContentResponse.Status.NORMAL ->
-            if (!it.functionCalls.isNullOrEmpty() && functionCallsHandler != null) {
-              sendFunctionResponse(it.functionCalls.map(functionCallsHandler).toList())
-            } else {
-              val audioData = it.data?.parts?.get(0)?.asInlineDataPartOrNull()?.inlineData
-              if (audioData != null) {
-                playBackQueue.add(audioData)
-              }
-            }
-        }
-      }
-    }
-  }
-
-  private fun playServerResponseAudio() {
-    CoroutineScope(backgroundDispatcher).launch {
-      while (isRecording) {
-        val data = playBackQueue.poll()
-        if (data == null) {
-          audioHelper?.start()
-          continue
-        }
-        audioHelper?.stopRecording()
-        audioHelper?.playAudio(data)
-      }
-    }
-  }
+  /**
+   * Coroutine scope that we batch data on for [startAudioConversation].
+   *
+   * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
+   */
+  private var scope = CancelledCoroutineScope
 
   /**
-   * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * [stopAudioConversation].
+   * Playback audio data sent from the model.
    *
-   * @param functionCallHandler A callback function that is invoked whenever the server receives a
-   * function call.
+   * Effectively, this is what the model is saying.
    */
+  private val playBackQueue = ConcurrentLinkedQueue<ByteArray>()
+
+  /**
+   * Toggled whenever [receive] and [stopReceiving] are called.
+   *
+   * Used to ensure only one flow is consuming the playback at once.
+   */
+  private val startedReceiving = AtomicBoolean(false)
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   */
+  @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    if (isRecording) {
-      Log.w(TAG, "startAudioConversation called after the recording has already started.")
-      return
+    FirebaseVertexAIException.catchAsync {
+      if (scope.isActive) {
+        Log.w(
+          TAG,
+          "startAudioConversation called after the recording has already started. " +
+            "Call stopAudioConversation to close the previous connection."
+        )
+        return@catchAsync
+      }
+
+      scope = CoroutineScope(blockingDispatcher + childJob())
+      audioHelper = AudioHelper.build()
+
+      recordUserAudio()
+      processModelResponses(functionCallHandler)
+      listenForModelPlayback()
     }
-    isRecording = true
-    audioHelper = AudioHelper()
-    audioHelper!!.setupAudioTrack()
-    fillRecordedAudioQueue()
-    CoroutineScope(backgroundDispatcher).launch { sendAudioDataToServer() }
-    fillServerResponseAudioQueue(functionCallHandler)
-    playServerResponseAudio()
   }
 
   /**
-   * Stops the audio conversation with the Gemini Server. This needs to be called only after calling
-   * [startAudioConversation]
+   * Stops the audio conversation with the model.
+   *
+   * This only needs to be called after a previous call to [startAudioConversation].
+   *
+   * If there is no audio conversation currently active, this function does nothing.
    */
   public fun stopAudioConversation() {
-    stopReceiving()
-    isRecording = false
-    audioHelper?.let {
-      while (playBackQueue.isNotEmpty()) playBackQueue.poll()
-      while (audioQueue.isNotEmpty()) audioQueue.poll()
-      it.release()
+    FirebaseVertexAIException.catch {
+      if (!startedReceiving.getAndSet(false)) return@catch
+
+      scope.cancel()
+      playBackQueue.clear()
+
+      audioHelper?.release()
+      audioHelper = null
     }
-    audioHelper = null
+  }
+
+  /**
+   * Receives responses from the model for both streaming and standard requests.
+   *
+   * Call [close] to stop receiving responses from the model.
+   *
+   * @return A [Flow] which will emit [LiveContentResponse] from the model.
+   *
+   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   * @see stopReceiving
+   */
+  public fun receive(): Flow<LiveContentResponse> {
+    return FirebaseVertexAIException.catch {
+      if (startedReceiving.getAndSet(true)) {
+        throw SessionAlreadyReceivingException()
+      }
+
+      // TODO(b/410059569): Remove when fixed
+      flow {
+          while (true) {
+            val response = session.incoming.tryReceive()
+            if (response.isClosed || !startedReceiving.get()) break
+
+            val frame = response.getOrNull()
+            frame?.let { frameToLiveContentResponse(it) }?.let { emit(it) }
+
+            yield()
+          }
+        }
+        .onCompletion { stopAudioConversation() }
+        .catch { throw FirebaseVertexAIException.from(it) }
+
+      // TODO(b/410059569): Add back when fixed
+      //    return session.incoming.receiveAsFlow().transform { frame ->
+      //      val response = frameToLiveContentResponse(frame)
+      //      response?.let { emit(it) }
+      //    }.onCompletion {
+      //      stopAudioConversation()
+      //    }.catch { throw FirebaseVertexAIException.from(it) }
+    }
   }
 
   /**
@@ -241,134 +185,336 @@ internal constructor(
    *
    * To resume receiving data, you must either handle it directly using [receive], or indirectly by
    * using [startAudioConversation].
+   *
+   * @see close
    */
+  // TODO(b/410059569): Remove when fixed
   public fun stopReceiving() {
-    if (!startedReceiving) {
-      return
-    }
-    receiveChannel.cancel()
-    receiveChannel = Channel()
-    startedReceiving = false
-  }
+    FirebaseVertexAIException.catch {
+      if (!startedReceiving.getAndSet(false)) return@catch
 
-  /**
-   * Receives responses from the server for both streaming and standard requests. Call
-   * [stopReceiving] to stop receiving responses from the server.
-   *
-   * @return A [Flow] which will emit [LiveContentResponse] as and when it receives it
-   *
-   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
-   */
-  public fun receive(): Flow<LiveContentResponse> {
-    if (startedReceiving) {
-      throw SessionAlreadyReceivingException()
-    }
+      scope.cancel()
+      playBackQueue.clear()
 
-    val flowReceive = session!!.incoming.receiveAsFlow()
-    CoroutineScope(backgroundDispatcher).launch { flowReceive.collect { receiveChannel.send(it) } }
-    return flow {
-      startedReceiving = true
-      while (true) {
-        val message = receiveChannel.receive()
-        val receivedBytes = (message as Frame.Binary).readBytes()
-        val receivedJson = receivedBytes.toString(Charsets.UTF_8)
-        if (receivedJson.contains("interrupted")) {
-          emit(LiveContentResponse(null, LiveContentResponse.Status.INTERRUPTED, null))
-          continue
-        }
-        if (receivedJson.contains("turnComplete")) {
-          emit(LiveContentResponse(null, LiveContentResponse.Status.TURN_COMPLETE, null))
-          continue
-        }
-        try {
-          val serverContent = Json.decodeFromString<ServerContentSetup.Internal>(receivedJson)
-          val data = serverContent.serverContent.modelTurn.toPublic()
-          if (data.parts[0].asInlineDataPartOrNull()?.mimeType?.equals("audio/pcm") == true) {
-            emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-          }
-          if (data.parts[0] is TextPart) {
-            emit(LiveContentResponse(data, LiveContentResponse.Status.NORMAL, null))
-          }
-          continue
-        } catch (e: Exception) {
-          Log.i(TAG, "Failed to decode server content: ${e.message}")
-        }
-        try {
-          val functionContent = Json.decodeFromString<ToolCallSetup.Internal>(receivedJson)
-          emit(
-            LiveContentResponse(
-              null,
-              LiveContentResponse.Status.NORMAL,
-              functionContent.toolCall.functionCalls.map {
-                FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
-              }
-            )
-          )
-          continue
-        } catch (e: Exception) {
-          Log.w(TAG, "Failed to decode function calling: ${e.message}")
-        }
-      }
+      audioHelper?.release()
+      audioHelper = null
     }
   }
 
   /**
-   * Sends the function calling responses to the server.
+   * Sends function calling responses to the model.
+   *
+   * **NOTE:** If you're using [startAudioConversation], the method will handle sending function
+   * responses to the model for you. You do _not_ need to call this method in that case.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    val jsonString =
-      Json.encodeToString(
-        ToolResponseSetup(functionList.map { it.toInternalFunctionCall() }).toInternal()
-      )
-    session?.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(
+          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
+            .toInternal()
+        )
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
-   * Streams client data to the server. Calling this after [startAudioConversation] will play the
-   * response audio immediately.
+   * Streams client data to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    val jsonString =
-      Json.encodeToString(MediaStreamingSetup(mediaChunks.map { it.toInternal() }).toInternal())
-    session?.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(
+          BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
+        )
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
-   * Sends data to the server. Calling this after [startAudioConversation] will play the response
-   * audio immediately.
+   * Sends [data][Content] to the model.
    *
-   * @param content Client [Content] to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
-    val jsonString =
-      Json.encodeToString(ClientContentSetup(listOf(content.toInternal()), true).toInternal())
-    session?.send(Frame.Text(jsonString))
+    FirebaseVertexAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(
+          BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
+        )
+      session.send(Frame.Text(jsonString))
+    }
   }
 
   /**
-   * Sends text to the server. Calling this after [startAudioConversation] will play the response
-   * audio immediately.
+   * Sends text to the model.
    *
-   * @param text Text to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param text Text to be sent to the model.
    */
   public suspend fun send(text: String) {
-    send(Content.Builder().text(text).build())
+    FirebaseVertexAIException.catchAsync { send(Content.Builder().text(text).build()) }
   }
 
   /**
    * Closes the client session.
    *
-   * After this is called, the session object becomes unusable. To interact with the server again,
-   * you must create a new session using [LiveGenerativeModel].
+   * Once a [LiveSession] is closed, it can not be reopened; you'll need to start a new
+   * [LiveSession].
+   *
+   * @see stopReceiving
    */
   public suspend fun close() {
-    session?.close()
+    FirebaseVertexAIException.catchAsync {
+      session.close()
+      stopAudioConversation()
+    }
+  }
+
+  /** Listen to the user's microphone and send the data to the model. */
+  private fun recordUserAudio() {
+    // Buffer the recording so we can keep recording while data is sent to the server
+    audioHelper
+      ?.listenToRecording()
+      ?.buffer(UNLIMITED)
+      ?.accumulateUntil(MIN_BUFFER_SIZE)
+      ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
+      ?.catch { throw FirebaseVertexAIException.from(it) }
+      ?.launchIn(scope)
+  }
+
+  /**
+   * Processes responses from the model during an audio conversation.
+   *
+   * Audio messages are added to [playBackQueue].
+   *
+   * Launched asynchronously on [scope].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the server receives a
+   * function call.
+   */
+  private fun processModelResponses(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
+  ) {
+    receive()
+      .transform {
+        if (it.status == LiveContentResponse.Status.INTERRUPTED) {
+          playBackQueue.clear()
+        } else {
+          emit(it)
+        }
+      }
+      .onEach {
+        if (!it.functionCalls.isNullOrEmpty()) {
+          if (functionCallHandler != null) {
+            // It's fine to suspend here since you can't have a function call running concurrently
+            // with an audio response
+            sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
+          } else {
+            Log.w(
+              TAG,
+              "Function calls were present in the response, but a functionCallHandler was not provided."
+            )
+          }
+        }
+
+        val audioParts = it.data?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
+        for (part in audioParts) {
+          playBackQueue.add(part.inlineData)
+        }
+      }
+      .launchIn(scope)
+  }
+
+  /**
+   * Listens for playback data from the model and plays the audio.
+   *
+   * Polls [playBackQueue] for data, and calls [AudioHelper.playAudio] when data is received.
+   *
+   * Launched asynchronously on [scope].
+   */
+  private fun listenForModelPlayback() {
+    scope.launch {
+      while (isActive) {
+        val playbackData = playBackQueue.poll()
+        if (playbackData == null) {
+          // The model playback queue is complete, so we can continue recording
+          // TODO(b/408223520): Conditionally resume when param is added
+          audioHelper?.resumeRecording()
+          yield()
+        } else {
+          /**
+           * We pause the recording while the model is speaking to avoid interrupting it because of
+           * no echo cancellation
+           */
+          // TODO(b/408223520): Conditionally pause when param is added
+          audioHelper?.pauseRecording()
+
+          audioHelper?.playAudio(playbackData)
+        }
+      }
+    }
+  }
+
+  /**
+   * Converts a [Frame] from the model to a valid [LiveContentResponse], if possible.
+   *
+   * @return The corresponding [LiveContentResponse] or null if it couldn't be converted.
+   */
+  private fun frameToLiveContentResponse(frame: Frame): LiveContentResponse? {
+    val jsonMessage = Json.parseToJsonElement(frame.readBytes().toString(Charsets.UTF_8))
+
+    if (jsonMessage !is JsonObject) {
+      Log.w(TAG, "Server response was not a JsonObject: $jsonMessage")
+      return null
+    }
+
+    return when {
+      "toolCall" in jsonMessage -> {
+        val functionContent =
+          JSON.decodeFromJsonElement<BidiGenerateContentToolCallSetup.Internal>(jsonMessage)
+        LiveContentResponse(
+          null,
+          LiveContentResponse.Status.NORMAL,
+          functionContent.toolCall.functionCalls.map {
+            FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
+          }
+        )
+      }
+      "serverContent" in jsonMessage -> {
+        val serverContent =
+          JSON.decodeFromJsonElement<BidiGenerateContentServerContentSetup.Internal>(jsonMessage)
+            .serverContent
+        val status =
+          when {
+            serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
+            serverContent.interrupted == true -> LiveContentResponse.Status.INTERRUPTED
+            else -> LiveContentResponse.Status.NORMAL
+          }
+        LiveContentResponse(serverContent.modelTurn?.toPublic(), status, null)
+      }
+      else -> {
+        Log.w(TAG, "Failed to decode the server response: $jsonMessage")
+        null
+      }
+    }
+  }
+
+  /**
+   * Incremental update of the current conversation delivered from the client.
+   *
+   * Effectively, a message from the client to the model.
+   */
+  internal class BidiGenerateContentClientContentSetup(
+    val turns: List<Content.Internal>,
+    val turnComplete: Boolean
+  ) {
+    @Serializable
+    internal class Internal(val clientContent: BidiGenerateContentClientContent) {
+      @Serializable
+      internal data class BidiGenerateContentClientContent(
+        val turns: List<Content.Internal>,
+        val turnComplete: Boolean
+      )
+    }
+
+    fun toInternal() = Internal(Internal.BidiGenerateContentClientContent(turns, turnComplete))
+  }
+
+  /**
+   * Incremental server update generated by the model in response to client messages.
+   *
+   * Effectively, a message from the model to the client.
+   */
+  internal class BidiGenerateContentServerContentSetup(
+    val modelTurn: Content.Internal?,
+    val turnComplete: Boolean?,
+    val interrupted: Boolean?
+  ) {
+    @Serializable
+    internal class Internal(val serverContent: BidiGenerateContentServerContent) {
+      @Serializable
+      internal data class BidiGenerateContentServerContent(
+        val modelTurn: Content.Internal?,
+        val turnComplete: Boolean?,
+        val interrupted: Boolean?
+      )
+    }
+
+    fun toInternal() =
+      Internal(Internal.BidiGenerateContentServerContent(modelTurn, turnComplete, interrupted))
+  }
+
+  /**
+   * Request for the client to execute the provided function calls and return the responses with the
+   * matched `id`s.
+   */
+  internal data class BidiGenerateContentToolCallSetup(
+    val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
+  ) {
+    @Serializable
+    internal class Internal(val toolCall: BidiGenerateContentToolCall) {
+      @Serializable
+      internal data class BidiGenerateContentToolCall(
+        val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
+      )
+    }
+
+    fun toInternal(): Internal {
+      return Internal(Internal.BidiGenerateContentToolCall(functionCalls))
+    }
+  }
+
+  /** Client generated responses to a [BidiGenerateContentToolCallSetup]. */
+  internal class BidiGenerateContentToolResponseSetup(
+    val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
+  ) {
+    @Serializable
+    internal data class Internal(val toolResponse: BidiGenerateContentToolResponse) {
+      @Serializable
+      internal data class BidiGenerateContentToolResponse(
+        val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
+      )
+    }
+
+    fun toInternal() = Internal(Internal.BidiGenerateContentToolResponse(functionResponses))
+  }
+
+  /**
+   * User input that is sent to the model in real time.
+   *
+   * End of turn is derived from user activity (eg; end of speech).
+   */
+  internal class BidiGenerateContentRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
+    @Serializable
+    internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
+      @Serializable
+      internal data class BidiGenerateContentRealtimeInput(
+        val mediaChunks: List<MediaData.Internal>
+      )
+    }
+    fun toInternal() = Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks))
+  }
+
+  private companion object {
+    val TAG = LiveSession::class.java.simpleName
+    val MIN_BUFFER_SIZE =
+      AudioTrack.getMinBufferSize(
+        24000,
+        AudioFormat.CHANNEL_OUT_MONO,
+        AudioFormat.ENCODING_PCM_16BIT
+      )
   }
 }

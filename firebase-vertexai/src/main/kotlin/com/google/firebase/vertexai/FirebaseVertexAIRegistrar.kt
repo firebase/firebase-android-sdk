@@ -18,7 +18,7 @@ package com.google.firebase.vertexai
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.components.Component
@@ -41,13 +41,13 @@ internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
       Component.builder(FirebaseVertexAIMultiResourceComponent::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(backgroundDispatcher))
+        .add(Dependency.required(blockingDispatcher))
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
         .factory { container ->
           FirebaseVertexAIMultiResourceComponent(
             container[firebaseApp],
-            container.get(backgroundDispatcher),
+            container.get(blockingDispatcher),
             container.getProvider(appCheckInterop),
             container.getProvider(internalAuthProvider)
           )
@@ -62,7 +62,7 @@ internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)
     private val internalAuthProvider = unqualified(InternalAuthProvider::class.java)
-    private val backgroundDispatcher =
-      Qualified.qualified(Background::class.java, CoroutineDispatcher::class.java)
+    private val blockingDispatcher =
+      Qualified.qualified(Blocking::class.java, CoroutineDispatcher::class.java)
   }
 }
