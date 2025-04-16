@@ -1,5 +1,5 @@
 # Unreleased
-
+* [unchanged] Updated to keep SDK versions aligned.
 
 # 2.1.0
 * [changed] Add warning for known issue b/328687152

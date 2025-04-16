@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal improvements.
 
 # 16.0.0
 * [changed] DataConnectOperationException added, enabling support for partial

@@ -1,0 +1,222 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "5aff679ee3e0fa22c1ff7876f08eb9088acd41c3",
+                "prId": "6875",
+                "author": "Rodrigo Lazo",
+                "message": "[RC] Remove package declaration from testapp manifest (#6875)\n\nThis is a leftover from a previous migration that moved the\nnamespace/package declarations from the `AndroidManifest.xml` files to\nthe gradle build files.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5aff679ee3e0fa22c1ff7876f08eb9088acd41c3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6875"
+            },
+            {
+                "commitId": "5081e7c978c4f9ff7d358f4b8713ef15a57c1058",
+                "prId": "6816",
+                "author": "Tushar Khandelwal",
+                "message": "Disconnect from Remote Config real-time server when app is backgrounded. (#6816)\n\nThis PR focuses on enhancing the reliability and efficiency of the\nRemote Config real-time stream, particularly concerning background app\nstates. We've refined the ``ConfigRealtimeHttpClient`` to retrieve and\nmanage the underlying input and error streams more effectively, ensuring\nproper closure even in error scenarios. Additionally, the\n``closeRealtimeHttpStream`` method now explicitly closes these streams\nusing the acquired references.\n\nA key improvement is the robust handling of the app's background state.\nThe ``setRealtimeBackgroundState`` method is now synchronized to\nguarantee thread-safe updates and will immediately close the real-time\nHTTP connection when the app transitions to the background. This\nbackground state is also reflected in ``ConfigAutoFetch``, allowing for\nconditional exception logging during real-time stream listening,\nensuring logs are only generated when the app is actively in the\nforeground. Furthermore, ``ConfigAutoFetch`` now maintains a dedicated\n``InputStream`` reference to ensure proper stream closure, and a\nseparate reference is kept in ``beginRealtimeHttpStream`` to handle\npotential early closure scenarios before ``ConfigAutoFetch`` is reached.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5081e7c978c4f9ff7d358f4b8713ef15a57c1058",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6816"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "19c8c7f822c130698cf2db8e9ee3b9f11fa91b9e",
+                "prId": "6822",
+                "author": "Angel Leon",
+                "message": "fix: avoid android.os.strictmode.UnbufferedIoViolation (resubmission of PR #6565) (#6822)\n\n- Wrap InputStream with BufferedInputStream to ensure buffered I/O and\nprevent UnbufferedIoViolation in Android 14 (SDK 34).\n- Use try-with-resources to automatically close streams, improving\nresource management.\n- Retain existing functionality for converting InputStream to a UTF-8\nstring.\n\nThis change ensures compliance with Android 14's stricter I/O policies.\n\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/19c8c7f822c130698cf2db8e9ee3b9f11fa91b9e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6822"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "cf2b7a86ff988ce9d37d7390520547f54a36381c",
+                "prId": "6814",
+                "author": "Matthew Robertson",
+                "message": "Upgrade to Android ndk r27c and update Crashpad to latest commit (#6814)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cf2b7a86ff988ce9d37d7390520547f54a36381c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6814"
+            },
+            {
+                "commitId": "5ff9d9576741c6a8fbcdf0507d53da8b08a4f146",
+                "prId": "6797",
+                "author": "Matthew Robertson",
+                "message": "Updated internal Crashpad version (#6797)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5ff9d9576741c6a8fbcdf0507d53da8b08a4f146",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6797"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "278e437a7dd02c9046186eda707a020e63e214d4",
+                "prId": "6809",
+                "author": "Tejas Deshpande",
+                "message": "Changes in the Session Test App to verify behaviour with Fireperf #no-changelog (#6809)\n\nThis change adds a way to repeatedly log identical performance traces in\ndifferent processes.\n- Currently traces on different activities are logged on different\nFireperf Sessions.\n- Adds additional logging to help identify different Firebase instances\nin different processes.\n- Adds Fireperf custom attributes to identify processes.\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/278e437a7dd02c9046186eda707a020e63e214d4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6809"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "210dc0279ee974fac677f2aa7cc50d26586aea7d",
+                "prId": "6854",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: AuthIntegrationTest.kt: add missing import for FirebaseDataConnectInternal (#6854)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/210dc0279ee974fac677f2aa7cc50d26586aea7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6854"
+            },
+            {
+                "commitId": "dbf5d014ab08cf3d86b6e31d2650afad451fdb3c",
+                "prId": "6836",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: auth code internal cleanup (#6836)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dbf5d014ab08cf3d86b6e31d2650afad451fdb3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6836"
+            },
+            {
+                "commitId": "f826b40e84d1d58e895fc882a5131de9a9859042",
+                "prId": "6835",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix two flaky tests due to their failure to wait for FirebaseAuth to be initialized (#6835)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f826b40e84d1d58e895fc882a5131de9a9859042",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6835"
+            },
+            {
+                "commitId": "8af38c9599656d022b701b2304537a47a7bf6f35",
+                "prId": "6839",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix flaky test that ensures deserialize() throws IllegalArgumentException on invalid input (#6839)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8af38c9599656d022b701b2304537a47a7bf6f35",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6839"
+            },
+            {
+                "commitId": "75cdf963195c873151a6fe0ece181543c01cea5f",
+                "prId": "6827",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: QuerySubscriptionIntegrationTest.kt: fix flaky test using backgroundScope (#6827)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/75cdf963195c873151a6fe0ece181543c01cea5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6827"
+            },
+            {
+                "commitId": "2cdac31dc2d9510c158596ebec4ce7ddba327eb5",
+                "prId": "6825",
+                "author": "Rodrigo Lazo",
+                "message": "Update changelog file (#6825)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2cdac31dc2d9510c158596ebec4ce7ddba327eb5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6825"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "24fba9b55f2ba7c4a821bd2fa835cd1e0a97d8d4",
+                "prId": "6868",
+                "author": "Ehsan",
+                "message": "fix: Improve efficiency of online/offline composite index tests. (#6868)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/24fba9b55f2ba7c4a821bd2fa835cd1e0a97d8d4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6868"
+            },
+            {
+                "commitId": "edcea54ea570af828f31cf5f54e952ad6c32ff61",
+                "prId": "6859",
+                "author": "Mila",
+                "message": "fix: remove null value inclusion from `whereNotEqualTo` and `whereNotIn` filter results  (#6859)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/edcea54ea570af828f31cf5f54e952ad6c32ff61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6859"
+            },
+            {
+                "commitId": "70c8e89dbc6698346a612d926da8f6bf1ddf6797",
+                "prId": "6841",
+                "author": "Ehsan",
+                "message": "Improve the integration test coverage for online vs offline comparisons. (#6841)\n\nThis PR improves the way `checkOnlineAndOfflineResultsMatch` test util\nfunction was written.\n\nIt does so by first pre-populating the cache with the entire collection,\nthen performing the query from cache (this results in a full collection\nscan), then performing the query from the server, and then performing\nthe query from cache again (this results in using\n`performQueryUsingRemoteKeys`. It then ensures that all of these 3\nresults are the same and equal to the expected results.\n\n#no-changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/70c8e89dbc6698346a612d926da8f6bf1ddf6797",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6841"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "40b7637c6c4e246113b781ba5be3f1a7356678de",
+                "prId": "6870",
+                "author": "Daymon",
+                "message": "Refactor live bidi (#6870)\n\nPer [b/410070347](https://b.corp.google.com/issues/410070347),\n\nThis refactors our bidi model to be more thread safe, and take better\nadvantage of immutability and kotlin coroutines. This solves various\nedge case issues, as well as makes it easier to maintain.\n\nThis PR also fixes the following:\n- [b/410063693](https://b.corp.google.com/issues/410063693) -> Add\nserialization for bidi responses\n- [b/410064609](https://b.corp.google.com/issues/410064609) -> Retain\naudio data if present when turn complete or interrupted\n- [b/410069806](https://b.corp.google.com/issues/410069806) -> Use\nblocking instead of background dispatcher for bidi\n- [b/410841715](https://b.corp.google.com/issues/410841715) -> Catch\nBidi exceptions\n- [b/410067576](https://b.corp.google.com/issues/410067576) -> Send\nzeroed out audio data to server when not speaking",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/40b7637c6c4e246113b781ba5be3f1a7356678de",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6870"
+            },
+            {
+                "commitId": "47e37b5802a1be2038bc392dadb9a88c4cec8dbe",
+                "prId": "6834",
+                "author": "Vinay Guthal",
+                "message": "Update LiveModelFutures to return LiveSessionFutures instead of LiveSession (#6834)\n\nUpdate the `connect` method of` LiveModelFutures` class to return\n`ListenableFuture` instead of `LiveSession`.\n\nThis change reduces the burden on Java developers, as they would have to\ncreate a `LiveSessionFutures` object anyway.\n\nAdditionally, the `startAudioConverstion` method is now annotated with\n`@JvmOverloads` to maintain compatibility with Java.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/47e37b5802a1be2038bc392dadb9a88c4cec8dbe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6834"
+            },
+            {
+                "commitId": "33e989f2f162348a2b75c19cbc8ce962e3d14264",
+                "prId": "6848",
+                "author": "Vinay Guthal",
+                "message": "update javadocs (#6848)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/33e989f2f162348a2b75c19cbc8ce962e3d14264",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6848"
+            },
+            {
+                "commitId": "d7a56a1e56699b8ea0ccd8bb752b702be2b39cf1",
+                "prId": "6837",
+                "author": "Vinay Guthal",
+                "message": "upate release notes (#6837)\n\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d7a56a1e56699b8ea0ccd8bb752b702be2b39cf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6837"
+            },
+            {
+                "commitId": "9e89b289be79a8d7892db08be16d77e6a81eea45",
+                "prId": "6843",
+                "author": "Daymon",
+                "message": "Add support for HarmBlockThreshold.OFF (#6843)\n\nPer [b/409040155](https://b.corp.google.com/issues/409040155),\n\nThis adds support for `HarmBlockThreshold.OFF`, and also adds javadocs\nthat clearly articulate the difference it holds from `NONE`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9e89b289be79a8d7892db08be16d77e6a81eea45",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6843"
+            },
+            {
+                "commitId": "6e3be7893e600014e855d8ca2b511c3681bbd7c2",
+                "prId": "6847",
+                "author": "Vinay Guthal",
+                "message": "use bytestream instead of bytearray (#6847)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6e3be7893e600014e855d8ca2b511c3681bbd7c2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6847"
+            },
+            {
+                "commitId": "395e9dd51107bfb1057c220a847b6f420a250beb",
+                "prId": "6823",
+                "author": "Vinay Guthal",
+                "message": "fix emulator listening to itself (#6823)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/395e9dd51107bfb1057c220a847b6f420a250beb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6823"
+            },
+            {
+                "commitId": "d2e72df5231cfe0a8067e139ce60aa108992972d",
+                "prId": "6759",
+                "author": "Vinay Guthal",
+                "message": "Bidirectional Streaming Android (#6759)\n\nBidirectional streaming for android. Creates a bunch of helper classes\nfor the same. The main classes which handle the bidirectional streaming\nare LiveGenerativeModel and LiveSession\n\n---------\n\nCo-authored-by: VinayGuthal <VinayGuthal@users.noreply.github.com>\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2e72df5231cfe0a8067e139ce60aa108992972d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6759"
+            },
+            {
+                "commitId": "dbeecd4df3803d14e885b011e5998129c87cfd87",
+                "prId": "6810",
+                "author": "emilypgoogle",
+                "message": "Add basic Vertex Java compilation tests (#6810)\n\nThis is a starting point for compilation testing, broadly using most\nsymbols Vertex exposes to Java users, lightly validating usability and\nstructure. As a note, there are some builder patterns in Vertex that\ndon't work as expected from Java and were omitted, as fixing that would\nbe a breaking change.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dbeecd4df3803d14e885b011e5998129c87cfd87",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6810"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx"
+    ]
+}

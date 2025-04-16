@@ -1,0 +1,15 @@
+{
+    "name": "m163",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-vertexai"
+    ]
+}
