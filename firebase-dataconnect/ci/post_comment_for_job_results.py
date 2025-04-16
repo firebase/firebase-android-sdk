@@ -72,9 +72,9 @@ def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
 
   yield ""
   yield (
-    f"run_id={data.github_run_id} "
-    f"run_number={data.github_run_number} "
-    f"run_attempt={data.github_run_attempt}"
+    f"run_id=`{data.github_run_id}` "
+    f"run_number=`{data.github_run_number}` "
+    f"run_attempt=`{data.github_run_attempt}`"
   )
 
 
