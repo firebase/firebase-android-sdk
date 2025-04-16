@@ -13,11 +13,14 @@ indent-width = 2
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+  "COM812", # missing-trailing-comma
   "D100", # Missing docstring in public module
   "D101", # Missing docstring in public class
+  "D102", # Missing docstring in public method
   "D103", # Missing docstring in public function
   "D106", # Missing docstring in public nested class
   "D107", # Missing docstring in `__init__`
+  "D203", # incorrect-blank-line-before-class
   "D211", # no-blank-line-before-class
   "D212", # multi-line-summary-second-line
   "T201", # print` found
