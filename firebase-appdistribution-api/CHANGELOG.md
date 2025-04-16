@@ -1,6 +1,4 @@
 # Unreleased
-* [fixed] Added custom tab support for more browsers [#6692]
-
 
 # 16.0.0-beta15
 * [unchanged] Updated to accommodate the release of the updated
