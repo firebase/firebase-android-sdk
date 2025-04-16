@@ -33,7 +33,6 @@ import com.google.firebase.sessions.testing.FakeUuidGenerator
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -135,7 +134,7 @@ class SharedSessionRepositoryTest {
   }
 
   @Test
-  fun appForegroundSharedSessionRepo_updateSuccess() = runTest {
+  fun appForegroundGenerateNewSession_updateSuccess() = runTest {
     val sessionFirelogPublisher =
       SessionFirelogPublisherImpl(
         fakeFirebaseApp.firebaseApp,
@@ -166,20 +165,22 @@ class SharedSessionRepositoryTest {
         backgroundDispatcher =
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
       )
-    backgroundScope.launch {
-      fakeTimeProvider.addInterval(20.hours)
-      sharedSessionRepository.appForeground()
-    }
     runCurrent()
+
+    fakeTimeProvider.addInterval(20.hours)
+    sharedSessionRepository.appForeground()
+    runCurrent()
+
     assertThat(sharedSessionRepository.localSessionData.sessionDetails.sessionId)
       .isEqualTo(SESSION_ID_1)
+    assertThat(sharedSessionRepository.localSessionData.backgroundTime).isNull()
     assertThat(sharedSessionRepository.previousNotificationType)
       .isEqualTo(SharedSessionRepositoryImpl.NotificationType.GENERAL)
     fakeDataStore.close()
   }
 
   @Test
-  fun appForegroundSharedSessionRepo_updateFail() = runTest {
+  fun appForegroundGenerateNewSession_updateFail() = runTest {
     val sessionFirelogPublisher =
       SessionFirelogPublisherImpl(
         fakeFirebaseApp.firebaseApp,
@@ -201,7 +202,6 @@ class SharedSessionRepositoryTest {
         ),
         IllegalArgumentException("Datastore init failed")
       )
-    fakeDataStore.throwOnNextUpdateData(IllegalArgumentException("Datastore update failed"))
     val sharedSessionRepository =
       SharedSessionRepositoryImpl(
         sessionsSettings,
@@ -212,15 +212,23 @@ class SharedSessionRepositoryTest {
         backgroundDispatcher =
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
       )
-
-    backgroundScope.launch {
-      fakeTimeProvider.addInterval(20.hours)
-      sharedSessionRepository.appForeground()
-    }
     runCurrent()
+
+    // set background time first
+    fakeDataStore.throwOnNextUpdateData(IllegalArgumentException("Datastore update failed"))
+    sharedSessionRepository.appBackground()
+    runCurrent()
+
+    // foreground update session
+    fakeTimeProvider.addInterval(20.hours)
+    fakeDataStore.throwOnNextUpdateData(IllegalArgumentException("Datastore update failed"))
+    sharedSessionRepository.appForeground()
+    runCurrent()
+
     // session_2 here because session_1 is failed when try to init datastore
     assertThat(sharedSessionRepository.localSessionData.sessionDetails.sessionId)
       .isEqualTo(SESSION_ID_2)
+    assertThat(sharedSessionRepository.localSessionData.backgroundTime).isNull()
     assertThat(sharedSessionRepository.previousNotificationType)
       .isEqualTo(SharedSessionRepositoryImpl.NotificationType.FALLBACK)
     fakeDataStore.close()
