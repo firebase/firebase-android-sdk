@@ -38,14 +38,31 @@ internal class FirebaseVertexAIMultiResourceComponent(
 ) {
 
   @GuardedBy("this")
-  private val vertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  private val regularVertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
-  @GuardedBy("this") private val googleInstance: MutableList<FirebaseGoogleAI> = mutableListOf()
 
-  fun getVertexAI(location: String): FirebaseAI =
+    @GuardedBy("this")
+    private val vertexInstances: MutableMap<String, FirebaseAI> = mutableMapOf()
+
+  @GuardedBy("this") private val googleInstance: MutableList<FirebaseAI> = mutableListOf()
+
+    fun getRegularVertexAI(location: String): FirebaseVertexAI =
+        synchronized(this) {
+            regularVertexInstances[location]
+                ?: FirebaseVertexAI(
+                    app,
+                    backgroundDispatcher,
+                    location,
+                    appCheckProvider,
+                    internalAuthProvider,
+                )
+                    .also { regularVertexInstances[location] = it }
+        }
+
+    fun getVertexAI(location: String): FirebaseAI =
     synchronized(this) {
-      vertexInstances[location]
-        ?: FirebaseVertexAI(
+        vertexInstances[location]
+        ?: FirebaseAI(
             app,
             GenerativeBackend.VERTEX_AI,
             backgroundDispatcher,
@@ -53,14 +70,13 @@ internal class FirebaseVertexAIMultiResourceComponent(
             appCheckProvider,
             internalAuthProvider,
           )
-          .also { vertexInstances[location] = it }
+          .also { regularVertexInstances[location] = it }
     }
 
   fun getGoogleAI(): FirebaseAI =
     synchronized(this) {
       googleInstance.getOrNull(0)
-        ?: FirebaseGoogleAI(
-            FirebaseVertexAI(
+        ?: FirebaseAI(
               app,
               GenerativeBackend.GOOGLE_AI,
               backgroundDispatcher,
@@ -68,7 +84,6 @@ internal class FirebaseVertexAIMultiResourceComponent(
               appCheckProvider,
               internalAuthProvider,
             )
-          )
           .also { googleInstance.add(it) }
     }
 }
