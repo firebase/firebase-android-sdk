@@ -39,15 +39,26 @@ import com.google.firebase.vertexai.type.ToolConfig
 import kotlin.coroutines.CoroutineContext
 
 /** Entry point for all _Vertex AI for Firebase_ functionality. */
-public class FirebaseVertexAI
-internal constructor(
-  private val firebaseApp: FirebaseApp,
-  private val backend: GenerativeBackend,
-  @Background private val backgroundDispatcher: CoroutineContext,
-  private val location: String,
-  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
-  private val internalAuthProvider: Provider<InternalAuthProvider>,
-) {
+public class FirebaseVertexAI {
+  private val firebaseAI: FirebaseAI
+
+  internal constructor(
+    firebaseApp: FirebaseApp,
+    @Background backgroundDispatcher: CoroutineContext,
+    location: String,
+    appCheckProvider: Provider<InteropAppCheckTokenProvider>,
+    internalAuthProvider: Provider<InternalAuthProvider>,
+  ) {
+    firebaseAI = FirebaseAI(
+      firebaseApp,
+      GenerativeBackend.VERTEX_AI,
+      backgroundDispatcher,
+      location,
+      appCheckProvider,
+      internalAuthProvider
+    )
+  }
+
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
@@ -72,39 +83,7 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): GenerativeModel {
-    if (location.trim().isEmpty() || location.contains("/")) {
-      throw InvalidLocationException(location)
-    }
-    val modelUri =
-      when (backend) {
-        GenerativeBackend.VERTEX_AI ->
-          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
-        GenerativeBackend.GOOGLE_AI ->
-          "projects/${firebaseApp.options.projectId}/models/${modelName}"
-      }
-    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
-      Log.w(
-        TAG,
-        """Unsupported Gemini model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
-      """
-          .trimIndent(),
-      )
-    }
-    return GenerativeModel(
-      modelUri,
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      generationConfig,
-      safetySettings,
-      tools,
-      toolConfig,
-      systemInstruction,
-      requestOptions,
-      backend,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
+    return firebaseAI.generativeModel(modelName,generationConfig,safetySettings,tools,toolConfig,systemInstruction,requestOptions)
   }
 
   /**
@@ -127,31 +106,7 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): LiveGenerativeModel {
-    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
-      Log.w(
-        TAG,
-        """Unsupported Gemini model "$modelName"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
-      """
-          .trimIndent(),
-      )
-    }
-    if (location.trim().isEmpty() || location.contains("/")) {
-      throw InvalidLocationException(location)
-    }
-    return LiveGenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      backgroundDispatcher,
-      generationConfig,
-      tools,
-      systemInstruction,
-      location,
-      requestOptions,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
+    return firebaseAI.liveModel(modelName,generationConfig,tools,systemInstruction,requestOptions)
   }
 
   /**
@@ -171,35 +126,7 @@ internal constructor(
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): ImagenModel {
-    val modelUri =
-      when (backend) {
-        GenerativeBackend.VERTEX_AI ->
-          "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}"
-        GenerativeBackend.GOOGLE_AI ->
-          "projects/${firebaseApp.options.projectId}/models/${modelName}"
-      }
-    if (location.trim().isEmpty() || location.contains("/")) {
-      throw InvalidLocationException(location)
-    }
-    if (!modelName.startsWith(IMAGEN_MODEL_NAME_PREFIX)) {
-      Log.w(
-        TAG,
-        """Unsupported Imagen model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
-      """
-          .trimIndent(),
-      )
-    }
-    return ImagenModel(
-      modelUri,
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      generationConfig,
-      safetySettings,
-      requestOptions,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
+    return firebaseAI.imagenModel(modelName, generationConfig, safetySettings, requestOptions)
   }
 
   public companion object {

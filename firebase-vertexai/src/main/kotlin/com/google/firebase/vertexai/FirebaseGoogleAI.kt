@@ -30,7 +30,7 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
 /** Entry point for all _Google AI_ functionality. */
-public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseVertexAI) {
+public class FirebaseGoogleAI internal constructor(private val proxy: FirebaseAI) {
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
