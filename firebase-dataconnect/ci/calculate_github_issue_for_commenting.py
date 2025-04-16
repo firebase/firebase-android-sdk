@@ -15,95 +15,68 @@
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import logging
-import sys
+import re
 import typing
-from typing import override
-
-if typing.TYPE_CHECKING:
-  from collections.abc import Sequence
-  from typing import Never, TextIO
-
-  from _typeshed import SupportsWrite
 
 type ExitCode = int
 
 
-def main(args: Sequence[str], stdout: TextIO, stderr: TextIO) -> ExitCode:
-  try:
-    parsed_args = parse_args(args[0], args[1:], stdout)
-  except MyArgumentParser.Error as e:
-    if e.exit_code != 0:
-      print(f"ERROR: invalid command-line arguments: {e}", file=stderr)
-      print("Run with --help for help", file=stderr)
-    return e.exit_code
+def main() -> None:
+  args = parse_args()
+  logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-  print(f"Successfully parsed arguments: {parsed_args!r}")
-  return 0
+  logging.info("Extracting PR number from ${{ github.ref }}: %s", args.github_ref)
+  pr_number: int | None = pr_number_from_github_ref(args.github_ref)
+  logging.info("Extracted PR number: %s", pr_number)
 
 
-@dataclasses.dataclass(frozen=True)
-class GetIssueNumberCommand:
+def pr_number_from_github_ref(github_ref: str) -> int | None:
+  match = re.fullmatch("refs/pull/([0-9]+)/merge", github_ref)
+  return int(match.group(1)) if match else None
+
+
+class ParsedArgs(typing.Protocol):
   github_ref: str
+  github_repository: str
   github_event_name: str
-  default_github_issue: int
+  pr_body_github_issue_key: str
+  github_issue_for_scheduled_run: str
 
 
-@dataclasses.dataclass(frozen=True)
-class ParsedArgs:
-  log_level: int
-  command: GetIssueNumberCommand
-
-
-class MyArgumentParser(argparse.ArgumentParser):
-  def __init__(self, prog: str, stdout: SupportsWrite[str]) -> None:
-    super().__init__(prog=prog, usage="%(prog)s <command> [options]")
-    self.stdout = stdout
-
-  @override
-  def exit(self, status: int = 0, message: str | None = None) -> Never:
-    raise self.Error(exit_code=status, message=message)
-
-  @override
-  def error(self, message: str) -> Never:
-    self.exit(2, message)
-
-  @override
-  def print_usage(self, file: SupportsWrite[str] | None = None) -> None:
-    file = file if file is not None else self.stdout
-    super().print_usage(file)
-
-  @override
-  def print_help(self, file: SupportsWrite[str] | None = None) -> None:
-    file = file if file is not None else self.stdout
-    super().print_help(file)
-
-  class Error(Exception):
-    def __init__(self, exit_code: ExitCode, message: str | None) -> None:
-      super().__init__(message)
-      self.exit_code = exit_code
-
-
-def parse_args(prog: str, args: Sequence[str], stdout: TextIO) -> ParsedArgs:
-  arg_parser = MyArgumentParser(prog, stdout)
-  parsed_args = arg_parser.parse_args(args)
-  print(f"parsed_args: {parsed_args!r}")
-  return ParsedArgs(
-    log_level=logging.INFO,
-    command=GetIssueNumberCommand(
-      github_ref="sample_github_ref",
-      github_event_name="sample_github_event_name",
-      default_github_issue=123456,
-    ),
+def parse_args() -> ParsedArgs:
+  arg_parser = argparse.ArgumentParser()
+  arg_parser.add_argument(
+    "--github-ref",
+    required=True,
+    help="The value of ${{ github.ref }} in the workflow",
   )
+  arg_parser.add_argument(
+    "--github-repository",
+    required=True,
+    help="The value of ${{ github.repository }} in the workflow",
+  )
+  arg_parser.add_argument(
+    "--github-event-name",
+    required=True,
+    help="The value of ${{ github.event_name }} in the workflow",
+  )
+  arg_parser.add_argument(
+    "--pr-body-github-issue-key",
+    required=True,
+    help="The string to search for in a Pull Request body to determine the GitHub Issue number "
+    "for commenting. For example, if the value is 'foobar' then this script searched a PR "
+    "body for a line of the form 'foobar=NNNN' where 'NNNN' is the GitHub issue number",
+  )
+  arg_parser.add_argument(
+    "--github-issue-for-scheduled-run",
+    required=True,
+    help="The GitHub Issue number to use for commenting when --github-event-name is 'schedule'",
+  )
+
+  parse_result = arg_parser.parse_args()
+  return typing.cast("ParsedArgs", parse_result)
 
 
 if __name__ == "__main__":
-  try:
-    exit_code = main(sys.argv, sys.stdout, sys.stderr)
-  except KeyboardInterrupt:
-    print("ERROR: application terminated by keyboard interrupt", file=sys.stderr)
-    exit_code = 1
-
-  sys.exit(exit_code)
+  main()
