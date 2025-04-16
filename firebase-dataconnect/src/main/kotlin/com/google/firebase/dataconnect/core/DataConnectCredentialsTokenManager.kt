@@ -194,12 +194,23 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "forceRefresh()" }
     val oldState =
       state.getAndUpdate { currentState ->
-        when (currentState) {
-          is State.Closed -> State.Closed
-          is State.New -> currentState.copy(forceTokenRefresh = true)
-          is State.Idle -> currentState.copy(forceTokenRefresh = true)
-          is State.Active -> State.Idle(currentState.provider, forceTokenRefresh = true)
+        val newState =
+          when (currentState) {
+            is State.Closed -> State.Closed
+            is State.New -> currentState.copy(forceTokenRefresh = true)
+            is State.Idle -> currentState.copy(forceTokenRefresh = true)
+            is State.Active -> State.Idle(currentState.provider, forceTokenRefresh = true)
+          }
+
+        check(newState is State.Closed || newState is State.StateWithForceTokenRefresh<T>) {
+          "internal error gbazc7qr66: newState should have been Closed or " +
+            "StateWithForceTokenRefresh, but got: $newState"
         }
+        check((newState as? State.StateWithForceTokenRefresh<T>)?.forceTokenRefresh !== false) {
+          "internal error fnzwyrsez2: newState.forceTokenRefresh should have been true"
+        }
+
+        newState
       }
 
     when (oldState) {
