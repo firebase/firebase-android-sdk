@@ -328,7 +328,7 @@ jobs:
         run: pyright --warnings --stats
 
   send-notifications:
-    needs: 
+    needs:
       - 'integration-test'
       - 'actionlint-dataconnect-yml'
       - 'python-ci-unit-tests'
@@ -349,48 +349,54 @@ jobs:
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
 
-      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - run: pip install -r requirements.txt
+        working-directory: firebase-dataconnect/ci
 
       - id: issue-id
         name: Determine GitHub Issue For Commenting
+        working-directory: firebase-dataconnect/ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          set -xv
-
-          python \
-            firebase-dataconnect/ci/calculate_github_issue_for_commenting.py \
-            --output-file=github_issue_number.txt \
-            --github-repository='${{ github.repository }}' \
-            --github-ref='${{ github.ref }}' \
-            --github-event-name='${{ github.event_name }}' \
-            --pr-body-github-issue-key=trksmnkncd_notification_issue \
+          args=(
+            python
+            calculate_github_issue_for_commenting.py
+            --output-file=github_issue_number.txt
+            --github-repository='${{ github.repository }}'
+            --github-ref='${{ github.ref }}'
+            --github-event-name='${{ github.event_name }}'
+            --pr-body-github-issue-key=trksmnkncd_notification_issue
             --github-issue-for-scheduled-run=6857 # https://github.com/firebase/firebase-android-sdk/issues/6857
+          )
+          echo "${args[*]}"
+          "${args[@]}"
 
+          set -xv
           issue="$(cat github_issue_number.txt)"
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
 
       - name: Post Comment on GitHub Issue
         if: steps.issue-id.outputs.issue != ''
+        working-directory: firebase-dataconnect/ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          set -xv
-
-          exec python \
-            firebase-dataconnect/ci/post_comment_for_job_results.py \
-            --github-issue='${{ steps.issue-id.outputs.issue }}' \
-            --github-repository='${{ github.repository }}' \
-            --github-sha='${{ github.sha }}' \
-            --github-repository-html-url='${{ github.event.repository.html_url }}' \
-            --github-run-id='${{ github.run_id }}' \
-            --github-run-number='${{ github.run_number }}' \
-            --github-run-attempt='${{ github.run_attempt }}' \
-            'integration-test:${{ needs.integration-test.result }}' \
-            'actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}' \
-            'python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}' \
-            'python-ci-lint:${{ needs.python-ci-lint.result }}' \
-            'python-ci-format:${{ needs.python-ci-format.result }}' \
-            'python-ci-type-check:${{ needs.python-ci-type-check.result }}' \
+          args=(
+            python
+            post_comment_for_job_results.py
+            --github-issue='${{ steps.issue-id.outputs.issue }}'
+            --github-repository='${{ github.repository }}'
+            --github-sha='${{ github.sha }}'
+            --github-repository-html-url='${{ github.event.repository.html_url }}'
+            --github-run-id='${{ github.run_id }}'
+            --github-run-number='${{ github.run_number }}'
+            --github-run-attempt='${{ github.run_attempt }}'
+            'integration-test:${{ needs.integration-test.result }}'
+            'actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}'
+            'python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}'
+            'python-ci-lint:${{ needs.python-ci-lint.result }}'
+            'python-ci-format:${{ needs.python-ci-format.result }}'
+            'python-ci-type-check:${{ needs.python-ci-type-check.result }}'
+          )
+          echo "${args[*]}"
+          exec "${args[@]}"
