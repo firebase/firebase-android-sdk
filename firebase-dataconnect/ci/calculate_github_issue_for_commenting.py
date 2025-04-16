@@ -17,18 +17,69 @@ from __future__ import annotations
 import argparse
 import logging
 import re
+import subprocess
 import typing
 
-type ExitCode = int
+if typing.TYPE_CHECKING:
+  from collections.abc import Iterable
 
 
 def main() -> None:
   args = parse_args()
   logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-  logging.info("Extracting PR number from string: %s", args.github_ref)
-  pr_number: int | None = pr_number_from_github_ref(args.github_ref)
-  logging.info("Extracted PR number: %s", pr_number)
+  github_issue = calculate_github_issue(
+    github_event_name=args.github_event_name,
+    github_issue_for_scheduled_run=args.github_issue_for_scheduled_run,
+    github_ref=args.github_ref,
+    github_repository=args.github_repository,
+    pr_body_github_issue_key=args.pr_body_github_issue_key,
+  )
+
+  logging.info(github_issue)
+
+
+def calculate_github_issue(
+  github_event_name: str,
+  github_issue_for_scheduled_run: int,
+  github_ref: str,
+  github_repository: str,
+  pr_body_github_issue_key: str,
+) -> int | None:
+  if github_event_name == "schedule":
+    logging.info(
+      "GitHub Event name is: %s; using GitHub Issue: %s",
+      github_event_name,
+      github_issue_for_scheduled_run,
+    )
+    return github_issue_for_scheduled_run
+
+  logging.info("Extracting PR number from string: %s", github_ref)
+  pr_number: int | None = pr_number_from_github_ref(github_ref)
+
+  if pr_number is None:
+    logging.info("No PR number extracted")
+    return None
+
+  logging.info("PR number extracted: %s", pr_number)
+  logging.info("Loading body text of PR: %s", pr_number)
+  pr_body_text = load_pr_body(
+    pr_number=pr_number,
+    github_repository=github_repository,
+  )
+
+  logging.info("Looking for GitHub Issue key in PR body text: %s=NNNN", pr_body_github_issue_key)
+  github_issue = github_issue_from_pr_body(
+    pr_body=pr_body_text,
+    issue_key=pr_body_github_issue_key,
+  )
+
+  if github_issue is None:
+    logging.info("No GitHub Issue key found in PR body")
+    return None
+
+  logging.info("Found GitHub Issue key in PR body: %s", github_issue)
+  return github_issue
 
 
 def pr_number_from_github_ref(github_ref: str) -> int | None:
@@ -36,12 +87,41 @@ def pr_number_from_github_ref(github_ref: str) -> int | None:
   return int(match.group(1)) if match else None
 
 
+def load_pr_body(pr_number: int, github_repository: str) -> str:
+  gh_args = log_pr_body_gh_args(pr_number=pr_number, github_repository=github_repository)
+  gh_args = tuple(gh_args)
+  logging.info("Running command: %s", subprocess.list2cmdline(gh_args))
+  return subprocess.check_output(gh_args, encoding="utf8", errors="replace")  # noqa: S603
+
+
+def log_pr_body_gh_args(pr_number: int, github_repository: str) -> Iterable[str]:
+  yield "gh"
+  yield "issue"
+  yield "view"
+  yield str(pr_number)
+  yield "--json"
+  yield "body"
+  yield "--jq"
+  yield ".body"
+  yield "-R"
+  yield github_repository
+
+
+def github_issue_from_pr_body(pr_body: str, issue_key: str) -> int | None:
+  expr = re.compile(r"\s*" + re.escape(issue_key) + r"\s*=\s*(\d+)\s*")
+  for line in pr_body.splitlines():
+    match = expr.fullmatch(line.strip())
+    if match:
+      return int(match.group(1))
+  return None
+
+
 class ParsedArgs(typing.Protocol):
   github_ref: str
   github_repository: str
   github_event_name: str
   pr_body_github_issue_key: str
-  github_issue_for_scheduled_run: str
+  github_issue_for_scheduled_run: int
 
 
 def parse_args() -> ParsedArgs:
@@ -70,6 +150,7 @@ def parse_args() -> ParsedArgs:
   )
   arg_parser.add_argument(
     "--github-issue-for-scheduled-run",
+    type=int,
     required=True,
     help="The GitHub Issue number to use for commenting when --github-event-name is 'schedule'",
   )

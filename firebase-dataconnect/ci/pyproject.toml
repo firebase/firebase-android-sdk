@@ -27,8 +27,8 @@ ignore = [
   "D203", # incorrect-blank-line-before-class
   "D211", # no-blank-line-before-class
   "D212", # multi-line-summary-second-line
+  "E501", # Line too long (will be fixed by the formatter)
   "LOG015", # root-logger-call
-  "T201", # print` found
 ]
 
 [tool.ruff.lint.per-file-ignores]
