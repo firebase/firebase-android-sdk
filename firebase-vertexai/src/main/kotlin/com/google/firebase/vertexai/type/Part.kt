@@ -57,11 +57,11 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
+  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
+    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
   }
 }
 
@@ -71,8 +71,11 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
-  Part {
+// TODO(b/410040441): Support id property
+public class FunctionCallPart(
+  public val name: String,
+  public val args: Map<String, JsonElement>,
+) : Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
@@ -88,12 +91,17 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
  * @param name the name of the called function
  * @param response the response produced by the function as a [JSONObject]
  */
+// TODO(b/410040441): Support id property
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
     @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+  }
+
+  internal fun toInternalFunctionCall(): Internal.FunctionResponse {
+    return Internal.FunctionResponse(this.name, this.response)
   }
 }
 

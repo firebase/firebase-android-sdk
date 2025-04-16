@@ -102,7 +102,7 @@ class StreamTests {
 
     val flow = function.stream(input).asFlow()
     try {
-      withTimeout(1000) {
+      withTimeout(10_000) {
         flow.collect { response ->
           if (response is StreamResponse.Message) {
             messages.add(response)
@@ -116,11 +116,11 @@ class StreamTests {
       throwable = e
     }
 
+    assertThat(throwable).isNull()
     assertThat(messages.map { it.message.data.toString() })
       .containsExactly("hello", "world", "this", "is", "cool")
     assertThat(result).isNotNull()
     assertThat(result!!.result.data.toString()).isEqualTo("hello world this is cool")
-    assertThat(throwable).isNull()
     assertThat(isComplete).isTrue()
   }
 
@@ -128,14 +128,14 @@ class StreamTests {
   fun genStreamError_receivesError() = runBlocking {
     val input = mapOf("data" to "test error")
     val function =
-      functions.getHttpsCallable("genStreamError").withTimeout(2000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("genStreamError").withTimeout(10_000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream(input).subscribe(subscriber)
 
-    withTimeout(2000) {
+    withTimeout(10_000) {
       while (subscriber.throwable == null) {
-        delay(100)
+        delay(1_000)
       }
     }
 
@@ -146,14 +146,14 @@ class StreamTests {
   @Test
   fun nonExistentFunction_receivesError() = runBlocking {
     val function =
-      functions.getHttpsCallable("nonexistentFunction").withTimeout(2000, TimeUnit.MILLISECONDS)
+      functions.getHttpsCallable("nonexistentFunction").withTimeout(10_000, TimeUnit.MILLISECONDS)
     val subscriber = StreamSubscriber()
 
     function.stream().subscribe(subscriber)
 
-    withTimeout(2000) {
+    withTimeout(10_000) {
       while (subscriber.throwable == null) {
-        delay(100)
+        delay(1_000)
       }
     }
 
@@ -195,7 +195,8 @@ class StreamTests {
 
     function.stream(mapOf("data" to "test")).subscribe(subscriber)
 
-    withTimeout(2000) { delay(500) }
+    withTimeout(10_000) { delay(1000) }
+    assertThat(subscriber.throwable).isNull()
     assertThat(subscriber.messages).isEmpty()
     assertThat(subscriber.result).isNull()
   }

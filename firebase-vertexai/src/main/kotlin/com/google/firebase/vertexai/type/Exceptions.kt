@@ -67,6 +67,38 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
       }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a
+     * [FirebaseVertexAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catch
+     */
+    internal suspend fun <T> catchAsync(callback: suspend () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a
+     * [FirebaseVertexAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catchAsync
+     */
+    internal fun <T> catch(callback: () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
   }
 }
 
@@ -173,6 +205,20 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
+
+/** Streaming session already receiving. */
+public class SessionAlreadyReceivingException :
+  FirebaseVertexAIException(
+    "This session is already receiving. Please call stopReceiving() before calling this again."
+  )
+
+/** Audio record initialization failures for audio streaming */
+public class AudioRecordInitializationFailedException(message: String) :
+  FirebaseVertexAIException(message)
+
+/** Handshake failed with the server */
+public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */

@@ -27,7 +27,7 @@ firebaseAppdistributionGradle = "5.1.1"
 firebaseCommon = "21.0.0"
 firebaseComponents = "18.0.0"
 firebaseCrashlyticsGradle = "3.0.2"
-glide = "4.11.0"
+glide = "4.16.0"
 googleApiClient = "1.30.9"
 googleServices = "4.3.15"
 gradleErrorpronePlugin = "3.1.0"
@@ -37,7 +37,7 @@ hamcrest = "2.2"
 hamcrestJunit = "2.0.0.0"
 hamcrestLibrary = "2.2"
 httpclientAndroid = "4.3.5.1"
-integrity = "1.2.0"
+integrity = "1.4.0"
 jacksonCore = "2.13.1"
 jacksonDatabind = "2.18.2"
 javalite = "3.25.5"
@@ -68,7 +68,6 @@ runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.1.14"
 serialization = "1.5.1"
-serialization-plugin = "1.8.22"
 slf4jNop = "2.0.9"
 spotless = "7.0.0.BETA3"
 testServices = "1.2.0"
@@ -154,6 +153,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorVer
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorVersion" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktorVersion" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorVersion" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktorVersion" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorVersion" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 maven-resolver-api = { module = "org.apache.maven.resolver:maven-resolver-api", version.ref = "mavenResolverApi" }
@@ -231,7 +231,7 @@ maven-resolver = [
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "gradleErrorpronePlugin" }

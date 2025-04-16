@@ -38,6 +38,7 @@ import org.gradle.api.tasks.TaskAction
  * - Adds the deprecated status to ktx sections in _toc.yaml files
  * - Fixes broken hyperlinks in `@see` blocks
  * - Removes the prefix path from book_path
+ * - Removes the `com.google` package prefix from _toc.yaml files
  *
  * **Please note:** This task is idempotent- meaning it can safely be ran multiple times on the same
  * set of files.
@@ -77,9 +78,34 @@ abstract class FiresiteTransformTask : DefaultTask() {
   }
 
   private fun File.fixYamlFile() {
-    val fixedContent = readText().removeClassHeader().removeIndexHeader().addDeprecatedStatus()
+    val fixedContent =
+      readText().removeClassHeader().removeIndexHeader().addDeprecatedStatus().removePackagePrefix()
     writeText(fixedContent)
   }
+
+  /**
+   * Removes the `com.google.` prefix from the package titles in the table of contents.
+   *
+   * The prefix pollutes the TOC, especially on smaller screen sizes; so we opt to removed it
+   * entirely.
+   *
+   * Example input:
+   * ```
+   * toc:
+   * - title: "com.google.firebase.functions"
+   *   path: "/docs/reference/android/com/google/firebase/functions/package-summary.html"
+   * ```
+   *
+   * Example output:
+   * ```
+   * toc:
+   * - title: "firebase.functions"
+   *   path: "/docs/reference/android/com/google/firebase/functions/package-summary.html"
+   * ```
+   *
+   * TODO(b/378717454): Migrate to the param packagePrefixToRemoveInToc in dackka when fixed
+   */
+  private fun String.removePackagePrefix() = remove(Regex("(?<=title: \")(com\\.google\\.)"))
 
   /**
    * Fixes broken hyperlinks in the rendered HTML
