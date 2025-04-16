@@ -38,8 +38,8 @@ def main() -> None:
   )
 
   file_text = "" if github_issue is None else str(github_issue)
-  logging.info("Writing '%s' to %s", file_text, args.output_file)
-  args.output_file.write_text(file_text, encoding="utf8", errors="replace")
+  logging.info("Writing '%s' to %s", file_text, args.issue_output_file)
+  args.issue_output_file.write_text(file_text, encoding="utf8", errors="replace")
 
 
 def calculate_github_issue(
@@ -120,7 +120,8 @@ def github_issue_from_pr_body(pr_body: str, issue_key: str) -> int | None:
 
 
 class ParsedArgs(typing.Protocol):
-  output_file: pathlib.Path
+  issue_output_file: pathlib.Path
+  pr_output_file: pathlib.Path
   github_ref: str
   github_repository: str
   github_event_name: str
@@ -131,10 +132,16 @@ class ParsedArgs(typing.Protocol):
 def parse_args() -> ParsedArgs:
   arg_parser = argparse.ArgumentParser()
   arg_parser.add_argument(
-    "--output-file",
+    "--issue-output-file",
     required=True,
     help="The file to which to write the calculated issue number"
     "if no issue number was found, then an empty file will be written",
+  )
+  arg_parser.add_argument(
+    "--pr-output-file",
+    required=True,
+    help="The file to which to write the calculated triggering PR number"
+    "if no PR was found, then an empty file will be written",
   )
   arg_parser.add_argument(
     "--github-ref",
@@ -166,7 +173,8 @@ def parse_args() -> ParsedArgs:
   )
 
   parse_result = arg_parser.parse_args()
-  parse_result.output_file = pathlib.Path(parse_result.output_file)
+  parse_result.issue_output_file = pathlib.Path(parse_result.issue_output_file)
+  parse_result.pr_output_file = pathlib.Path(parse_result.pr_output_file)
   return typing.cast("ParsedArgs", parse_result)
 
 

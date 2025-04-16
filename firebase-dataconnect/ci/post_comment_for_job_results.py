@@ -49,7 +49,20 @@ def main() -> None:
 
 
 def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
-  yield f"Result of workflows at {data.github_sha}:"
+  pr_str = data.triggering_pr.strip()
+  pr: int | None
+  if len(pr) == 0:
+    pr = None
+  else:
+    try:
+      pr = int(pr)
+    except ValueError:
+      logging.warning("WARNING: unable to parse PR number as an int: %s", pr)
+      pr = None
+
+  yield f"Posting from Pull Request {pr}: {data.github_repository_html_url}/pull/{pr}"
+
+  yield f"Result of workflow '{data.github_workflow}' at {data.github_sha}:"
 
   for job_result in data.job_results:
     result_symbol = "✅" if job_result.result == "success" else "❌"
@@ -82,6 +95,7 @@ def post_issue_comment_gh_args(
 ) -> Iterable[str]:
   yield "gh"
   yield "issue"
+
   yield "comment"
   yield str(issue_number)
   yield "--body-file"
@@ -112,11 +126,13 @@ class ParsedArgs(typing.Protocol):
   job_results: Sequence[JobResult]
   github_issue: int
   github_repository: str
+  github_workflow: str
   github_sha: str
   github_repository_html_url: str
   github_run_id: str
   github_run_number: str
   github_run_attempt: str
+  triggering_pr: str
 
 
 class ParseError(Exception):
@@ -134,13 +150,24 @@ def parse_args() -> ParsedArgs:
   )
   arg_parser.add_argument(
     "--github-issue",
+    type=int,
     required=True,
     help="The GitHub Issue number to which to post a comment",
+  )
+  arg_parser.add_argument(
+    "--triggering-pr",
+    required=True,
+    help="The GitHub Pull Request number that triggered the workflow, or empty if not applicable.",
   )
   arg_parser.add_argument(
     "--github-repository",
     required=True,
     help="The value of ${{ github.repository }} in the workflow",
+  )
+  arg_parser.add_argument(
+    "--github-workflow",
+    required=True,
+    help="The value of ${{ github.workflow }} in the workflow",
   )
   arg_parser.add_argument(
     "--github-sha",
