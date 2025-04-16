@@ -14,13 +14,15 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static com.google.firebase.crashlytics.internal.common.Utils.awaitEvenIfOnMainThread;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.Locale;
 import java.util.Objects;
@@ -28,6 +30,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class IdManager implements InstallIdProvider {
+  private static final int TIMEOUT_MILLIS = 10_000;
 
   public static final String DEFAULT_VERSION_NAME = "0.0";
 
@@ -113,8 +116,9 @@ public class IdManager implements InstallIdProvider {
     // We only look at the FID if Crashlytics data collection is enabled, since querying it can
     // result in a network call that registers the FID with Firebase.
     if (dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
-      FirebaseInstallationId trueFid = fetchTrueFid();
-      Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid);
+      // We don't need an auth token here, we just need to detect if the fid has changed.
+      FirebaseInstallationId trueFid = fetchTrueFid(/* validate= */ false);
+      Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid.getFid());
 
       if (trueFid.getFid() == null) {
         // This shouldn't happen often. We will assume the cached FID is valid, if it exists.
@@ -177,18 +181,23 @@ public class IdManager implements InstallIdProvider {
    * <p>If either call fails for any reason, logs a warning and sets a null value for that field.
    */
   @NonNull
-  public FirebaseInstallationId fetchTrueFid() {
+  public FirebaseInstallationId fetchTrueFid(boolean validate) {
+    CrashlyticsWorkers.checkNotMainThread(); // This fetch blocks, never do it on main.
     String fid = null;
     String authToken = null;
 
-    // Fetch the auth token first, so the fid will be validated.
-    try {
-      authToken = awaitEvenIfOnMainThread(firebaseInstallations.getToken(false)).getToken();
-    } catch (Exception ex) {
-      Logger.getLogger().w("Error getting Firebase authentication token.", ex);
+    if (validate) {
+      // Fetch the auth token first when requested, so the fid will be validated.
+      try {
+        authToken =
+            Tasks.await(firebaseInstallations.getToken(false), TIMEOUT_MILLIS, MILLISECONDS)
+                .getToken();
+      } catch (Exception ex) {
+        Logger.getLogger().w("Error getting Firebase authentication token.", ex);
+      }
     }
     try {
-      fid = awaitEvenIfOnMainThread(firebaseInstallations.getId());
+      fid = Tasks.await(firebaseInstallations.getId(), TIMEOUT_MILLIS, MILLISECONDS);
     } catch (Exception ex) {
       Logger.getLogger().w("Error getting Firebase installation id.", ex);
     }
@@ -210,7 +219,9 @@ public class IdManager implements InstallIdProvider {
     return iid;
   }
 
-  /** @return the package name that identifies this App. */
+  /**
+   * @return the package name that identifies this App.
+   */
   public String getAppIdentifier() {
     return appIdentifier;
   }

@@ -16,6 +16,7 @@
 
 package com.google.firebase.testing.sessions
 
+import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -26,14 +27,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
   val crashlytics = FirebaseCrashlytics.getInstance()
+  val performance = FirebasePerformance.getInstance()
 
   private var _binding: FragmentFirstBinding? = null
 
@@ -64,31 +71,40 @@ class FirstFragment : Fragment() {
         Thread.sleep(1_000)
       }
     }
+    binding.createTrace.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace")
+        performanceTrace.start()
+        delay(1000)
+        performanceTrace.stop()
+      }
+    }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        ForegroundService.startService(getContext()!!, "Starting service at ${getDateText()}")
+        ForegroundService.startService(requireContext(), "Starting service at ${getDateText()}")
         binding.buttonForegroundProcess.setText("Stop foreground service")
       } else {
-        ForegroundService.stopService(getContext()!!)
+        ForegroundService.stopService(requireContext())
         binding.buttonForegroundProcess.setText("Start foreground service")
       }
     }
     binding.startSplitscreen.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
       activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
-      val intent = Intent(getContext()!!, MainActivity::class.java)
+      val intent = Intent(requireContext(), MainActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
     }
     binding.nextActivityButton.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
+    binding.processName.text = getProcessName()
   }
 
   override fun onResume() {
@@ -110,6 +126,10 @@ class FirstFragment : Fragment() {
     fun getDateText(): String =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+      else "unknown"
+
+    fun getProcessName(): String =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
       else "unknown"
   }
 }

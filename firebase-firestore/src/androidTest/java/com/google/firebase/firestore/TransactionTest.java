@@ -371,7 +371,7 @@ public class TransactionTest {
     AtomicInteger started = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
-    firestore.getAsyncQueue().skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
+    AccessHelper.getAsyncQueue(firestore).skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 5.0)));
 
@@ -437,7 +437,7 @@ public class TransactionTest {
     AtomicInteger counter = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
-    firestore.getAsyncQueue().skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
+    AccessHelper.getAsyncQueue(firestore).skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 5.0, "other", "yes")));
 
@@ -532,7 +532,7 @@ public class TransactionTest {
     AtomicInteger started = new AtomicInteger(0);
 
     FirebaseFirestore firestore = testFirestore();
-    firestore.getAsyncQueue().skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
+    AccessHelper.getAsyncQueue(firestore).skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(new POJO(5.0, "no", "clean")));
 
@@ -601,7 +601,7 @@ public class TransactionTest {
   @Test
   public void testReadingADocTwiceWithDifferentVersions() {
     FirebaseFirestore firestore = testFirestore();
-    firestore.getAsyncQueue().skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
+    AccessHelper.getAsyncQueue(firestore).skipDelaysForTimerId(TimerId.RETRY_TRANSACTION);
     DocumentReference doc = firestore.collection("counters").document();
     waitFor(doc.set(map("count", 15.0)));
     AtomicInteger counter = new AtomicInteger(0);

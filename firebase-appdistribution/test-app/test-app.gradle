@@ -20,16 +20,21 @@ plugins {
 }
 
 android {
+    namespace "com.google.firebase.appdistribution.testapp"
     compileSdk 33
 
     defaultConfig {
         applicationId "com.googletest.firebase.appdistribution.testapp"
-        minSdkVersion 23
-        targetSdkVersion 33
-        versionName "3.2"
-        versionCode 7
+        minSdk 23
+        targetSdk 34
+        versionName "3.3"
+        versionCode 8
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -53,8 +58,8 @@ android {
             versionNameSuffix "-beta"
 
             firebaseAppDistribution {
-                releaseNotes "Beta variant of Android SDK test app"
-                // testers "your email here"
+                releaseNotes = "Beta variant of Android SDK test app"
+                // testers = "your email here"
             }
         }
     }
@@ -90,10 +95,10 @@ dependencies {
     // Shake detection
     implementation 'com.squareup:seismic:1.0.3'
     // Other dependencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
 
     // Beta flavor uses the full implementation
     betaImplementation project(':firebase-appdistribution')
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
 }

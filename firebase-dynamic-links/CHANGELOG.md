@@ -1,6 +1,16 @@
 # Unreleased
 
 
+# 22.1.0
+* [deprecated] `firebase-dynamic-links` is deprecated. For information about timelines and alternatives,
+  see the [irebase-dynamic-links deprecation FAQ](/support/dynamic-links-faq).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-dynamic-links` library. The Kotlin extensions library has no additional
+updates.
+
 # 22.0.0
 * [changed] Bump internal dependencies
 

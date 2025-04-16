@@ -1,6 +1,56 @@
 # Unreleased
 
 
+# 24.1.1
+* [changed] Bug fix in SyncTask to always unregister the receiver on the same
+  context on which it was registered.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.1.0
+* [deprecated] Deprecated additional FCM upstream messaging methods and updated
+  all upstream methods to indicate they are now decommissioned. See the
+  [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
+  details.
+* [changed] Changed WithinAppServiceConnection's ScheduledThreadPoolExecutor's
+  configuration to allow the thread to stop polling after the timeout task has
+  been canceled.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.0.3
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.0.2
+* [changed] Included message priority when logging to Firelog.
+
+# 24.0.1
+* [changed] Retry Topic Subscribe/Unsubscribe operations with exponential
+  backoff if they hit a quota error.
+* [changed] Checked for notification_open duplicate logging based on message ID
+  instead of the Activity's Intent.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
 # 24.0.0
 * [changed] Switched Firelog to use the new TransportBackend.
 * [changed] Log analytics for notifications displayed by Google Play services on
@@ -378,7 +428,7 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   * The [messaging] registration tokens of installed instances of your apps
     might change once after updating dependencies to their latest versions. To
     learn if your apps are affected, review the
-    <a href="//github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/FCM_TOKENS_CHANGE.md"
+    <a href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
        class="external">[firebase_installations] documentation</a>. Also,
     make sure to
     <a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor

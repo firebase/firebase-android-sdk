@@ -115,7 +115,9 @@ public class FieldFilter extends Filter {
     Value other = doc.getField(field);
     // Types do not have to match in NOT_EQUAL filters.
     if (operator == Operator.NOT_EQUAL) {
-      return other != null && this.matchesComparison(Values.compare(other, value));
+      return other != null
+          && !other.hasNullValue()
+          && this.matchesComparison(Values.compare(other, value));
     }
     // Only compare types with matching backend order (such as double and int).
     return other != null

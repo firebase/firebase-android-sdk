@@ -18,10 +18,11 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "inappmessaging"
+    libraryGroup = "inappmessaging"
     publishJavadoc = false
-    publishReleaseNotes = false
-    publishSources = true
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
@@ -54,11 +55,11 @@ dependencies {
 
     implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
          exclude group: "com.google.firebase", module: "firebase-common"
      }
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 }

@@ -24,12 +24,14 @@ buildscript {
 
   dependencies {
     classpath "com.android.tools.build:gradle:8.3.2"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
     classpath "com.google.gms:google-services:4.3.14"
     classpath "com.google.firebase:firebase-crashlytics-gradle:2.8.1"
   }
 }
 
 apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
 
 android {
   compileSdkVersion 34
@@ -52,6 +54,7 @@ android {
   }
 
   compileOptions {
+    coreLibraryDesugaringEnabled true
     sourceCompatibility 1.8
     targetCompatibility 1.8
   }
@@ -64,7 +67,7 @@ android {
 apply from: "configure.gradle"
 
 dependencies {
-  implementation "androidx.test:core:1.5.0"
+  implementation libs.androidx.test.core
   // Common utilities (application side)
   implementation "androidx.test:rules:1.4.0"
   implementation "androidx.test:runner:1.4.0"
@@ -90,11 +93,14 @@ dependencies {
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
   implementation "com.google.truth:truth:1.0.1"
-  implementation "junit:junit:4.13.2"
+  implementation libs.junit
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
-  androidTestImplementation "junit:junit:4.13.2"
+  androidTestImplementation libs.junit
+
+  // Desugaring library
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
 
 clean.doLast {

@@ -31,6 +31,7 @@ import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
+import com.google.firebase.firestore.VectorValue;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -176,7 +177,8 @@ public class CustomClassMapper {
         || o instanceof GeoPoint
         || o instanceof Blob
         || o instanceof DocumentReference
-        || o instanceof FieldValue) {
+        || o instanceof FieldValue
+        || o instanceof VectorValue) {
       return o;
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && o instanceof Instant) {
       Instant instant = (Instant) o;
@@ -249,6 +251,8 @@ public class CustomClassMapper {
       return (T) convertGeoPoint(o, context);
     } else if (DocumentReference.class.isAssignableFrom(clazz)) {
       return (T) convertDocumentReference(o, context);
+    } else if (VectorValue.class.isAssignableFrom(clazz)) {
+      return (T) convertVectorValue(o, context);
     } else if (clazz.isArray()) {
       throw deserializeError(
           context.errorPath, "Converting to Arrays is not supported, please use Lists instead");
@@ -547,6 +551,16 @@ public class CustomClassMapper {
       throw deserializeError(
           context.errorPath,
           "Failed to convert value of type " + o.getClass().getName() + " to GeoPoint");
+    }
+  }
+
+  private static VectorValue convertVectorValue(Object o, DeserializeContext context) {
+    if (o instanceof VectorValue) {
+      return (VectorValue) o;
+    } else {
+      throw deserializeError(
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to VectorValue");
     }
   }
 

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <p>Do not use this class except for testing purposes.
  */
+@SuppressLint("SupportAnnotationUsage")
 @VisibleForTesting
 final class TestingHooks {
 
@@ -223,7 +225,7 @@ final class TestingHooks {
       }
       return create(
           bloomFilter,
-          /*bloomFilterApplied=*/ bloomFilterStatus == BloomFilterApplicationStatus.SUCCESS,
+          /* bloomFilterApplied= */ bloomFilterStatus == BloomFilterApplicationStatus.SUCCESS,
           unchangedNames.getHashCount(),
           unchangedNames.getBits().getBitmap().size(),
           unchangedNames.getBits().getPadding());

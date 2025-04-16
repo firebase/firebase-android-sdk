@@ -1,6 +1,57 @@
 # Unreleased
 
 
+# 21.0.5
+* [changed] Updated `protolite-well-known-types` dependency to v18.0.1 [#6716]
+* [fixed] Fixed a bug that allowed invalid payload bytes value in network request metrics [#6721]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.4
+* [fixed] Fixed a performance issue with shared preferences
+  calling `.apply()` every time a value is read from remote config (#6407)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.3
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.2
+* [fixed] Fixed `IllegalStateException` that happened when starting a trace
+  before Firebase initializes.
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.1
+* [fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
+  FirebasePerf is not yet initialized (Github #5584).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.0.0
 * [changed] Bump internal dependencies
 

@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
@@ -87,7 +88,13 @@ public class RemoteEventTest {
       Map<Integer, Integer> outstandingResponses,
       ImmutableSortedSet<DocumentKey> existingKeys,
       WatchChange... watchChanges) {
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(targetMetadataProvider);
+
+    // The BloomFilter proto is created based on the document paths that are constructed using the
+    // pattern: "projects/test-project/databases/test-database/documents/"+document_key.
+    DatabaseId databaseId = DatabaseId.forDatabase("test-project", "test-database");
+
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(databaseId, targetMetadataProvider);
 
     List<Integer> targetIds = new ArrayList<>();
 
@@ -469,10 +476,6 @@ public class RemoteEventTest {
     WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
     WatchChange change3 = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
 
-    // The BloomFilter proto value below is created based on the document paths that are constructed
-    // using the pattern: "projects/test-project/databases/test-database/documents/"+document_key.
-    // Override the default database ID to ensure that the document path matches the pattern above.
-    targetMetadataProvider.setDatabaseId("test-project", "test-database");
     WatchChangeAggregator aggregator =
         createAggregator(
             targetMap,

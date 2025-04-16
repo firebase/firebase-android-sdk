@@ -18,7 +18,7 @@ LOCAL_CPPFLAGS := \
     -DZLIB_CONST \
     -DCRASHPAD_ZLIB_SOURCE_SYSTEM \
     -DCRASHPAD_LSS_SOURCE_EXTERNAL \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -flto \
@@ -44,6 +44,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/exception_handler_protocol.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/initial_signal_dispositions.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/memory_map.cc \
+    $(THIRD_PARTY_PATH)/crashpad/util/linux/pac_helper.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/proc_stat_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/proc_task_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/linux/ptrace_broker.cc \

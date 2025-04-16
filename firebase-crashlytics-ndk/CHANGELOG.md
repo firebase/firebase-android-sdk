@@ -1,5 +1,33 @@
 # Unreleased
+# 19.4.3
+* [changed] Updated internal Crashpad version to commit `21a20e`.
 
+# 19.4.2
+* [changed] Updated `firebase-crashlytics` dependency to v19.4.2
+
+# 19.4.1
+* [changed] Updated `firebase-crashlytics` dependency to v19.4.1
+
+# 19.3.0
+* [changed] Updated `firebase-crashlytics` dependency to v19.3.0
+
+# 19.2.1
+* [changed] Updated `firebase-crashlytics` dependency to v19.2.1
+
+# 19.2.0
+* [changed] Updated `firebase-crashlytics` dependency to v19.2.0
+
+# 19.1.0
+* [changed] Updated `firebase-crashlytics` dependency to v19.1.0
+
+# 19.0.3
+* [changed] Updated `firebase-crashlytics` dependency to v19.0.3
+
+# 19.0.2
+* [changed] Update libcrashlytics to support 16 kb page sizes.
+
+# 19.0.1
+* [changed] Updated `firebase-crashlytics` dependency to v19.0.1
 
 # 19.0.0
 * [changed] Bump internal dependencies

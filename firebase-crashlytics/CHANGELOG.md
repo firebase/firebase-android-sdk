@@ -1,9 +1,111 @@
 # Unreleased
 
 
+# 19.4.2
+* [changed] Internal changes to read version control info more efficiently [#6754]
+* [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]
+* [changed] Updated `firebase-sessions` dependency to v2.1.0
+  * [changed] Add warning for known issue [b/328687152](https://issuetracker.google.com/328687152) [#6755]
+  * [changed] Updated datastore dependency to v1.1.3 to fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.4.1
+* [changed] Updated `firebase-sessions` dependency to v2.0.9
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.4.0
+* [feature] Added an overload for `recordException` that allows logging additional custom
+  keys to the non fatal event [#3551]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.3.0
+* [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
+* [fixed] Execute failure listener outside the main thread  [#6535]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.2.1
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.2.0
+* [fixed] Improved data consistency for rapid user actions.
+* [fixed] Fixed exception propagation in the case of no default uncaught exception handler.
+* [changed] Internal changes to improve startup time.
+* [changed] Internal changes to the way background tasks are scheduled.
+* [changed] Migrated SDK to use standard Firebase executors.
+
+# 19.1.0
+* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
+  enabled.
+  (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
+* [fixed] Ensure that on-demand fatal events are never processed on the main thread.
+  (GitHub [#4345](https://github.com/firebase/firebase-android-sdk/issues/4345){: .external})
+* [changed] Internal changes to the way session IDs are generated.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.3
+* [changed] Update the internal file system to handle long file names.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.2
+* [changed] Changing caught exception type to fail safely on any exception type.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.1
+* [changed] Improve cold initialization time.
+* [fixed] Fixed version compatibility issues with other Firebase libraries.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 19.0.0
 * [fixed] Force validation or rotation of FIDs.
 * [fixed] Added keep rule for shrinkage of Crashlytics build resources in strict mode.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -244,10 +346,10 @@ updates.
 
 # 18.2.10
 * [fixed] Fixed a bug that could prevent unhandled exceptions from being
-  propogated to the default handler when the network is unavailable.
+  propagated to the default handler when the network is unavailable.
 * [changed] Internal changes to support on-demand fatal crash reporting for
   Flutter apps.
-* [fixed] Fixed a bug that prevented [crashlytics] from initalizing on some
+* [fixed] Fixed a bug that prevented [crashlytics] from initializing on some
   devices in some cases. (#3269)
 
 

@@ -20,10 +20,11 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    libraryGroup "firestore"
-    publishSources = true
+    libraryGroup = "firestore"
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
@@ -61,13 +62,13 @@ dependencies {
     implementation("com.google.firebase:firebase-components:18.0.0")
 
     testImplementation project(':firebase-database-collection')
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
-    testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"
+    testCompileOnly libs.protobuf.java
 }

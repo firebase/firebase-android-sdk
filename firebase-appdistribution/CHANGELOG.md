@@ -1,7 +1,13 @@
 # Unreleased
 
 
-# 17.0.0
+# 16.0.0-beta15
+* [fixed] Added custom tab support for more browsers [#6692]
+
+# 16.0.0-beta14
+* [changed] Internal improvements to testing on Android 14
+
+# 16.0.0-beta13
 * [changed] Bump internal dependencies
 
 # 16.0.0-beta12

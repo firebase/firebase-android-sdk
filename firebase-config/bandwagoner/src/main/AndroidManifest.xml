@@ -17,9 +17,8 @@
 
 <!-- The first number in the version name distinguishes this as the 3P app version. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.googletest.firebase.remoteconfig.bandwagoner"
-    android:versionCode="1"
-    android:versionName="3.0.0">
+	android:versionCode="1"
+	android:versionName="3.0.0">
 
 
   <!--Needed for Firebase Installations getToken method.-->
@@ -30,22 +29,22 @@
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
   <application
-      android:name=".MainApplication"
-      android:label="Bandwagoner"
-      android:theme="@style/LightNoActionBarTheme">
+	  android:name=".MainApplication"
+	  android:label="Bandwagoner"
+	  android:theme="@style/LightNoActionBarTheme">
 
-    <activity android:exported="true" android:name=".MainActivity">
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
+	<activity android:exported="true" android:name=".MainActivity">
+	  <intent-filter>
+		<action android:name="android.intent.action.MAIN" />
+		<category android:name="android.intent.category.LAUNCHER" />
+	  </intent-filter>
+	</activity>
 
-    <service android:exported="false" android:name="com.google.firebase.components.ComponentDiscoveryService">
-      <meta-data
-          android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
-          android:value="com.google.firebase.components.ComponentRegistrar"/>
-    </service>
+	<service android:exported="false" android:name="com.google.firebase.components.ComponentDiscoveryService">
+	  <meta-data
+		  android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+		  android:value="com.google.firebase.components.ComponentRegistrar"/>
+	</service>
 
   </application>
 

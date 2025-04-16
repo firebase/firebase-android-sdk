@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.google.firebase.inappmessaging.internal.RateLimitProto.Counter;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;

@@ -14,6 +14,7 @@
 package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.FirebaseMessaging.TAG;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -26,7 +27,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.stats.ConnectionTracker;
-import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -35,7 +35,6 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Helper object to abstract the ServiceConnection lifecycle for binding to services within the same
@@ -65,7 +64,7 @@ class WithinAppServiceConnection implements ServiceConnection {
                 finish();
               },
               EnhancedIntentService.MESSAGE_TIMEOUT_S,
-              TimeUnit.SECONDS);
+              SECONDS);
 
       getTask()
           .addOnCompleteListener(
@@ -85,6 +84,7 @@ class WithinAppServiceConnection implements ServiceConnection {
   }
 
   private final Context context;
+
   /** Intent used during service connection to connect to the correct service */
   private final Intent connectionIntent;
 
@@ -99,18 +99,20 @@ class WithinAppServiceConnection implements ServiceConnection {
   @GuardedBy("this")
   private boolean connectionInProgress = false;
 
-  // TODO(b/258424124): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   WithinAppServiceConnection(Context context, String action) {
     // Class instances are owned by a static variable in FirebaseInstanceIdReceiver
     // and GcmReceiver so that they survive getting gc'd and reinstantiated, so use a
     // scheduled thread pool executor with core size of 0 so that the no threads will be
     // kept idle.
-    this(
-        context,
-        action,
-        new ScheduledThreadPoolExecutor(
-            0, new NamedThreadFactory("Firebase-FirebaseInstanceIdServiceConnection")));
+    this(context, action, createScheduledThreadPoolExecutor());
+  }
+
+  @SuppressLint("ThreadPoolCreation")
+  private static ScheduledThreadPoolExecutor createScheduledThreadPoolExecutor() {
+    ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+    threadPoolExecutor.setKeepAliveTime(EnhancedIntentService.MESSAGE_TIMEOUT_S * 2, SECONDS);
+    threadPoolExecutor.allowCoreThreadTimeOut(true);
+    return threadPoolExecutor;
   }
 
   @VisibleForTesting

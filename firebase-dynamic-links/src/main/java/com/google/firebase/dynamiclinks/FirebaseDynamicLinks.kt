@@ -22,12 +22,15 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import java.lang.Deprecated
 
 /** Returns the [FirebaseDynamicLinks] instance of the default [FirebaseApp]. */
+@get:Deprecated
 val Firebase.dynamicLinks: FirebaseDynamicLinks
   get() = FirebaseDynamicLinks.getInstance()
 
 /** Returns the [FirebaseDynamicLinks] instance of a given [FirebaseApp]. */
+@Deprecated
 fun Firebase.dynamicLinks(app: FirebaseApp): FirebaseDynamicLinks {
   return FirebaseDynamicLinks.getInstance(app)
 }
@@ -36,6 +39,7 @@ fun Firebase.dynamicLinks(app: FirebaseApp): FirebaseDynamicLinks {
  * Creates a [DynamicLink.AndroidParameters] object initialized using the [init] function and sets
  * it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.androidParameters(init: DynamicLink.AndroidParameters.Builder.() -> Unit) {
   val builder = DynamicLink.AndroidParameters.Builder()
   builder.init()
@@ -46,6 +50,7 @@ fun DynamicLink.Builder.androidParameters(init: DynamicLink.AndroidParameters.Bu
  * Creates a [DynamicLink.AndroidParameters] object initialized with the specified [packageName] and
  * using the [init] function and sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.androidParameters(
   packageName: String,
   init: DynamicLink.AndroidParameters.Builder.() -> Unit
@@ -59,6 +64,7 @@ fun DynamicLink.Builder.androidParameters(
  * Creates a [DynamicLink.IosParameters] object initialized with the specified [bundleId] and using
  * the [init] function and sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.iosParameters(
   bundleId: String,
   init: DynamicLink.IosParameters.Builder.() -> Unit
@@ -72,6 +78,7 @@ fun DynamicLink.Builder.iosParameters(
  * Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized using the [init] function
  * and sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.googleAnalyticsParameters(
   init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
 ) {
@@ -84,6 +91,7 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
  * Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized with the specified [source],
  * [medium], [campaign] and using the [init] function and sets it to the [DynamicLink.Builder].
  */
+@Deprecated
 fun DynamicLink.Builder.googleAnalyticsParameters(
   source: String,
   medium: String,
@@ -99,6 +107,7 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
  * Creates a [DynamicLink.ItunesConnectAnalyticsParameters] object initialized using the [init]
  * function and sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
   init: DynamicLink.ItunesConnectAnalyticsParameters.Builder.() -> Unit
 ) {
@@ -111,6 +120,7 @@ fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
  * Creates a [DynamicLink.SocialMetaTagParameters] object initialized using the [init] function and
  * sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.socialMetaTagParameters(
   init: DynamicLink.SocialMetaTagParameters.Builder.() -> Unit
 ) {
@@ -123,6 +133,7 @@ fun DynamicLink.Builder.socialMetaTagParameters(
  * Creates a [DynamicLink.NavigationInfoParameters] object initialized using the [init] function and
  * sets it to the [DynamicLink.Builder]
  */
+@Deprecated
 fun DynamicLink.Builder.navigationInfoParameters(
   init: DynamicLink.NavigationInfoParameters.Builder.() -> Unit
 ) {
@@ -132,6 +143,7 @@ fun DynamicLink.Builder.navigationInfoParameters(
 }
 
 /** Creates a [DynamicLink] object initialized using the [init] function. */
+@Deprecated
 fun FirebaseDynamicLinks.dynamicLink(init: DynamicLink.Builder.() -> Unit): DynamicLink {
   val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
   builder.init()
@@ -139,6 +151,7 @@ fun FirebaseDynamicLinks.dynamicLink(init: DynamicLink.Builder.() -> Unit): Dyna
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
+@Deprecated
 fun FirebaseDynamicLinks.shortLinkAsync(
   init: DynamicLink.Builder.() -> Unit
 ): Task<ShortDynamicLink> {
@@ -148,6 +161,7 @@ fun FirebaseDynamicLinks.shortLinkAsync(
 }
 
 /** Creates a [ShortDynamicLink] object initialized using the [init] function. */
+@Deprecated
 fun FirebaseDynamicLinks.shortLinkAsync(
   suffix: Int,
   init: DynamicLink.Builder.() -> Unit
@@ -158,22 +172,22 @@ fun FirebaseDynamicLinks.shortLinkAsync(
 }
 
 /** Destructuring declaration for [ShortDynamicLink] to provide shortLink. */
-operator fun ShortDynamicLink.component1() = shortLink
+@Deprecated operator fun ShortDynamicLink.component1() = shortLink
 
 /** Destructuring declaration for [ShortDynamicLink] to provide previewLink. */
-operator fun ShortDynamicLink.component2() = previewLink
+@Deprecated operator fun ShortDynamicLink.component2() = previewLink
 
 /** Destructuring declaration for [ShortDynamicLink] to provide warnings. */
-operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
+@Deprecated operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
 
 /** Destructuring declaration for [PendingDynamicLinkData] to provide link. */
-operator fun PendingDynamicLinkData.component1() = link
+@Deprecated operator fun PendingDynamicLinkData.component1() = link
 
 /** Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion. */
-operator fun PendingDynamicLinkData.component2() = minimumAppVersion
+@Deprecated operator fun PendingDynamicLinkData.component2() = minimumAppVersion
 
 /** Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp. */
-operator fun PendingDynamicLinkData.component3() = clickTimestamp
+@Deprecated operator fun PendingDynamicLinkData.component3() = clickTimestamp
 
 /** @suppress */
 @Keep

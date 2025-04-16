@@ -453,7 +453,7 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
 
     // Ensure the server timestamp stays uncommitted for the first half of the test
-    waitFor(collection.firestore.getClient().disableNetwork());
+    waitFor(collection.firestore.disableNetwork());
 
     TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
     TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
@@ -497,7 +497,7 @@ public class ValidationTest {
     document.set(map("timestamp", FieldValue.serverTimestamp()));
     waitFor(offlineCallbackDone.getTask());
 
-    waitFor(collection.firestore.getClient().enableNetwork());
+    waitFor(collection.firestore.enableNetwork());
     waitFor(onlineCallbackDone.getTask());
 
     listenerRegistration.remove();
@@ -782,7 +782,7 @@ public class ValidationTest {
 
   /** Performs a write using each write API and makes sure it succeeds. */
   private static void expectWriteSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
+    expectWriteSuccess(data, /* includeSets= */ true, /* includeUpdates= */ true);
   }
 
   /**
@@ -837,17 +837,17 @@ public class ValidationTest {
 
   /** Performs a write using each write API and makes sure it fails with the expected reason. */
   private static void expectWriteError(Object data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ true, /*includeUpdates=*/ true);
+    expectWriteError(data, reason, /* includeSets= */ true, /* includeUpdates= */ true);
   }
 
   /** Performs a write using each update API and makes sure it fails with the expected reason. */
   private static void expectUpdateError(Map<String, Object> data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ false, /*includeUpdates=*/ true);
+    expectWriteError(data, reason, /* includeSets= */ false, /* includeUpdates= */ true);
   }
 
   /** Performs a write using each set API and makes sure it fails with the expected reason. */
   private static void expectSetError(Object data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ true, /*includeUpdates=*/ false);
+    expectWriteError(data, reason, /* includeSets= */ true, /* includeUpdates= */ false);
   }
 
   /**

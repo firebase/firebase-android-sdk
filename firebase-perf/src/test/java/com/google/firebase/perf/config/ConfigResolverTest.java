@@ -28,7 +28,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
@@ -278,6 +277,23 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
     // Assert that final result is true, and no value is cached.
     assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
+    verify(mockDeviceCacheManager, never()).setValue(any(), anyString());
+  }
+
+  @Test
+  public void getIsServiceCollectionEnabled_deviceCacheHasSameValueAsFrc_returnCacheValue() {
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(true));
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(true));
+
+    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
+        .thenReturn(Optional.of(""));
+    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
+        .thenReturn(Optional.of(""));
+
+    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
+    verify(mockDeviceCacheManager, never()).setValue(any(), anyBoolean());
     verify(mockDeviceCacheManager, never()).setValue(any(), anyString());
   }
 

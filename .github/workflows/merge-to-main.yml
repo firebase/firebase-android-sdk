@@ -3,7 +3,7 @@ name: Merge to main
 on:
   pull_request:
     branches:
-      - master
+      - main
     types:
       - opened
       - labeled
@@ -15,7 +15,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-    - uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
+    - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
       with:
         message: >
           ### 📝 PRs merging into main branch

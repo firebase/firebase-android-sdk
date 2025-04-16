@@ -37,6 +37,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -72,14 +73,15 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -155,7 +157,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigCacheClient mockDefaultsCache;
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
-  @Mock private ConfigMetadataClient metadataClient;
+  @Mock private ConfigSharedPrefsClient sharedPrefsClient;
 
   @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
   @Mock private ConfigAutoFetch mockConfigAutoFetch;
@@ -192,7 +194,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigContainer realtimeFetchedContainer;
   private ConfigAutoFetch configAutoFetch;
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
-  private ConfigMetadataClient realtimeMetadataClient;
+  private ConfigSharedPrefsClient realtimeSharedPrefsClient;
 
   private FetchResponse firstFetchedContainerResponse;
 
@@ -240,7 +242,7 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient,
+            sharedPrefsClient,
             mockConfigRealtimeHandler,
             mockRolloutsStateSubscriptionsHandler);
 
@@ -252,14 +254,14 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
                 mockFireperfDefaultsCache,
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE),
+                RemoteConfigComponent.getSharedPrefsClient(context, APP_ID, FIREPERF_NAMESPACE),
                 mockRolloutsStateSubscriptionsHandler);
 
     personalizationFrc =
@@ -269,14 +271,15 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 PERSONALIZATION_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFetchedCache,
                 mockActivatedCache,
                 mockDefaultsCache,
                 mockFetchHandler,
                 parameterHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, PERSONALIZATION_NAMESPACE),
+                RemoteConfigComponent.getSharedPrefsClient(
+                    context, APP_ID, PERSONALIZATION_NAMESPACE),
                 mockRolloutsStateSubscriptionsHandler);
 
     firstFetchedContainer =
@@ -316,7 +319,7 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {
             mockOnUpdateListener.onUpdate(configUpdate);
           }
 
@@ -349,8 +352,10 @@ public final class FirebaseRemoteConfigTest {
             listeners,
             mockRetryListener,
             scheduledExecutorService);
-    realtimeMetadataClient =
-        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+    configAutoFetch.setIsInBackground(false);
+    realtimeSharedPrefsClient =
+        new ConfigSharedPrefsClient(
+            context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -360,14 +365,14 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-            realtimeMetadataClient,
+            realtimeSharedPrefsClient,
             scheduledExecutorService);
   }
 
   @Test
   public void ensureInitialized_notInitialized_isNotComplete() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
     loadActivatedCacheWithIncompleteTask();
     loadInstanceIdAndToken();
 
@@ -380,9 +385,9 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_initialized_returnsCorrectFrcInfo() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
@@ -806,8 +811,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /* container= */ null);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
 
@@ -1024,7 +1029,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void getInfo_returnsInfo() {
-    when(metadataClient.getInfo()).thenReturn(mockFrcInfo);
+    when(sharedPrefsClient.getInfo()).thenReturn(mockFrcInfo);
 
     long fetchTimeInMillis = 100L;
     int lastFetchStatus = LAST_FETCH_STATUS_THROTTLED;
@@ -1071,11 +1076,11 @@ public final class FirebaseRemoteConfigTest {
     verify(mockActivatedCache).clear();
     verify(mockFetchedCache).clear();
     verify(mockDefaultsCache).clear();
-    verify(metadataClient).clear();
+    verify(sharedPrefsClient).clear();
   }
 
   @Test
-  public void setConfigSettingsAsync_updatesMetadata() {
+  public void setConfigSettingsAsync_updatesSharedPrefs() {
     long fetchTimeout = 13L;
     long minimumFetchInterval = 666L;
     FirebaseRemoteConfigSettings frcSettings =
@@ -1087,7 +1092,7 @@ public final class FirebaseRemoteConfigTest {
     Task<Void> setterTask = frc.setConfigSettingsAsync(frcSettings);
 
     assertThat(setterTask.isSuccessful()).isTrue();
-    verify(metadataClient).setConfigSettings(frcSettings);
+    verify(sharedPrefsClient).setConfigSettings(frcSettings);
   }
 
   @Test
@@ -1272,17 +1277,18 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_and_end_connection() throws Exception {
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
+    InputStream inputStream =
+        new ByteArrayInputStream(
+            "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8));
+    InputStream inputStreamSpy = spy(inputStream);
+    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStreamSpy);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockHttpURLConnection).disconnect();
+    verify(inputStreamSpy, times(2)).close();
   }
 
   @Test
@@ -1306,7 +1312,7 @@ public final class FirebaseRemoteConfigTest {
         .createRealtimeConnection();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(301);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1327,7 +1333,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1346,7 +1352,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1365,7 +1371,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
@@ -1384,7 +1390,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
@@ -1405,7 +1411,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
@@ -1426,7 +1432,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
@@ -1444,7 +1450,7 @@ public final class FirebaseRemoteConfigTest {
         .createRealtimeConnection();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getErrorStream())
         .thenReturn(
             new ByteArrayInputStream(FORBIDDEN_ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8)));
@@ -1467,7 +1473,7 @@ public final class FirebaseRemoteConfigTest {
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
     doNothing()
         .when(configRealtimeHttpClientSpy)
-        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     flushScheduledTasks();
@@ -1510,6 +1516,25 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtime_stream_listen_backgrounded_disconnects() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(Tasks.forResult(mockHttpURLConnection))
+        .when(configRealtimeHttpClientSpy)
+        .createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    configRealtimeHttpClientSpy.setIsInBackground(true);
+    flushScheduledTasks();
+
+    verify(mockHttpURLConnection, times(1)).disconnect();
+  }
+
+  @Test
   public void realtimeStreamListen_andUnableToParseMessage() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream())
@@ -1528,15 +1553,28 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
+    InputStream inputStream = mock(InputStream.class);
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStream);
+    when(inputStream.read()).thenThrow(IOException.class);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockHttpURLConnection).disconnect();
+    verify(inputStream).close();
+  }
+
+  @Test
+  public void realtime_stream_listen_get_inputstream_exception_handling() throws Exception {
+    InputStream inputStream = mock(InputStream.class);
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    configAutoFetch.listenForNotifications();
+
+    verify(mockHttpURLConnection, times(1)).getInputStream();
+    verify(inputStream, never()).close();
   }
 
   @Test
@@ -1658,6 +1696,22 @@ public final class FirebaseRemoteConfigTest {
     assertThat(fakeConnection.getRequestMethod()).isEqualTo("POST");
   }
 
+  @Test
+  public void setCustomSignals_succeeds_and_calls_sharedPrefsClient() {
+    CustomSignals customSignals =
+        new CustomSignals.Builder()
+            .put("key1", "value1")
+            .put("key2", 123L)
+            .put("key3", 12.34)
+            .put("key4", null)
+            .build();
+
+    Task<Void> setterTask = frc.setCustomSignals(customSignals);
+
+    assertThat(setterTask.isSuccessful()).isTrue();
+    verify(sharedPrefsClient).setCustomSignals(customSignals.customSignals);
+  }
+
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
@@ -1757,7 +1811,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(ConfigUpdate configUpdate) {}
+      public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}

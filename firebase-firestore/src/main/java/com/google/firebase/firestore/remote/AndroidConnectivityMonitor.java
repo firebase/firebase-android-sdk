@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>Implementation note: Most of the code here was shamelessly stolen from
  * https://github.com/grpc/grpc-java/blob/master/android/src/main/java/io/grpc/android/AndroidChannelBuilder.java
  */
-public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
+final class AndroidConnectivityMonitor implements ConnectivityMonitor {
 
   private static final String LOG_TAG = "AndroidConnectivityMonitor";
 
@@ -52,7 +52,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
   @Nullable private Runnable unregisterRunnable;
   private final List<Consumer<NetworkStatus>> callbacks = new ArrayList<>();
 
-  public AndroidConnectivityMonitor(Context context) {
+  AndroidConnectivityMonitor(Context context) {
     // This notnull restriction could be eliminated... the pre-N method doesn't
     // require a Context, and we could use that even on N+ if necessary.
     hardAssert(context != null, "Context must be non-null");

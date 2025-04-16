@@ -19,10 +19,13 @@ package com.google.firebase.sessions
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -35,7 +38,7 @@ internal fun interface SessionFirelogPublisher {
 
   companion object {
     val instance: SessionFirelogPublisher
-      get() = Firebase.app[SessionFirelogPublisher::class.java]
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionFirelogPublisher
   }
 }
 
@@ -44,12 +47,15 @@ internal fun interface SessionFirelogPublisher {
  *
  * @hide
  */
-internal class SessionFirelogPublisherImpl(
+@Singleton
+internal class SessionFirelogPublisherImpl
+@Inject
+constructor(
   private val firebaseApp: FirebaseApp,
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val sessionSettings: SessionsSettings,
   private val eventGDTLogger: EventGDTLoggerInterface,
-  private val backgroundDispatcher: CoroutineContext,
+  @Background private val backgroundDispatcher: CoroutineContext,
 ) : SessionFirelogPublisher {
 
   /**
@@ -80,7 +86,7 @@ internal class SessionFirelogPublisherImpl(
   private fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
     try {
       eventGDTLogger.log(sessionEvent)
-      Log.d(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+      Log.d(TAG, "Successfully logged Session Start event.")
     } catch (ex: RuntimeException) {
       Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
     }

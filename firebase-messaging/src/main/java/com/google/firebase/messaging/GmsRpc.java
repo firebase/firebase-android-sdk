@@ -58,6 +58,12 @@ class GmsRpc {
   /** Another server error besides ERROR_SERVICE_NOT_AVAILABLE that we retry on. */
   static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
 
+  /**
+   * A server error that represents hitting topic subscription quota. Trying again here may
+   * continue to fail, but as long as we use exponential backoff its okay to retry.
+   */
+  static final String TOO_MANY_SUBSCRIBERS = "TOO_MANY_SUBSCRIBERS";
+
   /** Heartbeat tag for firebase iid. */
   static final String FIREBASE_IID_HEARTBEAT_TAG = "fire-iid";
 
@@ -71,15 +77,14 @@ class GmsRpc {
   private static final String EXTRA_TOPIC = "gcm.topic";
   private static final String TOPIC_PREFIX = "/topics/";
 
-  // LINT.IfChange
   /** InstanceId should be reset. Can be a duplicate, or deleted. */
   static final String ERROR_INSTANCE_ID_RESET = "INSTANCE_ID_RESET";
-  // LINT.ThenChange(//depot/google3/firebase/instance_id/client/cpp/src/android/instance_id.cc)
 
   // --- List of parameters sent to the /register3 servlet
 
   /** Internal parameter used to indicate a 'subtype'. Will not be stored in DB for Nacho. */
   private static final String EXTRA_SUBTYPE = "subtype";
+
   /** Extra used to indicate which senders (Google API project IDs) can send messages to the app */
   private static final String EXTRA_SENDER = "sender";
 
@@ -102,18 +107,24 @@ class GmsRpc {
 
   /** Version of the client library. String like: "fcm-112233" */
   private static final String PARAM_CLIENT_VER = "cliv";
+
   /** gmp_app_id (application identifier in firebase). String */
   private static final String PARAM_GMP_APP_ID = "gmp_app_id";
+
   /** version of the gms package. Integer.toString() */
   private static final String PARAM_GMS_VER = "gmsv";
+
   /** android build version. Integer.toString() */
   private static final String PARAM_OS_VER = "osv";
+
   /** package version code. Integer.toString() */
   private static final String PARAM_APP_VER_CODE = "app_ver";
+
   /** package version name. Integer.toString() */
   private static final String PARAM_APP_VER_NAME = "app_ver_name";
 
   private static final String PARAM_FIS_AUTH_TOKEN = "Goog-Firebase-Installations-Auth";
+
   /** hashed value of developer chosen (nick)name of Firebase Core SDK (a.k.a. FirebaseApp) */
   private static final String PARAM_FIREBASE_APP_NAME_HASH = "firebase-app-name-hash";
 

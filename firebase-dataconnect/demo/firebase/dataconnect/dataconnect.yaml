@@ -1,0 +1,9 @@
+specVersion: v1
+serviceId: srv3ar8skbsza
+location: us-central1
+schema:
+  source: ./schema
+  datasource:
+    postgresql: null
+connectorDirs:
+ - ./connector

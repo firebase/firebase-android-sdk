@@ -39,12 +39,26 @@
     app:layout_constraintLeft_toLeftOf="parent" />
 
   <Button
+      android:id="@+id/second_create_trace"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/create_trace"
+      app:layout_constraintTop_toBottomOf="@id/second_crash_button"
+      app:layout_constraintLeft_toLeftOf="parent" />
+
+  <Button
     android:id="@+id/kill_background_processes"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/kill_processes_button_text"
     app:layout_constraintTop_toBottomOf="@id/second_crash_button"
     app:layout_constraintLeft_toLeftOf="parent" />
+
+  <TextView
+      android:id="@+id/process_name_second"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text=""/>
 
   <LinearLayout
     android:layout_width="match_parent"

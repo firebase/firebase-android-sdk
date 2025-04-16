@@ -22,14 +22,20 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 
-/** Provides accessor methods to dynamic links data. */
+/**
+ * Provides accessor methods to dynamic links data.
+ *
+ * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+ */
+@Deprecated
 public class PendingDynamicLinkData {
 
   @Nullable private final DynamicLinkUTMParams dynamicLinkUTMParams;
@@ -96,8 +102,12 @@ public class PendingDynamicLinkData {
    * will match {@link android.content.IntentFilter} to deep link into the app.
    *
    * @return The deep link if it exists, null otherwise.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Nullable
+  @Deprecated
   public Uri getLink() {
     if (dynamicLinkData == null) {
       return null;
@@ -114,8 +124,12 @@ public class PendingDynamicLinkData {
    * Link.
    *
    * @return Bundle of utm parameters associated with firebase dynamic link.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public Bundle getUtmParameters() {
     if (dynamicLinkUTMParams == null) {
       return new Bundle();
@@ -131,7 +145,11 @@ public class PendingDynamicLinkData {
    * #getUpdateAppIntent(Context)}.
    *
    * @return minimum version code set on the dynamic link, or 0 if not specified.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
+  @Deprecated
   public int getMinimumAppVersion() {
     if (dynamicLinkData == null) {
       return 0;
@@ -144,7 +162,11 @@ public class PendingDynamicLinkData {
    * the amount of time that has passed since the user selected the link until the app is launched.
    *
    * @return The number of milliseconds that have elapsed since January 1, 1970.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
+  @Deprecated
   public long getClickTimestamp() {
     if (dynamicLinkData == null) {
       return 0L;
@@ -185,8 +207,12 @@ public class PendingDynamicLinkData {
    *
    * @return - An {@link Intent} that will launch the Play Store to update the app, or null if the
    *     dynamic link minimum version code is not greater than the installed version.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Nullable
+  @Deprecated
   public Intent getUpdateAppIntent(@NonNull Context context) {
     int versionCode;
     // zero indicates any version is accepted.

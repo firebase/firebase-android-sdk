@@ -18,11 +18,12 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup "crashlytics"
+  libraryGroup = "crashlytics"
   testLab.enabled = true
   publishJavadoc = false
-  publishReleaseNotes = false
-  publishSources = true
+  releaseNotes { 
+    enabled.set(false)
+}
 }
 
 android {
