@@ -26,7 +26,7 @@ def main() -> None:
   args = parse_args()
   logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-  logging.info("Extracting PR number from ${{ github.ref }}: %s", args.github_ref)
+  logging.info("Extracting PR number from string: %s", args.github_ref)
   pr_number: int | None = pr_number_from_github_ref(args.github_ref)
   logging.info("Extracted PR number: %s", pr_number)
 
