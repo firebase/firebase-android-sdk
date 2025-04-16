@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.type.ResponseModality // Added import
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -88,6 +89,7 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
+  internal val responseModalities: List<ResponseModality>?, // Added property
 ) {
 
   /**
@@ -128,6 +130,7 @@ private constructor(
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
+    @JvmField public var responseModalities: List<ResponseModality>? = null // Added property
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -142,6 +145,7 @@ private constructor(
         frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
+         responseModalities = responseModalities, // Added property
       )
   }
 
@@ -156,7 +160,9 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal()
+       responseSchema = responseSchema?.toInternal(),
+        // Pass the responseModalities to the Internal class constructor
+        responseModalities = this.responseModalities 
     )
 
   @Serializable
@@ -171,6 +177,7 @@ private constructor(
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
     @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
+     @SerialName("response_modalities") val responseModalities: List<ResponseModality>? = null, // Added property
   )
 
   public companion object {
