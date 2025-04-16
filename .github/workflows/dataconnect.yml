@@ -328,7 +328,13 @@ jobs:
         run: pyright --warnings --stats
 
   send-notifications:
-    needs: [integration-test, actionlint-dataconnect-yml]
+    needs: 
+      - 'integration-test'
+      - 'actionlint-dataconnect-yml'
+      - 'python-ci-unit-tests'
+      - 'python-ci-lint'
+      - 'python-ci-format'
+      - 'python-ci-type-check'
     if: always()
     permissions:
       issues: write
@@ -357,8 +363,8 @@ jobs:
           python \
             calculate_github_issue_for_commenting.py \
             --output-file=github_issue_number.txt \
-            --github-ref='${{ github.ref }}' \
             --github-repository='${{ github.repository }}' \
+            --github-ref='${{ github.ref }}' \
             --github-event-name='${{ github.event_name }}' \
             --pr-body-github-issue-key=trksmnkncd_notification_issue \
             --github-issue-for-scheduled-run=6857 # https://github.com/firebase/firebase-android-sdk/issues/6857
@@ -372,17 +378,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          set -xv
 
-          cat >message.txt <<EOF
-          Result of workflows at ${{ github.sha }}:
-          - integration-test: ${{ (needs.integration-test.result == 'success' && '✅') || '❌' }} ${{ needs.integration-test.result }}
-          - actionlint-dataconnect-yml: ${{ (needs.actionlint-dataconnect-yml.result == 'success' && '✅') || '❌' }} ${{ needs.actionlint-dataconnect-yml.result }}
-
-          ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
-
-          run_id=${{ github.run_id }} run_number=${{ github.run_number }} run_attempt=${{ github.run_attempt }}
-          EOF
-
-          echo "Posting comment on GitHub Issue: https://github.com/firebase/firebase-android-sdk/issues/${{ steps.issue-id.outputs.issue }}"
-          cat message.txt
-          gh issue comment ${{ steps.issue-id.outputs.issue }} --body-file message.txt -R ${{ github.repository }}
+          exec python \
+            post_comment_for_job_results.py \
+            --github-issue='${{ steps.issue-id.outputs.issue }}' \
+            --github-repository='${{ github.repository }}' \
+            --github-sha='${{ github.sha }}' \
+            --github-repository-html-url='${{ github.event.repository.html_url }}' \
+            --github-run-id='${{ github.run_id }}' \
+            --github-run-number='${{ github.run_number }}' \
+            --github-run-attempt='${{ github.run_attempt }}' \
+            'integration-test:${{ needs.integration-test.result }}' \
+            'actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}' \
+            'python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}' \
+            'python-ci-lint:${{ needs.python-ci-lint.result }}' \
+            'python-ci-format:${{ needs.python-ci-format.result }}' \
+            'python-ci-type-check:${{ needs.python-ci-type-check.result }}' \
