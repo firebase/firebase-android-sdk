@@ -57,11 +57,11 @@ constructor(
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
           } else {
             firebaseApp.addLifecycleEventListener { _, _ ->
-              // Log.w(
-              //   TAG,
-              //   "FirebaseApp instance deleted. Sessions library will stop collecting data.",
-              // )
-              // TODO(mrober): Clean up on firebase app delete
+              Log.w(
+                TAG,
+                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
+              )
+              sessionsActivityLifecycleCallbacks.onAppDelete()
             }
           }
         }
