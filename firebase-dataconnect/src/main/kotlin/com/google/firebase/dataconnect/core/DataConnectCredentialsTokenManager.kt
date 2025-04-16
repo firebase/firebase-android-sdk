@@ -193,12 +193,12 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   fun forceRefresh() {
     logger.debug { "forceRefresh()" }
     val oldState =
-      state.getAndUpdate { oldState ->
-        when (oldState) {
+      state.getAndUpdate { currentState ->
+        when (currentState) {
           is State.Closed -> State.Closed
-          is State.New -> oldState.copy(forceTokenRefresh = true)
-          is State.Idle -> oldState.copy(forceTokenRefresh = true)
-          is State.Active -> State.Idle(oldState.provider, forceTokenRefresh = true)
+          is State.New -> currentState.copy(forceTokenRefresh = true)
+          is State.Idle -> currentState.copy(forceTokenRefresh = true)
+          is State.Active -> State.Idle(currentState.provider, forceTokenRefresh = true)
         }
       }
 
@@ -340,11 +340,11 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     addTokenListener(newProvider)
 
     val oldState =
-      state.getAndUpdate { oldState ->
-        when (oldState) {
+      state.getAndUpdate { currentState ->
+        when (currentState) {
           is State.Closed -> State.Closed
-          is State.New -> State.Idle(newProvider, oldState.forceTokenRefresh)
-          is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
+          is State.New -> State.Idle(newProvider, currentState.forceTokenRefresh)
+          is State.Idle -> State.Idle(newProvider, currentState.forceTokenRefresh)
           is State.Active -> State.Idle(newProvider, forceTokenRefresh = false)
         }
       }

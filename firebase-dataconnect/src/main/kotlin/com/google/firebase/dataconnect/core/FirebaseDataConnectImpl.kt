@@ -162,17 +162,17 @@ internal class FirebaseDataConnectImpl(
 
   private fun initialize(): State.Initialized {
     val newState =
-      state.updateAndGet { oldState ->
-        when (oldState) {
+      state.updateAndGet { currentState ->
+        when (currentState) {
           is State.New -> {
-            val grpcRPCs = createDataConnectGrpcRPCs(oldState.emulatorSettings)
+            val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcClient)
             State.Initialized(grpcRPCs, grpcClient, queryManager)
           }
-          is State.Initialized -> oldState
-          is State.Closing -> oldState
-          is State.Closed -> oldState
+          is State.Initialized -> currentState
+          is State.Closing -> currentState
+          is State.Closed -> currentState
         }
       }
 
@@ -294,16 +294,16 @@ internal class FirebaseDataConnectImpl(
   }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
-    state.update { oldState ->
-      when (oldState) {
+    state.update { currentState ->
+      when (currentState) {
         is State.New ->
-          oldState.copy(emulatorSettings = EmulatedServiceSettings(host = host, port = port))
+          currentState.copy(emulatorSettings = EmulatedServiceSettings(host = host, port = port))
         is State.Initialized ->
           throw IllegalStateException(
             "Cannot call useEmulator() after instance has already been initialized."
           )
-        is State.Closing -> oldState
-        is State.Closed -> oldState
+        is State.Closing -> currentState
+        is State.Closed -> currentState
       }
     }
   }
@@ -443,12 +443,12 @@ internal class FirebaseDataConnectImpl(
           logger.warn(exception) { "close() failed" }
         } else {
           logger.debug { "close() completed successfully" }
-          state.update { oldState ->
-            check(oldState is State.Closing) {
-              "oldState is ${oldState}, but expected Closing (error code hsee7gfxvz)"
+          state.update { currentState ->
+            check(currentState is State.Closing) {
+              "currentState is ${currentState}, but expected Closing (error code hsee7gfxvz)"
             }
-            check(oldState.closeJob === closeJob) {
-              "oldState.closeJob is ${oldState.closeJob}, but expected $closeJob " +
+            check(currentState.closeJob === closeJob) {
+              "currentState.closeJob is ${currentState.closeJob}, but expected $closeJob " +
                 "(error code n3x86pr6qn)"
             }
             State.Closed
@@ -459,16 +459,16 @@ internal class FirebaseDataConnectImpl(
     }
 
     val newState =
-      state.updateAndGet { oldState ->
-        when (oldState) {
+      state.updateAndGet { currentState ->
+        when (currentState) {
           is State.New -> State.Closed
           is State.Initialized ->
-            State.Closing(oldState.grpcRPCs, createCloseJob(oldState.grpcRPCs))
+            State.Closing(currentState.grpcRPCs, createCloseJob(currentState.grpcRPCs))
           is State.Closing ->
-            if (oldState.closeJob.isCancelled) {
-              oldState.copy(closeJob = createCloseJob(oldState.grpcRPCs))
+            if (currentState.closeJob.isCancelled) {
+              currentState.copy(closeJob = createCloseJob(currentState.grpcRPCs))
             } else {
-              oldState
+              currentState
             }
           is State.Closed -> State.Closed
         }
