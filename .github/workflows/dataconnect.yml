@@ -334,36 +334,36 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+
       - id: issue-id
         name: Determine GitHub Issue For Commenting
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: firebase-dataconnect/ci
         run: |
           set -euo pipefail
           set -xv
 
-          # If this job was triggered by a pull request, then check to see if
-          # the description of the PR specifies a GitHub Issue to which to post
-          # a comment. The GitHub Issue number is specified by including a line
-          # of the form "trksmnkncd_notification_issue=6863" in the description.
-          # Specifying an issue number in this manner is primarily intended for
-          # debugging/development purposes of the comment-posting logic itself.
-          # For example, issue number 6863 was specifically created for testing.
-          # (see https://github.com/firebase/firebase-android-sdk/issues/6863)
-          pr_number=$(echo '${{ github.ref }}' | sed -En 's#^refs/pull/([0-9]+)/merge$#\1#p')
-          if [[ -n $pr_number ]] ; then
-            issue_from_pr_body=$(gh issue view "$pr_number" --json body --jq '.body' -R ${{ github.repository }} | sed -En 's#(\s|^)trksmnkncd_notification_issue=([0-9]+)(\s|$)#\2#p')
-          fi
+          python \
+            calculate_github_issue_for_commenting.py \
+            --output-file=github_issue_number.txt \
+            --github-ref='${{ github.ref }}' \
+            --github-repository='${{ github.repository }}' \
+            --github-event-name='${{ github.event_name }}' \
+            --pr-body-github-issue-key=trksmnkncd_notification_issue \
+            --github-issue-for-scheduled-run=6857 # https://github.com/firebase/firebase-android-sdk/issues/6857
 
-          if [[ -v issue_from_pr_body ]] && [[ -n $issue_from_pr_body ]] ; then
-            issue="$issue_from_pr_body"
-          elif [[ '${{ github.event_name }}' == 'schedule' ]] ; then
-            # See https://github.com/firebase/firebase-android-sdk/issues/6857
-            issue=6857
-          else
-            issue=
-          fi
-
+          issue="$(cat github_issue_number.txt)"
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
 
       - name: Post Comment on GitHub Issue
