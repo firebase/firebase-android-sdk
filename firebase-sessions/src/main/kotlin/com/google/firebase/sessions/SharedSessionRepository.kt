@@ -29,7 +29,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import org.jetbrains.annotations.VisibleForTesting
 
 /** Repository to persist session data to be shared between all app processes. */
 internal interface SharedSessionRepository {
@@ -50,26 +49,26 @@ constructor(
   @Background private val backgroundDispatcher: CoroutineContext,
 ) : SharedSessionRepository {
   /** Local copy of the session data. Can get out of sync, must be double-checked in datastore. */
-  @VisibleForTesting lateinit var localSessionData: SessionData
+  internal lateinit var localSessionData: SessionData
 
   /**
    * Either notify the subscribers with general multi-process supported session or fallback local
    * session
    */
-  private enum class NotificationType {
+  internal enum class NotificationType {
     GENERAL,
     FALLBACK
   }
+  internal var previousNotificationType: NotificationType = NotificationType.GENERAL
 
   init {
-    println("session repo init")
     CoroutineScope(backgroundDispatcher).launch {
       sessionDataStore.data
         .catch {
           val newSession =
             SessionData(
               sessionDetails = sessionGenerator.generateNewSession(null),
-              backgroundTime = timeProvider.currentTime()
+              backgroundTime = null
             )
           Log.d(
             TAG,
@@ -123,7 +122,7 @@ constructor(
               val newSessionDetails =
                 sessionGenerator.generateNewSession(sessionData.sessionDetails)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
-              currentSessionData.copy(sessionDetails = newSessionDetails)
+              currentSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
             } else {
               currentSessionData
             }
@@ -131,7 +130,8 @@ constructor(
         } catch (ex: Exception) {
           Log.d(TAG, "App appForegrounded, failed to update data. Message: ${ex.message}")
           val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
-          localSessionData = localSessionData.copy(sessionDetails = newSessionDetails)
+          localSessionData =
+            localSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
           sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
 
           val sessionId = newSessionDetails.sessionId
@@ -142,24 +142,29 @@ constructor(
   }
 
   private suspend fun notifySubscribers(sessionId: String, type: NotificationType) {
+    previousNotificationType = type
     FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
       // Notify subscribers, regardless of sampling and data collection state
       subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
-      when (type) {
-        NotificationType.GENERAL ->
-          Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
-        NotificationType.FALLBACK ->
-          Log.d(
-            TAG,
+      Log.d(
+        TAG,
+        when (type) {
+          NotificationType.GENERAL ->
+            "Notified ${subscriber.sessionSubscriberName} of new session $sessionId"
+          NotificationType.FALLBACK ->
             "Notified ${subscriber.sessionSubscriberName} of new fallback session $sessionId"
-          )
-      }
+        }
+      )
     }
   }
 
   private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {
-    val interval = timeProvider.currentTime() - sessionData.backgroundTime
-    return interval > sessionsSettings.sessionRestartTimeout
+    sessionData.backgroundTime?.let {
+      val interval = timeProvider.currentTime() - it
+      return interval > sessionsSettings.sessionRestartTimeout
+    }
+    Log.d(TAG, "No process has backgrounded yet, should not change the session.")
+    return false
   }
 
   private companion object {

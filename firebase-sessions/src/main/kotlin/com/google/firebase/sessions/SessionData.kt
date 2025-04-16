@@ -27,7 +27,10 @@ import kotlinx.serialization.json.Json
 
 /** Session data to be persisted. */
 @Serializable
-internal data class SessionData(val sessionDetails: SessionDetails, val backgroundTime: Time)
+internal data class SessionData(
+  val sessionDetails: SessionDetails,
+  val backgroundTime: Time? = null
+)
 
 /** DataStore json [Serializer] for [SessionData]. */
 @Singleton
@@ -38,11 +41,7 @@ constructor(
   private val timeProvider: TimeProvider,
 ) : Serializer<SessionData> {
   override val defaultValue: SessionData
-    get() =
-      SessionData(
-        sessionDetails = sessionGenerator.generateNewSession(currentSession = null),
-        backgroundTime = timeProvider.currentTime(),
-      )
+    get() = SessionData(sessionGenerator.generateNewSession(currentSession = null))
 
   override suspend fun readFrom(input: InputStream): SessionData =
     try {
