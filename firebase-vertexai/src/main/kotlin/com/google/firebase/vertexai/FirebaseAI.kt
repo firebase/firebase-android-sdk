@@ -16,6 +16,7 @@ package com.google.firebase.vertexai
  * limitations under the License.
  */
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -205,7 +206,7 @@ internal constructor(
     public companion object {
         /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
         @JvmStatic
-        public val instance: FirebaseVertexAI
+        public val instance: FirebaseAI
             get() = getInstance(location = "us-central1")
 
         /**
@@ -215,11 +216,12 @@ internal constructor(
          * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
          * .
          */
+        @SuppressLint("FirebaseUseExplicitDependencies")
         @JvmStatic
         @JvmOverloads
-        public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
+        public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseAI {
             val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-            return multiResourceComponent.getVertexAI(location)
+            return multiResourceComponent.getFirebaseAI(location)
         }
 
         /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] */

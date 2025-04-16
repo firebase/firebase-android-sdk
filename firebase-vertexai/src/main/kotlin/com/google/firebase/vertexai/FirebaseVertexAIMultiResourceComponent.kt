@@ -44,7 +44,7 @@ internal class FirebaseVertexAIMultiResourceComponent(
     @GuardedBy("this")
     private val vertexInstances: MutableMap<String, FirebaseAI> = mutableMapOf()
 
-  @GuardedBy("this") private val googleInstance: MutableList<FirebaseAI> = mutableListOf()
+  @GuardedBy("this") private val firebaseAiInstance: MutableList<FirebaseAI> = mutableListOf()
 
     fun getRegularVertexAI(location: String): FirebaseVertexAI =
         synchronized(this) {
@@ -70,20 +70,36 @@ internal class FirebaseVertexAIMultiResourceComponent(
             appCheckProvider,
             internalAuthProvider,
           )
-          .also { regularVertexInstances[location] = it }
+          .also { vertexInstances[location] = it }
     }
 
-  fun getGoogleAI(): FirebaseAI =
-    synchronized(this) {
-      googleInstance.getOrNull(0)
-        ?: FirebaseAI(
-              app,
-              GenerativeBackend.GOOGLE_AI,
-              backgroundDispatcher,
-              "UNUSED",
-              appCheckProvider,
-              internalAuthProvider,
-            )
-          .also { googleInstance.add(it) }
-    }
+    // THIS CAN BE DONE BETTER
+  fun getFirebaseAI(location: String?): FirebaseAI {
+      if (location != null) {
+          return synchronized(this) {
+              firebaseAiInstance.getOrNull(0)
+                  ?: FirebaseAI(
+                      app,
+                      GenerativeBackend.VERTEX_AI,
+                      backgroundDispatcher,
+                      location,
+                      appCheckProvider,
+                      internalAuthProvider,
+                  )
+                      .also { firebaseAiInstance.add(it) }
+          }
+      }
+      return synchronized(this) {
+          firebaseAiInstance.getOrNull(0)
+              ?: FirebaseAI(
+                  app,
+                  GenerativeBackend.GOOGLE_AI,
+                  backgroundDispatcher,
+                  "UNUSED",
+                  appCheckProvider,
+                  internalAuthProvider,
+              )
+                  .also { firebaseAiInstance.add(it) }
+      }
+  }
 }
