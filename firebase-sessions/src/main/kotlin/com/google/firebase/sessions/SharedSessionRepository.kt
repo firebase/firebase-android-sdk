@@ -62,14 +62,13 @@ constructor(
   internal var previousNotificationType: NotificationType = NotificationType.GENERAL
 
   init {
-    println("session repo init")
     CoroutineScope(backgroundDispatcher).launch {
       sessionDataStore.data
         .catch {
           val newSession =
             SessionData(
               sessionDetails = sessionGenerator.generateNewSession(null),
-              backgroundTime = timeProvider.currentTime()
+              backgroundTime = null
             )
           Log.d(
             TAG,
@@ -123,7 +122,7 @@ constructor(
               val newSessionDetails =
                 sessionGenerator.generateNewSession(sessionData.sessionDetails)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
-              currentSessionData.copy(sessionDetails = newSessionDetails)
+              currentSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
             } else {
               currentSessionData
             }
@@ -131,7 +130,8 @@ constructor(
         } catch (ex: Exception) {
           Log.d(TAG, "App appForegrounded, failed to update data. Message: ${ex.message}")
           val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
-          localSessionData = localSessionData.copy(sessionDetails = newSessionDetails)
+          localSessionData =
+            localSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
           sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
 
           val sessionId = newSessionDetails.sessionId
@@ -159,8 +159,12 @@ constructor(
   }
 
   private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {
-    val interval = timeProvider.currentTime() - sessionData.backgroundTime
-    return interval > sessionsSettings.sessionRestartTimeout
+    sessionData.backgroundTime?.let {
+      val interval = timeProvider.currentTime() - it
+      return interval > sessionsSettings.sessionRestartTimeout
+    }
+    Log.d(TAG, "No process has backgrounded yet, should not change the session.")
+    return false
   }
 
   private companion object {
