@@ -484,6 +484,29 @@ internal class FirebaseDataConnectImpl(
       is State.Closing -> newState.closeJob.apply { start() }
       is State.Closed -> null
     }
+
+    // Register the new "close job". Do not overwrite a close job that is already in progress (to
+    // avoid having more than one close job in progress at a time) or a close job that completed
+    // successfully (since there is nothing to do if a previous close job was successful).
+    val updatedCloseJobRef =
+      closeJob.updateAndGet { currentCloseJobRef: NullableReference<Deferred<Unit>> ->
+        if (currentCloseJobRef.ref !== null && !currentCloseJobRef.ref.isCancelled) {
+          currentCloseJobRef
+        } else {
+          NullableReference(newCloseJob)
+        }
+      }
+
+    // Start the updated "close job" (if it was already started then start() is a no-op).
+    val updatedCloseJob =
+      checkNotNull(updatedCloseJobRef.ref) {
+        "internal error: closeJob.updateAndGet() returned a NullableReference whose 'ref' " +
+          "property was null; however it should NOT have been null (error code y5fk4ntdnd)"
+      }
+    updatedCloseJob.start()
+
+    // Return the "close job", which _may_ already be completed, so the caller can await it.
+    return updatedCloseJob
   }
 
   // The generated SDK relies on equals() and hashCode() using object identity.
