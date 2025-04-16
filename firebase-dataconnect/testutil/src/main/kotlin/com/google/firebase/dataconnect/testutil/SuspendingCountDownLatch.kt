@@ -61,9 +61,9 @@ class SuspendingCountDownLatch(count: Int) {
    * @throws IllegalStateException if called when the count has already reached zero.
    */
   fun countDown(): SuspendingCountDownLatch {
-    _count.update { oldValue ->
-      check(oldValue > 0) { "countDown() called too many times (oldValue=$oldValue)" }
-      oldValue - 1
+    _count.update { currentValue ->
+      check(currentValue > 0) { "countDown() called too many times (currentValue=$currentValue)" }
+      currentValue - 1
     }
     return this
   }

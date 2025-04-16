@@ -425,9 +425,9 @@ internal class FirebaseDataConnectImpl(
     // avoid having more than one close job in progress at a time) or a close job that completed
     // successfully (since there is nothing to do if a previous close job was successful).
     val updatedCloseJobRef =
-      closeJob.updateAndGet { oldCloseJobRef: NullableReference<Deferred<Unit>> ->
-        if (oldCloseJobRef.ref !== null && !oldCloseJobRef.ref.isCancelled) {
-          oldCloseJobRef
+      closeJob.updateAndGet { currentCloseJobRef: NullableReference<Deferred<Unit>> ->
+        if (currentCloseJobRef.ref !== null && !currentCloseJobRef.ref.isCancelled) {
+          currentCloseJobRef
         } else {
           NullableReference(newCloseJob)
         }
