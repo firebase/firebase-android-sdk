@@ -28,7 +28,9 @@ ignore = [
   "D211", # no-blank-line-before-class
   "D212", # multi-line-summary-second-line
   "E501", # Line too long (will be fixed by the formatter)
+  "EM101", # Exception must not use a string literal, assign to variable first
   "LOG015", # root-logger-call
+  "TRY003", # Avoid specifying long messages outside the exception class
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -42,3 +44,4 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 docstring-code-format = true
+SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
