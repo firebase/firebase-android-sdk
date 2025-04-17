@@ -36,70 +36,37 @@ internal class FirebaseVertexAIMultiResourceComponent(
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
+  @GuardedBy("this")
+  private val vertexAiInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
   @GuardedBy("this")
-  private val regularVertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  private val firebaseAiInstances: MutableMap<GenerativeBackend, FirebaseAi> = mutableMapOf()
 
-
-    @GuardedBy("this")
-    private val vertexInstances: MutableMap<String, FirebaseAI> = mutableMapOf()
-
-  @GuardedBy("this") private val firebaseAiInstance: MutableList<FirebaseAI> = mutableListOf()
-
-    fun getRegularVertexAI(location: String): FirebaseVertexAI =
-        synchronized(this) {
-            regularVertexInstances[location]
-                ?: FirebaseVertexAI(
-                    app,
-                    backgroundDispatcher,
-                    location,
-                    appCheckProvider,
-                    internalAuthProvider,
-                )
-                    .also { regularVertexInstances[location] = it }
-        }
-
-    fun getVertexAI(location: String): FirebaseAI =
+  internal fun getVertexAI(location: String): FirebaseVertexAI =
     synchronized(this) {
-        vertexInstances[location]
-        ?: FirebaseAI(
+      vertexAiInstances[location]
+        ?: FirebaseVertexAI(
             app,
-            GenerativeBackend.VERTEX_AI,
             backgroundDispatcher,
             location,
             appCheckProvider,
             internalAuthProvider,
           )
-          .also { vertexInstances[location] = it }
+          .also { vertexAiInstances[location] = it }
     }
 
-    // THIS CAN BE DONE BETTER
-  fun getFirebaseAI(location: String?): FirebaseAI {
-      if (location != null) {
-          return synchronized(this) {
-              firebaseAiInstance.getOrNull(0)
-                  ?: FirebaseAI(
-                      app,
-                      GenerativeBackend.VERTEX_AI,
-                      backgroundDispatcher,
-                      location,
-                      appCheckProvider,
-                      internalAuthProvider,
-                  )
-                      .also { firebaseAiInstance.add(it) }
-          }
-      }
-      return synchronized(this) {
-          firebaseAiInstance.getOrNull(0)
-              ?: FirebaseAI(
-                  app,
-                  GenerativeBackend.GOOGLE_AI,
-                  backgroundDispatcher,
-                  "UNUSED",
-                  appCheckProvider,
-                  internalAuthProvider,
-              )
-                  .also { firebaseAiInstance.add(it) }
-      }
+  // THIS CAN BE DONE BETTER
+  fun getFirebaseAI(backend: GenerativeBackend): FirebaseAi {
+    return synchronized(this) {
+      firebaseAiInstances[backend]
+        ?: FirebaseAi(
+            app,
+            backend,
+            backgroundDispatcher,
+            appCheckProvider,
+            internalAuthProvider,
+          )
+          .also { firebaseAiInstances[backend] = it }
+    }
   }
 }
