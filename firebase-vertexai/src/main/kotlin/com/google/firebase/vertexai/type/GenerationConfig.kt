@@ -88,6 +88,7 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
+  internal val responseModalities: List<ResponseModality>?,
 ) {
 
   /**
@@ -128,6 +129,7 @@ private constructor(
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
+    @JvmField public var responseModalities: List<ResponseModality>? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -156,7 +158,8 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal()
+      responseSchema = responseSchema?.toInternal(),
+      responseModalities = responseModalities?.map { it.toInternal() },
     )
 
   @Serializable
@@ -171,6 +174,7 @@ private constructor(
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
     @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
+    @SerialName("response_modalities") val responseModalities: List<String>? = null,
   )
 
   public companion object {
