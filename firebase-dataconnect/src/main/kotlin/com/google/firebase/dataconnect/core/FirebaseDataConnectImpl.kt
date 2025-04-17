@@ -54,6 +54,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -406,35 +407,42 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    // Start the job to asynchronously close the gRPC client.
-    while (true) {
-      val oldCloseJob = closeJob.value
-
-      oldCloseJob.ref?.let {
-        if (!it.isCancelled) {
-          return it
-        }
+    // Create the "close job" to asynchronously close the gRPC client.
+    @OptIn(DelicateCoroutinesApi::class)
+    val newCloseJob =
+      GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
+        lazyGrpcRPCs.initializedValueOrNull?.close()
       }
-
-      @OptIn(DelicateCoroutinesApi::class)
-      val newCloseJob =
-        GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcRPCs.initializedValueOrNull?.close()
-        }
-
-      newCloseJob.invokeOnCompletion { exception ->
-        if (exception === null) {
-          logger.debug { "close() completed successfully" }
-        } else {
-          logger.warn(exception) { "close() failed" }
-        }
-      }
-
-      if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
-        newCloseJob.start()
-        return newCloseJob
+    newCloseJob.invokeOnCompletion { exception ->
+      if (exception === null) {
+        logger.debug { "close() completed successfully" }
+      } else {
+        logger.warn(exception) { "close() failed" }
       }
     }
+
+    // Register the new "close job". Do not overwrite a close job that is already in progress (to
+    // avoid having more than one close job in progress at a time) or a close job that completed
+    // successfully (since there is nothing to do if a previous close job was successful).
+    val updatedCloseJobRef =
+      closeJob.updateAndGet { currentCloseJobRef: NullableReference<Deferred<Unit>> ->
+        if (currentCloseJobRef.ref !== null && !currentCloseJobRef.ref.isCancelled) {
+          currentCloseJobRef
+        } else {
+          NullableReference(newCloseJob)
+        }
+      }
+
+    // Start the updated "close job" (if it was already started then start() is a no-op).
+    val updatedCloseJob =
+      checkNotNull(updatedCloseJobRef.ref) {
+        "internal error: closeJob.updateAndGet() returned a NullableReference whose 'ref' " +
+          "property was null; however it should NOT have been null (error code y5fk4ntdnd)"
+      }
+    updatedCloseJob.start()
+
+    // Return the "close job", which _may_ already be completed, so the caller can await it.
+    return updatedCloseJob
   }
 
   // The generated SDK relies on equals() and hashCode() using object identity.
