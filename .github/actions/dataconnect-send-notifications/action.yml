@@ -30,7 +30,6 @@ runs:
           python
           calculate_github_issue_for_commenting.py
           --issue-output-file=github_issue_number.txt
-          --pr-output-file=github_pr_number.txt
           --github-repository='${{ github.repository }}'
           --github-ref='${{ github.ref }}'
           --github-event-name='${{ github.event_name }}'
@@ -43,8 +42,6 @@ runs:
         set -xv
         issue="$(cat github_issue_number.txt)"
         echo "issue=$issue" >> "$GITHUB_OUTPUT"
-        pr="$(cat github_pr_number.txt)"
-        echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
     - name: Post Comment on GitHub Issue
       if: steps.issue-id.outputs.issue != ''
@@ -57,12 +54,12 @@ runs:
           --github-issue='${{ steps.issue-id.outputs.issue }}'
           --github-workflow='${{ github.workflow }}'
           --github-repository='${{ github.repository }}'
+          --github-ref='${{ github.ref }}'
           --github-sha='${{ github.sha }}'
           --github-repository-html-url='${{ github.event.repository.html_url }}'
           --github-run-id='${{ github.run_id }}'
           --github-run-number='${{ github.run_number }}'
           --github-run-attempt='${{ github.run_attempt }}'
-          --triggering-pr='${{ steps.issue-id.outputs.pr }}'
         )
 
         while read -r line; do

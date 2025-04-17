@@ -22,6 +22,8 @@ import subprocess
 import tempfile
 import typing
 
+from util import fetch_pr_info, pr_number_from_github_ref
+
 if typing.TYPE_CHECKING:
   from collections.abc import Iterable, Sequence
 
@@ -49,17 +51,23 @@ def main() -> None:
 
 
 def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
-  pr: int | None
-  if len(data.triggering_pr) == 0:
-    pr = None
+  logging.info("Extracting PR number from string: %s", data.github_ref)
+  pr_number = pr_number_from_github_ref(data.github_ref)
+  pr_title: str | None
+  if pr_number is None:
+    logging.info("No PR number extracted")
+    pr_title = None
   else:
-    try:
-      pr = int(data.triggering_pr)
-    except ValueError:
-      logging.warning("WARNING: unable to parse PR number as an int: %s", data.triggering_pr)
-      pr = None
+    pr_info = fetch_pr_info(
+      pr_number=pr_number,
+      github_repository=data.github_repository,
+    )
+    pr_title = pr_info.title
 
-  yield f"Posting from Pull Request {data.github_repository_html_url}/pull/{pr}"
+  if pr_number is not None:
+    yield (
+      f"Posting from Pull Request {data.github_repository_html_url}/pull/{pr_number} ({pr_title})"
+    )
 
   yield f"Result of workflow '{data.github_workflow}' at {data.github_sha}:"
 
@@ -125,13 +133,13 @@ class ParsedArgs(typing.Protocol):
   job_results: Sequence[JobResult]
   github_issue: int
   github_repository: str
+  github_ref: str
   github_workflow: str
   github_sha: str
   github_repository_html_url: str
   github_run_id: str
   github_run_number: str
   github_run_attempt: str
-  triggering_pr: str
 
 
 class ParseError(Exception):
@@ -154,14 +162,14 @@ def parse_args() -> ParsedArgs:
     help="The GitHub Issue number to which to post a comment",
   )
   arg_parser.add_argument(
-    "--triggering-pr",
-    required=True,
-    help="The GitHub Pull Request number that triggered the workflow, or empty if not applicable.",
-  )
-  arg_parser.add_argument(
     "--github-repository",
     required=True,
     help="The value of ${{ github.repository }} in the workflow",
+  )
+  arg_parser.add_argument(
+    "--github-ref",
+    required=True,
+    help="The value of ${{ github.ref }} in the workflow",
   )
   arg_parser.add_argument(
     "--github-workflow",

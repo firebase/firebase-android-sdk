@@ -15,22 +15,19 @@
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import logging
 import pathlib
 import re
-import subprocess
 import typing
 
-if typing.TYPE_CHECKING:
-  from collections.abc import Iterable
+from util import fetch_pr_info, pr_number_from_github_ref
 
 
 def main() -> None:
   args = parse_args()
   logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-  calculated_result = calculate_github_issue(
+  github_issue = calculate_github_issue(
     github_event_name=args.github_event_name,
     github_issue_for_scheduled_run=args.github_issue_for_scheduled_run,
     github_ref=args.github_ref,
@@ -38,22 +35,9 @@ def main() -> None:
     pr_body_github_issue_key=args.pr_body_github_issue_key,
   )
 
-  github_issue = calculated_result.issue
-  github_pr = calculated_result.pr
-
   issue_file_text = "" if github_issue is None else str(github_issue)
   logging.info("Writing '%s' to %s", issue_file_text, args.issue_output_file)
   args.issue_output_file.write_text(issue_file_text, encoding="utf8", errors="replace")
-
-  pr_file_text = "" if github_pr is None else str(github_pr)
-  logging.info("Writing '%s' to %s", pr_file_text, args.pr_output_file)
-  args.pr_output_file.write_text(pr_file_text, encoding="utf8", errors="replace")
-
-
-@dataclasses.dataclass(frozen=True)
-class CalculatedGitHubIssue:
-  issue: int | None
-  pr: int | None
 
 
 def calculate_github_issue(
@@ -62,70 +46,42 @@ def calculate_github_issue(
   github_ref: str,
   github_repository: str,
   pr_body_github_issue_key: str,
-) -> CalculatedGitHubIssue:
+) -> int | None:
   if github_event_name == "schedule":
     logging.info(
       "GitHub Event name is: %s; using GitHub Issue: %s",
       github_event_name,
       github_issue_for_scheduled_run,
     )
-    return CalculatedGitHubIssue(
-      issue=github_issue_for_scheduled_run,
-      pr=None,  # scheduled runs are, by definition, not associated with a PR.
-    )
+    return github_issue_for_scheduled_run
 
   logging.info("Extracting PR number from string: %s", github_ref)
   pr_number = pr_number_from_github_ref(github_ref)
   if pr_number is None:
     logging.info("No PR number extracted")
-    return CalculatedGitHubIssue(None, None)
+    return None
   typing.assert_type(pr_number, int)
 
   logging.info("PR number extracted: %s", pr_number)
   logging.info("Loading body text of PR: %s", pr_number)
-  pr_body_text = load_pr_body(
+  pr_info = fetch_pr_info(
     pr_number=pr_number,
     github_repository=github_repository,
   )
 
   logging.info("Looking for GitHub Issue key in PR body text: %s=NNNN", pr_body_github_issue_key)
   github_issue = github_issue_from_pr_body(
-    pr_body=pr_body_text,
+    pr_body=pr_info.body,
     issue_key=pr_body_github_issue_key,
   )
 
   if github_issue is None:
     logging.info("No GitHub Issue key found in PR body")
-    return CalculatedGitHubIssue(issue=None, pr=pr_number)
+    return None
   typing.assert_type(github_issue, int)
 
   logging.info("Found GitHub Issue key in PR body: %s", github_issue)
-  return CalculatedGitHubIssue(issue=github_issue, pr=pr_number)
-
-
-def pr_number_from_github_ref(github_ref: str) -> int | None:
-  match = re.fullmatch("refs/pull/([0-9]+)/merge", github_ref)
-  return int(match.group(1)) if match else None
-
-
-def load_pr_body(pr_number: int, github_repository: str) -> str:
-  gh_args = log_pr_body_gh_args(pr_number=pr_number, github_repository=github_repository)
-  gh_args = tuple(gh_args)
-  logging.info("Running command: %s", subprocess.list2cmdline(gh_args))
-  return subprocess.check_output(gh_args, encoding="utf8", errors="replace")  # noqa: S603
-
-
-def log_pr_body_gh_args(pr_number: int, github_repository: str) -> Iterable[str]:
-  yield "gh"
-  yield "issue"
-  yield "view"
-  yield str(pr_number)
-  yield "--json"
-  yield "body"
-  yield "--jq"
-  yield ".body"
-  yield "-R"
-  yield github_repository
+  return github_issue
 
 
 def github_issue_from_pr_body(pr_body: str, issue_key: str) -> int | None:
@@ -139,7 +95,6 @@ def github_issue_from_pr_body(pr_body: str, issue_key: str) -> int | None:
 
 class ParsedArgs(typing.Protocol):
   issue_output_file: pathlib.Path
-  pr_output_file: pathlib.Path
   github_ref: str
   github_repository: str
   github_event_name: str
@@ -154,12 +109,6 @@ def parse_args() -> ParsedArgs:
     required=True,
     help="The file to which to write the calculated issue number"
     "if no issue number was found, then an empty file will be written",
-  )
-  arg_parser.add_argument(
-    "--pr-output-file",
-    required=True,
-    help="The file to which to write the calculated triggering PR number"
-    "if no PR was found, then an empty file will be written",
   )
   arg_parser.add_argument(
     "--github-ref",
@@ -192,7 +141,6 @@ def parse_args() -> ParsedArgs:
 
   parse_result = arg_parser.parse_args()
   parse_result.issue_output_file = pathlib.Path(parse_result.issue_output_file)
-  parse_result.pr_output_file = pathlib.Path(parse_result.pr_output_file)
   return typing.cast("ParsedArgs", parse_result)
 
 
