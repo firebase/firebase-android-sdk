@@ -99,12 +99,12 @@ jobs:
           run_cmd which node
           run_cmd node --version
           run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
-          run_cmd ./gradlew --version
+          run_cmd firebase-dataconnect/demo/gradlew --version
 
-      - name: ./gradlew assemble test
+      - name: gradle assemble test
         run: |
           set -x
-          ./gradlew \
+          firebase-dataconnect/demo/gradlew \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
@@ -156,12 +156,12 @@ jobs:
           java -version
           which javac
           javac -version
-          ./gradlew --version
+          firebase-dataconnect/demo/gradlew --version
 
-      - name: ./gradlew spotlessCheck
+      - name: gradle spotlessCheck
         run: |
           set -x
-          ./gradlew \
+          firebase-dataconnect/demo/gradlew \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
