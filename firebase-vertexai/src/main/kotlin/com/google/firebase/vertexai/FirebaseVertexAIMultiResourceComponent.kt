@@ -36,39 +36,37 @@ internal class FirebaseVertexAIMultiResourceComponent(
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
+  @GuardedBy("this")
+  private val vertexAiInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
 
   @GuardedBy("this")
-  private val vertexInstances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  private val firebaseAiInstances: MutableMap<GenerativeBackend, FirebaseAi> = mutableMapOf()
 
-  @GuardedBy("this") private val googleInstance: MutableList<FirebaseGoogleAI> = mutableListOf()
-
-  fun getVertexAI(location: String): FirebaseVertexAI =
+  internal fun getVertexAI(location: String): FirebaseVertexAI =
     synchronized(this) {
-      vertexInstances[location]
+      vertexAiInstances[location]
         ?: FirebaseVertexAI(
             app,
-            GenerativeBackend.VERTEX_AI,
             backgroundDispatcher,
             location,
             appCheckProvider,
             internalAuthProvider,
           )
-          .also { vertexInstances[location] = it }
+          .also { vertexAiInstances[location] = it }
     }
 
-  fun getGoogleAI(): FirebaseGoogleAI =
-    synchronized(this) {
-      googleInstance.getOrNull(0)
-        ?: FirebaseGoogleAI(
-            FirebaseVertexAI(
-              app,
-              GenerativeBackend.GOOGLE_AI,
-              backgroundDispatcher,
-              "UNUSED",
-              appCheckProvider,
-              internalAuthProvider,
-            )
+  // THIS CAN BE DONE BETTER
+  fun getFirebaseAI(backend: GenerativeBackend): FirebaseAi {
+    return synchronized(this) {
+      firebaseAiInstances[backend]
+        ?: FirebaseAi(
+            app,
+            backend,
+            backgroundDispatcher,
+            appCheckProvider,
+            internalAuthProvider,
           )
-          .also { googleInstance.add(it) }
+          .also { firebaseAiInstances[backend] = it }
     }
+  }
 }

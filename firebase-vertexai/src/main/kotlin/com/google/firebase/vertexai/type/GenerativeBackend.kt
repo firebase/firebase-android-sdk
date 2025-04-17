@@ -16,7 +16,13 @@
 
 package com.google.firebase.vertexai.type
 
-internal enum class GenerativeBackend {
-  VERTEX_AI,
-  GOOGLE_AI,
+public abstract class GenerativeBackend {
+  public class VertexAI(public val location: String = "us-central1") : GenerativeBackend() {
+    public fun validateLocation() {
+      if (location.trim().isEmpty() || location.contains("/")) {
+        throw InvalidLocationException(location)
+      }
+    }
+  }
+  public class GoogleAI(): GenerativeBackend()
 }

@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.firebase.vertexai
 
+import android.annotation.SuppressLint
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
@@ -28,6 +29,7 @@ import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.GenerativeBackend
 import com.google.firebase.vertexai.type.ImagenGenerationConfig
 import com.google.firebase.vertexai.type.ImagenSafetySettings
+import com.google.firebase.vertexai.type.InvalidStateException
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
@@ -37,25 +39,14 @@ import com.google.firebase.vertexai.type.ToolConfig
 import kotlin.coroutines.CoroutineContext
 
 /** Entry point for all _Vertex AI for Firebase_ functionality. */
-public class FirebaseVertexAI {
-  private val firebaseAI: FirebaseAi
-
-  internal constructor(
-    firebaseApp: FirebaseApp,
-    @Background backgroundDispatcher: CoroutineContext,
-    location: String,
-    appCheckProvider: Provider<InteropAppCheckTokenProvider>,
-    internalAuthProvider: Provider<InternalAuthProvider>,
-  ) {
-    firebaseAI =
-      FirebaseAi(
-        firebaseApp,
-        GenerativeBackend.VertexAI(location),
-        backgroundDispatcher,
-        appCheckProvider,
-        internalAuthProvider
-      )
-  }
+public class FirebaseAi
+internal constructor(
+  private val firebaseApp: FirebaseApp,
+  private val backend: GenerativeBackend,
+  @Background private val backgroundDispatcher: CoroutineContext,
+  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
+  private val internalAuthProvider: Provider<InternalAuthProvider>,
+) {
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
@@ -80,14 +71,39 @@ public class FirebaseVertexAI {
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): GenerativeModel {
-    return firebaseAI.generativeModel(
-      modelName,
+    if (backend is GenerativeBackend.VertexAI) {
+      backend.validateLocation()
+    }
+    val modelUri =
+      when (backend) {
+        is GenerativeBackend.VertexAI ->
+          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
+        is GenerativeBackend.GoogleAI ->
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
+        else -> throw InvalidStateException("Unknown backend: $backend")
+      }
+    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Gemini model "${modelName}"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      """
+          .trimIndent(),
+      )
+    }
+    return GenerativeModel(
+      modelUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
       generationConfig,
       safetySettings,
       tools,
       toolConfig,
       systemInstruction,
-      requestOptions
+      requestOptions,
+      backend,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
     )
   }
 
@@ -111,12 +127,33 @@ public class FirebaseVertexAI {
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): LiveGenerativeModel {
-    return firebaseAI.liveModel(
-      modelName,
+    if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Gemini model "$modelName"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      """
+          .trimIndent(),
+      )
+    }
+    if (backend !is GenerativeBackend.VertexAI) {
+      throw UnsupportedOperationException("Only supported in vertex for now")
+    }
+
+    backend.validateLocation()
+
+    return LiveGenerativeModel(
+      "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}",
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      backgroundDispatcher,
       generationConfig,
       tools,
       systemInstruction,
-      requestOptions
+      backend.location,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
     )
   }
 
@@ -137,14 +174,43 @@ public class FirebaseVertexAI {
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): ImagenModel {
-    return firebaseAI.imagenModel(modelName, generationConfig, safetySettings, requestOptions)
+    val modelUri =
+      when (backend) {
+        is GenerativeBackend.VertexAI ->
+          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
+        is GenerativeBackend.GoogleAI ->
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
+        else -> throw InvalidStateException("Unknown backend: $backend")
+      }
+    if (backend is GenerativeBackend.VertexAI) {
+      backend.validateLocation()
+    }
+    if (!modelName.startsWith(IMAGEN_MODEL_NAME_PREFIX)) {
+      Log.w(
+        TAG,
+        """Unsupported Imagen model "${modelName}"; see
+      https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
+      """
+          .trimIndent(),
+      )
+    }
+    return ImagenModel(
+      modelUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      generationConfig,
+      safetySettings,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
   }
 
   public companion object {
-    /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
+    /** The [FirebaseAi] instance for the default [FirebaseApp] and the GoogleAI backend. */
     @JvmStatic
-    public val instance: FirebaseVertexAI
-      get() = getInstance(location = "us-central1")
+    public val instance: FirebaseAi
+      get() = getInstance(Firebase.app)
 
     /**
      * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
@@ -154,14 +220,38 @@ public class FirebaseVertexAI {
      * .
      */
     @JvmStatic
-    @JvmOverloads
-    public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
-      val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
-      return multiResourceComponent.getVertexAI(location)
-    }
+    public fun getInstance(
+      backend: GenerativeBackend
+    ): FirebaseAi = getInstance(Firebase.app, backend)
 
-    /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] */
-    @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
+    /**
+     * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
+     *
+     * @param location location identifier, defaults to `us-central1`; see available
+     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+     * .
+     */
+    @JvmStatic
+    public fun getInstance(
+      app: FirebaseApp
+    ): FirebaseAi = getInstance(app, GenerativeBackend.GoogleAI())
+
+    /**
+     * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
+     *
+     * @param location location identifier, defaults to `us-central1`; see available
+     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+     * .
+     */
+    @SuppressLint("FirebaseUseExplicitDependencies")
+    @JvmStatic
+    public fun getInstance(
+      app: FirebaseApp,
+      backend: GenerativeBackend
+    ): FirebaseAi {
+      val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
+      return multiResourceComponent.getFirebaseAI(backend)
+    }
 
     private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
 
@@ -172,11 +262,11 @@ public class FirebaseVertexAI {
 }
 
 /** Returns the [FirebaseVertexAI] instance of the default [FirebaseApp]. */
-public val Firebase.vertexAI: FirebaseVertexAI
-  get() = FirebaseVertexAI.instance
+public val Firebase.ai: FirebaseAi
+  get() = FirebaseAi.instance
 
 /** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
-public fun Firebase.vertexAI(
+public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,
-  location: String = "us-central1",
-): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)
+  backend: GenerativeBackend = GenerativeBackend.GoogleAI()
+): FirebaseAi = FirebaseAi.getInstance(app, backend)

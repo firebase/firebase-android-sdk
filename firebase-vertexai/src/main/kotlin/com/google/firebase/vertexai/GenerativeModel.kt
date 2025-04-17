@@ -24,6 +24,7 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
 import com.google.firebase.vertexai.common.CountTokensRequest
 import com.google.firebase.vertexai.common.GenerateContentRequest
+import com.google.firebase.vertexai.common.InvalidStateException
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
@@ -56,7 +57,7 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
-  private val generativeBackend: GenerativeBackend = GenerativeBackend.VERTEX_AI,
+  private val generativeBackend: GenerativeBackend = GenerativeBackend.VertexAI(),
   private val controller: APIController,
 ) {
   internal constructor(
@@ -221,8 +222,9 @@ internal constructor(
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
     when (generativeBackend) {
-      GenerativeBackend.GOOGLE_AI -> CountTokensRequest.forGenAI(constructRequest(*prompt))
-      GenerativeBackend.VERTEX_AI -> CountTokensRequest.forVertexAI(constructRequest(*prompt))
+      is GenerativeBackend.GoogleAI -> CountTokensRequest.forGenAI(constructRequest(*prompt))
+      is GenerativeBackend.VertexAI -> CountTokensRequest.forVertexAI(constructRequest(*prompt))
+      else -> throw InvalidStateException("Unknown backend: $generativeBackend")
     }
 
   private fun GenerateContentResponse.validate() = apply {
