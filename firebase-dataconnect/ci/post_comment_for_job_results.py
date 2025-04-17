@@ -80,6 +80,7 @@ def generate_message_lines(data: ParsedArgs) -> Iterable[str]:
 
   yield ""
   yield (
+    f"event_name=`{data.github_event_name}` "
     f"run_id=`{data.github_run_id}` "
     f"run_number=`{data.github_run_number}` "
     f"run_attempt=`{data.github_run_attempt}`"
@@ -133,6 +134,7 @@ class ParsedArgs(typing.Protocol):
   job_results: Sequence[JobResult]
   github_issue: int
   github_repository: str
+  github_event_name: str
   github_ref: str
   github_workflow: str
   github_sha: str
@@ -165,6 +167,11 @@ def parse_args() -> ParsedArgs:
     "--github-repository",
     required=True,
     help="The value of ${{ github.repository }} in the workflow",
+  )
+  arg_parser.add_argument(
+    "--github-event-name",
+    required=True,
+    help="The value of ${{ github.event_name }} in the workflow",
   )
   arg_parser.add_argument(
     "--github-ref",

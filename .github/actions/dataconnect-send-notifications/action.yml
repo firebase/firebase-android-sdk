@@ -55,6 +55,7 @@ runs:
           --github-workflow='${{ github.workflow }}'
           --github-repository='${{ github.repository }}'
           --github-ref='${{ github.ref }}'
+          --github-event-name='${{ github.event_name }}'
           --github-sha='${{ github.sha }}'
           --github-repository-html-url='${{ github.event.repository.html_url }}'
           --github-run-id='${{ github.run_id }}'
