@@ -18,13 +18,13 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - run: pip install -r requirements.txt
+      shell: bash
       working-directory: firebase-dataconnect/ci
 
     - id: issue-id
       name: Determine GitHub Issue For Commenting
       working-directory: firebase-dataconnect/ci
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: bash
       run: |
         args=(
           python
@@ -49,8 +49,7 @@ runs:
     - name: Post Comment on GitHub Issue
       if: steps.issue-id.outputs.issue != ''
       working-directory: firebase-dataconnect/ci
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: bash
       run: |
         args=(
           python

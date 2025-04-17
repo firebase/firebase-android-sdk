@@ -183,6 +183,9 @@ jobs:
             firebase-dataconnect/ci/
             .github/actions/dataconnect-send-notifications/
 
+      - name: gh auth login
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+
       - name: Create Job Results File
         id: create-job-results-file
         run: |
