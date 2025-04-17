@@ -36,7 +36,7 @@ def fetch_pr_info(pr_number: int, github_repository: str) -> GitHubPrInfo:
   gh_args = tuple(gh_args)
   logging.info("Running command: %s", subprocess.list2cmdline(gh_args))
   output_str = subprocess.check_output(gh_args, encoding="utf8", errors="replace")  # noqa: S603
-  logging.info("%s", output_str)
+  logging.info("%s", output_str.strip())
   output = json.loads(output_str)
   return GitHubPrInfo(
     title=output["title"],
