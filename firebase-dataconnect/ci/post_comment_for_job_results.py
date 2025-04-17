@@ -122,7 +122,7 @@ class JobResult:
     colon_index = s.find(":")
     if colon_index < 0:
       raise ParseError(
-        "no colon (:) character found in job result specfication, "
+        "no colon (:) character found in job result specification, "
         "which is required to delimit the job ID from the job result"
       )
     job_id = s[:colon_index]
