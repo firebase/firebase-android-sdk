@@ -176,19 +176,24 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            .github/actions/dataconnect-send-notifications/
+
       - name: Create Job Results File
         id: create-job-results-file
         run: |
           set -xveuo pipefail
-          job_results_file="$(mktemp)"
-
-          echo 'test:${{ needs.test.result }}' >>"$job_results_file"
-          echo 'spotlessCheck:${{ needs.spotlessCheck.result }}' >>"$job_results_file"
-
-          echo "job_results_file=$job_results_file" >>"$GITHUB_OUTPUT"
+          cat >'${{ runner.temp }}/job_results.txt' <<EOF
+          test:${{ needs.test.result }}
+          spotlessCheck:${{ needs.spotlessCheck.result }}
+          EOF
 
       - uses: ./.github/actions/dataconnect-send-notifications
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
           github-issue-for-scheduled-runs: "6891"
-          job-results-file: ${{ steps.create-job-results-file.outputs.job_results_file }}
+          job-results-file: ${{ runner.temp }}/job_results.txt
