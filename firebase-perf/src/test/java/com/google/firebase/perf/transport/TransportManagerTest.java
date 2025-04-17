@@ -30,6 +30,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Process;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
@@ -1399,6 +1400,11 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     if (shouldInitialize) {
       // Set the version name since Firebase sessions needs it.
       Context context = ApplicationProvider.getApplicationContext();
+
+      // For unit test, app context does not application info related to uid, so we have to force
+      // set it through process info.
+      context.getApplicationInfo().uid = Process.myUid();
+
       ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
 
       PackageInfo packageInfo =
@@ -1468,6 +1474,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
         .isEqualTo(FAKE_FIREBASE_APPLICATION_ID);
     assertThat(loggedPerfMetric.getApplicationInfo().getApplicationProcessState())
         .isEqualTo(applicationProcessState);
+    assertThat(loggedPerfMetric.getApplicationInfo().getProcessName())
+        .isEqualTo("com.google.firebase.perf.test");
     assertThat(loggedPerfMetric.getApplicationInfo().hasAndroidAppInfo()).isTrue();
   }
 
