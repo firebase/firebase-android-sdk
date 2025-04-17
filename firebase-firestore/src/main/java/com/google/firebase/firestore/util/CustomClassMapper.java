@@ -14,6 +14,24 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.firebase.firestore.util.ApiUtil.invoke;
+import static com.google.firebase.firestore.util.ApiUtil.newInstance;
+
+import android.net.Uri;
+import android.os.Build;
+import androidx.annotation.RequiresApi;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.IgnoreExtraProperties;
+import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.ServerTimestamp;
+import com.google.firebase.firestore.ThrowOnExtraProperties;
+import com.google.firebase.firestore.VectorValue;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -38,25 +56,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import android.net.Uri;
-import android.os.Build;
-import androidx.annotation.RequiresApi;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.DocumentId;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.Exclude;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.IgnoreExtraProperties;
-import com.google.firebase.firestore.PropertyName;
-import com.google.firebase.firestore.ServerTimestamp;
-import com.google.firebase.firestore.ThrowOnExtraProperties;
-import com.google.firebase.firestore.VectorValue;
-
-import static com.google.firebase.firestore.util.ApiUtil.invoke;
-import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
