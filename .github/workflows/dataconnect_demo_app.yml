@@ -179,64 +179,19 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          show-progress: false
-          sparse-checkout: 'firebase-dataconnect/ci/'
+      - name: Create Job Results File
+        id: create-job-results-file
+        run: |
+          set -xveuo pipefail
+          job_results_file="$(mktemp)"
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+          echo 'test:${{ needs.test.result }}' >>"$job_results_file"
+          echo 'spotlessCheck:${{ needs.spotlessCheck.result }}' >>"$job_results_file"
+
+          echo "job_results_file=$job_results_file" >>"$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/dataconnect-send-notifications
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
-
-      - run: pip install -r requirements.txt
-        working-directory: firebase-dataconnect/ci
-
-      - id: issue-id
-        name: Determine GitHub Issue For Commenting
-        working-directory: firebase-dataconnect/ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          args=(
-            python
-            calculate_github_issue_for_commenting.py
-            --issue-output-file=github_issue_number.txt
-            --pr-output-file=github_pr_number.txt
-            --github-repository='${{ github.repository }}'
-            --github-ref='${{ github.ref }}'
-            --github-event-name='${{ github.event_name }}'
-            --pr-body-github-issue-key=trksmnkncd_notification_issue
-            --github-issue-for-scheduled-run=6891 # https://github.com/firebase/firebase-android-sdk/issues/6891
-          )
-          echo "${args[*]}"
-          "${args[@]}"
-
-          set -xv
-          issue="$(cat github_issue_number.txt)"
-          echo "issue=$issue" >> "$GITHUB_OUTPUT"
-          pr="$(cat github_pr_number.txt)"
-          echo "pr=$pr" >> "$GITHUB_OUTPUT"
-
-      - name: Post Comment on GitHub Issue
-        if: steps.issue-id.outputs.issue != ''
-        working-directory: firebase-dataconnect/ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          args=(
-            python
-            post_comment_for_job_results.py
-            --github-issue='${{ steps.issue-id.outputs.issue }}'
-            --github-workflow='${{ github.workflow }}'
-            --github-repository='${{ github.repository }}'
-            --github-sha='${{ github.sha }}'
-            --github-repository-html-url='${{ github.event.repository.html_url }}'
-            --github-run-id='${{ github.run_id }}'
-            --github-run-number='${{ github.run_number }}'
-            --github-run-attempt='${{ github.run_attempt }}'
-            --triggering-pr='${{ steps.issue-id.outputs.pr }}'
-            'test:${{ needs.test.result }}'
-            'spotlessCheck:${{ needs.spotlessCheck.result }}'
-          )
-          echo "${args[*]}"
-          exec "${args[@]}"
+          github-issue-for-scheduled-runs: "6891"
+          job-results-file: ${{ steps.create-job-results-file.outputs.job_results_file }}
