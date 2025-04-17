@@ -167,6 +167,15 @@ jobs:
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           spotlessCheck
 
+  # The "send-notifications" job adds a comment to GitHub Issue
+  # https://github.com/firebase/firebase-android-sdk/issues/6891 with the results of the scheduled
+  # nightly runs. Interested parties can then subscribe to that issue to be aprised of the outcome
+  # of the nightly runs.
+  #
+  # When testing the comment-adding logic itself, you can add the line
+  #   trksmnkncd_notification_issue=6863
+  # into the PR's description to instead post a comment to issue #6863, an issue specifically
+  # created for testing, avoiding spamming the main issue to which others are subscribed.
   send-notifications:
     needs:
       - 'test'
@@ -181,7 +190,7 @@ jobs:
           show-progress: false
           sparse-checkout: |
             firebase-dataconnect/ci/
-            .github/actions/dataconnect-send-notifications/
+            .github/
 
       - name: gh auth login
         run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token

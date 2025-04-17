@@ -327,6 +327,15 @@ jobs:
         working-directory: firebase-dataconnect/ci
         run: pyright --warnings --stats
 
+  # The "send-notifications" job adds a comment to GitHub Issue
+  # https://github.com/firebase/firebase-android-sdk/issues/6857 with the results of the scheduled
+  # nightly runs. Interested parties can then subscribe to that issue to be aprised of the outcome
+  # of the nightly runs.
+  #
+  # When testing the comment-adding logic itself, you can add the line
+  #   trksmnkncd_notification_issue=6863
+  # into the PR's description to instead post a comment to issue #6863, an issue specifically
+  # created for testing, avoiding spamming the main issue to which others are subscribed.
   send-notifications:
     needs:
       - 'integration-test'
@@ -343,65 +352,28 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
-          sparse-checkout: 'firebase-dataconnect/ci/'
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            .github/
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - name: gh auth login
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+
+      - name: Create Job Results File
+        id: create-job-results-file
+        run: |
+          set -xveuo pipefail
+          cat >'${{ runner.temp }}/job_results.txt' <<EOF
+          integration-test:${{ needs.integration-test.result }}
+          actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
+          python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
+          python-ci-lint:${{ needs.python-ci-lint.result }}
+          python-ci-format:${{ needs.python-ci-format.result }}
+          python-ci-type-check:${{ needs.python-ci-type-check.result }}
+          EOF
+
+      - uses: ./.github/actions/dataconnect-send-notifications
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
-
-      - run: pip install -r requirements.txt
-        working-directory: firebase-dataconnect/ci
-
-      - id: issue-id
-        name: Determine GitHub Issue For Commenting
-        working-directory: firebase-dataconnect/ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          args=(
-            python
-            calculate_github_issue_for_commenting.py
-            --issue-output-file=github_issue_number.txt
-            --pr-output-file=github_pr_number.txt
-            --github-repository='${{ github.repository }}'
-            --github-ref='${{ github.ref }}'
-            --github-event-name='${{ github.event_name }}'
-            --pr-body-github-issue-key=trksmnkncd_notification_issue
-            --github-issue-for-scheduled-run=6857 # https://github.com/firebase/firebase-android-sdk/issues/6857
-          )
-          echo "${args[*]}"
-          "${args[@]}"
-
-          set -xv
-          issue="$(cat github_issue_number.txt)"
-          echo "issue=$issue" >> "$GITHUB_OUTPUT"
-          pr="$(cat github_pr_number.txt)"
-          echo "pr=$pr" >> "$GITHUB_OUTPUT"
-
-      - name: Post Comment on GitHub Issue
-        if: steps.issue-id.outputs.issue != ''
-        working-directory: firebase-dataconnect/ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          args=(
-            python
-            post_comment_for_job_results.py
-            --github-issue='${{ steps.issue-id.outputs.issue }}'
-            --github-workflow='${{ github.workflow }}'
-            --github-repository='${{ github.repository }}'
-            --github-sha='${{ github.sha }}'
-            --github-repository-html-url='${{ github.event.repository.html_url }}'
-            --github-run-id='${{ github.run_id }}'
-            --github-run-number='${{ github.run_number }}'
-            --github-run-attempt='${{ github.run_attempt }}'
-            --triggering-pr='${{ steps.issue-id.outputs.pr }}'
-            'integration-test:${{ needs.integration-test.result }}'
-            'actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}'
-            'python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}'
-            'python-ci-lint:${{ needs.python-ci-lint.result }}'
-            'python-ci-format:${{ needs.python-ci-format.result }}'
-            'python-ci-type-check:${{ needs.python-ci-type-check.result }}'
-          )
-          echo "${args[*]}"
-          exec "${args[@]}"
+          github-issue-for-scheduled-runs: "6857"
+          job-results-file: ${{ runner.temp }}/job_results.txt
