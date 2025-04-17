@@ -24,11 +24,6 @@ env:
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
 
-defaults:
-  run:
-    shell: bash
-    working-directory: firebase-dataconnect/demo
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -52,8 +47,8 @@ jobs:
           node-version: ${{ env.FDC_NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: |
-            firebase-dataconnect/demo/github_actions_demo_test_cache_key.txt
-            firebase-dataconnect/demo/github_actions_demo_assemble_firebase_tools_version.txt
+            github_actions_demo_test_cache_key.txt
+            github_actions_demo_assemble_firebase_tools_version.txt
 
       - name: cache package-lock.json
         id: package_json_lock
@@ -86,7 +81,7 @@ jobs:
             firebase-dataconnect/demo/build.gradle.kts
             firebase-dataconnect/demo/gradle.properties
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
-            firebase-dataconnect/demo/github_actions_demo_test_cache_key.txt
+            github_actions_demo_test_cache_key.txt
 
       - name: tool versions
         continue-on-error: true
@@ -110,6 +105,7 @@ jobs:
         run: |
           set -x
           ./gradlew \
+          --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           --profile \
@@ -150,7 +146,7 @@ jobs:
             firebase-dataconnect/demo/build.gradle.kts
             firebase-dataconnect/demo/gradle.properties
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
-            firebase-dataconnect/demo/github_actions_demo_spotless_cache_key.txt
+            github_actions_demo_spotless_cache_key.txt
 
       - name: tool versions
         continue-on-error: true
@@ -166,6 +162,7 @@ jobs:
         run: |
           set -x
           ./gradlew \
+          --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           spotlessCheck
