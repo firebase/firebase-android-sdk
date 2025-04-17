@@ -157,13 +157,9 @@ private constructor(
       stopSequences = stopSequences,
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
-        responseMimeType = responseMimeType,
-        responseSchema = responseSchema,
-        responseModalities = responseModalities,
-      )
       responseMimeType = responseMimeType,
       responseSchema = responseSchema?.toInternal(),
-      responseModalities = responseModalities?.map { it.toInternal() }
+      responseModalities = responseModalities?.map { it.toInternal() },
     )
 
   @Serializable
