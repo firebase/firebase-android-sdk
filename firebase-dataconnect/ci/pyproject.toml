@@ -4,7 +4,6 @@ requires-python = ">= 3.13"
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
-markers = [ "paramaterize" ]
 
 [tool.pyright]
 include = ["**/*.py"]
