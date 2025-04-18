@@ -175,14 +175,13 @@ jobs:
         run: |
           set -xveuo pipefail
           export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:password@127.0.0.1:5432?sslmode=disable'
+          export DATACONNECT_EMULATOR_BINARY_PATH="$PWD"/firebase-dataconnect/connectors/build/intermediates/dataconnect/debug/executable/dataconnect-*
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
-      - name: Logcat Log Capture Start
+      - name: Start Logcat Capture
         continue-on-error: true
-        run: |
-          set -xveuo pipefail
-          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
+        run: "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
 
       - name: Gradle connectedCheck
         id: connectedCheck
