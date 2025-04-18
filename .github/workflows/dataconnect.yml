@@ -174,14 +174,24 @@ jobs:
       - name: Start Firebase Emulators
         run: |
           set -xveuo pipefail
+
+          # Use the same dataconnect binary as was used for code generation in gradle assemble
+          DATACONNECT_EMULATOR_BINARY_PATH="$(find "$PWD"/firebase-dataconnect/connectors/build/intermediates/dataconnect/debug/executable -type f)"
+          if [[ -n $DATACONNECT_EMULATOR_BINARY_PATH ]] ; then
+            echo "INTERNAL ERROR v7kg2dfhbc: unable to find data connect binary" >&2
+            exit 1
+          fi
+          export DATACONNECT_EMULATOR_BINARY_PATH
+
           export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:password@127.0.0.1:5432?sslmode=disable'
-          export DATACONNECT_EMULATOR_BINARY_PATH="$PWD"/firebase-dataconnect/connectors/build/intermediates/dataconnect/debug/executable/dataconnect-*
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
       - name: Start Logcat Capture
         continue-on-error: true
-        run: "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
+        run: |
+          set -xveuo pipefail
+          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
 
       - name: Gradle connectedCheck
         id: connectedCheck
