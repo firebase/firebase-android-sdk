@@ -177,7 +177,7 @@ jobs:
 
           # Use the same dataconnect binary as was used for code generation in gradle assemble
           DATACONNECT_EMULATOR_BINARY_PATH="$(find "$PWD"/firebase-dataconnect/connectors/build/intermediates/dataconnect/debug/executable -type f)"
-          if [[ -n $DATACONNECT_EMULATOR_BINARY_PATH ]] ; then
+          if [[ -z $DATACONNECT_EMULATOR_BINARY_PATH ]] ; then
             echo "INTERNAL ERROR v7kg2dfhbc: unable to find data connect binary" >&2
             exit 1
           fi
