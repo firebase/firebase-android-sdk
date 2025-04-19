@@ -352,7 +352,21 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
             getClass().getSimpleName(),
             "(%x) Closing stream client-side",
             System.identityHashCode(this));
-        call.halfClose();
+        try {
+          call.halfClose();
+        } catch (IllegalStateException e) {
+          // Secondary failure encountered. The underlying RPC has entered an error state. We will
+          // log and continue since the RPC is being discarded anyway.
+          //
+          // Example, "IllegalStateException: call was cancelled" was observed in
+          // https://github.com/firebase/firebase-android-sdk/issues/6883
+          // Likely caused by other part of system already cancelling stream.
+          Logger.debug(
+              getClass().getSimpleName(),
+              "(%x) Closing stream client-side result in exception: [%s]",
+              System.identityHashCode(this),
+              e);
+        }
       }
       call = null;
     }
