@@ -19,11 +19,10 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
-import com.google.firebase.perf.v1.GaugeMetadata;
-import com.google.firebase.perf.v1.GaugeMetric;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,7 +31,7 @@ import java.util.Set;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
-public class SessionManager {
+public class SessionManager extends AppStateUpdateHandler {
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
 
@@ -66,6 +65,7 @@ public class SessionManager {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
     this.appStateMonitor = appStateMonitor;
+    registerForAppState();
   }
 
   /**
@@ -74,6 +74,21 @@ public class SessionManager {
    */
   public void setApplicationContext(final Context appContext) {
     gaugeManager.initializeGaugeMetadataManager(appContext);
+  }
+
+  @Override
+  public void onUpdateAppState(ApplicationProcessState newAppState) {
+    super.onUpdateAppState(newAppState);
+    if (appStateMonitor.isColdStart()) {
+      // Ignore the app state change if it's a cold start.
+      return;
+    }
+
+    // TODO(b/394127311): Verify if this is called after a new session.
+    if (this.perfSession.isVerbose()) {
+      long collectionFrequency = updateGaugeCollection(newAppState);
+      updateGaugeLogging(perfSession.sessionId(), newAppState, collectionFrequency);
+    }
   }
 
   /**
@@ -92,12 +107,10 @@ public class SessionManager {
   }
 
   /**
-   * Updates the currently associated {@link #perfSession} and broadcast the change.
+   * Updates the currently associated {@link #perfSession} and broadcast the change to relevant
+   * traces.
    *
-   * <p>Uses the provided PerfSession {@link PerfSession}, log the {@link GaugeMetadata} and
-   * start/stop the collection of {@link GaugeMetric} depending upon Session verbosity.
-   *
-   * @see PerfSession#isVerbose()
+   * <p>Uses the provided PerfSession {@link PerfSession}.
    */
   public void updatePerfSession(PerfSession perfSession) {
     // Do not update the perf session if it is the exact same sessionId.
@@ -106,9 +119,6 @@ public class SessionManager {
     }
 
     this.perfSession = perfSession;
-
-    // TODO(b/394127311): Update/verify behavior for Firebase Sessions.
-
     synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
         SessionAwareObject callback = i.next().get();
@@ -121,9 +131,6 @@ public class SessionManager {
         }
       }
     }
-
-    // Start of stop the gauge data collection.
-    startOrStopCollectingGauges(appStateMonitor.getAppState());
   }
 
   /**
@@ -133,7 +140,16 @@ public class SessionManager {
    * this does not reset the perfSession.
    */
   public void initializeGaugeCollection() {
-    startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
+    if (perfSession.isVerbose()) {
+      updateGaugeCollection(ApplicationProcessState.FOREGROUND);
+    }
+  }
+
+  public void updateGaugeCollectionOnNewSession() {
+    if (perfSession.isVerbose()) {
+      long frequency = updateGaugeCollection(ApplicationProcessState.FOREGROUND);
+      updateGaugeLogging(perfSession.sessionId(), ApplicationProcessState.FOREGROUND, frequency);
+    }
   }
 
   /**
@@ -160,15 +176,13 @@ public class SessionManager {
     }
   }
 
-  private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
+  private long updateGaugeCollection(ApplicationProcessState applicationProcessState) {
+    return gaugeManager.updateGaugeCollection(applicationProcessState, perfSession.getTimer());
+  }
 
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.startCollectingGauges(perfSession, appState);
-    } else {
-      gaugeManager.stopCollectingGauges();
-    }
+  private void updateGaugeLogging(
+      String sessionId, ApplicationProcessState applicationProcessState, long collectionFrequency) {
+    gaugeManager.updateGaugeLogging(sessionId, applicationProcessState, collectionFrequency);
   }
 
   @VisibleForTesting

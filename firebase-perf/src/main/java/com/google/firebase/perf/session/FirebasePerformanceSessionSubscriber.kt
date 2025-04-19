@@ -28,12 +28,19 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
-    // TODO(b/394127311): Add logic to deal with app start gauges.
     FirebaseSessionsEnforcementCheck.checkSession(currentPerfSession, "onSessionChanged")
+
+    if (currentPerfSession.isLegacy() && currentPerfSession.isVerbose) {
+      GaugeManager.getInstance()
+        .logGaugeMetadata(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
+      GaugeManager.getInstance()
+        .logExistingGaugeMetrics(sessionDetails.sessionId, ApplicationProcessState.FOREGROUND)
+    }
 
     val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
     SessionManager.getInstance().updatePerfSession(updatedSession)
     GaugeManager.getInstance()
       .logGaugeMetadata(updatedSession.sessionId(), ApplicationProcessState.FOREGROUND)
+    SessionManager.getInstance().updateGaugeCollectionOnNewSession()
   }
 }
