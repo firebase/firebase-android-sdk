@@ -46,7 +46,10 @@ public class GenerateContentResponse(
 
   /** Convenience field to list all the [InlineDataPart]s in the response, if they exist. */
   public val inlineDataParts: List<InlineDataPart> by lazy {
-    candidates.first().content.parts.filterIsInstance<InlineDataPart>()
+    candidates.first().content.parts.let { parts ->
+      parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
+        parts.filterIsInstance<InlineDataPart>()
+    }
   }
 
   @Serializable
