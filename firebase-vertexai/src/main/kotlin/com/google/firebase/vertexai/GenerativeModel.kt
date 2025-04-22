@@ -31,6 +31,7 @@ import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.GenerativeBackend
+import com.google.firebase.vertexai.type.InvalidStateException
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ResponseStoppedException
@@ -212,7 +213,18 @@ internal constructor(
     GenerateContentRequest(
       modelName,
       prompt.map { it.toInternal() },
-      safetySettings?.map { it.toInternal() },
+      safetySettings
+        ?.also { safetySettingList ->
+          if (
+            generativeBackend == GenerativeBackend.GOOGLE_AI &&
+              safetySettingList.any { it.method != null }
+          ) {
+            throw InvalidStateException(
+              "HarmBlockMethod is unsupported by the Google Developer API"
+            )
+          }
+        }
+        ?.map { it.toInternal() },
       generationConfig?.toInternal(),
       tools?.map { it.toInternal() },
       toolConfig?.toInternal(),
