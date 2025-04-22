@@ -69,6 +69,9 @@ import kotlinx.serialization.Serializable
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
  * [responseMimeType] must also be set.
  *
+ * @property responseModalities Specifies the format of the data in which the server responds to
+ * requests
+ *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
  *
@@ -77,7 +80,6 @@ import kotlinx.serialization.Serializable
  * guide for more details.
  */
 public class GenerationConfig
-@OptIn(PublicPreviewAPI::class)
 private constructor(
   internal val temperature: Float?,
   internal val topK: Int?,
@@ -89,7 +91,7 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
-  internal val responseModalities:  List<ResponseModality>?,
+  internal val responseModalities: List<ResponseModality>?,
 ) {
 
   /**
@@ -117,6 +119,9 @@ private constructor(
    * @property responseMimeType See [GenerationConfig.responseMimeType].
    *
    * @property responseSchema See [GenerationConfig.responseSchema].
+   *
+   * @property responseModalities See [GenerationConfig.responseModalities].
+   *
    * @see [generationConfig]
    */
   public class Builder {
