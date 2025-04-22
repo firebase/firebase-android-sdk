@@ -234,12 +234,14 @@ jobs:
       - name: Verify "Gradle connectedCheck" Step Was Successful
         if: steps.connectedCheck.outcome != 'success'
         run: |
-          set -xveuo pipefail
+          set -euo pipefail
 
           if [[ ! -e logcat.log ]] ; then
             echo "WARNING dsdta43sxk: logcat log file not found; skipping scanning for test failures" >&2
           else
+            echo "Scanning logcat output for failure details"
             python firebase-dataconnect/ci/logcat_error_report.py --logcat-file=logcat.log
+            echo
           fi
 
           echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
