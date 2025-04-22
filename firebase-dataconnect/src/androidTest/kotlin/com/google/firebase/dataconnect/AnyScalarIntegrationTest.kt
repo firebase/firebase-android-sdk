@@ -68,11 +68,6 @@ class AnyScalarIntegrationTest : DataConnectIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  fun forcedFailureRevertMeBeforeMerging() {
-    throw Exception("vzmht3nbgr forced error!")
-  }
-
-  @Test
   fun anyScalarNonNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
