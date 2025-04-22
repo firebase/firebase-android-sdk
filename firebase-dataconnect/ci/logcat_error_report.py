@@ -102,7 +102,7 @@ def main() -> None:
   passed_tests = [test_result for test_result in test_results if test_result.passed]
   failed_tests = [test_result for test_result in test_results if not test_result.passed]
   print_line(
-    f"Found results for {len(test_results)} tests:"
+    f"Found results for {len(test_results)} tests: "
     f"{len(passed_tests)} passed, {len(failed_tests)} failed"
   )
 
