@@ -45,7 +45,14 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part
+public class ImagePart(public val image: Bitmap) : Part {
+
+  internal fun toInlineDataPart() =
+    InlineDataPart(
+      android.util.Base64.decode(encodeBitmapToBase64Png(image), BASE_64_FLAGS),
+      "image/jpeg"
+    )
+}
 
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
