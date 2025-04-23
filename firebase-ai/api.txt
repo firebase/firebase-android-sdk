@@ -13,7 +13,7 @@ package com.google.firebase.ai {
     property public final java.util.List<com.google.firebase.ai.type.Content> history;
   }
 
-  public final class FirebaseVertexAI {
+  public final class FirebaseAI {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null);
@@ -21,10 +21,10 @@ package com.google.firebase.ai {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
-    method public static com.google.firebase.ai.FirebaseVertexAI getInstance();
-    method public static com.google.firebase.ai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app);
-    method public static com.google.firebase.ai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, String location);
-    method public static com.google.firebase.ai.FirebaseVertexAI getInstance(String location);
+    method public static com.google.firebase.ai.FirebaseAI getInstance();
+    method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend);
+    method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app);
+    method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null);
@@ -34,21 +34,21 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.Content? systemInstruction = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
-    property public static final com.google.firebase.ai.FirebaseVertexAI instance;
-    field public static final com.google.firebase.ai.FirebaseVertexAI.Companion Companion;
+    property public static final com.google.firebase.ai.FirebaseAI instance;
+    field public static final com.google.firebase.ai.FirebaseAI.Companion Companion;
   }
 
-  public static final class FirebaseVertexAI.Companion {
-    method public com.google.firebase.ai.FirebaseVertexAI getInstance();
-    method public com.google.firebase.ai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app);
-    method public com.google.firebase.ai.FirebaseVertexAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, String location);
-    method public com.google.firebase.ai.FirebaseVertexAI getInstance(String location);
-    property public final com.google.firebase.ai.FirebaseVertexAI instance;
+  public static final class FirebaseAI.Companion {
+    method public com.google.firebase.ai.FirebaseAI getInstance();
+    method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend);
+    method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app);
+    method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend);
+    property public final com.google.firebase.ai.FirebaseAI instance;
   }
 
-  public final class FirebaseVertexAIKt {
-    method public static com.google.firebase.ai.FirebaseVertexAI getVertexAI(com.google.firebase.Firebase);
-    method public static com.google.firebase.ai.FirebaseVertexAI vertexAI(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app = Firebase.app, String location = "us-central1");
+  public final class FirebaseAIKt {
+    method public static com.google.firebase.ai.FirebaseAI ai(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend = GenerativeBackend.googleAI());
+    method public static com.google.firebase.ai.FirebaseAI getAi(com.google.firebase.Firebase);
   }
 
   public final class GenerativeModel {
@@ -115,7 +115,7 @@ package com.google.firebase.ai.java {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.java.LiveSessionFutures> connect();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.LiveSession> connect();
     method public static final com.google.firebase.ai.java.LiveModelFutures from(com.google.firebase.ai.LiveGenerativeModel model);
     field public static final com.google.firebase.ai.java.LiveModelFutures.Companion Companion;
   }
@@ -132,9 +132,8 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.ai.java.LiveSessionFutures.Companion Companion;
   }
@@ -367,6 +366,19 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.GenerationConfig generationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.GenerationConfig.Builder,kotlin.Unit> init);
   }
 
+  public final class GenerativeBackend {
+    method public static com.google.firebase.ai.type.GenerativeBackend googleAI();
+    method public static com.google.firebase.ai.type.GenerativeBackend vertexAI();
+    method public static com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+    field public static final com.google.firebase.ai.type.GenerativeBackend.Companion Companion;
+  }
+
+  public static final class GenerativeBackend.Companion {
+    method public com.google.firebase.ai.type.GenerativeBackend googleAI();
+    method public com.google.firebase.ai.type.GenerativeBackend vertexAI();
+    method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+  }
+
   public final class HarmBlockMethod {
     method public int getOrdinal();
     property public final int ordinal;
@@ -385,7 +397,6 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.HarmBlockThreshold LOW_AND_ABOVE;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold MEDIUM_AND_ABOVE;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold NONE;
-    field public static final com.google.firebase.ai.type.HarmBlockThreshold OFF;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold ONLY_HIGH;
   }
 
@@ -598,7 +609,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
-    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.ai.type.ResponseModality? responseModality);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModalities(com.google.firebase.ai.type.ResponseModality? responseModalities);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
@@ -629,7 +640,7 @@ package com.google.firebase.ai.type {
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
@@ -697,6 +708,7 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.ResponseModality.Companion Companion;
     field public static final com.google.firebase.ai.type.ResponseModality IMAGE;
     field public static final com.google.firebase.ai.type.ResponseModality TEXT;
+    field public static final com.google.firebase.ai.type.ResponseModality UNSPECIFIED;
   }
 
   public static final class ResponseModality.Companion {

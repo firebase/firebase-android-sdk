@@ -53,26 +53,17 @@ public class Voices private constructor(public val ordinal: Int) {
   }
 
   public companion object {
-    /**
-     * Unspecified voice.
-     *
-     * Will use the default voice of the model.
-     */
+    /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: Voices = Voices(0)
 
-    /** Represents the Charon voice. */
     @JvmField public val CHARON: Voices = Voices(1)
 
-    /** Represents the Aoede voice. */
     @JvmField public val AOEDE: Voices = Voices(2)
 
-    /** Represents the Fenrir voice. */
     @JvmField public val FENRIR: Voices = Voices(3)
 
-    /** Represents the Kore voice. */
     @JvmField public val KORE: Voices = Voices(4)
 
-    /** Represents the Puck voice. */
     @JvmField public val PUCK: Voices = Voices(5)
   }
 }

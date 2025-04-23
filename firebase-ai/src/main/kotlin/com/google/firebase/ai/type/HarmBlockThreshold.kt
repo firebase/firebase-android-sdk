@@ -25,7 +25,6 @@ public class HarmBlockThreshold private constructor(public val ordinal: Int) {
 
   internal fun toInternal() =
     when (this) {
-      OFF -> Internal.OFF
       NONE -> Internal.BLOCK_NONE
       ONLY_HIGH -> Internal.BLOCK_ONLY_HIGH
       MEDIUM_AND_ABOVE -> Internal.BLOCK_MEDIUM_AND_ABOVE
@@ -40,7 +39,6 @@ public class HarmBlockThreshold private constructor(public val ordinal: Int) {
     BLOCK_MEDIUM_AND_ABOVE,
     BLOCK_ONLY_HIGH,
     BLOCK_NONE,
-    OFF
   }
 
   public companion object {
@@ -55,13 +53,5 @@ public class HarmBlockThreshold private constructor(public val ordinal: Int) {
 
     /** All content is allowed regardless of harm. */
     @JvmField public val NONE: HarmBlockThreshold = HarmBlockThreshold(3)
-
-    /**
-     * All content is allowed regardless of harm.
-     *
-     * The same as [NONE], but metadata when the corresponding [HarmCategory] occurs will **NOT** be
-     * present in the response.
-     */
-    @JvmField public val OFF: HarmBlockThreshold = HarmBlockThreshold(4)
   }
 }

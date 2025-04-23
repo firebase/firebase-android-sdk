@@ -16,11 +16,11 @@
 
 package com.google.firebase.ai.type
 
-import com.google.firebase.ai.FirebaseVertexAI
+import com.google.firebase.ai.FirebaseAI
 import com.google.firebase.ai.common.FirebaseCommonAIException
 import kotlinx.coroutines.TimeoutCancellationException
 
-/** Parent class for any errors that occur from the [FirebaseVertexAI] SDK. */
+/** Parent class for any errors that occur from the [FirebaseAI] SDK. */
 public abstract class FirebaseVertexAIException
 internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
 
@@ -67,38 +67,6 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
       }
-
-    /**
-     * Catch any exception thrown in the [callback] block and rethrow it as a
-     * [FirebaseVertexAIException].
-     *
-     * Will return whatever the [callback] returns as well.
-     *
-     * @see catch
-     */
-    internal suspend fun <T> catchAsync(callback: suspend () -> T): T {
-      try {
-        return callback()
-      } catch (e: Exception) {
-        throw from(e)
-      }
-    }
-
-    /**
-     * Catch any exception thrown in the [callback] block and rethrow it as a
-     * [FirebaseVertexAIException].
-     *
-     * Will return whatever the [callback] returns as well.
-     *
-     * @see catchAsync
-     */
-    internal fun <T> catch(callback: () -> T): T {
-      try {
-        return callback()
-      } catch (e: Exception) {
-        throw from(e)
-      }
-    }
   }
 }
 

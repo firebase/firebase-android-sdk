@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package java.com.google.firebase.ai;
+package java.com.google.firebase.vertexai;
 
 import android.graphics.Bitmap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.firebase.concurrent.FirebaseExecutors;
-import com.google.firebase.ai.FirebaseVertexAI;
+import com.google.firebase.ai.FirebaseAI;
 import com.google.firebase.ai.GenerativeModel;
 import com.google.firebase.ai.java.ChatFutures;
 import com.google.firebase.ai.java.GenerativeModelFutures;
@@ -45,6 +44,7 @@ import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.SafetyRating;
 import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.UsageMetadata;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ import org.reactivestreams.Subscription;
 public class JavaCompileTests {
 
   public void initializeJava() throws Exception {
-    FirebaseVertexAI vertex = FirebaseVertexAI.getInstance();
+    FirebaseAI vertex = FirebaseAI.getInstance();
     GenerativeModel model = vertex.generativeModel("fake-model-name");
     GenerativeModelFutures futures = GenerativeModelFutures.from(model);
     testFutures(futures);

@@ -18,7 +18,7 @@ package com.google.firebase.ai
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Blocking
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.components.Component
@@ -30,7 +30,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * [ComponentRegistrar] for setting up [FirebaseVertexAI] and its internal dependencies.
+ * [ComponentRegistrar] for setting up [FirebaseAI] and its internal dependencies.
  *
  * @hide
  */
@@ -38,16 +38,16 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class FirebaseAIRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseVertexAIMultiResourceComponent::class.java)
+      Component.builder(FirebaseAIMultiResourceComponent::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(blockingDispatcher))
+        .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
         .factory { container ->
-          FirebaseVertexAIMultiResourceComponent(
+          FirebaseAIMultiResourceComponent(
             container[firebaseApp],
-            container.get(blockingDispatcher),
+            container.get(backgroundDispatcher),
             container.getProvider(appCheckInterop),
             container.getProvider(internalAuthProvider)
           )
@@ -57,12 +57,12 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
     )
 
   private companion object {
-    private const val LIBRARY_NAME = "fire-vertex"
+    private const val LIBRARY_NAME = "fire-ai"
 
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)
     private val internalAuthProvider = unqualified(InternalAuthProvider::class.java)
-    private val blockingDispatcher =
-      Qualified.qualified(Blocking::class.java, CoroutineDispatcher::class.java)
+    private val backgroundDispatcher =
+      Qualified.qualified(Background::class.java, CoroutineDispatcher::class.java)
   }
 }

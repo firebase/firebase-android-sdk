@@ -17,8 +17,6 @@
 package com.google.firebase.ai
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
-import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
@@ -30,6 +28,8 @@ import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.ImagenSafetySettings
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.InternalAuthProvider
 
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input

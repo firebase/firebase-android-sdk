@@ -71,11 +71,8 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-// TODO(b/410040441): Support id property
-public class FunctionCallPart(
-  public val name: String,
-  public val args: Map<String, JsonElement>,
-) : Part {
+public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
+  Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
@@ -91,7 +88,6 @@ public class FunctionCallPart(
  * @param name the name of the called function
  * @param response the response produced by the function as a [JSONObject]
  */
-// TODO(b/410040441): Support id property
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable

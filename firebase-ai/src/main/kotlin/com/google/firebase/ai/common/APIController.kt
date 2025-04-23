@@ -19,7 +19,6 @@ package com.google.firebase.ai.common
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.options
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.type.CountTokensResponse
@@ -30,6 +29,7 @@ import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.Response
+import com.google.firebase.options
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -165,7 +165,6 @@ internal constructor(
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location))
-
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =

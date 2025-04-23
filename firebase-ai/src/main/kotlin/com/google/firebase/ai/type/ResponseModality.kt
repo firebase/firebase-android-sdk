@@ -18,14 +18,16 @@ package com.google.firebase.ai.type
 
 import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Represents the type of content present in a response (e.g., text, image, audio). */
+/** Modality for bidirectional streaming. */
 @PublicPreviewAPI
 public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
+    @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
     TEXT,
     IMAGE,
     AUDIO;
@@ -36,7 +38,8 @@ public class ResponseModality private constructor(public val ordinal: Int) {
       when (this) {
         TEXT -> ResponseModality.TEXT
         IMAGE -> ResponseModality.IMAGE
-        else -> ResponseModality.AUDIO
+        AUDIO -> ResponseModality.AUDIO
+        else -> ResponseModality.UNSPECIFIED
       }
   }
 
@@ -44,17 +47,20 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     when (this) {
       TEXT -> "TEXT"
       IMAGE -> "IMAGE"
-      else -> "AUDIO"
+      AUDIO -> "AUDIO"
+      else -> "UNSPECIFIED"
     }
   public companion object {
+    /** Unspecified modality. */
+    @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
 
-    /** Represents a plain text response modality. */
+    /** Plain text. */
     @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
-    /** Represents an image response modality. */
+    /** Image. */
     @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
-    /** Represents an audio response modality. */
+    /** Audio. */
     @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }
