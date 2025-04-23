@@ -44,7 +44,9 @@ public class GenerateContentResponse(
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
   }
 
-  /** Returns inline data parts found in any `Part`s of the first candidate of the response, if any. */
+  /**
+   * Returns inline data parts found in any `Part`s of the first candidate of the response, if any.
+   */
   public val inlineDataParts: List<InlineDataPart> by lazy {
     candidates.first().content.parts.let { parts ->
       parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
