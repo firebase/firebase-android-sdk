@@ -45,7 +45,9 @@ public class GenerateContentResponse(
   }
 
   /**
-   * Returns inline data parts found in any `Part`s of the first candidate of the response, if any.
+   * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
+   *
+   * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
     candidates.first().content.parts.let { parts ->
