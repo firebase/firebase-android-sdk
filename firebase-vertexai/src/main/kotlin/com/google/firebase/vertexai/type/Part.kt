@@ -171,7 +171,7 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Png(image))
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
@@ -193,7 +193,7 @@ internal fun Part.toInternal(): InternalPart {
   }
 }
 
-private fun encodeBitmapToBase64Png(input: Bitmap): String {
+private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
   ByteArrayOutputStream().let {
     input.compress(Bitmap.CompressFormat.JPEG, 80, it)
     return android.util.Base64.encodeToString(it.toByteArray(), BASE_64_FLAGS)
