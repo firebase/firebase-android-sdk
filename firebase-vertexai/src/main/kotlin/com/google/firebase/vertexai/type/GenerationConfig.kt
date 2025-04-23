@@ -69,8 +69,7 @@ import kotlinx.serialization.Serializable
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
  * [responseMimeType] must also be set.
  *
- * @property responseModalities Specifies the format of the data in which the server responds to
- * requests
+ * @property responseModalities The format of data in which the model should respond with.
  *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
