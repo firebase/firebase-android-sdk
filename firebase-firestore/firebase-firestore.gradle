@@ -142,10 +142,10 @@ dependencies {
     implementation libs.grpc.stub
     implementation libs.kotlin.stdlib
     implementation libs.kotlinx.coroutines.core
-    implementation libs.kotlinx.datetime
 
     compileOnly libs.autovalue.annotations
     compileOnly libs.javax.annotation.jsr250
+    compileOnly libs.kotlinx.datetime
 
     annotationProcessor libs.autovalue
 
@@ -163,6 +163,7 @@ dependencies {
     testImplementation libs.hamcrest.junit
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
+    testImplementation libs.kotlinx.datetime
 
     testCompileOnly libs.protobuf.java
 
