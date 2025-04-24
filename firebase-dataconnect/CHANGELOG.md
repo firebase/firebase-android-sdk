@@ -1,5 +1,7 @@
 # Unreleased
-
+* [changed] Code robustness improvements related to state management in
+  `FirebaseDataConnect` objects.
+  ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
 
 # 16.0.0
 * [changed] DataConnectOperationException added, enabling support for partial
