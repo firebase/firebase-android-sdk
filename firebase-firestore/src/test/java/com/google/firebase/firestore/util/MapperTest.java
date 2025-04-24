@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.TestUtil;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.junit.Test;
 import org.robolectric.annotation.Config;
@@ -92,6 +95,44 @@ public class MapperTest {
 
     public boolean isValue() {
       return value;
+    }
+  }
+
+  private static class TimeBean {
+    public Timestamp timestamp;
+    public Date date;
+    public Instant instant;
+    public kotlinx.datetime.Instant instantKt;
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      TimeBean timeBean = (TimeBean) o;
+      return Objects.equals(timestamp, timeBean.timestamp)
+          && Objects.equals(date, timeBean.date)
+          && Objects.equals(instant, timeBean.instant)
+          && Objects.equals(instantKt, timeBean.instantKt);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(timestamp, date, instant, instantKt);
+    }
+
+    @Override
+    public String toString() {
+      return "TimeBean{"
+          + "_date="
+          + date
+          + ", _timestamp="
+          + timestamp
+          + ", _instant="
+          + instant
+          + ", _instantKt="
+          + instantKt
+          + '}';
     }
   }
 
@@ -1474,6 +1515,48 @@ public class MapperTest {
     BooleanBean bean = new BooleanBean();
     bean.value = true;
     assertJson("{'value': true}", serialize(bean));
+  }
+
+  @Test
+  public void serializeTimeBean() {
+    TimeBean bean = new TimeBean();
+    bean.instant = Instant.ofEpochSecond(1234, 5678);
+    bean.timestamp = new Timestamp(bean.instant);
+    bean.date = new Date(1234);
+    bean.instantKt = new kotlinx.datetime.Instant(bean.instant);
+    assertEquals(
+        Map.of(
+            "timestamp",
+            bean.timestamp,
+            "date",
+            bean.date,
+            "instant",
+            bean.timestamp,
+            "instantKt",
+            bean.timestamp),
+        serialize(bean));
+  }
+
+  @Test
+  public void deserializeTimeBean() {
+    TimeBean bean = new TimeBean();
+    bean.instant = Instant.ofEpochSecond(1234, 5678);
+    bean.timestamp = new Timestamp(bean.instant);
+    bean.date = new Date(1234);
+    bean.instantKt = new kotlinx.datetime.Instant(bean.instant);
+    assertEquals(
+        bean,
+        convertToCustomClass(
+            Map.of(
+                "timestamp",
+                bean.timestamp,
+                "date",
+                bean.date,
+                "instant",
+                bean.timestamp,
+                "instantKt",
+                bean.timestamp),
+            TimeBean.class));
   }
 
   @Test

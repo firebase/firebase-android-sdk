@@ -142,6 +142,7 @@ dependencies {
     implementation libs.grpc.stub
     implementation libs.kotlin.stdlib
     implementation libs.kotlinx.coroutines.core
+    implementation libs.kotlinx.datetime
 
     compileOnly libs.autovalue.annotations
     compileOnly libs.javax.annotation.jsr250
