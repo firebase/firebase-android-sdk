@@ -115,7 +115,7 @@ package com.google.firebase.ai.java {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.LiveSession> connect();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.java.LiveSessionFutures> connect();
     method public static final com.google.firebase.ai.java.LiveModelFutures from(com.google.firebase.ai.LiveGenerativeModel model);
     field public static final com.google.firebase.ai.java.LiveModelFutures.Companion Companion;
   }
@@ -132,8 +132,9 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.ai.java.LiveSessionFutures.Companion Companion;
   }
@@ -146,7 +147,7 @@ package com.google.firebase.ai.java {
 
 package com.google.firebase.ai.type {
 
-  public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public AudioRecordInitializationFailedException(String message);
   }
 
@@ -223,7 +224,7 @@ package com.google.firebase.ai.type {
     property public final String? role;
   }
 
-  public final class ContentBlockedException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class ContentBlockedException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
   public final class ContentKt {
@@ -287,7 +288,7 @@ package com.google.firebase.ai.type {
   public static final class FinishReason.Companion {
   }
 
-  public abstract class FirebaseVertexAIException extends java.lang.RuntimeException {
+  public abstract class FirebaseAIException extends java.lang.RuntimeException {
   }
 
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
@@ -397,6 +398,7 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.HarmBlockThreshold LOW_AND_ABOVE;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold MEDIUM_AND_ABOVE;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold NONE;
+    field public static final com.google.firebase.ai.type.HarmBlockThreshold OFF;
     field public static final com.google.firebase.ai.type.HarmBlockThreshold ONLY_HIGH;
   }
 
@@ -565,13 +567,13 @@ package com.google.firebase.ai.type {
     property public final String mimeType;
   }
 
-  public final class InvalidAPIKeyException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class InvalidAPIKeyException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class InvalidLocationException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class InvalidLocationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class InvalidStateException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class InvalidStateException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveContentResponse {
@@ -609,7 +611,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
-    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModalities(com.google.firebase.ai.type.ResponseModality? responseModalities);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.ai.type.ResponseModality? responseModality);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
@@ -640,7 +642,7 @@ package com.google.firebase.ai.type {
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
@@ -672,7 +674,7 @@ package com.google.firebase.ai.type {
     method public static String? asTextOrNull(com.google.firebase.ai.type.Part);
   }
 
-  public final class PromptBlockedException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class PromptBlockedException extends com.google.firebase.ai.type.FirebaseAIException {
     method public com.google.firebase.ai.type.GenerateContentResponse? getResponse();
     property public final com.google.firebase.ai.type.GenerateContentResponse? response;
   }
@@ -690,7 +692,7 @@ package com.google.firebase.ai.type {
   @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
   }
 
-  public final class QuotaExceededException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class QuotaExceededException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
   public final class RequestOptions {
@@ -698,23 +700,22 @@ package com.google.firebase.ai.type {
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
   }
 
-  public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ResponseModality {
+  public final class ResponseModality {
     method public int getOrdinal();
     property public final int ordinal;
     field public static final com.google.firebase.ai.type.ResponseModality AUDIO;
     field public static final com.google.firebase.ai.type.ResponseModality.Companion Companion;
     field public static final com.google.firebase.ai.type.ResponseModality IMAGE;
     field public static final com.google.firebase.ai.type.ResponseModality TEXT;
-    field public static final com.google.firebase.ai.type.ResponseModality UNSPECIFIED;
   }
 
   public static final class ResponseModality.Companion {
   }
 
-  public final class ResponseStoppedException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class ResponseStoppedException extends com.google.firebase.ai.type.FirebaseAIException {
     method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
     property public final com.google.firebase.ai.type.GenerateContentResponse response;
   }
@@ -819,20 +820,20 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null);
   }
 
-  public final class SerializationException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class SerializationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class ServerException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class ServerException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class ServiceConnectionHandshakeFailedException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class ServiceConnectionHandshakeFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public ServiceConnectionHandshakeFailedException(String message, Throwable? cause = null);
   }
 
-  public final class ServiceDisabledException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class ServiceDisabledException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class SessionAlreadyReceivingException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class SessionAlreadyReceivingException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public SessionAlreadyReceivingException();
   }
 
@@ -868,10 +869,10 @@ package com.google.firebase.ai.type {
     ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
   }
 
-  public final class UnknownException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class UnknownException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class UnsupportedUserLocationException extends com.google.firebase.ai.type.FirebaseVertexAIException {
+  public final class UnsupportedUserLocationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
   public final class UsageMetadata {

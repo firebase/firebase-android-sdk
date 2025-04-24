@@ -45,7 +45,14 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part
+public class ImagePart(public val image: Bitmap) : Part {
+
+  internal fun toInlineDataPart() =
+    InlineDataPart(
+      android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
+      "image/jpeg"
+    )
+}
 
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
@@ -71,8 +78,11 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
-  Part {
+// TODO(b/410040441): Support id property
+public class FunctionCallPart(
+  public val name: String,
+  public val args: Map<String, JsonElement>,
+) : Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
@@ -88,6 +98,7 @@ public class FunctionCallPart(public val name: String, public val args: Map<Stri
  * @param name the name of the called function
  * @param response the response produced by the function as a [JSONObject]
  */
+// TODO(b/410040441): Support id property
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
@@ -160,7 +171,7 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Png(image))
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
@@ -182,7 +193,7 @@ internal fun Part.toInternal(): InternalPart {
   }
 }
 
-private fun encodeBitmapToBase64Png(input: Bitmap): String {
+private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
   ByteArrayOutputStream().let {
     input.compress(Bitmap.CompressFormat.JPEG, 80, it)
     return android.util.Base64.encodeToString(it.toByteArray(), BASE_64_FLAGS)

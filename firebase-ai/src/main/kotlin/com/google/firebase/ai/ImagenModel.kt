@@ -21,7 +21,7 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
-import com.google.firebase.ai.type.FirebaseVertexAIException
+import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
@@ -79,7 +79,7 @@ internal constructor(
         .validate()
         .toPublicInline()
     } catch (e: Throwable) {
-      throw FirebaseVertexAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   private fun constructRequest(

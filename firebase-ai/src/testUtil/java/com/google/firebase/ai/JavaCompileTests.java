@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package java.com.google.firebase.vertexai;
+package java.com.google.firebase.ai;
 
 import android.graphics.Bitmap;
 import com.google.common.util.concurrent.ListenableFuture;

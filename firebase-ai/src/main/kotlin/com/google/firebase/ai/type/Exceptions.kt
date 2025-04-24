@@ -21,20 +21,20 @@ import com.google.firebase.ai.common.FirebaseCommonAIException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseAI] SDK. */
-public abstract class FirebaseVertexAIException
+public abstract class FirebaseAIException
 internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
 
   internal companion object {
 
     /**
-     * Converts a [Throwable] to a [FirebaseVertexAIException].
+     * Converts a [Throwable] to a [FirebaseAIException].
      *
      * Will populate default messages as expected, and propagate the provided [cause] through the
      * resulting exception.
      */
-    internal fun from(cause: Throwable): FirebaseVertexAIException =
+    internal fun from(cause: Throwable): FirebaseAIException =
       when (cause) {
-        is FirebaseVertexAIException -> cause
+        is FirebaseAIException -> cause
         is FirebaseCommonAIException ->
           when (cause) {
             is com.google.firebase.ai.common.SerializationException ->
@@ -67,22 +67,53 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
       }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a
+     * [FirebaseVertexAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catch
+     */
+    internal suspend fun <T> catchAsync(callback: suspend () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
+
+    /**
+     * Catch any exception thrown in the [callback] block and rethrow it as a [FirebaseAIException].
+     *
+     * Will return whatever the [callback] returns as well.
+     *
+     * @see catchAsync
+     */
+    internal fun <T> catch(callback: () -> T): T {
+      try {
+        return callback()
+      } catch (e: Exception) {
+        throw from(e)
+      }
+    }
   }
 }
 
 /** Something went wrong while trying to deserialize a response from the server. */
 public class SerializationException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /** The server responded with a non 200 response code. */
 public class ServerException internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /** The provided API Key is not valid. */
 public class InvalidAPIKeyException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /**
  * A request was blocked.
@@ -97,7 +128,7 @@ internal constructor(
   cause: Throwable? = null,
   message: String? = null,
 ) :
-  FirebaseVertexAIException(
+  FirebaseAIException(
     "Prompt was blocked: ${response?.promptFeedback?.blockReason?.name?: message}",
     cause,
   ) {
@@ -106,7 +137,7 @@ internal constructor(
 
 public class ContentBlockedException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /**
  * The user's location (region) is not supported by the API.
@@ -117,7 +148,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
 public class UnsupportedUserLocationException internal constructor(cause: Throwable? = null) :
-  FirebaseVertexAIException("User location is not supported for the API use.", cause)
+  FirebaseAIException("User location is not supported for the API use.", cause)
 
 /**
  * Some form of state occurred that shouldn't have.
@@ -125,7 +156,7 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
  * Usually indicative of consumer error.
  */
 public class InvalidStateException internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /**
  * A request was stopped during generation for some reason.
@@ -134,7 +165,7 @@ public class InvalidStateException internal constructor(message: String, cause: 
  */
 public class ResponseStoppedException
 internal constructor(public val response: GenerateContentResponse, cause: Throwable? = null) :
-  FirebaseVertexAIException(
+  FirebaseAIException(
     "Content generation stopped. Reason: ${response.candidates.first().finishReason?.name}",
     cause,
   )
@@ -146,7 +177,7 @@ internal constructor(public val response: GenerateContentResponse, cause: Throwa
  */
 public class RequestTimeoutException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /**
  * The specified Vertex AI location is invalid.
@@ -156,7 +187,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 public class InvalidLocationException
 internal constructor(location: String, cause: Throwable? = null) :
-  FirebaseVertexAIException("Invalid location \"${location}\"", cause)
+  FirebaseAIException("Invalid location \"${location}\"", cause)
 
 /**
  * The service is not enabled for this Firebase project. Learn how to enable the required services
@@ -165,7 +196,7 @@ internal constructor(location: String, cause: Throwable? = null) :
  */
 public class ServiceDisabledException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /**
  * The request has hit a quota limit. Learn more about quotas in the
@@ -173,22 +204,22 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /** Streaming session already receiving. */
 public class SessionAlreadyReceivingException :
-  FirebaseVertexAIException(
+  FirebaseAIException(
     "This session is already receiving. Please call stopReceiving() before calling this again."
   )
 
 /** Audio record initialization failures for audio streaming */
 public class AudioRecordInitializationFailedException(message: String) :
-  FirebaseVertexAIException(message)
+  FirebaseAIException(message)
 
 /** Handshake failed with the server */
 public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseVertexAIException(message, cause)
+  FirebaseAIException(message, cause)
