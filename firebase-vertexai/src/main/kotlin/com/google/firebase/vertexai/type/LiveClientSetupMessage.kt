@@ -19,19 +19,25 @@ package com.google.firebase.vertexai.type
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
+/**
+ * First message in a live session.
+ *
+ * Contains configuration that will be used for the duration of the session.
+ */
 @OptIn(ExperimentalSerializationApi::class)
 @PublicPreviewAPI
-internal class BidiGenerateContentClientMessage(
+internal class LiveClientSetupMessage(
   val model: String,
+  // Some config options are supported in generateContent but not in bidi and vise versa; so bidi
+  // needs its own config class
   val generationConfig: LiveGenerationConfig.Internal?,
   val tools: List<Tool.Internal>?,
   val systemInstruction: Content.Internal?
 ) {
-
   @Serializable
-  internal class Internal(val setup: BidiGenerateContentSetup) {
+  internal class Internal(val setup: LiveClientSetup) {
     @Serializable
-    internal data class BidiGenerateContentSetup(
+    internal data class LiveClientSetup(
       val model: String,
       val generationConfig: LiveGenerationConfig.Internal?,
       val tools: List<Tool.Internal>?,
@@ -40,5 +46,5 @@ internal class BidiGenerateContentClientMessage(
   }
 
   fun toInternal() =
-    Internal(Internal.BidiGenerateContentSetup(model, generationConfig, tools, systemInstruction))
+    Internal(Internal.LiveClientSetup(model, generationConfig, tools, systemInstruction))
 }

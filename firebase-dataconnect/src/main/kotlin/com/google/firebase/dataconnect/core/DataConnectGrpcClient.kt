@@ -102,7 +102,7 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
+  private inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,
     kotlinMethodName: String,
     block: T.() -> R

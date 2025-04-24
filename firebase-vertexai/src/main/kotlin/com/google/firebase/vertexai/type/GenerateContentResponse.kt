@@ -44,6 +44,18 @@ public class GenerateContentResponse(
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
   }
 
+  /**
+   * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
+   *
+   * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
+   */
+  public val inlineDataParts: List<InlineDataPart> by lazy {
+    candidates.first().content.parts.let { parts ->
+      parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
+        parts.filterIsInstance<InlineDataPart>()
+    }
+  }
+
   @Serializable
   internal data class Internal(
     val candidates: List<Candidate.Internal>? = null,

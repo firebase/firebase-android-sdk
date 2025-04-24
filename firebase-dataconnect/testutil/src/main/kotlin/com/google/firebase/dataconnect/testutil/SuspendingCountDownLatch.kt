@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.testutil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 
 /**
  * An implementation of [java.util.concurrent.CountDownLatch] that suspends instead of blocking.
@@ -60,14 +61,10 @@ class SuspendingCountDownLatch(count: Int) {
    * @throws IllegalStateException if called when the count has already reached zero.
    */
   fun countDown(): SuspendingCountDownLatch {
-    while (true) {
-      val oldValue = _count.value
-      check(oldValue > 0) { "countDown() called too many times (oldValue=$oldValue)" }
-
-      val newValue = oldValue - 1
-      if (_count.compareAndSet(oldValue, newValue)) {
-        return this
-      }
+    _count.update { currentValue ->
+      check(currentValue > 0) { "countDown() called too many times (currentValue=$currentValue)" }
+      currentValue - 1
     }
+    return this
   }
 }
