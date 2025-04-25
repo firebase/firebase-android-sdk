@@ -212,7 +212,7 @@ internal constructor(
   }
 
   public companion object {
-    /** The [FirebaseAI] instance for the default [FirebaseApp] */
+    /** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */
     @JvmStatic
     public val instance: FirebaseAI
       get() = getInstance(backend = GenerativeBackend.googleAI())
@@ -232,7 +232,7 @@ internal constructor(
       return multiResourceComponent.get(backend)
     }
 
-    /** Returns the [FirebaseAI] instance for the provided [FirebaseApp] */
+    /** The [FirebaseAI] instance for the provided [FirebaseApp] using the Google AI Backend. */
     @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseAI = getInstance(app)
 
     private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
@@ -243,14 +243,14 @@ internal constructor(
   }
 }
 
-/** Returns the [FirebaseAI] instance of the default [FirebaseApp]. */
+/** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */
 public val Firebase.ai: FirebaseAI
   get() = FirebaseAI.instance
 
 /**
  * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
  *
- * @param backend the backend reference to make generative AI requests to. .
+ * @param backend the backend reference to make generative AI requests to.
  */
 public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,

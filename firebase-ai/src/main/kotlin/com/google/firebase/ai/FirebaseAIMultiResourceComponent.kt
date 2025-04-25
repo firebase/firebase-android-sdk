@@ -37,11 +37,11 @@ internal class FirebaseAIMultiResourceComponent(
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
-  @GuardedBy("this") private val aiInstances: MutableMap<String, FirebaseAI> = mutableMapOf()
+  @GuardedBy("this") private val instances: MutableMap<String, FirebaseAI> = mutableMapOf()
 
   fun get(backend: GenerativeBackend): FirebaseAI =
     synchronized(this) {
-      aiInstances[backend.location]
+      instances[backend.location]
         ?: FirebaseAI(
             app,
             backend,
@@ -49,6 +49,6 @@ internal class FirebaseAIMultiResourceComponent(
             appCheckProvider,
             internalAuthProvider,
           )
-          .also { aiInstances[backend.location] = it }
+          .also { instances[backend.location] = it }
     }
 }
