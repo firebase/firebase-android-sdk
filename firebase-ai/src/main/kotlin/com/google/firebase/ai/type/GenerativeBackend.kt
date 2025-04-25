@@ -33,8 +33,12 @@ internal constructor(internal val location: String, internal val backend: Genera
      */
     @JvmStatic
     @JvmOverloads
-    public fun vertexAI(location: String = "us-central1"): GenerativeBackend =
-      GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
+    public fun vertexAI(location: String = "us-central1"): GenerativeBackend {
+      if (location.isBlank() || location.contains("/")) {
+        throw InvalidLocationException(location)
+      }
+      return GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
+    }
   }
 }
 

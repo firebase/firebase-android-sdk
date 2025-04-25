@@ -25,12 +25,11 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenSafetySettings
-import com.google.firebase.ai.type.InvalidLocationException
+import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
-import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.annotations.concurrent.Blocking
@@ -49,9 +48,6 @@ internal constructor(
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
-  init {
-    validateLocation()
-  }
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
@@ -142,7 +138,7 @@ internal constructor(
         GenerativeBackendEnum.VERTEX_AI ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
-          throw ServiceDisabledException("Live Model is not yet available on the Google AI backend")
+          throw InvalidStateException("Live Model is not yet available on the Google AI backend")
       },
       firebaseApp.options.apiKey,
       firebaseApp,
@@ -200,15 +196,6 @@ internal constructor(
       appCheckProvider.get(),
       internalAuthProvider.get(),
     )
-  }
-
-  private fun validateLocation() {
-    if (backend.backend != GenerativeBackendEnum.VERTEX_AI) {
-      return
-    }
-    if (backend.location.isBlank() || backend.location.contains("/")) {
-      throw InvalidLocationException(backend.location)
-    }
   }
 
   public companion object {
