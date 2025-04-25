@@ -17,19 +17,19 @@
 package com.google.firebase.ai
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
-import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
-import com.google.firebase.ai.type.FirebaseVertexAIException
+import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.ImagenSafetySettings
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.InternalAuthProvider
 
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
@@ -79,7 +79,7 @@ internal constructor(
         .validate()
         .toPublicInline()
     } catch (e: Throwable) {
-      throw FirebaseVertexAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   private fun constructRequest(

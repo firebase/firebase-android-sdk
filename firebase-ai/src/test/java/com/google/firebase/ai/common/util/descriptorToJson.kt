@@ -145,8 +145,7 @@ internal fun typeNameFromKind(kind: SerialKind): String {
  * want in the json output. There are two class names
  *
  * - `com.google.firebase.ai.type.Content.Internal` for regular scenarios
- * - `com.google.firebase.ai.type.Content.Internal.SomeClass` for nested classes in the
- * serializer.
+ * - `com.google.firebase.ai.type.Content.Internal.SomeClass` for nested classes in the serializer.
  *
  * For the later time we need the second to last component, for the former we need the last
  * component.

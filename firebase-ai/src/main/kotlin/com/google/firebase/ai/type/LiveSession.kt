@@ -21,11 +21,11 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
+import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
@@ -97,7 +97,7 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    FirebaseVertexAIException.catchAsync {
+    FirebaseAIException.catchAsync {
       if (scope.isActive) {
         Log.w(
           TAG,
@@ -124,7 +124,7 @@ internal constructor(
    * If there is no audio conversation currently active, this function does nothing.
    */
   public fun stopAudioConversation() {
-    FirebaseVertexAIException.catch {
+    FirebaseAIException.catch {
       if (!startedReceiving.getAndSet(false)) return@catch
 
       scope.cancel()
@@ -146,7 +146,7 @@ internal constructor(
    * @see stopReceiving
    */
   public fun receive(): Flow<LiveContentResponse> {
-    return FirebaseVertexAIException.catch {
+    return FirebaseAIException.catch {
       if (startedReceiving.getAndSet(true)) {
         throw SessionAlreadyReceivingException()
       }
@@ -164,7 +164,7 @@ internal constructor(
           }
         }
         .onCompletion { stopAudioConversation() }
-        .catch { throw FirebaseVertexAIException.from(it) }
+        .catch { throw FirebaseAIException.from(it) }
 
       // TODO(b/410059569): Add back when fixed
       //    return session.incoming.receiveAsFlow().transform { frame ->
@@ -190,7 +190,7 @@ internal constructor(
    */
   // TODO(b/410059569): Remove when fixed
   public fun stopReceiving() {
-    FirebaseVertexAIException.catch {
+    FirebaseAIException.catch {
       if (!startedReceiving.getAndSet(false)) return@catch
 
       scope.cancel()
@@ -211,7 +211,7 @@ internal constructor(
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    FirebaseVertexAIException.catchAsync {
+    FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
           BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
@@ -231,7 +231,7 @@ internal constructor(
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    FirebaseVertexAIException.catchAsync {
+    FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
           BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
@@ -248,7 +248,7 @@ internal constructor(
    * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
-    FirebaseVertexAIException.catchAsync {
+    FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
           BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
@@ -265,7 +265,7 @@ internal constructor(
    * @param text Text to be sent to the model.
    */
   public suspend fun send(text: String) {
-    FirebaseVertexAIException.catchAsync { send(Content.Builder().text(text).build()) }
+    FirebaseAIException.catchAsync { send(Content.Builder().text(text).build()) }
   }
 
   /**
@@ -277,7 +277,7 @@ internal constructor(
    * @see stopReceiving
    */
   public suspend fun close() {
-    FirebaseVertexAIException.catchAsync {
+    FirebaseAIException.catchAsync {
       session.close()
       stopAudioConversation()
     }
@@ -291,7 +291,7 @@ internal constructor(
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
       ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
-      ?.catch { throw FirebaseVertexAIException.from(it) }
+      ?.catch { throw FirebaseAIException.from(it) }
       ?.launchIn(scope)
   }
 

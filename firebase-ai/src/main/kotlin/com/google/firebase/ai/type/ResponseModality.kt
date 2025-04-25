@@ -21,7 +21,6 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 /** Represents the type of content present in a response (e.g., text, image, audio). */
-@PublicPreviewAPI
 public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)

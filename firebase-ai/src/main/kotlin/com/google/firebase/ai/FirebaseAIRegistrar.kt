@@ -30,7 +30,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * [ComponentRegistrar] for setting up [FirebaseVertexAI] and its internal dependencies.
+ * [ComponentRegistrar] for setting up [FirebaseAI] and its internal dependencies.
  *
  * @hide
  */
@@ -38,14 +38,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class FirebaseAIRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseVertexAIMultiResourceComponent::class.java)
+      Component.builder(FirebaseAIMultiResourceComponent::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(blockingDispatcher))
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
         .factory { container ->
-          FirebaseVertexAIMultiResourceComponent(
+          FirebaseAIMultiResourceComponent(
             container[firebaseApp],
             container.get(blockingDispatcher),
             container.getProvider(appCheckInterop),
@@ -57,7 +57,7 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
     )
 
   private companion object {
-    private const val LIBRARY_NAME = "fire-vertex"
+    private const val LIBRARY_NAME = "fire-ai"
 
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)

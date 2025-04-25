@@ -18,6 +18,7 @@ package com.google.firebase.ai
 
 import androidx.annotation.GuardedBy
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
@@ -29,25 +30,25 @@ import kotlin.coroutines.CoroutineContext
  *
  * @hide
  */
-internal class FirebaseVertexAIMultiResourceComponent(
+internal class FirebaseAIMultiResourceComponent(
   private val app: FirebaseApp,
   @Blocking val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
-  @GuardedBy("this") private val instances: MutableMap<String, FirebaseVertexAI> = mutableMapOf()
+  @GuardedBy("this") private val instances: MutableMap<String, FirebaseAI> = mutableMapOf()
 
-  fun get(location: String): FirebaseVertexAI =
+  fun get(backend: GenerativeBackend): FirebaseAI =
     synchronized(this) {
-      instances[location]
-        ?: FirebaseVertexAI(
+      instances[backend.location]
+        ?: FirebaseAI(
             app,
+            backend,
             blockingDispatcher,
-            location,
             appCheckProvider,
-            internalAuthProvider
+            internalAuthProvider,
           )
-          .also { instances[location] = it }
+          .also { instances[backend.location] = it }
     }
 }

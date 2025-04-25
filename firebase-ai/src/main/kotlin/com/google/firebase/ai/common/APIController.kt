@@ -19,7 +19,6 @@ package com.google.firebase.ai.common
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.options
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.type.CountTokensResponse
@@ -30,6 +29,7 @@ import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.Response
+import com.google.firebase.options
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -165,7 +165,6 @@ internal constructor(
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location))
-
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =
@@ -294,7 +293,7 @@ private suspend fun validateResponse(response: HttpResponse) {
   val htmlContentType = ContentType.Text.Html.withCharset(Charset.forName("utf-8"))
   if (response.status == HttpStatusCode.NotFound && response.contentType() == htmlContentType)
     throw ServerException(
-      """URL not found. Please verify the location used to create the `FirebaseVertexAI` object
+      """URL not found. Please verify the location used to create the `FirebaseAI` object
           | See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions
           | for the list of available locations. Raw response: ${response.bodyAsText()}"""
         .trimMargin()
@@ -324,7 +323,7 @@ private suspend fun validateResponse(response: HttpResponse) {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
         """
-        The Vertex AI in Firebase SDK requires the Vertex AI in Firebase API
+        The Firebase AI SDK requires the Vertex AI in Firebase API
         (`firebasevertexai.googleapis.com`) to be enabled in your Firebase project. Enable this API
         by visiting the Firebase Console at
         https://console.firebase.google.com/project/${Firebase.options.projectId}/genai
