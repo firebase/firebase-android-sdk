@@ -49,7 +49,7 @@ public class ImagePart(public val image: Bitmap) : Part {
 
   internal fun toInlineDataPart() =
     InlineDataPart(
-      android.util.Base64.decode(encodeBitmapToBase64Png(image), BASE_64_FLAGS),
+      android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
       "image/jpeg"
     )
 }
