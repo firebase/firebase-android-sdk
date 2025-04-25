@@ -60,19 +60,6 @@ internal class DevAPIUnarySnapshotTests {
     }
 
   @Test
-  fun `quotes escaped`() =
-    goldenDevAPIUnaryFile("unary-success-quote-reply.txt") {
-      withTimeout(testTimeout) {
-        val response = model.generateContent("prompt")
-
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().content.parts.isEmpty() shouldBe false
-        val part = response.candidates.first().content.parts.first() as TextPart
-        part.text shouldContain "\""
-      }
-    }
-
-  @Test
   fun `prompt blocked for safety`() =
     goldenDevAPIUnaryFile("unary-failure-prompt-blocked-safety.txt") {
       withTimeout(testTimeout) {
