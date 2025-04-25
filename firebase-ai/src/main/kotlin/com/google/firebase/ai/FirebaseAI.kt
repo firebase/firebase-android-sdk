@@ -207,7 +207,7 @@ internal constructor(
     /**
      * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
      *
-     * @param backend the backend reference to make generative AI requests to. .
+     * @param backend the backend reference to make generative AI requests to.
      */
     @JvmStatic
     @JvmOverloads
