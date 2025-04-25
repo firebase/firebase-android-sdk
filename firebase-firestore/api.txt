@@ -47,8 +47,7 @@ package com.google.firebase.firestore {
     method public byte[] toBytes();
   }
 
-  public final class BsonBinaryData implements java.lang.Comparable<com.google.firebase.firestore.BsonBinaryData!> {
-    method public int compareTo(com.google.firebase.firestore.BsonBinaryData);
+  public final class BsonBinaryData {
     method public com.google.protobuf.ByteString dataAsByteString();
     method public byte[] dataAsBytes();
     method public static com.google.firebase.firestore.BsonBinaryData fromByteString(int, com.google.protobuf.ByteString);
@@ -56,15 +55,13 @@ package com.google.firebase.firestore {
     method public int subtype();
   }
 
-  public final class BsonObjectId implements java.lang.Comparable<com.google.firebase.firestore.BsonObjectId!> {
+  public final class BsonObjectId {
     ctor public BsonObjectId(String);
-    method public int compareTo(com.google.firebase.firestore.BsonObjectId);
     field public final String! value;
   }
 
-  public final class BsonTimestamp implements java.lang.Comparable<com.google.firebase.firestore.BsonTimestamp!> {
+  public final class BsonTimestamp {
     ctor public BsonTimestamp(long, long);
-    method public int compareTo(com.google.firebase.firestore.BsonTimestamp);
     field public final long increment;
     field public final long seconds;
   }
@@ -339,9 +336,8 @@ package com.google.firebase.firestore {
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
-  public final class Int32Value implements java.lang.Comparable<com.google.firebase.firestore.Int32Value!> {
+  public final class Int32Value {
     ctor public Int32Value(int);
-    method public int compareTo(com.google.firebase.firestore.Int32Value);
     field public final int value;
   }
 
@@ -541,9 +537,8 @@ package com.google.firebase.firestore {
     method public <T> java.util.List<T!> toObjects(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
 
-  public final class RegexValue implements java.lang.Comparable<com.google.firebase.firestore.RegexValue!> {
+  public final class RegexValue {
     ctor public RegexValue(String, String);
-    method public int compareTo(com.google.firebase.firestore.RegexValue);
     field public final String! options;
     field public final String! pattern;
   }

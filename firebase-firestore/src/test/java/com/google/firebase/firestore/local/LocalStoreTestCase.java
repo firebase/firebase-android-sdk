@@ -63,6 +63,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -111,7 +112,7 @@ public abstract class LocalStoreTestCase {
 
   private List<MutationBatch> batches;
   private @Nullable ImmutableSortedMap<DocumentKey, Document> lastChanges;
-  private @Nullable QueryResult lastQueryResult;
+  private @Nullable DocumentSet lastQueryResult;
   private int lastTargetId;
 
   abstract Persistence getPersistence();
@@ -214,7 +215,11 @@ public abstract class LocalStoreTestCase {
 
   protected void executeQuery(Query query) {
     resetPersistenceStats();
-    lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+    QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+    lastQueryResult = DocumentSet.emptySet(query.comparator());
+    for (Entry<DocumentKey, Document> entry : queryResult.getDocuments()) {
+      lastQueryResult = lastQueryResult.add(entry.getValue());
+    }
   }
 
   protected void setIndexAutoCreationEnabled(boolean isEnabled) {
@@ -310,8 +315,12 @@ public abstract class LocalStoreTestCase {
 
   protected void assertQueryReturned(String... keys) {
     assertNotNull(lastQueryResult);
-    ImmutableSortedMap<DocumentKey, Document> documents = lastQueryResult.getDocuments();
-    assertThat(keys(documents)).containsExactly(Arrays.stream(keys).map(TestUtil::key).toArray());
+    assertEquals(lastQueryResult.size(), keys.length);
+    List<DocumentKey> expectedKeys =
+        Arrays.stream(keys).map(TestUtil::key).collect(Collectors.toList());
+    List<DocumentKey> actualKeys =
+        lastQueryResult.toList().stream().map(Document::getKey).collect(Collectors.toList());
+    assertEquals(expectedKeys, actualKeys);
   }
 
   private void assertQueryDocumentMapping(int targetId, DocumentKey... keys) {

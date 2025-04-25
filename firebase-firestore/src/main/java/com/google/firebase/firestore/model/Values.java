@@ -70,10 +70,10 @@ public class Values {
   public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-  public static final Value MIN_VALUE = NULL_VALUE;
+  public static final Value INTERNAL_MIN_VALUE = NULL_VALUE;
   public static final Value MAX_VALUE_TYPE =
       Value.newBuilder().setStringValue(RESERVED_MAX_KEY).build();
-  public static final Value MAX_VALUE =
+  public static final Value INTERNAL_MAX_VALUE =
       Value.newBuilder()
           .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
           .build();
@@ -81,6 +81,7 @@ public class Values {
   public static final Value VECTOR_VALUE_TYPE =
       Value.newBuilder().setStringValue(RESERVED_VECTOR_KEY).build();
   public static final String VECTOR_MAP_VECTORS_KEY = "value";
+
   private static final Value MIN_VECTOR_VALUE =
       Value.newBuilder()
           .setMapValue(
@@ -93,7 +94,7 @@ public class Values {
 
   /**
    * The order of types in Firestore. This order is based on the backend's ordering, but modified to
-   * support server timestamps and {@link #MAX_VALUE}.
+   * support server timestamps and {@link #INTERNAL_MAX_VALUE}.
    */
   public static final int TYPE_ORDER_NULL = 0;
 
@@ -672,6 +673,80 @@ public class Values {
   public static Value MIN_MAP =
       Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
 
+  public static Value MIN_KEY_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(
+                      RESERVED_MIN_KEY,
+                      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()))
+          .build();
+
+  public static Value MAX_KEY_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(
+                      RESERVED_MAX_KEY,
+                      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()))
+          .build();
+
+  public static Value MIN_BSON_OBJECT_ID_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(RESERVED_OBJECT_ID_KEY, Value.newBuilder().setStringValue("").build()))
+          .build();
+
+  public static Value MIN_BSON_TIMESTAMP_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(
+                      RESERVED_BSON_TIMESTAMP_KEY,
+                      Value.newBuilder()
+                          .setMapValue(
+                              MapValue.newBuilder()
+                                  // Both seconds and increment are 32 bit unsigned integers
+                                  .putFields(
+                                      RESERVED_BSON_TIMESTAMP_SECONDS_KEY,
+                                      Value.newBuilder().setIntegerValue(0).build())
+                                  .putFields(
+                                      RESERVED_BSON_TIMESTAMP_INCREMENT_KEY,
+                                      Value.newBuilder().setIntegerValue(0).build()))
+                          .build()))
+          .build();
+
+  public static Value MIN_BSON_BINARY_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(
+                      RESERVED_BSON_BINARY_KEY,
+                      // bsonBinaryValue should have at least one byte as subtype
+                      Value.newBuilder()
+                          .setBytesValue(ByteString.copyFrom(new byte[] {0}))
+                          .build()))
+          .build();
+
+  public static Value MIN_REGEX_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(
+                      RESERVED_REGEX_KEY,
+                      Value.newBuilder()
+                          .setMapValue(
+                              MapValue.newBuilder()
+                                  .putFields(
+                                      RESERVED_REGEX_PATTERN_KEY,
+                                      Value.newBuilder().setStringValue("").build())
+                                  .putFields(
+                                      RESERVED_REGEX_OPTIONS_KEY,
+                                      Value.newBuilder().setStringValue("").build()))
+                          .build()))
+          .build();
+
   /** Returns the lowest value for the given value type (inclusive). */
   public static Value getLowerBound(Value value) {
     switch (value.getValueTypeCase()) {
@@ -695,10 +770,27 @@ public class Values {
       case ARRAY_VALUE:
         return MIN_ARRAY;
       case MAP_VALUE:
+        MapRepresentation mapType = detectMapRepresentation(value);
         // VectorValue sorts after ArrayValue and before an empty MapValue
-        if (isVectorValue(value)) {
+        if (mapType.equals(MapRepresentation.VECTOR)) {
           return MIN_VECTOR_VALUE;
+        } else if (mapType.equals(MapRepresentation.BSON_OBJECT_ID)) {
+          return MIN_BSON_OBJECT_ID_VALUE;
+        } else if (mapType.equals(MapRepresentation.BSON_TIMESTAMP)) {
+          return MIN_BSON_TIMESTAMP_VALUE;
+        } else if (mapType.equals(MapRepresentation.BSON_BINARY)) {
+          return MIN_BSON_BINARY_VALUE;
+        } else if (mapType.equals(MapRepresentation.REGEX)) {
+          return MIN_REGEX_VALUE;
+        } else if (mapType.equals(MapRepresentation.INT32)) {
+          // int32Value is treated the same as integerValue and doubleValue
+          return MIN_NUMBER;
+        } else if (mapType.equals(MapRepresentation.MIN_KEY)) {
+          return MIN_KEY_VALUE;
+        } else if (mapType.equals(MapRepresentation.MAX_KEY)) {
+          return MAX_KEY_VALUE;
         }
+
         return MIN_MAP;
       default:
         throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
@@ -709,43 +801,116 @@ public class Values {
   public static Value getUpperBound(Value value) {
     switch (value.getValueTypeCase()) {
       case NULL_VALUE:
-        return MIN_BOOLEAN;
+        return MIN_KEY_VALUE;
       case BOOLEAN_VALUE:
         return MIN_NUMBER;
       case INTEGER_VALUE:
       case DOUBLE_VALUE:
         return MIN_TIMESTAMP;
       case TIMESTAMP_VALUE:
-        return MIN_STRING;
+        return MIN_BSON_TIMESTAMP_VALUE;
       case STRING_VALUE:
         return MIN_BYTES;
       case BYTES_VALUE:
-        return MIN_REFERENCE;
+        return MIN_BSON_BINARY_VALUE;
       case REFERENCE_VALUE:
-        return MIN_GEO_POINT;
+        return MIN_BSON_OBJECT_ID_VALUE;
       case GEO_POINT_VALUE:
-        return MIN_ARRAY;
+        return MIN_REGEX_VALUE;
       case ARRAY_VALUE:
         return MIN_VECTOR_VALUE;
       case MAP_VALUE:
-        // VectorValue sorts after ArrayValue and before an empty MapValue
-        if (isVectorValue(value)) {
+        MapRepresentation mapType = detectMapRepresentation(value);
+        if (mapType.equals(MapRepresentation.VECTOR)) {
           return MIN_MAP;
         }
-        return MAX_VALUE;
+        if (mapType.equals(MapRepresentation.BSON_OBJECT_ID)) {
+          return MIN_GEO_POINT;
+        }
+        if (mapType.equals(MapRepresentation.BSON_TIMESTAMP)) {
+          return MIN_STRING;
+        }
+        if (mapType.equals(MapRepresentation.BSON_BINARY)) {
+          return MIN_REFERENCE;
+        }
+        if (mapType.equals(MapRepresentation.REGEX)) {
+          return MIN_ARRAY;
+        }
+        if (mapType.equals(MapRepresentation.INT32)) {
+          // int32Value is treated the same as integerValue and doubleValue
+          return MIN_TIMESTAMP;
+        }
+        if (mapType.equals(MapRepresentation.MIN_KEY)) {
+          return MIN_BOOLEAN;
+        }
+        if (mapType.equals(MapRepresentation.MAX_KEY)) {
+          return INTERNAL_MAX_VALUE;
+        }
+
+        return MAX_KEY_VALUE;
       default:
         throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
     }
   }
 
-  /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
-  public static boolean isMaxValue(Value value) {
-    return MAX_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  static boolean isMinKey(Map<String, Value> fields) {
+    return fields.size() == 1
+        && fields.containsKey(RESERVED_MIN_KEY)
+        && fields.get(RESERVED_MIN_KEY).hasNullValue();
   }
 
-  /** Returns true if the Value represents a VectorValue . */
-  public static boolean isVectorValue(Value value) {
-    return VECTOR_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  static boolean isMaxKey(Map<String, Value> fields) {
+    return fields.size() == 1
+        && fields.containsKey(RESERVED_MAX_KEY)
+        && fields.get(RESERVED_MAX_KEY).hasNullValue();
+  }
+
+  static boolean isInt32Value(Map<String, Value> fields) {
+    return fields.size() == 1
+        && fields.containsKey(RESERVED_INT32_KEY)
+        && fields.get(RESERVED_INT32_KEY).hasIntegerValue();
+  }
+
+  static boolean isBsonObjectId(Map<String, Value> fields) {
+    return fields.size() == 1
+        && fields.containsKey(RESERVED_OBJECT_ID_KEY)
+        && fields.get(RESERVED_OBJECT_ID_KEY).hasStringValue();
+  }
+
+  static boolean isBsonBinaryData(Map<String, Value> fields) {
+    return fields.size() == 1
+        && fields.containsKey(RESERVED_BSON_BINARY_KEY)
+        && fields.get(RESERVED_BSON_BINARY_KEY).hasBytesValue();
+  }
+
+  static boolean isRegexValue(Map<String, Value> fields) {
+    if (fields.size() == 1
+        && fields.containsKey(RESERVED_REGEX_KEY)
+        && fields.get(RESERVED_REGEX_KEY).hasMapValue()) {
+      MapValue innerMapValue = fields.get(RESERVED_REGEX_KEY).getMapValue();
+      Map<String, Value> values = innerMapValue.getFieldsMap();
+      return innerMapValue.getFieldsCount() == 2
+          && values.containsKey(RESERVED_REGEX_PATTERN_KEY)
+          && values.containsKey(RESERVED_REGEX_OPTIONS_KEY)
+          && values.get(RESERVED_REGEX_PATTERN_KEY).hasStringValue()
+          && values.get(RESERVED_REGEX_OPTIONS_KEY).hasStringValue();
+    }
+    return false;
+  }
+
+  static boolean isBsonTimestamp(Map<String, Value> fields) {
+    if (fields.size() == 1
+        && fields.containsKey(RESERVED_BSON_TIMESTAMP_KEY)
+        && fields.get(RESERVED_BSON_TIMESTAMP_KEY).hasMapValue()) {
+      MapValue innerMapValue = fields.get(RESERVED_BSON_TIMESTAMP_KEY).getMapValue();
+      Map<String, Value> values = innerMapValue.getFieldsMap();
+      return innerMapValue.getFieldsCount() == 2
+          && values.containsKey(RESERVED_BSON_TIMESTAMP_SECONDS_KEY)
+          && values.containsKey(RESERVED_BSON_TIMESTAMP_INCREMENT_KEY)
+          && values.get(RESERVED_BSON_TIMESTAMP_SECONDS_KEY).hasIntegerValue()
+          && values.get(RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).hasIntegerValue();
+    }
+    return false;
   }
 
   public enum MapRepresentation {
@@ -793,25 +958,25 @@ public class Values {
     }
 
     // Check for BSON-related mappings
-    if (fields.containsKey(RESERVED_REGEX_KEY)) {
+    if (isRegexValue(fields)) {
       return MapRepresentation.REGEX;
     }
-    if (fields.containsKey(RESERVED_OBJECT_ID_KEY)) {
+    if (isBsonObjectId(fields)) {
       return MapRepresentation.BSON_OBJECT_ID;
     }
-    if (fields.containsKey(RESERVED_INT32_KEY)) {
+    if (isInt32Value(fields)) {
       return MapRepresentation.INT32;
     }
-    if (fields.containsKey(RESERVED_BSON_TIMESTAMP_KEY)) {
+    if (isBsonTimestamp(fields)) {
       return MapRepresentation.BSON_TIMESTAMP;
     }
-    if (fields.containsKey(RESERVED_BSON_BINARY_KEY)) {
+    if (isBsonBinaryData(fields)) {
       return MapRepresentation.BSON_BINARY;
     }
-    if (fields.containsKey(RESERVED_MIN_KEY)) {
+    if (isMinKey(fields)) {
       return MapRepresentation.MIN_KEY;
     }
-    if (fields.containsKey(RESERVED_MAX_KEY)) {
+    if (isMaxKey(fields)) {
       return MapRepresentation.MAX_KEY;
     }
 

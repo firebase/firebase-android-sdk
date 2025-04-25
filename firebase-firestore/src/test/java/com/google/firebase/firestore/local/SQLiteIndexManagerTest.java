@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.model.FieldIndex.IndexState;
 import static com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
 import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
+import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -30,12 +31,16 @@ import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Query;
@@ -1231,6 +1236,372 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     validateIndexType(query, IndexManager.IndexType.FULL);
     validateIndexType(subQuery1, IndexManager.IndexType.FULL);
     validateIndexType(subQuery2, IndexManager.IndexType.NONE);
+  }
+
+  @Test
+  public void testIndexesBsonObjectId() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/doc2", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    addDoc("coll/doc3", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "==", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    verifyResults(query, "coll/doc1");
+
+    query =
+        query("coll")
+            .filter(filter("key", "!=", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "<=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    verifyResults(query, "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "<", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    verifyResults(query, "coll/doc1");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+    verifyResults(query);
+
+    query =
+        query("coll")
+            .filter(filter("key", "<", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesBsonBinary() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc2", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc3", map("key", FieldValue.bsonBinaryData(1, new byte[] {2, 1, 2})));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "==", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    verifyResults(query, "coll/doc1");
+
+    query =
+        query("coll")
+            .filter(filter("key", "!=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "<=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    verifyResults(query, "coll/doc3");
+
+    query =
+        query("coll")
+            .filter(filter("key", "<", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    verifyResults(query, "coll/doc1");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">", FieldValue.bsonBinaryData(1, new byte[] {2, 1, 2})));
+    verifyResults(query);
+
+    query =
+        query("coll")
+            .filter(filter("key", "<", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesBsonTimestamp() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.bsonTimestamp(1, 1)));
+    addDoc("coll/doc2", map("key", FieldValue.bsonTimestamp(1, 2)));
+    addDoc("coll/doc3", map("key", FieldValue.bsonTimestamp(2, 1)));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", FieldValue.bsonTimestamp(1, 1)));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", FieldValue.bsonTimestamp(1, 1)));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", FieldValue.bsonTimestamp(1, 2)));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", FieldValue.bsonTimestamp(1, 2)));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.bsonTimestamp(1, 2)));
+    verifyResults(query, "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<", FieldValue.bsonTimestamp(1, 2)));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.bsonTimestamp(2, 1)));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", FieldValue.bsonTimestamp(1, 1)));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesRegex() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.regex("a", "i")));
+    addDoc("coll/doc2", map("key", FieldValue.regex("a", "m")));
+    addDoc("coll/doc3", map("key", FieldValue.regex("b", "i")));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", FieldValue.regex("a", "i")));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", FieldValue.regex("a", "i")));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", FieldValue.regex("a", "m")));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", FieldValue.regex("a", "m")));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.regex("a", "m")));
+    verifyResults(query, "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<", FieldValue.regex("a", "m")));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.regex("b", "i")));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", FieldValue.regex("a", "i")));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesInt32() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.int32(1)));
+    addDoc("coll/doc2", map("key", FieldValue.int32(2)));
+    addDoc("coll/doc3", map("key", FieldValue.int32(3)));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", FieldValue.int32(1)));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", FieldValue.int32(1)));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", FieldValue.int32(2)));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", FieldValue.int32(2)));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.int32(2)));
+    verifyResults(query, "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<", FieldValue.int32(2)));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.int32(3)));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", FieldValue.int32(1)));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesMinKey() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+    addDoc("coll/doc1", map("key", FieldValue.minKey()));
+    addDoc("coll/doc2", map("key", FieldValue.minKey()));
+    addDoc("coll/doc3", map("key", null));
+    addDoc("coll/doc4", map("key", 1));
+    addDoc("coll/doc5", map("key", FieldValue.maxKey()));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc3", "coll/doc1", "coll/doc2", "coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", "==", FieldValue.minKey()));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", "!=", FieldValue.minKey()));
+    verifyResults(query, "coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", ">=", FieldValue.minKey()));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", "<=", FieldValue.minKey()));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.minKey()));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", FieldValue.minKey()));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesMaxKey() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+    addDoc("coll/doc1", map("key", FieldValue.minKey()));
+    addDoc("coll/doc2", map("key", 1));
+    addDoc("coll/doc3", map("key", FieldValue.maxKey()));
+    addDoc("coll/doc4", map("key", FieldValue.maxKey()));
+    addDoc("coll/doc5", map("key", null));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc5", "coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4");
+
+    query = query("coll").filter(filter("key", "==", FieldValue.maxKey()));
+    verifyResults(query, "coll/doc3", "coll/doc4");
+
+    query = query("coll").filter(filter("key", "!=", FieldValue.maxKey()));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">=", FieldValue.maxKey()));
+    verifyResults(query, "coll/doc3", "coll/doc4");
+
+    query = query("coll").filter(filter("key", "<=", FieldValue.maxKey()));
+    verifyResults(query, "coll/doc3", "coll/doc4");
+
+    query = query("coll").filter(filter("key", ">", FieldValue.maxKey()));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", FieldValue.maxKey()));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexFieldsOfBsonTypesTogether() {
+    indexManager.addFieldIndex(fieldIndex("coll", "key", Kind.DESCENDING));
+
+    addDoc("coll/doc1", map("key", FieldValue.minKey()));
+    addDoc("coll/doc2", map("key", FieldValue.int32(2)));
+    addDoc("coll/doc3", map("key", FieldValue.int32(1)));
+    addDoc("coll/doc4", map("key", FieldValue.bsonTimestamp(1, 2)));
+    addDoc("coll/doc5", map("key", FieldValue.bsonTimestamp(1, 1)));
+    addDoc("coll/doc6", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc7", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc8", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    addDoc("coll/doc9", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/doc10", map("key", FieldValue.regex("a", "m")));
+    addDoc("coll/doc11", map("key", FieldValue.regex("a", "i")));
+    addDoc("coll/doc12", map("key", FieldValue.maxKey()));
+
+    Query query = query("coll").orderBy(orderBy("key", "desc"));
+    verifyResults(
+        query,
+        "coll/doc12", // maxKey
+        "coll/doc10", // regex m
+        "coll/doc11", // regex i
+        "coll/doc8", // objectId eb
+        "coll/doc9", // objectId ea
+        "coll/doc6", // binary [1,2,4]
+        "coll/doc7", // binary [1,2,3]
+        "coll/doc4", // timestamp 1,2
+        "coll/doc5", // timestamp 1,1
+        "coll/doc2", // int32 2
+        "coll/doc3", // int32 1
+        "coll/doc1" // minKey
+        );
+  }
+
+  @Test
+  public void testIndexFieldsOfAllTypesTogether() {
+    indexManager.addFieldIndex(fieldIndex("coll", "key", Kind.DESCENDING));
+
+    addDoc("coll/a", map("key", null));
+    addDoc("coll/b", map("key", FieldValue.minKey()));
+    addDoc("coll/c", map("key", true));
+    addDoc("coll/d", map("key", Double.NaN));
+    addDoc("coll/e", map("key", FieldValue.int32(1)));
+    addDoc("coll/f", map("key", 2.0));
+    addDoc("coll/g", map("key", 3L));
+    addDoc("coll/h", map("key", new Timestamp(100, 123456000)));
+    addDoc("coll/i", map("key", FieldValue.bsonTimestamp(1, 2)));
+    addDoc("coll/j", map("key", "string"));
+    addDoc("coll/k", map("key", blob(1, 2, 3)));
+    addDoc("coll/l", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    addDoc("coll/m", map("key", ref("foo/bar")));
+    addDoc("coll/n", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/o", map("key", new GeoPoint(0, 1)));
+    addDoc("coll/p", map("key", FieldValue.regex("^foo", "i")));
+    addDoc("coll/q", map("key", Arrays.asList(1, 2)));
+    // Note: Vector type not available in Java SDK, skipping 'r'
+    addDoc("coll/s", map("key", map("a", 1)));
+    addDoc("coll/t", map("key", FieldValue.maxKey()));
+
+    Query query = query("coll").orderBy(orderBy("key", "desc"));
+    verifyResults(
+        query,
+        "coll/t", // maxKey
+        "coll/s", // map
+        "coll/q", // array
+        "coll/p", // regex
+        "coll/o", // geopoint
+        "coll/n", // objectId
+        "coll/m", // reference
+        "coll/l", // bsonBinary
+        "coll/k", // bytes
+        "coll/j", // string
+        "coll/i", // bsonTimestamp
+        "coll/h", // timestamp
+        "coll/g", // long
+        "coll/f", // double
+        "coll/e", // int32
+        "coll/d", // NaN
+        "coll/c", // boolean
+        "coll/b", // minKey
+        "coll/a" // null
+        );
   }
 
   private void validateIndexType(Query query, IndexManager.IndexType expected) {

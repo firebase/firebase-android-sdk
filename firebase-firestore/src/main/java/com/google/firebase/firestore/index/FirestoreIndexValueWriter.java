@@ -19,31 +19,41 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /** Firestore index value writer. */
 public class FirestoreIndexValueWriter {
-  // Note: This code is copied from the backend. Code that is not used by Firestore was removed.
+  // Note: This file is copied from the backend. Code that is not used by
+  // Firestore was removed. Code that has different behavior was modified.
 
   // The client SDK only supports references to documents from the same database. We can skip the
   // first five segments.
   public static final int DOCUMENT_NAME_OFFSET = 5;
 
   public static final int INDEX_TYPE_NULL = 5;
+  public static final int INDEX_TYPE_MIN_KEY = 7;
   public static final int INDEX_TYPE_BOOLEAN = 10;
   public static final int INDEX_TYPE_NAN = 13;
   public static final int INDEX_TYPE_NUMBER = 15;
   public static final int INDEX_TYPE_TIMESTAMP = 20;
+  public static final int INDEX_TYPE_BSON_TIMESTAMP = 22;
   public static final int INDEX_TYPE_STRING = 25;
   public static final int INDEX_TYPE_BLOB = 30;
+  public static final int INDEX_TYPE_BSON_BINARY = 31;
   public static final int INDEX_TYPE_REFERENCE = 37;
+  public static final int INDEX_TYPE_BSON_OBJECT_ID = 43;
   public static final int INDEX_TYPE_GEOPOINT = 45;
+  public static final int INDEX_TYPE_REGEX = 47;
   public static final int INDEX_TYPE_ARRAY = 50;
   public static final int INDEX_TYPE_VECTOR = 53;
   public static final int INDEX_TYPE_MAP = 55;
   public static final int INDEX_TYPE_REFERENCE_SEGMENT = 60;
+  public static final int INDEX_TYPE_MAX_KEY = 999;
 
   // A terminator that indicates that a truncatable value was not truncated.
   // This must be smaller than all other type labels.
@@ -112,13 +122,43 @@ public class FirestoreIndexValueWriter {
         encoder.writeDouble(geoPoint.getLongitude());
         break;
       case MAP_VALUE:
-        if (Values.isMaxValue(indexValue)) {
+        Values.MapRepresentation mapType = Values.detectMapRepresentation(indexValue);
+        if (mapType.equals(Values.MapRepresentation.INTERNAL_MAX)) {
           writeValueTypeLabel(encoder, Integer.MAX_VALUE);
           break;
-        } else if (Values.isVectorValue(indexValue)) {
+        } else if (mapType.equals(Values.MapRepresentation.VECTOR)) {
           writeIndexVector(indexValue.getMapValue(), encoder);
           break;
+        } else if (mapType.equals(Values.MapRepresentation.REGEX)) {
+          writeIndexRegex(indexValue.getMapValue(), encoder);
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.BSON_TIMESTAMP)) {
+          writeIndexBsonTimestamp(indexValue.getMapValue(), encoder);
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.BSON_OBJECT_ID)) {
+          writeIndexBsonObjectId(indexValue.getMapValue(), encoder);
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.BSON_BINARY)) {
+          writeIndexBsonBinaryData(indexValue.getMapValue(), encoder);
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.INT32)) {
+          writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
+          // Double and Int32 sort the same
+          encoder.writeDouble(
+              indexValue
+                  .getMapValue()
+                  .getFieldsMap()
+                  .get(Values.RESERVED_INT32_KEY)
+                  .getIntegerValue());
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.MIN_KEY)) {
+          writeValueTypeLabel(encoder, INDEX_TYPE_MIN_KEY);
+          break;
+        } else if (mapType.equals(Values.MapRepresentation.MAX_KEY)) {
+          writeValueTypeLabel(encoder, INDEX_TYPE_MAX_KEY);
+          break;
         }
+
         writeIndexMap(indexValue.getMapValue(), encoder);
         writeTruncationMarker(encoder);
         break;
@@ -157,6 +197,53 @@ public class FirestoreIndexValueWriter {
     this.writeIndexValueAux(map.get(key), encoder);
   }
 
+  private void writeIndexRegex(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_REGEX);
+
+    Map<String, Value> fields =
+        mapIndexValue.getFieldsMap().get(Values.RESERVED_REGEX_KEY).getMapValue().getFieldsMap();
+    encoder.writeString(fields.get(Values.RESERVED_REGEX_PATTERN_KEY).getStringValue());
+    encoder.writeString(fields.get(Values.RESERVED_REGEX_OPTIONS_KEY).getStringValue());
+    writeTruncationMarker(encoder);
+  }
+
+  private void writeIndexBsonTimestamp(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_BSON_TIMESTAMP);
+
+    Map<String, Value> timestampFields =
+        mapValue
+            .getFieldsMap()
+            .get(Values.RESERVED_BSON_TIMESTAMP_KEY)
+            .getMapValue()
+            .getFieldsMap();
+
+    long unsignedSeconds =
+        timestampFields.get(Values.RESERVED_BSON_TIMESTAMP_SECONDS_KEY).getIntegerValue();
+    long unsignedIncrement =
+        timestampFields.get(Values.RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).getIntegerValue();
+
+    // BSON Timestamps are encoded as a 64-bit long with the lower 32 bits being the increment
+    // and the upper 32 bits being the seconds
+    long value = (unsignedSeconds << 32) | (unsignedIncrement & 0xFFFFFFFFL);
+
+    encoder.writeLong(value);
+  }
+
+  private void writeIndexBsonObjectId(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_BSON_OBJECT_ID);
+
+    String oid = mapValue.getFieldsMap().get(Values.RESERVED_OBJECT_ID_KEY).getStringValue();
+    encoder.writeBytes(ByteString.copyFrom(oid.getBytes()));
+  }
+
+  private void writeIndexBsonBinaryData(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_BSON_BINARY);
+
+    encoder.writeBytes(
+        mapValue.getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue());
+    writeTruncationMarker(encoder);
+  }
+
   private void writeIndexMap(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_MAP);
     for (Map.Entry<String, Value> entry : mapIndexValue.getFieldsMap().entrySet()) {
@@ -177,7 +264,15 @@ public class FirestoreIndexValueWriter {
   private void writeIndexEntityRef(String referenceValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_REFERENCE);
 
-    ResourcePath path = ResourcePath.fromString(referenceValue);
+    List<String> segments = new ArrayList<>();
+    String[] parts = referenceValue.split("/");
+    for (String part : parts) {
+      if (!part.isEmpty()) {
+        segments.add(part);
+      }
+    }
+    ResourcePath path = ResourcePath.fromSegments(segments);
+
     int numSegments = path.length();
     for (int index = DOCUMENT_NAME_OFFSET; index < numSegments; ++index) {
       String segment = path.getSegment(index);

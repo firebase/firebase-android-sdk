@@ -151,12 +151,12 @@ public class TargetTest {
 
     Bound lowerBound = target.getLowerBound(index);
     assertEquals(1, lowerBound.getPosition().size());
-    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.MIN_VALUE));
+    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.INTERNAL_MIN_VALUE));
     assertTrue(lowerBound.isInclusive());
 
     Bound upperBound = target.getUpperBound(index);
     assertEquals(1, upperBound.getPosition().size());
-    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.MAX_VALUE));
+    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.INTERNAL_MAX_VALUE));
     assertTrue(upperBound.isInclusive());
   }
 
@@ -183,7 +183,7 @@ public class TargetTest {
 
     Bound upperBound = target.getUpperBound(index);
     assertEquals(1, upperBound.getPosition().size());
-    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.MAX_VALUE));
+    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.INTERNAL_MAX_VALUE));
     assertTrue(upperBound.isInclusive());
   }
 
@@ -259,7 +259,7 @@ public class TargetTest {
 
     Bound lowerBound = target.getLowerBound(index);
     assertEquals(1, lowerBound.getPosition().size());
-    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.MIN_VALUE));
+    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.INTERNAL_MIN_VALUE));
     assertTrue(lowerBound.isInclusive());
 
     Bound upperBound = target.getUpperBound(index);

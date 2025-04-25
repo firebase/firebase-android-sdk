@@ -358,6 +358,7 @@ public class POJOTest {
     assertEquals(reference.getId(), readFromStore.getDocReferenceId());
   }
 
+  // TODO(Mila/BSON): this test is flaky due to a bug in the backend.
   @Test
   public void testSetMerge() {
     CollectionReference collection = testCollectionOnNightly();
