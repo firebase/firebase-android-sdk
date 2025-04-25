@@ -16,15 +16,5 @@
 -->
 <issues format="6" by="lint 8.3.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.2)" variant="all" version="8.3.2">
 
-    <issue
-        id="MissingPermission"
-        message="Missing permissions required by AudioHelper.startRecording: android.permission.RECORD_AUDIO"
-        errorLine1="    CoroutineScope(backgroundDispatcher).launch {"
-        errorLine2="                                         ^">
-        <location
-            file="src/main/kotlin/com/google/firebase/vertexai/type/LiveSession.kt"
-            line="133"
-            column="42"/>
-    </issue>
 
 </issues>
