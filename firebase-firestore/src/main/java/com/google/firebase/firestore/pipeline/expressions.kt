@@ -313,68 +313,137 @@ abstract class Expr internal constructor() {
     fun xor(condition: BooleanExpr, vararg conditions: BooleanExpr) =
       BooleanExpr("xor", condition, *conditions)
 
+    /**
+     * @return A new [Expr] representing the not operation.
+     */
     @JvmStatic fun not(condition: BooleanExpr) = BooleanExpr("not", condition)
 
+    /**
+     * @return A new [Expr] representing the bitAnd operation.
+     */
     @JvmStatic fun bitAnd(left: Expr, right: Expr): Expr = FunctionExpr("bit_and", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitAnd operation.
+     */
     @JvmStatic fun bitAnd(left: Expr, right: Any): Expr = FunctionExpr("bit_and", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitAnd operation.
+     */
     @JvmStatic
     fun bitAnd(fieldName: String, right: Expr): Expr = FunctionExpr("bit_and", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitAnd operation.
+     */
     @JvmStatic
     fun bitAnd(fieldName: String, right: Any): Expr = FunctionExpr("bit_and", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitOr operation.
+     */
     @JvmStatic fun bitOr(left: Expr, right: Expr): Expr = FunctionExpr("bit_or", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitOr operation.
+     */
     @JvmStatic fun bitOr(left: Expr, right: Any): Expr = FunctionExpr("bit_or", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitOr operation.
+     */
     @JvmStatic
     fun bitOr(fieldName: String, right: Expr): Expr = FunctionExpr("bit_or", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitOr operation.
+     */
     @JvmStatic
     fun bitOr(fieldName: String, right: Any): Expr = FunctionExpr("bit_or", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitXor operation.
+     */
     @JvmStatic fun bitXor(left: Expr, right: Expr): Expr = FunctionExpr("bit_xor", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitXor operation.
+     */
     @JvmStatic fun bitXor(left: Expr, right: Any): Expr = FunctionExpr("bit_xor", left, right)
 
+    /**
+     * @return A new [Expr] representing the bitXor operation.
+     */
     @JvmStatic
     fun bitXor(fieldName: String, right: Expr): Expr = FunctionExpr("bit_xor", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitXor operation.
+     */
     @JvmStatic
     fun bitXor(fieldName: String, right: Any): Expr = FunctionExpr("bit_xor", fieldName, right)
 
+    /**
+     * @return A new [Expr] representing the bitNot operation.
+     */
     @JvmStatic fun bitNot(left: Expr): Expr = FunctionExpr("bit_not", left)
 
+    /**
+     * @return A new [Expr] representing the bitNot operation.
+     */
     @JvmStatic fun bitNot(fieldName: String): Expr = FunctionExpr("bit_not", fieldName)
 
+    /**
+     * @return A new [Expr] representing the bitLeftShift operation.
+     */
     @JvmStatic
     fun bitLeftShift(left: Expr, numberExpr: Expr): Expr =
       FunctionExpr("bit_left_shift", left, numberExpr)
 
+    /**
+     * @return A new [Expr] representing the bitLeftShift operation.
+     */
     @JvmStatic
     fun bitLeftShift(left: Expr, number: Int): Expr = FunctionExpr("bit_left_shift", left, number)
 
+    /**
+     * @return A new [Expr] representing the bitLeftShift operation.
+     */
     @JvmStatic
     fun bitLeftShift(fieldName: String, numberExpr: Expr): Expr =
       FunctionExpr("bit_left_shift", fieldName, numberExpr)
 
+    /**
+     * @return A new [Expr] representing the bitLeftShift operation.
+     */
     @JvmStatic
     fun bitLeftShift(fieldName: String, number: Int): Expr =
       FunctionExpr("bit_left_shift", fieldName, number)
 
+    /**
+     * @return A new [Expr] representing the bitRightShift operation.
+     */
     @JvmStatic
     fun bitRightShift(left: Expr, numberExpr: Expr): Expr =
       FunctionExpr("bit_right_shift", left, numberExpr)
 
+    /**
+     * @return A new [Expr] representing the bitRightShift operation.
+     */
     @JvmStatic
     fun bitRightShift(left: Expr, number: Int): Expr = FunctionExpr("bit_right_shift", left, number)
 
+    /**
+     * @return A new [Expr] representing the bitRightShift operation.
+     */
     @JvmStatic
     fun bitRightShift(fieldName: String, numberExpr: Expr): Expr =
       FunctionExpr("bit_right_shift", fieldName, numberExpr)
 
+    /**
+     * @return A new [Expr] representing the bitRightShift operation.
+     */
     @JvmStatic
     fun bitRightShift(fieldName: String, number: Int): Expr =
       FunctionExpr("bit_right_shift", fieldName, number)
@@ -426,359 +495,433 @@ abstract class Expr internal constructor() {
       FunctionExpr("add", fieldName, second, *others)
 
     /**
+     * @return A new [Expr] representing the subtract operation.
      */
     @JvmStatic fun subtract(left: Expr, right: Expr): Expr = FunctionExpr("subtract", left, right)
 
     /**
+     * @return A new [Expr] representing the subtract operation.
      */
     @JvmStatic fun subtract(left: Expr, right: Any): Expr = FunctionExpr("subtract", left, right)
 
     /**
+     * @return A new [Expr] representing the subtract operation.
      */
     @JvmStatic
     fun subtract(fieldName: String, other: Expr): Expr = FunctionExpr("subtract", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the subtract operation.
      */
     @JvmStatic
     fun subtract(fieldName: String, other: Any): Expr = FunctionExpr("subtract", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the multiply operation.
      */
     @JvmStatic fun multiply(left: Expr, right: Expr): Expr = FunctionExpr("multiply", left, right)
 
     /**
+     * @return A new [Expr] representing the multiply operation.
      */
     @JvmStatic fun multiply(left: Expr, right: Any): Expr = FunctionExpr("multiply", left, right)
 
     /**
+     * @return A new [Expr] representing the multiply operation.
      */
     @JvmStatic
     fun multiply(fieldName: String, other: Expr): Expr = FunctionExpr("multiply", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the multiply operation.
      */
     @JvmStatic
     fun multiply(fieldName: String, other: Any): Expr = FunctionExpr("multiply", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic fun divide(left: Expr, right: Expr): Expr = FunctionExpr("divide", left, right)
 
     /**
+     * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic fun divide(left: Expr, right: Any): Expr = FunctionExpr("divide", left, right)
 
     /**
+     * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic
     fun divide(fieldName: String, other: Expr): Expr = FunctionExpr("divide", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic
     fun divide(fieldName: String, other: Any): Expr = FunctionExpr("divide", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the mod operation.
      */
     @JvmStatic fun mod(left: Expr, right: Expr): Expr = FunctionExpr("mod", left, right)
 
     /**
+     * @return A new [Expr] representing the mod operation.
      */
     @JvmStatic fun mod(left: Expr, right: Any): Expr = FunctionExpr("mod", left, right)
 
     /**
+     * @return A new [Expr] representing the mod operation.
      */
     @JvmStatic fun mod(fieldName: String, other: Expr): Expr = FunctionExpr("mod", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the mod operation.
      */
     @JvmStatic fun mod(fieldName: String, other: Any): Expr = FunctionExpr("mod", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the eqAny operation.
      */
     @JvmStatic
     fun eqAny(value: Expr, values: List<Any>) =
       BooleanExpr("eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     /**
+     * @return A new [Expr] representing the eqAny operation.
      */
     @JvmStatic
     fun eqAny(fieldName: String, values: List<Any>) =
       BooleanExpr("eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     /**
+     * @return A new [Expr] representing the notEqAny operation.
      */
     @JvmStatic
     fun notEqAny(value: Expr, values: List<Any>) =
       BooleanExpr("not_eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     /**
+     * @return A new [Expr] representing the notEqAny operation.
      */
     @JvmStatic
     fun notEqAny(fieldName: String, values: List<Any>) =
       BooleanExpr("not_eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     /**
+     * @return A new [Expr] representing the isNan operation.
      */
     @JvmStatic fun isNan(expr: Expr) = BooleanExpr("is_nan", expr)
 
     /**
+     * @return A new [Expr] representing the isNan operation.
      */
     @JvmStatic fun isNan(fieldName: String) = BooleanExpr("is_nan", fieldName)
 
     /**
+     * @return A new [Expr] representing the isNotNan operation.
      */
     @JvmStatic fun isNotNan(expr: Expr) = BooleanExpr("is_not_nan", expr)
 
     /**
+     * @return A new [Expr] representing the isNotNan operation.
      */
     @JvmStatic fun isNotNan(fieldName: String) = BooleanExpr("is_not_nan", fieldName)
 
     /**
+     * @return A new [Expr] representing the isNull operation.
      */
     @JvmStatic fun isNull(expr: Expr) = BooleanExpr("is_null", expr)
 
     /**
+     * @return A new [Expr] representing the isNull operation.
      */
     @JvmStatic fun isNull(fieldName: String) = BooleanExpr("is_null", fieldName)
 
     /**
+     * @return A new [Expr] representing the isNotNull operation.
      */
     @JvmStatic fun isNotNull(expr: Expr) = BooleanExpr("is_not_null", expr)
 
     /**
+     * @return A new [Expr] representing the isNotNull operation.
      */
     @JvmStatic fun isNotNull(fieldName: String) = BooleanExpr("is_not_null", fieldName)
 
     /**
+     * @return A new [Expr] representing the replaceFirst operation.
      */
     @JvmStatic
     fun replaceFirst(value: Expr, find: Expr, replace: Expr): Expr =
       FunctionExpr("replace_first", value, find, replace)
 
     /**
+     * @return A new [Expr] representing the replaceFirst operation.
      */
     @JvmStatic
     fun replaceFirst(value: Expr, find: String, replace: String): Expr =
       FunctionExpr("replace_first", value, find, replace)
 
     /**
+     * @return A new [Expr] representing the replaceFirst operation.
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: String, replace: String): Expr =
       FunctionExpr("replace_first", fieldName, find, replace)
 
     /**
+     * @return A new [Expr] representing the replaceAll operation.
      */
     @JvmStatic
     fun replaceAll(value: Expr, find: Expr, replace: Expr): Expr =
       FunctionExpr("replace_all", value, find, replace)
 
     /**
+     * @return A new [Expr] representing the replaceAll operation.
      */
     @JvmStatic
     fun replaceAll(value: Expr, find: String, replace: String): Expr =
       FunctionExpr("replace_all", value, find, replace)
 
     /**
+     * @return A new [Expr] representing the replaceAll operation.
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
       FunctionExpr("replace_all", fieldName, find, replace)
 
     /**
+     * @return A new [Expr] representing the charLength operation.
      */
     @JvmStatic fun charLength(value: Expr): Expr = FunctionExpr("char_length", value)
 
     /**
+     * @return A new [Expr] representing the charLength operation.
      */
     @JvmStatic fun charLength(fieldName: String): Expr = FunctionExpr("char_length", fieldName)
 
     /**
+     * @return A new [Expr] representing the byteLength operation.
      */
     @JvmStatic fun byteLength(value: Expr): Expr = FunctionExpr("byte_length", value)
 
     /**
+     * @return A new [Expr] representing the byteLength operation.
      */
     @JvmStatic fun byteLength(fieldName: String): Expr = FunctionExpr("byte_length", fieldName)
 
     /**
+     * @return A new [Expr] representing the like operation.
      */
     @JvmStatic fun like(expr: Expr, pattern: Expr) = BooleanExpr("like", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the like operation.
      */
     @JvmStatic fun like(expr: Expr, pattern: String) = BooleanExpr("like", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the like operation.
      */
     @JvmStatic fun like(fieldName: String, pattern: Expr) = BooleanExpr("like", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the like operation.
      */
     @JvmStatic
     fun like(fieldName: String, pattern: String) = BooleanExpr("like", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the regexContains operation.
      */
     @JvmStatic
     fun regexContains(expr: Expr, pattern: Expr) = BooleanExpr("regex_contains", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the regexContains operation.
      */
     @JvmStatic
     fun regexContains(expr: Expr, pattern: String) = BooleanExpr("regex_contains", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the regexContains operation.
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: Expr) =
       BooleanExpr("regex_contains", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the regexContains operation.
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: String) =
       BooleanExpr("regex_contains", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the regexMatch operation.
      */
     @JvmStatic fun regexMatch(expr: Expr, pattern: Expr) = BooleanExpr("regex_match", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the regexMatch operation.
      */
     @JvmStatic
     fun regexMatch(expr: Expr, pattern: String) = BooleanExpr("regex_match", expr, pattern)
 
     /**
+     * @return A new [Expr] representing the regexMatch operation.
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: Expr) =
       BooleanExpr("regex_match", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the regexMatch operation.
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: String) =
       BooleanExpr("regex_match", fieldName, pattern)
 
     /**
+     * @return A new [Expr] representing the logicalMax operation.
      */
     @JvmStatic
     fun logicalMax(left: Expr, right: Expr): Expr = FunctionExpr("logical_max", left, right)
 
     /**
+     * @return A new [Expr] representing the logicalMax operation.
      */
     @JvmStatic
     fun logicalMax(left: Expr, right: Any): Expr = FunctionExpr("logical_max", left, right)
 
     /**
+     * @return A new [Expr] representing the logicalMax operation.
      */
     @JvmStatic
     fun logicalMax(fieldName: String, other: Expr): Expr =
       FunctionExpr("logical_max", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the logicalMax operation.
      */
     @JvmStatic
     fun logicalMax(fieldName: String, other: Any): Expr =
       FunctionExpr("logical_max", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the logicalMin operation.
      */
     @JvmStatic
     fun logicalMin(left: Expr, right: Expr): Expr = FunctionExpr("logical_min", left, right)
 
     /**
+     * @return A new [Expr] representing the logicalMin operation.
      */
     @JvmStatic
     fun logicalMin(left: Expr, right: Any): Expr = FunctionExpr("logical_min", left, right)
 
     /**
+     * @return A new [Expr] representing the logicalMin operation.
      */
     @JvmStatic
     fun logicalMin(fieldName: String, other: Expr): Expr =
       FunctionExpr("logical_min", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the logicalMin operation.
      */
     @JvmStatic
     fun logicalMin(fieldName: String, other: Any): Expr =
       FunctionExpr("logical_min", fieldName, other)
 
     /**
+     * @return A new [Expr] representing the reverse operation.
      */
     @JvmStatic fun reverse(expr: Expr): Expr = FunctionExpr("reverse", expr)
 
     /**
+     * @return A new [Expr] representing the reverse operation.
      */
     @JvmStatic fun reverse(fieldName: String): Expr = FunctionExpr("reverse", fieldName)
 
     /**
+     * @return A new [Expr] representing the strContains operation.
      */
     @JvmStatic
     fun strContains(expr: Expr, substring: Expr) = BooleanExpr("str_contains", expr, substring)
 
     /**
+     * @return A new [Expr] representing the strContains operation.
      */
     @JvmStatic
     fun strContains(expr: Expr, substring: String) = BooleanExpr("str_contains", expr, substring)
 
     /**
+     * @return A new [Expr] representing the strContains operation.
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: Expr) =
       BooleanExpr("str_contains", fieldName, substring)
 
     /**
+     * @return A new [Expr] representing the strContains operation.
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: String) =
       BooleanExpr("str_contains", fieldName, substring)
 
     /**
+     * @return A new [Expr] representing the startsWith operation.
      */
     @JvmStatic fun startsWith(expr: Expr, prefix: Expr) = BooleanExpr("starts_with", expr, prefix)
 
     /**
+     * @return A new [Expr] representing the startsWith operation.
      */
     @JvmStatic fun startsWith(expr: Expr, prefix: String) = BooleanExpr("starts_with", expr, prefix)
 
     /**
+     * @return A new [Expr] representing the startsWith operation.
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: Expr) = BooleanExpr("starts_with", fieldName, prefix)
 
     /**
+     * @return A new [Expr] representing the startsWith operation.
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: String) =
       BooleanExpr("starts_with", fieldName, prefix)
 
     /**
+     * @return A new [Expr] representing the endsWith operation.
      */
     @JvmStatic fun endsWith(expr: Expr, suffix: Expr) = BooleanExpr("ends_with", expr, suffix)
 
     /**
+     * @return A new [Expr] representing the endsWith operation.
      */
     @JvmStatic fun endsWith(expr: Expr, suffix: String) = BooleanExpr("ends_with", expr, suffix)
 
     /**
+     * @return A new [Expr] representing the endsWith operation.
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: Expr) = BooleanExpr("ends_with", fieldName, suffix)
 
     /**
+     * @return A new [Expr] representing the endsWith operation.
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: String) = BooleanExpr("ends_with", fieldName, suffix)
 
     /**
+     * @return A new [Expr] representing the toLower operation.
      */
     @JvmStatic fun toLower(expr: Expr): Expr = FunctionExpr("to_lower", expr)
 
     /**
+     * @return A new [Expr] representing the toLower operation.
      */
     @JvmStatic
     fun toLower(
@@ -786,10 +929,12 @@ abstract class Expr internal constructor() {
     ): Expr = FunctionExpr("to_lower", fieldName)
 
     /**
+     * @return A new [Expr] representing the toUpper operation.
      */
     @JvmStatic fun toUpper(expr: Expr): Expr = FunctionExpr("to_upper", expr)
 
     /**
+     * @return A new [Expr] representing the toUpper operation.
      */
     @JvmStatic
     fun toUpper(
@@ -797,30 +942,36 @@ abstract class Expr internal constructor() {
     ): Expr = FunctionExpr("to_upper", fieldName)
 
     /**
+     * @return A new [Expr] representing the trim operation.
      */
     @JvmStatic fun trim(expr: Expr): Expr = FunctionExpr("trim", expr)
 
     /**
+     * @return A new [Expr] representing the trim operation.
      */
     @JvmStatic fun trim(fieldName: String): Expr = FunctionExpr("trim", fieldName)
 
     /**
+     * @return A new [Expr] representing the strConcat operation.
      */
     @JvmStatic
     fun strConcat(first: Expr, vararg rest: Expr): Expr = FunctionExpr("str_concat", first, *rest)
 
     /**
+     * @return A new [Expr] representing the strConcat operation.
      */
     @JvmStatic
     fun strConcat(first: Expr, vararg rest: Any): Expr = FunctionExpr("str_concat", first, *rest)
 
     /**
+     * @return A new [Expr] representing the strConcat operation.
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg rest: Expr): Expr =
       FunctionExpr("str_concat", fieldName, *rest)
 
     /**
+     * @return A new [Expr] representing the strConcat operation.
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg rest: Any): Expr =
@@ -829,410 +980,499 @@ abstract class Expr internal constructor() {
     internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", elements)
 
     /**
+     * @return A new [Expr] representing the map operation.
      */
     @JvmStatic
     fun map(elements: Map<String, Any>) =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /**
+     * @return A new [Expr] representing the mapGet operation.
      */
     @JvmStatic fun mapGet(map: Expr, key: Expr): Expr = FunctionExpr("map_get", map, key)
 
     /**
+     * @return A new [Expr] representing the mapGet operation.
      */
     @JvmStatic fun mapGet(map: Expr, key: String): Expr = FunctionExpr("map_get", map, key)
 
     /**
+     * @return A new [Expr] representing the mapGet operation.
      */
     @JvmStatic
     fun mapGet(fieldName: String, key: Expr): Expr = FunctionExpr("map_get", fieldName, key)
 
     /**
+     * @return A new [Expr] representing the mapGet operation.
      */
     @JvmStatic
     fun mapGet(fieldName: String, key: String): Expr = FunctionExpr("map_get", fieldName, key)
 
     /**
+     * @return A new [Expr] representing the mapMerge operation.
      */
     @JvmStatic
     fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr): Expr =
       FunctionExpr("map_merge", firstMap, secondMap, otherMaps)
 
     /**
+     * @return A new [Expr] representing the mapMerge operation.
      */
     @JvmStatic
     fun mapMerge(mapField: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
       FunctionExpr("map_merge", mapField, secondMap, otherMaps)
 
     /**
+     * @return A new [Expr] representing the mapRemove operation.
      */
     @JvmStatic
     fun mapRemove(firstMap: Expr, key: Expr): Expr = FunctionExpr("map_remove", firstMap, key)
 
     /**
+     * @return A new [Expr] representing the mapRemove operation.
      */
     @JvmStatic
     fun mapRemove(mapField: String, key: Expr): Expr = FunctionExpr("map_remove", mapField, key)
 
     /**
+     * @return A new [Expr] representing the mapRemove operation.
      */
     @JvmStatic
     fun mapRemove(firstMap: Expr, key: String): Expr = FunctionExpr("map_remove", firstMap, key)
 
     /**
+     * @return A new [Expr] representing the mapRemove operation.
      */
     @JvmStatic
     fun mapRemove(mapField: String, key: String): Expr = FunctionExpr("map_remove", mapField, key)
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("cosine_distance", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("cosine_distance", vector1, vector(vector2))
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("cosine_distance", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(fieldName: String, vector: Expr): Expr =
       FunctionExpr("cosine_distance", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(fieldName: String, vector: DoubleArray): Expr =
       FunctionExpr("cosine_distance", fieldName, vector(vector))
 
     /**
+     * @return A new [Expr] representing the cosineDistance operation.
      */
     @JvmStatic
     fun cosineDistance(fieldName: String, vector: VectorValue): Expr =
       FunctionExpr("cosine_distance", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("dot_product", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("dot_product", vector1, vector(vector2))
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("dot_product", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(fieldName: String, vector: Expr): Expr =
       FunctionExpr("dot_product", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(fieldName: String, vector: DoubleArray): Expr =
       FunctionExpr("dot_product", fieldName, vector(vector))
 
     /**
+     * @return A new [Expr] representing the dotProduct operation.
      */
     @JvmStatic
     fun dotProduct(fieldName: String, vector: VectorValue): Expr =
       FunctionExpr("dot_product", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the euclideanDistance operation.
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("euclidean_distance", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the euclideanDistance operation.
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("euclidean_distance", vector1, vector(vector2))
 
     /**
+     * @return A new [Expr] representing the not operation.
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("euclidean_distance", vector1, vector2)
 
     /**
+     * @return A new [Expr] representing the euclideanDistance operation.
      */
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: Expr): Expr =
       FunctionExpr("euclidean_distance", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the euclideanDistance operation.
      */
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: DoubleArray): Expr =
       FunctionExpr("euclidean_distance", fieldName, vector(vector))
 
     /**
+     * @return A new [Expr] representing the euclideanDistance operation.
      */
     @JvmStatic
     fun euclideanDistance(fieldName: String, vector: VectorValue): Expr =
       FunctionExpr("euclidean_distance", fieldName, vector)
 
     /**
+     * @return A new [Expr] representing the vectorLength operation.
      */
     @JvmStatic fun vectorLength(vector: Expr): Expr = FunctionExpr("vector_length", vector)
 
     /**
+     * @return A new [Expr] representing the vectorLength operation.
      */
     @JvmStatic fun vectorLength(fieldName: String): Expr = FunctionExpr("vector_length", fieldName)
 
     /**
+     * @return A new [Expr] representing the unixMicrosToTimestamp operation.
      */
     @JvmStatic
     fun unixMicrosToTimestamp(input: Expr): Expr = FunctionExpr("unix_micros_to_timestamp", input)
 
     /**
+     * @return A new [Expr] representing the unixMicrosToTimestamp operation.
      */
     @JvmStatic
     fun unixMicrosToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_micros_to_timestamp", fieldName)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixMicros operation.
      */
     @JvmStatic
     fun timestampToUnixMicros(input: Expr): Expr = FunctionExpr("timestamp_to_unix_micros", input)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixMicros operation.
      */
     @JvmStatic
     fun timestampToUnixMicros(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_micros", fieldName)
 
     /**
+     * @return A new [Expr] representing the unixMillisToTimestamp operation.
      */
     @JvmStatic
     fun unixMillisToTimestamp(input: Expr): Expr = FunctionExpr("unix_millis_to_timestamp", input)
 
     /**
+     * @return A new [Expr] representing the unixMillisToTimestamp operation.
      */
     @JvmStatic
     fun unixMillisToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_millis_to_timestamp", fieldName)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixMillis operation.
      */
     @JvmStatic
     fun timestampToUnixMillis(input: Expr): Expr = FunctionExpr("timestamp_to_unix_millis", input)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixMillis operation.
      */
     @JvmStatic
     fun timestampToUnixMillis(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_millis", fieldName)
 
     /**
+     * @return A new [Expr] representing the unixSecondsToTimestamp operation.
      */
     @JvmStatic
     fun unixSecondsToTimestamp(input: Expr): Expr = FunctionExpr("unix_seconds_to_timestamp", input)
 
     /**
+     * @return A new [Expr] representing the unixSecondsToTimestamp operation.
      */
     @JvmStatic
     fun unixSecondsToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_seconds_to_timestamp", fieldName)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixSeconds operation.
      */
     @JvmStatic
     fun timestampToUnixSeconds(input: Expr): Expr = FunctionExpr("timestamp_to_unix_seconds", input)
 
     /**
+     * @return A new [Expr] representing the timestampToUnixSeconds operation.
      */
     @JvmStatic
     fun timestampToUnixSeconds(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_seconds", fieldName)
 
     /**
+     * @return A new [Expr] representing the timestampAdd operation.
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_add", timestamp, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampAdd operation.
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_add", timestamp, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampAdd operation.
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_add", fieldName, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampAdd operation.
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_add", fieldName, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampSub operation.
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_sub", timestamp, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampSub operation.
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_sub", timestamp, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampSub operation.
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_sub", fieldName, unit, amount)
 
     /**
+     * @return A new [Expr] representing the timestampSub operation.
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_sub", fieldName, unit, amount)
 
     /**
+     * @return A new [Expr] representing the eq operation.
      */
     @JvmStatic fun eq(left: Expr, right: Expr) = BooleanExpr("eq", left, right)
 
     /**
+     * @return A new [Expr] representing the eq operation.
      */
     @JvmStatic fun eq(left: Expr, right: Any) = BooleanExpr("eq", left, right)
 
     /**
+     * @return A new [Expr] representing the eq operation.
      */
     @JvmStatic fun eq(fieldName: String, right: Expr) = BooleanExpr("eq", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the eq operation.
      */
     @JvmStatic fun eq(fieldName: String, right: Any) = BooleanExpr("eq", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the neq operation.
      */
     @JvmStatic fun neq(left: Expr, right: Expr) = BooleanExpr("neq", left, right)
 
     /**
+     * @return A new [Expr] representing the neq operation.
      */
     @JvmStatic fun neq(left: Expr, right: Any) = BooleanExpr("neq", left, right)
 
     /**
+     * @return A new [Expr] representing the neq operation.
      */
     @JvmStatic fun neq(fieldName: String, right: Expr) = BooleanExpr("neq", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the neq operation.
      */
     @JvmStatic fun neq(fieldName: String, right: Any) = BooleanExpr("neq", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the gt operation.
      */
     @JvmStatic fun gt(left: Expr, right: Expr) = BooleanExpr("gt", left, right)
 
     /**
+     * @return A new [Expr] representing the gt operation.
      */
     @JvmStatic fun gt(left: Expr, right: Any) = BooleanExpr("gt", left, right)
 
     /**
+     * @return A new [Expr] representing the gt operation.
      */
     @JvmStatic fun gt(fieldName: String, right: Expr) = BooleanExpr("gt", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the gt operation.
      */
     @JvmStatic fun gt(fieldName: String, right: Any) = BooleanExpr("gt", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the gte operation.
      */
     @JvmStatic fun gte(left: Expr, right: Expr) = BooleanExpr("gte", left, right)
 
     /**
+     * @return A new [Expr] representing the gte operation.
      */
     @JvmStatic fun gte(left: Expr, right: Any) = BooleanExpr("gte", left, right)
 
     /**
+     * @return A new [Expr] representing the gte operation.
      */
     @JvmStatic fun gte(fieldName: String, right: Expr) = BooleanExpr("gte", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the gte operation.
      */
     @JvmStatic fun gte(fieldName: String, right: Any) = BooleanExpr("gte", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the lt operation.
      */
     @JvmStatic fun lt(left: Expr, right: Expr) = BooleanExpr("lt", left, right)
 
     /**
+     * @return A new [Expr] representing the lt operation.
      */
     @JvmStatic fun lt(left: Expr, right: Any) = BooleanExpr("lt", left, right)
 
     /**
+     * @return A new [Expr] representing the lt operation.
      */
     @JvmStatic fun lt(fieldName: String, right: Expr) = BooleanExpr("lt", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the lt operation.
      */
     @JvmStatic fun lt(fieldName: String, right: Any) = BooleanExpr("lt", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the lte operation.
      */
     @JvmStatic fun lte(left: Expr, right: Expr) = BooleanExpr("lte", left, right)
 
     /**
+     * @return A new [Expr] representing the lte operation.
      */
     @JvmStatic fun lte(left: Expr, right: Any) = BooleanExpr("lte", left, right)
 
     /**
+     * @return A new [Expr] representing the lte operation.
      */
     @JvmStatic fun lte(fieldName: String, right: Expr) = BooleanExpr("lte", fieldName, right)
 
     /**
+     * @return A new [Expr] representing the lte operation.
      */
     @JvmStatic fun lte(fieldName: String, right: Any) = BooleanExpr("lte", fieldName, right)
 
     /**
+     * Creates an expression that concatenates an array with other arrays.
+     *
+     *
+     *
+     * @return A new [Expr] representing the arrayConcat operation.
      */
     @JvmStatic
-    fun arrayConcat(array: Expr, vararg arrays: Expr): Expr =
-      FunctionExpr("array_concat", array, *arrays)
+    fun arrayConcat(firstArray: Expr, secondArray: Expr, vararg otherArrays: Any): Expr =
+      FunctionExpr("array_concat", firstArray, secondArray, *otherArrays)
 
     /**
+     * Creates an expression that concatenates an array with other arrays.
+     *
+     * @return A new [Expr] representing the arrayConcat operation.
      */
     @JvmStatic
-    fun arrayConcat(fieldName: String, vararg arrays: Expr): Expr =
-      FunctionExpr("array_concat", fieldName, *arrays)
+    fun arrayConcat(firstArray: Expr, vararg otherArrays: Any): Expr =
+      FunctionExpr("array_concat", firstArray, *otherArrays)
 
     /**
+     * Creates an expression that concatenates a field's array value with other arrays.
+     *
+     * @return A new [Expr] representing the arrayConcat operation.
      */
     @JvmStatic
-    fun arrayConcat(array: Expr, arrays: List<Any>): Expr =
-      FunctionExpr("array_concat", array, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+    fun arrayConcat(fieldName: String, secondArray: Expr, vararg otherArrays: Any): Expr =
+      FunctionExpr("array_concat", fieldName, secondArray, *otherArrays)
 
     /**
+     * Creates an expression that concatenates a field's array value with other arrays.
+     *
+     * @return A new [Expr] representing the arrayConcat operation.
      */
     @JvmStatic
-    fun arrayConcat(fieldName: String, arrays: List<Any>): Expr =
-      FunctionExpr("array_concat", fieldName, ListOfExprs(toArrayOfExprOrConstant(arrays)))
+    fun arrayConcat(fieldName: String, vararg otherArrays: Any): Expr =
+      FunctionExpr("array_concat", fieldName, *otherArrays)
 
     /**
      */
@@ -1661,10 +1901,16 @@ abstract class Expr internal constructor() {
   fun timestampSub(unit: String, amount: Double) = Companion.timestampSub(this, unit, amount)
 
   /**
+   * Creates an expression that concatenates a field's array value with other arrays.
+   *
+   * @return A new [Expr] representing the arrayConcat operation.
    */
-  fun arrayConcat(vararg arrays: Expr) = Companion.arrayConcat(this, *arrays)
+  fun arrayConcat(vararg otherArrays: Expr) = Companion.arrayConcat(this, *otherArrays)
 
   /**
+   * Creates an expression that concatenates a field's array value with other arrays.
+   *
+   * @return A new [Expr] representing the arrayConcat operation.
    */
   fun arrayConcat(arrays: List<Any>) = Companion.arrayConcat(this, arrays)
 
