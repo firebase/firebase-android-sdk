@@ -293,7 +293,7 @@ private suspend fun validateResponse(response: HttpResponse) {
   val htmlContentType = ContentType.Text.Html.withCharset(Charset.forName("utf-8"))
   if (response.status == HttpStatusCode.NotFound && response.contentType() == htmlContentType)
     throw ServerException(
-      """URL not found. Please verify the location used to create the `FirebaseVertexAI` object
+      """URL not found. Please verify the location used to create the `FirebaseAI` object
           | See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions
           | for the list of available locations. Raw response: ${response.bodyAsText()}"""
         .trimMargin()
@@ -323,7 +323,7 @@ private suspend fun validateResponse(response: HttpResponse) {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
         """
-        The Vertex AI in Firebase SDK requires the Vertex AI in Firebase API
+        The Firebase AI SDK requires the Vertex AI in Firebase API
         (`firebasevertexai.googleapis.com`) to be enabled in your Firebase project. Enable this API
         by visiting the Firebase Console at
         https://console.firebase.google.com/project/${Firebase.options.projectId}/genai

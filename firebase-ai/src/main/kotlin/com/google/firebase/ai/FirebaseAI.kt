@@ -30,24 +30,28 @@ import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
+import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
-import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import kotlin.coroutines.CoroutineContext
 
-/** Entry point for all _Vertex AI for Firebase_ functionality. */
+/** Entry point for all _Firebase AI_ functionality. */
 public class FirebaseAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
   private val backend: GenerativeBackend,
-  @Background private val backgroundDispatcher: CoroutineContext,
+  @Blocking private val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
+  init {
+    validateLocation()
+  }
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
@@ -72,7 +76,6 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): GenerativeModel {
-    validateLocation()
     val modelUri =
       when (backend.backend) {
         GenerativeBackendEnum.VERTEX_AI ->
@@ -134,12 +137,16 @@ internal constructor(
           .trimIndent(),
       )
     }
-    validateLocation()
     return LiveGenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}",
+      when (backend.backend) {
+        GenerativeBackendEnum.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
+        GenerativeBackendEnum.GOOGLE_AI ->
+          throw ServiceDisabledException("Live Model is not yet available on the Google AI backend")
+      },
       firebaseApp.options.apiKey,
       firebaseApp,
-      backgroundDispatcher,
+      blockingDispatcher,
       generationConfig,
       tools,
       systemInstruction,
@@ -174,7 +181,6 @@ internal constructor(
         GenerativeBackendEnum.GOOGLE_AI ->
           "projects/${firebaseApp.options.projectId}/models/${modelName}"
       }
-    validateLocation()
     if (!modelName.startsWith(IMAGEN_MODEL_NAME_PREFIX)) {
       Log.w(
         TAG,
@@ -223,7 +229,7 @@ internal constructor(
       backend: GenerativeBackend
     ): FirebaseAI {
       val multiResourceComponent = app[FirebaseAIMultiResourceComponent::class.java]
-      return multiResourceComponent.getAI(backend)
+      return multiResourceComponent.get(backend)
     }
 
     /** Returns the [FirebaseAI] instance for the provided [FirebaseApp] */

@@ -39,7 +39,7 @@ internal class FirebaseAIMultiResourceComponent(
 
   @GuardedBy("this") private val aiInstances: MutableMap<String, FirebaseAI> = mutableMapOf()
 
-  fun getAI(backend: GenerativeBackend): FirebaseAI =
+  fun get(backend: GenerativeBackend): FirebaseAI =
     synchronized(this) {
       aiInstances[backend.location]
         ?: FirebaseAI(

@@ -53,7 +53,7 @@ internal data class CountTokensRequest(
 ) : Request {
   companion object {
 
-    fun forGenAI(generateContentRequest: GenerateContentRequest) =
+    fun forGoogleAI(generateContentRequest: GenerateContentRequest) =
       CountTokensRequest(
         generateContentRequest =
           generateContentRequest.model?.let {

@@ -35,7 +35,7 @@ import kotlinx.coroutines.CoroutineDispatcher
  * @hide
  */
 @Keep
-internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
+internal class FirebaseAIRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
       Component.builder(FirebaseAIMultiResourceComponent::class.java)
