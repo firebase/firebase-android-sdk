@@ -1124,14 +1124,10 @@ abstract class Expr internal constructor() {
     fun arrayConcat(firstArrayField: String, secondArray: Any, vararg otherArrays: Any): Expr =
       FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
 
-    /**
-     * @return A new [Expr] representing the arrayReverse operation.
-     */
+    /** @return A new [Expr] representing the arrayReverse operation. */
     @JvmStatic fun arrayReverse(array: Expr): Expr = FunctionExpr("array_reverse", array)
 
-    /**
-     * @return A new [Expr] representing the arrayReverse operation.
-     */
+    /** @return A new [Expr] representing the arrayReverse operation. */
     @JvmStatic fun arrayReverse(fieldName: String): Expr = FunctionExpr("array_reverse", fieldName)
 
     /**
@@ -1184,7 +1180,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(array: Expr, values: List<Any>) = arrayContainsAll(array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContainsAll(array: Expr, values: List<Any>) =
+      arrayContainsAll(array, ListOfExprs(toArrayOfExprOrConstant(values)))
 
     /**
      * Creates an expression that checks if [array] contains all elements of [arrayExpression].
@@ -1206,7 +1203,11 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr("array_contains_all", arrayFieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+      BooleanExpr(
+        "array_contains_all",
+        arrayFieldName,
+        ListOfExprs(toArrayOfExprOrConstant(values))
+      )
 
     /**
      * Creates an expression that checks if array field contains all elements of [arrayExpression].
@@ -1250,7 +1251,11 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr("array_contains_any", arrayFieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+      BooleanExpr(
+        "array_contains_any",
+        arrayFieldName,
+        ListOfExprs(toArrayOfExprOrConstant(values))
+      )
 
     /**
      * Creates an expression that checks if array field contains any elements of [arrayExpression].
@@ -1277,25 +1282,20 @@ abstract class Expr internal constructor() {
      * @param arrayFieldName The name of the field containing an array to calculate the length of.
      * @return A new [Expr] representing the the length of the array.
      */
-    @JvmStatic fun arrayLength(arrayFieldName: String): Expr = FunctionExpr("array_length", arrayFieldName)
+    @JvmStatic
+    fun arrayLength(arrayFieldName: String): Expr = FunctionExpr("array_length", arrayFieldName)
 
-    /**
-     * @return A new [Expr] representing the cond operation.
-     */
+    /** @return A new [Expr] representing the cond operation. */
     @JvmStatic
     fun cond(condition: BooleanExpr, then: Expr, otherwise: Expr): Expr =
       FunctionExpr("cond", condition, then, otherwise)
 
-    /**
-     * @return A new [Expr] representing the cond operation.
-     */
+    /** @return A new [Expr] representing the cond operation. */
     @JvmStatic
     fun cond(condition: BooleanExpr, then: Any, otherwise: Any): Expr =
       FunctionExpr("cond", condition, then, otherwise)
 
-    /**
-     * @return A new [Expr] representing the exists operation.
-     */
+    /** @return A new [Expr] representing the exists operation. */
     @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
   }
 
@@ -1700,7 +1700,8 @@ abstract class Expr internal constructor() {
    * @param arrayExpression The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAll operation.
    */
-  fun arrayContainsAll(arrayExpression: Expr): BooleanExpr = Companion.arrayContainsAll(this, arrayExpression)
+  fun arrayContainsAll(arrayExpression: Expr): BooleanExpr =
+    Companion.arrayContainsAll(this, arrayExpression)
 
   /**
    * Creates an expression that checks if array contains any of the specified [values].
@@ -1716,7 +1717,8 @@ abstract class Expr internal constructor() {
    * @param arrayExpression The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAny operation.
    */
-  fun arrayContainsAny(arrayExpression: Expr): BooleanExpr = Companion.arrayContainsAny(this, arrayExpression)
+  fun arrayContainsAny(arrayExpression: Expr): BooleanExpr =
+    Companion.arrayContainsAny(this, arrayExpression)
 
   /**
    * Creates an expression that calculates the length of an array expression.
@@ -1872,7 +1874,11 @@ internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
  * [FunctionExpr] instances.
  */
 open class FunctionExpr
-internal constructor(private val name: String, private val params: Array<out Expr>) : Expr() {
+internal constructor(
+  private val name: String,
+  private val params: Array<out Expr>,
+  private val options: InternalOptions = InternalOptions.EMPTY
+) : Expr() {
   internal constructor(
     name: String,
     param: Expr,
@@ -1896,13 +1902,14 @@ internal constructor(private val name: String, private val params: Array<out Exp
     for (param in params) {
       builder.addArgs(param.toProto(userDataReader))
     }
+    options.forEach(builder::putOptions)
     return Value.newBuilder().setFunctionValue(builder).build()
   }
 }
 
 /** An interface that represents a filter condition. */
 open class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
-  FunctionExpr(name, params) {
+  FunctionExpr(name, params, InternalOptions.EMPTY) {
   internal constructor(
     name: String,
     params: List<Any>

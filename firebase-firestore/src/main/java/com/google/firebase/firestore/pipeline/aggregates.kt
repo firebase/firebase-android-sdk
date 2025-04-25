@@ -22,7 +22,11 @@ internal constructor(internal val alias: String, internal val expr: AggregateFun
 
 /** A class that represents an aggregate function. */
 class AggregateFunction
-private constructor(private val name: String, private val params: Array<out Expr>) {
+private constructor(
+  private val name: String,
+  private val params: Array<out Expr>,
+  private val options: InternalOptions = InternalOptions.EMPTY
+) {
   private constructor(name: String) : this(name, emptyArray())
   private constructor(name: String, expr: Expr) : this(name, arrayOf(expr))
   private constructor(name: String, fieldName: String) : this(name, Expr.field(fieldName))
@@ -71,6 +75,7 @@ private constructor(private val name: String, private val params: Array<out Expr
     for (param in params) {
       builder.addArgs(param.toProto(userDataReader))
     }
+    options.forEach(builder::putOptions)
     return Value.newBuilder().setFunctionValue(builder).build()
   }
 }
