@@ -310,7 +310,7 @@ internal constructor(
   ) {
     receive()
       .transform {
-        if (it.status == LiveContentResponse.Status.INTERRUPTED) {
+        if (it.interrupted == true) {
           playBackQueue.clear()
         } else {
           emit(it)
@@ -387,7 +387,8 @@ internal constructor(
           JSON.decodeFromJsonElement<BidiGenerateContentToolCallSetup.Internal>(jsonMessage)
         LiveContentResponse(
           null,
-          LiveContentResponse.Status.NORMAL,
+          null,
+          null,
           functionContent.toolCall.functionCalls.map {
             FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
           }
@@ -397,13 +398,12 @@ internal constructor(
         val serverContent =
           JSON.decodeFromJsonElement<BidiGenerateContentServerContentSetup.Internal>(jsonMessage)
             .serverContent
-        val status =
-          when {
-            serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
-            serverContent.interrupted == true -> LiveContentResponse.Status.INTERRUPTED
-            else -> LiveContentResponse.Status.NORMAL
-          }
-        LiveContentResponse(serverContent.modelTurn?.toPublic(), status, null)
+        LiveContentResponse(
+          serverContent.modelTurn?.toPublic(),
+          serverContent.interrupted,
+          serverContent.turnComplete,
+          null
+        )
       }
       else -> {
         Log.w(TAG, "Failed to decode the server response: $jsonMessage")

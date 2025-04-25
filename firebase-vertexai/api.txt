@@ -569,25 +569,14 @@ package com.google.firebase.vertexai.type {
   @com.google.firebase.vertexai.type.PublicPreviewAPI public final class LiveContentResponse {
     method public com.google.firebase.vertexai.type.Content? getData();
     method public java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>? getFunctionCalls();
-    method public int getStatus();
+    method public Boolean? getInterrupted();
     method public String? getText();
+    method public Boolean? getTurnComplete();
     property public final com.google.firebase.vertexai.type.Content? data;
     property public final java.util.List<com.google.firebase.vertexai.type.FunctionCallPart>? functionCalls;
-    property public final int status;
+    property public final Boolean? interrupted;
     property public final String? text;
-  }
-
-  @kotlin.jvm.JvmInline public static final value class LiveContentResponse.Status {
-    field public static final com.google.firebase.vertexai.type.LiveContentResponse.Status.Companion Companion;
-  }
-
-  public static final class LiveContentResponse.Status.Companion {
-    method public int getINTERRUPTED();
-    method public int getNORMAL();
-    method public int getTURN_COMPLETE();
-    property public final int INTERRUPTED;
-    property public final int NORMAL;
-    property public final int TURN_COMPLETE;
+    property public final Boolean? turnComplete;
   }
 
   @com.google.firebase.vertexai.type.PublicPreviewAPI public final class LiveGenerationConfig {

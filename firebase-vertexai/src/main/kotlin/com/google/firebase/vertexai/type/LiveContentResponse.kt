@@ -30,10 +30,19 @@ internal constructor(
   public val data: Content?,
 
   /**
-   * The status of the live content response. Indicates whether the response is normal, was
-   * interrupted, or signifies the completion of a turn.
+   * The model was interrupted while generating data.
+   *
+   * An interruption occurs when the client sends a message while the model is actively sending
+   * data.
    */
-  public val status: Status,
+  public val interrupted: Boolean?,
+
+  /**
+   * The model has finished sending data in the current interaction.
+   *
+   * Can be set alongside content, signifying that the content is the last in the turn.
+   */
+  public val turnComplete: Boolean?,
 
   /**
    * A list of [FunctionCallPart] included in the response, if any.
@@ -49,26 +58,4 @@ internal constructor(
    */
   public val text: String? =
     data?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
-
-  /** Represents the status of a [LiveContentResponse], within a single interaction. */
-  @JvmInline
-  public value class Status private constructor(private val value: Int) {
-    public companion object {
-      /** The server is actively sending data for the current interaction. */
-      public val NORMAL: Status = Status(0)
-      /**
-       * The server was interrupted while generating data.
-       *
-       * An interruption occurs when the client sends a message while the server is [actively]
-       * [NORMAL] sending data.
-       */
-      public val INTERRUPTED: Status = Status(1)
-      /**
-       * The model has finished sending data in the current interaction.
-       *
-       * Can be set alongside content, signifying that the content is the last in the turn.
-       */
-      public val TURN_COMPLETE: Status = Status(2)
-    }
-  }
 }
