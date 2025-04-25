@@ -20,13 +20,11 @@ import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.InvalidAPIKeyException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
-import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
