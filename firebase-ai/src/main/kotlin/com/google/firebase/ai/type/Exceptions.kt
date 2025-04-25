@@ -69,8 +69,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
       }
 
     /**
-     * Catch any exception thrown in the [callback] block and rethrow it as a
-     * [FirebaseAIException].
+     * Catch any exception thrown in the [callback] block and rethrow it as a [FirebaseAIException].
      *
      * Will return whatever the [callback] returns as well.
      *
