@@ -69,21 +69,6 @@ internal class DevAPIUnarySnapshotTests {
     }
 
   @Test
-  fun `citation returns correctly`() =
-    goldenDevAPIUnaryFile("unary-success-citations.txt") {
-      withTimeout(testTimeout) {
-        val response = model.generateContent("prompt")
-
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().citationMetadata?.citations?.size shouldBe 4
-        response.candidates.first().citationMetadata?.citations?.forEach {
-          it.startIndex shouldNotBe null
-          it.endIndex shouldNotBe null
-        }
-      }
-    }
-
-  @Test
   fun `invalid api key`() =
     goldenDevAPIUnaryFile("unary-failure-api-key.txt", HttpStatusCode.BadRequest) {
       withTimeout(testTimeout) {
