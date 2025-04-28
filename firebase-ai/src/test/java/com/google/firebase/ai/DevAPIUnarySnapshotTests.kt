@@ -35,7 +35,7 @@ internal class DevAPIUnarySnapshotTests {
 
   @Test
   fun `short reply`() =
-    goldenDevAPIUnaryFile("unary-success-basic-reply-short.txt") {
+    goldenDevAPIUnaryFile("unary-success-basic-reply-short.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -47,7 +47,7 @@ internal class DevAPIUnarySnapshotTests {
 
   @Test
   fun `long reply`() =
-    goldenDevAPIUnaryFile("unary-success-basic-reply-long.txt") {
+    goldenDevAPIUnaryFile("unary-success-basic-reply-long.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -59,7 +59,7 @@ internal class DevAPIUnarySnapshotTests {
 
   @Test
   fun `response blocked for safety`() =
-    goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.txt") {
+    goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.json") {
       withTimeout(testTimeout) {
         shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
           {
@@ -70,7 +70,7 @@ internal class DevAPIUnarySnapshotTests {
 
   @Test
   fun `citation returns correctly`() =
-    goldenDevAPIUnaryFile("unary-success-citations.txt") {
+    goldenDevAPIUnaryFile("unary-success-citations.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -85,14 +85,14 @@ internal class DevAPIUnarySnapshotTests {
 
   @Test
   fun `invalid api key`() =
-    goldenDevAPIUnaryFile("unary-failure-api-key.txt", HttpStatusCode.BadRequest) {
+    goldenDevAPIUnaryFile("unary-failure-api-key.json", HttpStatusCode.BadRequest) {
       withTimeout(testTimeout) {
         shouldThrow<InvalidAPIKeyException> { model.generateContent("prompt") }
       }
     }
   @Test
   fun `unknown model`() =
-    goldenDevAPIUnaryFile("unary-failure-unknown-model.txt", HttpStatusCode.NotFound) {
+    goldenDevAPIUnaryFile("unary-failure-unknown-model.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
     }
 }
