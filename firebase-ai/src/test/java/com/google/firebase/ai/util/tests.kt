@@ -248,7 +248,7 @@ internal fun goldenDevAPIUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenUnaryFile("developerapi/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
+) = goldenUnaryFile("googleai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
 
 /**
  * Loads a *Golden File* from the resource directory.

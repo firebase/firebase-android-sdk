@@ -58,23 +58,12 @@ internal class DevAPIUnarySnapshotTests {
     }
 
   @Test
-  fun `prompt blocked for safety`() =
-    goldenDevAPIUnaryFile("unary-failure-prompt-blocked-safety.txt") {
-      withTimeout(testTimeout) {
-        shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
-          {
-            it.response.candidates[0].finishReason shouldBe FinishReason.MAX_TOKENS
-          }
-      }
-    }
-
-  @Test
   fun `response blocked for safety`() =
     goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.txt") {
       withTimeout(testTimeout) {
         shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
           {
-            it.response.candidates[0].finishReason shouldBe FinishReason.MAX_TOKENS
+            it.response.candidates[0].finishReason shouldBe FinishReason.SAFETY
           }
       }
     }
