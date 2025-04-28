@@ -18,9 +18,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.net.Uri;
 import android.os.Build;
+import android.os.Looper;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.TestDownloadHelper.StreamDownloadResponse;
@@ -40,7 +42,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -137,7 +138,7 @@ public class DownloadTest {
     ControllableSchedulerHelper.getInstance().resume();
 
     for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
+      shadowOf(Looper.getMainLooper()).runToEndOfTasks();
       if (semaphore.tryAcquire(2, 1, TimeUnit.MILLISECONDS)) {
         Assert.assertEquals(bytesDownloaded.get(), bytesTransferred.get());
         return;
@@ -256,7 +257,7 @@ public class DownloadTest {
         TestDownloadHelper.byteDownload(
             new StringBuilder(), bitmap -> assertEquals(1076408, bitmap.length));
     for (int i = 0; i < 3000; i++) {
-      Robolectric.flushForegroundThreadScheduler();
+      shadowOf(Looper.getMainLooper()).runToEndOfTasks();
       if (semaphore.tryAcquire(1, 1, TimeUnit.MILLISECONDS)) {
         // success!
         factory.verifyOldMock();
