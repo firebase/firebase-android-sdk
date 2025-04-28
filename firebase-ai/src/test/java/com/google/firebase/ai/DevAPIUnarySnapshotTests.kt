@@ -24,6 +24,7 @@ import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
@@ -53,6 +54,21 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.isEmpty() shouldBe false
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `citation returns correctly`() =
+    goldenDevAPIUnaryFile("unary-success-citations.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().citationMetadata?.citations?.size shouldBe 4
+        response.candidates.first().citationMetadata?.citations?.forEach {
+          it.startIndex shouldNotBe null
+          it.endIndex shouldNotBe null
+        }
       }
     }
 
