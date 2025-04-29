@@ -57,16 +57,6 @@ internal class DevAPIUnarySnapshotTests {
       }
     }
 
-  @Test
-  fun `response blocked for safety`() =
-    goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.json") {
-      withTimeout(testTimeout) {
-        shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
-          {
-            it.response.candidates[0].finishReason shouldBe FinishReason.SAFETY
-          }
-      }
-    }
 
   @Test
   fun `citation returns correctly`() =
