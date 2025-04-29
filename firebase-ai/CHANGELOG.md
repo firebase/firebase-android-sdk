@@ -13,3 +13,4 @@
 * [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
   interrupted or the turn completed. (#6870)
 * [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
+* [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6922)
