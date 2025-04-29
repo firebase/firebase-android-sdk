@@ -559,46 +559,31 @@ internal object Values {
     return VECTOR_VALUE_TYPE == value.mapValue.fieldsMap[TYPE_KEY]
   }
 
-  @JvmStatic
-  fun encodeValue(value: Long): Value {
-    return Value.newBuilder().setIntegerValue(value).build()
-  }
+  @JvmStatic fun encodeValue(value: Long): Value = Value.newBuilder().setIntegerValue(value).build()
 
   @JvmStatic
-  fun encodeValue(value: Int): Value {
-    return Value.newBuilder().setIntegerValue(value.toLong()).build()
-  }
+  fun encodeValue(value: Int): Value = Value.newBuilder().setIntegerValue(value.toLong()).build()
 
   @JvmStatic
-  fun encodeValue(value: Double): Value {
-    return Value.newBuilder().setDoubleValue(value).build()
-  }
+  fun encodeValue(value: Double): Value = Value.newBuilder().setDoubleValue(value).build()
 
   @JvmStatic
-  fun encodeValue(value: Float): Value {
-    return Value.newBuilder().setDoubleValue(value.toDouble()).build()
-  }
+  fun encodeValue(value: Float): Value = Value.newBuilder().setDoubleValue(value.toDouble()).build()
 
   @JvmStatic
-  fun encodeValue(value: Number): Value {
-    return when (value) {
+  fun encodeValue(value: Number): Value =
+    when (value) {
       is Long -> encodeValue(value)
       is Int -> encodeValue(value)
       is Double -> encodeValue(value)
       is Float -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected number type: $value")
     }
-  }
 
   @JvmStatic
-  fun encodeValue(value: String): Value {
-    return Value.newBuilder().setStringValue(value).build()
-  }
+  fun encodeValue(value: String): Value = Value.newBuilder().setStringValue(value).build()
 
-  @JvmStatic
-  fun encodeValue(date: Date): Value {
-    return encodeValue(com.google.firebase.Timestamp((date)))
-  }
+  @JvmStatic fun encodeValue(date: Date): Value = encodeValue(com.google.firebase.Timestamp((date)))
 
   @JvmStatic
   fun encodeValue(timestamp: com.google.firebase.Timestamp): Value {
@@ -615,33 +600,29 @@ internal object Values {
   }
 
   @JvmStatic
-  fun encodeValue(value: Boolean): Value {
-    return Value.newBuilder().setBooleanValue(value).build()
-  }
+  fun encodeValue(value: Boolean): Value = Value.newBuilder().setBooleanValue(value).build()
 
   @JvmStatic
-  fun encodeValue(geoPoint: GeoPoint): Value {
-    return Value.newBuilder()
+  fun encodeValue(geoPoint: GeoPoint): Value =
+    Value.newBuilder()
       .setGeoPointValue(
         LatLng.newBuilder().setLatitude(geoPoint.latitude).setLongitude(geoPoint.longitude)
       )
       .build()
-  }
 
   @JvmStatic
-  fun encodeValue(value: Blob): Value {
-    return Value.newBuilder().setBytesValue(value.toByteString()).build()
-  }
+  fun encodeValue(value: ByteArray): Value =
+    Value.newBuilder().setBytesValue(ByteString.copyFrom(value)).build()
 
   @JvmStatic
-  fun encodeValue(docRef: DocumentReference): Value {
-    return Value.newBuilder().setReferenceValue(docRef.fullPath).build()
-  }
+  fun encodeValue(value: Blob): Value =
+    Value.newBuilder().setBytesValue(value.toByteString()).build()
 
   @JvmStatic
-  fun encodeValue(vector: VectorValue): Value {
-    return encodeVectorValue(vector.toArray())
-  }
+  fun encodeValue(docRef: DocumentReference): Value =
+    Value.newBuilder().setReferenceValue(docRef.fullPath).build()
+
+  @JvmStatic fun encodeValue(vector: VectorValue): Value = encodeVectorValue(vector.toArray())
 
   @JvmStatic
   fun encodeVectorValue(vector: DoubleArray): Value {
@@ -659,18 +640,16 @@ internal object Values {
   }
 
   @JvmStatic
-  fun encodeValue(map: Map<String, Value>): Value {
-    return Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(map)).build()
-  }
+  fun encodeValue(map: Map<String, Value>): Value =
+    Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(map)).build()
 
   @JvmStatic
-  fun encodeValue(values: Iterable<Value>): Value {
-    return Value.newBuilder().setArrayValue(ArrayValue.newBuilder().addAllValues(values)).build()
-  }
+  fun encodeValue(values: Iterable<Value>): Value =
+    Value.newBuilder().setArrayValue(ArrayValue.newBuilder().addAllValues(values)).build()
 
   @JvmStatic
-  fun encodeAnyValue(value: Any?): Value {
-    return when (value) {
+  fun encodeAnyValue(value: Any?): Value =
+    when (value) {
       null -> NULL_VALUE
       is String -> encodeValue(value)
       is Number -> encodeValue(value)
@@ -682,5 +661,4 @@ internal object Values {
       is VectorValue -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
-  }
 }

@@ -73,6 +73,7 @@ abstract class Expr internal constructor() {
         is GeoPoint -> constant(value)
         is Blob -> constant(value)
         is DocumentReference -> constant(value)
+        is ByteArray -> constant(value)
         is VectorValue -> constant(value)
         is Value -> ValueConstant(value)
         is Map<*, *> ->
@@ -174,6 +175,17 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: GeoPoint): Expr {
+      return ValueConstant(encodeValue(value))
+    }
+
+    /**
+     * Create a constant for a bytes value.
+     *
+     * @param value The bytes value.
+     * @return A new [Expr] constant instance.
+     */
+    @JvmStatic
+    fun constant(value: ByteArray): Expr {
       return ValueConstant(encodeValue(value))
     }
 
@@ -316,91 +328,247 @@ abstract class Expr internal constructor() {
     /** @return A new [Expr] representing the not operation. */
     @JvmStatic fun not(condition: BooleanExpr) = BooleanExpr("not", condition)
 
-    /** @return A new [Expr] representing the bitAnd operation. */
-    @JvmStatic fun bitAnd(left: Expr, right: Expr): Expr = FunctionExpr("bit_and", left, right)
-
-    /** @return A new [Expr] representing the bitAnd operation. */
-    @JvmStatic fun bitAnd(left: Expr, right: Any): Expr = FunctionExpr("bit_and", left, right)
-
-    /** @return A new [Expr] representing the bitAnd operation. */
+    /**
+     * Creates an expression that applies a bitwise AND operation between two expressions.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise AND operation.
+     */
     @JvmStatic
-    fun bitAnd(fieldName: String, right: Expr): Expr = FunctionExpr("bit_and", fieldName, right)
+    fun bitAnd(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_and", bits, bitsOther)
 
-    /** @return A new [Expr] representing the bitAnd operation. */
+    /**
+     * Creates an expression that applies a bitwise AND operation between an expression and a
+     * constant.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise AND operation.
+     */
     @JvmStatic
-    fun bitAnd(fieldName: String, right: Any): Expr = FunctionExpr("bit_and", fieldName, right)
+    fun bitAnd(bits: Expr, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_and", bits, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitOr operation. */
-    @JvmStatic fun bitOr(left: Expr, right: Expr): Expr = FunctionExpr("bit_or", left, right)
-
-    /** @return A new [Expr] representing the bitOr operation. */
-    @JvmStatic fun bitOr(left: Expr, right: Any): Expr = FunctionExpr("bit_or", left, right)
-
-    /** @return A new [Expr] representing the bitOr operation. */
+    /**
+     * Creates an expression that applies a bitwise AND operation between an field and an
+     * expression.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise AND operation.
+     */
     @JvmStatic
-    fun bitOr(fieldName: String, right: Expr): Expr = FunctionExpr("bit_or", fieldName, right)
+    fun bitAnd(bitsFieldName: String, bitsOther: Expr): Expr =
+      FunctionExpr("bit_and", bitsFieldName, bitsOther)
 
-    /** @return A new [Expr] representing the bitOr operation. */
+    /**
+     * Creates an expression that applies a bitwise AND operation between an field and constant.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise AND operation.
+     */
     @JvmStatic
-    fun bitOr(fieldName: String, right: Any): Expr = FunctionExpr("bit_or", fieldName, right)
+    fun bitAnd(bitsFieldName: String, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_and", bitsFieldName, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitXor operation. */
-    @JvmStatic fun bitXor(left: Expr, right: Expr): Expr = FunctionExpr("bit_xor", left, right)
-
-    /** @return A new [Expr] representing the bitXor operation. */
-    @JvmStatic fun bitXor(left: Expr, right: Any): Expr = FunctionExpr("bit_xor", left, right)
-
-    /** @return A new [Expr] representing the bitXor operation. */
+    /**
+     * Creates an expression that applies a bitwise OR operation between two expressions.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise OR operation.
+     */
     @JvmStatic
-    fun bitXor(fieldName: String, right: Expr): Expr = FunctionExpr("bit_xor", fieldName, right)
+    fun bitOr(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_or", bits, bitsOther)
 
-    /** @return A new [Expr] representing the bitXor operation. */
+    /**
+     * Creates an expression that applies a bitwise OR operation between an expression and a
+     * constant.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise OR operation.
+     */
     @JvmStatic
-    fun bitXor(fieldName: String, right: Any): Expr = FunctionExpr("bit_xor", fieldName, right)
+    fun bitOr(bits: Expr, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_or", bits, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitNot operation. */
-    @JvmStatic fun bitNot(left: Expr): Expr = FunctionExpr("bit_not", left)
-
-    /** @return A new [Expr] representing the bitNot operation. */
-    @JvmStatic fun bitNot(fieldName: String): Expr = FunctionExpr("bit_not", fieldName)
-
-    /** @return A new [Expr] representing the bitLeftShift operation. */
+    /**
+     * Creates an expression that applies a bitwise OR operation between an field and an expression.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise OR operation.
+     */
     @JvmStatic
-    fun bitLeftShift(left: Expr, numberExpr: Expr): Expr =
-      FunctionExpr("bit_left_shift", left, numberExpr)
+    fun bitOr(bitsFieldName: String, bitsOther: Expr): Expr =
+      FunctionExpr("bit_or", bitsFieldName, bitsOther)
 
-    /** @return A new [Expr] representing the bitLeftShift operation. */
+    /**
+     * Creates an expression that applies a bitwise OR operation between an field and constant.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise OR operation.
+     */
     @JvmStatic
-    fun bitLeftShift(left: Expr, number: Int): Expr = FunctionExpr("bit_left_shift", left, number)
+    fun bitOr(bitsFieldName: String, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_or", bitsFieldName, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitLeftShift operation. */
+    /**
+     * Creates an expression that applies a bitwise XOR operation between two expressions.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise XOR operation.
+     */
     @JvmStatic
-    fun bitLeftShift(fieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_left_shift", fieldName, numberExpr)
+    fun bitXor(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_xor", bits, bitsOther)
 
-    /** @return A new [Expr] representing the bitLeftShift operation. */
+    /**
+     * Creates an expression that applies a bitwise XOR operation between an expression and a
+     * constant.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise XOR operation.
+     */
     @JvmStatic
-    fun bitLeftShift(fieldName: String, number: Int): Expr =
-      FunctionExpr("bit_left_shift", fieldName, number)
+    fun bitXor(bits: Expr, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_xor", bits, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitRightShift operation. */
+    /**
+     * Creates an expression that applies a bitwise XOR operation between an field and an
+     * expression.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise XOR operation.
+     */
     @JvmStatic
-    fun bitRightShift(left: Expr, numberExpr: Expr): Expr =
-      FunctionExpr("bit_right_shift", left, numberExpr)
+    fun bitXor(bitsFieldName: String, bitsOther: Expr): Expr =
+      FunctionExpr("bit_xor", bitsFieldName, bitsOther)
 
-    /** @return A new [Expr] representing the bitRightShift operation. */
+    /**
+     * Creates an expression that applies a bitwise XOR operation between an field and constant.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param bitsOther A constant byte array.
+     * @return A new [Expr] representing the bitwise XOR operation.
+     */
     @JvmStatic
-    fun bitRightShift(left: Expr, number: Int): Expr = FunctionExpr("bit_right_shift", left, number)
+    fun bitXor(bitsFieldName: String, bitsOther: ByteArray): Expr =
+      FunctionExpr("bit_xor", bitsFieldName, constant(bitsOther))
 
-    /** @return A new [Expr] representing the bitRightShift operation. */
-    @JvmStatic
-    fun bitRightShift(fieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_right_shift", fieldName, numberExpr)
+    /**
+     * Creates an expression that applies a bitwise NOT operation to an expression.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @return A new [Expr] representing the bitwise NOT operation.
+     */
+    @JvmStatic fun bitNot(bits: Expr): Expr = FunctionExpr("bit_not", bits)
 
-    /** @return A new [Expr] representing the bitRightShift operation. */
+    /**
+     * Creates an expression that applies a bitwise NOT operation to a field.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @return A new [Expr] representing the bitwise NOT operation.
+     */
+    @JvmStatic fun bitNot(bitsFieldName: String): Expr = FunctionExpr("bit_not", bitsFieldName)
+
+    /**
+     * Creates an expression that applies a bitwise left shift operation between two expressions.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param numberExpr The number of bits to shift.
+     * @return A new [Expr] representing the bitwise left shift operation.
+     */
     @JvmStatic
-    fun bitRightShift(fieldName: String, number: Int): Expr =
-      FunctionExpr("bit_right_shift", fieldName, number)
+    fun bitLeftShift(bits: Expr, numberExpr: Expr): Expr =
+      FunctionExpr("bit_left_shift", bits, numberExpr)
+
+    /**
+     * Creates an expression that applies a bitwise left shift operation between an expression and a
+     * constant.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param number The number of bits to shift.
+     * @return A new [Expr] representing the bitwise left shift operation.
+     */
+    @JvmStatic
+    fun bitLeftShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_left_shift", bits, number)
+
+    /**
+     * Creates an expression that applies a bitwise left shift operation between a field and an
+     * expression.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param numberExpr The number of bits to shift.
+     * @return A new [Expr] representing the bitwise left shift operation.
+     */
+    @JvmStatic
+    fun bitLeftShift(bitsFieldName: String, numberExpr: Expr): Expr =
+      FunctionExpr("bit_left_shift", bitsFieldName, numberExpr)
+
+    /**
+     * Creates an expression that applies a bitwise left shift operation between a field and a
+     * constant.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param number The number of bits to shift.
+     * @return A new [Expr] representing the bitwise left shift operation.
+     */
+    @JvmStatic
+    fun bitLeftShift(bitsFieldName: String, number: Int): Expr =
+      FunctionExpr("bit_left_shift", bitsFieldName, number)
+
+    /**
+     * Creates an expression that applies a bitwise right shift operation between two expressions.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param numberExpr The number of bits to shift.
+     * @return A new [Expr] representing the bitwise right shift operation.
+     */
+    @JvmStatic
+    fun bitRightShift(bits: Expr, numberExpr: Expr): Expr =
+      FunctionExpr("bit_right_shift", bits, numberExpr)
+
+    /**
+     * Creates an expression that applies a bitwise right shift operation between an expression and
+     * a constant.
+     *
+     * @param bits An expression that returns bits when evaluated.
+     * @param number The number of bits to shift.
+     * @return A new [Expr] representing the bitwise right shift operation.
+     */
+    @JvmStatic
+    fun bitRightShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_right_shift", bits, number)
+
+    /**
+     * Creates an expression that applies a bitwise right shift operation between a field and an
+     * expression.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param numberExpr The number of bits to shift.
+     * @return A new [Expr] representing the bitwise right shift operation.
+     */
+    @JvmStatic
+    fun bitRightShift(bitsFieldName: String, numberExpr: Expr): Expr =
+      FunctionExpr("bit_right_shift", bitsFieldName, numberExpr)
+
+    /**
+     * Creates an expression that applies a bitwise right shift operation between a field and a
+     * constant.
+     *
+     * @param bitsFieldName Name of field that contains bits data.
+     * @param number The number of bits to shift.
+     * @return A new [Expr] representing the bitwise right shift operation.
+     */
+    @JvmStatic
+    fun bitRightShift(bitsFieldName: String, number: Int): Expr =
+      FunctionExpr("bit_right_shift", bitsFieldName, number)
 
     /**
      * Creates an expression that adds this expression to another expression.
@@ -1124,11 +1292,22 @@ abstract class Expr internal constructor() {
     fun arrayConcat(firstArrayField: String, secondArray: Any, vararg otherArrays: Any): Expr =
       FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
 
-    /** @return A new [Expr] representing the arrayReverse operation. */
+    /**
+     * Reverses the order of elements in the [array].
+     *
+     * @param array The array expression to reverse.
+     * @return A new [Expr] representing the arrayReverse operation.
+     */
     @JvmStatic fun arrayReverse(array: Expr): Expr = FunctionExpr("array_reverse", array)
 
-    /** @return A new [Expr] representing the arrayReverse operation. */
-    @JvmStatic fun arrayReverse(fieldName: String): Expr = FunctionExpr("array_reverse", fieldName)
+    /**
+     * Reverses the order of elements in the array field.
+     *
+     * @param arrayFieldName The name of field that contains the array to reverse.
+     * @return A new [Expr] representing the arrayReverse operation.
+     */
+    @JvmStatic
+    fun arrayReverse(arrayFieldName: String): Expr = FunctionExpr("array_reverse", arrayFieldName)
 
     /**
      * Creates an expression that checks if the array contains a specific [element].
@@ -1272,7 +1451,7 @@ abstract class Expr internal constructor() {
      * Creates an expression that calculates the length of an [array] expression.
      *
      * @param array The array expression to calculate the length of.
-     * @return A new [Expr] representing the the length of the array.
+     * @return A new [Expr] representing the length of the array.
      */
     @JvmStatic fun arrayLength(array: Expr): Expr = FunctionExpr("array_length", array)
 
@@ -1280,10 +1459,61 @@ abstract class Expr internal constructor() {
      * Creates an expression that calculates the length of an array field.
      *
      * @param arrayFieldName The name of the field containing an array to calculate the length of.
-     * @return A new [Expr] representing the the length of the array.
+     * @return A new [Expr] representing the length of the array.
      */
     @JvmStatic
     fun arrayLength(arrayFieldName: String): Expr = FunctionExpr("array_length", arrayFieldName)
+
+    /**
+     * Creates an expression that indexes into an array from the beginning or end and return the
+     * element. If the offset exceeds the array length, an error is returned. A negative offset,
+     * starts from the end.
+     *
+     * @param array An [Expr] evaluating to an array.
+     * @param offset An Expr evaluating to the index of the element to return.
+     * @return A new [Expr] representing the arrayOffset operation.
+     */
+    @JvmStatic
+    fun arrayOffset(array: Expr, offset: Expr): Expr = FunctionExpr("array_offset", array, offset)
+
+    /**
+     * Creates an expression that indexes into an array from the beginning or end and return the
+     * element. If the offset exceeds the array length, an error is returned. A negative offset,
+     * starts from the end.
+     *
+     * @param array An [Expr] evaluating to an array.
+     * @param offset The index of the element to return.
+     * @return A new [Expr] representing the arrayOffset operation.
+     */
+    @JvmStatic
+    fun arrayOffset(array: Expr, offset: Int): Expr =
+      FunctionExpr("array_offset", array, constant(offset))
+
+    /**
+     * Creates an expression that indexes into an array from the beginning or end and return the
+     * element. If the offset exceeds the array length, an error is returned. A negative offset,
+     * starts from the end.
+     *
+     * @param arrayFieldName The name of an array field.
+     * @param offset An Expr evaluating to the index of the element to return.
+     * @return A new [Expr] representing the arrayOffset operation.
+     */
+    @JvmStatic
+    fun arrayOffset(arrayFieldName: String, offset: Expr): Expr =
+      FunctionExpr("array_offset", arrayFieldName, offset)
+
+    /**
+     * Creates an expression that indexes into an array from the beginning or end and return the
+     * element. If the offset exceeds the array length, an error is returned. A negative offset,
+     * starts from the end.
+     *
+     * @param arrayFieldName The name of an array field.
+     * @param offset The index of the element to return.
+     * @return A new [Expr] representing the arrayOffset operation.
+     */
+    @JvmStatic
+    fun arrayOffset(arrayFieldName: String, offset: Int): Expr =
+      FunctionExpr("array_offset", arrayFieldName, constant(offset))
 
     /** @return A new [Expr] representing the cond operation. */
     @JvmStatic
@@ -1300,48 +1530,91 @@ abstract class Expr internal constructor() {
   }
 
   /**
+   * Creates an expression that applies a bitwise AND operation with other expression.
+   *
+   * @param bitsOther An expression that returns bits when evaluated.
+   * @return A new [Expr] representing the bitwise AND operation.
    */
-  fun bitAnd(right: Expr) = bitAnd(this, right)
+  fun bitAnd(bitsOther: Expr): Expr = Companion.bitAnd(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise AND operation with a constant.
+   *
+   * @param bitsOther A constant byte array.
+   * @return A new [Expr] representing the bitwise AND operation.
    */
-  fun bitAnd(right: Any) = bitAnd(this, right)
+  fun bitAnd(bitsOther: ByteArray): Expr = Companion.bitAnd(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise OR operation with other expression.
+   *
+   * @param bitsOther An expression that returns bits when evaluated.
+   * @return A new [Expr] representing the bitwise OR operation.
    */
-  fun bitOr(right: Expr) = bitOr(this, right)
+  fun bitOr(bitsOther: Expr): Expr = Companion.bitOr(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise OR operation with a constant.
+   *
+   * @param bitsOther A constant byte array.
+   * @return A new [Expr] representing the bitwise OR operation.
    */
-  fun bitOr(right: Any) = bitOr(this, right)
+  fun bitOr(bitsOther: ByteArray): Expr = Companion.bitOr(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise XOR operation with an expression.
+   *
+   * @param bitsOther An expression that returns bits when evaluated.
+   * @return A new [Expr] representing the bitwise XOR operation.
    */
-  fun bitXor(right: Expr) = bitXor(this, right)
+  fun bitXor(bitsOther: Expr): Expr = Companion.bitXor(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise XOR operation with a constant.
+   *
+   * @param bitsOther A constant byte array.
+   * @return A new [Expr] representing the bitwise XOR operation.
    */
-  fun bitXor(right: Any) = bitXor(this, right)
+  fun bitXor(bitsOther: ByteArray): Expr = Companion.bitXor(this, bitsOther)
 
   /**
+   * Creates an expression that applies a bitwise NOT operation to this expression.
+   *
+   * @return A new [Expr] representing the bitwise NOT operation.
    */
-  fun bitNot() = bitNot(this)
+  fun bitNot(): Expr = Companion.bitNot(this)
 
   /**
+   * Creates an expression that applies a bitwise left shift operation with an expression.
+   *
+   * @param numberExpr The number of bits to shift.
+   * @return A new [Expr] representing the bitwise left shift operation.
    */
-  fun bitLeftShift(numberExpr: Expr) = bitLeftShift(this, numberExpr)
+  fun bitLeftShift(numberExpr: Expr): Expr = Companion.bitLeftShift(this, numberExpr)
 
   /**
+   * Creates an expression that applies a bitwise left shift operation with a constant.
+   *
+   * @param number The number of bits to shift.
+   * @return A new [Expr] representing the bitwise left shift operation.
    */
-  fun bitLeftShift(number: Int) = bitLeftShift(this, number)
+  fun bitLeftShift(number: Int): Expr = Companion.bitLeftShift(this, number)
 
   /**
+   * Creates an expression that applies a bitwise right shift operation with an expression.
+   *
+   * @param numberExpr The number of bits to shift.
+   * @return A new [Expr] representing the bitwise right shift operation.
    */
-  fun bitRightShift(numberExpr: Expr) = bitRightShift(this, numberExpr)
+  fun bitRightShift(numberExpr: Expr): Expr = Companion.bitRightShift(this, numberExpr)
 
   /**
+   * Creates an expression that applies a bitwise right shift operation with a constant.
+   *
+   * @param number The number of bits to shift.
+   * @return A new [Expr] representing the bitwise right shift operation.
    */
-  fun bitRightShift(number: Int) = bitRightShift(this, number)
+  fun bitRightShift(number: Int): Expr = Companion.bitRightShift(this, number)
 
   /**
    * Assigns an alias to this expression.
@@ -1667,6 +1940,9 @@ abstract class Expr internal constructor() {
     Companion.arrayConcat(this, secondArray, *otherArrays)
 
   /**
+   * Reverses the order of elements in the array.
+   *
+   * @return A new [Expr] representing the arrayReverse operation.
    */
   fun arrayReverse() = Companion.arrayReverse(this)
 
@@ -1723,9 +1999,29 @@ abstract class Expr internal constructor() {
   /**
    * Creates an expression that calculates the length of an array expression.
    *
-   * @return A new [Expr] representing the the length of the array.
+   * @return A new [Expr] representing the length of the array.
    */
   fun arrayLength() = Companion.arrayLength(this)
+
+  /**
+   * Creates an expression that indexes into an array from the beginning or end and return the
+   * element. If the offset exceeds the array length, an error is returned. A negative offset,
+   * starts from the end.
+   *
+   * @param offset An Expr evaluating to the index of the element to return.
+   * @return A new [Expr] representing the arrayOffset operation.
+   */
+  fun arrayOffset(offset: Expr) = Companion.arrayOffset(this, offset)
+
+  /**
+   * Creates an expression that indexes into an array from the beginning or end and return the
+   * element. If the offset exceeds the array length, an error is returned. A negative offset,
+   * starts from the end.
+   *
+   * @param offset An Expr evaluating to the index of the element to return.
+   * @return A new [Expr] representing the arrayOffset operation.
+   */
+  fun arrayOffset(offset: Int) = Companion.arrayOffset(this, offset)
 
   /**
    */
@@ -1744,12 +2040,18 @@ abstract class Expr internal constructor() {
   fun max() = AggregateFunction.max(this)
 
   /**
+   * Create an [Ordering] that sorts documents in ascending order based on value of this expression
+   *
+   * @return A new [Ordering] object with ascending sort by this expression.
    */
-  fun ascending() = Ordering.ascending(this)
+  fun ascending(): Ordering = Ordering.ascending(this)
 
   /**
+   * Create an [Ordering] that sorts documents in descending order based on value of this expression
+   *
+   * @return A new [Ordering] object with descending sort by this expression.
    */
-  fun descending() = Ordering.descending(this)
+  fun descending(): Ordering = Ordering.descending(this)
 
   /**
    */
