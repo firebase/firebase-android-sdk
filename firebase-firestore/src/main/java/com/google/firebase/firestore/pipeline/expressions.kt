@@ -694,49 +694,129 @@ abstract class Expr internal constructor() {
     /** @return A new [Expr] representing the mod operation. */
     @JvmStatic fun mod(fieldName: String, other: Any): Expr = FunctionExpr("mod", fieldName, other)
 
-    /** @return A new [Expr] representing the eqAny operation. */
+    /**
+     * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
+     * provided [values].
+     *
+     * @param expression The expression whose results to compare.
+     * @param values The values to check against.
+     * @return A new [BooleanExpr] representing the 'IN' comparison.
+     */
     @JvmStatic
-    fun eqAny(value: Expr, values: List<Any>) =
-      BooleanExpr("eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(expression: Expr, values: List<Any>): BooleanExpr =
+      eqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    /** @return A new [Expr] representing the eqAny operation. */
+    /**
+     * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
+     * elements of [arrayExpression].
+     *
+     * @param expression The expression whose results to compare.
+     * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+     * equality to the input.
+     * @return A new [BooleanExpr] representing the 'IN' comparison.
+     */
     @JvmStatic
-    fun eqAny(fieldName: String, values: List<Any>) =
-      BooleanExpr("eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(expression: Expr, arrayExpression: Expr): BooleanExpr =
+      BooleanExpr("eq_any", expression, arrayExpression)
 
-    /** @return A new [Expr] representing the notEqAny operation. */
+    /**
+     * Creates an expression that checks if a field's value is equal to any of the provided [values]
+     * .
+     *
+     * @param fieldName The field to compare.
+     * @param values The values to check against.
+     * @return A new [BooleanExpr] representing the 'IN' comparison.
+     */
     @JvmStatic
-    fun notEqAny(value: Expr, values: List<Any>) =
-      BooleanExpr("not_eq_any", value, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(fieldName: String, values: List<Any>): BooleanExpr =
+      eqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
 
-    /** @return A new [Expr] representing the notEqAny operation. */
+    /**
+     * Creates an expression that checks if a field's value is equal to any of the elements of
+     * [arrayExpression].
+     *
+     * @param fieldName The field to compare.
+     * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+     * equality to the input.
+     * @return A new [BooleanExpr] representing the 'IN' comparison.
+     */
     @JvmStatic
-    fun notEqAny(fieldName: String, values: List<Any>) =
-      BooleanExpr("not_eq_any", fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(fieldName: String, arrayExpression: Expr): BooleanExpr =
+      BooleanExpr("eq_any", fieldName, arrayExpression)
+
+    /**
+     * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
+     * provided [values].
+     *
+     * @param expression The expression whose results to compare.
+     * @param values The values to check against.
+     * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
+     */
+    @JvmStatic
+    fun notEqAny(expression: Expr, values: List<Any>): BooleanExpr =
+      notEqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
+
+    /**
+     * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
+     * elements of [arrayExpression].
+     *
+     * @param expression The expression whose results to compare.
+     * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+     * equality to the input.
+     * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
+     */
+    @JvmStatic
+    fun notEqAny(expression: Expr, arrayExpression: Expr): BooleanExpr =
+      BooleanExpr("not_eq_any", expression, arrayExpression)
+
+    /**
+     * Creates an expression that checks if a field's value is not equal to all of the provided
+     * [values].
+     *
+     * @param fieldName The field to compare.
+     * @param values The values to check against.
+     * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
+     */
+    @JvmStatic
+    fun notEqAny(fieldName: String, values: List<Any>): BooleanExpr =
+      notEqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+
+    /**
+     * Creates an expression that checks if a field's value is not equal to all of the elements of
+     * [arrayExpression].
+     *
+     * @param fieldName The field to compare.
+     * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+     * equality to the input.
+     * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
+     */
+    @JvmStatic
+    fun notEqAny(fieldName: String, arrayExpression: Expr): BooleanExpr =
+      BooleanExpr("not_eq_any", fieldName, arrayExpression)
 
     /** @return A new [Expr] representing the isNan operation. */
-    @JvmStatic fun isNan(expr: Expr) = BooleanExpr("is_nan", expr)
+    @JvmStatic fun isNan(expr: Expr): BooleanExpr = BooleanExpr("is_nan", expr)
 
     /** @return A new [Expr] representing the isNan operation. */
-    @JvmStatic fun isNan(fieldName: String) = BooleanExpr("is_nan", fieldName)
+    @JvmStatic fun isNan(fieldName: String): BooleanExpr = BooleanExpr("is_nan", fieldName)
 
     /** @return A new [Expr] representing the isNotNan operation. */
-    @JvmStatic fun isNotNan(expr: Expr) = BooleanExpr("is_not_nan", expr)
+    @JvmStatic fun isNotNan(expr: Expr): BooleanExpr = BooleanExpr("is_not_nan", expr)
 
     /** @return A new [Expr] representing the isNotNan operation. */
-    @JvmStatic fun isNotNan(fieldName: String) = BooleanExpr("is_not_nan", fieldName)
+    @JvmStatic fun isNotNan(fieldName: String): BooleanExpr = BooleanExpr("is_not_nan", fieldName)
 
     /** @return A new [Expr] representing the isNull operation. */
-    @JvmStatic fun isNull(expr: Expr) = BooleanExpr("is_null", expr)
+    @JvmStatic fun isNull(expr: Expr): BooleanExpr = BooleanExpr("is_null", expr)
 
     /** @return A new [Expr] representing the isNull operation. */
-    @JvmStatic fun isNull(fieldName: String) = BooleanExpr("is_null", fieldName)
+    @JvmStatic fun isNull(fieldName: String): BooleanExpr = BooleanExpr("is_null", fieldName)
 
     /** @return A new [Expr] representing the isNotNull operation. */
-    @JvmStatic fun isNotNull(expr: Expr) = BooleanExpr("is_not_null", expr)
+    @JvmStatic fun isNotNull(expr: Expr): BooleanExpr = BooleanExpr("is_not_null", expr)
 
     /** @return A new [Expr] representing the isNotNull operation. */
-    @JvmStatic fun isNotNull(fieldName: String) = BooleanExpr("is_not_null", fieldName)
+    @JvmStatic fun isNotNull(fieldName: String): BooleanExpr = BooleanExpr("is_not_null", fieldName)
 
     /** @return A new [Expr] representing the replaceFirst operation. */
     @JvmStatic
@@ -803,25 +883,31 @@ abstract class Expr internal constructor() {
     @JvmStatic fun byteLength(fieldName: String): Expr = FunctionExpr("byte_length", fieldName)
 
     /** @return A new [Expr] representing the like operation. */
-    @JvmStatic fun like(expr: Expr, pattern: Expr) = BooleanExpr("like", expr, pattern)
-
-    /** @return A new [Expr] representing the like operation. */
-    @JvmStatic fun like(expr: Expr, pattern: String) = BooleanExpr("like", expr, pattern)
-
-    /** @return A new [Expr] representing the like operation. */
-    @JvmStatic fun like(fieldName: String, pattern: Expr) = BooleanExpr("like", fieldName, pattern)
+    @JvmStatic fun like(expr: Expr, pattern: Expr): BooleanExpr = BooleanExpr("like", expr, pattern)
 
     /** @return A new [Expr] representing the like operation. */
     @JvmStatic
-    fun like(fieldName: String, pattern: String) = BooleanExpr("like", fieldName, pattern)
+    fun like(expr: Expr, pattern: String): BooleanExpr = BooleanExpr("like", expr, pattern)
+
+    /** @return A new [Expr] representing the like operation. */
+    @JvmStatic
+    fun like(fieldName: String, pattern: Expr): BooleanExpr =
+      BooleanExpr("like", fieldName, pattern)
+
+    /** @return A new [Expr] representing the like operation. */
+    @JvmStatic
+    fun like(fieldName: String, pattern: String): BooleanExpr =
+      BooleanExpr("like", fieldName, pattern)
 
     /** @return A new [Expr] representing the regexContains operation. */
     @JvmStatic
-    fun regexContains(expr: Expr, pattern: Expr) = BooleanExpr("regex_contains", expr, pattern)
+    fun regexContains(expr: Expr, pattern: Expr): BooleanExpr =
+      BooleanExpr("regex_contains", expr, pattern)
 
     /** @return A new [Expr] representing the regexContains operation. */
     @JvmStatic
-    fun regexContains(expr: Expr, pattern: String) = BooleanExpr("regex_contains", expr, pattern)
+    fun regexContains(expr: Expr, pattern: String): BooleanExpr =
+      BooleanExpr("regex_contains", expr, pattern)
 
     /** @return A new [Expr] representing the regexContains operation. */
     @JvmStatic
@@ -834,11 +920,14 @@ abstract class Expr internal constructor() {
       BooleanExpr("regex_contains", fieldName, pattern)
 
     /** @return A new [Expr] representing the regexMatch operation. */
-    @JvmStatic fun regexMatch(expr: Expr, pattern: Expr) = BooleanExpr("regex_match", expr, pattern)
+    @JvmStatic
+    fun regexMatch(expr: Expr, pattern: Expr): BooleanExpr =
+      BooleanExpr("regex_match", expr, pattern)
 
     /** @return A new [Expr] representing the regexMatch operation. */
     @JvmStatic
-    fun regexMatch(expr: Expr, pattern: String) = BooleanExpr("regex_match", expr, pattern)
+    fun regexMatch(expr: Expr, pattern: String): BooleanExpr =
+      BooleanExpr("regex_match", expr, pattern)
 
     /** @return A new [Expr] representing the regexMatch operation. */
     @JvmStatic
@@ -894,50 +983,111 @@ abstract class Expr internal constructor() {
 
     /** @return A new [Expr] representing the strContains operation. */
     @JvmStatic
-    fun strContains(expr: Expr, substring: Expr) = BooleanExpr("str_contains", expr, substring)
+    fun strContains(expr: Expr, substring: Expr): BooleanExpr =
+      BooleanExpr("str_contains", expr, substring)
 
     /** @return A new [Expr] representing the strContains operation. */
     @JvmStatic
-    fun strContains(expr: Expr, substring: String) = BooleanExpr("str_contains", expr, substring)
+    fun strContains(expr: Expr, substring: String): BooleanExpr =
+      BooleanExpr("str_contains", expr, substring)
 
-    /** @return A new [Expr] representing the strContains operation. */
+    /** @return A new [BooleanExpr] representing the strContains operation. */
     @JvmStatic
-    fun strContains(fieldName: String, substring: Expr) =
+    fun strContains(fieldName: String, substring: Expr): BooleanExpr =
       BooleanExpr("str_contains", fieldName, substring)
 
-    /** @return A new [Expr] representing the strContains operation. */
+    /** @return A new [BooleanExpr] representing the strContains operation. */
     @JvmStatic
-    fun strContains(fieldName: String, substring: String) =
+    fun strContains(fieldName: String, substring: String): BooleanExpr =
       BooleanExpr("str_contains", fieldName, substring)
 
-    /** @return A new [Expr] representing the startsWith operation. */
-    @JvmStatic fun startsWith(expr: Expr, prefix: Expr) = BooleanExpr("starts_with", expr, prefix)
-
-    /** @return A new [Expr] representing the startsWith operation. */
-    @JvmStatic fun startsWith(expr: Expr, prefix: String) = BooleanExpr("starts_with", expr, prefix)
-
-    /** @return A new [Expr] representing the startsWith operation. */
+    /**
+     * Creates an expression that checks if a string expression starts with a given [prefix].
+     *
+     * @param stringExpr The expression to check.
+     * @param prefix The prefix string expression to check for.
+     * @return A new [BooleanExpr] representing the 'starts with' comparison.
+     */
     @JvmStatic
-    fun startsWith(fieldName: String, prefix: Expr) = BooleanExpr("starts_with", fieldName, prefix)
+    fun startsWith(stringExpr: Expr, prefix: Expr): BooleanExpr =
+      BooleanExpr("starts_with", stringExpr, prefix)
 
-    /** @return A new [Expr] representing the startsWith operation. */
+    /**
+     * Creates an expression that checks if a string expression starts with a given [prefix].
+     *
+     * @param stringExpr The expression to check.
+     * @param prefix The prefix string to check for.
+     * @return A new [BooleanExpr] representing the 'starts with' comparison.
+     */
     @JvmStatic
-    fun startsWith(fieldName: String, prefix: String) =
+    fun startsWith(stringExpr: Expr, prefix: String): BooleanExpr =
+      BooleanExpr("starts_with", stringExpr, prefix)
+
+    /**
+     * Creates an expression that checks if a string expression starts with a given [prefix].
+     *
+     * @param fieldName The name of field that contains a string to check.
+     * @param prefix The prefix string expression to check for.
+     * @return A new [BooleanExpr] representing the 'starts with' comparison.
+     */
+    @JvmStatic
+    fun startsWith(fieldName: String, prefix: Expr): BooleanExpr =
       BooleanExpr("starts_with", fieldName, prefix)
 
-    /** @return A new [Expr] representing the endsWith operation. */
-    @JvmStatic fun endsWith(expr: Expr, suffix: Expr) = BooleanExpr("ends_with", expr, suffix)
-
-    /** @return A new [Expr] representing the endsWith operation. */
-    @JvmStatic fun endsWith(expr: Expr, suffix: String) = BooleanExpr("ends_with", expr, suffix)
-
-    /** @return A new [Expr] representing the endsWith operation. */
+    /**
+     * Creates an expression that checks if a string expression starts with a given [prefix].
+     *
+     * @param fieldName The name of field that contains a string to check.
+     * @param prefix The prefix string to check for.
+     * @return A new [BooleanExpr] representing the 'starts with' comparison.
+     */
     @JvmStatic
-    fun endsWith(fieldName: String, suffix: Expr) = BooleanExpr("ends_with", fieldName, suffix)
+    fun startsWith(fieldName: String, prefix: String): BooleanExpr =
+      BooleanExpr("starts_with", fieldName, prefix)
 
-    /** @return A new [Expr] representing the endsWith operation. */
+    /**
+     * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * @param stringExpr The expression to check.
+     * @param suffix The suffix string expression to check for.
+     * @return A new [BooleanExpr] representing the 'ends with' comparison.
+     */
     @JvmStatic
-    fun endsWith(fieldName: String, suffix: String) = BooleanExpr("ends_with", fieldName, suffix)
+    fun endsWith(stringExpr: Expr, suffix: Expr): BooleanExpr =
+      BooleanExpr("ends_with", stringExpr, suffix)
+
+    /**
+     * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * @param stringExpr The expression to check.
+     * @param suffix The suffix string to check for.
+     * @return A new [BooleanExpr] representing the 'ends with' comparison.
+     */
+    @JvmStatic
+    fun endsWith(stringExpr: Expr, suffix: String): BooleanExpr =
+      BooleanExpr("ends_with", stringExpr, suffix)
+
+    /**
+     * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * @param fieldName The name of field that contains a string to check.
+     * @param suffix The suffix string expression to check for.
+     * @return A new [BooleanExpr] representing the 'ends with' comparison.
+     */
+    @JvmStatic
+    fun endsWith(fieldName: String, suffix: Expr): BooleanExpr =
+      BooleanExpr("ends_with", fieldName, suffix)
+
+    /**
+     * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * @param fieldName The name of field that contains a string to check.
+     * @param suffix The suffix string to check for.
+     * @return A new [BooleanExpr] representing the 'ends with' comparison.
+     */
+    @JvmStatic
+    fun endsWith(fieldName: String, suffix: String): BooleanExpr =
+      BooleanExpr("ends_with", fieldName, suffix)
 
     /** @return A new [Expr] representing the toLower operation. */
     @JvmStatic fun toLower(expr: Expr): Expr = FunctionExpr("to_lower", expr)
@@ -1326,77 +1476,244 @@ abstract class Expr internal constructor() {
     fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_sub", fieldName, unit, amount)
 
-    /** @return A new [Expr] representing the eq operation. */
-    @JvmStatic fun eq(left: Expr, right: Expr) = BooleanExpr("eq", left, right)
+    /**
+     * Creates an expression that checks if two expressions are equal.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the equality comparison.
+     */
+    @JvmStatic fun eq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("eq", left, right)
 
-    /** @return A new [Expr] representing the eq operation. */
-    @JvmStatic fun eq(left: Expr, right: Any) = BooleanExpr("eq", left, right)
+    /**
+     * Creates an expression that checks if an expression is equal to a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the equality comparison.
+     */
+    @JvmStatic fun eq(left: Expr, right: Any): BooleanExpr = BooleanExpr("eq", left, right)
 
-    /** @return A new [Expr] representing the eq operation. */
-    @JvmStatic fun eq(fieldName: String, right: Expr) = BooleanExpr("eq", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is equal to an expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the equality comparison.
+     */
+    @JvmStatic
+    fun eq(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("eq", fieldName, expression)
 
-    /** @return A new [Expr] representing the eq operation. */
-    @JvmStatic fun eq(fieldName: String, right: Any) = BooleanExpr("eq", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is equal to another value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the equality comparison.
+     */
+    @JvmStatic
+    fun eq(fieldName: String, value: Any): BooleanExpr = BooleanExpr("eq", fieldName, value)
 
-    /** @return A new [Expr] representing the neq operation. */
-    @JvmStatic fun neq(left: Expr, right: Expr) = BooleanExpr("neq", left, right)
+    /**
+     * Creates an expression that checks if two expressions are not equal.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the inequality comparison.
+     */
+    @JvmStatic fun neq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("neq", left, right)
 
-    /** @return A new [Expr] representing the neq operation. */
-    @JvmStatic fun neq(left: Expr, right: Any) = BooleanExpr("neq", left, right)
+    /**
+     * Creates an expression that checks if an expression is not equal to a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the inequality comparison.
+     */
+    @JvmStatic fun neq(left: Expr, right: Any): BooleanExpr = BooleanExpr("neq", left, right)
 
-    /** @return A new [Expr] representing the neq operation. */
-    @JvmStatic fun neq(fieldName: String, right: Expr) = BooleanExpr("neq", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is not equal to an expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the inequality comparison.
+     */
+    @JvmStatic
+    fun neq(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("neq", fieldName, expression)
 
-    /** @return A new [Expr] representing the neq operation. */
-    @JvmStatic fun neq(fieldName: String, right: Any) = BooleanExpr("neq", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is not equal to another value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the inequality comparison.
+     */
+    @JvmStatic
+    fun neq(fieldName: String, value: Any): BooleanExpr = BooleanExpr("neq", fieldName, value)
 
-    /** @return A new [Expr] representing the gt operation. */
-    @JvmStatic fun gt(left: Expr, right: Expr) = BooleanExpr("gt", left, right)
+    /**
+     * Creates an expression that checks if the first expression is greater than the second
+     * expression.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the greater than comparison.
+     */
+    @JvmStatic fun gt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gt", left, right)
 
-    /** @return A new [Expr] representing the gt operation. */
-    @JvmStatic fun gt(left: Expr, right: Any) = BooleanExpr("gt", left, right)
+    /**
+     * Creates an expression that checks if an expression is greater than a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the greater than comparison.
+     */
+    @JvmStatic fun gt(left: Expr, right: Any): BooleanExpr = BooleanExpr("gt", left, right)
 
-    /** @return A new [Expr] representing the gt operation. */
-    @JvmStatic fun gt(fieldName: String, right: Expr) = BooleanExpr("gt", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is greater than an expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the greater than comparison.
+     */
+    @JvmStatic
+    fun gt(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("gt", fieldName, expression)
 
-    /** @return A new [Expr] representing the gt operation. */
-    @JvmStatic fun gt(fieldName: String, right: Any) = BooleanExpr("gt", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is greater than another value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the greater than comparison.
+     */
+    @JvmStatic
+    fun gt(fieldName: String, value: Any): BooleanExpr = BooleanExpr("gt", fieldName, value)
 
-    /** @return A new [Expr] representing the gte operation. */
-    @JvmStatic fun gte(left: Expr, right: Expr) = BooleanExpr("gte", left, right)
+    /**
+     * Creates an expression that checks if the first expression is greater than or equal to the
+     * second expression.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+     */
+    @JvmStatic fun gte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gte", left, right)
 
-    /** @return A new [Expr] representing the gte operation. */
-    @JvmStatic fun gte(left: Expr, right: Any) = BooleanExpr("gte", left, right)
+    /**
+     * Creates an expression that checks if an expression is greater than or equal to a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+     */
+    @JvmStatic fun gte(left: Expr, right: Any): BooleanExpr = BooleanExpr("gte", left, right)
 
-    /** @return A new [Expr] representing the gte operation. */
-    @JvmStatic fun gte(fieldName: String, right: Expr) = BooleanExpr("gte", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is greater than or equal to an
+     * expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+     */
+    @JvmStatic
+    fun gte(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("gte", fieldName, expression)
 
-    /** @return A new [Expr] representing the gte operation. */
-    @JvmStatic fun gte(fieldName: String, right: Any) = BooleanExpr("gte", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is greater than or equal to another
+     * value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+     */
+    @JvmStatic
+    fun gte(fieldName: String, value: Any): BooleanExpr = BooleanExpr("gte", fieldName, value)
 
-    /** @return A new [Expr] representing the lt operation. */
-    @JvmStatic fun lt(left: Expr, right: Expr) = BooleanExpr("lt", left, right)
+    /**
+     * Creates an expression that checks if the first expression is less than the second expression.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the less than comparison.
+     */
+    @JvmStatic fun lt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lt", left, right)
 
-    /** @return A new [Expr] representing the lt operation. */
-    @JvmStatic fun lt(left: Expr, right: Any) = BooleanExpr("lt", left, right)
+    /**
+     * Creates an expression that checks if an expression is less than a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the less than comparison.
+     */
+    @JvmStatic fun lt(left: Expr, right: Any): BooleanExpr = BooleanExpr("lt", left, right)
 
-    /** @return A new [Expr] representing the lt operation. */
-    @JvmStatic fun lt(fieldName: String, right: Expr) = BooleanExpr("lt", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is less than an expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the less than comparison.
+     */
+    @JvmStatic
+    fun lt(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("lt", fieldName, expression)
 
-    /** @return A new [Expr] representing the lt operation. */
-    @JvmStatic fun lt(fieldName: String, right: Any) = BooleanExpr("lt", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is less than another value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the less than comparison.
+     */
+    @JvmStatic
+    fun lt(fieldName: String, right: Any): BooleanExpr = BooleanExpr("lt", fieldName, right)
 
-    /** @return A new [Expr] representing the lte operation. */
-    @JvmStatic fun lte(left: Expr, right: Expr) = BooleanExpr("lte", left, right)
+    /**
+     * Creates an expression that checks if the first expression is less than or equal to the second
+     * expression.
+     *
+     * @param left The first expression to compare.
+     * @param right The second expression to compare to.
+     * @return A new [BooleanExpr] representing the less than or equal to comparison.
+     */
+    @JvmStatic fun lte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lte", left, right)
 
-    /** @return A new [Expr] representing the lte operation. */
-    @JvmStatic fun lte(left: Expr, right: Any) = BooleanExpr("lte", left, right)
+    /**
+     * Creates an expression that checks if an expression is less than or equal to a value.
+     *
+     * @param left The first expression to compare.
+     * @param right The value to compare to.
+     * @return A new [BooleanExpr] representing the less than or equal to comparison.
+     */
+    @JvmStatic fun lte(left: Expr, right: Any): BooleanExpr = BooleanExpr("lte", left, right)
 
-    /** @return A new [Expr] representing the lte operation. */
-    @JvmStatic fun lte(fieldName: String, right: Expr) = BooleanExpr("lte", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is less than or equal to an expression.
+     *
+     * @param fieldName The field name to compare.
+     * @param expression The expression to compare to.
+     * @return A new [BooleanExpr] representing the less than or equal to comparison.
+     */
+    @JvmStatic
+    fun lte(fieldName: String, expression: Expr): BooleanExpr =
+      BooleanExpr("lte", fieldName, expression)
 
-    /** @return A new [Expr] representing the lte operation. */
-    @JvmStatic fun lte(fieldName: String, right: Any) = BooleanExpr("lte", fieldName, right)
+    /**
+     * Creates an expression that checks if a field's value is less than or equal to another value.
+     *
+     * @param fieldName The field name to compare.
+     * @param value The value to compare to.
+     * @return A new [BooleanExpr] representing the less than or equal to comparison.
+     */
+    @JvmStatic
+    fun lte(fieldName: String, value: Any): BooleanExpr = BooleanExpr("lte", fieldName, value)
 
     /**
      * Creates an expression that concatenates an array with other arrays.
@@ -1471,7 +1788,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the arrayContains operation.
      */
     @JvmStatic
-    fun arrayContains(array: Expr, element: Expr) = BooleanExpr("array_contains", array, element)
+    fun arrayContains(array: Expr, element: Expr): BooleanExpr =
+      BooleanExpr("array_contains", array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -1492,7 +1810,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the arrayContains operation.
      */
     @JvmStatic
-    fun arrayContains(array: Expr, element: Any) = BooleanExpr("array_contains", array, element)
+    fun arrayContains(array: Expr, element: Any): BooleanExpr =
+      BooleanExpr("array_contains", array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -1696,7 +2015,31 @@ abstract class Expr internal constructor() {
       FunctionExpr("cond", condition, thenValue, elseValue)
 
     /** @return A new [Expr] representing the exists operation. */
-    @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
+    @JvmStatic fun exists(expr: Expr): BooleanExpr = BooleanExpr("exists", expr)
+
+    /**
+     * Creates an expression that returns the document ID from a path.
+     *
+     * @param documentPath An expression the evaluates to document path.
+     * @return A new [Expr] representing the documentId operation.
+     */
+    @JvmStatic fun documentId(documentPath: Expr): Expr = FunctionExpr("document_id", documentPath)
+
+    /**
+     * Creates an expression that returns the document ID from a path.
+     *
+     * @param documentPath The string representation of the document path.
+     * @return A new [Expr] representing the documentId operation.
+     */
+    @JvmStatic fun documentId(documentPath: String): Expr = documentId(constant(documentPath))
+
+    /**
+     * Creates an expression that returns the document ID from a [DocumentReference].
+     *
+     * @param docRef The [DocumentReference].
+     * @return A new [Expr] representing the documentId operation.
+     */
+    @JvmStatic fun documentId(docRef: DocumentReference): Expr = documentId(constant(docRef))
   }
 
   /**
@@ -1797,6 +2140,13 @@ abstract class Expr internal constructor() {
    * associates it with the provided alias.
    */
   open fun alias(alias: String) = ExprWithAlias(alias, this)
+
+  /**
+   * Creates an expression that returns the document ID from this path expression.
+   *
+   * @return A new [Expr] representing the documentId operation.
+   */
+  fun documentId(): Expr = Companion.documentId(this)
 
   /**
    * Creates an expression that adds this expression to another expression.
@@ -1957,25 +2307,41 @@ abstract class Expr internal constructor() {
 
   /**
    */
-  fun strContains(substring: Expr) = Companion.strContains(this, substring)
+  fun strContains(substring: Expr): BooleanExpr = Companion.strContains(this, substring)
 
   /**
    */
-  fun strContains(substring: String) = Companion.strContains(this, substring)
+  fun strContains(substring: String): BooleanExpr = Companion.strContains(this, substring)
 
   /**
+   * Creates an expression that checks if this string expression starts with a given [prefix].
+   *
+   * @param prefix The prefix string expression to check for.
+   * @return A new [Expr] representing the the 'starts with' comparison.
    */
-  fun startsWith(prefix: Expr) = Companion.startsWith(this, prefix)
+  fun startsWith(prefix: Expr): BooleanExpr = Companion.startsWith(this, prefix)
 
   /**
+   * Creates an expression that checks if this string expression starts with a given [prefix].
+   *
+   * @param prefix The prefix string expression to check for.
+   * @return A new [Expr] representing the 'starts with' comparison.
    */
-  fun startsWith(prefix: String) = Companion.startsWith(this, prefix)
+  fun startsWith(prefix: String): BooleanExpr = Companion.startsWith(this, prefix)
 
   /**
+   * Creates an expression that checks if this string expression ends with a given [suffix].
+   *
+   * @param suffix The suffix string expression to check for.
+   * @return A new [Expr] representing the 'ends with' comparison.
    */
-  fun endsWith(suffix: Expr) = Companion.endsWith(this, suffix)
+  fun endsWith(suffix: Expr): BooleanExpr = Companion.endsWith(this, suffix)
 
   /**
+   * Creates an expression that checks if this string expression ends with a given [suffix].
+   *
+   * @param suffix The suffix string to check for.
+   * @return A new [Expr] representing the the 'ends with' comparison.
    */
   fun endsWith(suffix: String) = Companion.endsWith(this, suffix)
 
@@ -2249,8 +2615,8 @@ abstract class Expr internal constructor() {
   fun count(): AggregateFunction = AggregateFunction.count(this)
 
   /**
-   * Creates an aggregation that calculates the sum of this numeric expression across multiple
-   * stage inputs.
+   * Creates an aggregation that calculates the sum of this numeric expression across multiple stage
+   * inputs.
    *
    * @return A new [AggregateFunction] representing the 'sum' aggregation.
    */
@@ -2295,56 +2661,106 @@ abstract class Expr internal constructor() {
   fun descending(): Ordering = Ordering.descending(this)
 
   /**
+   * Creates an expression that checks if this and [other] expression are equal.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the equality comparison.
    */
-  fun eq(other: Expr) = Companion.eq(this, other)
+  fun eq(other: Expr): BooleanExpr = Companion.eq(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is equal to a [value].
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the equality comparison.
+   */
+  fun eq(value: Any): BooleanExpr = Companion.eq(this, value)
+
+  /**
+   * Creates an expression that checks if this expressions is not equal to the [other] expression.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the inequality comparison.
+   */
+  fun neq(other: Expr): BooleanExpr = Companion.neq(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is not equal to a [value].
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the inequality comparison.
+   */
+  fun neq(value: Any): BooleanExpr = Companion.neq(this, value)
+
+  /**
+   * Creates an expression that checks if this expression is greater than the [other] expression.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the greater than comparison.
+   */
+  fun gt(other: Expr): BooleanExpr = Companion.gt(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is greater than a [value].
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the greater than comparison.
+   */
+  fun gt(value: Any): BooleanExpr = Companion.gt(this, value)
+
+  /**
+   * Creates an expression that checks if this expression is greater than or equal to the [other]
+   * expression.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+   */
+  fun gte(other: Expr): BooleanExpr = Companion.gte(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is greater than or equal to a [value].
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the greater than or equal to comparison.
+   */
+  fun gte(value: Any): BooleanExpr = Companion.gte(this, value)
+
+  /**
+   * Creates an expression that checks if this expression is less than the [other] expression.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the less than comparison.
+   */
+  fun lt(other: Expr): BooleanExpr = Companion.lt(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is less than a value.
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the less than comparison.
+   */
+  fun lt(value: Any): BooleanExpr = Companion.lt(this, value)
+
+  /**
+   * Creates an expression that checks if this expression is less than or equal to the [other]
+   * expression.
+   *
+   * @param other The expression to compare to.
+   * @return A new [BooleanExpr] representing the less than or equal to comparison.
+   */
+  fun lte(other: Expr): BooleanExpr = Companion.lte(this, other)
+
+  /**
+   * Creates an expression that checks if this expression is less than or equal to a [value].
+   *
+   * @param value The value to compare to.
+   * @return A new [BooleanExpr] representing the less than or equal to comparison.
+   */
+  fun lte(value: Any): BooleanExpr = Companion.lte(this, value)
 
   /**
    */
-  fun eq(other: Any) = Companion.eq(this, other)
-
-  /**
-   */
-  fun neq(other: Expr) = Companion.neq(this, other)
-
-  /**
-   */
-  fun neq(other: Any) = Companion.neq(this, other)
-
-  /**
-   */
-  fun gt(other: Expr) = Companion.gt(this, other)
-
-  /**
-   */
-  fun gt(other: Any) = Companion.gt(this, other)
-
-  /**
-   */
-  fun gte(other: Expr) = Companion.gte(this, other)
-
-  /**
-   */
-  fun gte(other: Any) = Companion.gte(this, other)
-
-  /**
-   */
-  fun lt(other: Expr) = Companion.lt(this, other)
-
-  /**
-   */
-  fun lt(other: Any) = Companion.lt(this, other)
-
-  /**
-   */
-  fun lte(other: Expr) = Companion.lte(this, other)
-
-  /**
-   */
-  fun lte(other: Any) = Companion.lte(this, other)
-
-  /**
-   */
-  fun exists() = Companion.exists(this)
+  fun exists(): BooleanExpr = Companion.exists(this)
 
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
@@ -2472,7 +2888,7 @@ open class BooleanExpr internal constructor(name: String, params: Array<out Expr
 
     /**
      */
-    @JvmStatic fun generic(name: String, vararg expr: Expr) = BooleanExpr(name, expr)
+    @JvmStatic fun generic(name: String, vararg expr: Expr): BooleanExpr = BooleanExpr(name, expr)
   }
 
   /**
