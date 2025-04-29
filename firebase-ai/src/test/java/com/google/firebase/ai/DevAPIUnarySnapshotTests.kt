@@ -57,7 +57,6 @@ internal class DevAPIUnarySnapshotTests {
       }
     }
 
-
   @Test
   fun `citation returns correctly`() =
     goldenDevAPIUnaryFile("unary-success-citations.json") {
