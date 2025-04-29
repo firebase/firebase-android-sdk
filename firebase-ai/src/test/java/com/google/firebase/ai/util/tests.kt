@@ -193,7 +193,7 @@ internal fun goldenDevAPIStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenStreamingFile("vertexai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
+) = goldenStreamingFile("googleai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
