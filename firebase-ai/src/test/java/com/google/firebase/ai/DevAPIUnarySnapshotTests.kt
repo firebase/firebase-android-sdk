@@ -24,6 +24,7 @@ import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
@@ -79,6 +80,17 @@ internal class DevAPIUnarySnapshotTests {
           it.startIndex shouldNotBe null
           it.endIndex shouldNotBe null
         }
+      }
+    }
+
+  @Test
+  fun `response blocked for safety`() =
+    goldenDevAPIUnaryFile("unary-failure-finish-reason-safety.txt") {
+      withTimeout(testTimeout) {
+        shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
+          {
+            it.response.candidates[0].finishReason shouldBe FinishReason.SAFETY
+          }
       }
     }
 
