@@ -644,17 +644,41 @@ abstract class Expr internal constructor() {
     @JvmStatic
     fun multiply(fieldName: String, other: Any): Expr = FunctionExpr("multiply", fieldName, other)
 
-    /** @return A new [Expr] representing the divide operation. */
+    /**
+     * Creates an expression that divides two expressions.
+     *
+     * @param left The expression to be divided.
+     * @param right The expression to divide by.
+     * @return A new [Expr] representing the division operation.
+     */
     @JvmStatic fun divide(left: Expr, right: Expr): Expr = FunctionExpr("divide", left, right)
 
-    /** @return A new [Expr] representing the divide operation. */
+    /**
+     * Creates an expression that divides an expression by an expression by a value.
+     *
+     * @param left The expression to be divided.
+     * @param right The value to divide by.
+     * @return A new [Expr] representing the division operation.
+     */
     @JvmStatic fun divide(left: Expr, right: Any): Expr = FunctionExpr("divide", left, right)
 
-    /** @return A new [Expr] representing the divide operation. */
+    /**
+     * Creates an expression that divides a field's value by an expression.
+     *
+     * @param fieldName The field name to be divided.
+     * @param other The expression to divide by.
+     * @return A new [Expr] representing the divide operation.
+     */
     @JvmStatic
     fun divide(fieldName: String, other: Expr): Expr = FunctionExpr("divide", fieldName, other)
 
-    /** @return A new [Expr] representing the divide operation. */
+    /**
+     * Creates an expression that divides a field's value by a value.
+     *
+     * @param fieldName The field name to be divided.
+     * @param other The value to divide by.
+     * @return A new [Expr] representing the divide operation.
+     */
     @JvmStatic
     fun divide(fieldName: String, other: Any): Expr = FunctionExpr("divide", fieldName, other)
 
@@ -744,16 +768,38 @@ abstract class Expr internal constructor() {
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
       FunctionExpr("replace_all", fieldName, find, replace)
 
-    /** @return A new [Expr] representing the charLength operation. */
-    @JvmStatic fun charLength(value: Expr): Expr = FunctionExpr("char_length", value)
+    /**
+     * Creates an expression that calculates the character length of a string expression in UTF8.
+     *
+     * @param expr The expression representing the string.
+     * @return A new [Expr] representing the charLength operation.
+     */
+    @JvmStatic fun charLength(expr: Expr): Expr = FunctionExpr("char_length", expr)
 
-    /** @return A new [Expr] representing the charLength operation. */
+    /**
+     * Creates an expression that calculates the character length of a string field in UTF8.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @return A new [Expr] representing the charLength operation.
+     */
     @JvmStatic fun charLength(fieldName: String): Expr = FunctionExpr("char_length", fieldName)
 
-    /** @return A new [Expr] representing the byteLength operation. */
+    /**
+     * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the
+     * length of a Blob.
+     *
+     * @param value The expression representing the string.
+     * @return A new [Expr] representing the length of the string in bytes.
+     */
     @JvmStatic fun byteLength(value: Expr): Expr = FunctionExpr("byte_length", value)
 
-    /** @return A new [Expr] representing the byteLength operation. */
+    /**
+     * Creates an expression that calculates the length of a string represented by a field in UTF-8
+     * bytes, or just the length of a Blob.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @return A new [Expr] representing the length of the string in bytes.
+     */
     @JvmStatic fun byteLength(fieldName: String): Expr = FunctionExpr("byte_length", fieldName)
 
     /** @return A new [Expr] representing the like operation. */
@@ -982,95 +1028,203 @@ abstract class Expr internal constructor() {
     @JvmStatic
     fun mapRemove(mapField: String, key: String): Expr = FunctionExpr("map_remove", mapField, key)
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between two vector expressions.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("cosine_distance", vector1, vector2)
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("cosine_distance", vector1, vector(vector2))
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an [Expr]) to compare against.
+     * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("cosine_distance", vector1, vector2)
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between a vector field and a vector expression.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: Expr): Expr =
-      FunctionExpr("cosine_distance", fieldName, vector)
+    fun cosineDistance(vectorFieldName: String, vector: Expr): Expr =
+      FunctionExpr("cosine_distance", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between a vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("cosine_distance", fieldName, vector(vector))
+    fun cosineDistance(vectorFieldName: String, vector: DoubleArray): Expr =
+      FunctionExpr("cosine_distance", vectorFieldName, vector(vector))
 
-    /** @return A new [Expr] representing the cosineDistance operation. */
+    /**
+     * Calculates the Cosine distance between a vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the cosine distance between the two vectors.
+     */
     @JvmStatic
-    fun cosineDistance(fieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("cosine_distance", fieldName, vector)
+    fun cosineDistance(vectorFieldName: String, vector: VectorValue): Expr =
+      FunctionExpr("cosine_distance", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between two vector expressions.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("dot_product", vector1, vector2)
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("dot_product", vector1, vector(vector2))
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an [Expr]) to compare against.
+     * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("dot_product", vector1, vector2)
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between a vector field and a vector expression.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
-    fun dotProduct(fieldName: String, vector: Expr): Expr =
-      FunctionExpr("dot_product", fieldName, vector)
+    fun dotProduct(vectorFieldName: String, vector: Expr): Expr =
+      FunctionExpr("dot_product", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
-    fun dotProduct(fieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("dot_product", fieldName, vector(vector))
+    fun dotProduct(vectorFieldName: String, vector: DoubleArray): Expr =
+      FunctionExpr("dot_product", vectorFieldName, vector(vector))
 
-    /** @return A new [Expr] representing the dotProduct operation. */
+    /**
+     * Calculates the dot product distance between a vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the dot product distance between the two vectors.
+     */
     @JvmStatic
-    fun dotProduct(fieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("dot_product", fieldName, vector)
+    fun dotProduct(vectorFieldName: String, vector: VectorValue): Expr =
+      FunctionExpr("dot_product", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the euclideanDistance operation. */
+    /**
+     * Calculates the Euclidean distance between two vector expressions.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: Expr): Expr =
       FunctionExpr("euclidean_distance", vector1, vector2)
 
-    /** @return A new [Expr] representing the euclideanDistance operation. */
+    /**
+     * Calculates the Euclidean distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an Expr) to compare against.
+     * @param vector2 The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: DoubleArray): Expr =
       FunctionExpr("euclidean_distance", vector1, vector(vector2))
 
-    /** @return A new [Expr] representing the not operation. */
+    /**
+     * Calculates the Euclidean distance between vector expression and a vector literal.
+     *
+     * @param vector1 The first vector (represented as an [Expr]) to compare against.
+     * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: VectorValue): Expr =
       FunctionExpr("euclidean_distance", vector1, vector2)
 
-    /** @return A new [Expr] representing the euclideanDistance operation. */
+    /**
+     * Calculates the Euclidean distance between a vector field and a vector expression.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an Expr) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
-    fun euclideanDistance(fieldName: String, vector: Expr): Expr =
-      FunctionExpr("euclidean_distance", fieldName, vector)
+    fun euclideanDistance(vectorFieldName: String, vector: Expr): Expr =
+      FunctionExpr("euclidean_distance", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the euclideanDistance operation. */
+    /**
+     * Calculates the Euclidean distance between a vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (as an array of doubles) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
-    fun euclideanDistance(fieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("euclidean_distance", fieldName, vector(vector))
+    fun euclideanDistance(vectorFieldName: String, vector: DoubleArray): Expr =
+      FunctionExpr("euclidean_distance", vectorFieldName, vector(vector))
 
-    /** @return A new [Expr] representing the euclideanDistance operation. */
+    /**
+     * Calculates the Euclidean distance between a vector field and a vector literal.
+     *
+     * @param vectorFieldName The name of the field containing the first vector.
+     * @param vector The other vector (represented as an [VectorValue]) to compare against.
+     * @return A new [Expr] representing the Euclidean distance between the two vectors.
+     */
     @JvmStatic
-    fun euclideanDistance(fieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("euclidean_distance", fieldName, vector)
+    fun euclideanDistance(vectorFieldName: String, vector: VectorValue): Expr =
+      FunctionExpr("euclidean_distance", vectorFieldName, vector)
 
     /** @return A new [Expr] representing the vectorLength operation. */
     @JvmStatic fun vectorLength(vector: Expr): Expr = FunctionExpr("vector_length", vector)
@@ -1515,15 +1669,31 @@ abstract class Expr internal constructor() {
     fun arrayOffset(arrayFieldName: String, offset: Int): Expr =
       FunctionExpr("array_offset", arrayFieldName, constant(offset))
 
-    /** @return A new [Expr] representing the cond operation. */
+    /**
+     * Creates a conditional expression that evaluates to a [thenExpr] expression if a condition is
+     * true or an [elseExpr] expression if the condition is false.
+     *
+     * @param condition The condition to evaluate.
+     * @param thenExpr The expression to evaluate if the condition is true.
+     * @param elseExpr The expression to evaluate if the condition is false.
+     * @return A new [Expr] representing the conditional operation.
+     */
     @JvmStatic
-    fun cond(condition: BooleanExpr, then: Expr, otherwise: Expr): Expr =
-      FunctionExpr("cond", condition, then, otherwise)
+    fun cond(condition: BooleanExpr, thenExpr: Expr, elseExpr: Expr): Expr =
+      FunctionExpr("cond", condition, thenExpr, elseExpr)
 
-    /** @return A new [Expr] representing the cond operation. */
+    /**
+     * Creates a conditional expression that evaluates to a [thenValue] if a condition is true or an
+     * [elseValue] if the condition is false.
+     *
+     * @param condition The condition to evaluate.
+     * @param thenValue Value if the condition is true.
+     * @param elseValue Value if the condition is false.
+     * @return A new [Expr] representing the conditional operation.
+     */
     @JvmStatic
-    fun cond(condition: BooleanExpr, then: Any, otherwise: Any): Expr =
-      FunctionExpr("cond", condition, then, otherwise)
+    fun cond(condition: BooleanExpr, thenValue: Any, elseValue: Any): Expr =
+      FunctionExpr("cond", condition, thenValue, elseValue)
 
     /** @return A new [Expr] representing the exists operation. */
     @JvmStatic fun exists(expr: Expr) = BooleanExpr("exists", expr)
@@ -1663,10 +1833,18 @@ abstract class Expr internal constructor() {
   fun multiply(other: Any) = Companion.multiply(this, other)
 
   /**
+   * Creates an expression that divides this expression by another expression.
+   *
+   * @param other The expression to divide by.
+   * @return A new [Expr] representing the division operation.
    */
   fun divide(other: Expr) = Companion.divide(this, other)
 
   /**
+   * Creates an expression that divides this expression by a value.
+   *
+   * @param other The value to divide by.
+   * @return A new [Expr] representing the division operation.
    */
   fun divide(other: Any) = Companion.divide(this, other)
 
@@ -1719,12 +1897,19 @@ abstract class Expr internal constructor() {
   fun replaceAll(find: String, replace: String) = Companion.replaceAll(this, find, replace)
 
   /**
+   * Creates an expression that calculates the character length of this string expression in UTF8.
+   *
+   * @return A new [Expr] representing the charLength operation.
    */
-  fun charLength() = Companion.charLength(this)
+  fun charLength(): Expr = Companion.charLength(this)
 
   /**
+   * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the length
+   * of a Blob.
+   *
+   * @return A new [Expr] representing the length of the string in bytes.
    */
-  fun byteLength() = Companion.byteLength(this)
+  fun byteLength(): Expr = Companion.byteLength(this)
 
   /**
    */
@@ -1840,34 +2025,66 @@ abstract class Expr internal constructor() {
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
 
   /**
+   * Calculates the Cosine distance between this and another vector expressions.
+   *
+   * @param vector The other vector (represented as an Expr) to compare against.
+   * @return A new [Expr] representing the cosine distance between the two vectors.
    */
   fun cosineDistance(vector: Expr) = Companion.cosineDistance(this, vector)
 
   /**
+   * Calculates the Cosine distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (as an array of doubles) to compare against.
+   * @return A new [Expr] representing the cosine distance between the two vectors.
    */
   fun cosineDistance(vector: DoubleArray) = Companion.cosineDistance(this, vector)
 
   /**
+   * Calculates the Cosine distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (represented as an [VectorValue]) to compare against.
+   * @return A new [Expr] representing the cosine distance between the two vectors.
    */
   fun cosineDistance(vector: VectorValue) = Companion.cosineDistance(this, vector)
 
   /**
+   * Calculates the dot product distance between this and another vector expression.
+   *
+   * @param vector The other vector (represented as an Expr) to compare against.
+   * @return A new [Expr] representing the dot product distance between the two vectors.
    */
   fun dotProduct(vector: Expr) = Companion.dotProduct(this, vector)
 
   /**
+   * Calculates the dot product distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (as an array of doubles) to compare against.
+   * @return A new [Expr] representing the dot product distance between the two vectors.
    */
   fun dotProduct(vector: DoubleArray) = Companion.dotProduct(this, vector)
 
   /**
+   * Calculates the dot product distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (represented as an [VectorValue]) to compare against.
+   * @return A new [Expr] representing the dot product distance between the two vectors.
    */
   fun dotProduct(vector: VectorValue) = Companion.dotProduct(this, vector)
 
   /**
+   * Calculates the Euclidean distance between this and another vector expression.
+   *
+   * @param vector The other vector (represented as an Expr) to compare against.
+   * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
   fun euclideanDistance(vector: Expr) = Companion.euclideanDistance(this, vector)
 
   /**
+   * Calculates the Euclidean distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (as an array of doubles) to compare against.
+   * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
   fun euclideanDistance(vector: DoubleArray) = Companion.euclideanDistance(this, vector)
 
@@ -2024,20 +2241,44 @@ abstract class Expr internal constructor() {
   fun arrayOffset(offset: Int) = Companion.arrayOffset(this, offset)
 
   /**
+   * Creates an aggregation that counts the number of stage inputs with valid evaluations of the
+   * this expression.
+   *
+   * @return A new [AggregateFunction] representing the 'count' aggregation.
    */
-  fun sum() = AggregateFunction.sum(this)
+  fun count(): AggregateFunction = AggregateFunction.count(this)
 
   /**
+   * Creates an aggregation that calculates the sum of this numeric expression across multiple
+   * stage inputs.
+   *
+   * @return A new [AggregateFunction] representing the 'sum' aggregation.
    */
-  fun avg() = AggregateFunction.avg(this)
+  fun sum(): AggregateFunction = AggregateFunction.sum(this)
 
   /**
+   * Creates an aggregation that calculates the average (mean) of this numeric expression across
+   * multiple stage inputs.
+   *
+   * @return A new [AggregateFunction] representing the 'avg' aggregation.
    */
-  fun min() = AggregateFunction.min(this)
+  fun avg(): AggregateFunction = AggregateFunction.avg(this)
 
   /**
+   * Creates an aggregation that finds the minimum value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the 'min' aggregation.
    */
-  fun max() = AggregateFunction.max(this)
+  fun min(): AggregateFunction = AggregateFunction.min(this)
+
+  /**
+   * Creates an aggregation that finds the maximum value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the 'max' aggregation.
+   */
+  fun max(): AggregateFunction = AggregateFunction.max(this)
 
   /**
    * Create an [Ordering] that sorts documents in ascending order based on value of this expression
