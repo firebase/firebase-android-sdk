@@ -127,7 +127,7 @@ package com.google.firebase.ai.java {
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveSessionFutures {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
-    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveContentResponse> receive();
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
@@ -293,9 +293,12 @@ package com.google.firebase.ai.type {
 
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
+    ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null);
     method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
+    method public String? getId();
     method public String getName();
     property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
+    property public final String? id;
     property public final String name;
   }
 
@@ -320,8 +323,11 @@ package com.google.firebase.ai.type {
 
   public final class FunctionResponsePart implements com.google.firebase.ai.type.Part {
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response);
+    ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null);
+    method public String? getId();
     method public String getName();
     method public kotlinx.serialization.json.JsonObject getResponse();
+    property public final String? id;
     property public final String name;
     property public final kotlinx.serialization.json.JsonObject response;
   }
@@ -576,30 +582,6 @@ package com.google.firebase.ai.type {
   public final class InvalidStateException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveContentResponse {
-    method public com.google.firebase.ai.type.Content? getData();
-    method public java.util.List<com.google.firebase.ai.type.FunctionCallPart>? getFunctionCalls();
-    method public int getStatus();
-    method public String? getText();
-    property public final com.google.firebase.ai.type.Content? data;
-    property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart>? functionCalls;
-    property public final int status;
-    property public final String? text;
-  }
-
-  @kotlin.jvm.JvmInline public static final value class LiveContentResponse.Status {
-    field public static final com.google.firebase.ai.type.LiveContentResponse.Status.Companion Companion;
-  }
-
-  public static final class LiveContentResponse.Status.Companion {
-    method public int getINTERRUPTED();
-    method public int getNORMAL();
-    method public int getTURN_COMPLETE();
-    property public final int INTERRUPTED;
-    property public final int NORMAL;
-    property public final int TURN_COMPLETE;
-  }
-
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerationConfig {
     field public static final com.google.firebase.ai.type.LiveGenerationConfig.Companion Companion;
   }
@@ -635,9 +617,40 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.LiveGenerationConfig liveGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveGenerationConfig.Builder,kotlin.Unit> init);
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete);
+    method public com.google.firebase.ai.type.Content? getContent();
+    method public boolean getGenerationComplete();
+    method public boolean getInterrupted();
+    method public boolean getTurnComplete();
+    property public final com.google.firebase.ai.type.Content? content;
+    property public final boolean generationComplete;
+    property public final boolean interrupted;
+    property public final boolean turnComplete;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public interface LiveServerMessage {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerSetupComplete implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveServerSetupComplete();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerToolCall implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveServerToolCall(java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls);
+    method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
+    property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerToolCallCancellation implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveServerToolCallCancellation(java.util.List<java.lang.String> functionIds);
+    method public java.util.List<java.lang.String> getFunctionIds();
+    property public final java.util.List<java.lang.String> functionIds;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveContentResponse> receive();
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
