@@ -77,38 +77,57 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  *
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
+ * @param id Unique id of the function call. If present, the returned [FunctionResponsePart] should
+ * have a matching `id` field.
  */
-// TODO(b/410040441): Support id property
-public class FunctionCallPart(
+public class FunctionCallPart
+@JvmOverloads
+constructor(
   public val name: String,
   public val args: Map<String, JsonElement>,
+  public val id: String? = null
 ) : Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
+    internal data class FunctionCall(
+      val name: String,
+      val args: Map<String, JsonElement?>? = null,
+      val id: String? = null
+    )
   }
 }
 
 /**
  * Represents function call output to be returned to the model when it requests a function call.
  *
- * @param name the name of the called function
- * @param response the response produced by the function as a [JSONObject]
+ * @param name The name of the called function.
+ * @param response The response produced by the function as a [JSONObject].
+ * @param id Matching `id` for a [FunctionCallPart], if one was provided.
  */
-// TODO(b/410040441): Support id property
-public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
+public class FunctionResponsePart
+@JvmOverloads
+constructor(
+  public val name: String,
+  public val response: JsonObject,
+  public val id: String? = null
+) : Part {
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable
+    internal data class FunctionResponse(
+      val name: String,
+      val response: JsonObject,
+      val id: String? = null
+    )
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(this.name, this.response)
+    return Internal.FunctionResponse(name, response, id)
   }
 }
 
@@ -181,9 +200,11 @@ internal fun Part.toInternal(): InternalPart {
         )
       )
     is FunctionCallPart ->
-      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args))
+      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id))
     is FunctionResponsePart ->
-      FunctionResponsePart.Internal(FunctionResponsePart.Internal.FunctionResponse(name, response))
+      FunctionResponsePart.Internal(
+        FunctionResponsePart.Internal.FunctionResponse(name, response, id)
+      )
     is FileDataPart ->
       FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
     else ->
@@ -214,13 +235,11 @@ internal fun InternalPart.toPublic(): Part {
     is FunctionCallPart.Internal ->
       FunctionCallPart(
         functionCall.name,
-        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+        functionCall.id
       )
     is FunctionResponsePart.Internal ->
-      FunctionResponsePart(
-        functionResponse.name,
-        functionResponse.response,
-      )
+      FunctionResponsePart(functionResponse.name, functionResponse.response, functionResponse.id)
     is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
