@@ -210,15 +210,16 @@ internal fun goldenUnaryFile(
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   backend: GenerativeBackend = GenerativeBackend.vertexAI(),
   block: CommonTest,
-) =
+) = doBlocking {
   commonTest(httpStatusCode, backend = backend) {
     val goldenFile = loadGoldenFile(name)
     val message = goldenFile.readText()
 
-    channel.send(message.toByteArray())
+    launch { channel.send(message.toByteArray()) }
 
     block()
   }
+}
 
 /**
  * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically
