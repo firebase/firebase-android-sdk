@@ -65,9 +65,9 @@ class PostReleasePlugin : Plugin<Project> {
   fun registerVersionBumpTask(project: Project) =
     project.tasks.register<VersionBumpTask>("versionBump") {
       // TODO(b/285892320): Remove condition when bug fixed
-      bumpVersion.set(project.firebaseLibrary.artifactId.map {
-        it !== "protolite-well-known-types"
-      })
+      bumpVersion.set(
+        project.firebaseLibrary.artifactId.map { it !== "protolite-well-known-types" }
+      )
     }
 
   /**
