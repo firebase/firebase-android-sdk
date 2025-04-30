@@ -316,10 +316,10 @@ public class JavaCompileTests {
   }
 
   private void validateLiveContentResponse(LiveContentResponse response) {
-    //int status = response.getStatus();
-    //Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
-    //Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
-    //Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
+    // int status = response.getStatus();
+    // Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
+    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
+    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
     // TODO b/412743328 LiveContentResponse.Status inaccessible for Java users
     Content data = response.getData();
     if (data != null) {
