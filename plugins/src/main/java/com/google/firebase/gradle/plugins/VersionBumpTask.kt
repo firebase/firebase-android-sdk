@@ -40,7 +40,8 @@ import org.gradle.kotlin.dsl.provideDelegate
  *   version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
  *   higher than [releasedVersion].
- * @property bumpVersion If set, then the default provided by [newVersion] will be bumped by one patch. Defaults to `true`.
+ * @property bumpVersion If set, then the default provided by [newVersion] will be bumped by one
+ *   patch. Defaults to `true`.
  * @see PostReleasePlugin
  */
 abstract class VersionBumpTask : DefaultTask() {
@@ -63,7 +64,8 @@ abstract class VersionBumpTask : DefaultTask() {
   @TaskAction
   fun build() {
     val latestVersion = releasedVersion.get()
-    val version = newVersion.orNull ?: if(bumpVersion.get()) latestVersion.bump() else latestVersion
+    val version =
+      newVersion.orNull ?: if (bumpVersion.get()) latestVersion.bump() else latestVersion
 
     versionFile.get().asFile.rewriteLines {
       when {
