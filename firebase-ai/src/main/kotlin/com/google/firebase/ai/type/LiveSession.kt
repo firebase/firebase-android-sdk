@@ -169,13 +169,6 @@ internal constructor(
         .catch { throw FirebaseAIException.from(it) }
 
       // TODO(b/410059569): Add back when fixed
-      //    return session.incoming.receiveAsFlow().map {
-      //      JSON.decodeFromString<InternalLiveServerMessage>(
-      //        it.readBytes().toString(Charsets.UTF_8)
-      //      ).toPublic()
-      //    }.onCompletion {
-      //      stopAudioConversation()
-      //    }.catch { throw FirebaseAIException.from(it) }
     }
   }
 
