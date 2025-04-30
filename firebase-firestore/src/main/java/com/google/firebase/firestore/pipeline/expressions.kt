@@ -2014,8 +2014,45 @@ abstract class Expr internal constructor() {
     fun cond(condition: BooleanExpr, thenValue: Any, elseValue: Any): Expr =
       FunctionExpr("cond", condition, thenValue, elseValue)
 
-    /** @return A new [Expr] representing the exists operation. */
-    @JvmStatic fun exists(expr: Expr): BooleanExpr = BooleanExpr("exists", expr)
+    /**
+     * Creates an expression that checks if a field exists.
+     *
+     * @param value An expression evaluates to the name of the field to check.
+     * @return A new [Expr] representing the exists check.
+     */
+    @JvmStatic fun exists(value: Expr): BooleanExpr = BooleanExpr("exists", value)
+
+    /**
+     * Creates an expression that checks if a field exists.
+     *
+     * @param fieldName The field name to check.
+     * @return A new [Expr] representing the exists check.
+     */
+    @JvmStatic fun exists(fieldName: String): BooleanExpr = BooleanExpr("exists", fieldName)
+
+    /**
+     * Creates an expression that returns the [catchExpr] argument if there is an
+     * error, else return the result of the [tryExpr] argument evaluation.
+     *
+     * @param tryExpr The try expression.
+     * @param catchExpr The catch expression that will be evaluated and
+     * returned if the [tryExpr] produces an error.
+     * @return A new [Expr] representing the ifError operation.
+     */
+    @JvmStatic
+    fun ifError(tryExpr: Expr, catchExpr: Expr): Expr = FunctionExpr("if_error", tryExpr, catchExpr)
+
+    /**
+     * Creates an expression that returns the [catchValue] argument if there is an
+     * error, else return the result of the [tryExpr] argument evaluation.
+     *
+     * @param tryExpr The try expression.
+     * @param catchValue The value that will be returned if the [tryExpr] produces an error.
+     * @return A new [Expr] representing the ifError operation.
+     */
+    @JvmStatic
+    fun ifError(tryExpr: Expr, catchValue: Any): Expr =
+      FunctionExpr("if_error", tryExpr, catchValue)
 
     /**
      * Creates an expression that returns the document ID from a path.
@@ -2207,12 +2244,42 @@ abstract class Expr internal constructor() {
   fun mod(other: Any) = Companion.mod(this, other)
 
   /**
+   * Creates an expression that checks if this expression, when evaluated, is equal to any of the
+   * provided [values].
+   *
+   * @param values The values to check against.
+   * @return A new [BooleanExpr] representing the 'IN' comparison.
    */
   fun eqAny(values: List<Any>) = Companion.eqAny(this, values)
 
   /**
+   * Creates an expression that checks if this expression, when evaluated, is equal to any of the
+   * elements of [arrayExpression].
+   *
+   * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+   * equality to the input.
+   * @return A new [BooleanExpr] representing the 'IN' comparison.
+   */
+  fun eqAny(arrayExpression: Expr) = Companion.eqAny(this, arrayExpression)
+
+  /**
+   * Creates an expression that checks if this expression, when evaluated, is not equal to all the
+   * provided [values].
+   *
+   * @param values The values to check against.
+   * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
    */
   fun notEqAny(values: List<Any>) = Companion.notEqAny(this, values)
+
+  /**
+   * Creates an expression that checks if this expression, when evaluated, is not equal to all the
+   * elements of [arrayExpression].
+   *
+   * @param arrayExpression An expression that evaluates to an array, whose elements to check for
+   * equality to the input.
+   * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
+   */
+  fun notEqAny(arrayExpression: Expr) = Companion.notEqAny(this, arrayExpression)
 
   /**
    */
@@ -2759,8 +2826,31 @@ abstract class Expr internal constructor() {
   fun lte(value: Any): BooleanExpr = Companion.lte(this, value)
 
   /**
+   * Creates an expression that checks if this expression evaluates to a name of the field that
+   * exists.
+   *
+   * @return A new [Expr] representing the exists check.
    */
   fun exists(): BooleanExpr = Companion.exists(this)
+
+  /**
+   * Creates an expression that returns the [catchExpr] argument if there is an
+   * error, else return the result of this expression.
+   *
+   * @param catchExpr The catch expression that will be evaluated and
+   * returned if the this expression produces an error.
+   * @return A new [Expr] representing the ifError operation.
+   */
+  fun ifError(catchExpr: Expr): Expr = Companion.ifError(this, catchExpr)
+
+  /**
+   * Creates an expression that returns the [catchValue] argument if there is an
+   * error, else return the result of this expression.
+   *
+   * @param catchValue The value that will be returned if this expression produces an error.
+   * @return A new [Expr] representing the ifError operation.
+   */
+  fun ifError(catchValue: Any): Expr = Companion.ifError(this, catchValue)
 
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
@@ -2838,6 +2928,7 @@ internal constructor(
   private val params: Array<out Expr>,
   private val options: InternalOptions = InternalOptions.EMPTY
 ) : Expr() {
+  internal constructor(name: String, param: Expr) : this(name, arrayOf(param))
   internal constructor(
     name: String,
     param: Expr,
@@ -2846,9 +2937,15 @@ internal constructor(
   internal constructor(
     name: String,
     param1: Expr,
+    param2: Expr
+  ) : this(name, arrayOf(param1, param2))
+  internal constructor(
+    name: String,
+    param1: Expr,
     param2: Expr,
     vararg params: Any
   ) : this(name, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
+  internal constructor(name: String, fieldName: String) : this(name, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
     fieldName: String,
@@ -2866,18 +2963,27 @@ internal constructor(
   }
 }
 
-/** An interface that represents a filter condition. */
+/** A class that represents a filter condition. */
 open class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   FunctionExpr(name, params, InternalOptions.EMPTY) {
   internal constructor(
     name: String,
-    params: List<Any>
-  ) : this(name, toArrayOfExprOrConstant(params))
+    param: Expr
+  ) : this(name, arrayOf(param))
   internal constructor(
     name: String,
     param: Expr,
     vararg params: Any
   ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  internal constructor(
+    name: String,
+    param1: Expr,
+    param2: Expr
+  ) : this(name, arrayOf(param1, param2))
+  internal constructor(
+    name: String,
+    fieldName: String
+  ) : this(name, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
     fieldName: String,
