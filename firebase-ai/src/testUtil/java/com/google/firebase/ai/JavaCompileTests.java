@@ -49,6 +49,7 @@ import com.google.firebase.ai.type.MediaData;
 import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.Part;
 import com.google.firebase.ai.type.PromptFeedback;
+import com.google.firebase.ai.type.PublicPreviewAPI;
 import com.google.firebase.ai.type.ResponseModality;
 import com.google.firebase.ai.type.SafetyRating;
 import com.google.firebase.ai.type.SpeechConfig;
@@ -60,6 +61,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+
+import kotlin.OptIn;
 import kotlinx.serialization.json.JsonElement;
 import kotlinx.serialization.json.JsonNull;
 import kotlinx.serialization.json.JsonObject;
@@ -71,6 +74,7 @@ import org.reactivestreams.Subscription;
 /**
  * Tests in this file exist to be compiled, not invoked
  */
+@OptIn(markerClass = PublicPreviewAPI.class)
 public class JavaCompileTests {
 
   public void initializeJava() throws Exception {
