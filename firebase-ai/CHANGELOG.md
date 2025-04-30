@@ -13,5 +13,11 @@
 * [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
   interrupted or the turn completed. (#6870)
 * [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
+* * [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
+  fields as properties of `LiveContentResponse`. (#6906)
+* [changed] **Breaking Change**: Removed the `LiveContentResponse` class, and instead have provided subclasses
+  of `LiveServerMessage` that match the responses from the model. (#6910)
+* [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6910)
 * [feature] Add support for specifying response modalities in `GenerationConfig`. (#6921)
 * [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6922)
+
