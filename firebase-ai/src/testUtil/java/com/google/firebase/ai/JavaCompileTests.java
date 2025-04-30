@@ -18,7 +18,6 @@ package java.com.google.firebase.vertexai;
 
 import android.graphics.Bitmap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.ai.FirebaseAI;
 import com.google.firebase.ai.GenerativeModel;
 import com.google.firebase.ai.LiveGenerativeModel;
@@ -56,6 +55,7 @@ import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.UsageMetadata;
 import com.google.firebase.ai.type.Voices;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +172,7 @@ public class JavaCompileTests {
     List<Candidate> candidates = response.getCandidates();
     if (candidates.size() == 1
         && candidates.get(0).getContent().getParts().stream()
-        .anyMatch(p -> p instanceof TextPart && !((TextPart) p).getText().isEmpty())) {
+            .anyMatch(p -> p instanceof TextPart && !((TextPart) p).getText().isEmpty())) {
       String text = response.getText();
       Assert.assertNotNull(text);
       Assert.assertFalse(text.isBlank());
@@ -316,10 +316,10 @@ public class JavaCompileTests {
   }
 
   private void validateLiveContentResponse(LiveContentResponse response) {
-    //int status = response.getStatus();
-    //Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
-    //Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
-    //Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
+    // int status = response.getStatus();
+    // Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
+    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
+    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
     // TODO b/412743328 LiveContentResponse.Status inaccessible for Java users
     Content data = response.getData();
     if (data != null) {
