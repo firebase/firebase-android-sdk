@@ -87,15 +87,15 @@ public class ValuesTest {
     BsonTimestamp bsonTimestamp2 = new BsonTimestamp(1, 3);
     BsonTimestamp bsonTimestamp3 = new BsonTimestamp(2, 2);
 
-    Int32Value int32Value1 = FieldValue.int32(1);
-    Int32Value int32Value2 = FieldValue.int32(2);
+    Int32Value int32Value1 = new Int32Value(1);
+    Int32Value int32Value2 = new Int32Value(2);
 
-    RegexValue regexValue1 = FieldValue.regex("^foo", "i");
-    RegexValue regexValue2 = FieldValue.regex("^foo", "m");
-    RegexValue regexValue3 = FieldValue.regex("^bar", "i");
+    RegexValue regexValue1 = new RegexValue("^foo", "i");
+    RegexValue regexValue2 = new RegexValue("^foo", "m");
+    RegexValue regexValue3 = new RegexValue("^bar", "i");
 
-    MinKey minKey = FieldValue.minKey();
-    MaxKey maxKey = FieldValue.maxKey();
+    MinKey minKey = MinKey.instance();
+    MaxKey maxKey = MaxKey.instance();
 
     new EqualsTester()
         .addEqualityGroup(wrap(true), wrap(true))
@@ -150,13 +150,13 @@ public class ValuesTest {
         .addEqualityGroup(wrap(new BsonTimestamp(1, 2)), wrap(bsonTimestamp1))
         .addEqualityGroup(wrap(new BsonTimestamp(1, 3)), wrap(bsonTimestamp2))
         .addEqualityGroup(wrap(new BsonTimestamp(2, 2)), wrap(bsonTimestamp3))
-        .addEqualityGroup(wrap(FieldValue.int32(1)), wrap(int32Value1))
-        .addEqualityGroup(wrap(FieldValue.int32(2)), wrap(int32Value2))
-        .addEqualityGroup(wrap(FieldValue.regex("^foo", "i")), wrap(regexValue1))
-        .addEqualityGroup(wrap(FieldValue.regex("^foo", "m")), wrap(regexValue2))
-        .addEqualityGroup(wrap(FieldValue.regex("^bar", "i")), wrap(regexValue3))
-        .addEqualityGroup(wrap(FieldValue.minKey()), wrap(minKey))
-        .addEqualityGroup(wrap(FieldValue.maxKey()), wrap(maxKey))
+        .addEqualityGroup(wrap(new Int32Value(1)), wrap(int32Value1))
+        .addEqualityGroup(wrap(new Int32Value(2)), wrap(int32Value2))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "i")), wrap(regexValue1))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "m")), wrap(regexValue2))
+        .addEqualityGroup(wrap(new RegexValue("^bar", "i")), wrap(regexValue3))
+        .addEqualityGroup(wrap(MinKey.instance()), wrap(minKey))
+        .addEqualityGroup(wrap(MaxKey.instance()), wrap(maxKey))
         .testEquals();
   }
 
@@ -170,7 +170,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap((Object) null))
 
         // MinKey is after null
-        .addEqualityGroup(wrap(FieldValue.minKey()), wrap(MinKey.instance()))
+        .addEqualityGroup(wrap(MinKey.instance()))
 
         // booleans
         .addEqualityGroup(wrap(false))
@@ -181,27 +181,20 @@ public class ValuesTest {
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(-Double.MAX_VALUE))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
-        .addEqualityGroup(
-            wrap(new Int32Value(-2147483648)),
-            wrap(FieldValue.int32(-2147483648)),
-            wrap(Integer.MIN_VALUE))
+        .addEqualityGroup(wrap(new Int32Value(-2147483648)), wrap(Integer.MIN_VALUE))
         .addEqualityGroup(wrap(-1.1))
         .addEqualityGroup(wrap(-1.0))
         .addEqualityGroup(wrap(-Double.MIN_NORMAL))
         .addEqualityGroup(wrap(-Double.MIN_VALUE))
         // Zeros all compare the same.
-        .addEqualityGroup(
-            wrap(-0.0), wrap(0.0), wrap(0L), wrap(new Int32Value(0)), wrap(FieldValue.int32(0)))
+        .addEqualityGroup(wrap(-0.0), wrap(0.0), wrap(0L), wrap(new Int32Value(0)))
         .addEqualityGroup(wrap(Double.MIN_VALUE))
         .addEqualityGroup(wrap(Double.MIN_NORMAL))
         .addEqualityGroup(wrap(0.1))
         // Doubles, Longs, Int32Values compareTo() the same.
         .addEqualityGroup(wrap(1.0), wrap(1L), wrap(new Int32Value(1)))
         .addEqualityGroup(wrap(1.1))
-        .addEqualityGroup(
-            wrap(new Int32Value(2147483647)),
-            wrap(FieldValue.int32(2147483647)),
-            wrap(Integer.MAX_VALUE))
+        .addEqualityGroup(wrap(new Int32Value(2147483647)), wrap(Integer.MAX_VALUE))
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.MAX_VALUE))
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
@@ -211,7 +204,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(date2))
 
         // bson timestamps
-        .addEqualityGroup(wrap(new BsonTimestamp(123, 4)), wrap(FieldValue.bsonTimestamp(123, 4)))
+        .addEqualityGroup(wrap(new BsonTimestamp(123, 4)))
         .addEqualityGroup(wrap(new BsonTimestamp(123, 5)))
         .addEqualityGroup(wrap(new BsonTimestamp(124, 0)))
 
@@ -241,8 +234,7 @@ public class ValuesTest {
         // bson binary data
         .addEqualityGroup(
             wrap(BsonBinaryData.fromBytes(1, new byte[] {})),
-            wrap(BsonBinaryData.fromByteString(1, ByteString.EMPTY)),
-            wrap(FieldValue.bsonBinaryData(1, new byte[] {})))
+            wrap(BsonBinaryData.fromByteString(1, ByteString.EMPTY)))
         .addEqualityGroup(wrap(BsonBinaryData.fromBytes(1, new byte[] {0})))
         .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2})))
         .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2, 3})))
@@ -257,9 +249,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
 
         // bson object id
-        .addEqualityGroup(
-            wrap(new BsonObjectId("507f191e810c19729de860ea")),
-            wrap(FieldValue.bsonObjectId("507f191e810c19729de860ea")))
+        .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860ea")))
         .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860eb")))
         // latin small letter e + combining acute accent + latin small letter b
         .addEqualityGroup(wrap(new BsonObjectId("e\u0301b")))
@@ -282,7 +272,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(new GeoPoint(90, 180)))
 
         // regex
-        .addEqualityGroup(wrap(new RegexValue("^foo", "i")), wrap(FieldValue.regex("^foo", "i")))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "i")))
         .addEqualityGroup(wrap(new RegexValue("^foo", "m")))
         .addEqualityGroup(wrap(new RegexValue("^zoo", "i")))
         // latin small letter e + combining acute accent + latin small letter b
@@ -311,7 +301,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("foo", "0")))
 
         // MaxKey is last
-        .addEqualityGroup(wrap(FieldValue.maxKey()), wrap(MaxKey.instance()))
+        .addEqualityGroup(wrap(MaxKey.instance()))
         .testCompare();
   }
 
@@ -323,7 +313,7 @@ public class ValuesTest {
 
         // lower bound of MinKey is MinKey
         .addEqualityGroup(
-            wrap(getLowerBound(TestUtil.wrap(FieldValue.minKey()))), wrap(FieldValue.minKey()))
+            wrap(getLowerBound(TestUtil.wrap(MinKey.instance()))), wrap(MinKey.instance()))
 
         // booleans
         .addEqualityGroup(wrap(false), wrap(getLowerBound(TestUtil.wrap(true))))
@@ -333,7 +323,7 @@ public class ValuesTest {
         .addEqualityGroup(
             wrap(getLowerBound(TestUtil.wrap(1.0))),
             wrap(Double.NaN),
-            wrap(getLowerBound(TestUtil.wrap(FieldValue.int32(1)))))
+            wrap(getLowerBound(TestUtil.wrap(new Int32Value(1)))))
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
 
@@ -380,9 +370,9 @@ public class ValuesTest {
 
         // regular expressions
         .addEqualityGroup(
-            wrap(getLowerBound(TestUtil.wrap(FieldValue.regex("^foo", "i")))),
-            wrap(FieldValue.regex("", "")))
-        .addEqualityGroup(wrap(FieldValue.regex("^foo", "i")))
+            wrap(getLowerBound(TestUtil.wrap(new RegexValue("^foo", "i")))),
+            wrap(new RegexValue("", "")))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "i")))
 
         // arrays
         .addEqualityGroup(
@@ -404,7 +394,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(map("foo", "bar")))), wrap(map()))
 
         // maxKey
-        .addEqualityGroup(wrap(FieldValue.maxKey()))
+        .addEqualityGroup(wrap(MaxKey.instance()))
         .testCompare();
   }
 
@@ -416,19 +406,17 @@ public class ValuesTest {
 
         // upper value of null is MinKey
         .addEqualityGroup(
-            wrap(getUpperBound(TestUtil.wrap((Object) null))),
-            wrap(FieldValue.minKey()),
-            wrap(MinKey.instance()))
+            wrap(getUpperBound(TestUtil.wrap((Object) null))), wrap(MinKey.instance()))
 
         // upper value of MinKey is boolean `false`
-        .addEqualityGroup(wrap(false), wrap(getUpperBound(TestUtil.wrap(FieldValue.minKey()))))
+        .addEqualityGroup(wrap(false), wrap(getUpperBound(TestUtil.wrap(MinKey.instance()))))
 
         // booleans
         .addEqualityGroup(wrap(true))
         .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(false))))
 
         // numbers
-        .addEqualityGroup(wrap(FieldValue.int32(2147483647))) // largest int32 value
+        .addEqualityGroup(wrap(new Int32Value(2147483647))) // largest int32 value
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
         .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(1.0))))
@@ -468,8 +456,8 @@ public class ValuesTest {
         .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(new GeoPoint(90, 180)))))
 
         // regular expressions
-        .addEqualityGroup(wrap(FieldValue.regex("^foo", "i")))
-        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(FieldValue.regex("", "")))))
+        .addEqualityGroup(wrap(new RegexValue("^foo", "i")))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(new RegexValue("", "")))))
 
         // arrays
         .addEqualityGroup(wrap(Collections.singletonList(false)))
@@ -489,9 +477,7 @@ public class ValuesTest {
 
         // upper value of objects is MaxKey
         .addEqualityGroup(
-            wrap(getUpperBound(TestUtil.wrap(map("a", "b")))),
-            wrap(FieldValue.maxKey()),
-            wrap(MaxKey.instance()))
+            wrap(getUpperBound(TestUtil.wrap(map("a", "b")))), wrap(MaxKey.instance()))
         .testCompare();
   }
 
@@ -513,21 +499,19 @@ public class ValuesTest {
         TestUtil.wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
         "{a:[b,{c:geo(30.0,60.0)}]}");
 
-    assertCanonicalId(
-        TestUtil.wrap(FieldValue.regex("a", "b")), "{__regex__:{options:b,pattern:a}}");
+    assertCanonicalId(TestUtil.wrap(new RegexValue("a", "b")), "{__regex__:{options:b,pattern:a}}");
 
-    assertCanonicalId(TestUtil.wrap(FieldValue.bsonObjectId("foo")), "{__oid__:foo}");
+    assertCanonicalId(TestUtil.wrap(new BsonObjectId("foo")), "{__oid__:foo}");
     assertCanonicalId(
-        TestUtil.wrap(FieldValue.bsonTimestamp(1, 2)),
-        "{__request_timestamp__:{increment:2,seconds:1}}");
-    assertCanonicalId((TestUtil.wrap(FieldValue.int32(1))), "{__int__:1}");
+        TestUtil.wrap(new BsonTimestamp(1, 2)), "{__request_timestamp__:{increment:2,seconds:1}}");
+    assertCanonicalId((TestUtil.wrap(new Int32Value(1))), "{__int__:1}");
     assertCanonicalId(
-        TestUtil.wrap(FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
+        TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
     assertCanonicalId(
-        TestUtil.wrap(FieldValue.bsonBinaryData(128, new byte[] {1, 2, 3})),
+        TestUtil.wrap(BsonBinaryData.fromBytes(128, new byte[] {1, 2, 3})),
         "{__binary__:80010203}");
-    assertCanonicalId(TestUtil.wrap(FieldValue.minKey()), "{__min__:null}");
-    assertCanonicalId(TestUtil.wrap(FieldValue.maxKey()), "{__max__:null}");
+    assertCanonicalId(TestUtil.wrap(MinKey.instance()), "{__min__:null}");
+    assertCanonicalId(TestUtil.wrap(MaxKey.instance()), "{__max__:null}");
   }
 
   @Test
@@ -542,14 +526,14 @@ public class ValuesTest {
 
   @Test
   public void DetectsBsonTypesCorrectly() {
-    Value minKeyValue = TestUtil.wrap(FieldValue.minKey());
-    Value maxKeyValue = TestUtil.wrap(FieldValue.maxKey());
-    Value int32Value = TestUtil.wrap(FieldValue.int32(1));
-    Value regexValue = TestUtil.wrap(FieldValue.regex("^foo", "i"));
-    Value bsonTimestampValue = TestUtil.wrap(FieldValue.bsonTimestamp(1, 2));
-    Value bsonObjectIdValue = TestUtil.wrap(FieldValue.bsonObjectId("foo"));
-    Value bsonBinaryDataValue1 = TestUtil.wrap(FieldValue.bsonBinaryData(1, new byte[] {}));
-    Value bsonBinaryDataValue2 = TestUtil.wrap(FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4}));
+    Value minKeyValue = TestUtil.wrap(MinKey.instance());
+    Value maxKeyValue = TestUtil.wrap(MaxKey.instance());
+    Value int32Value = TestUtil.wrap(new Int32Value(1));
+    Value regexValue = TestUtil.wrap(new RegexValue("^foo", "i"));
+    Value bsonTimestampValue = TestUtil.wrap(new BsonTimestamp(1, 2));
+    Value bsonObjectIdValue = TestUtil.wrap(new BsonObjectId("foo"));
+    Value bsonBinaryDataValue1 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {}));
+    Value bsonBinaryDataValue2 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
 
     assertTrue(Values.isMinKey(minKeyValue.getMapValue().getFieldsMap()));
     assertFalse(Values.isMinKey(maxKeyValue.getMapValue().getFieldsMap()));

@@ -34,8 +34,14 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Int32Value;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -843,25 +849,25 @@ public class QueryTest {
 
     // BSON types
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.bsonObjectId("foo"))),
+        baseQuery.filter(filter("a", "<=", new BsonObjectId("foo"))),
         "collection|f:a<={__oid__:foo}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}))),
+        baseQuery.filter(filter("a", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))),
         "collection|f:a<={__binary__:01010203}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.bsonTimestamp(1, 2))),
+        baseQuery.filter(filter("a", "<=", new BsonTimestamp(1, 2))),
         "collection|f:a<={__request_timestamp__:{increment:2,seconds:1}}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.regex("^foo", "i"))),
+        baseQuery.filter(filter("a", "<=", new RegexValue("^foo", "i"))),
         "collection|f:a<={__regex__:{options:i,pattern:^foo}}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.int32(1))),
+        baseQuery.filter(filter("a", "<=", new Int32Value(1))),
         "collection|f:a<={__int__:1}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.minKey())),
+        baseQuery.filter(filter("a", "<=", MinKey.instance())),
         "collection|f:a<={__min__:null}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", FieldValue.maxKey())),
+        baseQuery.filter(filter("a", "<=", MaxKey.instance())),
         "collection|f:a<={__max__:null}|ob:aasc__name__asc");
   }
 

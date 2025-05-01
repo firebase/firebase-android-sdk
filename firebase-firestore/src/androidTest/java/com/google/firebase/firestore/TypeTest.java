@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.FieldValue.maxKey;
-import static com.google.firebase.firestore.FieldValue.minKey;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.assertSDKQueryResultsConsistentWithBackend;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionOnNightly;
@@ -112,12 +110,12 @@ public class TypeTest {
 
   @Test
   public void testCanReadAndWriteMinKey() {
-    verifySuccessfulWriteReadCycle(map("minKey", minKey()), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("minKey", MinKey.instance()), testDocumentOnNightly());
   }
 
   @Test
   public void testCanReadAndWriteMaxKey() {
-    verifySuccessfulWriteReadCycle(map("maxKey", maxKey()), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("maxKey", MaxKey.instance()), testDocumentOnNightly());
   }
 
   @Test
@@ -162,13 +160,13 @@ public class TypeTest {
   public void testCanReadAndWriteBsonTypesInLists() {
     List<Object> data =
         Arrays.asList(
-            FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-            FieldValue.regex("^foo", "i"),
-            FieldValue.bsonTimestamp(1, 2),
-            FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-            FieldValue.int32(1),
-            FieldValue.minKey(),
-            FieldValue.maxKey());
+            new BsonObjectId("507f191e810c19729de860ea"),
+            new RegexValue("^foo", "i"),
+            new BsonTimestamp(1, 2),
+            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            new Int32Value(1),
+            MinKey.instance(),
+            MaxKey.instance());
 
     verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocumentOnNightly());
   }
@@ -177,13 +175,13 @@ public class TypeTest {
   public void testCanReadAndWriteBsonTypesInMaps() {
     Map<String, Object> data =
         map(
-            "bsonObjectId", FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-            "regex", FieldValue.regex("^foo", "i"),
-            "bsonTimestamp", FieldValue.bsonTimestamp(1, 2),
-            "bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-            "int32", FieldValue.int32(1),
-            "minKey", FieldValue.minKey(),
-            "maxKey", FieldValue.maxKey());
+            "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
+            "regex", new RegexValue("^foo", "i"),
+            "bsonTimestamp", new BsonTimestamp(1, 2),
+            "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            "int32", new Int32Value(1),
+            "minKey", MinKey.instance(),
+            "maxKey", MaxKey.instance());
 
     verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocumentOnNightly());
   }
@@ -192,7 +190,7 @@ public class TypeTest {
   public void invalidRegexGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.regex("foo", "a"))));
+      waitFor(testDocumentOnNightly().set(map("key", new RegexValue("foo", "a"))));
     } catch (Exception e) {
       error = e;
     }
@@ -209,7 +207,7 @@ public class TypeTest {
     Exception error = null;
     try {
       // bsonObjectId with length not equal to 24 gets rejected
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.bsonObjectId("foobar"))));
+      waitFor(testDocumentOnNightly().set(map("key", new BsonObjectId("foobar"))));
     } catch (Exception e) {
       error = e;
     }
@@ -223,7 +221,7 @@ public class TypeTest {
     try {
       waitFor(
           testDocumentOnNightly()
-              .set(map("key", FieldValue.bsonBinaryData(1234, new byte[] {1, 2, 3}))));
+              .set(map("key", BsonBinaryData.fromBytes(1234, new byte[] {1, 2, 3}))));
     } catch (Exception e) {
       error = e;
     }
@@ -239,7 +237,7 @@ public class TypeTest {
   public void invalidBsonTimestampDataGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.bsonTimestamp(-1, 1))));
+      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(-1, 1))));
     } catch (Exception e) {
       error = e;
     }
@@ -251,7 +249,7 @@ public class TypeTest {
                 "The field 'seconds' value (-1) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.bsonTimestamp(4294967296L, 1))));
+      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(4294967296L, 1))));
     } catch (Exception e) {
       error = e;
     }
@@ -263,7 +261,7 @@ public class TypeTest {
                 "The field 'seconds' value (4294967296) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.bsonTimestamp(1, -1))));
+      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(1, -1))));
     } catch (Exception e) {
       error = e;
     }
@@ -275,7 +273,7 @@ public class TypeTest {
                 "The field 'increment' value (-1) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", FieldValue.bsonTimestamp(1, 4294967296L))));
+      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(1, 4294967296L))));
     } catch (Exception e) {
       error = e;
     }
@@ -329,9 +327,9 @@ public class TypeTest {
             "bsonBinary",
             BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
             "minKey",
-            minKey(),
+            MinKey.instance(),
             "maxKey",
-            maxKey());
+            MaxKey.instance());
 
     waitFor(doc.set(data));
     DocumentSnapshot snapshot = waitFor(doc.get());
@@ -405,7 +403,7 @@ public class TypeTest {
             "null",
             map("value", null),
             "min",
-            map("value", FieldValue.minKey()),
+            map("value", MinKey.instance()),
             "boolean",
             map("value", true),
             "nan",
@@ -441,7 +439,7 @@ public class TypeTest {
             "map",
             map("value", map("key", true)),
             "max",
-            map("value", FieldValue.maxKey()));
+            map("value", MaxKey.instance()));
 
     writeTestDocsOnCollection(colRef, testDocs);
 

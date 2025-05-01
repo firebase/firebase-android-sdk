@@ -106,7 +106,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsBsonObjectId()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonObjectId("507f191e810c19729de860ea"));
+    Value value = dataReader.parseQueryValue(new BsonObjectId("507f191e810c19729de860ea"));
 
     // Encode an actual ObjectIdValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -131,7 +131,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsBsonBinaryData()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}));
+    Value value = dataReader.parseQueryValue(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
 
     // Encode an actual BSONBinaryDataValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -157,7 +157,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsBsonBinaryWithEmptyData()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonBinaryData(1, new byte[] {}));
+    Value value = dataReader.parseQueryValue(BsonBinaryData.fromBytes(1, new byte[] {}));
 
     // Encode an actual BSONBinaryDataValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -183,7 +183,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsBsonTimestamp()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonTimestamp(1, 2));
+    Value value = dataReader.parseQueryValue(new BsonTimestamp(1, 2));
 
     // Encode an actual BSONTimestampValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -207,7 +207,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsLargestBsonTimestamp()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonTimestamp(4294967295L, 4294967295L));
+    Value value = dataReader.parseQueryValue(new BsonTimestamp(4294967295L, 4294967295L));
 
     // Encode an actual BSONTimestampValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -232,7 +232,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsSmallestBsonTimestamp()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.bsonTimestamp(0, 0));
+    Value value = dataReader.parseQueryValue(new BsonTimestamp(0, 0));
 
     // Encode an actual BSONTimestampValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -255,7 +255,7 @@ public class FirestoreIndexValueWriterTest {
   @Test
   public void writeIndexValueSupportsRegex() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.regex("^foo", "i"));
+    Value value = dataReader.parseQueryValue(new RegexValue("^foo", "i"));
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
@@ -278,7 +278,7 @@ public class FirestoreIndexValueWriterTest {
   @Test
   public void writeIndexValueSupportsInt32() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.int32(1));
+    Value value = dataReader.parseQueryValue(new Int32Value(1));
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
@@ -300,7 +300,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsLargestInt32()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.int32(2147483647));
+    Value value = dataReader.parseQueryValue(new Int32Value(2147483647));
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
@@ -322,7 +322,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsSmallestInt32()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.int32(-2147483648));
+    Value value = dataReader.parseQueryValue(new Int32Value(-2147483648));
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
@@ -343,7 +343,7 @@ public class FirestoreIndexValueWriterTest {
   @Test
   public void writeIndexValueSupportsMinKey() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.minKey());
+    Value value = dataReader.parseQueryValue(MinKey.instance());
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
@@ -363,7 +363,7 @@ public class FirestoreIndexValueWriterTest {
   @Test
   public void writeIndexValueSupportsMaxKey() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(FieldValue.maxKey());
+    Value value = dataReader.parseQueryValue(MaxKey.instance());
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));

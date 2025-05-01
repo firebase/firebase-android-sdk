@@ -69,13 +69,13 @@ public class POJOTest {
       this.timestamp = new Timestamp(123, 123456000);
       this.blob = Blob.fromBytes(new byte[] {3, 1, 4, 1, 5});
       this.geoPoint = new GeoPoint(3.1415, 9.2653);
-      this.bsonObjectId = FieldValue.bsonObjectId("507f191e810c19729de860ea");
-      this.bsonBinaryData = FieldValue.bsonBinaryData(1, new byte[] {3, 1, 4, 1, 5});
-      this.bsonTimestamp = FieldValue.bsonTimestamp(1, 2);
-      this.regexValue = FieldValue.regex("^foo", "i");
-      this.int32Value = FieldValue.int32(1);
-      this.minKey = FieldValue.minKey();
-      this.maxKey = FieldValue.maxKey();
+      this.bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
+      this.bsonBinaryData = BsonBinaryData.fromBytes(1, new byte[] {3, 1, 4, 1, 5});
+      this.bsonTimestamp = new BsonTimestamp(1, 2);
+      this.regexValue = new RegexValue("^foo", "i");
+      this.int32Value = new Int32Value(1);
+      this.minKey = MinKey.instance();
+      this.maxKey = MaxKey.instance();
     }
 
     public double getNumber() {

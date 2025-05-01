@@ -39,9 +39,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.core.ArrayContainsAnyFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.InFilter;
@@ -331,7 +337,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesBsonObjectIds() {
-    Value model = wrap(FieldValue.bsonObjectId("foo"));
+    Value model = wrap(new BsonObjectId("foo"));
 
     Value proto =
         Value.newBuilder()
@@ -346,7 +352,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesBsonTimestamps() {
-    Value model = wrap(FieldValue.bsonTimestamp(12345, 67));
+    Value model = wrap(new BsonTimestamp(12345, 67));
 
     Value proto =
         Value.newBuilder()
@@ -372,7 +378,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesBsonBinaryData() {
-    Value model = wrap(FieldValue.bsonBinaryData(127, new byte[] {1, 2, 3}));
+    Value model = wrap(BsonBinaryData.fromBytes(127, new byte[] {1, 2, 3}));
 
     Value proto =
         Value.newBuilder()
@@ -391,7 +397,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesRegexValues() {
-    Value model = wrap(FieldValue.regex("^foo", "i"));
+    Value model = wrap(new RegexValue("^foo", "i"));
     Value proto =
         Value.newBuilder()
             .setMapValue(
@@ -416,7 +422,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesInt32Values() {
-    Value model = wrap(FieldValue.int32(12345));
+    Value model = wrap(new com.google.firebase.firestore.Int32Value(12345));
 
     Value proto =
         Value.newBuilder()
@@ -431,7 +437,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesMinKey() {
-    Value model = wrap(FieldValue.minKey());
+    Value model = wrap(MinKey.instance());
 
     Value proto =
         Value.newBuilder()
@@ -447,7 +453,7 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesMaxKey() {
-    Value model = wrap(FieldValue.maxKey());
+    Value model = wrap(MaxKey.instance());
 
     Value proto =
         Value.newBuilder()

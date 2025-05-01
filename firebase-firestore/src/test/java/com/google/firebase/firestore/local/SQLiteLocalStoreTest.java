@@ -36,8 +36,15 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Int32Value;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -377,11 +384,11 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(
-        setMutation("coll/doc1", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea"))));
+        setMutation("coll/doc1", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
     writeMutation(
-        setMutation("coll/doc2", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb"))));
+        setMutation("coll/doc2", map("key", new BsonObjectId("507f191e810c19729de860eb"))));
     writeMutation(
-        setMutation("coll/doc3", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ec"))));
+        setMutation("coll/doc3", map("key", new BsonObjectId("507f191e810c19729de860ec"))));
 
     backfillIndexes();
 
@@ -398,17 +405,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", "==", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "==", new BsonObjectId("507f191e810c19729de860ea")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1");
 
-    query =
-        query("coll")
-            .filter(filter("key", "!=", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "!=", new BsonObjectId("507f191e810c19729de860ea")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -419,9 +422,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", ">=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", ">=", new BsonObjectId("507f191e810c19729de860eb")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -432,9 +433,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", "<=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", "<=", new BsonObjectId("507f191e810c19729de860eb")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -445,17 +444,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2");
 
-    query =
-        query("coll")
-            .filter(filter("key", ">", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+    query = query("coll").filter(filter("key", ">", new BsonObjectId("507f191e810c19729de860ec")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query =
-        query("coll")
-            .filter(filter("key", "<", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "<", new BsonObjectId("507f191e810c19729de860ea")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -468,8 +463,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                     "key",
                     "in",
                     Arrays.asList(
-                        FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-                        FieldValue.bsonObjectId("507f191e810c19729de860eb"))));
+                        new BsonObjectId("507f191e810c19729de860ea"),
+                        new BsonObjectId("507f191e810c19729de860eb"))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -487,9 +482,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
 
-    writeMutation(setMutation("coll/doc1", map("key", FieldValue.bsonTimestamp(1000, 1000))));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.bsonTimestamp(1001, 1000))));
-    writeMutation(setMutation("coll/doc3", map("key", FieldValue.bsonTimestamp(1000, 1001))));
+    writeMutation(setMutation("coll/doc1", map("key", new BsonTimestamp(1000, 1000))));
+    writeMutation(setMutation("coll/doc2", map("key", new BsonTimestamp(1001, 1000))));
+    writeMutation(setMutation("coll/doc3", map("key", new BsonTimestamp(1000, 1001))));
 
     backfillIndexes();
 
@@ -506,13 +501,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc3", "coll/doc2");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.bsonTimestamp(1000, 1000)));
+    query = query("coll").filter(filter("key", "==", new BsonTimestamp(1000, 1000)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.bsonTimestamp(1000, 1000)));
+    query = query("coll").filter(filter("key", "!=", new BsonTimestamp(1000, 1000)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -523,7 +518,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc3", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.bsonTimestamp(1000, 1001)));
+    query = query("coll").filter(filter("key", ">=", new BsonTimestamp(1000, 1001)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -534,7 +529,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc3", "coll/doc2");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.bsonTimestamp(1000, 1001)));
+    query = query("coll").filter(filter("key", "<=", new BsonTimestamp(1000, 1001)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -545,13 +540,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.bsonTimestamp(1001, 1000)));
+    query = query("coll").filter(filter("key", ">", new BsonTimestamp(1001, 1000)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query = query("coll").filter(filter("key", "<", FieldValue.bsonTimestamp(1000, 1000)));
+    query = query("coll").filter(filter("key", "<", new BsonTimestamp(1000, 1000)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -563,9 +558,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                 filter(
                     "key",
                     "in",
-                    Arrays.asList(
-                        FieldValue.bsonTimestamp(1000, 1000),
-                        FieldValue.bsonTimestamp(1000, 1001))));
+                    Arrays.asList(new BsonTimestamp(1000, 1000), new BsonTimestamp(1000, 1001))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -584,13 +577,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(
-        setMutation("coll/doc1", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc1", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
     writeMutation(
-        setMutation("coll/doc2", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2}))));
+        setMutation("coll/doc2", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
     writeMutation(
-        setMutation("coll/doc3", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4}))));
+        setMutation("coll/doc3", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
     writeMutation(
-        setMutation("coll/doc4", map("key", FieldValue.bsonBinaryData(2, new byte[] {1, 2}))));
+        setMutation("coll/doc4", map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2}))));
 
     backfillIndexes();
 
@@ -611,7 +604,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", "==", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", "==", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
@@ -619,7 +612,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", "!=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", "!=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -634,7 +627,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", ">=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", ">=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -649,7 +642,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", "<=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -661,14 +654,14 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertQueryReturned("coll/doc2", "coll/doc1");
 
     query =
-        query("coll").filter(filter("key", ">", FieldValue.bsonBinaryData(2, new byte[] {1, 2})));
+        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(2, new byte[] {1, 2})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
     query =
-        query("coll").filter(filter("key", "<", FieldValue.bsonBinaryData(1, new byte[] {1, 2})));
+        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -681,8 +674,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                     "key",
                     "in",
                     Arrays.asList(
-                        FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-                        FieldValue.bsonBinaryData(1, new byte[] {1, 2}))));
+                        BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                        BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -700,9 +693,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
 
-    writeMutation(setMutation("coll/doc1", map("key", FieldValue.regex("^bar", "i"))));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.regex("^bar", "m"))));
-    writeMutation(setMutation("coll/doc3", map("key", FieldValue.regex("^foo", "i"))));
+    writeMutation(setMutation("coll/doc1", map("key", new RegexValue("^bar", "i"))));
+    writeMutation(setMutation("coll/doc2", map("key", new RegexValue("^bar", "m"))));
+    writeMutation(setMutation("coll/doc3", map("key", new RegexValue("^foo", "i"))));
 
     backfillIndexes();
 
@@ -719,13 +712,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.regex("^bar", "i")));
+    query = query("coll").filter(filter("key", "==", new RegexValue("^bar", "i")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.regex("^bar", "i")));
+    query = query("coll").filter(filter("key", "!=", new RegexValue("^bar", "i")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -736,13 +729,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.regex("^foo", "i")));
+    query = query("coll").filter(filter("key", ">", new RegexValue("^foo", "i")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query = query("coll").filter(filter("key", "<", FieldValue.regex("^bar", "i")));
+    query = query("coll").filter(filter("key", "<", new RegexValue("^bar", "i")));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -754,7 +747,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                 filter(
                     "key",
                     "in",
-                    Arrays.asList(FieldValue.regex("^bar", "i"), FieldValue.regex("^foo", "i"))));
+                    Arrays.asList(new RegexValue("^bar", "i"), new RegexValue("^foo", "i"))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -771,9 +764,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     FieldIndex index =
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
-    writeMutation(setMutation("coll/doc1", map("key", FieldValue.int32(-1))));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.int32(0))));
-    writeMutation(setMutation("coll/doc3", map("key", FieldValue.int32(1))));
+    writeMutation(setMutation("coll/doc1", map("key", new Int32Value(-1))));
+    writeMutation(setMutation("coll/doc2", map("key", new Int32Value(0))));
+    writeMutation(setMutation("coll/doc3", map("key", new Int32Value(1))));
 
     backfillIndexes();
 
@@ -790,13 +783,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.int32(-1)));
+    query = query("coll").filter(filter("key", "==", new Int32Value(-1)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.int32(-1)));
+    query = query("coll").filter(filter("key", "!=", new Int32Value(-1)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -807,7 +800,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.int32(0)));
+    query = query("coll").filter(filter("key", ">=", new Int32Value(0)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -818,7 +811,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.int32(0)));
+    query = query("coll").filter(filter("key", "<=", new Int32Value(0)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -829,13 +822,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.int32(1)));
+    query = query("coll").filter(filter("key", ">", new Int32Value(1)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query = query("coll").filter(filter("key", "<", FieldValue.int32(-1)));
+    query = query("coll").filter(filter("key", "<", new Int32Value(-1)));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -843,7 +836,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", "in", Arrays.asList(FieldValue.int32(-1), FieldValue.int32(0))));
+            .filter(filter("key", "in", Arrays.asList(new Int32Value(-1), new Int32Value(0))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -862,10 +855,10 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(setMutation("coll/doc1", map("key", null)));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.minKey())));
-    writeMutation(setMutation("coll/doc3", map("key", FieldValue.minKey())));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc3", map("key", MinKey.instance())));
     writeMutation(setMutation("coll/doc4", map("key", 1)));
-    writeMutation(setMutation("coll/doc5", map("key", FieldValue.maxKey())));
+    writeMutation(setMutation("coll/doc5", map("key", MaxKey.instance())));
 
     backfillIndexes();
 
@@ -886,7 +879,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "==", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -897,7 +890,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "!=", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -908,7 +901,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", ">=", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -919,7 +912,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "<=", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -930,13 +923,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", ">", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query = query("coll").filter(filter("key", "<", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "<", MinKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -944,7 +937,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     query =
         query("coll")
-            .filter(filter("key", "in", Arrays.asList(FieldValue.minKey(), FieldValue.maxKey())));
+            .filter(filter("key", "in", Arrays.asList(MinKey.instance(), MaxKey.instance())));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -965,10 +958,10 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(setMutation("coll/doc1", map("key", null)));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.minKey())));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
     writeMutation(setMutation("coll/doc3", map("key", 1)));
-    writeMutation(setMutation("coll/doc4", map("key", FieldValue.maxKey())));
-    writeMutation(setMutation("coll/doc5", map("key", FieldValue.maxKey())));
+    writeMutation(setMutation("coll/doc4", map("key", MaxKey.instance())));
+    writeMutation(setMutation("coll/doc5", map("key", MaxKey.instance())));
 
     backfillIndexes();
 
@@ -989,7 +982,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "==", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -1000,7 +993,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "!=", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -1011,7 +1004,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", ">=", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -1022,7 +1015,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "<=", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -1033,13 +1026,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", ">", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query = query("coll").filter(filter("key", "<", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "<", MaxKey.instance()));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -1052,22 +1045,22 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.DESCENDING);
     configureFieldIndexes(singletonList(index));
 
-    writeMutation(setMutation("coll/doc1", map("key", FieldValue.minKey())));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.int32(2))));
-    writeMutation(setMutation("coll/doc3", map("key", FieldValue.int32(1))));
-    writeMutation(setMutation("coll/doc4", map("key", FieldValue.bsonTimestamp(1000, 1001))));
-    writeMutation(setMutation("coll/doc5", map("key", FieldValue.bsonTimestamp(1000, 1000))));
+    writeMutation(setMutation("coll/doc1", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc2", map("key", new Int32Value(2))));
+    writeMutation(setMutation("coll/doc3", map("key", new Int32Value(1))));
+    writeMutation(setMutation("coll/doc4", map("key", new BsonTimestamp(1000, 1001))));
+    writeMutation(setMutation("coll/doc5", map("key", new BsonTimestamp(1000, 1000))));
     writeMutation(
-        setMutation("coll/doc6", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4}))));
+        setMutation("coll/doc6", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
     writeMutation(
-        setMutation("coll/doc7", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc7", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
     writeMutation(
-        setMutation("coll/doc8", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb"))));
+        setMutation("coll/doc8", map("key", new BsonObjectId("507f191e810c19729de860eb"))));
     writeMutation(
-        setMutation("coll/doc9", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea"))));
-    writeMutation(setMutation("coll/doc10", map("key", FieldValue.regex("^bar", "m"))));
-    writeMutation(setMutation("coll/doc11", map("key", FieldValue.regex("^bar", "i"))));
-    writeMutation(setMutation("coll/doc12", map("key", FieldValue.maxKey())));
+        setMutation("coll/doc9", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
+    writeMutation(setMutation("coll/doc10", map("key", new RegexValue("^bar", "m"))));
+    writeMutation(setMutation("coll/doc11", map("key", new RegexValue("^bar", "i"))));
+    writeMutation(setMutation("coll/doc12", map("key", MaxKey.instance())));
 
     backfillIndexes();
 
@@ -1122,27 +1115,27 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(setMutation("coll/doc1", map("key", null)));
-    writeMutation(setMutation("coll/doc2", map("key", FieldValue.minKey())));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
     writeMutation(setMutation("coll/doc3", map("key", true)));
     writeMutation(setMutation("coll/doc4", map("key", Double.NaN)));
-    writeMutation(setMutation("coll/doc5", map("key", FieldValue.int32(1))));
+    writeMutation(setMutation("coll/doc5", map("key", new Int32Value(1))));
     writeMutation(setMutation("coll/doc6", map("key", 2.0)));
     writeMutation(setMutation("coll/doc7", map("key", 3)));
     writeMutation(setMutation("coll/doc8", map("key", new Timestamp(100, 123456000))));
-    writeMutation(setMutation("coll/doc9", map("key", FieldValue.bsonTimestamp(1, 2))));
+    writeMutation(setMutation("coll/doc9", map("key", new BsonTimestamp(1, 2))));
     writeMutation(setMutation("coll/doc10", map("key", "string")));
     writeMutation(setMutation("coll/doc11", map("key", blob(1, 2, 3))));
     writeMutation(
-        setMutation("coll/doc12", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc12", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
     writeMutation(setMutation("coll/doc13", map("key", ref("foo/bar"))));
     writeMutation(
-        setMutation("coll/doc14", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea"))));
+        setMutation("coll/doc14", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
     writeMutation(setMutation("coll/doc15", map("key", new GeoPoint(1, 2))));
-    writeMutation(setMutation("coll/doc16", map("key", FieldValue.regex("^bar", "m"))));
+    writeMutation(setMutation("coll/doc16", map("key", new RegexValue("^bar", "m"))));
     writeMutation(setMutation("coll/doc17", map("key", Arrays.asList(2, "foo"))));
     writeMutation(setMutation("coll/doc18", map("key", FieldValue.vector(new double[] {1, 2, 3}))));
     writeMutation(setMutation("coll/doc19", map("key", map("bar", 1, "foo", 2))));
-    writeMutation(setMutation("coll/doc20", map("key", FieldValue.maxKey())));
+    writeMutation(setMutation("coll/doc20", map("key", MaxKey.instance())));
 
     backfillIndexes();
 

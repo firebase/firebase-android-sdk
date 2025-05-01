@@ -30,7 +30,7 @@ public class BsonTypesTest {
   @Test
   public void testBsonObjectIdEquality() {
     BsonObjectId bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
-    BsonObjectId bsonObjectIdDup = FieldValue.bsonObjectId("507f191e810c19729de860ea");
+    BsonObjectId bsonObjectIdDup = new BsonObjectId("507f191e810c19729de860ea");
     BsonObjectId differentObjectId = new BsonObjectId("507f191e810c19729de860eb");
 
     assertEquals(bsonObjectId, bsonObjectIdDup);
@@ -45,7 +45,7 @@ public class BsonTypesTest {
   @Test
   public void testBsonTimeStampEquality() {
     BsonTimestamp bsonTimestamp = new BsonTimestamp(1, 2);
-    BsonTimestamp bsonTimestampDup = FieldValue.bsonTimestamp(1, 2);
+    BsonTimestamp bsonTimestampDup = new BsonTimestamp(1, 2);
     BsonTimestamp differentSecondsTimestamp = new BsonTimestamp(2, 2);
     BsonTimestamp differentIncrementTimestamp = new BsonTimestamp(1, 3);
 
@@ -65,7 +65,7 @@ public class BsonTypesTest {
   @Test
   public void testBsonBinaryDataEquality() {
     BsonBinaryData bsonBinaryData = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
-    BsonBinaryData bsonBinaryDataDup = FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3});
+    BsonBinaryData bsonBinaryDataDup = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
     BsonBinaryData differentSubtypeBinaryData = BsonBinaryData.fromBytes(2, new byte[] {1, 2, 3});
     BsonBinaryData differentDataBinaryData = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4});
 
@@ -85,7 +85,7 @@ public class BsonTypesTest {
   @Test
   public void testRegexEquality() {
     RegexValue regex = new RegexValue("^foo", "i");
-    RegexValue regexDup = FieldValue.regex("^foo", "i");
+    RegexValue regexDup = new RegexValue("^foo", "i");
     RegexValue differentPatternRegex = new RegexValue("^bar", "i");
     RegexValue differentOptionsRegex = new RegexValue("^foo", "m");
 
@@ -105,7 +105,7 @@ public class BsonTypesTest {
   @Test
   public void testInt32Equality() {
     Int32Value int32 = new Int32Value(1);
-    Int32Value int32Dup = FieldValue.int32(1);
+    Int32Value int32Dup = new Int32Value(1);
     Int32Value differentInt32 = new Int32Value(2);
 
     assertEquals(int32, int32Dup);
@@ -119,7 +119,7 @@ public class BsonTypesTest {
 
   @Test
   public void testMaxKeyIsSingleton() {
-    MaxKey maxKey = FieldValue.maxKey();
+    MaxKey maxKey = MaxKey.instance();
     MaxKey maxKeyDup = MaxKey.instance();
     assertEquals(maxKey, maxKeyDup);
     assertEquals(maxKey.hashCode(), maxKeyDup.hashCode());
@@ -127,7 +127,7 @@ public class BsonTypesTest {
 
   @Test
   public void testMinKeyIsSingleton() {
-    MinKey minKey = FieldValue.minKey();
+    MinKey minKey = MinKey.instance();
     MinKey minKeyDup = MinKey.instance();
     assertEquals(minKey, minKeyDup);
     assertEquals(minKey.hashCode(), minKeyDup.hashCode());
@@ -135,8 +135,8 @@ public class BsonTypesTest {
 
   @Test
   public void testMinKeyMaxKeyNullNotEqual() {
-    MinKey minKey = FieldValue.minKey();
-    MaxKey maxKey = FieldValue.maxKey();
+    MinKey minKey = MinKey.instance();
+    MaxKey maxKey = MaxKey.instance();
     assertNotEquals(minKey, maxKey);
     assertNotEquals(minKey, null);
     assertNotEquals(maxKey, null);

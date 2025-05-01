@@ -49,34 +49,34 @@ public class BsonTypesTest {
             testCollectionOnNightly()
                 .add(
                     map(
-                        "bsonObjectId", FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-                        "regex", FieldValue.regex("^foo", "i"),
-                        "bsonTimestamp", FieldValue.bsonTimestamp(1, 2),
-                        "bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-                        "int32", FieldValue.int32(1),
-                        "minKey", FieldValue.minKey(),
-                        "maxKey", FieldValue.maxKey())));
+                        "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
+                        "regex", new RegexValue("^foo", "i"),
+                        "bsonTimestamp", new BsonTimestamp(1, 2),
+                        "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                        "int32", new Int32Value(1),
+                        "minKey", MinKey.instance(),
+                        "maxKey", MaxKey.instance())));
 
     waitFor(
         docRef.set(
             map(
                 "bsonObjectId",
-                FieldValue.bsonObjectId("507f191e810c19729de860eb"),
+                new BsonObjectId("507f191e810c19729de860eb"),
                 "regex",
-                FieldValue.regex("^foo", "m"),
+                new RegexValue("^foo", "m"),
                 "bsonTimestamp",
-                FieldValue.bsonTimestamp(1, 3)),
+                new BsonTimestamp(1, 3)),
             SetOptions.merge()));
 
-    waitFor(docRef.update(map("int32", FieldValue.int32(2))));
+    waitFor(docRef.update(map("int32", new Int32Value(2))));
 
-    expected.put("bsonObjectId", FieldValue.bsonObjectId("507f191e810c19729de860eb"));
-    expected.put("regex", FieldValue.regex("^foo", "m"));
-    expected.put("bsonTimestamp", FieldValue.bsonTimestamp(1, 3));
-    expected.put("bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}));
-    expected.put("int32", FieldValue.int32(2));
-    expected.put("minKey", FieldValue.minKey());
-    expected.put("maxKey", FieldValue.maxKey());
+    expected.put("bsonObjectId", new BsonObjectId("507f191e810c19729de860eb"));
+    expected.put("regex", new RegexValue("^foo", "m"));
+    expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
+    expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+    expected.put("int32", new Int32Value(2));
+    expected.put("minKey", MinKey.instance());
+    expected.put("maxKey", MaxKey.instance());
 
     DocumentSnapshot actual = waitFor(docRef.get());
 
@@ -101,30 +101,30 @@ public class BsonTypesTest {
     Map<String, Object> expected = new HashMap<>();
     docRef.set(
         map(
-            "bsonObjectId", FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-            "regex", FieldValue.regex("^foo", "i"),
-            "bsonTimestamp", FieldValue.bsonTimestamp(1, 2),
-            "bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-            "int32", FieldValue.int32(1),
-            "minKey", FieldValue.minKey(),
-            "maxKey", FieldValue.maxKey()));
+            "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
+            "regex", new RegexValue("^foo", "i"),
+            "bsonTimestamp", new BsonTimestamp(1, 2),
+            "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            "int32", new Int32Value(1),
+            "minKey", MinKey.instance(),
+            "maxKey", MaxKey.instance()));
 
     docRef.update(
         map(
             "bsonObjectId",
-            FieldValue.bsonObjectId("507f191e810c19729de860eb"),
+            new BsonObjectId("507f191e810c19729de860eb"),
             "regex",
-            FieldValue.regex("^foo", "m"),
+            new RegexValue("^foo", "m"),
             "bsonTimestamp",
-            FieldValue.bsonTimestamp(1, 3)));
+            new BsonTimestamp(1, 3)));
 
-    expected.put("bsonObjectId", FieldValue.bsonObjectId("507f191e810c19729de860eb"));
-    expected.put("regex", FieldValue.regex("^foo", "m"));
-    expected.put("bsonTimestamp", FieldValue.bsonTimestamp(1, 3));
-    expected.put("bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}));
-    expected.put("int32", FieldValue.int32(1));
-    expected.put("minKey", FieldValue.minKey());
-    expected.put("maxKey", FieldValue.maxKey());
+    expected.put("bsonObjectId", new BsonObjectId("507f191e810c19729de860eb"));
+    expected.put("regex", new RegexValue("^foo", "m"));
+    expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
+    expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+    expected.put("int32", new Int32Value(1));
+    expected.put("minKey", MinKey.instance());
+    expected.put("maxKey", MaxKey.instance());
 
     DocumentSnapshot actual = waitFor(docRef.get());
 
@@ -162,44 +162,49 @@ public class BsonTypesTest {
                           assertNull(docSnap);
                           ref.set(
                               map(
-                                  "purpose", "Bson types tests",
+                                  "purpose",
+                                  "Bson types tests",
                                   "bsonObjectId",
-                                      FieldValue.bsonObjectId("507f191e810c19729de860ea"),
-                                  "regex", FieldValue.regex("^foo", "i"),
-                                  "bsonTimestamp", FieldValue.bsonTimestamp(1, 2),
-                                  "bsonBinary", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}),
-                                  "int32", FieldValue.int32(1),
-                                  "minKey", FieldValue.minKey(),
-                                  "maxKey", FieldValue.maxKey()));
+                                  new BsonObjectId("507f191e810c19729de860ea"),
+                                  "regex",
+                                  new RegexValue("^foo", "i"),
+                                  "bsonTimestamp",
+                                  new BsonTimestamp(1, 2),
+                                  "bsonBinary",
+                                  BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                                  "int32",
+                                  new Int32Value(1),
+                                  "minKey",
+                                  MinKey.instance(),
+                                  "maxKey",
+                                  MaxKey.instance()));
                           break;
                         case 1:
                           assertNotNull(docSnap);
 
                           assertEquals(
                               docSnap.getBsonBinaryData("bsonBinary"),
-                              FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}));
+                              BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
                           assertEquals(
                               docSnap.getBsonObjectId("bsonObjectId"),
-                              FieldValue.bsonObjectId("507f191e810c19729de860ea"));
+                              new BsonObjectId("507f191e810c19729de860ea"));
+                          assertEquals(docSnap.getRegexValue("regex"), new RegexValue("^foo", "i"));
                           assertEquals(
-                              docSnap.getRegexValue("regex"), FieldValue.regex("^foo", "i"));
-                          assertEquals(
-                              docSnap.getBsonTimestamp("bsonTimestamp"),
-                              FieldValue.bsonTimestamp(1, 2));
-                          assertEquals(docSnap.getInt32Value("int32"), FieldValue.int32(1));
-                          assertEquals(docSnap.getMinKey("minKey"), FieldValue.minKey());
-                          assertEquals(docSnap.getMaxKey("maxKey"), FieldValue.maxKey());
+                              docSnap.getBsonTimestamp("bsonTimestamp"), new BsonTimestamp(1, 2));
+                          assertEquals(docSnap.getInt32Value("int32"), new Int32Value(1));
+                          assertEquals(docSnap.getMinKey("minKey"), MinKey.instance());
+                          assertEquals(docSnap.getMaxKey("maxKey"), MaxKey.instance());
 
                           ref.set(
                               map(
                                   "purpose",
                                   "Bson types tests",
                                   "bsonObjectId",
-                                  FieldValue.bsonObjectId("507f191e810c19729de860eb"),
+                                  new BsonObjectId("507f191e810c19729de860eb"),
                                   "regex",
-                                  FieldValue.regex("^foo", "m"),
+                                  new RegexValue("^foo", "m"),
                                   "bsonTimestamp",
-                                  FieldValue.bsonTimestamp(1, 3)),
+                                  new BsonTimestamp(1, 3)),
                               SetOptions.merge());
                           break;
                         case 2:
@@ -207,19 +212,17 @@ public class BsonTypesTest {
 
                           assertEquals(
                               docSnap.getBsonObjectId("bsonObjectId"),
-                              FieldValue.bsonObjectId("507f191e810c19729de860eb"));
+                              new BsonObjectId("507f191e810c19729de860eb"));
+                          assertEquals(docSnap.getRegexValue("regex"), new RegexValue("^foo", "m"));
                           assertEquals(
-                              docSnap.getRegexValue("regex"), FieldValue.regex("^foo", "m"));
-                          assertEquals(
-                              docSnap.getBsonTimestamp("bsonTimestamp"),
-                              FieldValue.bsonTimestamp(1, 3));
+                              docSnap.getBsonTimestamp("bsonTimestamp"), new BsonTimestamp(1, 3));
 
-                          ref.update(map("int32", FieldValue.int32(2)));
+                          ref.update(map("int32", new Int32Value(2)));
                           break;
                         case 3:
                           assertNotNull(docSnap);
 
-                          assertEquals(docSnap.getInt32Value("int32"), FieldValue.int32(2));
+                          assertEquals(docSnap.getInt32Value("int32"), new Int32Value(2));
 
                           ref.delete();
                           break;
@@ -254,11 +257,11 @@ public class BsonTypesTest {
     Map<String, Map<String, Object>> docs =
         map(
             "a",
-            map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")),
+            map("key", new BsonObjectId("507f191e810c19729de860ea")),
             "b",
-            map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")),
+            map("key", new BsonObjectId("507f191e810c19729de860eb")),
             "c",
-            map("key", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+            map("key", new BsonObjectId("507f191e810c19729de860ec")));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -267,14 +270,14 @@ public class BsonTypesTest {
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", FieldValue.bsonObjectId("507f191e810c19729de860ea"));
+            .whereGreaterThan("key", new BsonObjectId("507f191e810c19729de860ea"));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereNotEqualTo("key", FieldValue.bsonObjectId("507f191e810c19729de860eb"));
+            .whereNotEqualTo("key", new BsonObjectId("507f191e810c19729de860eb"));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -284,11 +287,11 @@ public class BsonTypesTest {
     Map<String, Map<String, Object>> docs =
         map(
             "a",
-            map("key", FieldValue.bsonTimestamp(1, 1)),
+            map("key", new BsonTimestamp(1, 1)),
             "b",
-            map("key", FieldValue.bsonTimestamp(1, 2)),
+            map("key", new BsonTimestamp(1, 2)),
             "c",
-            map("key", FieldValue.bsonTimestamp(2, 1)));
+            map("key", new BsonTimestamp(2, 1)));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -297,14 +300,14 @@ public class BsonTypesTest {
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", FieldValue.bsonTimestamp(1, 1));
+            .whereGreaterThan("key", new BsonTimestamp(1, 1));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereNotEqualTo("key", FieldValue.bsonTimestamp(1, 2));
+            .whereNotEqualTo("key", new BsonTimestamp(1, 2));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -314,11 +317,11 @@ public class BsonTypesTest {
     Map<String, Map<String, Object>> docs =
         map(
             "a",
-            map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})),
+            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
             "b",
-            map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})),
+            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})),
             "c",
-            map("key", FieldValue.bsonBinaryData(2, new byte[] {1, 2, 2})));
+            map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2, 2})));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -327,14 +330,14 @@ public class BsonTypesTest {
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3}));
+            .whereGreaterThan("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereNotEqualTo("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4}));
+            .whereNotEqualTo("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -343,9 +346,9 @@ public class BsonTypesTest {
   public void filterAndOrderRegex() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.regex("^bar", "i")),
-            "b", map("key", FieldValue.regex("^bar", "m")),
-            "c", map("key", FieldValue.regex("^baz", "i")));
+            "a", map("key", new RegexValue("^bar", "i")),
+            "b", map("key", new RegexValue("^bar", "m")),
+            "c", map("key", new RegexValue("^baz", "i")));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -354,14 +357,14 @@ public class BsonTypesTest {
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", FieldValue.regex("^bar", "i"));
+            .whereGreaterThan("key", new RegexValue("^bar", "i"));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereNotEqualTo("key", FieldValue.regex("^bar", "m"));
+            .whereNotEqualTo("key", new RegexValue("^bar", "m"));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -370,23 +373,21 @@ public class BsonTypesTest {
   public void filterAndOrderInt32() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.int32(-1)),
-            "b", map("key", FieldValue.int32(1)),
-            "c", map("key", FieldValue.int32(2)));
+            "a", map("key", new Int32Value(-1)),
+            "b", map("key", new Int32Value(1)),
+            "c", map("key", new Int32Value(2)));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
     waitFor(randomColl.get());
 
     Query orderedQuery =
-        randomColl
-            .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", FieldValue.int32(-1));
+        randomColl.orderBy("key", Direction.DESCENDING).whereGreaterThan("key", new Int32Value(-1));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
-        randomColl.orderBy("key", Direction.DESCENDING).whereNotEqualTo("key", FieldValue.int32(1));
+        randomColl.orderBy("key", Direction.DESCENDING).whereNotEqualTo("key", new Int32Value(1));
 
     assertSDKQueryResultsConsistentWithBackend(orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -395,11 +396,11 @@ public class BsonTypesTest {
   public void filterAndOrderMinKey() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.minKey()),
-            "b", map("key", FieldValue.minKey()),
+            "a", map("key", MinKey.instance()),
+            "b", map("key", MinKey.instance()),
             "c", map("key", null),
             "d", map("key", 1L),
-            "e", map("key", FieldValue.maxKey()));
+            "e", map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -411,24 +412,24 @@ public class BsonTypesTest {
                 "key",
                 Direction
                     .DESCENDING) // minKeys are equal, would sort by documentId as secondary order
-            .whereEqualTo("key", FieldValue.minKey());
+            .whereEqualTo("key", MinKey.instance());
 
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("b", "a"));
 
     // TODO(Mila/BSON): uncomment this test when null value inclusion is fixed
-    // query = randomColl.whereNotEqualTo("key", FieldValue.minKey());
+    // query = randomColl.whereNotEqualTo("key", MinKey.instance());
     // assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("d", "e"));
 
-    query = randomColl.whereGreaterThanOrEqualTo("key", FieldValue.minKey());
+    query = randomColl.whereGreaterThanOrEqualTo("key", MinKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("a", "b"));
 
-    query = randomColl.whereLessThanOrEqualTo("key", FieldValue.minKey());
+    query = randomColl.whereLessThanOrEqualTo("key", MinKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("a", "b"));
 
-    query = randomColl.whereGreaterThan("key", FieldValue.minKey());
+    query = randomColl.whereGreaterThan("key", MinKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList());
 
-    query = randomColl.whereGreaterThan("key", FieldValue.minKey());
+    query = randomColl.whereGreaterThan("key", MinKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList());
   }
 
@@ -436,10 +437,10 @@ public class BsonTypesTest {
   public void filterAndOrderMaxKey() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.minKey()),
+            "a", map("key", MinKey.instance()),
             "b", map("key", 1L),
-            "c", map("key", FieldValue.maxKey()),
-            "d", map("key", FieldValue.maxKey()),
+            "c", map("key", MaxKey.instance()),
+            "d", map("key", MaxKey.instance()),
             "e", map("key", null));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
@@ -452,24 +453,24 @@ public class BsonTypesTest {
                 "key",
                 Direction
                     .DESCENDING) // maxKeys are equal, would sort by documentId as secondary order
-            .whereEqualTo("key", FieldValue.maxKey());
+            .whereEqualTo("key", MaxKey.instance());
 
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("d", "c"));
 
     // TODO(Mila/BSON): uncomment this test when null value inclusion is fixed
-    // query = randomColl.whereNotEqualTo("key", FieldValue.maxKey());
+    // query = randomColl.whereNotEqualTo("key", MaxKey.instance());
     // assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("a", "b"));
 
-    query = randomColl.whereGreaterThanOrEqualTo("key", FieldValue.maxKey());
+    query = randomColl.whereGreaterThanOrEqualTo("key", MaxKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("c", "d"));
 
-    query = randomColl.whereLessThanOrEqualTo("key", FieldValue.maxKey());
+    query = randomColl.whereLessThanOrEqualTo("key", MaxKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("c", "d"));
 
-    query = randomColl.whereLessThan("key", FieldValue.maxKey());
+    query = randomColl.whereLessThan("key", MaxKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList());
 
-    query = randomColl.whereGreaterThan("key", FieldValue.maxKey());
+    query = randomColl.whereGreaterThan("key", MaxKey.instance());
     assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList());
   }
 
@@ -477,11 +478,11 @@ public class BsonTypesTest {
   public void filterNullValueWithBsonTypes() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.minKey()),
+            "a", map("key", MinKey.instance()),
             "b", map("key", null),
             "c", map("key", null),
             "d", map("key", 1L),
-            "e", map("key", FieldValue.maxKey()));
+            "e", map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -499,43 +500,43 @@ public class BsonTypesTest {
     Map<String, Map<String, Object>> docs =
         map(
             "bsonObjectId1",
-            map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")),
+            map("key", new BsonObjectId("507f191e810c19729de860ea")),
             "bsonObjectId2",
-            map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")),
+            map("key", new BsonObjectId("507f191e810c19729de860eb")),
             "bsonObjectId3",
-            map("key", FieldValue.bsonObjectId("407f191e810c19729de860ea")),
+            map("key", new BsonObjectId("407f191e810c19729de860ea")),
             "regex1",
-            map("key", FieldValue.regex("^bar", "m")),
+            map("key", new RegexValue("^bar", "m")),
             "regex2",
-            map("key", FieldValue.regex("^bar", "i")),
+            map("key", new RegexValue("^bar", "i")),
             "regex3",
-            map("key", FieldValue.regex("^baz", "i")),
+            map("key", new RegexValue("^baz", "i")),
             "bsonTimestamp1",
-            map("key", FieldValue.bsonTimestamp(2, 0)),
+            map("key", new BsonTimestamp(2, 0)),
             "bsonTimestamp2",
-            map("key", FieldValue.bsonTimestamp(1, 2)),
+            map("key", new BsonTimestamp(1, 2)),
             "bsonTimestamp3",
-            map("key", FieldValue.bsonTimestamp(1, 1)),
+            map("key", new BsonTimestamp(1, 1)),
             "bsonBinary1",
-            map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})),
+            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
             "bsonBinary2",
-            map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})),
+            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})),
             "bsonBinary3",
-            map("key", FieldValue.bsonBinaryData(2, new byte[] {1, 2, 2})),
+            map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2, 2})),
             "int32Value1",
-            map("key", FieldValue.int32(-1)),
+            map("key", new Int32Value(-1)),
             "int32Value2",
-            map("key", FieldValue.int32(1)),
+            map("key", new Int32Value(1)),
             "int32Value3",
-            map("key", FieldValue.int32(0)),
+            map("key", new Int32Value(0)),
             "minKey1",
-            map("key", FieldValue.minKey()),
+            map("key", MinKey.instance()),
             "minKey2",
-            map("key", FieldValue.minKey()),
+            map("key", MinKey.instance()),
             "maxKey1",
-            map("key", FieldValue.maxKey()),
+            map("key", MaxKey.instance()),
             "maxKey2",
-            map("key", FieldValue.maxKey()));
+            map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     // Pre-populate the cache with all docs
@@ -571,9 +572,9 @@ public class BsonTypesTest {
   public void canRunTransactionsOnDocumentsWithBsonTypes() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
-            "a", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")),
-            "b", map("key", FieldValue.regex("^foo", "i")),
-            "c", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            "a", map("key", new BsonObjectId("507f191e810c19729de860ea")),
+            "b", map("key", new RegexValue("^foo", "i")),
+            "c", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
     waitFor(
@@ -581,9 +582,8 @@ public class BsonTypesTest {
             transaction -> {
               DocumentSnapshot docSnap = transaction.get(randomColl.document("a"));
               assertEquals(
-                  docSnap.getBsonObjectId("key"),
-                  FieldValue.bsonObjectId("507f191e810c19729de860ea"));
-              transaction.update(randomColl.document("b"), "key", FieldValue.regex("^bar", "i"));
+                  docSnap.getBsonObjectId("key"), new BsonObjectId("507f191e810c19729de860ea"));
+              transaction.update(randomColl.document("b"), "key", new RegexValue("^bar", "i"));
               transaction.delete(randomColl.document("c"));
               return null;
             }));
@@ -596,8 +596,8 @@ public class BsonTypesTest {
     assertTrue(getSnapshotDocIds.equals(Arrays.asList("a", "b")));
     assertEquals(
         getSnapshot.getDocuments().get(0).getBsonObjectId("key"),
-        FieldValue.bsonObjectId("507f191e810c19729de860ea"));
+        new BsonObjectId("507f191e810c19729de860ea"));
     assertEquals(
-        getSnapshot.getDocuments().get(1).getRegexValue("key"), FieldValue.regex("^bar", "i"));
+        getSnapshot.getDocuments().get(1).getRegexValue("key"), new RegexValue("^bar", "i"));
   }
 }

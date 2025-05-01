@@ -39,8 +39,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Int32Value;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Query;
@@ -1243,51 +1249,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
-    addDoc("coll/doc2", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
-    addDoc("coll/doc3", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+    addDoc("coll/doc1", map("key", new BsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/doc2", map("key", new BsonObjectId("507f191e810c19729de860eb")));
+    addDoc("coll/doc3", map("key", new BsonObjectId("507f191e810c19729de860ec")));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", "==", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "==", new BsonObjectId("507f191e810c19729de860ea")));
     verifyResults(query, "coll/doc1");
 
-    query =
-        query("coll")
-            .filter(filter("key", "!=", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "!=", new BsonObjectId("507f191e810c19729de860ea")));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", ">=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", ">=", new BsonObjectId("507f191e810c19729de860eb")));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", "<=", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", "<=", new BsonObjectId("507f191e810c19729de860eb")));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query =
-        query("coll")
-            .filter(filter("key", ">", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", ">", new BsonObjectId("507f191e810c19729de860eb")));
     verifyResults(query, "coll/doc3");
 
-    query =
-        query("coll")
-            .filter(filter("key", "<", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
+    query = query("coll").filter(filter("key", "<", new BsonObjectId("507f191e810c19729de860eb")));
     verifyResults(query, "coll/doc1");
 
-    query =
-        query("coll")
-            .filter(filter("key", ">", FieldValue.bsonObjectId("507f191e810c19729de860ec")));
+    query = query("coll").filter(filter("key", ">", new BsonObjectId("507f191e810c19729de860ec")));
     verifyResults(query);
 
-    query =
-        query("coll")
-            .filter(filter("key", "<", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    query = query("coll").filter(filter("key", "<", new BsonObjectId("507f191e810c19729de860ea")));
     verifyResults(query);
   }
 
@@ -1296,51 +1286,47 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
-    addDoc("coll/doc2", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
-    addDoc("coll/doc3", map("key", FieldValue.bsonBinaryData(1, new byte[] {2, 1, 2})));
+    addDoc("coll/doc1", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc2", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc3", map("key", BsonBinaryData.fromBytes(1, new byte[] {2, 1, 2})));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
     query =
         query("coll")
-            .filter(filter("key", "==", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", "==", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     verifyResults(query, "coll/doc1");
 
     query =
         query("coll")
-            .filter(filter("key", "!=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+            .filter(filter("key", "!=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
     query =
         query("coll")
-            .filter(filter("key", ">=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+            .filter(filter("key", ">=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
     query =
         query("coll")
-            .filter(filter("key", "<=", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+            .filter(filter("key", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
     query =
-        query("coll")
-            .filter(filter("key", ">", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc3");
 
     query =
-        query("coll")
-            .filter(filter("key", "<", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc1");
 
     query =
-        query("coll")
-            .filter(filter("key", ">", FieldValue.bsonBinaryData(1, new byte[] {2, 1, 2})));
+        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(1, new byte[] {2, 1, 2})));
     verifyResults(query);
 
     query =
-        query("coll")
-            .filter(filter("key", "<", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     verifyResults(query);
   }
 
@@ -1349,35 +1335,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.bsonTimestamp(1, 1)));
-    addDoc("coll/doc2", map("key", FieldValue.bsonTimestamp(1, 2)));
-    addDoc("coll/doc3", map("key", FieldValue.bsonTimestamp(2, 1)));
+    addDoc("coll/doc1", map("key", new BsonTimestamp(1, 1)));
+    addDoc("coll/doc2", map("key", new BsonTimestamp(1, 2)));
+    addDoc("coll/doc3", map("key", new BsonTimestamp(2, 1)));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.bsonTimestamp(1, 1)));
+    query = query("coll").filter(filter("key", "==", new BsonTimestamp(1, 1)));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.bsonTimestamp(1, 1)));
+    query = query("coll").filter(filter("key", "!=", new BsonTimestamp(1, 1)));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.bsonTimestamp(1, 2)));
+    query = query("coll").filter(filter("key", ">=", new BsonTimestamp(1, 2)));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.bsonTimestamp(1, 2)));
+    query = query("coll").filter(filter("key", "<=", new BsonTimestamp(1, 2)));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.bsonTimestamp(1, 2)));
+    query = query("coll").filter(filter("key", ">", new BsonTimestamp(1, 2)));
     verifyResults(query, "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<", FieldValue.bsonTimestamp(1, 2)));
+    query = query("coll").filter(filter("key", "<", new BsonTimestamp(1, 2)));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.bsonTimestamp(2, 1)));
+    query = query("coll").filter(filter("key", ">", new BsonTimestamp(2, 1)));
     verifyResults(query);
 
-    query = query("coll").filter(filter("key", "<", FieldValue.bsonTimestamp(1, 1)));
+    query = query("coll").filter(filter("key", "<", new BsonTimestamp(1, 1)));
     verifyResults(query);
   }
 
@@ -1386,35 +1372,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.regex("a", "i")));
-    addDoc("coll/doc2", map("key", FieldValue.regex("a", "m")));
-    addDoc("coll/doc3", map("key", FieldValue.regex("b", "i")));
+    addDoc("coll/doc1", map("key", new RegexValue("a", "i")));
+    addDoc("coll/doc2", map("key", new RegexValue("a", "m")));
+    addDoc("coll/doc3", map("key", new RegexValue("b", "i")));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.regex("a", "i")));
+    query = query("coll").filter(filter("key", "==", new RegexValue("a", "i")));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.regex("a", "i")));
+    query = query("coll").filter(filter("key", "!=", new RegexValue("a", "i")));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.regex("a", "m")));
+    query = query("coll").filter(filter("key", ">=", new RegexValue("a", "m")));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.regex("a", "m")));
+    query = query("coll").filter(filter("key", "<=", new RegexValue("a", "m")));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.regex("a", "m")));
+    query = query("coll").filter(filter("key", ">", new RegexValue("a", "m")));
     verifyResults(query, "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<", FieldValue.regex("a", "m")));
+    query = query("coll").filter(filter("key", "<", new RegexValue("a", "m")));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.regex("b", "i")));
+    query = query("coll").filter(filter("key", ">", new RegexValue("b", "i")));
     verifyResults(query);
 
-    query = query("coll").filter(filter("key", "<", FieldValue.regex("a", "i")));
+    query = query("coll").filter(filter("key", "<", new RegexValue("a", "i")));
     verifyResults(query);
   }
 
@@ -1423,35 +1409,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.int32(1)));
-    addDoc("coll/doc2", map("key", FieldValue.int32(2)));
-    addDoc("coll/doc3", map("key", FieldValue.int32(3)));
+    addDoc("coll/doc1", map("key", new Int32Value(1)));
+    addDoc("coll/doc2", map("key", new Int32Value(2)));
+    addDoc("coll/doc3", map("key", new Int32Value(3)));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.int32(1)));
+    query = query("coll").filter(filter("key", "==", new Int32Value(1)));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.int32(1)));
+    query = query("coll").filter(filter("key", "!=", new Int32Value(1)));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.int32(2)));
+    query = query("coll").filter(filter("key", ">=", new Int32Value(2)));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.int32(2)));
+    query = query("coll").filter(filter("key", "<=", new Int32Value(2)));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.int32(2)));
+    query = query("coll").filter(filter("key", ">", new Int32Value(2)));
     verifyResults(query, "coll/doc3");
 
-    query = query("coll").filter(filter("key", "<", FieldValue.int32(2)));
+    query = query("coll").filter(filter("key", "<", new Int32Value(2)));
     verifyResults(query, "coll/doc1");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.int32(3)));
+    query = query("coll").filter(filter("key", ">", new Int32Value(3)));
     verifyResults(query);
 
-    query = query("coll").filter(filter("key", "<", FieldValue.int32(1)));
+    query = query("coll").filter(filter("key", "<", new Int32Value(1)));
     verifyResults(query);
   }
 
@@ -1459,31 +1445,31 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testIndexesMinKey() {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
-    addDoc("coll/doc1", map("key", FieldValue.minKey()));
-    addDoc("coll/doc2", map("key", FieldValue.minKey()));
+    addDoc("coll/doc1", map("key", MinKey.instance()));
+    addDoc("coll/doc2", map("key", MinKey.instance()));
     addDoc("coll/doc3", map("key", null));
     addDoc("coll/doc4", map("key", 1));
-    addDoc("coll/doc5", map("key", FieldValue.maxKey()));
+    addDoc("coll/doc5", map("key", MaxKey.instance()));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc3", "coll/doc1", "coll/doc2", "coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "==", MinKey.instance()));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "!=", MinKey.instance()));
     verifyResults(query, "coll/doc4", "coll/doc5");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", ">=", MinKey.instance()));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "<=", MinKey.instance()));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", ">", MinKey.instance()));
     verifyResults(query);
 
-    query = query("coll").filter(filter("key", "<", FieldValue.minKey()));
+    query = query("coll").filter(filter("key", "<", MinKey.instance()));
     verifyResults(query);
   }
 
@@ -1491,31 +1477,31 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testIndexesMaxKey() {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
-    addDoc("coll/doc1", map("key", FieldValue.minKey()));
+    addDoc("coll/doc1", map("key", MinKey.instance()));
     addDoc("coll/doc2", map("key", 1));
-    addDoc("coll/doc3", map("key", FieldValue.maxKey()));
-    addDoc("coll/doc4", map("key", FieldValue.maxKey()));
+    addDoc("coll/doc3", map("key", MaxKey.instance()));
+    addDoc("coll/doc4", map("key", MaxKey.instance()));
     addDoc("coll/doc5", map("key", null));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc5", "coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4");
 
-    query = query("coll").filter(filter("key", "==", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "==", MaxKey.instance()));
     verifyResults(query, "coll/doc3", "coll/doc4");
 
-    query = query("coll").filter(filter("key", "!=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "!=", MaxKey.instance()));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
-    query = query("coll").filter(filter("key", ">=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", ">=", MaxKey.instance()));
     verifyResults(query, "coll/doc3", "coll/doc4");
 
-    query = query("coll").filter(filter("key", "<=", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "<=", MaxKey.instance()));
     verifyResults(query, "coll/doc3", "coll/doc4");
 
-    query = query("coll").filter(filter("key", ">", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", ">", MaxKey.instance()));
     verifyResults(query);
 
-    query = query("coll").filter(filter("key", "<", FieldValue.maxKey()));
+    query = query("coll").filter(filter("key", "<", MaxKey.instance()));
     verifyResults(query);
   }
 
@@ -1523,18 +1509,18 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testIndexFieldsOfBsonTypesTogether() {
     indexManager.addFieldIndex(fieldIndex("coll", "key", Kind.DESCENDING));
 
-    addDoc("coll/doc1", map("key", FieldValue.minKey()));
-    addDoc("coll/doc2", map("key", FieldValue.int32(2)));
-    addDoc("coll/doc3", map("key", FieldValue.int32(1)));
-    addDoc("coll/doc4", map("key", FieldValue.bsonTimestamp(1, 2)));
-    addDoc("coll/doc5", map("key", FieldValue.bsonTimestamp(1, 1)));
-    addDoc("coll/doc6", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 4})));
-    addDoc("coll/doc7", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
-    addDoc("coll/doc8", map("key", FieldValue.bsonObjectId("507f191e810c19729de860eb")));
-    addDoc("coll/doc9", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
-    addDoc("coll/doc10", map("key", FieldValue.regex("a", "m")));
-    addDoc("coll/doc11", map("key", FieldValue.regex("a", "i")));
-    addDoc("coll/doc12", map("key", FieldValue.maxKey()));
+    addDoc("coll/doc1", map("key", MinKey.instance()));
+    addDoc("coll/doc2", map("key", new Int32Value(2)));
+    addDoc("coll/doc3", map("key", new Int32Value(1)));
+    addDoc("coll/doc4", map("key", new BsonTimestamp(1, 2)));
+    addDoc("coll/doc5", map("key", new BsonTimestamp(1, 1)));
+    addDoc("coll/doc6", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc7", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc8", map("key", new BsonObjectId("507f191e810c19729de860eb")));
+    addDoc("coll/doc9", map("key", new BsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/doc10", map("key", new RegexValue("a", "m")));
+    addDoc("coll/doc11", map("key", new RegexValue("a", "i")));
+    addDoc("coll/doc12", map("key", MaxKey.instance()));
 
     Query query = query("coll").orderBy(orderBy("key", "desc"));
     verifyResults(
@@ -1559,25 +1545,25 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(fieldIndex("coll", "key", Kind.DESCENDING));
 
     addDoc("coll/a", map("key", null));
-    addDoc("coll/b", map("key", FieldValue.minKey()));
+    addDoc("coll/b", map("key", MinKey.instance()));
     addDoc("coll/c", map("key", true));
     addDoc("coll/d", map("key", Double.NaN));
-    addDoc("coll/e", map("key", FieldValue.int32(1)));
+    addDoc("coll/e", map("key", new Int32Value(1)));
     addDoc("coll/f", map("key", 2.0));
     addDoc("coll/g", map("key", 3L));
     addDoc("coll/h", map("key", new Timestamp(100, 123456000)));
-    addDoc("coll/i", map("key", FieldValue.bsonTimestamp(1, 2)));
+    addDoc("coll/i", map("key", new BsonTimestamp(1, 2)));
     addDoc("coll/j", map("key", "string"));
     addDoc("coll/k", map("key", blob(1, 2, 3)));
-    addDoc("coll/l", map("key", FieldValue.bsonBinaryData(1, new byte[] {1, 2, 3})));
+    addDoc("coll/l", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
     addDoc("coll/m", map("key", ref("foo/bar")));
-    addDoc("coll/n", map("key", FieldValue.bsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/n", map("key", new BsonObjectId("507f191e810c19729de860ea")));
     addDoc("coll/o", map("key", new GeoPoint(0, 1)));
-    addDoc("coll/p", map("key", FieldValue.regex("^foo", "i")));
+    addDoc("coll/p", map("key", new RegexValue("^foo", "i")));
     addDoc("coll/q", map("key", Arrays.asList(1, 2)));
     // Note: Vector type not available in Java SDK, skipping 'r'
     addDoc("coll/s", map("key", map("a", 1)));
-    addDoc("coll/t", map("key", FieldValue.maxKey()));
+    addDoc("coll/t", map("key", MaxKey.instance()));
 
     Query query = query("coll").orderBy(orderBy("key", "desc"));
     verifyResults(

@@ -110,9 +110,9 @@ public class UserDataWriter {
       case TYPE_ORDER_REGEX:
         return convertRegex(value.getMapValue().getFieldsMap());
       case TYPE_ORDER_MAX_KEY:
-        return FieldValue.maxKey();
+        return MaxKey.instance();
       case TYPE_ORDER_MIN_KEY:
-        return FieldValue.minKey();
+        return MinKey.instance();
 
       default:
         throw fail("Unknown value type: " + value.getValueTypeCase());

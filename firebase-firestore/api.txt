@@ -175,16 +175,9 @@ package com.google.firebase.firestore {
   public abstract class FieldValue {
     method public static com.google.firebase.firestore.FieldValue arrayRemove(java.lang.Object!...!);
     method public static com.google.firebase.firestore.FieldValue arrayUnion(java.lang.Object!...!);
-    method public static com.google.firebase.firestore.BsonBinaryData bsonBinaryData(int, byte[]);
-    method public static com.google.firebase.firestore.BsonObjectId bsonObjectId(String);
-    method public static com.google.firebase.firestore.BsonTimestamp bsonTimestamp(long, long);
     method public static com.google.firebase.firestore.FieldValue delete();
     method public static com.google.firebase.firestore.FieldValue increment(double);
     method public static com.google.firebase.firestore.FieldValue increment(long);
-    method public static com.google.firebase.firestore.Int32Value int32(int);
-    method public static com.google.firebase.firestore.MaxKey maxKey();
-    method public static com.google.firebase.firestore.MinKey minKey();
-    method public static com.google.firebase.firestore.RegexValue regex(String, String);
     method public static com.google.firebase.firestore.FieldValue serverTimestamp();
     method public static com.google.firebase.firestore.VectorValue vector(double[]);
   }

@@ -48,7 +48,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #arrayUnion()} transforms. */
+  /** {@code FieldValue} class for {@link #arrayUnion()} transforms. */
   static class ArrayUnionFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -66,7 +66,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #arrayRemove()} transforms. */
+  /** {@code FieldValue} class for {@link #arrayRemove()} transforms. */
   static class ArrayRemoveFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -84,7 +84,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #increment()} transforms. */
+  /** {@code FieldValue} class for {@link #increment()} transforms. */
   static class NumericIncrementFieldValue extends FieldValue {
     private final Number operand;
 
@@ -192,83 +192,5 @@ public abstract class FieldValue {
   @NonNull
   public static VectorValue vector(@NonNull double[] values) {
     return new VectorValue(values);
-  }
-
-  /**
-   * Creates a new {@link RegexValue} constructed using the given pattern and options.
-   *
-   * @param pattern The pattern to use for the new regular expression.
-   * @param options The options to use for the new regular expression.
-   * @return A new {@link RegexValue} constructed using the given pattern and options.
-   */
-  @NonNull
-  public static RegexValue regex(@NonNull String pattern, @NonNull String options) {
-    return new RegexValue(pattern, options);
-  }
-
-  /**
-   * Creates a new {@link Int32Value} constructed using the given number.
-   *
-   * @param value The number to use for constructing the Int32Value object.
-   * @return A new {@link Int32Value} constructed using the number.
-   */
-  @NonNull
-  public static Int32Value int32(int value) {
-    return new Int32Value(value);
-  }
-
-  /**
-   * Creates a new {@link BsonTimestamp} constructed using the given values.
-   *
-   * @param seconds The seconds value to use for the new BSON Timestamp.
-   * @param increment The increment value to use for the new BSON Timestamp.
-   * @return A new {@link BsonTimestamp} constructed using the given values.
-   */
-  @NonNull
-  public static BsonTimestamp bsonTimestamp(long seconds, long increment) {
-    return new BsonTimestamp(seconds, increment);
-  }
-
-  /**
-   * Creates a new {@link BsonObjectId} constructed using the given value.
-   *
-   * @param oid The 24-character hex string representation of the ObjectId.
-   * @return A new {@link BsonObjectId} constructed using the given value.
-   */
-  @NonNull
-  public static BsonObjectId bsonObjectId(@NonNull String oid) {
-    return new BsonObjectId(oid);
-  }
-
-  /**
-   * Creates a new {@link BsonBinaryData} constructed using the given values.
-   *
-   * @param subtype The subtype for the data.
-   * @param data The binary data as a byte array.
-   * @return A new {@link BsonBinaryData} constructed using the given values.
-   */
-  @NonNull
-  public static BsonBinaryData bsonBinaryData(int subtype, @NonNull byte[] data) {
-    return BsonBinaryData.fromBytes(subtype, data);
-  }
-
-  /**
-   * Returns a {@link MinKey} value.
-   *
-   * @return A {@link MinKey} object which is the same as all MinKey objects.
-   */
-  @NonNull
-  public static MinKey minKey() {
-    return MinKey.instance();
-  }
-
-  /**
-   * Returns a {@link MaxKey} value.
-   *
-   * @return A {@link MaxKey} object which is the same as all MaxKey objects.
-   */
-  @NonNull
-  public static MaxKey maxKey() {
-    return MaxKey.instance();
   }
 }
