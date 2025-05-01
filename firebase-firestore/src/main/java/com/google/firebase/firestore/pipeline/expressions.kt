@@ -794,28 +794,88 @@ abstract class Expr internal constructor() {
     fun notEqAny(fieldName: String, arrayExpression: Expr): BooleanExpr =
       BooleanExpr("not_eq_any", fieldName, arrayExpression)
 
-    /** @return A new [Expr] representing the isNan operation. */
+    /**
+     * Creates an expression that returns true if a value is absent. Otherwise, returns false even
+     * if the value is null.
+     *
+     * @param value The expression to check.
+     * @return A new [BooleanExpr] representing the isAbsent operation.
+     */
+    @JvmStatic fun isAbsent(value: Expr): BooleanExpr = BooleanExpr("is_absent", value)
+
+    /**
+     * Creates an expression that returns true if a field is absent. Otherwise, returns false even
+     * if the field value is null.
+     *
+     * @param fieldName The field to check.
+     * @return A new [BooleanExpr] representing the isAbsent operation.
+     */
+    @JvmStatic fun isAbsent(fieldName: String): BooleanExpr = BooleanExpr("is_absent", fieldName)
+
+    /**
+     * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the isNan operation.
+     */
     @JvmStatic fun isNan(expr: Expr): BooleanExpr = BooleanExpr("is_nan", expr)
 
-    /** @return A new [Expr] representing the isNan operation. */
+    /**
+     * Creates an expression that checks if [expr] evaluates to 'NaN' (Not a Number).
+     *
+     * @param fieldName The field to check.
+     * @return A new [BooleanExpr] representing the isNan operation.
+     */
     @JvmStatic fun isNan(fieldName: String): BooleanExpr = BooleanExpr("is_nan", fieldName)
 
-    /** @return A new [Expr] representing the isNotNan operation. */
+    /**
+     * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a
+     * Number).
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the isNotNan operation.
+     */
     @JvmStatic fun isNotNan(expr: Expr): BooleanExpr = BooleanExpr("is_not_nan", expr)
 
-    /** @return A new [Expr] representing the isNotNan operation. */
+    /**
+     * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
+     * Number).
+     *
+     * @param fieldName The field to check.
+     * @return A new [BooleanExpr] representing the isNotNan operation.
+     */
     @JvmStatic fun isNotNan(fieldName: String): BooleanExpr = BooleanExpr("is_not_nan", fieldName)
 
-    /** @return A new [Expr] representing the isNull operation. */
+    /**
+     * Creates an expression that checks if tbe result of [expr] is null.
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the isNull operation.
+     */
     @JvmStatic fun isNull(expr: Expr): BooleanExpr = BooleanExpr("is_null", expr)
 
-    /** @return A new [Expr] representing the isNull operation. */
+    /**
+     * Creates an expression that checks if tbe value of a field is null.
+     *
+     * @param fieldName The field to check.
+     * @return A new [BooleanExpr] representing the isNull operation.
+     */
     @JvmStatic fun isNull(fieldName: String): BooleanExpr = BooleanExpr("is_null", fieldName)
 
-    /** @return A new [Expr] representing the isNotNull operation. */
+    /**
+     * Creates an expression that checks if tbe result of [expr] is not null.
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the isNotNull operation.
+     */
     @JvmStatic fun isNotNull(expr: Expr): BooleanExpr = BooleanExpr("is_not_null", expr)
 
-    /** @return A new [Expr] representing the isNotNull operation. */
+    /**
+     * Creates an expression that checks if tbe value of a field is not null.
+     *
+     * @param fieldName The field to check.
+     * @return A new [BooleanExpr] representing the isNotNull operation.
+     */
     @JvmStatic fun isNotNull(fieldName: String): BooleanExpr = BooleanExpr("is_not_null", fieldName)
 
     /** @return A new [Expr] representing the replaceFirst operation. */
@@ -2031,20 +2091,20 @@ abstract class Expr internal constructor() {
     @JvmStatic fun exists(fieldName: String): BooleanExpr = BooleanExpr("exists", fieldName)
 
     /**
-     * Creates an expression that returns the [catchExpr] argument if there is an
-     * error, else return the result of the [tryExpr] argument evaluation.
+     * Creates an expression that returns the [catchExpr] argument if there is an error, else return
+     * the result of the [tryExpr] argument evaluation.
      *
      * @param tryExpr The try expression.
-     * @param catchExpr The catch expression that will be evaluated and
-     * returned if the [tryExpr] produces an error.
+     * @param catchExpr The catch expression that will be evaluated and returned if the [tryExpr]
+     * produces an error.
      * @return A new [Expr] representing the ifError operation.
      */
     @JvmStatic
     fun ifError(tryExpr: Expr, catchExpr: Expr): Expr = FunctionExpr("if_error", tryExpr, catchExpr)
 
     /**
-     * Creates an expression that returns the [catchValue] argument if there is an
-     * error, else return the result of the [tryExpr] argument evaluation.
+     * Creates an expression that returns the [catchValue] argument if there is an error, else
+     * return the result of the [tryExpr] argument evaluation.
      *
      * @param tryExpr The try expression.
      * @param catchValue The value that will be returned if the [tryExpr] produces an error.
@@ -2250,7 +2310,7 @@ abstract class Expr internal constructor() {
    * @param values The values to check against.
    * @return A new [BooleanExpr] representing the 'IN' comparison.
    */
-  fun eqAny(values: List<Any>) = Companion.eqAny(this, values)
+  fun eqAny(values: List<Any>): BooleanExpr = Companion.eqAny(this, values)
 
   /**
    * Creates an expression that checks if this expression, when evaluated, is equal to any of the
@@ -2260,7 +2320,7 @@ abstract class Expr internal constructor() {
    * equality to the input.
    * @return A new [BooleanExpr] representing the 'IN' comparison.
    */
-  fun eqAny(arrayExpression: Expr) = Companion.eqAny(this, arrayExpression)
+  fun eqAny(arrayExpression: Expr): BooleanExpr = Companion.eqAny(this, arrayExpression)
 
   /**
    * Creates an expression that checks if this expression, when evaluated, is not equal to all the
@@ -2269,7 +2329,7 @@ abstract class Expr internal constructor() {
    * @param values The values to check against.
    * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
    */
-  fun notEqAny(values: List<Any>) = Companion.notEqAny(this, values)
+  fun notEqAny(values: List<Any>): BooleanExpr = Companion.notEqAny(this, values)
 
   /**
    * Creates an expression that checks if this expression, when evaluated, is not equal to all the
@@ -2279,23 +2339,36 @@ abstract class Expr internal constructor() {
    * equality to the input.
    * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
    */
-  fun notEqAny(arrayExpression: Expr) = Companion.notEqAny(this, arrayExpression)
+  fun notEqAny(arrayExpression: Expr): BooleanExpr = Companion.notEqAny(this, arrayExpression)
 
   /**
+   * Creates an expression that checks if this expression evaluates to 'NaN' (Not a Number).
+   *
+   * @return A new [BooleanExpr] representing the isNan operation.
    */
-  fun isNan() = Companion.isNan(this)
+  fun isNan(): BooleanExpr = Companion.isNan(this)
 
   /**
+   * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
+   * Number).
+   *
+   * @return A new [BooleanExpr] representing the isNotNan operation.
    */
-  fun isNotNan() = Companion.isNotNan(this)
+  fun isNotNan(): BooleanExpr = Companion.isNotNan(this)
 
   /**
+   * Creates an expression that checks if tbe result of this expression is null.
+   *
+   * @return A new [BooleanExpr] representing the isNull operation.
    */
-  fun isNull() = Companion.isNull(this)
+  fun isNull(): BooleanExpr = Companion.isNull(this)
 
   /**
+   * Creates an expression that checks if tbe result of this expression is not null.
+   *
+   * @return A new [BooleanExpr] representing the isNotNull operation.
    */
-  fun isNotNull() = Companion.isNotNull(this)
+  fun isNotNull(): BooleanExpr = Companion.isNotNull(this)
 
   /**
    */
@@ -2463,7 +2536,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
    */
-  fun cosineDistance(vector: Expr) = Companion.cosineDistance(this, vector)
+  fun cosineDistance(vector: Expr): Expr = Companion.cosineDistance(this, vector)
 
   /**
    * Calculates the Cosine distance between this vector expression and a vector literal.
@@ -2471,7 +2544,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
    */
-  fun cosineDistance(vector: DoubleArray) = Companion.cosineDistance(this, vector)
+  fun cosineDistance(vector: DoubleArray): Expr = Companion.cosineDistance(this, vector)
 
   /**
    * Calculates the Cosine distance between this vector expression and a vector literal.
@@ -2479,7 +2552,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (represented as an [VectorValue]) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
    */
-  fun cosineDistance(vector: VectorValue) = Companion.cosineDistance(this, vector)
+  fun cosineDistance(vector: VectorValue): Expr = Companion.cosineDistance(this, vector)
 
   /**
    * Calculates the dot product distance between this and another vector expression.
@@ -2487,7 +2560,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
    */
-  fun dotProduct(vector: Expr) = Companion.dotProduct(this, vector)
+  fun dotProduct(vector: Expr): Expr = Companion.dotProduct(this, vector)
 
   /**
    * Calculates the dot product distance between this vector expression and a vector literal.
@@ -2495,7 +2568,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
    */
-  fun dotProduct(vector: DoubleArray) = Companion.dotProduct(this, vector)
+  fun dotProduct(vector: DoubleArray): Expr = Companion.dotProduct(this, vector)
 
   /**
    * Calculates the dot product distance between this vector expression and a vector literal.
@@ -2503,7 +2576,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (represented as an [VectorValue]) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
    */
-  fun dotProduct(vector: VectorValue) = Companion.dotProduct(this, vector)
+  fun dotProduct(vector: VectorValue): Expr = Companion.dotProduct(this, vector)
 
   /**
    * Calculates the Euclidean distance between this and another vector expression.
@@ -2511,7 +2584,7 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
-  fun euclideanDistance(vector: Expr) = Companion.euclideanDistance(this, vector)
+  fun euclideanDistance(vector: Expr): Expr = Companion.euclideanDistance(this, vector)
 
   /**
    * Calculates the Euclidean distance between this vector expression and a vector literal.
@@ -2519,11 +2592,15 @@ abstract class Expr internal constructor() {
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
-  fun euclideanDistance(vector: DoubleArray) = Companion.euclideanDistance(this, vector)
+  fun euclideanDistance(vector: DoubleArray): Expr = Companion.euclideanDistance(this, vector)
 
   /**
+   * Calculates the Euclidean distance between this vector expression and a vector literal.
+   *
+   * @param vector The other vector (represented as an [VectorValue]) to compare against.
+   * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
-  fun euclideanDistance(vector: VectorValue) = Companion.euclideanDistance(this, vector)
+  fun euclideanDistance(vector: VectorValue): Expr = Companion.euclideanDistance(this, vector)
 
   /**
    */
@@ -2834,18 +2911,18 @@ abstract class Expr internal constructor() {
   fun exists(): BooleanExpr = Companion.exists(this)
 
   /**
-   * Creates an expression that returns the [catchExpr] argument if there is an
-   * error, else return the result of this expression.
+   * Creates an expression that returns the [catchExpr] argument if there is an error, else return
+   * the result of this expression.
    *
-   * @param catchExpr The catch expression that will be evaluated and
-   * returned if the this expression produces an error.
+   * @param catchExpr The catch expression that will be evaluated and returned if the this
+   * expression produces an error.
    * @return A new [Expr] representing the ifError operation.
    */
   fun ifError(catchExpr: Expr): Expr = Companion.ifError(this, catchExpr)
 
   /**
-   * Creates an expression that returns the [catchValue] argument if there is an
-   * error, else return the result of this expression.
+   * Creates an expression that returns the [catchValue] argument if there is an error, else return
+   * the result of this expression.
    *
    * @param catchValue The value that will be returned if this expression produces an error.
    * @return A new [Expr] representing the ifError operation.
@@ -2966,10 +3043,7 @@ internal constructor(
 /** A class that represents a filter condition. */
 open class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
   FunctionExpr(name, params, InternalOptions.EMPTY) {
-  internal constructor(
-    name: String,
-    param: Expr
-  ) : this(name, arrayOf(param))
+  internal constructor(name: String, param: Expr) : this(name, arrayOf(param))
   internal constructor(
     name: String,
     param: Expr,
@@ -2980,10 +3054,7 @@ open class BooleanExpr internal constructor(name: String, params: Array<out Expr
     param1: Expr,
     param2: Expr
   ) : this(name, arrayOf(param1, param2))
-  internal constructor(
-    name: String,
-    fieldName: String
-  ) : this(name, arrayOf(field(fieldName)))
+  internal constructor(name: String, fieldName: String) : this(name, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
     fieldName: String,
