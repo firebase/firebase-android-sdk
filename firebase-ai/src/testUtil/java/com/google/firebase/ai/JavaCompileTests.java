@@ -17,6 +17,7 @@
 package java.com.google.firebase.ai;
 
 import android.graphics.Bitmap;
+import androidx.annotation.Nullable;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.ai.FirebaseAI;
 import com.google.firebase.ai.GenerativeModel;
@@ -43,8 +44,12 @@ import com.google.firebase.ai.type.HarmProbability;
 import com.google.firebase.ai.type.HarmSeverity;
 import com.google.firebase.ai.type.ImagePart;
 import com.google.firebase.ai.type.InlineDataPart;
-import com.google.firebase.ai.type.LiveContentResponse;
 import com.google.firebase.ai.type.LiveGenerationConfig;
+import com.google.firebase.ai.type.LiveServerContent;
+import com.google.firebase.ai.type.LiveServerMessage;
+import com.google.firebase.ai.type.LiveServerSetupComplete;
+import com.google.firebase.ai.type.LiveServerToolCall;
+import com.google.firebase.ai.type.LiveServerToolCallCancellation;
 import com.google.firebase.ai.type.MediaData;
 import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.Part;
@@ -196,7 +201,10 @@ public class JavaCompileTests {
     }
   }
 
-  public void validateContent(Content content) {
+  public void validateContent(@Nullable Content content) {
+    if (content == null) {
+      return;
+    }
     String role = content.getRole();
     for (Part part : content.getParts()) {
       if (part instanceof TextPart) {
@@ -279,15 +287,15 @@ public class JavaCompileTests {
     session
         .receive()
         .subscribe(
-            new Subscriber<LiveContentResponse>() {
+            new Subscriber<LiveServerMessage>() {
               @Override
               public void onSubscribe(Subscription s) {
                 s.request(Long.MAX_VALUE);
               }
 
               @Override
-              public void onNext(LiveContentResponse response) {
-                validateLiveContentResponse(response);
+              public void onNext(LiveServerMessage message) {
+                validateLiveContentResponse(message);
               }
 
               @Override
@@ -318,17 +326,22 @@ public class JavaCompileTests {
     session.close();
   }
 
-  private void validateLiveContentResponse(LiveContentResponse response) {
-    // int status = response.getStatus();
-    // Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
-    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
-    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
-    // TODO b/412743328 LiveContentResponse.Status inaccessible for Java users
-    Content data = response.getData();
-    if (data != null) {
-      validateContent(data);
+  private void validateLiveContentResponse(LiveServerMessage message) {
+    if (message instanceof LiveServerContent) {
+      LiveServerContent content = (LiveServerContent) message;
+      validateContent(content.getContent());
+      boolean complete = content.getGenerationComplete();
+      boolean interrupted = content.getInterrupted();
+      boolean turnComplete = content.getTurnComplete();
+    } else if (message instanceof LiveServerSetupComplete) {
+      LiveServerSetupComplete setup = (LiveServerSetupComplete) message;
+      // No methods
+    } else if (message instanceof LiveServerToolCall) {
+      LiveServerToolCall call = (LiveServerToolCall) message;
+      validateFunctionCalls(call.getFunctionCalls());
+    } else if (message instanceof LiveServerToolCallCancellation) {
+      LiveServerToolCallCancellation cancel = (LiveServerToolCallCancellation) message;
+      List<String> functions = cancel.getFunctionIds();
     }
-    String text = response.getText();
-    validateFunctionCalls(response.getFunctionCalls());
   }
 }
