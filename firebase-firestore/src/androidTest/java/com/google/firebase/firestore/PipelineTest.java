@@ -25,7 +25,7 @@ import static com.google.firebase.firestore.pipeline.Expr.eq;
 import static com.google.firebase.firestore.pipeline.Expr.euclideanDistance;
 import static com.google.firebase.firestore.pipeline.Expr.field;
 import static com.google.firebase.firestore.pipeline.Expr.gt;
-import static com.google.firebase.firestore.pipeline.Expr.logicalMax;
+import static com.google.firebase.firestore.pipeline.Expr.logicalMaximum;
 import static com.google.firebase.firestore.pipeline.Expr.lt;
 import static com.google.firebase.firestore.pipeline.Expr.lte;
 import static com.google.firebase.firestore.pipeline.Expr.mapGet;
@@ -724,8 +724,8 @@ public class PipelineTest {
             .collection(randomCol)
             .where(field("author").eq("Douglas Adams"))
             .select(
-                field("rating").logicalMax(4.5).alias("max_rating"),
-                logicalMax(field("published"), 1900).alias("max_published"))
+                field("rating").logicalMaximum(4.5).alias("max_rating"),
+                logicalMaximum(field("published"), 1900).alias("max_published"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)

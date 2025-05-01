@@ -829,8 +829,7 @@ abstract class Expr internal constructor() {
     @JvmStatic fun isNan(fieldName: String): BooleanExpr = BooleanExpr("is_nan", fieldName)
 
     /**
-     * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a
-     * Number).
+     * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
      *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
@@ -942,19 +941,48 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic fun byteLength(fieldName: String): Expr = FunctionExpr("byte_length", fieldName)
 
-    /** @return A new [Expr] representing the like operation. */
-    @JvmStatic fun like(expr: Expr, pattern: Expr): BooleanExpr = BooleanExpr("like", expr, pattern)
-
-    /** @return A new [Expr] representing the like operation. */
+    /**
+     * Creates an expression that performs a case-sensitive wildcard string comparison.
+     *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+     * @return A new [BooleanExpr] representing the like operation.
+     */
     @JvmStatic
-    fun like(expr: Expr, pattern: String): BooleanExpr = BooleanExpr("like", expr, pattern)
+    fun like(stringExpression: Expr, pattern: Expr): BooleanExpr =
+      BooleanExpr("like", stringExpression, pattern)
 
-    /** @return A new [Expr] representing the like operation. */
+    /**
+     * Creates an expression that performs a case-sensitive wildcard string comparison.
+     *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+     * @return A new [BooleanExpr] representing the like operation.
+     */
+    @JvmStatic
+    fun like(stringExpression: Expr, pattern: String): BooleanExpr =
+      BooleanExpr("like", stringExpression, pattern)
+
+    /**
+     * Creates an expression that performs a case-sensitive wildcard string comparison against a
+     * field.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+     * @return A new [BooleanExpr] representing the like comparison.
+     */
     @JvmStatic
     fun like(fieldName: String, pattern: Expr): BooleanExpr =
       BooleanExpr("like", fieldName, pattern)
 
-    /** @return A new [Expr] representing the like operation. */
+    /**
+     * Creates an expression that performs a case-sensitive wildcard string comparison against a
+     * field.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+     * @return A new [BooleanExpr] representing the like comparison.
+     */
     @JvmStatic
     fun like(fieldName: String, pattern: String): BooleanExpr =
       BooleanExpr("like", fieldName, pattern)
@@ -999,41 +1027,53 @@ abstract class Expr internal constructor() {
     fun regexMatch(fieldName: String, pattern: String) =
       BooleanExpr("regex_match", fieldName, pattern)
 
-    /** @return A new [Expr] representing the logicalMax operation. */
+    /**
+     * Creates an expression that returns the largest value between multiple input expressions or
+     * literal values. Based on Firestore's value type ordering.
+     *
+     * @param expr The first operand expression.
+     * @param others Optional additional expressions or literals.
+     * @return A new [Expr] representing the logical maximum operation.
+     */
     @JvmStatic
-    fun logicalMax(left: Expr, right: Expr): Expr = FunctionExpr("logical_max", left, right)
+    fun logicalMaximum(expr: Expr, vararg others: Any): Expr =
+      FunctionExpr("logical_max", expr, *others)
 
-    /** @return A new [Expr] representing the logicalMax operation. */
+    /**
+     * Creates an expression that returns the largest value between multiple input expressions or
+     * literal values. Based on Firestore's value type ordering.
+     *
+     * @param fieldName The first operand field name.
+     * @param others Optional additional expressions or literals.
+     * @return A new [Expr] representing the logical maximum operation.
+     */
     @JvmStatic
-    fun logicalMax(left: Expr, right: Any): Expr = FunctionExpr("logical_max", left, right)
+    fun logicalMaximum(fieldName: String, vararg others: Any): Expr =
+      FunctionExpr("logical_max", fieldName, *others)
 
-    /** @return A new [Expr] representing the logicalMax operation. */
+    /**
+     * Creates an expression that returns the smallest value between multiple input expressions or
+     * literal values. Based on Firestore's value type ordering.
+     *
+     * @param expr The first operand expression.
+     * @param others Optional additional expressions or literals.
+     * @return A new [Expr] representing the logical minimum operation.
+     */
     @JvmStatic
-    fun logicalMax(fieldName: String, other: Expr): Expr =
-      FunctionExpr("logical_max", fieldName, other)
+    fun logicalMinimum(expr: Expr, vararg others: Any): Expr =
+      FunctionExpr("logical_min", expr, *others)
 
-    /** @return A new [Expr] representing the logicalMax operation. */
+    /**
+     * Creates an expression that returns the smallest value between multiple input expressions or
+     * literal values. Based on Firestore's value type ordering.
+     *
+     * @param fieldName The first operand field name.
+     * @param others Optional additional expressions or literals.
+     * @return A new [Expr] representing the logical minimum operation.
+     */
     @JvmStatic
-    fun logicalMax(fieldName: String, other: Any): Expr =
-      FunctionExpr("logical_max", fieldName, other)
-
-    /** @return A new [Expr] representing the logicalMin operation. */
-    @JvmStatic
-    fun logicalMin(left: Expr, right: Expr): Expr = FunctionExpr("logical_min", left, right)
-
-    /** @return A new [Expr] representing the logicalMin operation. */
-    @JvmStatic
-    fun logicalMin(left: Expr, right: Any): Expr = FunctionExpr("logical_min", left, right)
-
-    /** @return A new [Expr] representing the logicalMin operation. */
-    @JvmStatic
-    fun logicalMin(fieldName: String, other: Expr): Expr =
-      FunctionExpr("logical_min", fieldName, other)
-
-    /** @return A new [Expr] representing the logicalMin operation. */
-    @JvmStatic
-    fun logicalMin(fieldName: String, other: Any): Expr =
-      FunctionExpr("logical_min", fieldName, other)
+    fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
+      FunctionExpr("logical_min", fieldName, *others)
 
     /** @return A new [Expr] representing the reverse operation. */
     @JvmStatic fun reverse(expr: Expr): Expr = FunctionExpr("reverse", expr)
@@ -1193,9 +1233,14 @@ abstract class Expr internal constructor() {
 
     internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", elements)
 
-    /** @return A new [Expr] representing the map operation. */
+    /**
+     * Creates an expression that creates a Firestore map value from an input object.
+     *
+     * @param elements The input map to evaluate in the expression.
+     * @return A new [Expr] representing the map function.
+     */
     @JvmStatic
-    fun map(elements: Map<String, Any>) =
+    fun map(elements: Map<String, Any>): Expr =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /** @return A new [Expr] representing the mapGet operation. */
@@ -1215,12 +1260,12 @@ abstract class Expr internal constructor() {
     /** @return A new [Expr] representing the mapMerge operation. */
     @JvmStatic
     fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", firstMap, secondMap, otherMaps)
+      FunctionExpr("map_merge", firstMap, secondMap, *otherMaps)
 
     /** @return A new [Expr] representing the mapMerge operation. */
     @JvmStatic
     fun mapMerge(mapField: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", mapField, secondMap, otherMaps)
+      FunctionExpr("map_merge", mapField, secondMap, *otherMaps)
 
     /** @return A new [Expr] representing the mapRemove operation. */
     @JvmStatic
@@ -2342,6 +2387,14 @@ abstract class Expr internal constructor() {
   fun notEqAny(arrayExpression: Expr): BooleanExpr = Companion.notEqAny(this, arrayExpression)
 
   /**
+   * Creates an expression that returns true if yhe result of this expression is absent. Otherwise,
+   * returns false even if the value is null.
+   *
+   * @return A new [BooleanExpr] representing the isAbsent operation.
+   */
+  fun isAbsent(): BooleanExpr = Companion.isAbsent(this)
+
+  /**
    * Creates an expression that checks if this expression evaluates to 'NaN' (Not a Number).
    *
    * @return A new [BooleanExpr] representing the isNan operation.
@@ -2402,48 +2455,76 @@ abstract class Expr internal constructor() {
   fun byteLength(): Expr = Companion.byteLength(this)
 
   /**
+   * Creates an expression that performs a case-sensitive wildcard string comparison.
+   *
+   * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+   * @return A new [BooleanExpr] representing the like operation.
    */
-  fun like(pattern: Expr) = Companion.like(this, pattern)
+  fun like(pattern: Expr): BooleanExpr = Companion.like(this, pattern)
+
+  /**
+   * Creates an expression that performs a case-sensitive wildcard string comparison.
+   *
+   * @param pattern The pattern to search for. You can use "%" as a wildcard character.
+   * @return A new [BooleanExpr] representing the like operation.
+   */
+  fun like(pattern: String): BooleanExpr = Companion.like(this, pattern)
 
   /**
    */
-  fun like(pattern: String) = Companion.like(this, pattern)
+  fun regexContains(pattern: Expr): BooleanExpr = Companion.regexContains(this, pattern)
 
   /**
    */
-  fun regexContains(pattern: Expr) = Companion.regexContains(this, pattern)
+  fun regexContains(pattern: String): BooleanExpr = Companion.regexContains(this, pattern)
 
   /**
    */
-  fun regexContains(pattern: String) = Companion.regexContains(this, pattern)
+  fun regexMatch(pattern: Expr): BooleanExpr = Companion.regexMatch(this, pattern)
 
   /**
    */
-  fun regexMatch(pattern: Expr) = Companion.regexMatch(this, pattern)
+  fun regexMatch(pattern: String): BooleanExpr = Companion.regexMatch(this, pattern)
+
+  /**
+   * Creates an expression that returns the largest value between multiple input expressions or
+   * literal values. Based on Firestore's value type ordering.
+   *
+   * @param others Expressions or literals.
+   * @return A new [Expr] representing the logical maximum operation.
+   */
+  fun logicalMaximum(vararg others: Expr): Expr = Companion.logicalMaximum(this, *others)
+
+  /**
+   * Creates an expression that returns the largest value between multiple input expressions or
+   * literal values. Based on Firestore's value type ordering.
+   *
+   * @param others Expressions or literals.
+   * @return A new [Expr] representing the logical maximum operation.
+   */
+  fun logicalMaximum(vararg others: Any): Expr = Companion.logicalMaximum(this, *others)
+
+  /**
+   * Creates an expression that returns the smallest value between multiple input expressions or
+   * literal values. Based on Firestore's value type ordering.
+   *
+   * @param others Expressions or literals.
+   * @return A new [Expr] representing the logical minimum operation.
+   */
+  fun logicalMinimum(vararg others: Expr): Expr = Companion.logicalMinimum(this, *others)
+
+  /**
+   * Creates an expression that returns the smallest value between multiple input expressions or
+   * literal values. Based on Firestore's value type ordering.
+   *
+   * @param others Expressions or literals.
+   * @return A new [Expr] representing the logical minimum operation.
+   */
+  fun logicalMinimum(vararg others: Any): Expr = Companion.logicalMinimum(this, *others)
 
   /**
    */
-  fun regexMatch(pattern: String) = Companion.regexMatch(this, pattern)
-
-  /**
-   */
-  fun logicalMax(other: Expr) = Companion.logicalMax(this, other)
-
-  /**
-   */
-  fun logicalMax(other: Any) = Companion.logicalMax(this, other)
-
-  /**
-   */
-  fun logicalMin(other: Expr) = Companion.logicalMin(this, other)
-
-  /**
-   */
-  fun logicalMin(other: Any) = Companion.logicalMin(this, other)
-
-  /**
-   */
-  fun reverse() = Companion.reverse(this)
+  fun reverse(): Expr = Companion.reverse(this)
 
   /**
    */
