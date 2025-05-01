@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed an issue where tests were depending on a deprecated feature of the test framework (#6927)
 
 # 21.0.1
 * [fixed] Fixed an issue where `maxUploadRetryTimeMillis` parameter is ignored when uploading using
@@ -208,4 +209,3 @@ updates.
   `UploadTask.TaskSnapshot.getDownloadUrl()` methods. To get a current download
   URL, use
   [`StorageReference.getDownloadUr()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#getDownloadUrl()).
-
