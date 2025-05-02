@@ -17,15 +17,16 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
+import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Status
@@ -52,7 +53,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectError>,
+    val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
   )
 
   suspend fun executeQuery(
@@ -74,7 +75,7 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() }
     )
   }
 
@@ -97,11 +98,11 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() }
     )
   }
 
-  private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
+  private inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,
     kotlinMethodName: String,
     block: T.() -> R
@@ -138,50 +139,72 @@ internal class DataConnectGrpcClient(
 internal object DataConnectGrpcClientGlobals {
   private fun ListValue.toPathSegment() =
     valuesList.map {
-      when (val kind = it.kindCase) {
-        Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
-        Value.KindCase.NUMBER_VALUE ->
-          DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
-        else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
+      when (it.kindCase) {
+        Value.KindCase.STRING_VALUE -> DataConnectPathSegment.Field(it.stringValue)
+        Value.KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(it.numberValue.toInt())
+        // The cases below are expected to never occur; however, implement some logic for them
+        // to avoid things like throwing exceptions in those cases.
+        Value.KindCase.NULL_VALUE -> DataConnectPathSegment.Field("null")
+        Value.KindCase.BOOL_VALUE -> DataConnectPathSegment.Field(it.boolValue.toString())
+        Value.KindCase.LIST_VALUE -> DataConnectPathSegment.Field(it.listValue.toCompactString())
+        Value.KindCase.STRUCT_VALUE ->
+          DataConnectPathSegment.Field(it.structValue.toCompactString())
+        else -> DataConnectPathSegment.Field(it.toString())
       }
     }
 
-  private fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
-    buildList {
-      this@toSourceLocations.forEach {
-        add(DataConnectError.SourceLocation(line = it.line, column = it.column))
-      }
-    }
-
-  fun GraphqlError.toDataConnectError() =
-    DataConnectError(
+  fun GraphqlError.toErrorInfoImpl() =
+    DataConnectOperationFailureResponseImpl.ErrorInfoImpl(
       message = message,
       path = path.toPathSegment(),
-      this.locationsList.toSourceLocations()
     )
 
   fun <T> DataConnectGrpcClient.OperationResult.deserialize(
     deserializer: DeserializationStrategy<T>,
     serializersModule: SerializersModule?,
-  ): T =
+  ): T {
     if (deserializer === DataConnectUntypedData) {
-      @Suppress("UNCHECKED_CAST")
-      DataConnectUntypedData(data?.toMap(), errors) as T
-    } else if (data === null) {
-      if (errors.isNotEmpty()) {
-        throw DataConnectException("operation failed: errors=$errors")
-      } else {
-        throw DataConnectException("no data included in result")
-      }
-    } else if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors (data=$data)")
-    } else {
-      try {
-        decodeFromStruct(data, deserializer, serializersModule)
-      } catch (dataConnectException: DataConnectException) {
-        throw dataConnectException
-      } catch (throwable: Throwable) {
-        throw DataConnectException("decoding response data failed: $throwable", throwable)
-      }
+      @Suppress("UNCHECKED_CAST") return DataConnectUntypedData(data?.toMap(), errors) as T
     }
+
+    val decodedData: Result<T>? =
+      data?.let { data -> runCatching { decodeFromStruct(data, deserializer, serializersModule) } }
+
+    if (errors.isNotEmpty()) {
+      throw DataConnectOperationException(
+        "operation encountered errors during execution: $errors",
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = data?.toMap(),
+            data = decodedData?.getOrNull(),
+            errors = errors,
+          )
+      )
+    }
+
+    if (decodedData == null) {
+      throw DataConnectOperationException(
+        "no data was included in the response from the server",
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = null,
+            data = null,
+            errors = emptyList(),
+          )
+      )
+    }
+
+    return decodedData.getOrElse { exception ->
+      throw DataConnectOperationException(
+        "decoding data from the server's response failed: ${exception.message}",
+        cause = exception,
+        response =
+          DataConnectOperationFailureResponseImpl(
+            rawData = data?.toMap(),
+            data = null,
+            errors = emptyList(),
+          )
+      )
+    }
+  }
 }

@@ -122,8 +122,14 @@ public class CompositeIndexTestHelper {
   // actual document IDs created by the test helper.
   @NonNull
   public void assertOnlineAndOfflineResultsMatch(
-      @NonNull Query query, @NonNull String... expectedDocs) {
-    checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
+      @NonNull CollectionReference collection,
+      @NonNull Query query,
+      @NonNull String... expectedDocs) {
+    // `checkOnlineAndOfflineResultsMatch` first makes sure all documents needed for
+    // `query` are in the cache. It does so making a `get` on the first argument.
+    // Since *all* composite index tests use the same collection, this is very inefficient to do.
+    // Therefore, we should only do so for tests where `TEST_ID_FIELD` matches the current test.
+    checkOnlineAndOfflineResultsMatch(this.query(collection), query, toHashedIds(expectedDocs));
   }
 
   // Asserts that the IDs in the query snapshot matches the expected Ids. The expected document

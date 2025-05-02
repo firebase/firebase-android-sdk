@@ -46,6 +46,15 @@ public class ContentModality private constructor(public val ordinal: Int) {
       }
   }
 
+  internal fun toInternal() =
+    when (this) {
+      TEXT -> "TEXT"
+      IMAGE -> "IMAGE"
+      VIDEO -> "VIDEO"
+      AUDIO -> "AUDIO"
+      DOCUMENT -> "DOCUMENT"
+      else -> "UNSPECIFIED"
+    }
   public companion object {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: ContentModality = ContentModality(0)

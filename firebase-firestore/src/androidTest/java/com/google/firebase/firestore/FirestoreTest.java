@@ -1533,7 +1533,7 @@ public class FirestoreTest {
             "_id1__",
             "a");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocs);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocs);
   }
 
   @Test
@@ -1564,7 +1564,7 @@ public class FirestoreTest {
     List<String> expectedDocs =
         Arrays.asList("__id12__", "__id9223372036854775807__", "12", "7", "A");
 
-    assertSDKQueryResultsConsistentWithBackend(filteredQuery, testDocs, expectedDocs);
+    assertSDKQueryResultsConsistentWithBackend(colRef, filteredQuery, testDocs, expectedDocs);
   }
 
   @Test
@@ -1604,7 +1604,8 @@ public class FirestoreTest {
             "_id1__",
             "a");
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    // Run query with snapshot listener
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1640,7 +1641,7 @@ public class FirestoreTest {
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
@@ -1676,7 +1677,7 @@ public class FirestoreTest {
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
@@ -1712,7 +1713,7 @@ public class FirestoreTest {
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
@@ -1748,7 +1749,7 @@ public class FirestoreTest {
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
@@ -1785,7 +1786,7 @@ public class FirestoreTest {
         Arrays.asList(
             "Sierpiński", "Łukasiewicz", "你好", "你顥", "岩澤", "︒", "Ｐ", "🄟", "🐵", "😀", "😁");
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
@@ -1830,6 +1831,6 @@ public class FirestoreTest {
             "g",
             map("value", "ab??"));
 
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, actualDocs, expectedDocIds);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, actualDocs, expectedDocIds);
   }
 }

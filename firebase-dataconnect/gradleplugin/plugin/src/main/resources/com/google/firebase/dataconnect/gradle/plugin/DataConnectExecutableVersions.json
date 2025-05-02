@@ -1,5 +1,5 @@
 {
-  "defaultVersion": "1.8.3",
+  "defaultVersion": "2.2.0",
   "versions": [
     {
       "version": "1.3.4",
@@ -486,6 +486,150 @@
       "os": "linux",
       "size": 25448600,
       "sha512DigestHex": "6734188ed2dc41fdf9922e152848d46a4bd6a30083c918ac0de5197e1f998f8dc2b4e190c47b02c176f68b93591132c29be142b4b61a36c81aec2358a81864c6"
+    },
+    {
+      "version": "1.8.4",
+      "os": "windows",
+      "size": 26020352,
+      "sha512DigestHex": "a93277e32a3da54e9b6f9153fa056398567a659d0e5e23422c98bea4b480db6c8d49049135575031bad5e109fb06f82cb65d9131dc8b1ecf3a89039854aacc03"
+    },
+    {
+      "version": "1.8.4",
+      "os": "macos",
+      "size": 25588480,
+      "sha512DigestHex": "7b8d4e605b6c31b0fa82dab74ac215cbe1745f84c83cb7fc71f7d8e0e697e449d50b91f2bc02a0e20eda870169a6f4ab0d65bfda088801f5245d853fc005e98e"
+    },
+    {
+      "version": "1.8.4",
+      "os": "linux",
+      "size": 25501848,
+      "sha512DigestHex": "be03f18228074e584d8e4b758ad75d22f71b1f6222c4a3c858f89fd081a138dd27dc03bfb43bd85ac21fb0eba6aae464d429c5f3e166a7d86b9daa0a5f3e8644"
+    },
+    {
+      "version": "1.8.5",
+      "os": "windows",
+      "size": 26031616,
+      "sha512DigestHex": "14a1f69ee9062bfd460573722f8315781ed12e16734f3d09d635881850e33b159930fee403d5d2bd5ec3644fef3d3d869fe003d3760a9b50223de7676a95502c"
+    },
+    {
+      "version": "1.8.5",
+      "os": "macos",
+      "size": 25600768,
+      "sha512DigestHex": "ecf07c8ab3295e70c15128d5682269efcd89517dd9d068711a028097efd7bb7995611f7e4ee8312107d9b6e0a82b5565557bac658911f2f6ade8363356007183"
+    },
+    {
+      "version": "1.8.5",
+      "os": "linux",
+      "size": 25514136,
+      "sha512DigestHex": "628fe32575e6caac56130ae8d286156a15b220d4365bef1c99e71b7cbcd7fa76022cca41e1670816723c9ae24c9db32ee41921075293b7a6500ea58c87e08a60"
+    },
+    {
+      "version": "1.9.0",
+      "os": "windows",
+      "size": 26838016,
+      "sha512DigestHex": "2680b28d4aec2c401974f0f8cf4110b36974acb52fd7afd8bb23d9d9b619308f66352ed4c1e7b3fc492af29ab1e490b7cee879e9f22eaf7dbf96b4d8fa978b55"
+    },
+    {
+      "version": "1.9.0",
+      "os": "macos",
+      "size": 26395392,
+      "sha512DigestHex": "39e214d639a747f7af7cdad4aff0ed2af0bb6c3544b3c2daf95f43706039e47a3f0492e8a1c13c352e873f3f9c747af1cb4fb80470007c817bd11431905428e7"
+    },
+    {
+      "version": "1.9.0",
+      "os": "linux",
+      "size": 26308760,
+      "sha512DigestHex": "02f3fa7c1b98876073c909b259c199ed60c6e1d89cf832d41585cc04a7314a1692cb66709c37fde45be680da6ddc14cd11619d9f80350f0eb180a0de9b8ef2da"
+    },
+    {
+      "version": "1.9.1",
+      "os": "windows",
+      "size": 26846720,
+      "sha512DigestHex": "ef4014f58df5a9ab6e4c5d1a33a384d93affc7b9bb971a99a2672c05147d0cb64005ecda241a96a37984a9b6657ab900c3b26f2c7a5cfb32a24a2591afc9b94d"
+    },
+    {
+      "version": "1.9.1",
+      "os": "macos",
+      "size": 26403584,
+      "sha512DigestHex": "ec90bd0c21feb5310f528e80b6415ad028a4f09a2ea99e2a1eca135d27a533ceda8f778c007f06e5ecbc5be0e32a2b13b4d8460ac5ad073e4216e7eb643f0b5d"
+    },
+    {
+      "version": "1.9.1",
+      "os": "linux",
+      "size": 26316952,
+      "sha512DigestHex": "631cb41c1bf8ab18563180112e9f114d96a525884cf96914b69fdcfd861d32aa852b06b1c675f911148d238a4cd4c3d574ef8f73e66444bf5b8f1199da059e13"
+    },
+    {
+      "version": "1.9.2",
+      "os": "windows",
+      "size": 26846208,
+      "sha512DigestHex": "1faedad0979fe1228b51f8a3b23f97468e2718cee08dfb65ec6b21e2a3cec99eee060cf9ee6560e80c7a5059437378a7e02f1afa77a8f4e931ef1a3294951fd2"
+    },
+    {
+      "version": "1.9.2",
+      "os": "macos",
+      "size": 26403584,
+      "sha512DigestHex": "4be6adab666688334879a72519337b851b494d63b7059e71f4c23b443d31f442c50bd69837af3897a9a38ac7aae1aebb8d97d33111e520110dac24c2a7f29a1d"
+    },
+    {
+      "version": "1.9.2",
+      "os": "linux",
+      "size": 26316952,
+      "sha512DigestHex": "0bd4fcb4bdb66aab502000c19df824fc8df192906e712edd0000192beeb0ba3d29f2a627fc3097735dbab2d9bcbc3715e12fb8afb26e17c2e3e40103357b49ae"
+    },
+    {
+      "version": "2.0.0",
+      "os": "windows",
+      "size": 26884096,
+      "sha512DigestHex": "720fc3b4be8da10e684eae252f962eed8d30f370068414642ab8e7974f9a370bc1b5038f47d2acc77f266ca224c0c22afc1177ae4510dca7d249ba423844abae"
+    },
+    {
+      "version": "2.0.0",
+      "os": "macos",
+      "size": 26440448,
+      "sha512DigestHex": "bf812823aedd709c88e7c757412fe7dedfe1e05f8526863d714637f5adcf3e894c9780b759b919a6f96ab5a5ef579d60e57969cbc3b4f0ff7bc91697311c85fd"
+    },
+    {
+      "version": "2.0.0",
+      "os": "linux",
+      "size": 26353816,
+      "sha512DigestHex": "37a3b7f4fca4a71c5c336fd7edebd4472bb51b31ff4abac80b31f8ef55831726b439f9f7ef1152cee6006019cd22cef51572874e5e6680962826fbc4c6166530"
+    },
+    {
+      "version": "2.1.0",
+      "os": "windows",
+      "size": 26884096,
+      "sha512DigestHex": "299525effb3d645868aadd82cbeac28a528d0ecbbbf78d0e830478d03618de9e7356fdfd5599d9cd29fa86250c3543d656f9fe10e2d35c771cb42b31e904e534"
+    },
+    {
+      "version": "2.1.0",
+      "os": "macos",
+      "size": 26440448,
+      "sha512DigestHex": "fac00b743d08eb9f0fbb4adceac63633a5364152551916ad2c787f4e5a3f8f51a5cd50350374279e04776cbf9e8d9b89d289c6f9e06f153820f9345b0a32733b"
+    },
+    {
+      "version": "2.1.0",
+      "os": "linux",
+      "size": 26357912,
+      "sha512DigestHex": "75661fd65f8fcb78b8ac3585816c18e821fe0b993a94c5fa7f8f928f5827da3112ecee0de246c07bffcead4291172beeccf27708f1fcf19720bae9352885768b"
+    },
+    {
+      "version": "2.2.0",
+      "os": "windows",
+      "size": 26982912,
+      "sha512DigestHex": "6e861a3603300474536c314318826d6609aeda04476996f1695ebe0dd4b508653dabee91935fcc2054d8c40965a630618241c7fbc55f490a3c109f240e69684d"
+    },
+    {
+      "version": "2.2.0",
+      "os": "macos",
+      "size": 26538752,
+      "sha512DigestHex": "018d73ae8c4bdc9032125bd01715a181253e411e6b0b507324a897b549efab25d9aaea11d3fe7b9e9dab38592b3967cd46df3650a5a76fb7ea80e9bea3225812"
+    },
+    {
+      "version": "2.2.0",
+      "os": "linux",
+      "size": 26452120,
+      "sha512DigestHex": "aab441e47115489b968f90d588b08f7a5848cef79849653bde84ffea5612404ec142c3bc87c6a466036a7e3e4228eff667a56ba633d3af93be0082ef4819c25f"
     }
   ]
 }

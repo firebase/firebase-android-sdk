@@ -1,4 +1,20 @@
 # Unreleased
+* [changed] Code robustness improvements related to state management in
+  `FirebaseDataConnect` objects.
+  ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
+
+
+# 16.0.1
+* [changed] Internal improvements.
+
+# 16.0.0
+* [changed] DataConnectOperationException added, enabling support for partial
+  errors; that is, any data that was received and/or was able to be decoded is
+  now available via the "response" property of the exception thrown when a
+  query or mutation is executed.
+  ([#6794](https://github.com/firebase/firebase-android-sdk/pull/6794))
+
+# 16.0.0-beta05
 * [changed] Changed gRPC proto package to v1 (was v1beta).
   ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
 

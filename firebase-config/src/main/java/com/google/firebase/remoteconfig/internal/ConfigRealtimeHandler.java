@@ -91,7 +91,7 @@ public class ConfigRealtimeHandler {
   }
 
   public synchronized void setBackgroundState(boolean isInBackground) {
-    configRealtimeHttpClient.setRealtimeBackgroundState(isInBackground);
+    configRealtimeHttpClient.setIsInBackground(isInBackground);
     if (!isInBackground) {
       beginRealtime();
     }
