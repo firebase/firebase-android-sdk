@@ -57,11 +57,13 @@ import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.PublicPreviewAPI;
 import com.google.firebase.ai.type.ResponseModality;
 import com.google.firebase.ai.type.SafetyRating;
+import com.google.firebase.ai.type.Schema;
 import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.UsageMetadata;
 import com.google.firebase.ai.type.Voices;
 import com.google.firebase.concurrent.FirebaseExecutors;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -92,8 +94,37 @@ public class JavaCompileTests {
   }
 
   private GenerationConfig getConfig() {
-    return new GenerationConfig.Builder().build();
-    // TODO b/406558430 GenerationConfig.Builder.setParts returns void
+    return new GenerationConfig.Builder()
+        .setTopK(10)
+        .setTopP(11.0F)
+        .setTemperature(32.0F)
+        .setCandidateCount(1)
+        .setMaxOutputTokens(0xCAFEBABE)
+        .setFrequencyPenalty(1.0F)
+        .setPresencePenalty(2.0F)
+        .setStopSequences(List.of("foo", "bar"))
+        .setResponseMimeType("image/jxl")
+        .setResponseModalities(List.of(ResponseModality.TEXT, ResponseModality.TEXT))
+        .setResponseSchema(getSchema())
+        .build();
+  }
+
+  private Schema getSchema() {
+    return Schema.obj(
+        Map.of(
+            "foo", Schema.numInt(),
+            "bar", Schema.numInt("Some integer"),
+            "baz", Schema.numInt("Some integer", false),
+            "qux", Schema.numDouble(),
+            "quux", Schema.numFloat("Some floating point number"),
+            "xyzzy", Schema.array(Schema.numInt(), "A list of integers"),
+            "fee", Schema.numLong(),
+            "ber",
+                Schema.obj(
+                    Map.of(
+                        "bez", Schema.array(Schema.numDouble("Nullable double", true)),
+                        "qez", Schema.enumeration(List.of("A", "B", "C"), "One of 3 letters"),
+                        "qeez", Schema.str("A funny string")))));
   }
 
   private LiveGenerationConfig getLiveConfig() {
@@ -113,13 +144,14 @@ public class JavaCompileTests {
   private void testFutures(GenerativeModelFutures futures) throws Exception {
     Content content =
         new Content.Builder()
+            .setParts(new ArrayList<>())
             .addText("Fake prompt")
             .addFileData("fakeuri", "image/png")
             .addInlineData(new byte[] {}, "text/json")
             .addImage(Bitmap.createBitmap(0, 0, Bitmap.Config.HARDWARE))
             .addPart(new FunctionCallPart("fakeFunction", Map.of("fakeArg", JsonNull.INSTANCE)))
+            .setRole("user")
             .build();
-    // TODO b/406558430 Content.Builder.setParts and Content.Builder.setRole return void
     Executor executor = FirebaseExecutors.directExecutor();
     ListenableFuture<CountTokensResponse> countResponse = futures.countTokens(content);
     validateCountTokensResponse(countResponse.get());
