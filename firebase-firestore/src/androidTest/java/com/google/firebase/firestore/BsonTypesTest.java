@@ -272,14 +272,16 @@ public class BsonTypesTest {
             .orderBy("key", Direction.DESCENDING)
             .whereGreaterThan("key", new BsonObjectId("507f191e810c19729de860ea"));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereNotEqualTo("key", new BsonObjectId("507f191e810c19729de860eb"));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
 
   @Test
@@ -302,14 +304,16 @@ public class BsonTypesTest {
             .orderBy("key", Direction.DESCENDING)
             .whereGreaterThan("key", new BsonTimestamp(1, 1));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereNotEqualTo("key", new BsonTimestamp(1, 2));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
 
   @Test
@@ -332,14 +336,16 @@ public class BsonTypesTest {
             .orderBy("key", Direction.DESCENDING)
             .whereGreaterThan("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereNotEqualTo("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
 
   @Test
@@ -359,14 +365,16 @@ public class BsonTypesTest {
             .orderBy("key", Direction.DESCENDING)
             .whereGreaterThan("key", new RegexValue("^bar", "i"));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereNotEqualTo("key", new RegexValue("^bar", "m"));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
 
   @Test
@@ -384,12 +392,14 @@ public class BsonTypesTest {
     Query orderedQuery =
         randomColl.orderBy("key", Direction.DESCENDING).whereGreaterThan("key", new Int32Value(-1));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
     orderedQuery =
         randomColl.orderBy("key", Direction.DESCENDING).whereNotEqualTo("key", new Int32Value(1));
 
-    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
 
   @Test
@@ -492,7 +502,8 @@ public class BsonTypesTest {
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("b", "c"));
 
     query = randomColl.whereNotEqualTo("key", null);
-    assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("a", "d", "e"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, query, docs, Arrays.asList("a", "d", "e"));
   }
 
   @Test

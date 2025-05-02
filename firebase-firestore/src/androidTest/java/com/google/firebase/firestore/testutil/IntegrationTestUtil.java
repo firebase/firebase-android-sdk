@@ -610,7 +610,9 @@ public class IntegrationTestUtil {
   // expected result.
   public static void assertSDKQueryResultsConsistentWithBackend(
       Query collection,
-      Query query, Map<String, Map<String, Object>> allData, List<String> expectedDocIds)
+      Query query,
+      Map<String, Map<String, Object>> allData,
+      List<String> expectedDocIds)
       throws Exception {
     // Check the cache round trip first to make sure cache is properly populated, otherwise the
     // snapshot listener below will return partial results from previous
