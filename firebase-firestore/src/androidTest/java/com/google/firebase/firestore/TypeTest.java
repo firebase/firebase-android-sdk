@@ -468,6 +468,6 @@ public class TypeTest {
             "max");
 
     // Assert that get and snapshot listener requests sort docs in the same, expected order
-    assertSDKQueryResultsConsistentWithBackend(orderedQuery, testDocs, expectedDocs);
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocs);
   }
 }
