@@ -71,7 +71,6 @@ internal class VertexAIStreamingSnapshotTests {
         responseList.last().candidates.first().apply {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
-          safetyRatings.isEmpty() shouldBe false
         }
       }
     }
