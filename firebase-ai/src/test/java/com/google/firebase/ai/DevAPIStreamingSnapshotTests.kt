@@ -42,9 +42,9 @@ internal class DevAPIStreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.last().candidates.first().let {
-          it.finishReason shouldBe FinishReason.STOP
-          it.content.parts.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
         }
       }
     }
@@ -57,9 +57,9 @@ internal class DevAPIStreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.last().candidates.first().let {
-          it.finishReason shouldBe FinishReason.STOP
-          it.content.parts.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
         }
       }
     }
