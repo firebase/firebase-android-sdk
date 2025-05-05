@@ -165,7 +165,7 @@ public class SessionManager {
         perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
 
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.startCollectingGauges(perfSession, appState);
+      gaugeManager.startCollectingGauges(perfSession);
     } else {
       gaugeManager.stopCollectingGauges();
     }
