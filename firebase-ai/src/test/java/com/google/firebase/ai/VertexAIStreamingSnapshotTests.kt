@@ -56,7 +56,6 @@ internal class VertexAIStreamingSnapshotTests {
           content.parts.isEmpty() shouldBe false
           safetyRatings.isEmpty() shouldBe false
         }
-
       }
     }
 
