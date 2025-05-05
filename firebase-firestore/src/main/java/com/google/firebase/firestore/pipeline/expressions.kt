@@ -600,7 +600,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun round(numericExpr: Expr, decimalPlace: Int): Expr =
+    fun roundToDecimal(numericExpr: Expr, decimalPlace: Int): Expr =
       FunctionExpr("round", numericExpr, constant(decimalPlace))
 
     /**
@@ -613,7 +613,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun round(numericField: String, decimalPlace: Int): Expr =
+    fun roundToDecimal(numericField: String, decimalPlace: Int): Expr =
       FunctionExpr("round", numericField, constant(decimalPlace))
 
     /**
@@ -626,7 +626,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun round(numericExpr: Expr, decimalPlace: Expr): Expr =
+    fun roundToDecimal(numericExpr: Expr, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericExpr, decimalPlace)
 
     /**
@@ -639,7 +639,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun round(numericField: String, decimalPlace: Expr): Expr =
+    fun roundToDecimal(numericField: String, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericField, decimalPlace)
 
     /**
@@ -2570,7 +2570,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun round(decimalPlace: Int) = Companion.round(this, decimalPlace)
+  fun roundToDecimal(decimalPlace: Int) = Companion.roundToDecimal(this, decimalPlace)
 
   /**
    * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
@@ -2580,7 +2580,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun round(decimalPlace: Expr) = Companion.round(this, decimalPlace)
+  fun roundToDecimal(decimalPlace: Expr) = Companion.roundToDecimal(this, decimalPlace)
 
   /**
    * Creates an expression that returns the smalled integer that isn't less than this numeric
