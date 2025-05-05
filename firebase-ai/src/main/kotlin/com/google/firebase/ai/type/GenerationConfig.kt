@@ -136,6 +136,36 @@ private constructor(
     @JvmField public var responseSchema: Schema? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
 
+    public fun setTemperature(temperature: Float?): Builder = apply {
+      this.temperature = temperature
+    }
+    public fun setTopK(topK: Int?): Builder = apply { this.topK = topK }
+    public fun setTopP(topP: Float?): Builder = apply { this.topP = topP }
+    public fun setCandidateCount(candidateCount: Int?): Builder = apply {
+      this.candidateCount = candidateCount
+    }
+    public fun setMaxOutputTokens(maxOutputTokens: Int?): Builder = apply {
+      this.maxOutputTokens = maxOutputTokens
+    }
+    public fun setPresencePenalty(presencePenalty: Float?): Builder = apply {
+      this.presencePenalty = presencePenalty
+    }
+    public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
+      this.frequencyPenalty = frequencyPenalty
+    }
+    public fun setStopSequences(stopSequences: List<String>?): Builder = apply {
+      this.stopSequences = stopSequences
+    }
+    public fun setResponseMimeType(responseMimeType: String?): Builder = apply {
+      this.responseMimeType = responseMimeType
+    }
+    public fun setResponseSchema(responseSchema: Schema?): Builder = apply {
+      this.responseSchema = responseSchema
+    }
+    public fun setResponseModalities(responseModalities: List<ResponseModality>?): Builder = apply {
+      this.responseModalities = responseModalities
+    }
+
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
       GenerationConfig(

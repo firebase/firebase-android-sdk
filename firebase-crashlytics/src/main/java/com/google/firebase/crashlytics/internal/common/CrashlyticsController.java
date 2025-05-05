@@ -661,15 +661,15 @@ class CrashlyticsController {
   }
 
   private static byte[] readResource(InputStream is) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int length;
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      byte[] buffer = new byte[1024];
+      int length;
 
-    while ((length = is.read(buffer)) != -1) {
-      out.write(buffer, 0, length);
+      while ((length = is.read(buffer)) != -1) {
+        out.write(buffer, 0, length);
+      }
+      return out.toByteArray();
     }
-
-    return out.toByteArray();
   }
 
   private void finalizePreviousNativeSession(String previousSessionId) {
