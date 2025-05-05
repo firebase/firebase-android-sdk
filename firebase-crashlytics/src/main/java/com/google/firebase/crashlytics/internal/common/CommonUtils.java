@@ -139,8 +139,9 @@ public class CommonUtils {
   public static String streamToString(InputStream is) {
     // Previous code was running into this: http://code.google.com/p/android/issues/detail?id=14562
     // on Android 2.3.3. The below code below does not exhibit that problem.
-    final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-    return s.hasNext() ? s.next() : "";
+    try (final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A")) {
+      return s.hasNext() ? s.next() : "";
+    }
   }
 
   public static String sha1(String source) {
