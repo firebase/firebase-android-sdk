@@ -207,7 +207,6 @@ public class GaugeManager extends AppStateUpdateHandler {
                 TimeUnit.MILLISECONDS);
 
     this.session = null;
-    this.applicationProcessState = ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
   }
 
   /**
