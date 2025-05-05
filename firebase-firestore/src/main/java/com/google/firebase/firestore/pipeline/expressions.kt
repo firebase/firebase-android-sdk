@@ -570,51 +570,175 @@ abstract class Expr internal constructor() {
     fun bitRightShift(bitsFieldName: String, number: Int): Expr =
       FunctionExpr("bit_right_shift", bitsFieldName, number)
 
+    /**
+     * Creates an expression that rounds [numericExpr] to nearest integer.
+     *
+     * Rounds away from zero in halfway cases.
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the round operation.
+     */
+    @JvmStatic fun round(numericExpr: Expr): Expr = FunctionExpr("round", numericExpr)
+
+    /**
+     * Creates an expression that rounds [numericField] to nearest integer.
+     *
+     * Rounds away from zero in halfway cases.
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the round operation.
+     */
+    @JvmStatic fun round(numericField: String): Expr = FunctionExpr("round", numericField)
+
+    /**
+     * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+     * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to round.
+     * @return A new [Expr] representing the round operation.
+     */
     @JvmStatic
     fun round(numericExpr: Expr, decimalPlace: Int): Expr =
       FunctionExpr("round", numericExpr, constant(decimalPlace))
 
+    /**
+     * Creates an expression that rounds off [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+     * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to round.
+     * @return A new [Expr] representing the round operation.
+     */
     @JvmStatic
     fun round(numericField: String, decimalPlace: Int): Expr =
       FunctionExpr("round", numericField, constant(decimalPlace))
 
-    @JvmStatic fun round(numericExpr: Expr): Expr = FunctionExpr("round", numericExpr)
-
-    @JvmStatic fun round(numericField: String): Expr = FunctionExpr("round", numericField)
-
+    /**
+     * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+     * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to round.
+     * @return A new [Expr] representing the round operation.
+     */
     @JvmStatic
     fun round(numericExpr: Expr, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericExpr, decimalPlace)
 
+    /**
+     * Creates an expression that rounds off [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+     * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to round.
+     * @return A new [Expr] representing the round operation.
+     */
     @JvmStatic
     fun round(numericField: String, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericField, decimalPlace)
 
+    /**
+     * Creates an expression that returns the smalled integer that isn't less than [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the ceil operation.
+     */
     @JvmStatic fun ceil(numericExpr: Expr): Expr = FunctionExpr("ceil", numericExpr)
 
+    /**
+     * Creates an expression that returns the smalled integer that isn't less than [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the ceil operation.
+     */
     @JvmStatic fun ceil(numericField: String): Expr = FunctionExpr("ceil", numericField)
 
+    /**
+     * Creates an expression that returns the largest integer that isn't less than [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the floor operation.
+     */
     @JvmStatic fun floor(numericExpr: Expr): Expr = FunctionExpr("floor", numericExpr)
 
+    /**
+     * Creates an expression that returns the largest integer that isn't less than [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing an integer result from the floor operation.
+     */
     @JvmStatic fun floor(numericField: String): Expr = FunctionExpr("floor", numericField)
 
+    /**
+     * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
+     * Returns infinity on overflow and zero on underflow.
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param exponent The numeric power to raise the [numericExpr].
+     * @return A new [Expr] representing a numeric result from raising [numericExpr] to the power of
+     * [exponent].
+     */
     @JvmStatic
     fun pow(numericExpr: Expr, exponent: Number): Expr =
       FunctionExpr("pow", numericExpr, constant(exponent))
 
+    /**
+     * Creates an expression that returns the [numericField] raised to the power of the [exponent].
+     * Returns infinity on overflow and zero on underflow.
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param exponent The numeric power to raise the [numericField].
+     * @return A new [Expr] representing a numeric result from raising [numericField] to the power
+     * of [exponent].
+     */
     @JvmStatic
     fun pow(numericField: String, exponent: Number): Expr =
       FunctionExpr("pow", numericField, constant(exponent))
 
+    /**
+     * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
+     * Returns infinity on overflow and zero on underflow.
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param exponent The numeric power to raise the [numericExpr].
+     * @return A new [Expr] representing a numeric result from raising [numericExpr] to the power of
+     * [exponent].
+     */
     @JvmStatic
     fun pow(numericExpr: Expr, exponent: Expr): Expr = FunctionExpr("pow", numericExpr, exponent)
 
+    /**
+     * Creates an expression that returns the [numericField] raised to the power of the [exponent].
+     * Returns infinity on overflow and zero on underflow.
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param exponent The numeric power to raise the [numericField].
+     * @return A new [Expr] representing a numeric result from raising [numericField] to the power
+     * of [exponent].
+     */
     @JvmStatic
     fun pow(numericField: String, exponent: Expr): Expr =
       FunctionExpr("pow", numericField, exponent)
 
+    /**
+     * Creates an expression that returns the square root of [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the square root operation.
+     */
     @JvmStatic fun sqrt(numericExpr: Expr): Expr = FunctionExpr("sqrt", numericExpr)
 
+    /**
+     * Creates an expression that returns the square root of [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the square root operation.
+     */
     @JvmStatic fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", numericField)
 
     /**
@@ -2429,20 +2553,76 @@ abstract class Expr internal constructor() {
    */
   fun mod(other: Any) = Companion.mod(this, other)
 
+  /**
+   * Creates an expression that rounds this numeric expression to nearest integer.
+   *
+   * Rounds away from zero in halfway cases.
+   *
+   * @return A new [Expr] representing an integer result from the round operation.
+   */
   fun round() = Companion.round(this)
 
+  /**
+   * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+   * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+   *
+   * @param decimalPlace The number of decimal places to round.
+   * @return A new [Expr] representing the round operation.
+   */
   fun round(decimalPlace: Int) = Companion.round(this, decimalPlace)
 
+  /**
+   * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, rounds off digits to the left of the decimal point if
+   * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+   *
+   * @param decimalPlace The number of decimal places to round.
+   * @return A new [Expr] representing the round operation.
+   */
   fun round(decimalPlace: Expr) = Companion.round(this, decimalPlace)
 
+  /**
+   * Creates an expression that returns the smalled integer that isn't less than this numeric
+   * expression.
+   *
+   * @return A new [Expr] representing an integer result from the ceil operation.
+   */
   fun ceil() = Companion.ceil(this)
 
+  /**
+   * Creates an expression that returns the largest integer that isn't less than this numeric
+   * expression.
+   *
+   * @return A new [Expr] representing an integer result from the floor operation.
+   */
   fun floor() = Companion.floor(this)
 
-  fun pow(exponentExpr: Number) = Companion.pow(this, exponentExpr)
+  /**
+   * Creates an expression that returns this numeric expression raised to the power of the
+   * [exponent]. Returns infinity on overflow and zero on underflow.
+   *
+   * @param exponent The numeric power to raise this numeric expression.
+   * @return A new [Expr] representing a numeric result from raising this numeric expression to the
+   * power of [exponent].
+   */
+  fun pow(exponent: Number) = Companion.pow(this, exponent)
 
-  fun pow(exponentExpr: Expr) = Companion.pow(this, exponentExpr)
+  /**
+   * Creates an expression that returns this numeric expression raised to the power of the
+   * [exponent]. Returns infinity on overflow and zero on underflow.
+   *
+   * @param exponent The numeric power to raise this numeric expression.
+   * @return A new [Expr] representing a numeric result from raising this numeric expression to the
+   * power of [exponent].
+   */
+  fun pow(exponent: Expr) = Companion.pow(this, exponent)
 
+  /**
+   * Creates an expression that returns the square root of this numeric expression.
+   *
+   * @return A new [Expr] representing the numeric result of the square root operation.
+   */
   fun sqrt() = Companion.sqrt(this)
 
   /**
