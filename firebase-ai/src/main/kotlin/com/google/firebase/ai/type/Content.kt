@@ -44,14 +44,17 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   public class Builder {
 
     /** The producer of the content. Must be either 'user' or 'model'. By default, it's "user". */
-    public var role: String? = "user"
+    @JvmField public var role: String? = "user"
 
     /**
      * The mutable list of [Part]s comprising the [Content].
      *
      * Prefer using the provided helper methods over modifying this list directly.
      */
-    public var parts: MutableList<Part> = arrayListOf()
+    @JvmField public var parts: MutableList<Part> = arrayListOf()
+
+    public fun setRole(role: String?): Content.Builder = apply { this.role = role }
+    public fun setParts(parts: MutableList<Part>): Content.Builder = apply { this.parts = parts }
 
     /** Adds a new [Part] to [parts]. */
     @JvmName("addPart")
