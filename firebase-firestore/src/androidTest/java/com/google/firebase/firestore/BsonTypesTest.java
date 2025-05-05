@@ -250,8 +250,6 @@ public class BsonTypesTest {
     }
   }
 
-  // TODO(Mila/BSON): remove the cache population after updating the
-  // assertSDKQueryResultsConsistentWithBackend
   @Test
   public void filterAndOrderBsonObjectIds() throws Exception {
     Map<String, Map<String, Object>> docs =
@@ -263,9 +261,6 @@ public class BsonTypesTest {
             "c",
             map("key", new BsonObjectId("507f191e810c19729de860ec")));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
-
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
 
     Query orderedQuery =
         randomColl
@@ -296,9 +291,6 @@ public class BsonTypesTest {
             map("key", new BsonTimestamp(2, 1)));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
-
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
@@ -328,9 +320,6 @@ public class BsonTypesTest {
             map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2, 2})));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
-
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
@@ -356,9 +345,6 @@ public class BsonTypesTest {
             "b", map("key", new RegexValue("^bar", "m")),
             "c", map("key", new RegexValue("^baz", "i")));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
-
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
 
     Query orderedQuery =
         randomColl
@@ -386,9 +372,6 @@ public class BsonTypesTest {
             "c", map("key", new Int32Value(2)));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
-
     Query orderedQuery =
         randomColl.orderBy("key", Direction.DESCENDING).whereGreaterThan("key", new Int32Value(-1));
 
@@ -413,9 +396,6 @@ public class BsonTypesTest {
             "e", map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
-
     Query query =
         randomColl
             .orderBy(
@@ -426,9 +406,8 @@ public class BsonTypesTest {
 
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("b", "a"));
 
-    // TODO(Mila/BSON): uncomment this test when null value inclusion is fixed
-    // query = randomColl.whereNotEqualTo("key", MinKey.instance());
-    // assertSDKQueryResultsConsistentWithBackend(query, docs, Arrays.asList("d", "e"));
+    query = randomColl.whereNotEqualTo("key", MinKey.instance());
+    assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("d", "e"));
 
     query = randomColl.whereGreaterThanOrEqualTo("key", MinKey.instance());
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("a", "b"));
@@ -454,9 +433,6 @@ public class BsonTypesTest {
             "e", map("key", null));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
 
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
-
     Query query =
         randomColl
             .orderBy(
@@ -467,9 +443,8 @@ public class BsonTypesTest {
 
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("d", "c"));
 
-    // TODO(Mila/BSON): uncomment this test when null value inclusion is fixed
-    // query = randomColl.whereNotEqualTo("key", MaxKey.instance());
-    // assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("a", "b"));
+    query = randomColl.whereNotEqualTo("key", MaxKey.instance());
+    assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("a", "b"));
 
     query = randomColl.whereGreaterThanOrEqualTo("key", MaxKey.instance());
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("c", "d"));
@@ -494,9 +469,6 @@ public class BsonTypesTest {
             "d", map("key", 1L),
             "e", map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
-
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
 
     Query query = randomColl.whereEqualTo("key", null);
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("b", "c"));
@@ -549,9 +521,6 @@ public class BsonTypesTest {
             "maxKey2",
             map("key", MaxKey.instance()));
     CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
-
-    // Pre-populate the cache with all docs
-    waitFor(randomColl.get());
 
     Query orderedQuery = randomColl.orderBy("key", Direction.DESCENDING);
     List<String> expectedDocs =
