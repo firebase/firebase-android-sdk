@@ -570,6 +570,53 @@ abstract class Expr internal constructor() {
     fun bitRightShift(bitsFieldName: String, number: Int): Expr =
       FunctionExpr("bit_right_shift", bitsFieldName, number)
 
+    @JvmStatic
+    fun round(numericExpr: Expr, decimalPlace: Int): Expr =
+      FunctionExpr("round", numericExpr, constant(decimalPlace))
+
+    @JvmStatic
+    fun round(numericField: String, decimalPlace: Int): Expr =
+      FunctionExpr("round", numericField, constant(decimalPlace))
+
+    @JvmStatic fun round(numericExpr: Expr): Expr = FunctionExpr("round", numericExpr)
+
+    @JvmStatic fun round(numericField: String): Expr = FunctionExpr("round", numericField)
+
+    @JvmStatic
+    fun round(numericExpr: Expr, decimalPlace: Expr): Expr =
+      FunctionExpr("round", numericExpr, decimalPlace)
+
+    @JvmStatic
+    fun round(numericField: String, decimalPlace: Expr): Expr =
+      FunctionExpr("round", numericField, decimalPlace)
+
+    @JvmStatic fun ceil(numericExpr: Expr): Expr = FunctionExpr("ceil", numericExpr)
+
+    @JvmStatic fun ceil(numericField: String): Expr = FunctionExpr("ceil", numericField)
+
+    @JvmStatic fun floor(numericExpr: Expr): Expr = FunctionExpr("floor", numericExpr)
+
+    @JvmStatic fun floor(numericField: String): Expr = FunctionExpr("floor", numericField)
+
+    @JvmStatic
+    fun pow(numericExpr: Expr, exponent: Number): Expr =
+      FunctionExpr("pow", numericExpr, constant(exponent))
+
+    @JvmStatic
+    fun pow(numericField: String, exponent: Number): Expr =
+      FunctionExpr("pow", numericField, constant(exponent))
+
+    @JvmStatic
+    fun pow(numericExpr: Expr, exponent: Expr): Expr = FunctionExpr("pow", numericExpr, exponent)
+
+    @JvmStatic
+    fun pow(numericField: String, exponent: Expr): Expr =
+      FunctionExpr("pow", numericField, exponent)
+
+    @JvmStatic fun sqrt(numericExpr: Expr): Expr = FunctionExpr("sqrt", numericExpr)
+
+    @JvmStatic fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", numericField)
+
     /**
      * Creates an expression that adds this expression to another expression.
      *
@@ -1243,35 +1290,69 @@ abstract class Expr internal constructor() {
     fun map(elements: Map<String, Any>): Expr =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
-    /** @return A new [Expr] representing the mapGet operation. */
-    @JvmStatic fun mapGet(map: Expr, key: Expr): Expr = FunctionExpr("map_get", map, key)
-
-    /** @return A new [Expr] representing the mapGet operation. */
-    @JvmStatic fun mapGet(map: Expr, key: String): Expr = FunctionExpr("map_get", map, key)
-
-    /** @return A new [Expr] representing the mapGet operation. */
+    /**
+     * Accesses a value from a map (object) field using the provided [key].
+     *
+     * @param mapExpression The expression representing the map.
+     * @param key The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
     @JvmStatic
-    fun mapGet(fieldName: String, key: Expr): Expr = FunctionExpr("map_get", fieldName, key)
+    fun mapGet(mapExpression: Expr, key: String): Expr = FunctionExpr("map_get", mapExpression, key)
 
-    /** @return A new [Expr] representing the mapGet operation. */
+    /**
+     * Accesses a value from a map (object) field using the provided [key].
+     *
+     * @param fieldName The field name of the map field.
+     * @param key The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
     @JvmStatic
     fun mapGet(fieldName: String, key: String): Expr = FunctionExpr("map_get", fieldName, key)
 
-    /** @return A new [Expr] representing the mapMerge operation. */
+    /**
+     * Creates an expression that merges multiple maps into a single map. If multiple maps have the
+     * same key, the later value is used.
+     *
+     * @param firstMap First map expression that will be merged.
+     * @param secondMap Second map expression that will be merged.
+     * @param otherMaps Additional maps to merge.
+     * @return A new [Expr] representing the mapMerge operation.
+     */
     @JvmStatic
     fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr): Expr =
       FunctionExpr("map_merge", firstMap, secondMap, *otherMaps)
 
-    /** @return A new [Expr] representing the mapMerge operation. */
+    /**
+     * Creates an expression that merges multiple maps into a single map. If multiple maps have the
+     * same key, the later value is used.
+     *
+     * @param firstMapFieldName First map field name that will be merged.
+     * @param secondMap Second map expression that will be merged.
+     * @param otherMaps Additional maps to merge.
+     * @return A new [Expr] representing the mapMerge operation.
+     */
     @JvmStatic
-    fun mapMerge(mapField: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", mapField, secondMap, *otherMaps)
+    fun mapMerge(firstMapFieldName: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
+      FunctionExpr("map_merge", firstMapFieldName, secondMap, *otherMaps)
 
-    /** @return A new [Expr] representing the mapRemove operation. */
+    /**
+     * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * @param mapExpr An expression return a map value.
+     * @param key The name of the key to remove from the input map.
+     * @return A new [Expr] that evaluates to a modified map.
+     */
     @JvmStatic
-    fun mapRemove(firstMap: Expr, key: Expr): Expr = FunctionExpr("map_remove", firstMap, key)
+    fun mapRemove(mapExpr: Expr, key: Expr): Expr = FunctionExpr("map_remove", mapExpr, key)
 
-    /** @return A new [Expr] representing the mapRemove operation. */
+    /**
+     * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * @param mapField The name of a field containing a map value.
+     * @param key The name of the key to remove from the input map.
+     * @return A new [Expr] that evaluates to a modified map.
+     */
     @JvmStatic
     fun mapRemove(mapField: String, key: Expr): Expr = FunctionExpr("map_remove", mapField, key)
 
@@ -2348,6 +2429,22 @@ abstract class Expr internal constructor() {
    */
   fun mod(other: Any) = Companion.mod(this, other)
 
+  fun round() = Companion.round(this)
+
+  fun round(decimalPlace: Int) = Companion.round(this, decimalPlace)
+
+  fun round(decimalPlace: Expr) = Companion.round(this, decimalPlace)
+
+  fun ceil() = Companion.ceil(this)
+
+  fun floor() = Companion.floor(this)
+
+  fun pow(exponentExpr: Number) = Companion.pow(this, exponentExpr)
+
+  fun pow(exponentExpr: Expr) = Companion.pow(this, exponentExpr)
+
+  fun sqrt() = Companion.sqrt(this)
+
   /**
    * Creates an expression that checks if this expression, when evaluated, is equal to any of the
    * provided [values].
@@ -2591,17 +2688,23 @@ abstract class Expr internal constructor() {
   fun strConcat(vararg string: Any) = Companion.strConcat(this, *string)
 
   /**
-   */
-  fun mapGet(key: Expr) = Companion.mapGet(this, key)
-
-  /**
+   * Accesses a map (object) value using the provided [key].
+   *
+   * @param key The key to access in the map.
+   * @return A new [Expr] representing the value associated with the given key in the map.
    */
   fun mapGet(key: String) = Companion.mapGet(this, key)
 
   /**
+   * Creates an expression that merges multiple maps into a single map. If multiple maps have the
+   * same key, the later value is used.
+   *
+   * @param mapExpr Map expression that will be merged.
+   * @param otherMaps Additional maps to merge.
+   * @return A new [Expr] representing the mapMerge operation.
    */
-  fun mapMerge(secondMap: Expr, vararg otherMaps: Expr) =
-    Companion.mapMerge(this, secondMap, *otherMaps)
+  fun mapMerge(mapExpr: Expr, vararg otherMaps: Expr) =
+    Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
    */
