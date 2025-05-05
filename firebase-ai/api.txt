@@ -216,12 +216,10 @@ package com.google.firebase.ai.type {
     method public <T extends com.google.firebase.ai.type.Part> com.google.firebase.ai.type.Content.Builder addPart(T data);
     method public com.google.firebase.ai.type.Content.Builder addText(String text);
     method public com.google.firebase.ai.type.Content build();
-    method public java.util.List<com.google.firebase.ai.type.Part> getParts();
-    method public String? getRole();
-    method public void setParts(java.util.List<com.google.firebase.ai.type.Part>);
-    method public void setRole(String?);
-    property public final java.util.List<com.google.firebase.ai.type.Part> parts;
-    property public final String? role;
+    method public com.google.firebase.ai.type.Content.Builder setParts(java.util.List<com.google.firebase.ai.type.Part> parts);
+    method public com.google.firebase.ai.type.Content.Builder setRole(String? role);
+    field public java.util.List<com.google.firebase.ai.type.Part> parts;
+    field public String? role;
   }
 
   public final class ContentBlockedException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -355,6 +353,17 @@ package com.google.firebase.ai.type {
   public static final class GenerationConfig.Builder {
     ctor public GenerationConfig.Builder();
     method public com.google.firebase.ai.type.GenerationConfig build();
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseMimeType(String? responseMimeType);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
