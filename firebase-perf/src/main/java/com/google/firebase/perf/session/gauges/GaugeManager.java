@@ -116,12 +116,12 @@ public class GaugeManager extends AppStateUpdateHandler {
   }
 
   /**
-   * Starts the collection of available gauges for the given {@code sessionId} and {@code
-   * applicationProcessState}. The collected Gauge Metrics will be flushed at regular intervals.
+   * Starts the collection of available gauges for the given {@link PerfSession}.
+   * The collected Gauge Metrics will be flushed by {@link GaugeCounter}
    *
    * <p>GaugeManager can only collect gauges for one session at a time, and if this method is called
    * again with the same or new sessionId while it's already collecting gauges, all future gauges
-   * will then be associated with the same or new sessionId and applicationProcessState.
+   * will then be associated with the same or new sessionId.
    *
    * @param session The {@link PerfSession} to which the collected gauges will be associated with.
    * @note: This method is NOT thread safe - {@link this.startCollectingGauges()} and {@link
@@ -132,8 +132,15 @@ public class GaugeManager extends AppStateUpdateHandler {
       stopCollectingGauges();
     }
 
+    ApplicationProcessState gaugeCollectionApplicationProcessState = applicationProcessState;
+    if (gaugeCollectionApplicationProcessState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+      logger.warn("Start collecting gauges with APPLICATION_PROCESS_STATE_UNKNOWN");
+      // Since the application process state is unknown, collect gauges at the foreground frequency.
+      gaugeCollectionApplicationProcessState = ApplicationProcessState.FOREGROUND;
+    }
+
     long collectionFrequency =
-        startCollectingGauges(this.applicationProcessState, session.getTimer());
+        startCollectingGauges(gaugeCollectionApplicationProcessState, session.getTimer());
     if (collectionFrequency == INVALID_GAUGE_COLLECTION_FREQUENCY) {
       logger.warn("Invalid gauge collection frequency. Unable to start collecting Gauges.");
       return;
@@ -185,10 +192,17 @@ public class GaugeManager extends AppStateUpdateHandler {
     memoryGaugeCollector.get().stopCollecting();
 
     logGaugeMetrics();
+
+    // TODO(b/394127311): There might be a race condition where a final metric is collected, but
+    // isn't uploaded.
     GaugeCounter.Companion.getInstance().resetCounter();
     this.session = null;
   }
 
+  /**
+   * Logs the existing GaugeMetrics to Firelog, associates it with the current {@link PerfSession}
+   * and {@link ApplicationProcessState}.
+   */
   protected boolean logGaugeMetrics() {
     if (session == null) {
       logger.warn("Attempted to log Gauge Metrics when session was null.");
