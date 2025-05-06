@@ -325,8 +325,13 @@ abstract class Expr internal constructor() {
     fun xor(condition: BooleanExpr, vararg conditions: BooleanExpr) =
       BooleanExpr("xor", condition, *conditions)
 
-    /** @return A new [Expr] representing the not operation. */
-    @JvmStatic fun not(condition: BooleanExpr) = BooleanExpr("not", condition)
+    /**
+     * Creates an expression that negates a boolean expression.
+     *
+     * @param condition The boolean expression to negate.
+     * @return A new [Expr] representing the not operation.
+     */
+    @JvmStatic fun not(condition: BooleanExpr): BooleanExpr = BooleanExpr("not", condition)
 
     /**
      * Creates an expression that applies a bitwise AND operation between two expressions.
@@ -742,11 +747,11 @@ abstract class Expr internal constructor() {
     @JvmStatic fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", numericField)
 
     /**
-     * Creates an expression that adds this expression to another expression.
+     * Creates an expression that adds numeric expressions and constants.
      *
-     * @param first The first expression to add.
-     * @param second The second expression to add to first expression.
-     * @param others Additional expression or literal to add.
+     * @param first Numeric expression to add.
+     * @param second Numeric expression to add.
+     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
@@ -754,116 +759,219 @@ abstract class Expr internal constructor() {
       FunctionExpr("add", first, second, *others)
 
     /**
-     * Creates an expression that adds this expression to another expression.
+     * Creates an expression that adds numeric expressions and constants.
      *
-     * @param first The first expression to add.
-     * @param second The second expression or literal to add to first expression.
-     * @param others Additional expression or literal to add.
+     * @param first Numeric expression to add.
+     * @param second Constant to add.
+     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(first: Expr, second: Any, vararg others: Any): Expr =
+    fun add(first: Expr, second: Number, vararg others: Any): Expr =
       FunctionExpr("add", first, second, *others)
 
     /**
-     * Creates an expression that adds a field's value to an expression.
+     * Creates an expression that adds a numeric field with numeric expressions and constants.
      *
-     * @param fieldName The name of the field containing the value to add.
-     * @param second The second expression to add to field value.
-     * @param others Additional expression or literal to add.
+     * @param numericFieldName Numeric field to add.
+     * @param second Numeric expression to add to field value.
+     * @param others Additional numeric expressions or constants to add.
+     * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(fieldName: String, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("add", fieldName, second, *others)
+    fun add(numericFieldName: String, second: Expr, vararg others: Any): Expr =
+      FunctionExpr("add", numericFieldName, second, *others)
 
     /**
-     * Creates an expression that adds a field's value to an expression.
+     * Creates an expression that adds a numeric field with numeric expressions and constants.
      *
-     * @param fieldName The name of the field containing the value to add.
-     * @param second The second expression or literal to add to field value.
-     * @param others Additional expression or literal to add.
+     * @param numericFieldName Numeric field to add.
+     * @param second Constant to add.
+     * @param others Additional numeric expressions or constants to add.
+     * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(fieldName: String, second: Any, vararg others: Any): Expr =
-      FunctionExpr("add", fieldName, second, *others)
-
-    /** @return A new [Expr] representing the subtract operation. */
-    @JvmStatic fun subtract(left: Expr, right: Expr): Expr = FunctionExpr("subtract", left, right)
-
-    /** @return A new [Expr] representing the subtract operation. */
-    @JvmStatic fun subtract(left: Expr, right: Any): Expr = FunctionExpr("subtract", left, right)
-
-    /** @return A new [Expr] representing the subtract operation. */
-    @JvmStatic
-    fun subtract(fieldName: String, other: Expr): Expr = FunctionExpr("subtract", fieldName, other)
-
-    /** @return A new [Expr] representing the subtract operation. */
-    @JvmStatic
-    fun subtract(fieldName: String, other: Any): Expr = FunctionExpr("subtract", fieldName, other)
-
-    /** @return A new [Expr] representing the multiply operation. */
-    @JvmStatic fun multiply(left: Expr, right: Expr): Expr = FunctionExpr("multiply", left, right)
-
-    /** @return A new [Expr] representing the multiply operation. */
-    @JvmStatic fun multiply(left: Expr, right: Any): Expr = FunctionExpr("multiply", left, right)
-
-    /** @return A new [Expr] representing the multiply operation. */
-    @JvmStatic
-    fun multiply(fieldName: String, other: Expr): Expr = FunctionExpr("multiply", fieldName, other)
-
-    /** @return A new [Expr] representing the multiply operation. */
-    @JvmStatic
-    fun multiply(fieldName: String, other: Any): Expr = FunctionExpr("multiply", fieldName, other)
+    fun add(numericFieldName: String, second: Number, vararg others: Any): Expr =
+      FunctionExpr("add", numericFieldName, second, *others)
 
     /**
-     * Creates an expression that divides two expressions.
+     * Creates an expression that subtracts two expressions.
      *
-     * @param left The expression to be divided.
-     * @param right The expression to divide by.
+     * @param minuend Numeric expression to subtract from.
+     * @param subtrahend Numeric expression to subtract.
+     * @return A new [Expr] representing the subtract operation.
+     */
+    @JvmStatic
+    fun subtract(minuend: Expr, subtrahend: Expr): Expr =
+      FunctionExpr("subtract", minuend, subtrahend)
+
+    /**
+     * Creates an expression that subtracts a constant value from a numeric expression.
+     *
+     * @param minuend Numeric expression to subtract from.
+     * @param subtrahend Constant to subtract.
+     * @return A new [Expr] representing the subtract operation.
+     */
+    @JvmStatic
+    fun subtract(minuend: Expr, subtrahend: Number): Expr =
+      FunctionExpr("subtract", minuend, subtrahend)
+
+    /**
+     * Creates an expression that subtracts a numeric expressions from numeric field.
+     *
+     * @param numericFieldName Numeric field to subtract from.
+     * @param subtrahend Numeric expression to subtract.
+     * @return A new [Expr] representing the subtract operation.
+     */
+    @JvmStatic
+    fun subtract(numericFieldName: String, subtrahend: Expr): Expr =
+      FunctionExpr("subtract", numericFieldName, subtrahend)
+
+    /**
+     * Creates an expression that subtracts a constant from numeric field.
+     *
+     * @param numericFieldName Numeric field to subtract from.
+     * @param subtrahend Constant to subtract.
+     * @return A new [Expr] representing the subtract operation.
+     */
+    @JvmStatic
+    fun subtract(numericFieldName: String, subtrahend: Number): Expr =
+      FunctionExpr("subtract", numericFieldName, subtrahend)
+
+    /**
+     * Creates an expression that multiplies numeric expressions and constants.
+     *
+     * @param first Numeric expression to multiply.
+     * @param second Numeric expression to multiply.
+     * @param others Additional numeric expressions or constants to multiply.
+     * @return A new [Expr] representing the multiplication operation.
+     */
+    @JvmStatic
+    fun multiply(first: Expr, second: Expr, vararg others: Any): Expr =
+      FunctionExpr("multiply", first, second, *others)
+
+    /**
+     * Creates an expression that multiplies numeric expressions and constants.
+     *
+     * @param first Numeric expression to multiply.
+     * @param second Constant to multiply.
+     * @param others Additional numeric expressions or constants to multiply.
+     * @return A new [Expr] representing the multiplication operation.
+     */
+    @JvmStatic
+    fun multiply(first: Expr, second: Number, vararg others: Any): Expr =
+      FunctionExpr("multiply", first, second, *others)
+
+    /**
+     * Creates an expression that multiplies a numeric field with numeric expressions and constants.
+     *
+     * @param numericFieldName Numeric field to multiply.
+     * @param second Numeric expression to add to field multiply.
+     * @param others Additional numeric expressions or constants to multiply.
+     * @return A new [Expr] representing the multiplication operation.
+     */
+    @JvmStatic
+    fun multiply(numericFieldName: String, second: Expr, vararg others: Any): Expr =
+      FunctionExpr("multiply", numericFieldName, second, *others)
+
+    /**
+     * Creates an expression that multiplies a numeric field with numeric expressions and constants.
+     *
+     * @param numericFieldName Numeric field to multiply.
+     * @param second Constant to multiply.
+     * @param others Additional numeric expressions or constants to multiply.
+     * @return A new [Expr] representing the multiplication operation.
+     */
+    @JvmStatic
+    fun multiply(numericFieldName: String, second: Number, vararg others: Any): Expr =
+      FunctionExpr("multiply", numericFieldName, second, *others)
+
+    /**
+     * Creates an expression that divides two numeric expressions.
+     *
+     * @param dividend The numeric expression to be divided.
+     * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the division operation.
      */
-    @JvmStatic fun divide(left: Expr, right: Expr): Expr = FunctionExpr("divide", left, right)
+    @JvmStatic
+    fun divide(dividend: Expr, divisor: Expr): Expr = FunctionExpr("divide", dividend, divisor)
 
     /**
-     * Creates an expression that divides an expression by an expression by a value.
+     * Creates an expression that divides a numeric expression by a constant.
      *
-     * @param left The expression to be divided.
-     * @param right The value to divide by.
+     * @param dividend The numeric expression to be divided.
+     * @param divisor The constant to divide by.
      * @return A new [Expr] representing the division operation.
      */
-    @JvmStatic fun divide(left: Expr, right: Any): Expr = FunctionExpr("divide", left, right)
+    @JvmStatic
+    fun divide(dividend: Expr, divisor: Number): Expr = FunctionExpr("divide", dividend, divisor)
 
     /**
-     * Creates an expression that divides a field's value by an expression.
+     * Creates an expression that divides numeric field by a numeric expression.
      *
-     * @param fieldName The field name to be divided.
-     * @param other The expression to divide by.
+     * @param dividendFieldName The numeric field name to be divided.
+     * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic
-    fun divide(fieldName: String, other: Expr): Expr = FunctionExpr("divide", fieldName, other)
+    fun divide(dividendFieldName: String, divisor: Expr): Expr =
+      FunctionExpr("divide", dividendFieldName, divisor)
 
     /**
-     * Creates an expression that divides a field's value by a value.
+     * Creates an expression that divides a numeric field by a constant.
      *
-     * @param fieldName The field name to be divided.
-     * @param other The value to divide by.
+     * @param dividendFieldName The numeric field name to be divided.
+     * @param divisor The constant to divide by.
      * @return A new [Expr] representing the divide operation.
      */
     @JvmStatic
-    fun divide(fieldName: String, other: Any): Expr = FunctionExpr("divide", fieldName, other)
+    fun divide(dividendFieldName: String, divisor: Number): Expr =
+      FunctionExpr("divide", dividendFieldName, divisor)
 
-    /** @return A new [Expr] representing the mod operation. */
-    @JvmStatic fun mod(left: Expr, right: Expr): Expr = FunctionExpr("mod", left, right)
+    /**
+     * Creates an expression that calculates the modulo (remainder) of dividing two numeric
+     * expressions.
+     *
+     * @param dividend The numeric expression to be divided.
+     * @param divisor The numeric expression to divide by.
+     * @return A new [Expr] representing the modulo operation.
+     */
+    @JvmStatic fun mod(dividend: Expr, divisor: Expr): Expr = FunctionExpr("mod", dividend, divisor)
 
-    /** @return A new [Expr] representing the mod operation. */
-    @JvmStatic fun mod(left: Expr, right: Any): Expr = FunctionExpr("mod", left, right)
+    /**
+     * Creates an expression that calculates the modulo (remainder) of dividing a numeric expression
+     * by a constant.
+     *
+     * @param dividend The numeric expression to be divided.
+     * @param divisor The constant to divide by.
+     * @return A new [Expr] representing the modulo operation.
+     */
+    @JvmStatic
+    fun mod(dividend: Expr, divisor: Number): Expr = FunctionExpr("mod", dividend, divisor)
 
-    /** @return A new [Expr] representing the mod operation. */
-    @JvmStatic fun mod(fieldName: String, other: Expr): Expr = FunctionExpr("mod", fieldName, other)
+    /**
+     * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
+     * constant.
+     *
+     * @param dividendFieldName The numeric field name to be divided.
+     * @param divisor The numeric expression to divide by.
+     * @return A new [Expr] representing the modulo operation.
+     */
+    @JvmStatic
+    fun mod(dividendFieldName: String, divisor: Expr): Expr =
+      FunctionExpr("mod", dividendFieldName, divisor)
 
-    /** @return A new [Expr] representing the mod operation. */
-    @JvmStatic fun mod(fieldName: String, other: Any): Expr = FunctionExpr("mod", fieldName, other)
+    /**
+     * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
+     * constant.
+     *
+     * @param dividendFieldName The numeric field name to be divided.
+     * @param divisor The constant to divide by.
+     * @return A new [Expr] representing the modulo operation.
+     */
+    @JvmStatic
+    fun mod(dividendFieldName: String, divisor: Number): Expr =
+      FunctionExpr("mod", dividendFieldName, divisor)
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -1463,7 +1571,7 @@ abstract class Expr internal constructor() {
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
      *
-     * @param mapExpr An expression return a map value.
+     * @param mapExpr An expression that evaluates to a map.
      * @param key The name of the key to remove from the input map.
      * @return A new [Expr] that evaluates to a modified map.
      */
@@ -1480,11 +1588,23 @@ abstract class Expr internal constructor() {
     @JvmStatic
     fun mapRemove(mapField: String, key: Expr): Expr = FunctionExpr("map_remove", mapField, key)
 
-    /** @return A new [Expr] representing the mapRemove operation. */
+    /**
+     * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * @param mapExpr An expression that evaluates to a map.
+     * @param key The name of the key to remove from the input map.
+     * @return A new [Expr] that evaluates to a modified map.
+     */
     @JvmStatic
-    fun mapRemove(firstMap: Expr, key: String): Expr = FunctionExpr("map_remove", firstMap, key)
+    fun mapRemove(mapExpr: Expr, key: String): Expr = FunctionExpr("map_remove", mapExpr, key)
 
-    /** @return A new [Expr] representing the mapRemove operation. */
+    /**
+     * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * @param mapField The name of a field containing a map value.
+     * @param key The name of the key to remove from the input map.
+     * @return A new [Expr] that evaluates to a modified map.
+     */
     @JvmStatic
     fun mapRemove(mapField: String, key: String): Expr = FunctionExpr("map_remove", mapField, key)
 
@@ -2496,62 +2616,94 @@ abstract class Expr internal constructor() {
   fun documentId(): Expr = Companion.documentId(this)
 
   /**
-   * Creates an expression that adds this expression to another expression.
+   * Creates an expression that adds this numeric expression to other numeric expressions and
+   * constants.
    *
-   * @param second The second expression to add to this expression.
-   * @param others Additional expression or literal to add to this expression.
+   * @param second Numeric expression to add.
+   * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
   fun add(second: Expr, vararg others: Any) = Companion.add(this, second, *others)
 
   /**
-   * Creates an expression that adds this expression to another expression.
+   * Creates an expression that adds this numeric expression to other numeric expressions and
+   * constants.
    *
-   * @param second The second expression or literal to add to this expression.
-   * @param others Additional expression or literal to add to this expression.
+   * @param second Constant to add.
+   * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
-  fun add(second: Any, vararg others: Any) = Companion.add(this, second, *others)
+  fun add(second: Number, vararg others: Any) = Companion.add(this, second, *others)
 
   /**
-   */
-  fun subtract(other: Expr) = Companion.subtract(this, other)
-
-  /**
-   */
-  fun subtract(other: Any) = Companion.subtract(this, other)
-
-  /**
-   */
-  fun multiply(other: Expr) = Companion.multiply(this, other)
-
-  /**
-   */
-  fun multiply(other: Any) = Companion.multiply(this, other)
-
-  /**
-   * Creates an expression that divides this expression by another expression.
+   * Creates an expression that subtracts a constant from this numeric expression.
    *
-   * @param other The expression to divide by.
+   * @param subtrahend Numeric expression to subtract.
+   * @return A new [Expr] representing the subtract operation.
+   */
+  fun subtract(subtrahend: Expr) = Companion.subtract(this, subtrahend)
+
+  /**
+   * Creates an expression that subtracts a numeric expressions from this numeric expression.
+   *
+   * @param subtrahend Constant to subtract.
+   * @return A new [Expr] representing the subtract operation.
+   */
+  fun subtract(subtrahend: Number) = Companion.subtract(this, subtrahend)
+
+  /**
+   * Creates an expression that multiplies this numeric expression to other numeric expressions and
+   * constants.
+   *
+   * @param second Numeric expression to multiply.
+   * @param others Additional numeric expressions or constants to multiply.
+   * @return A new [Expr] representing the multiplication operation.
+   */
+  fun multiply(second: Expr, vararg others: Any) = Companion.multiply(this, second, *others)
+
+  /**
+   * Creates an expression that multiplies this numeric expression to other numeric expressions and
+   * constants.
+   *
+   * @param second Constant to multiply.
+   * @param others Additional numeric expressions or constants to multiply.
+   * @return A new [Expr] representing the multiplication operation.
+   */
+  fun multiply(second: Number, vararg others: Any) = Companion.multiply(this, second, *others)
+
+  /**
+   * Creates an expression that divides this numeric expression by another numeric expression.
+   *
+   * @param divisor Numeric expression to divide this numeric expression by.
    * @return A new [Expr] representing the division operation.
    */
-  fun divide(other: Expr) = Companion.divide(this, other)
+  fun divide(divisor: Expr) = Companion.divide(this, divisor)
 
   /**
-   * Creates an expression that divides this expression by a value.
+   * Creates an expression that divides this numeric expression by a constant.
    *
-   * @param other The value to divide by.
+   * @param divisor Constant to divide this expression by.
    * @return A new [Expr] representing the division operation.
    */
-  fun divide(other: Any) = Companion.divide(this, other)
+  fun divide(divisor: Number) = Companion.divide(this, divisor)
 
   /**
+   * Creates an expression that calculates the modulo (remainder) of dividing this numeric
+   * expressions by another numeric expression.
+   *
+   * @param divisor The numeric expression to divide this expression by.
+   * @return A new [Expr] representing the modulo operation.
    */
-  fun mod(other: Expr) = Companion.mod(this, other)
+  fun mod(divisor: Expr) = Companion.mod(this, divisor)
 
   /**
+   * Creates an expression that calculates the modulo (remainder) of dividing this numeric
+   * expressions by a constant.
+   *
+   * @param divisor The constant to divide this expression by.
+   * @return A new [Expr] representing the modulo operation.
    */
-  fun mod(other: Any) = Companion.mod(this, other)
+  fun mod(divisor: Number) = Companion.mod(this, divisor)
 
   /**
    * Creates an expression that rounds this numeric expression to nearest integer.
@@ -2887,10 +3039,18 @@ abstract class Expr internal constructor() {
     Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
+   * Creates an expression that removes a key from this map expression.
+   *
+   * @param key The name of the key to remove from this map expression.
+   * @return A new [Expr] that evaluates to a modified map.
    */
   fun mapRemove(key: Expr) = Companion.mapRemove(this, key)
 
   /**
+   * Creates an expression that removes a key from this map expression.
+   *
+   * @param key The name of the key to remove from this map expression.
+   * @return A new [Expr] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
 
