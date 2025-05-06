@@ -102,12 +102,11 @@ public class GaugeManager extends AppStateUpdateHandler {
   public void onUpdateAppState(ApplicationProcessState applicationProcessState) {
     this.applicationProcessState = applicationProcessState;
 
-    if (session == null) {
-      // If the session is null, it means there's no gauges being collected.
+    if (session == null || !session.isVerbose()) {
       return;
     }
 
-    stopCollectingGauges();
+    // If it's a verbose session, start collecting gauges for the new app state.
     startCollectingGauges(this.applicationProcessState, session.getTimer());
   }
 

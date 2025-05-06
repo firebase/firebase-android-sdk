@@ -76,14 +76,8 @@ public class PerfSession implements Parcelable {
    * Enables/Disables the gauge and event collection for the system.
    */
   public void setGaugeAndEventCollectionEnabled(boolean enabled) {
+    // TODO(b/394127311): Explore deleting this method.
     isGaugeAndEventCollectionEnabled = enabled;
-  }
-
-  /*
-   * Returns if gauge and event collection is enabled for the system.
-   */
-  public boolean isGaugeAndEventCollectionEnabled() {
-    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Returns if the current session is verbose or not. */
