@@ -1156,32 +1156,111 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic fun isNotNull(fieldName: String): BooleanExpr = BooleanExpr("is_not_null", fieldName)
 
-    /** @return A new [Expr] representing the replaceFirst operation. */
+    /**
+     * Creates an expression that replaces the first occurrence of a substring within the
+     * [stringExpression].
+     *
+     * @param stringExpression The expression representing the string to perform the replacement on.
+     * @param find The expression representing the substring to search for in [stringExpression].
+     * @param replace The expression representing the replacement for the first occurrence of [find]
+     * .
+     * @return A new [Expr] representing the string with the first occurrence replaced.
+     */
     @JvmStatic
-    fun replaceFirst(value: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", value, find, replace)
+    fun replaceFirst(stringExpression: Expr, find: Expr, replace: Expr): Expr =
+      FunctionExpr("replace_first", stringExpression, find, replace)
 
-    /** @return A new [Expr] representing the replaceFirst operation. */
+    /**
+     * Creates an expression that replaces the first occurrence of a substring within the
+     * [stringExpression].
+     *
+     * @param stringExpression The expression representing the string to perform the replacement on.
+     * @param find The substring to search for in [stringExpression].
+     * @param replace The replacement for the first occurrence of [find] with.
+     * @return A new [Expr] representing the string with the first occurrence replaced.
+     */
     @JvmStatic
-    fun replaceFirst(value: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", value, find, replace)
+    fun replaceFirst(stringExpression: Expr, find: String, replace: String): Expr =
+      FunctionExpr("replace_first", stringExpression, find, replace)
 
-    /** @return A new [Expr] representing the replaceFirst operation. */
+    /**
+     * Creates an expression that replaces the first occurrence of a substring within the specified
+     * string field.
+     *
+     * @param fieldName The name of the field representing the string to perform the replacement on.
+     * @param find The expression representing the substring to search for in specified string
+     * field.
+     * @param replace The expression representing the replacement for the first occurrence of [find]
+     * with.
+     * @return A new [Expr] representing the string with the first occurrence replaced.
+     */
+    @JvmStatic
+    fun replaceFirst(fieldName: String, find: Expr, replace: Expr): Expr =
+      FunctionExpr("replace_first", fieldName, find, replace)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring within the specified
+     * string field.
+     *
+     * @param fieldName The name of the field representing the string to perform the replacement on.
+     * @param find The substring to search for in specified string field.
+     * @param replace The replacement for the first occurrence of [find] with.
+     * @return A new [Expr] representing the string with the first occurrence replaced.
+     */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: String, replace: String): Expr =
       FunctionExpr("replace_first", fieldName, find, replace)
 
-    /** @return A new [Expr] representing the replaceAll operation. */
+    /**
+     * Creates an expression that replaces all occurrences of a substring within the
+     * [stringExpression].
+     *
+     * @param stringExpression The expression representing the string to perform the replacement on.
+     * @param find The expression representing the substring to search for in [stringExpression].
+     * @param replace The expression representing the replacement for all occurrences of [find].
+     * @return A new [Expr] representing the string with all occurrences replaced.
+     */
     @JvmStatic
-    fun replaceAll(value: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", value, find, replace)
+    fun replaceAll(stringExpression: Expr, find: Expr, replace: Expr): Expr =
+      FunctionExpr("replace_all", stringExpression, find, replace)
 
-    /** @return A new [Expr] representing the replaceAll operation. */
+    /**
+     * Creates an expression that replaces all occurrences of a substring within the
+     * [stringExpression].
+     *
+     * @param stringExpression The expression representing the string to perform the replacement on.
+     * @param find The substring to search for in [stringExpression].
+     * @param replace The replacement for all occurrences of [find] with.
+     * @return A new [Expr] representing the string with all occurrences replaced.
+     */
     @JvmStatic
-    fun replaceAll(value: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", value, find, replace)
+    fun replaceAll(stringExpression: Expr, find: String, replace: String): Expr =
+      FunctionExpr("replace_all", stringExpression, find, replace)
 
-    /** @return A new [Expr] representing the replaceAll operation. */
+    /**
+     * Creates an expression that replaces all occurrences of a substring within the specified
+     * string field.
+     *
+     * @param fieldName The name of the field representing the string to perform the replacement on.
+     * @param find The expression representing the substring to search for in specified string
+     * field.
+     * @param replace The expression representing the replacement for all occurrences of [find]
+     * with.
+     * @return A new [Expr] representing the string with all occurrences replaced.
+     */
+    @JvmStatic
+    fun replaceAll(fieldName: String, find: Expr, replace: Expr): Expr =
+      FunctionExpr("replace_all", fieldName, find, replace)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring within the specified
+     * string field.
+     *
+     * @param fieldName The name of the field representing the string to perform the replacement on.
+     * @param find The substring to search for in specified string field.
+     * @param replace The replacement for all occurrences of [find] with.
+     * @return A new [Expr] representing the string with all occurrences replaced.
+     */
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
       FunctionExpr("replace_all", fieldName, find, replace)
@@ -1266,42 +1345,102 @@ abstract class Expr internal constructor() {
     fun like(fieldName: String, pattern: String): BooleanExpr =
       BooleanExpr("like", fieldName, pattern)
 
-    /** @return A new [Expr] representing the regexContains operation. */
-    @JvmStatic
-    fun regexContains(expr: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_contains", expr, pattern)
+    /**
+     * Creates an expression that return a pseudo-random number of type double in the range of [0,
+     * 1), inclusive of 0 and exclusive of 1.
+     *
+     * @return A new [Expr] representing the random number operation.
+     */
+    @JvmStatic fun rand(): Expr = FunctionExpr("rand")
 
-    /** @return A new [Expr] representing the regexContains operation. */
+    /**
+     * Creates an expression that checks if a string expression contains a specified regular
+     * expression as a substring.
+     *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param pattern The regular expression to use for the search.
+     * @return A new [BooleanExpr] representing the contains regular expression comparison.
+     */
     @JvmStatic
-    fun regexContains(expr: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_contains", expr, pattern)
+    fun regexContains(stringExpression: Expr, pattern: Expr): BooleanExpr =
+      BooleanExpr("regex_contains", stringExpression, pattern)
 
-    /** @return A new [Expr] representing the regexContains operation. */
+    /**
+     * Creates an expression that checks if a string expression contains a specified regular
+     * expression as a substring.
+     *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param pattern The regular expression to use for the search.
+     * @return A new [BooleanExpr] representing the contains regular expression comparison.
+     */
+    @JvmStatic
+    fun regexContains(stringExpression: Expr, pattern: String): BooleanExpr =
+      BooleanExpr("regex_contains", stringExpression, pattern)
+
+    /**
+     * Creates an expression that checks if a string field contains a specified regular expression
+     * as a substring.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The regular expression to use for the search.
+     * @return A new [BooleanExpr] representing the contains regular expression comparison.
+     */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: Expr) =
       BooleanExpr("regex_contains", fieldName, pattern)
 
-    /** @return A new [Expr] representing the regexContains operation. */
+    /**
+     * Creates an expression that checks if a string field contains a specified regular expression
+     * as a substring.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The regular expression to use for the search.
+     * @return A new [BooleanExpr] representing the contains regular expression comparison.
+     */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: String) =
       BooleanExpr("regex_contains", fieldName, pattern)
 
-    /** @return A new [Expr] representing the regexMatch operation. */
+    /**
+     * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * @param stringExpression The expression representing the string to match against.
+     * @param pattern The regular expression to use for the match.
+     * @return A new [BooleanExpr] representing the regular expression match comparison.
+     */
     @JvmStatic
-    fun regexMatch(expr: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_match", expr, pattern)
+    fun regexMatch(stringExpression: Expr, pattern: Expr): BooleanExpr =
+      BooleanExpr("regex_match", stringExpression, pattern)
 
-    /** @return A new [Expr] representing the regexMatch operation. */
+    /**
+     * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * @param stringExpression The expression representing the string to match against.
+     * @param pattern The regular expression to use for the match.
+     * @return A new [BooleanExpr] representing the regular expression match comparison.
+     */
     @JvmStatic
-    fun regexMatch(expr: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_match", expr, pattern)
+    fun regexMatch(stringExpression: Expr, pattern: String): BooleanExpr =
+      BooleanExpr("regex_match", stringExpression, pattern)
 
-    /** @return A new [Expr] representing the regexMatch operation. */
+    /**
+     * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The regular expression to use for the match.
+     * @return A new [BooleanExpr] representing the regular expression match comparison.
+     */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: Expr) =
       BooleanExpr("regex_match", fieldName, pattern)
 
-    /** @return A new [Expr] representing the regexMatch operation. */
+    /**
+     * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * @param fieldName The name of the field containing the string.
+     * @param pattern The regular expression to use for the match.
+     * @return A new [BooleanExpr] representing the regular expression match comparison.
+     */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: String) =
       BooleanExpr("regex_match", fieldName, pattern)
@@ -1354,13 +1493,27 @@ abstract class Expr internal constructor() {
     fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
       FunctionExpr("logical_min", fieldName, *others)
 
-    /** @return A new [Expr] representing the reverse operation. */
-    @JvmStatic fun reverse(expr: Expr): Expr = FunctionExpr("reverse", expr)
+    /**
+     * Creates an expression that reverses a string.
+     *
+     * @param stringExpression An expression evaluating to a string value, which will be reversed.
+     * @return A new [Expr] representing the reversed string.
+     */
+    @JvmStatic fun reverse(stringExpression: Expr): Expr = FunctionExpr("reverse", stringExpression)
 
-    /** @return A new [Expr] representing the reverse operation. */
+    /**
+     * Creates an expression that reverses a string value from the specified field.
+     *
+     * @param fieldName The name of the field that contains the string to reverse.
+     * @return A new [Expr] representing the reversed string.
+     */
     @JvmStatic fun reverse(fieldName: String): Expr = FunctionExpr("reverse", fieldName)
 
-    /** @return A new [Expr] representing the strContains operation. */
+    /**
+     * Creates an expression that checks if a string expression contains a specified substring.
+     *
+     * @return A new [BooleanExpr] representing the contains comparison.
+     */
     @JvmStatic
     fun strContains(expr: Expr, substring: Expr): BooleanExpr =
       BooleanExpr("str_contains", expr, substring)
@@ -2712,7 +2865,7 @@ abstract class Expr internal constructor() {
    *
    * @return A new [Expr] representing an integer result from the round operation.
    */
-  fun round() = Companion.round(this)
+  fun round(): Expr = Companion.round(this)
 
   /**
    * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
@@ -2722,7 +2875,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun roundToDecimal(decimalPlace: Int) = Companion.roundToDecimal(this, decimalPlace)
+  fun roundToDecimal(decimalPlace: Int): Expr = Companion.roundToDecimal(this, decimalPlace)
 
   /**
    * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
@@ -2732,7 +2885,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun roundToDecimal(decimalPlace: Expr) = Companion.roundToDecimal(this, decimalPlace)
+  fun roundToDecimal(decimalPlace: Expr): Expr = Companion.roundToDecimal(this, decimalPlace)
 
   /**
    * Creates an expression that returns the smalled integer that isn't less than this numeric
@@ -2740,7 +2893,7 @@ abstract class Expr internal constructor() {
    *
    * @return A new [Expr] representing an integer result from the ceil operation.
    */
-  fun ceil() = Companion.ceil(this)
+  fun ceil(): Expr = Companion.ceil(this)
 
   /**
    * Creates an expression that returns the largest integer that isn't less than this numeric
@@ -2748,7 +2901,7 @@ abstract class Expr internal constructor() {
    *
    * @return A new [Expr] representing an integer result from the floor operation.
    */
-  fun floor() = Companion.floor(this)
+  fun floor(): Expr = Companion.floor(this)
 
   /**
    * Creates an expression that returns this numeric expression raised to the power of the
@@ -2758,7 +2911,7 @@ abstract class Expr internal constructor() {
    * @return A new [Expr] representing a numeric result from raising this numeric expression to the
    * power of [exponent].
    */
-  fun pow(exponent: Number) = Companion.pow(this, exponent)
+  fun pow(exponent: Number): Expr = Companion.pow(this, exponent)
 
   /**
    * Creates an expression that returns this numeric expression raised to the power of the
@@ -2768,14 +2921,14 @@ abstract class Expr internal constructor() {
    * @return A new [Expr] representing a numeric result from raising this numeric expression to the
    * power of [exponent].
    */
-  fun pow(exponent: Expr) = Companion.pow(this, exponent)
+  fun pow(exponent: Expr): Expr = Companion.pow(this, exponent)
 
   /**
    * Creates an expression that returns the square root of this numeric expression.
    *
    * @return A new [Expr] representing the numeric result of the square root operation.
    */
-  fun sqrt() = Companion.sqrt(this)
+  fun sqrt(): Expr = Companion.sqrt(this)
 
   /**
    * Creates an expression that checks if this expression, when evaluated, is equal to any of the
@@ -2853,18 +3006,42 @@ abstract class Expr internal constructor() {
   fun isNotNull(): BooleanExpr = Companion.isNotNull(this)
 
   /**
+   * Creates an expression that replaces the first occurrence of a substring within this string
+   * expression.
+   *
+   * @param find The expression representing the substring to search for in this expressions.
+   * @param replace The expression representing the replacement for the first occurrence of [find].
+   * @return A new [Expr] representing the string with the first occurrence replaced.
    */
   fun replaceFirst(find: Expr, replace: Expr) = Companion.replaceFirst(this, find, replace)
 
   /**
+   * Creates an expression that replaces the first occurrence of a substring within this string
+   * expression.
+   *
+   * @param find The substring to search for in this string expression.
+   * @param replace The replacement for the first occurrence of [find] with.
+   * @return A new [Expr] representing the string with the first occurrence replaced.
    */
   fun replaceFirst(find: String, replace: String) = Companion.replaceFirst(this, find, replace)
 
   /**
+   * Creates an expression that replaces all occurrences of a substring within this string
+   * expression.
+   *
+   * @param find The expression representing the substring to search for in this string expression.
+   * @param replace The expression representing the replacement for all occurrences of [find].
+   * @return A new [Expr] representing the string with all occurrences replaced.
    */
   fun replaceAll(find: Expr, replace: Expr) = Companion.replaceAll(this, find, replace)
 
   /**
+   * Creates an expression that replaces all occurrences of a substring within this string
+   * expression.
+   *
+   * @param find The substring to search for in this string expression.
+   * @param replace The replacement for all occurrences of [find] with.
+   * @return A new [Expr] representing the string with all occurrences replaced.
    */
   fun replaceAll(find: String, replace: String) = Companion.replaceAll(this, find, replace)
 
@@ -2900,18 +3077,38 @@ abstract class Expr internal constructor() {
   fun like(pattern: String): BooleanExpr = Companion.like(this, pattern)
 
   /**
+   * Creates an expression that checks if this string expression contains a specified regular
+   * expression as a substring.
+   *
+   * @param pattern The regular expression to use for the search.
+   * @return A new [BooleanExpr] representing the contains regular expression comparison.
    */
   fun regexContains(pattern: Expr): BooleanExpr = Companion.regexContains(this, pattern)
 
   /**
+   * Creates an expression that checks if this string expression contains a specified regular
+   * expression as a substring.
+   *
+   * @param pattern The regular expression to use for the search.
+   * @return A new [BooleanExpr] representing the contains regular expression comparison.
    */
   fun regexContains(pattern: String): BooleanExpr = Companion.regexContains(this, pattern)
 
   /**
+   * Creates an expression that checks if this string expression matches a specified regular
+   * expression.
+   *
+   * @param pattern The regular expression to use for the match.
+   * @return A new [BooleanExpr] representing the regular expression match comparison.
    */
   fun regexMatch(pattern: Expr): BooleanExpr = Companion.regexMatch(this, pattern)
 
   /**
+   * Creates an expression that checks if this string expression matches a specified regular
+   * expression.
+   *
+   * @param pattern The regular expression to use for the match.
+   * @return A new [BooleanExpr] representing the regular expression match comparison.
    */
   fun regexMatch(pattern: String): BooleanExpr = Companion.regexMatch(this, pattern)
 
@@ -2952,6 +3149,9 @@ abstract class Expr internal constructor() {
   fun logicalMinimum(vararg others: Any): Expr = Companion.logicalMinimum(this, *others)
 
   /**
+   * Creates an expression that reverses this string expression.
+   *
+   * @return A new [Expr] representing the reversed string.
    */
   fun reverse(): Expr = Companion.reverse(this)
 
@@ -3529,6 +3729,7 @@ internal constructor(
   private val params: Array<out Expr>,
   private val options: InternalOptions = InternalOptions.EMPTY
 ) : Expr() {
+  internal constructor(name: String) : this(name, emptyArray())
   internal constructor(name: String, param: Expr) : this(name, arrayOf(param))
   internal constructor(
     name: String,
