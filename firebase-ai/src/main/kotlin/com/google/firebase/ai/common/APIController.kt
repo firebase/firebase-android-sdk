@@ -165,6 +165,7 @@ internal constructor(
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location))
+
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =
