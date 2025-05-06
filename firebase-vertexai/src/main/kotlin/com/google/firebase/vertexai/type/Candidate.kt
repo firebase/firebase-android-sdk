@@ -21,7 +21,6 @@ package com.google.firebase.vertexai.type
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
 import java.util.Calendar
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
