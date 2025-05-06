@@ -29,6 +29,10 @@ import com.google.firebase.vertexai.type.PublicPreviewAPI
  * @see [ImagenModel]
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public abstract class ImagenModelFutures internal constructor() {
   /**
    * Generates an image, returning the result directly to the caller.

@@ -34,6 +34,10 @@ import kotlinx.serialization.json.JsonNames
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exist.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Candidate
 internal constructor(
   public val content: Content,
@@ -106,6 +110,10 @@ internal constructor(
  * @property severity The severity of the potential harm.
  * @property severityScore A numerical score representing the severity of harm.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class SafetyRating
 internal constructor(
   public val category: HarmCategory,
@@ -146,6 +154,10 @@ internal constructor(
  * @property citations A list of individual cited sources and the parts of the content to which they
  * apply.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class CitationMetadata internal constructor(public val citations: List<Citation>) {
 
   @Serializable
@@ -173,6 +185,10 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
  * @property license The license under which the cited content is distributed under, if available.
  * @property publicationDate The date of publication of the cited source, if available.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Citation
 internal constructor(
   public val title: String? = null,
@@ -239,6 +255,10 @@ internal constructor(
  * @property name The name of the finish reason.
  * @property ordinal The ordinal value of the finish reason.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FinishReason private constructor(public val name: String, public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)

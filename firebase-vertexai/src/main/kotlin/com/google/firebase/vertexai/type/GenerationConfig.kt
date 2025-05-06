@@ -78,6 +78,10 @@ import kotlinx.serialization.Serializable
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -123,6 +127,10 @@ private constructor(
    *
    * @see [generationConfig]
    */
+  @Deprecated(
+    """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null

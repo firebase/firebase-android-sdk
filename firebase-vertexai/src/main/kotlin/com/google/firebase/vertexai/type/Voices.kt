@@ -21,6 +21,10 @@ import kotlinx.serialization.Serializable
 
 /** Various voices supported by the server */
 @PublicPreviewAPI
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)

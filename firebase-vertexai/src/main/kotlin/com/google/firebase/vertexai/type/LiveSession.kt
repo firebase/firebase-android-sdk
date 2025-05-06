@@ -58,6 +58,10 @@ import kotlinx.serialization.json.decodeFromJsonElement
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
 @OptIn(ExperimentalSerializationApi::class)
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,

@@ -27,6 +27,10 @@ import kotlinx.serialization.Serializable
  * for every MIME type.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
 

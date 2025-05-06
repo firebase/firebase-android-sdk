@@ -31,9 +31,17 @@ import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public interface Part {}
 
 /** Represents text or string based data sent to and received from requests. */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class TextPart(public val text: String) : Part {
 
   @Serializable internal data class Internal(val text: String) : InternalPart
@@ -45,6 +53,10 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagePart(public val image: Bitmap) : Part {
 
   internal fun toInlineDataPart() =
@@ -61,6 +73,10 @@ public class ImagePart(public val image: Bitmap) : Part {
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
@@ -79,6 +95,10 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * @param args the function parameters and values as a [Map]
  */
 // TODO(b/410040441): Support id property
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FunctionCallPart(
   public val name: String,
   public val args: Map<String, JsonElement>,
@@ -99,6 +119,10 @@ public class FunctionCallPart(
  * @param response the response produced by the function as a [JSONObject]
  */
 // TODO(b/410040441): Support id property
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
 
   @Serializable
@@ -120,6 +144,10 @@ public class FunctionResponsePart(public val name: String, public val response: 
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
+@Deprecated(
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
 
   @Serializable
