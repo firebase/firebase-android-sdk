@@ -209,3 +209,4 @@ updates.
   `UploadTask.TaskSnapshot.getDownloadUrl()` methods. To get a current download
   URL, use
   [`StorageReference.getDownloadUr()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#getDownloadUrl()).
+
