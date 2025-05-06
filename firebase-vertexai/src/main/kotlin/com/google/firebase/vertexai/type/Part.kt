@@ -45,7 +45,14 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part
+public class ImagePart(public val image: Bitmap) : Part {
+
+  internal fun toInlineDataPart() =
+    InlineDataPart(
+      android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
+      "image/jpeg"
+    )
+}
 
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
@@ -164,7 +171,7 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Png(image))
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
@@ -186,7 +193,7 @@ internal fun Part.toInternal(): InternalPart {
   }
 }
 
-private fun encodeBitmapToBase64Png(input: Bitmap): String {
+private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
   ByteArrayOutputStream().let {
     input.compress(Bitmap.CompressFormat.JPEG, 80, it)
     return android.util.Base64.encodeToString(it.toByteArray(), BASE_64_FLAGS)

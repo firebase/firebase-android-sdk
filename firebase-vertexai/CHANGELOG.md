@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.4.0
 * [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
     * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures object. 
     * **Action Required:** Change type of variable handling `LiveModelFutures.connect` to `ListenableFuture<LiveSessionsFutures>`
@@ -13,7 +16,9 @@
 * [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
   interrupted or the turn completed. (#6870)
 * [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
-
+* [feature] Enable response generation in multiple modalities. (#6901)
+* [changed] Removed the `LiveContentResponse.Status` class, and instead have nested the status
+  fields as properties of `LiveContentResponse`. (#6906)
 
 # 16.3.0
 * [feature] Emits a warning when attempting to use an incompatible model with
