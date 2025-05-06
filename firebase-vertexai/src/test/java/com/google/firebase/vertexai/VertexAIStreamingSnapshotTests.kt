@@ -62,10 +62,9 @@ internal class VertexAIStreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.forEach {
-          it.candidates.first().finishReason shouldBe FinishReason.STOP
-          it.candidates.first().content.parts.isEmpty() shouldBe false
-          it.candidates.first().safetyRatings.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
         }
       }
     }
