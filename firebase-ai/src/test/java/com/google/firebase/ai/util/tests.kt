@@ -39,7 +39,7 @@ import java.io.File
 import kotlinx.coroutines.launch
 import org.mockito.Mockito
 
-private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+private val TEST_CLIENT_ID = "firebase-ai-android/test"
 private val TEST_APP_ID = "1:android:12345"
 private val TEST_VERSION = 1
 
@@ -193,7 +193,7 @@ internal fun goldenDevAPIStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) = goldenStreamingFile("vertexai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
+) = goldenStreamingFile("googleai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
 
 /**
  * A variant of [commonTest] for performing snapshot tests.
