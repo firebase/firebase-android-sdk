@@ -1512,23 +1512,43 @@ abstract class Expr internal constructor() {
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
      *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param substring The expression representing the substring to search for.
      * @return A new [BooleanExpr] representing the contains comparison.
      */
     @JvmStatic
-    fun strContains(expr: Expr, substring: Expr): BooleanExpr =
-      BooleanExpr("str_contains", expr, substring)
+    fun strContains(stringExpression: Expr, substring: Expr): BooleanExpr =
+      BooleanExpr("str_contains", stringExpression, substring)
 
-    /** @return A new [Expr] representing the strContains operation. */
+    /**
+     * Creates an expression that checks if a string expression contains a specified substring.
+     *
+     * @param stringExpression The expression representing the string to perform the comparison on.
+     * @param substring The substring to search for.
+     * @return A new [BooleanExpr] representing the contains comparison.
+     */
     @JvmStatic
-    fun strContains(expr: Expr, substring: String): BooleanExpr =
-      BooleanExpr("str_contains", expr, substring)
+    fun strContains(stringExpression: Expr, substring: String): BooleanExpr =
+      BooleanExpr("str_contains", stringExpression, substring)
 
-    /** @return A new [BooleanExpr] representing the strContains operation. */
+    /**
+     * Creates an expression that checks if a string field contains a specified substring.
+     *
+     * @param fieldName The name of the field to perform the comparison on.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [BooleanExpr] representing the contains comparison.
+     */
     @JvmStatic
     fun strContains(fieldName: String, substring: Expr): BooleanExpr =
       BooleanExpr("str_contains", fieldName, substring)
 
-    /** @return A new [BooleanExpr] representing the strContains operation. */
+    /**
+     * Creates an expression that checks if a string field contains a specified substring.
+     *
+     * @param fieldName The name of the field to perform the comparison on.
+     * @param substring The substring to search for.
+     * @return A new [BooleanExpr] representing the contains comparison.
+     */
     @JvmStatic
     fun strContains(fieldName: String, substring: String): BooleanExpr =
       BooleanExpr("str_contains", fieldName, substring)
@@ -1645,23 +1665,51 @@ abstract class Expr internal constructor() {
     /** @return A new [Expr] representing the trim operation. */
     @JvmStatic fun trim(fieldName: String): Expr = FunctionExpr("trim", fieldName)
 
-    /** @return A new [Expr] representing the strConcat operation. */
+    /**
+     * Creates an expression that concatenates string expressions together.
+     *
+     * @param firstString The expression representing the initial string value.
+     * @param otherStrings Optional additional string expressions to concatenate.
+     * @return A new [Expr] representing the concatenated string.
+     */
     @JvmStatic
-    fun strConcat(first: Expr, vararg rest: Expr): Expr = FunctionExpr("str_concat", first, *rest)
+    fun strConcat(firstString: Expr, vararg otherStrings: Expr): Expr =
+      FunctionExpr("str_concat", firstString, *otherStrings)
 
-    /** @return A new [Expr] representing the strConcat operation. */
+    /**
+     * Creates an expression that concatenates string expressions together.
+     *
+     * @param firstString The expression representing the initial string value.
+     * @param otherStrings Optional additional string expressions or string constants to
+     * concatenate.
+     * @return A new [Expr] representing the concatenated string.
+     */
     @JvmStatic
-    fun strConcat(first: Expr, vararg rest: Any): Expr = FunctionExpr("str_concat", first, *rest)
+    fun strConcat(firstString: Expr, vararg otherStrings: Any): Expr =
+      FunctionExpr("str_concat", firstString, *otherStrings)
 
-    /** @return A new [Expr] representing the strConcat operation. */
+    /**
+     * Creates an expression that concatenates string expressions together.
+     *
+     * @param fieldName The field name containing the initial string value.
+     * @param otherStrings Optional additional string expressions to concatenate.
+     * @return A new [Expr] representing the concatenated string.
+     */
     @JvmStatic
-    fun strConcat(fieldName: String, vararg rest: Expr): Expr =
-      FunctionExpr("str_concat", fieldName, *rest)
+    fun strConcat(fieldName: String, vararg otherStrings: Expr): Expr =
+      FunctionExpr("str_concat", fieldName, *otherStrings)
 
-    /** @return A new [Expr] representing the strConcat operation. */
+    /**
+     * Creates an expression that concatenates string expressions together.
+     *
+     * @param fieldName The field name containing the initial string value.
+     * @param otherStrings Optional additional string expressions or string constants to
+     * concatenate.
+     * @return A new [Expr] representing the concatenated string.
+     */
     @JvmStatic
-    fun strConcat(fieldName: String, vararg rest: Any): Expr =
-      FunctionExpr("str_concat", fieldName, *rest)
+    fun strConcat(fieldName: String, vararg otherStrings: Any): Expr =
+      FunctionExpr("str_concat", fieldName, *otherStrings)
 
     internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", elements)
 
@@ -2776,7 +2824,7 @@ abstract class Expr internal constructor() {
    * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
-  fun add(second: Expr, vararg others: Any) = Companion.add(this, second, *others)
+  fun add(second: Expr, vararg others: Any): Expr = Companion.add(this, second, *others)
 
   /**
    * Creates an expression that adds this numeric expression to other numeric expressions and
@@ -2786,7 +2834,7 @@ abstract class Expr internal constructor() {
    * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
-  fun add(second: Number, vararg others: Any) = Companion.add(this, second, *others)
+  fun add(second: Number, vararg others: Any): Expr = Companion.add(this, second, *others)
 
   /**
    * Creates an expression that subtracts a constant from this numeric expression.
@@ -2794,7 +2842,7 @@ abstract class Expr internal constructor() {
    * @param subtrahend Numeric expression to subtract.
    * @return A new [Expr] representing the subtract operation.
    */
-  fun subtract(subtrahend: Expr) = Companion.subtract(this, subtrahend)
+  fun subtract(subtrahend: Expr): Expr = Companion.subtract(this, subtrahend)
 
   /**
    * Creates an expression that subtracts a numeric expressions from this numeric expression.
@@ -2802,7 +2850,7 @@ abstract class Expr internal constructor() {
    * @param subtrahend Constant to subtract.
    * @return A new [Expr] representing the subtract operation.
    */
-  fun subtract(subtrahend: Number) = Companion.subtract(this, subtrahend)
+  fun subtract(subtrahend: Number): Expr = Companion.subtract(this, subtrahend)
 
   /**
    * Creates an expression that multiplies this numeric expression to other numeric expressions and
@@ -2812,7 +2860,7 @@ abstract class Expr internal constructor() {
    * @param others Additional numeric expressions or constants to multiply.
    * @return A new [Expr] representing the multiplication operation.
    */
-  fun multiply(second: Expr, vararg others: Any) = Companion.multiply(this, second, *others)
+  fun multiply(second: Expr, vararg others: Any): Expr = Companion.multiply(this, second, *others)
 
   /**
    * Creates an expression that multiplies this numeric expression to other numeric expressions and
@@ -2822,7 +2870,7 @@ abstract class Expr internal constructor() {
    * @param others Additional numeric expressions or constants to multiply.
    * @return A new [Expr] representing the multiplication operation.
    */
-  fun multiply(second: Number, vararg others: Any) = Companion.multiply(this, second, *others)
+  fun multiply(second: Number, vararg others: Any): Expr = Companion.multiply(this, second, *others)
 
   /**
    * Creates an expression that divides this numeric expression by another numeric expression.
@@ -2830,7 +2878,7 @@ abstract class Expr internal constructor() {
    * @param divisor Numeric expression to divide this numeric expression by.
    * @return A new [Expr] representing the division operation.
    */
-  fun divide(divisor: Expr) = Companion.divide(this, divisor)
+  fun divide(divisor: Expr): Expr = Companion.divide(this, divisor)
 
   /**
    * Creates an expression that divides this numeric expression by a constant.
@@ -2838,7 +2886,7 @@ abstract class Expr internal constructor() {
    * @param divisor Constant to divide this expression by.
    * @return A new [Expr] representing the division operation.
    */
-  fun divide(divisor: Number) = Companion.divide(this, divisor)
+  fun divide(divisor: Number): Expr = Companion.divide(this, divisor)
 
   /**
    * Creates an expression that calculates the modulo (remainder) of dividing this numeric
@@ -2847,7 +2895,7 @@ abstract class Expr internal constructor() {
    * @param divisor The numeric expression to divide this expression by.
    * @return A new [Expr] representing the modulo operation.
    */
-  fun mod(divisor: Expr) = Companion.mod(this, divisor)
+  fun mod(divisor: Expr): Expr = Companion.mod(this, divisor)
 
   /**
    * Creates an expression that calculates the modulo (remainder) of dividing this numeric
@@ -2856,7 +2904,7 @@ abstract class Expr internal constructor() {
    * @param divisor The constant to divide this expression by.
    * @return A new [Expr] representing the modulo operation.
    */
-  fun mod(divisor: Number) = Companion.mod(this, divisor)
+  fun mod(divisor: Number): Expr = Companion.mod(this, divisor)
 
   /**
    * Creates an expression that rounds this numeric expression to nearest integer.
@@ -3156,10 +3204,18 @@ abstract class Expr internal constructor() {
   fun reverse(): Expr = Companion.reverse(this)
 
   /**
+   * Creates an expression that checks if this string expression contains a specified substring.
+   *
+   * @param substring The expression representing the substring to search for.
+   * @return A new [BooleanExpr] representing the contains comparison.
    */
   fun strContains(substring: Expr): BooleanExpr = Companion.strContains(this, substring)
 
   /**
+   * Creates an expression that checks if this string expression contains a specified substring.
+   *
+   * @param substring The substring to search for.
+   * @return A new [BooleanExpr] representing the contains comparison.
    */
   fun strContains(substring: String): BooleanExpr = Companion.strContains(this, substring)
 
@@ -3208,16 +3264,29 @@ abstract class Expr internal constructor() {
   fun trim() = Companion.trim(this)
 
   /**
+   * Creates an expression that concatenates string expressions together.
+   *
+   * @param stringExpressions The string expressions to concatenate.
+   * @return A new [Expr] representing the concatenated string.
    */
-  fun strConcat(vararg expr: Expr) = Companion.strConcat(this, *expr)
+  fun strConcat(vararg stringExpressions: Expr): Expr =
+    Companion.strConcat(this, *stringExpressions)
 
   /**
+   * Creates an expression that concatenates this string expression with string constants.
+   *
+   * @param strings The string constants to concatenate.
+   * @return A new [Expr] representing the concatenated string.
    */
-  fun strConcat(vararg string: String) = Companion.strConcat(this, *string)
+  fun strConcat(vararg strings: String): Expr = Companion.strConcat(this, *strings)
 
   /**
+   * Creates an expression that concatenates string expressions and string constants together.
+   *
+   * @param strings The string expressions or string constants to concatenate.
+   * @return A new [Expr] representing the concatenated string.
    */
-  fun strConcat(vararg string: Any) = Companion.strConcat(this, *string)
+  fun strConcat(vararg strings: Any): Expr = Companion.strConcat(this, *strings)
 
   /**
    * Accesses a map (object) value using the provided [key].
