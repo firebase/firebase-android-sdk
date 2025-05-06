@@ -41,6 +41,7 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
@@ -164,7 +165,9 @@ internal constructor(
     "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
-    client.webSocketSession(getBidiEndpoint(location))
+    client.webSocketSession(getBidiEndpoint(location)) {
+      applyCommonHeaders()
+    }
 
   fun generateContentStream(
     request: GenerateContentRequest
@@ -191,12 +194,7 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
-  private fun HttpRequestBuilder.applyCommonConfiguration(request: Request) {
-    when (request) {
-      is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
-      is CountTokensRequest -> setBody<CountTokensRequest>(request)
-      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
-    }
+  private fun HttpRequestBuilder.applyCommonHeaders() {
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
@@ -204,6 +202,14 @@ internal constructor(
       header("X-Firebase-AppId", googleAppId)
       header("X-Firebase-AppVersion", appVersion)
     }
+  }
+  private fun HttpRequestBuilder.applyCommonConfiguration(request: Request) {
+    when (request) {
+      is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
+      is CountTokensRequest -> setBody<CountTokensRequest>(request)
+      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
+    }
+   applyCommonHeaders()
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
