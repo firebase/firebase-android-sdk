@@ -107,7 +107,6 @@ public class GaugeManager extends AppStateUpdateHandler {
     }
 
     // If it's a verbose session, start collecting gauges for the new app state.
-    // This
     startCollectingGauges(this.applicationProcessState, session.getTimer());
   }
 
