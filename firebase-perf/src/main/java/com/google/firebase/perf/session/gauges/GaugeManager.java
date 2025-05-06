@@ -102,12 +102,14 @@ public class GaugeManager extends AppStateUpdateHandler {
   public void onUpdateAppState(ApplicationProcessState applicationProcessState) {
     this.applicationProcessState = applicationProcessState;
 
-    if (session == null || !session.isVerbose()) {
+    if (session == null) {
       return;
     }
 
-    // If it's a verbose session, start collecting gauges for the new app state.
-    startCollectingGauges(this.applicationProcessState, session.getTimer());
+    if (session.isVerbose()) {
+      // If it's a verbose session, start collecting gauges for the new app state.
+      startCollectingGauges(this.applicationProcessState, session.getTimer());
+    }
   }
 
   /** Returns the singleton instance of this class. */
