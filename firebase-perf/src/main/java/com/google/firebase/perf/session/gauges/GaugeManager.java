@@ -59,7 +59,6 @@ public class GaugeManager extends AppStateUpdateHandler {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-  @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
   @Nullable private PerfSession session = null;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
@@ -183,30 +182,36 @@ public class GaugeManager extends AppStateUpdateHandler {
       return;
     }
 
-    // This is needed, otherwise the Runnable might use a stale value.
-    final String sessionIdForScheduledTask = session.sessionId();
-    final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
-
     cpuGaugeCollector.get().stopCollecting();
     memoryGaugeCollector.get().stopCollecting();
 
-    if (gaugeManagerDataCollectionJob != null) {
-      gaugeManagerDataCollectionJob.cancel(false);
+    logGaugeMetrics();
+    GaugeCounter.Companion.getInstance().resetCounter();
+    this.session = null;
+  }
+
+  protected boolean logGaugeMetrics() {
+    if (session == null) {
+      logger.warn("Attempted to log Gauge Metrics when session was null.");
+      return false;
     }
 
-    // Flush any data that was collected for this session one last time.
+    logExistingGaugeMetrics(session.sessionId(), applicationProcessState);
+    return true;
+  }
+
+  private void logExistingGaugeMetrics(String sessionId, ApplicationProcessState applicationProcessState) {
+    // Flush any data that was collected and attach it to the given session and app state.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture<?> unusedFuture =
-        gaugeManagerExecutor
-            .get()
-            .schedule(
-                () -> {
-                  syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
-                },
-                TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
-                TimeUnit.MILLISECONDS);
-
-    this.session = null;
+            gaugeManagerExecutor
+                    .get()
+                    .schedule(
+                            () -> {
+                              syncFlush(sessionId, applicationProcessState);
+                            },
+                            TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                            TimeUnit.MILLISECONDS);
   }
 
   /**
