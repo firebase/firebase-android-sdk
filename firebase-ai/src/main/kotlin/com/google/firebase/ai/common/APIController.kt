@@ -164,9 +164,7 @@ internal constructor(
     "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
-    client.webSocketSession(getBidiEndpoint(location)) {
-      applyCommonHeaders()
-    }
+    client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
 
   fun generateContentStream(
     request: GenerateContentRequest
@@ -208,7 +206,7 @@ internal constructor(
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
       is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
     }
-   applyCommonHeaders()
+    applyCommonHeaders()
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
