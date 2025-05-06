@@ -18,7 +18,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.GaugeMetadata;
@@ -47,8 +46,7 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "PerfSession.perfSession()");
+    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "PerfSession.perfSession()");
 
     return perfSession;
   }
@@ -59,8 +57,7 @@ public class SessionManager {
   }
 
   @VisibleForTesting
-  public SessionManager(
-      GaugeManager gaugeManager, PerfSession perfSession) {
+  public SessionManager(GaugeManager gaugeManager, PerfSession perfSession) {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
   }
@@ -80,8 +77,7 @@ public class SessionManager {
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
     FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession,
-        "SessionManager.stopGaugeCollectionIfSessionRunningTooLong");
+        perfSession, "SessionManager.stopGaugeCollectionIfSessionRunningTooLong");
 
     if (perfSession.isSessionRunningTooLong()) {
       gaugeManager.stopCollectingGauges();
@@ -158,8 +154,7 @@ public class SessionManager {
   }
 
   private void startOrStopCollectingGauges() {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "startOrStopCollectingGauges");
+    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "startOrStopCollectingGauges");
 
     if (perfSession.isVerbose()) {
       gaugeManager.startCollectingGauges(perfSession);

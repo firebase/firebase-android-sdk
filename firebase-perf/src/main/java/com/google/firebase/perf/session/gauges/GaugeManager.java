@@ -49,7 +49,6 @@ public class GaugeManager extends AppStateUpdateHandler {
   // This is a guesstimate of the max amount of time to wait before any pending metrics' collection
   // might take.
   private static final long TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS = 20;
-  private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long INVALID_GAUGE_COLLECTION_FREQUENCY = -1;
 
   private final Lazy<ScheduledExecutorService> gaugeManagerExecutor;
@@ -59,6 +58,7 @@ public class GaugeManager extends AppStateUpdateHandler {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
+  @Nullable private ScheduledFuture<?> gaugeManagerDataCollectionJob = null;
   @Nullable private PerfSession session = null;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
@@ -133,7 +133,8 @@ public class GaugeManager extends AppStateUpdateHandler {
     }
 
     ApplicationProcessState gaugeCollectionApplicationProcessState = applicationProcessState;
-    if (gaugeCollectionApplicationProcessState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+    if (gaugeCollectionApplicationProcessState
+        == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
       logger.warn("Start collecting gauges with APPLICATION_PROCESS_STATE_UNKNOWN");
       // Since the application process state is unknown, collect gauges at the foreground frequency.
       gaugeCollectionApplicationProcessState = ApplicationProcessState.FOREGROUND;
@@ -192,20 +193,24 @@ public class GaugeManager extends AppStateUpdateHandler {
     memoryGaugeCollector.get().stopCollecting();
 
     logGaugeMetrics();
-
-    // TODO(b/394127311): There might be a race condition where a final metric is collected, but
-    // isn't uploaded.
-    GaugeCounter.Companion.getInstance().resetCounter();
     this.session = null;
   }
 
   /**
    * Logs the existing GaugeMetrics to Firelog, associates it with the current {@link PerfSession}
    * and {@link ApplicationProcessState}.
+   *
+   * @return true if a new data collection job is started, false otherwise.
    */
   protected boolean logGaugeMetrics() {
     if (session == null) {
-      logger.warn("Attempted to log Gauge Metrics when session was null.");
+      logger.debug("Attempted to log Gauge Metrics when session was null.");
+      return false;
+    }
+
+    // If there's an existing gaugeManagerDataCollectionJob, this is a no-op.
+    if (gaugeManagerDataCollectionJob != null && !gaugeManagerDataCollectionJob.isDone()) {
+      logger.debug("Attempted to start an additional gauge logging operation.");
       return false;
     }
 
@@ -213,18 +218,18 @@ public class GaugeManager extends AppStateUpdateHandler {
     return true;
   }
 
-  private void logExistingGaugeMetrics(String sessionId, ApplicationProcessState applicationProcessState) {
+  private void logExistingGaugeMetrics(
+      String sessionId, ApplicationProcessState applicationProcessState) {
     // Flush any data that was collected and attach it to the given session and app state.
-    @SuppressWarnings("FutureReturnValueIgnored")
-    ScheduledFuture<?> unusedFuture =
-            gaugeManagerExecutor
-                    .get()
-                    .schedule(
-                            () -> {
-                              syncFlush(sessionId, applicationProcessState);
-                            },
-                            TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
-                            TimeUnit.MILLISECONDS);
+    gaugeManagerDataCollectionJob =
+        gaugeManagerExecutor
+            .get()
+            .schedule(
+                () -> {
+                  syncFlush(sessionId, applicationProcessState);
+                },
+                TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -236,16 +241,19 @@ public class GaugeManager extends AppStateUpdateHandler {
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
+    GaugeCounter gaugeCounter = GaugeCounter.Companion.getInstance();
 
     // Adding CPU metric readings.
     while (!cpuGaugeCollector.get().cpuMetricReadings.isEmpty()) {
       gaugeMetricBuilder.addCpuMetricReadings(cpuGaugeCollector.get().cpuMetricReadings.poll());
+      gaugeCounter.decrementCounter();
     }
 
     // Adding Memory metric readings.
     while (!memoryGaugeCollector.get().memoryMetricReadings.isEmpty()) {
       gaugeMetricBuilder.addAndroidMemoryReadings(
           memoryGaugeCollector.get().memoryMetricReadings.poll());
+      gaugeCounter.decrementCounter();
     }
 
     // Adding Session ID info.
