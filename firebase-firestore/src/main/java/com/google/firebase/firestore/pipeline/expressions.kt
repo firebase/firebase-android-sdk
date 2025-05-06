@@ -605,7 +605,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun roundToDecimal(numericExpr: Expr, decimalPlace: Int): Expr =
+    fun roundToPrecision(numericExpr: Expr, decimalPlace: Int): Expr =
       FunctionExpr("round", numericExpr, constant(decimalPlace))
 
     /**
@@ -618,7 +618,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun roundToDecimal(numericField: String, decimalPlace: Int): Expr =
+    fun roundToPrecision(numericField: String, decimalPlace: Int): Expr =
       FunctionExpr("round", numericField, constant(decimalPlace))
 
     /**
@@ -631,7 +631,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun roundToDecimal(numericExpr: Expr, decimalPlace: Expr): Expr =
+    fun roundToPrecision(numericExpr: Expr, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericExpr, decimalPlace)
 
     /**
@@ -644,7 +644,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the round operation.
      */
     @JvmStatic
-    fun roundToDecimal(numericField: String, decimalPlace: Expr): Expr =
+    fun roundToPrecision(numericField: String, decimalPlace: Expr): Expr =
       FunctionExpr("round", numericField, decimalPlace)
 
     /**
@@ -2067,42 +2067,106 @@ abstract class Expr internal constructor() {
     fun timestampToUnixSeconds(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_seconds", fieldName)
 
-    /** @return A new [Expr] representing the timestampAdd operation. */
+    /**
+     * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * @param timestamp The expression representing the timestamp.
+     * @param unit The expression representing the unit of time to add. Valid units include
+     * "microsecond", "millisecond", "second", "minute", "hour" and "day".
+     * @param amount The expression representing the amount of time to add.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_add", timestamp, unit, amount)
 
-    /** @return A new [Expr] representing the timestampAdd operation. */
+    /**
+     * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * @param timestamp The expression representing the timestamp.
+     * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
+     * "second", "minute", "hour" and "day".
+     * @param amount The amount of time to add.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_add", timestamp, unit, amount)
 
-    /** @return A new [Expr] representing the timestampAdd operation. */
+    /**
+     * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @param unit The expression representing the unit of time to add. Valid units include
+     * "microsecond", "millisecond", "second", "minute", "hour" and "day".
+     * @param amount The expression representing the amount of time to add.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_add", fieldName, unit, amount)
 
-    /** @return A new [Expr] representing the timestampAdd operation. */
+    /**
+     * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
+     * "second", "minute", "hour" and "day".
+     * @param amount The amount of time to add.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_add", fieldName, unit, amount)
 
-    /** @return A new [Expr] representing the timestampSub operation. */
+    /**
+     * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * @param timestamp The expression representing the timestamp.
+     * @param unit The expression representing the unit of time to subtract. Valid units include
+     * "microsecond", "millisecond", "second", "minute", "hour" and "day".
+     * @param amount The expression representing the amount of time to subtract.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_sub", timestamp, unit, amount)
 
-    /** @return A new [Expr] representing the timestampSub operation. */
+    /**
+     * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * @param timestamp The expression representing the timestamp.
+     * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
+     * "second", "minute", "hour" and "day".
+     * @param amount The amount of time to subtract.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_sub", timestamp, unit, amount)
 
-    /** @return A new [Expr] representing the timestampSub operation. */
+    /**
+     * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
+     * "second", "minute", "hour" and "day".
+     * @param amount The amount of time to subtract.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: Expr, amount: Expr): Expr =
       FunctionExpr("timestamp_sub", fieldName, unit, amount)
 
-    /** @return A new [Expr] representing the timestampSub operation. */
+    /**
+     * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
+     * "second", "minute", "hour" and "day".
+     * @param amount The amount of time to subtract.
+     * @return A new [Expr] representing the resulting timestamp.
+     */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
       FunctionExpr("timestamp_sub", fieldName, unit, amount)
@@ -2923,7 +2987,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun roundToDecimal(decimalPlace: Int): Expr = Companion.roundToDecimal(this, decimalPlace)
+  fun roundToPrecision(decimalPlace: Int): Expr = Companion.roundToPrecision(this, decimalPlace)
 
   /**
    * Creates an expression that rounds off this numeric expression to [decimalPlace] decimal places
@@ -2933,7 +2997,7 @@ abstract class Expr internal constructor() {
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
-  fun roundToDecimal(decimalPlace: Expr): Expr = Companion.roundToDecimal(this, decimalPlace)
+  fun roundToPrecision(decimalPlace: Expr): Expr = Companion.roundToPrecision(this, decimalPlace)
 
   /**
    * Creates an expression that returns the smalled integer that isn't less than this numeric
@@ -3424,20 +3488,44 @@ abstract class Expr internal constructor() {
   fun timestampToUnixSeconds() = Companion.timestampToUnixSeconds(this)
 
   /**
+   * Creates an expression that adds a specified amount of time to this timestamp expression.
+   *
+   * @param unit The expression representing the unit of time to add. Valid units include
+   * "microsecond", "millisecond", "second", "minute", "hour" and "day".
+   * @param amount The expression representing the amount of time to add.
+   * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampAdd(unit: Expr, amount: Expr) = Companion.timestampAdd(this, unit, amount)
+  fun timestampAdd(unit: Expr, amount: Expr): Expr = Companion.timestampAdd(this, unit, amount)
 
   /**
+   * Creates an expression that adds a specified amount of time to this timestamp expression.
+   *
+   * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
+   * "second", "minute", "hour" and "day".
+   * @param amount The amount of time to add.
+   * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampAdd(unit: String, amount: Double) = Companion.timestampAdd(this, unit, amount)
+  fun timestampAdd(unit: String, amount: Double): Expr = Companion.timestampAdd(this, unit, amount)
 
   /**
+   * Creates an expression that subtracts a specified amount of time to this timestamp expression.
+   *
+   * @param unit The expression representing the unit of time to subtract. Valid units include
+   * "microsecond", "millisecond", "second", "minute", "hour" and "day".
+   * @param amount The expression representing the amount of time to subtract.
+   * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampSub(unit: Expr, amount: Expr) = Companion.timestampSub(this, unit, amount)
+  fun timestampSub(unit: Expr, amount: Expr): Expr = Companion.timestampSub(this, unit, amount)
 
   /**
+   * Creates an expression that subtracts a specified amount of time to this timestamp expression.
+   *
+   * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
+   * "second", "minute", "hour" and "day".
+   * @param amount The amount of time to subtract.
+   * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampSub(unit: String, amount: Double) = Companion.timestampSub(this, unit, amount)
+  fun timestampSub(unit: String, amount: Double): Expr = Companion.timestampSub(this, unit, amount)
 
   /**
    * Creates an expression that concatenates a field's array value with other arrays.
