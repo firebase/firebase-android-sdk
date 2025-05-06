@@ -21,6 +21,7 @@ package com.google.firebase.vertexai.type
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
 import java.util.Calendar
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -55,7 +56,7 @@ internal constructor(
     val groundingMetadata: GroundingMetadata? = null,
   ) {
     internal fun toPublic(): Candidate {
-      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       val citations = citationMetadata?.toPublic()
       val finishReason = finishReason?.toPublic()
 
@@ -128,8 +129,8 @@ internal constructor(
   internal data class Internal
   @JvmOverloads
   constructor(
-    val category: HarmCategory.Internal,
-    val probability: HarmProbability.Internal,
+    val category: HarmCategory.Internal? = null,
+    val probability: HarmProbability.Internal? = null,
     val blocked: Boolean? = null, // TODO(): any reason not to default to false?
     val probabilityScore: Float? = null,
     val severity: HarmSeverity.Internal? = null,
@@ -137,14 +138,23 @@ internal constructor(
   ) {
 
     internal fun toPublic() =
-      SafetyRating(
-        category = category.toPublic(),
-        probability = probability.toPublic(),
-        probabilityScore = probabilityScore ?: 0f,
-        blocked = blocked,
-        severity = severity?.toPublic(),
-        severityScore = severityScore
-      )
+      /**
+       * Due to a bug in the backend, it's possible that we receive an invalid `SafetyRating` value,
+       * without either category or probability. We return null in those cases to enable filtering
+       * by the higher level types.
+       */
+      if (category == null || probability == null) {
+        null
+      } else {
+        SafetyRating(
+          category = category.toPublic(),
+          probability = probability.toPublic(),
+          probabilityScore = probabilityScore ?: 0f,
+          blocked = blocked,
+          severity = severity?.toPublic(),
+          severityScore = severityScore
+        )
+      }
   }
 }
 

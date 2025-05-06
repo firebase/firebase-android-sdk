@@ -46,7 +46,7 @@ public class PromptFeedback(
   ) {
 
     internal fun toPublic(): PromptFeedback {
-      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       return PromptFeedback(blockReason?.toPublic(), safetyRatings, blockReasonMessage)
     }
   }
