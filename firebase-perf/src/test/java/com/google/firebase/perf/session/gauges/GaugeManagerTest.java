@@ -159,11 +159,11 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
       testStartCollectingGaugesStartCollectingMetricsWithUnknownApplicationProcessStateInForegroundState() {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.startCollectingGauges(fakeSession);
-    verify(fakeCpuGaugeCollector, never())
+    verify(fakeCpuGaugeCollector)
         .startCollecting(
             eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS),
             ArgumentMatchers.nullable(Timer.class));
-    verify(fakeMemoryGaugeCollector, never())
+    verify(fakeMemoryGaugeCollector)
         .startCollecting(
             eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS),
             ArgumentMatchers.nullable(Timer.class));
