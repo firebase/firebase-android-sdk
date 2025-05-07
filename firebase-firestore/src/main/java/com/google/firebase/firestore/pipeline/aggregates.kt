@@ -35,29 +35,108 @@ private constructor(
 
     @JvmStatic fun generic(name: String, vararg expr: Expr) = AggregateFunction(name, expr)
 
+    /**
+     * Creates an aggregation that counts the total number of stage inputs.
+     *
+     * @return A new [AggregateFunction] representing the countAll aggregation.
+     */
     @JvmStatic fun countAll() = AggregateFunction("count")
 
+    /**
+     * Creates an aggregation that counts the number of stage inputs where the input field exists.
+     *
+     * @param fieldName The name of the field to count.
+     * @return A new [AggregateFunction] representing the 'count' aggregation.
+     */
     @JvmStatic fun count(fieldName: String) = AggregateFunction("count", fieldName)
 
-    @JvmStatic fun count(expr: Expr) = AggregateFunction("count", expr)
+    /**
+     * Creates an aggregation that counts the number of stage inputs with valid evaluations of the
+     * provided [expression].
+     *
+     * @param expression The expression to count.
+     * @return A new [AggregateFunction] representing the 'count' aggregation.
+     */
+    @JvmStatic fun count(expression: Expr) = AggregateFunction("count", expression)
 
+    /**
+     * Creates an aggregation that counts the number of stage inputs where the provided boolean
+     * expression evaluates to true.
+     *
+     * @param condition The boolean expression to evaluate on each input.
+     * @return A new [AggregateFunction] representing the count aggregation.
+     */
     @JvmStatic fun countIf(condition: BooleanExpr) = AggregateFunction("countIf", condition)
 
+    /**
+     * Creates an aggregation that calculates the sum of a field's values across multiple stage
+     * inputs.
+     *
+     * @param fieldName The name of the field containing numeric values to sum up.
+     * @return A new [AggregateFunction] representing the average aggregation.
+     */
     @JvmStatic fun sum(fieldName: String) = AggregateFunction("sum", fieldName)
 
-    @JvmStatic fun sum(expr: Expr) = AggregateFunction("sum", expr)
+    /**
+     * Creates an aggregation that calculates the sum of values from an expression across multiple
+     * stage inputs.
+     *
+     * @param expression The expression to sum up.
+     * @return A new [AggregateFunction] representing the sum aggregation.
+     */
+    @JvmStatic fun sum(expression: Expr) = AggregateFunction("sum", expression)
 
+    /**
+     * Creates an aggregation that calculates the average (mean) of a field's values across multiple
+     * stage inputs.
+     *
+     * @param fieldName The name of the field containing numeric values to average.
+     * @return A new [AggregateFunction] representing the average aggregation.
+     */
     @JvmStatic fun avg(fieldName: String) = AggregateFunction("avg", fieldName)
 
-    @JvmStatic fun avg(expr: Expr) = AggregateFunction("avg", expr)
+    /**
+     * Creates an aggregation that calculates the average (mean) of values from an expression across
+     * multiple stage inputs.
+     *
+     * @param expression The expression representing the values to average.
+     * @return A new [AggregateFunction] representing the average aggregation.
+     */
+    @JvmStatic fun avg(expression: Expr) = AggregateFunction("avg", expression)
 
-    @JvmStatic fun min(fieldName: String) = AggregateFunction("min", fieldName)
+    /**
+     * Creates an aggregation that finds the minimum value of a field across multiple stage inputs.
+     *
+     * @param fieldName The name of the field to find the minimum value of.
+     * @return A new [AggregateFunction] representing the minimum aggregation.
+     */
+    @JvmStatic fun minimum(fieldName: String) = AggregateFunction("min", fieldName)
 
-    @JvmStatic fun min(expr: Expr) = AggregateFunction("min", expr)
+    /**
+     * Creates an aggregation that finds the minimum value of an expression across multiple stage
+     * inputs.
+     *
+     * @param expression The expression to find the minimum value of.
+     * @return A new [AggregateFunction] representing the minimum aggregation.
+     */
+    @JvmStatic fun minimum(expression: Expr) = AggregateFunction("min", expression)
 
-    @JvmStatic fun max(fieldName: String) = AggregateFunction("max", fieldName)
+    /**
+     * Creates an aggregation that finds the maximum value of a field across multiple stage inputs.
+     *
+     * @param fieldName The name of the field to find the maximum value of.
+     * @return A new [AggregateFunction] representing the maximum aggregation.
+     */
+    @JvmStatic fun maximum(fieldName: String) = AggregateFunction("max", fieldName)
 
-    @JvmStatic fun max(expr: Expr) = AggregateFunction("max", expr)
+    /**
+     * Creates an aggregation that finds the maximum value of an expression across multiple stage
+     * inputs.
+     *
+     * @param expression The expression to find the maximum value of.
+     * @return A new [AggregateFunction] representing the maximum aggregation.
+     */
+    @JvmStatic fun maximum(expression: Expr) = AggregateFunction("max", expression)
   }
 
   /**

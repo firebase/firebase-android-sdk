@@ -691,35 +691,35 @@ package com.google.firebase.firestore.pipeline {
 
   public final class AggregateFunction {
     method public com.google.firebase.firestore.pipeline.AggregateWithAlias alias(String alias);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction avg(com.google.firebase.firestore.pipeline.Expr expr);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction avg(com.google.firebase.firestore.pipeline.Expr expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction avg(String fieldName);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expr expr);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expr expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction count(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction countAll();
     method public static com.google.firebase.firestore.pipeline.AggregateFunction countIf(com.google.firebase.firestore.pipeline.BooleanExpr condition);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction max(com.google.firebase.firestore.pipeline.Expr expr);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction max(String fieldName);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction min(com.google.firebase.firestore.pipeline.Expr expr);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction min(String fieldName);
-    method public static com.google.firebase.firestore.pipeline.AggregateFunction sum(com.google.firebase.firestore.pipeline.Expr expr);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction maximum(com.google.firebase.firestore.pipeline.Expr expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction maximum(String fieldName);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction minimum(com.google.firebase.firestore.pipeline.Expr expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction minimum(String fieldName);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction sum(com.google.firebase.firestore.pipeline.Expr expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction sum(String fieldName);
     field public static final com.google.firebase.firestore.pipeline.AggregateFunction.Companion Companion;
   }
 
   public static final class AggregateFunction.Companion {
-    method public com.google.firebase.firestore.pipeline.AggregateFunction avg(com.google.firebase.firestore.pipeline.Expr expr);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction avg(com.google.firebase.firestore.pipeline.Expr expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction avg(String fieldName);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expr expr);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expr expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction count(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction countAll();
     method public com.google.firebase.firestore.pipeline.AggregateFunction countIf(com.google.firebase.firestore.pipeline.BooleanExpr condition);
     method public com.google.firebase.firestore.pipeline.AggregateFunction generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction max(com.google.firebase.firestore.pipeline.Expr expr);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction max(String fieldName);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction min(com.google.firebase.firestore.pipeline.Expr expr);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction min(String fieldName);
-    method public com.google.firebase.firestore.pipeline.AggregateFunction sum(com.google.firebase.firestore.pipeline.Expr expr);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction maximum(com.google.firebase.firestore.pipeline.Expr expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction maximum(String fieldName);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction minimum(com.google.firebase.firestore.pipeline.Expr expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction minimum(String fieldName);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction sum(com.google.firebase.firestore.pipeline.Expr expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction sum(String fieldName);
   }
 
@@ -738,8 +738,8 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public class BooleanExpr extends com.google.firebase.firestore.pipeline.FunctionExpr {
-    method public final com.google.firebase.firestore.pipeline.Expr cond(com.google.firebase.firestore.pipeline.Expr then, com.google.firebase.firestore.pipeline.Expr otherwise);
-    method public final com.google.firebase.firestore.pipeline.Expr cond(Object then, Object otherwise);
+    method public final com.google.firebase.firestore.pipeline.Expr cond(com.google.firebase.firestore.pipeline.Expr thenExpr, com.google.firebase.firestore.pipeline.Expr elseExpr);
+    method public final com.google.firebase.firestore.pipeline.Expr cond(Object thenValue, Object elseValue);
     method public final com.google.firebase.firestore.pipeline.AggregateFunction countIf();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr not();
@@ -1062,8 +1062,8 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expr mapRemove(String key);
     method public static final com.google.firebase.firestore.pipeline.Expr mapRemove(String mapField, com.google.firebase.firestore.pipeline.Expr key);
     method public static final com.google.firebase.firestore.pipeline.Expr mapRemove(String mapField, String key);
-    method public final com.google.firebase.firestore.pipeline.AggregateFunction max();
-    method public final com.google.firebase.firestore.pipeline.AggregateFunction min();
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction maximum();
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction minimum();
     method public final com.google.firebase.firestore.pipeline.Expr mod(com.google.firebase.firestore.pipeline.Expr divisor);
     method public static final com.google.firebase.firestore.pipeline.Expr mod(com.google.firebase.firestore.pipeline.Expr dividend, com.google.firebase.firestore.pipeline.Expr divisor);
     method public static final com.google.firebase.firestore.pipeline.Expr mod(com.google.firebase.firestore.pipeline.Expr dividend, Number divisor);
@@ -1194,18 +1194,18 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expr trim(com.google.firebase.firestore.pipeline.Expr stringExpression);
     method public static final com.google.firebase.firestore.pipeline.Expr trim(String fieldName);
     method public final com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp();
-    method public static final com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(com.google.firebase.firestore.pipeline.Expr input);
+    method public static final com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(String fieldName);
     method public final com.google.firebase.firestore.pipeline.Expr unixMillisToTimestamp();
     method public static final com.google.firebase.firestore.pipeline.Expr unixMillisToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.Expr unixMillisToTimestamp(String fieldName);
     method public final com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp();
-    method public static final com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expr input);
+    method public static final com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public static final com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.Expr vector(com.google.firebase.firestore.VectorValue vector);
     method public static final com.google.firebase.firestore.pipeline.Expr vector(double[] vector);
     method public final com.google.firebase.firestore.pipeline.Expr vectorLength();
-    method public static final com.google.firebase.firestore.pipeline.Expr vectorLength(com.google.firebase.firestore.pipeline.Expr vector);
+    method public static final com.google.firebase.firestore.pipeline.Expr vectorLength(com.google.firebase.firestore.pipeline.Expr vectorExpression);
     method public static final com.google.firebase.firestore.pipeline.Expr vectorLength(String fieldName);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr xor(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
     field public static final com.google.firebase.firestore.pipeline.Expr.Companion Companion;
@@ -1456,15 +1456,15 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expr toUpper(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expr trim(com.google.firebase.firestore.pipeline.Expr stringExpression);
     method public com.google.firebase.firestore.pipeline.Expr trim(String fieldName);
-    method public com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(com.google.firebase.firestore.pipeline.Expr input);
+    method public com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.Expr unixMicrosToTimestamp(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expr unixMillisToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.Expr unixMillisToTimestamp(String fieldName);
-    method public com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expr input);
+    method public com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expr expr);
     method public com.google.firebase.firestore.pipeline.Expr unixSecondsToTimestamp(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expr vector(com.google.firebase.firestore.VectorValue vector);
     method public com.google.firebase.firestore.pipeline.Expr vector(double[] vector);
-    method public com.google.firebase.firestore.pipeline.Expr vectorLength(com.google.firebase.firestore.pipeline.Expr vector);
+    method public com.google.firebase.firestore.pipeline.Expr vectorLength(com.google.firebase.firestore.pipeline.Expr vectorExpression);
     method public com.google.firebase.firestore.pipeline.Expr vectorLength(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpr xor(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
   }

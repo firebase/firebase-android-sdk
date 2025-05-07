@@ -329,7 +329,7 @@ abstract class Expr internal constructor() {
      * Creates an expression that negates a boolean expression.
      *
      * @param condition The boolean expression to negate.
-     * @return A new [Expr] representing the not operation.
+     * @return A new [BooleanExpr] representing the not operation.
      */
     @JvmStatic fun not(condition: BooleanExpr): BooleanExpr = BooleanExpr("not", condition)
 
@@ -2033,17 +2033,40 @@ abstract class Expr internal constructor() {
     fun euclideanDistance(vectorFieldName: String, vector: VectorValue): Expr =
       FunctionExpr("euclidean_distance", vectorFieldName, vector)
 
-    /** @return A new [Expr] representing the vectorLength operation. */
-    @JvmStatic fun vectorLength(vector: Expr): Expr = FunctionExpr("vector_length", vector)
+    /**
+     * Creates an expression that calculates the length (dimension) of a Firestore Vector.
+     *
+     * @param vectorExpression The expression representing the Firestore Vector.
+     * @return A new [Expr] representing the length (dimension) of the vector.
+     */
+    @JvmStatic
+    fun vectorLength(vectorExpression: Expr): Expr = FunctionExpr("vector_length", vectorExpression)
 
-    /** @return A new [Expr] representing the vectorLength operation. */
+    /**
+     * Creates an expression that calculates the length (dimension) of a Firestore Vector.
+     *
+     * @param fieldName The name of the field containing the Firestore Vector.
+     * @return A new [Expr] representing the length (dimension) of the vector.
+     */
     @JvmStatic fun vectorLength(fieldName: String): Expr = FunctionExpr("vector_length", fieldName)
 
-    /** @return A new [Expr] representing the unixMicrosToTimestamp operation. */
+    /**
+     * Creates an expression that interprets an expression as the number of microseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param expr The expression representing the number of microseconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
-    fun unixMicrosToTimestamp(input: Expr): Expr = FunctionExpr("unix_micros_to_timestamp", input)
+    fun unixMicrosToTimestamp(expr: Expr): Expr = FunctionExpr("unix_micros_to_timestamp", expr)
 
-    /** @return A new [Expr] representing the unixMicrosToTimestamp operation. */
+    /**
+     * Creates an expression that interprets a field's value as the number of microseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param fieldName The name of the field containing the number of microseconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
     fun unixMicrosToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_micros_to_timestamp", fieldName)
@@ -2069,10 +2092,23 @@ abstract class Expr internal constructor() {
     fun timestampToUnixMicros(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_micros", fieldName)
 
+    /**
+     * Creates an expression that interprets an expression as the number of milliseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param expr The expression representing the number of milliseconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
     fun unixMillisToTimestamp(expr: Expr): Expr = FunctionExpr("unix_millis_to_timestamp", expr)
 
-    /** @return A new [Expr] representing the unixMillisToTimestamp operation. */
+    /**
+     * Creates an expression that interprets a field's value as the number of milliseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param fieldName The name of the field containing the number of milliseconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
     fun unixMillisToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_millis_to_timestamp", fieldName)
@@ -2098,11 +2134,23 @@ abstract class Expr internal constructor() {
     fun timestampToUnixMillis(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_millis", fieldName)
 
-    /** @return A new [Expr] representing the unixSecondsToTimestamp operation. */
+    /**
+     * Creates an expression that interprets an expression as the number of seconds since the Unix
+     * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param expr The expression representing the number of seconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
-    fun unixSecondsToTimestamp(input: Expr): Expr = FunctionExpr("unix_seconds_to_timestamp", input)
+    fun unixSecondsToTimestamp(expr: Expr): Expr = FunctionExpr("unix_seconds_to_timestamp", expr)
 
-    /** @return A new [Expr] representing the unixSecondsToTimestamp operation. */
+    /**
+     * Creates an expression that interprets a field's value as the number of seconds since the Unix
+     * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * @param fieldName The name of the field containing the number of seconds since epoch.
+     * @return A new [Expr] representing the timestamp.
+     */
     @JvmStatic
     fun unixSecondsToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_seconds_to_timestamp", fieldName)
@@ -3530,10 +3578,17 @@ abstract class Expr internal constructor() {
   fun euclideanDistance(vector: VectorValue): Expr = Companion.euclideanDistance(this, vector)
 
   /**
+   * Creates an expression that calculates the length (dimension) of a Firestore Vector.
+   *
+   * @return A new [Expr] representing the length (dimension) of the vector.
    */
   fun vectorLength() = Companion.vectorLength(this)
 
   /**
+   * Creates an expression that interprets this expression as the number of microseconds since the
+   * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+   *
+   * @return A new [Expr] representing the timestamp.
    */
   fun unixMicrosToTimestamp() = Companion.unixMicrosToTimestamp(this)
 
@@ -3546,6 +3601,10 @@ abstract class Expr internal constructor() {
   fun timestampToUnixMicros() = Companion.timestampToUnixMicros(this)
 
   /**
+   * Creates an expression that interprets this expression as the number of milliseconds since the
+   * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+   *
+   * @return A new [Expr] representing the timestamp.
    */
   fun unixMillisToTimestamp() = Companion.unixMillisToTimestamp(this)
 
@@ -3558,6 +3617,10 @@ abstract class Expr internal constructor() {
   fun timestampToUnixMillis() = Companion.timestampToUnixMillis(this)
 
   /**
+   * Creates an expression that interprets this expression as the number of seconds since the Unix
+   * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+   *
+   * @return A new [Expr] representing the timestamp.
    */
   fun unixSecondsToTimestamp() = Companion.unixSecondsToTimestamp(this)
 
@@ -3717,7 +3780,7 @@ abstract class Expr internal constructor() {
    * Creates an aggregation that counts the number of stage inputs with valid evaluations of the
    * this expression.
    *
-   * @return A new [AggregateFunction] representing the 'count' aggregation.
+   * @return A new [AggregateFunction] representing the count aggregation.
    */
   fun count(): AggregateFunction = AggregateFunction.count(this)
 
@@ -3725,7 +3788,7 @@ abstract class Expr internal constructor() {
    * Creates an aggregation that calculates the sum of this numeric expression across multiple stage
    * inputs.
    *
-   * @return A new [AggregateFunction] representing the 'sum' aggregation.
+   * @return A new [AggregateFunction] representing the sum aggregation.
    */
   fun sum(): AggregateFunction = AggregateFunction.sum(this)
 
@@ -3733,7 +3796,7 @@ abstract class Expr internal constructor() {
    * Creates an aggregation that calculates the average (mean) of this numeric expression across
    * multiple stage inputs.
    *
-   * @return A new [AggregateFunction] representing the 'avg' aggregation.
+   * @return A new [AggregateFunction] representing the average aggregation.
    */
   fun avg(): AggregateFunction = AggregateFunction.avg(this)
 
@@ -3741,17 +3804,17 @@ abstract class Expr internal constructor() {
    * Creates an aggregation that finds the minimum value of this expression across multiple stage
    * inputs.
    *
-   * @return A new [AggregateFunction] representing the 'min' aggregation.
+   * @return A new [AggregateFunction] representing the minimum aggregation.
    */
-  fun min(): AggregateFunction = AggregateFunction.min(this)
+  fun minimum(): AggregateFunction = AggregateFunction.minimum(this)
 
   /**
    * Creates an aggregation that finds the maximum value of this expression across multiple stage
    * inputs.
    *
-   * @return A new [AggregateFunction] representing the 'max' aggregation.
+   * @return A new [AggregateFunction] representing the maximum aggregation.
    */
-  fun max(): AggregateFunction = AggregateFunction.max(this)
+  fun maximum(): AggregateFunction = AggregateFunction.maximum(this)
 
   /**
    * Create an [Ordering] that sorts documents in ascending order based on value of this expression
@@ -4033,20 +4096,39 @@ open class BooleanExpr internal constructor(name: String, params: Array<out Expr
   }
 
   /**
-   */
-  fun not() = not(this)
-
-  /**
+   * Creates an aggregation that counts the number of stage inputs where the this boolean expression
+   * evaluates to true.
+   *
+   * @return A new [AggregateFunction] representing the count aggregation.
    */
   fun countIf(): AggregateFunction = AggregateFunction.countIf(this)
 
   /**
+   * Creates a conditional expression that evaluates to a [thenExpr] expression if this condition is
+   * true or an [elseExpr] expression if the condition is false.
+   *
+   * @param thenExpr The expression to evaluate if the condition is true.
+   * @param elseExpr The expression to evaluate if the condition is false.
+   * @return A new [Expr] representing the conditional operation.
    */
-  fun cond(then: Expr, otherwise: Expr) = cond(this, then, otherwise)
+  fun cond(thenExpr: Expr, elseExpr: Expr): Expr = Expr.Companion.cond(this, thenExpr, elseExpr)
 
   /**
+   * Creates a conditional expression that evaluates to a [thenValue] if this condition is true or
+   * an [elseValue] if the condition is false.
+   *
+   * @param thenValue Value if the condition is true.
+   * @param elseValue Value if the condition is false.
+   * @return A new [Expr] representing the conditional operation.
    */
-  fun cond(then: Any, otherwise: Any) = cond(this, then, otherwise)
+  fun cond(thenValue: Any, elseValue: Any): Expr = Expr.Companion.cond(this, thenValue, elseValue)
+
+  /**
+   * Creates an expression that negates this boolean expression.
+   *
+   * @return A new [BooleanExpr] representing the not operation.
+   */
+  fun not(): BooleanExpr = Expr.Companion.not(this)
 }
 
 /**

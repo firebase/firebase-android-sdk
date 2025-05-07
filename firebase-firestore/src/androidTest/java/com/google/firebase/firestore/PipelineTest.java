@@ -244,7 +244,7 @@ public class PipelineTest {
             .aggregate(
                 AggregateFunction.countAll().alias("count"),
                 AggregateFunction.avg("rating").alias("avgRating"),
-                field("rating").max().alias("maxRating"))
+                field("rating").maximum().alias("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -304,8 +304,8 @@ public class PipelineTest {
             .collection(randomCol)
             .aggregate(
                 AggregateFunction.countAll().alias("count"),
-                field("rating").max().alias("maxRating"),
-                field("published").min().alias("minPublished"))
+                field("rating").maximum().alias("maxRating"),
+                field("published").minimum().alias("minPublished"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
