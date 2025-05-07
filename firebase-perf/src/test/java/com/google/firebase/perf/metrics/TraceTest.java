@@ -1032,7 +1032,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
+    new SessionManager(mock(GaugeManager.class), null);
 
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds);
 

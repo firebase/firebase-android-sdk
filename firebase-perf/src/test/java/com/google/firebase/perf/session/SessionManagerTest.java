@@ -75,8 +75,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
       throws ExecutionException, InterruptedException {
     when(mockPerfSession.isVerbose()).thenReturn(true);
     InOrder inOrder = Mockito.inOrder(mockGaugeManager);
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, mockPerfSession);
     testSessionManager.setApplicationContext(mockApplicationContext);
 
     inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
@@ -90,8 +89,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   public void testUpdatePerfSessionMakesGaugeManagerStopCollectingGaugesIfSessionIsNonVerbose() {
     forceNonVerboseSession();
 
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, mockPerfSession);
     testSessionManager.updatePerfSession(createTestSession(1));
 
     verify(mockGaugeManager).stopCollectingGauges();
@@ -101,8 +99,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   public void testUpdatePerfSessionMakesGaugeManagerStopCollectingGaugesWhenSessionsDisabled() {
     forceSessionsFeatureDisabled();
 
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, createTestSession(1), mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, createTestSession(1));
     testSessionManager.updatePerfSession(createTestSession(2));
 
     verify(mockGaugeManager).stopCollectingGauges();
@@ -114,8 +111,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     when(mockClock.getTime()).thenReturn(mockTimer);
 
     PerfSession session = new PerfSession(testSessionId(1), mockClock);
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, session);
 
     assertThat(session.isSessionRunningTooLong()).isFalse();
 
@@ -138,8 +134,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     PerfSession newSession = createTestSession(2);
     newSession.setGaugeAndEventCollectionEnabled(true);
 
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, previousSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, previousSession);
     testSessionManager.updatePerfSession(newSession);
     testSessionManager.setApplicationContext(mockApplicationContext);
 
@@ -149,8 +144,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSession_sessionAwareObjects_doesntNotifyIfNotRegistered() {
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, mockPerfSession);
 
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
@@ -165,8 +159,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSession_sessionAwareObjects_NotifiesIfRegistered() {
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, mockPerfSession);
 
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
@@ -185,8 +178,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testPerfSession_sessionAwareObjects_DoesNotNotifyIfUnregistered() {
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    SessionManager testSessionManager = new SessionManager(mockGaugeManager, mockPerfSession);
 
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
