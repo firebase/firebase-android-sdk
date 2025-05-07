@@ -1,0 +1,237 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "4c29e0b467d2bf1318714c75ff011b22995eea16",
+                "prId": "6939",
+                "author": "Vinay Guthal",
+                "message": "Add headers to be able to track bidi usage  (#6939)\n\nOriginally we were not tracking bidi usage in android. This PR enables\nit by adding certain headers when the initial websocket connection is\nmade. There was some refractoring done wrt to extract out the part which\njust adds the headers from the applyCommonConfiguration function",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c29e0b467d2bf1318714c75ff011b22995eea16",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6939"
+            },
+            {
+                "commitId": "bbe3de1925e4f964854a0f30ef7392d64d4c70f9",
+                "prId": "6932",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Fix test code to point to the right resource dir (#6932)\n\nThe devAPI helper method should read from the `googleai/` directory\ninstead of the `vertexai/` one.\n\nAdditionally, fixed tests broken by the change.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bbe3de1925e4f964854a0f30ef7392d64d4c70f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6932"
+            },
+            {
+                "commitId": "24dd7c48441b684bd2e99f260a5d0d5eb9ba1ef2",
+                "prId": "6930",
+                "author": "emilypgoogle",
+                "message": "Fix AI builders for Java consumers (#6930)\n\nFixes all Firebase AI builder patterns to be properly usable by Java\nconsumers. Small breaking binary change, no breaking source change.\nAdditionally, now that the builder pattern can be used, compile tests\nfor the builders and other classes like `Schema` have been implemented.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/24dd7c48441b684bd2e99f260a5d0d5eb9ba1ef2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6930"
+            },
+            {
+                "commitId": "0a880cc7a35a5cdcd012eaf70c2b00f7c4503569",
+                "prId": "6925",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Add workaround for invalid SafetyRating from the backend. (#6925)\n\nDue to a bug in the backend, it's possible that we receive an invalid\n`SafetyRating` value, without either category or probability. We return\nnull in those cases to enable filtering by the higher level types.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0a880cc7a35a5cdcd012eaf70c2b00f7c4503569",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6925"
+            },
+            {
+                "commitId": "4b12b337c1291de22fe35322c9575bdadbc74129",
+                "prId": "6903",
+                "author": "emilypgoogle",
+                "message": "Add Java VertexAI bidi compile tests (#6903)\n\nAdded Java compile tests for VertexAI's bidi support. Notably\nb/412743328 was filed due to `LiveContentResponse.Status` being\ninaccessible properly for Java.\n\nIn addition, minor non-bidi testing for `GenerationContent` being\ninaccessible was added, relating to a previous bug.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4b12b337c1291de22fe35322c9575bdadbc74129",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6903"
+            },
+            {
+                "commitId": "2b2388713889db915ab76d94f672350952e4be8d",
+                "prId": "6910",
+                "author": "Daymon",
+                "message": "Align LiveSeverMessage related protos (#6910)\n\nPer [b/410856389](https://b.corp.google.com/issues/410856389),\n\nThis removes the `LiveContentResponse` and provides a\n`LiveServerMessage` in its place that aligns with the proto, and the\nother SDKs. Documentation is included for everything added.\n\nAdditionally, this PR fixes the following:\n\n- [b/410040441](https://b.corp.google.com/issues/410040441) -> Add\nsupport for id field on functions\n- [b/413437559](https://b.corp.google.com/issues/413437559) -> Add\nsupport for generationComplete\n- [b/414602833](https://b.corp.google.com/issues/414602833) -> Fix\nfirebase ai changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2b2388713889db915ab76d94f672350952e4be8d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6910"
+            },
+            {
+                "commitId": "7b7e11ea5eafbcda1fcaa8ab1752b7cfaf11e425",
+                "prId": "6917",
+                "author": "Daymon",
+                "message": "Fix AI test timeout (#6917)\n\nPer [b/414406390](https://b.corp.google.com/issues/414406390),\n\nThis fixes the issue with long text golden files timing out the tests.\nThis occurred because the text contents were too large for the channel's\nbuffer- so the channel entered a suspension point until the content was\nread. Unfortunately, this suspension point blocked the test thread. To\nsolve this, we do the same thing we do for `goldenStreamingFile`- we\nwrite to the channel in a separate coroutine scope. This allows Kotlin\nto properly recognize that the suspension point within the writer should\nallow for the test thread to continue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b7e11ea5eafbcda1fcaa8ab1752b7cfaf11e425",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6917"
+            },
+            {
+                "commitId": "cbd963688b1e121cde93b6c02384d1b8dbdf4465",
+                "prId": "6921",
+                "author": "Daymon",
+                "message": "Add ResponseModality support to GenerationConfig (#6921)\n\nPer [b/414638874](https://b.corp.google.com/issues/414638874),\n\nThis adds support for `ResponseModality` in `GenerationConfig`. #6901\nadded this, but it seems it was missed during the migration to\n`firebase-ai`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cbd963688b1e121cde93b6c02384d1b8dbdf4465",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6921"
+            },
+            {
+                "commitId": "a87935401e6cf0dececaaae977bfa44bda49b430",
+                "prId": "6922",
+                "author": "Daymon",
+                "message": "Add inlineDataParts helper property (#6922)\n\nPer [b/414639898](https://b.corp.google.com/issues/414639898),\n\nThis adds a helper property to `GenerateContentResponse` for getting all\nthe `InlineDataPart` present in the first candidate, similar to `text`.\n\nThis was actually added in #6901, but it seems to have been missed\nduring our `firebase-ai` migration.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a87935401e6cf0dececaaae977bfa44bda49b430",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6922"
+            },
+            {
+                "commitId": "79248138c9320c127d34fb7197f24981441f3960",
+                "prId": "6916",
+                "author": "Rodrigo Lazo",
+                "message": "[ai] Use .json for unary tests instead of .txt (#6916)\n\nFollow up to #6915\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/79248138c9320c127d34fb7197f24981441f3960",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6916"
+            },
+            {
+                "commitId": "7cbb80b9762cee4b3f1c934b83251fb8c9a189f5",
+                "prId": "6911",
+                "author": "David Motsonashvili",
+                "message": "Davidmotson.firebase ai (#6911)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7cbb80b9762cee4b3f1c934b83251fb8c9a189f5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6911"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "548dc2886be128260a2366cb5363d555124b7875",
+                "prId": "6940",
+                "author": "Tushar Khandelwal",
+                "message": "Fix NetworkOnMainThreadException for API levels below 26 (#6940)\n\nThis change addresses a ``NetworkOnMainThreadException`` that was\nobserved on Android API levels below 26.\nThe crash happened during background transitions when disconnecting an\n``HttpURLConnection`` because background callbacks on these older OS\nversions could run on the main thread. The fix restricts the disconnect\nlogic to run only on API level 26 (Android 8.0) and higher.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/548dc2886be128260a2366cb5363d555124b7875",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6940"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "88f50d5744a90a165c00329991d630a1a7071cd1",
+                "prId": "6902",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: include relevant logcat snippets in github actions logs when androidTest tests fail (#6902)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/88f50d5744a90a165c00329991d630a1a7071cd1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6902"
+            },
+            {
+                "commitId": "534cc539ff919ad6078021832007cbec0ec1258b",
+                "prId": "6861",
+                "author": "Denver Coneybeare",
+                "message": "FirebaseDataConnectImpl.kt: use MutableStateFlow to store state, rather than mutexes (#6861)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/534cc539ff919ad6078021832007cbec0ec1258b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6861"
+            },
+            {
+                "commitId": "fd6553969b374f325d1340698504ecbf3f58ecfa",
+                "prId": "6896",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: use firebase-tools to launch fdc emulator instead of launching it directly (#6896)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fd6553969b374f325d1340698504ecbf3f58ecfa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6896"
+            },
+            {
+                "commitId": "bd2cb5f1d6cef61fd88845e5ca29b229188d3ad5",
+                "prId": "6880",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: create python script to post comments about scheduled runs (#6880)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bd2cb5f1d6cef61fd88845e5ca29b229188d3ad5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6880"
+            },
+            {
+                "commitId": "51b4a1c3c03608ad40555113e1189b64dd12505c",
+                "prId": "6840",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Improve usage of MutableStateFlow to improve readability (#6840)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/51b4a1c3c03608ad40555113e1189b64dd12505c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6840"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "fda3351722f16582024249bb7d336ca46f2d4068",
+                "prId": "6894",
+                "author": "Tom Andersen",
+                "message": "Handle error when stream was cancelled prior to calling halfClose. (#6894)\n\nThis should fix issue\nhttps://github.com/firebase/firebase-android-sdk/issues/6883",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fda3351722f16582024249bb7d336ca46f2d4068",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6894"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "4c4c7c93b08bb0ba78b3e99cb00a50469c6eab24",
+                "prId": "6927",
+                "author": "Rodrigo Lazo",
+                "message": "[Storage] Migrate from Robolectric.flushForegroundThreadScheduler to ShadowLooper.runToEndOfTasks (#6927)\n\nThe Robolectric Scheduler APIs are designed for LEGACY Looper mode,\nwhere tasks were controlled by Scheduler objects. LEGACY Looper mode has\nbeen deprecated for 5+ years. Migrate from\nRobolectric.flushForegroundThreadScheduler to ShadowLooper APIs.\n\nSee cl/752917858 for reference\n\n---------\n\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c4c7c93b08bb0ba78b3e99cb00a50469c6eab24",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6927"
+            }
+        ],
+        "firebase-storage/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "7b1855d1b60dfa886bd5e54b7793c008dee361b5",
+                "prId": "6941",
+                "author": "Daymon",
+                "message": "Prepare VertexAI SDK for release (#6941)\n\nPer [b/414829218](https://b.corp.google.com/issues/414829218),\n\nThis ensures the Vertex AI SDK is properly aligned for the upcoming\nrelease. More specifically, this PR does the following:\n\n- Adds deprecation notices for all the public classes and interfaces,\n**besides** the root `FirebaseVertexAI` class and the relevant extension\nmethods.\n- Updates the golden file version.\n- Adds the change from #6925 for working around invalid\n`SafetyRating`(s).\n- Adds a changelog entry that aligns with the deprecation notices.\n- Adds the changes from #6939 for tracking bidi usage.\n- Adds the changes from #6910 for aligning the bidi protos.\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b1855d1b60dfa886bd5e54b7793c008dee361b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6941"
+            },
+            {
+                "commitId": "4b12b337c1291de22fe35322c9575bdadbc74129",
+                "prId": "6903",
+                "author": "emilypgoogle",
+                "message": "Add Java VertexAI bidi compile tests (#6903)\n\nAdded Java compile tests for VertexAI's bidi support. Notably\nb/412743328 was filed due to `LiveContentResponse.Status` being\ninaccessible properly for Java.\n\nIn addition, minor non-bidi testing for `GenerationContent` being\ninaccessible was added, relating to a previous bug.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4b12b337c1291de22fe35322c9575bdadbc74129",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6903"
+            },
+            {
+                "commitId": "7b7e11ea5eafbcda1fcaa8ab1752b7cfaf11e425",
+                "prId": "6917",
+                "author": "Daymon",
+                "message": "Fix AI test timeout (#6917)\n\nPer [b/414406390](https://b.corp.google.com/issues/414406390),\n\nThis fixes the issue with long text golden files timing out the tests.\nThis occurred because the text contents were too large for the channel's\nbuffer- so the channel entered a suspension point until the content was\nread. Unfortunately, this suspension point blocked the test thread. To\nsolve this, we do the same thing we do for `goldenStreamingFile`- we\nwrite to the channel in a separate coroutine scope. This allows Kotlin\nto properly recognize that the suspension point within the writer should\nallow for the test thread to continue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b7e11ea5eafbcda1fcaa8ab1752b7cfaf11e425",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6917"
+            },
+            {
+                "commitId": "12127e6ec6a5e0e1264e248c5ba7fe7e7711595f",
+                "prId": "6912",
+                "author": "David Motsonashvili",
+                "message": "encodeBitmapToBase64Png -> encodeBitmapToBase64Jpeg (#6912)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/12127e6ec6a5e0e1264e248c5ba7fe7e7711595f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6912"
+            },
+            {
+                "commitId": "4fb4dfd197832035675b28320e09fb9105aa3639",
+                "prId": "6906",
+                "author": "Daymon",
+                "message": "Migrate LiveContentResponse.Status to properties (#6906)\n\nPer [b/410855548](https://b.corp.google.com/issues/410855548),\n\nThis removes the `LiveContentResponse.Status` class, and instead nests\nthe status as corresponding fields directly on `LiveContentResponse`.\nThis is done to ensure we can support the model returning multiple\nstatuses, since the model does not define them as exclusive.\n\nNote that proto alignment efforts will be in a separate PR. This PR is\n_only_ for migrating `Status` to properties.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4fb4dfd197832035675b28320e09fb9105aa3639",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6906"
+            },
+            {
+                "commitId": "d568e844fc79853a8a6c5b1a3819ef27d150f597",
+                "prId": "6905",
+                "author": "Rodrigo Lazo",
+                "message": "Refactor: Rename encodeBitmapToBase64Png to encodeBitmapToBase64Jpeg (#6905)\n\nThe private function `encodeBitmapToBase64Png` in\n`firebase-vertexai/src/main/kotlin/com/google/firebase/vertexai/type/Part.kt`\nwas already compressing Bitmap images to JPEG format, not PNG.\n\nThis commit renames the function to `encodeBitmapToBase64Jpeg` to\naccurately reflect its behavior. The single call site within the same\nfile has also been updated.\n\nno-changelog\n\nCo-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d568e844fc79853a8a6c5b1a3819ef27d150f597",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6905"
+            },
+            {
+                "commitId": "e9ef4799062b76b8a533c3ae0fe25d6d6b29a59d",
+                "prId": "6901",
+                "author": "Vinay Guthal",
+                "message": "Enable multimodal response generation in android (#6901)\n\nThis change enables use of multiple modalities when calling\ngenerateContent from the model.\nThis change adds a new field into the GenerationConfig to specify the\nresponseModalities which would be sent to the server. Also for easier\nresponse handling it exposes a function inlineDataParts which should\nreturn all the data sent back by the model.\n\n---------\n\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ef4799062b76b8a533c3ae0fe25d6d6b29a59d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6901"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":protolite-well-known-types"
+    ]
+}
