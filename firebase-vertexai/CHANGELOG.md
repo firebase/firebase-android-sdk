@@ -6,6 +6,12 @@
 
  Note: Existing Vertex AI in Firebase users may continue to use the SDK and receive bug fixes but,
  going forward, new features will only be added into the new Firebase AI SDK.
+* [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
+  fields as properties of `LiveContentResponse`. (#6941)
+* [changed] **Breaking Change**: Removed the `LiveContentResponse` class, and instead have provided subclasses
+  of `LiveServerMessage` that match the responses from the model. (#6941)
+* [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6941)
+* [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6941)
 
 
 # 16.4.0

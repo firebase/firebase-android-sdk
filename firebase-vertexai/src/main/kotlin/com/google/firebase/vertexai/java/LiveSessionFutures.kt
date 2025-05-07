@@ -23,7 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
-import com.google.firebase.vertexai.type.LiveContentResponse
+import com.google.firebase.vertexai.type.LiveServerMessage
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.MediaData
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -139,16 +139,16 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * Call [close] to stop receiving responses from the model.
    *
-   * @return A [Publisher] which will emit [LiveContentResponse] from the model.
+   * @return A [Publisher] which will emit [LiveServerMessage] from the model.
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    * @see stopReceiving
    */
-  public abstract fun receive(): Publisher<LiveContentResponse>
+  public abstract fun receive(): Publisher<LiveServerMessage>
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
-    override fun receive(): Publisher<LiveContentResponse> = session.receive().asPublisher()
+    override fun receive(): Publisher<LiveServerMessage> = session.receive().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }
