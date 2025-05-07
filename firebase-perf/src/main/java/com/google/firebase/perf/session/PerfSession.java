@@ -40,9 +40,7 @@ public class PerfSession implements Parcelable {
     if (sessionId == null) {
       sessionId = FirebaseSessionsHelperKt.createLegacySessionId();
     }
-    PerfSession session = new PerfSession(sessionId, new Clock());
-    session.setGaugeAndEventCollectionEnabled(session.shouldCollectGaugesAndEvents());
-    return session;
+    return new PerfSession(sessionId, new Clock());
   }
 
   /** Creates a PerfSession with the provided {@code sessionId} and {@code clock}. */
@@ -50,6 +48,7 @@ public class PerfSession implements Parcelable {
   public PerfSession(String sessionId, Clock clock) {
     this.sessionId = sessionId;
     creationTime = clock.getTime();
+    isGaugeAndEventCollectionEnabled = shouldCollectGaugesAndEvents();
   }
 
   private PerfSession(@NonNull Parcel in) {
@@ -70,20 +69,6 @@ public class PerfSession implements Parcelable {
    */
   public Timer getTimer() {
     return creationTime;
-  }
-
-  /*
-   * Enables/Disables the gauge and event collection for the system.
-   */
-  public void setGaugeAndEventCollectionEnabled(boolean enabled) {
-    isGaugeAndEventCollectionEnabled = enabled;
-  }
-
-  /*
-   * Returns if gauge and event collection is enabled for the system.
-   */
-  public boolean isGaugeAndEventCollectionEnabled() {
-    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Returns if the current session is verbose or not. */
@@ -152,11 +137,20 @@ public class PerfSession implements Parcelable {
   }
 
   /** If true, Session Gauge collection is enabled. */
+  @VisibleForTesting
   public boolean shouldCollectGaugesAndEvents() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     return configResolver.isPerformanceMonitoringEnabled()
         && (Math.abs(this.sessionId.hashCode() % 100)
             < configResolver.getSessionsSamplingRate() * 100);
+  }
+
+  /*
+   * Enables/Disables whether the session is verbose or not.
+   */
+  @VisibleForTesting
+  public void setGaugeAndEventCollectionEnabled(boolean enabled) {
+    isGaugeAndEventCollectionEnabled = enabled;
   }
 
   /**
