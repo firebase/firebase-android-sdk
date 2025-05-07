@@ -1,6 +1,6 @@
 # Unreleased
 * [changed] **Renamed / Replaced:** Vertex AI in Firebase (`FirebaseVertexAI`) has been renamed and
- replaced by the new Firebase AI SDK: `FirebaseAI`. This is to accomodate the evolving set of
+ replaced by the new Firebase AI SDK: `FirebaseAI`. This is to accommodate the evolving set of
  supported features and services. Please migrate to the new `FirebaseAI` package. See details in the
  [migration guide](/docs/vertex-ai/migrate-to-latest-sdk).
 
