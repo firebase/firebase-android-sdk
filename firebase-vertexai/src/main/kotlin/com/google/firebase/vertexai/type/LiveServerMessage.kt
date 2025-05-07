@@ -35,7 +35,7 @@ import kotlinx.serialization.json.jsonObject
  */
 @PublicPreviewAPI
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public interface LiveServerMessage
@@ -48,7 +48,7 @@ public interface LiveServerMessage
  */
 @PublicPreviewAPI
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class LiveServerContent(
@@ -116,7 +116,7 @@ public class LiveServerContent(
 /** The model is ready to receive client messages. */
 @PublicPreviewAPI
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class LiveServerSetupComplete : LiveServerMessage {
@@ -136,7 +136,7 @@ public class LiveServerSetupComplete : LiveServerMessage {
  */
 @PublicPreviewAPI
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>) :
@@ -169,7 +169,7 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
  */
 @PublicPreviewAPI
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class LiveServerToolCallCancellation(public val functionIds: List<String>) :

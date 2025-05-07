@@ -29,7 +29,7 @@ import kotlinx.serialization.Serializable
  * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class PromptFeedback(
@@ -54,7 +54,7 @@ public class PromptFeedback(
 
 /** Describes why content was blocked. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
