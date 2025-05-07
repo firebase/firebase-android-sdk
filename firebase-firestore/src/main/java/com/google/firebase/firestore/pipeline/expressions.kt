@@ -1641,28 +1641,54 @@ abstract class Expr internal constructor() {
     fun endsWith(fieldName: String, suffix: String): BooleanExpr =
       BooleanExpr("ends_with", fieldName, suffix)
 
-    /** @return A new [Expr] representing the toLower operation. */
-    @JvmStatic fun toLower(expr: Expr): Expr = FunctionExpr("to_lower", expr)
-
-    /** @return A new [Expr] representing the toLower operation. */
+    /**
+     * Creates an expression that converts a string expression to lowercase.
+     *
+     * @param stringExpression The expression representing the string to convert to lowercase.
+     * @return A new [Expr] representing the lowercase string.
+     */
     @JvmStatic
-    fun toLower(
-      fieldName: String,
-    ): Expr = FunctionExpr("to_lower", fieldName)
+    fun toLower(stringExpression: Expr): Expr = FunctionExpr("to_lower", stringExpression)
 
-    /** @return A new [Expr] representing the toUpper operation. */
-    @JvmStatic fun toUpper(expr: Expr): Expr = FunctionExpr("to_upper", expr)
+    /**
+     * Creates an expression that converts a string field to lowercase.
+     *
+     * @param fieldName The name of the field containing the string to convert to lowercase.
+     * @return A new [Expr] representing the lowercase string.
+     */
+    @JvmStatic fun toLower(fieldName: String): Expr = FunctionExpr("to_lower", fieldName)
 
-    /** @return A new [Expr] representing the toUpper operation. */
+    /**
+     * Creates an expression that converts a string expression to uppercase.
+     *
+     * @param stringExpression The expression representing the string to convert to uppercase.
+     * @return A new [Expr] representing the lowercase string.
+     */
     @JvmStatic
-    fun toUpper(
-      fieldName: String,
-    ): Expr = FunctionExpr("to_upper", fieldName)
+    fun toUpper(stringExpression: Expr): Expr = FunctionExpr("to_upper", stringExpression)
 
-    /** @return A new [Expr] representing the trim operation. */
-    @JvmStatic fun trim(expr: Expr): Expr = FunctionExpr("trim", expr)
+    /**
+     * Creates an expression that converts a string field to uppercase.
+     *
+     * @param fieldName The name of the field containing the string to convert to uppercase.
+     * @return A new [Expr] representing the lowercase string.
+     */
+    @JvmStatic fun toUpper(fieldName: String): Expr = FunctionExpr("to_upper", fieldName)
 
-    /** @return A new [Expr] representing the trim operation. */
+    /**
+     * Creates an expression that removes leading and trailing whitespace from a string expression.
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expr] representing the trimmed string.
+     */
+    @JvmStatic fun trim(stringExpression: Expr): Expr = FunctionExpr("trim", stringExpression)
+
+    /**
+     * Creates an expression that removes leading and trailing whitespace from a string field.
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expr] representing the trimmed string.
+     */
     @JvmStatic fun trim(fieldName: String): Expr = FunctionExpr("trim", fieldName)
 
     /**
@@ -2022,29 +2048,52 @@ abstract class Expr internal constructor() {
     fun unixMicrosToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_micros_to_timestamp", fieldName)
 
-    /** @return A new [Expr] representing the timestampToUnixMicros operation. */
+    /**
+     * Creates an expression that converts a timestamp expression to the number of microseconds
+     * since the Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param expr The expression representing the timestamp.
+     * @return A new [Expr] representing the number of microseconds since epoch.
+     */
     @JvmStatic
-    fun timestampToUnixMicros(input: Expr): Expr = FunctionExpr("timestamp_to_unix_micros", input)
+    fun timestampToUnixMicros(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_micros", expr)
 
-    /** @return A new [Expr] representing the timestampToUnixMicros operation. */
+    /**
+     * Creates an expression that converts a timestamp field to the number of microseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @return A new [Expr] representing the number of microseconds since epoch.
+     */
     @JvmStatic
     fun timestampToUnixMicros(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_micros", fieldName)
 
-    /** @return A new [Expr] representing the unixMillisToTimestamp operation. */
     @JvmStatic
-    fun unixMillisToTimestamp(input: Expr): Expr = FunctionExpr("unix_millis_to_timestamp", input)
+    fun unixMillisToTimestamp(expr: Expr): Expr = FunctionExpr("unix_millis_to_timestamp", expr)
 
     /** @return A new [Expr] representing the unixMillisToTimestamp operation. */
     @JvmStatic
     fun unixMillisToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_millis_to_timestamp", fieldName)
 
-    /** @return A new [Expr] representing the timestampToUnixMillis operation. */
+    /**
+     * Creates an expression that converts a timestamp expression to the number of milliseconds
+     * since the Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param expr The expression representing the timestamp.
+     * @return A new [Expr] representing the number of milliseconds since epoch.
+     */
     @JvmStatic
-    fun timestampToUnixMillis(input: Expr): Expr = FunctionExpr("timestamp_to_unix_millis", input)
+    fun timestampToUnixMillis(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_millis", expr)
 
-    /** @return A new [Expr] representing the timestampToUnixMillis operation. */
+    /**
+     * Creates an expression that converts a timestamp field to the number of milliseconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @return A new [Expr] representing the number of milliseconds since epoch.
+     */
     @JvmStatic
     fun timestampToUnixMillis(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_millis", fieldName)
@@ -2058,11 +2107,23 @@ abstract class Expr internal constructor() {
     fun unixSecondsToTimestamp(fieldName: String): Expr =
       FunctionExpr("unix_seconds_to_timestamp", fieldName)
 
-    /** @return A new [Expr] representing the timestampToUnixSeconds operation. */
+    /**
+     * Creates an expression that converts a timestamp expression to the number of seconds since the
+     * Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param expr The expression representing the timestamp.
+     * @return A new [Expr] representing the number of seconds since epoch.
+     */
     @JvmStatic
-    fun timestampToUnixSeconds(input: Expr): Expr = FunctionExpr("timestamp_to_unix_seconds", input)
+    fun timestampToUnixSeconds(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_seconds", expr)
 
-    /** @return A new [Expr] representing the timestampToUnixSeconds operation. */
+    /**
+     * Creates an expression that converts a timestamp field to the number of seconds since the Unix
+     * epoch (1970-01-01 00:00:00 UTC).
+     *
+     * @param fieldName The name of the field that contains the timestamp.
+     * @return A new [Expr] representing the number of seconds since epoch.
+     */
     @JvmStatic
     fun timestampToUnixSeconds(fieldName: String): Expr =
       FunctionExpr("timestamp_to_unix_seconds", fieldName)
@@ -3316,14 +3377,23 @@ abstract class Expr internal constructor() {
   fun endsWith(suffix: String) = Companion.endsWith(this, suffix)
 
   /**
+   * Creates an expression that converts this string expression to lowercase.
+   *
+   * @return A new [Expr] representing the lowercase string.
    */
   fun toLower() = Companion.toLower(this)
 
   /**
+   * Creates an expression that converts this string expression to uppercase.
+   *
+   * @return A new [Expr] representing the lowercase string.
    */
   fun toUpper() = Companion.toUpper(this)
 
   /**
+   * Creates an expression that removes leading and trailing whitespace from this string expression.
+   *
+   * @return A new [Expr] representing the trimmed string.
    */
   fun trim() = Companion.trim(this)
 
@@ -3468,6 +3538,10 @@ abstract class Expr internal constructor() {
   fun unixMicrosToTimestamp() = Companion.unixMicrosToTimestamp(this)
 
   /**
+   * Creates an expression that converts this timestamp expression to the number of microseconds
+   * since the Unix epoch (1970-01-01 00:00:00 UTC).
+   *
+   * @return A new [Expr] representing the number of microseconds since epoch.
    */
   fun timestampToUnixMicros() = Companion.timestampToUnixMicros(this)
 
@@ -3476,6 +3550,10 @@ abstract class Expr internal constructor() {
   fun unixMillisToTimestamp() = Companion.unixMillisToTimestamp(this)
 
   /**
+   * Creates an expression that converts this timestamp expression to the number of milliseconds
+   * since the Unix epoch (1970-01-01 00:00:00 UTC).
+   *
+   * @return A new [Expr] representing the number of milliseconds since epoch.
    */
   fun timestampToUnixMillis() = Companion.timestampToUnixMillis(this)
 
@@ -3484,6 +3562,10 @@ abstract class Expr internal constructor() {
   fun unixSecondsToTimestamp() = Companion.unixSecondsToTimestamp(this)
 
   /**
+   * Creates an expression that converts this timestamp expression to the number of seconds since
+   * the Unix epoch (1970-01-01 00:00:00 UTC).
+   *
+   * @return A new [Expr] representing the number of seconds since epoch.
    */
   fun timestampToUnixSeconds() = Companion.timestampToUnixSeconds(this)
 
