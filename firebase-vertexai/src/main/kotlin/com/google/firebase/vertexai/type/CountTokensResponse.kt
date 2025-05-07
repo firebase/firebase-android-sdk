@@ -33,6 +33,10 @@ import kotlinx.serialization.Serializable
  * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * prompt.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class CountTokensResponse(
   public val totalTokens: Int,
   public val totalBillableCharacters: Int? = null,

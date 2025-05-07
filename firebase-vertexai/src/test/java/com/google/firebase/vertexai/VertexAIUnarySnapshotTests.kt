@@ -55,8 +55,11 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(PublicPreviewAPI::class)
+@RunWith(RobolectricTestRunner::class)
 internal class VertexAIUnarySnapshotTests {
   private val testTimeout = 5.seconds
 
@@ -122,6 +125,16 @@ internal class VertexAIUnarySnapshotTests {
         candidate.safetyRatings.any { it.category == HarmCategory.UNKNOWN } shouldBe true
         response.promptFeedback?.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } shouldBe
           true
+      }
+    }
+
+  @Test
+  fun `invalid safety ratings during image generation`() =
+    goldenVertexUnaryFile("unary-success-image-invalid-safety-ratings.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
       }
     }
 

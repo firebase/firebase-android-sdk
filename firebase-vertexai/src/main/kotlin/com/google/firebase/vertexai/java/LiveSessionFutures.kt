@@ -23,7 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
-import com.google.firebase.vertexai.type.LiveContentResponse
+import com.google.firebase.vertexai.type.LiveServerMessage
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.MediaData
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -38,6 +38,10 @@ import org.reactivestreams.Publisher
  * @see [LiveSession]
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public abstract class LiveSessionFutures internal constructor() {
 
   /**
@@ -135,16 +139,16 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * Call [close] to stop receiving responses from the model.
    *
-   * @return A [Publisher] which will emit [LiveContentResponse] from the model.
+   * @return A [Publisher] which will emit [LiveServerMessage] from the model.
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    * @see stopReceiving
    */
-  public abstract fun receive(): Publisher<LiveContentResponse>
+  public abstract fun receive(): Publisher<LiveServerMessage>
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
-    override fun receive(): Publisher<LiveContentResponse> = session.receive().asPublisher()
+    override fun receive(): Publisher<LiveServerMessage> = session.receive().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }

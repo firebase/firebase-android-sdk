@@ -22,6 +22,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Represents the severity of a [HarmCategory] being applicable in a [SafetyRating]. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class HarmSeverity private constructor(public val ordinal: Int) {
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {

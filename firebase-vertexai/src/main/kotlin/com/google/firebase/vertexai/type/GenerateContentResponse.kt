@@ -26,6 +26,10 @@ import kotlinx.serialization.Serializable
  * When streaming, it's only populated in the first response.
  * @property usageMetadata Information about the number of tokens in the prompt and in the response.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerateContentResponse(
   public val candidates: List<Candidate>,
   public val promptFeedback: PromptFeedback?,

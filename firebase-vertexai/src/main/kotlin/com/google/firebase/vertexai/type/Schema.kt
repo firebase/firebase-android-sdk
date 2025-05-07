@@ -18,7 +18,15 @@ package com.google.firebase.vertexai.type
 
 import kotlinx.serialization.Serializable
 
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public abstract class StringFormat private constructor(internal val value: String) {
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Custom(value: String) : StringFormat(value)
 }
 
@@ -32,6 +40,10 @@ public abstract class StringFormat private constructor(internal val value: Strin
  * encouraged. The more information the model has about what it's expected to generate, the better
  * the results.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Schema
 internal constructor(
   public val type: String,

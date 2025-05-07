@@ -65,6 +65,10 @@ import kotlinx.serialization.Serializable
  * guide for more details.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class LiveGenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -102,6 +106,10 @@ private constructor(
    *
    * @property speechConfig See [LiveGenerationConfig.speechConfig]
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null

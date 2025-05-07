@@ -28,6 +28,10 @@ import kotlinx.serialization.Serializable
  * @param safetyRatings A list of relevant [SafetyRating].
  * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class PromptFeedback(
   public val blockReason: BlockReason?,
   public val safetyRatings: List<SafetyRating>,
@@ -42,13 +46,17 @@ public class PromptFeedback(
   ) {
 
     internal fun toPublic(): PromptFeedback {
-      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       return PromptFeedback(blockReason?.toPublic(), safetyRatings, blockReasonMessage)
     }
   }
 }
 
 /** Describes why content was blocked. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
