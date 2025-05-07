@@ -1,8 +1,11 @@
 # Unreleased
-* [changed] The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK
- (firebase-ai) to accommodate the evolving set of supported features and services.
+* [changed] **Renamed / Replaced:** Vertex AI in Firebase (`FirebaseVertexAI`) has been renamed and
+ replaced by the new Firebase AI SDK: `FirebaseAI`. This is to accomodate the evolving set of
+ supported features and services. Please migrate to the new `FirebaseAI` package. See details in the
+ [migration guide](/docs/vertex-ai/migrate-to-latest-sdk).
 
- For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk
+ Note: Existing Vertex AI in Firebase users may continue to use the SDK and receive bug fixes but,
+ going forward, new features will only be added into the new Firebase AI SDK.
 
 
 # 16.4.0
