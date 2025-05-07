@@ -165,7 +165,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             ArgumentMatchers.nullable(Timer.class));
     verify(fakeMemoryGaugeCollector)
         .startCollecting(
-            eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS),
+            eq(DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS),
             ArgumentMatchers.nullable(Timer.class));
   }
 
