@@ -178,21 +178,21 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenVerboseSessionForceDisabled() {
     forceNonVerboseSession();
     PerfSession testPerfSession = createTestSession(1);
-    assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
+    assertThat(testPerfSession.isVerbose()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenSessionsFeatureDisabled() {
     forceSessionsFeatureDisabled();
     PerfSession testPerfSession = createTestSession(1);
-    assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
+    assertThat(testPerfSession.isVerbose()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateEnablesGaugeCollectionWhenVerboseSessionForceEnabled() {
     forceVerboseSession();
     PerfSession testPerfSession = PerfSession.createWithId(testSessionId(1));
-    assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isTrue();
+    assertThat(testPerfSession.isVerbose()).isTrue();
   }
 
   @Test
