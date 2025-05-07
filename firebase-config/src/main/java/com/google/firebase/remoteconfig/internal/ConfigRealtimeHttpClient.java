@@ -22,6 +22,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -409,8 +410,13 @@ public class ConfigRealtimeHttpClient {
       }
       // Close the connection if the app is in the background and there is an active
       // HttpUrlConnection.
-      if (isInBackground && httpURLConnection != null) {
-        httpURLConnection.disconnect();
+      // This is now only done on Android versions >= O (API 26) because
+      // on older versions, background detection callbacks run on the main thread, which
+      // could lead to a NetworkOnMainThreadException when disconnecting the connection.
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (isInBackground && httpURLConnection != null) {
+          httpURLConnection.disconnect();
+        }
       }
     }
   }

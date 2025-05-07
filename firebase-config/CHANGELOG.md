@@ -1,8 +1,8 @@
 # Unreleased
-
+* [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting HttpURLConnection only on API levels 26 and higher.
 
 # 22.1.1
-[fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain
+* [fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain
 open in the background.
 
 
