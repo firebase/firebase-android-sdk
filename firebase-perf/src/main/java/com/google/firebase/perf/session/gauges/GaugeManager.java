@@ -243,7 +243,7 @@ public class GaugeManager extends AppStateUpdateHandler {
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
-    GaugeCounter gaugeCounter = GaugeCounter.Companion.getInstance();
+    GaugeCounter gaugeCounter = GaugeCounter.INSTANCE;
 
     // Adding CPU metric readings.
     while (!cpuGaugeCollector.get().cpuMetricReadings.isEmpty()) {

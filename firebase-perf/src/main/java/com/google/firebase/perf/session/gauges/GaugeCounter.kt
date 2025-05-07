@@ -17,10 +17,11 @@ package com.google.firebase.perf.session.gauges
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * [GaugeCounter] is a threadsafe counter for gauge metrics. If the metrics count exceeds
+ * [GaugeCounter] is a thread-safe counter for gauge metrics. If the metrics count exceeds
  * [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
  */
-class GaugeCounter private constructor() {
+object GaugeCounter {
+  private const val MAX_METRIC_COUNT = 25
   private val counter = AtomicInteger(0)
   private val gaugeManager: GaugeManager = GaugeManager.getInstance()
 
@@ -34,10 +35,5 @@ class GaugeCounter private constructor() {
 
   fun decrementCounter() {
     counter.decrementAndGet()
-  }
-
-  companion object {
-    val instance: GaugeCounter by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { GaugeCounter() }
-    const val MAX_METRIC_COUNT = 25
   }
 }
