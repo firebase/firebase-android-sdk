@@ -60,8 +60,7 @@ internal class MutationRefImpl<Data, Variables>(
 
   override suspend fun execute(): MutationResultImpl {
     val requestId = "mut" + Random.nextAlphanumericString(length = 10)
-    return dataConnect.lazyGrpcClient
-      .get()
+    return dataConnect.grpcClient
       .executeMutation(
         requestId = requestId,
         operationName = operationName,

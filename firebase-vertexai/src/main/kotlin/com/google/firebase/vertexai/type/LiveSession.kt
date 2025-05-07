@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
@@ -51,13 +50,14 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
 @OptIn(ExperimentalSerializationApi::class)
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,
@@ -140,13 +140,13 @@ internal constructor(
    *
    * Call [close] to stop receiving responses from the model.
    *
-   * @return A [Flow] which will emit [LiveContentResponse] from the model.
+   * @return A [Flow] which will emit [LiveServerMessage] from the model.
    *
    * @throws [SessionAlreadyReceivingException] when the session is already receiving.
    * @see stopReceiving
    */
-  public fun receive(): Flow<LiveContentResponse> {
-    return FirebaseVertexAIException.catch {
+  public fun receive(): Flow<LiveServerMessage> =
+    FirebaseVertexAIException.catch {
       if (startedReceiving.getAndSet(true)) {
         throw SessionAlreadyReceivingException()
       }
@@ -157,8 +157,14 @@ internal constructor(
             val response = session.incoming.tryReceive()
             if (response.isClosed || !startedReceiving.get()) break
 
-            val frame = response.getOrNull()
-            frame?.let { frameToLiveContentResponse(it) }?.let { emit(it) }
+            response
+              .getOrNull()
+              ?.let {
+                JSON.decodeFromString<InternalLiveServerMessage>(
+                  it.readBytes().toString(Charsets.UTF_8)
+                )
+              }
+              ?.let { emit(it.toPublic()) }
 
             yield()
           }
@@ -167,14 +173,7 @@ internal constructor(
         .catch { throw FirebaseVertexAIException.from(it) }
 
       // TODO(b/410059569): Add back when fixed
-      //    return session.incoming.receiveAsFlow().transform { frame ->
-      //      val response = frameToLiveContentResponse(frame)
-      //      response?.let { emit(it) }
-      //    }.onCompletion {
-      //      stopAudioConversation()
-      //    }.catch { throw FirebaseVertexAIException.from(it) }
     }
-  }
 
   /**
    * Stops receiving from the model.
@@ -309,30 +308,48 @@ internal constructor(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ) {
     receive()
-      .transform {
-        if (it.status == LiveContentResponse.Status.INTERRUPTED) {
-          playBackQueue.clear()
-        } else {
-          emit(it)
-        }
-      }
       .onEach {
-        if (!it.functionCalls.isNullOrEmpty()) {
-          if (functionCallHandler != null) {
-            // It's fine to suspend here since you can't have a function call running concurrently
-            // with an audio response
-            sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
-          } else {
+        when (it) {
+          is LiveServerToolCall -> {
+            if (it.functionCalls.isEmpty()) {
+              Log.w(
+                TAG,
+                "The model sent a tool call request, but it was missing functions to call."
+              )
+            } else if (functionCallHandler != null) {
+              // It's fine to suspend here since you can't have a function call running concurrently
+              // with an audio response
+              sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
+            } else {
+              Log.w(
+                TAG,
+                "Function calls were present in the response, but a functionCallHandler was not provided."
+              )
+            }
+          }
+          is LiveServerToolCallCancellation -> {
             Log.w(
               TAG,
-              "Function calls were present in the response, but a functionCallHandler was not provided."
+              "The model sent a tool cancellation request, but tool cancellation is not supported when using startAudioConversation()."
             )
           }
-        }
-
-        val audioParts = it.data?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
-        for (part in audioParts) {
-          playBackQueue.add(part.inlineData)
+          is LiveServerContent -> {
+            if (it.interrupted) {
+              playBackQueue.clear()
+            } else {
+              val audioParts = it.content?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
+              for (part in audioParts) {
+                playBackQueue.add(part.inlineData)
+              }
+            }
+          }
+          is LiveServerSetupComplete -> {
+            // we should only get this message when we initially `connect` in LiveGenerativeModel
+            Log.w(
+              TAG,
+              "The model sent LiveServerSetupComplete after the connection was established."
+            )
+          }
         }
       }
       .launchIn(scope)
@@ -369,50 +386,6 @@ internal constructor(
   }
 
   /**
-   * Converts a [Frame] from the model to a valid [LiveContentResponse], if possible.
-   *
-   * @return The corresponding [LiveContentResponse] or null if it couldn't be converted.
-   */
-  private fun frameToLiveContentResponse(frame: Frame): LiveContentResponse? {
-    val jsonMessage = Json.parseToJsonElement(frame.readBytes().toString(Charsets.UTF_8))
-
-    if (jsonMessage !is JsonObject) {
-      Log.w(TAG, "Server response was not a JsonObject: $jsonMessage")
-      return null
-    }
-
-    return when {
-      "toolCall" in jsonMessage -> {
-        val functionContent =
-          JSON.decodeFromJsonElement<BidiGenerateContentToolCallSetup.Internal>(jsonMessage)
-        LiveContentResponse(
-          null,
-          LiveContentResponse.Status.NORMAL,
-          functionContent.toolCall.functionCalls.map {
-            FunctionCallPart(it.name, it.args.orEmpty().mapValues { x -> x.value ?: JsonNull })
-          }
-        )
-      }
-      "serverContent" in jsonMessage -> {
-        val serverContent =
-          JSON.decodeFromJsonElement<BidiGenerateContentServerContentSetup.Internal>(jsonMessage)
-            .serverContent
-        val status =
-          when {
-            serverContent.turnComplete == true -> LiveContentResponse.Status.TURN_COMPLETE
-            serverContent.interrupted == true -> LiveContentResponse.Status.INTERRUPTED
-            else -> LiveContentResponse.Status.NORMAL
-          }
-        LiveContentResponse(serverContent.modelTurn?.toPublic(), status, null)
-      }
-      else -> {
-        Log.w(TAG, "Failed to decode the server response: $jsonMessage")
-        null
-      }
-    }
-  }
-
-  /**
    * Incremental update of the current conversation delivered from the client.
    *
    * Effectively, a message from the client to the model.
@@ -433,51 +406,7 @@ internal constructor(
     fun toInternal() = Internal(Internal.BidiGenerateContentClientContent(turns, turnComplete))
   }
 
-  /**
-   * Incremental server update generated by the model in response to client messages.
-   *
-   * Effectively, a message from the model to the client.
-   */
-  internal class BidiGenerateContentServerContentSetup(
-    val modelTurn: Content.Internal?,
-    val turnComplete: Boolean?,
-    val interrupted: Boolean?
-  ) {
-    @Serializable
-    internal class Internal(val serverContent: BidiGenerateContentServerContent) {
-      @Serializable
-      internal data class BidiGenerateContentServerContent(
-        val modelTurn: Content.Internal?,
-        val turnComplete: Boolean?,
-        val interrupted: Boolean?
-      )
-    }
-
-    fun toInternal() =
-      Internal(Internal.BidiGenerateContentServerContent(modelTurn, turnComplete, interrupted))
-  }
-
-  /**
-   * Request for the client to execute the provided function calls and return the responses with the
-   * matched `id`s.
-   */
-  internal data class BidiGenerateContentToolCallSetup(
-    val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
-  ) {
-    @Serializable
-    internal class Internal(val toolCall: BidiGenerateContentToolCall) {
-      @Serializable
-      internal data class BidiGenerateContentToolCall(
-        val functionCalls: List<FunctionCallPart.Internal.FunctionCall>
-      )
-    }
-
-    fun toInternal(): Internal {
-      return Internal(Internal.BidiGenerateContentToolCall(functionCalls))
-    }
-  }
-
-  /** Client generated responses to a [BidiGenerateContentToolCallSetup]. */
+  /** Client generated responses to a [LiveServerToolCall]. */
   internal class BidiGenerateContentToolResponseSetup(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
   ) {

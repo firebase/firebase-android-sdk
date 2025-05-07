@@ -1,0 +1,71 @@
+name: Data Connect Workflow Notifications
+description: Notify a GitHub Issue with the results of a workflow.
+
+inputs:
+  python-version:
+    required: true
+    default: "3.13"
+  github-issue-for-scheduled-runs:
+    required: true
+  job-results-file:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - run: pip install -r requirements.txt
+      shell: bash
+      working-directory: firebase-dataconnect/ci
+
+    - id: issue-id
+      name: Determine GitHub Issue For Commenting
+      working-directory: firebase-dataconnect/ci
+      shell: bash
+      run: |
+        args=(
+          python
+          calculate_github_issue_for_commenting.py
+          --issue-output-file=github_issue_number.txt
+          --github-repository='${{ github.repository }}'
+          --github-ref='${{ github.ref }}'
+          --github-event-name='${{ github.event_name }}'
+          --pr-body-github-issue-key=trksmnkncd_notification_issue
+          --github-issue-for-scheduled-run='${{ inputs.github-issue-for-scheduled-runs }}'
+        )
+        echo "${args[*]}"
+        "${args[@]}"
+
+        set -xv
+        issue="$(cat github_issue_number.txt)"
+        echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+    - name: Post Comment on GitHub Issue
+      if: steps.issue-id.outputs.issue != ''
+      working-directory: firebase-dataconnect/ci
+      shell: bash
+      run: |
+        args=(
+          python
+          post_comment_for_job_results.py
+          --github-issue='${{ steps.issue-id.outputs.issue }}'
+          --github-workflow='${{ github.workflow }}'
+          --github-repository='${{ github.repository }}'
+          --github-ref='${{ github.ref }}'
+          --github-event-name='${{ github.event_name }}'
+          --github-sha='${{ github.sha }}'
+          --github-repository-html-url='${{ github.event.repository.html_url }}'
+          --github-run-id='${{ github.run_id }}'
+          --github-run-number='${{ github.run_number }}'
+          --github-run-attempt='${{ github.run_attempt }}'
+        )
+
+        while read -r line; do
+          args=("${args[@]}" "$line")
+        done <'${{ inputs.job-results-file }}'
+
+        echo "${args[*]}"
+        exec "${args[@]}"
