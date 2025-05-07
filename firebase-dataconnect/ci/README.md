@@ -18,5 +18,5 @@ pip install -r requirements.txt
 Then, run all of these presubmit checks by running the following command:
 
 ```
-ruff check && ruff format && pyright && pytest && echo 'SUCCESS!!!!!!!!!!!!!!!'
+ruff check --fix && ruff format && pyright && pytest && echo 'SUCCESS!!!!!!!!!!!!!!!'
 ```
