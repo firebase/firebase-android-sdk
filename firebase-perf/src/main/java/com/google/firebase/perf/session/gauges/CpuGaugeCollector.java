@@ -76,7 +76,7 @@ public class CpuGaugeCollector {
   private final String procFileName;
   private final long clockTicksPerSecond;
 
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
+  @Nullable private ScheduledFuture<?> cpuMetricCollectorJob = null;
   private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
@@ -166,6 +166,7 @@ public class CpuGaugeCollector {
                 CpuMetricReading currCpuReading = syncCollectCpuMetric(referenceTime);
                 if (currCpuReading != null) {
                   cpuMetricReadings.add(currCpuReading);
+                  GaugeCounter.INSTANCE.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
