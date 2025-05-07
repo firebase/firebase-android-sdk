@@ -22,7 +22,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseVertexAI] SDK. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public abstract class FirebaseVertexAIException
@@ -108,7 +108,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
 
 /** Something went wrong while trying to deserialize a response from the server. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class SerializationException
@@ -117,7 +117,7 @@ internal constructor(message: String, cause: Throwable? = null) :
 
 /** The server responded with a non 200 response code. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ServerException internal constructor(message: String, cause: Throwable? = null) :
@@ -125,7 +125,7 @@ public class ServerException internal constructor(message: String, cause: Throwa
 
 /** The provided API Key is not valid. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class InvalidAPIKeyException
@@ -140,7 +140,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  * @property response The full server response.
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class PromptBlockedException
@@ -157,7 +157,7 @@ internal constructor(
 }
 
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ContentBlockedException
@@ -173,7 +173,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class UnsupportedUserLocationException internal constructor(cause: Throwable? = null) :
@@ -185,7 +185,7 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
  * Usually indicative of consumer error.
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class InvalidStateException internal constructor(message: String, cause: Throwable? = null) :
@@ -197,7 +197,7 @@ public class InvalidStateException internal constructor(message: String, cause: 
  * @property response The full server response.
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ResponseStoppedException
@@ -213,7 +213,7 @@ internal constructor(public val response: GenerateContentResponse, cause: Throwa
  * Usually occurs due to a user specified [timeout][RequestOptions.timeout].
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class RequestTimeoutException
@@ -227,7 +227,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  * [Vertex AI locations.](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class InvalidLocationException
@@ -240,7 +240,7 @@ internal constructor(location: String, cause: Throwable? = null) :
  * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/faq-and-troubleshooting#required-apis)
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ServiceDisabledException
@@ -252,7 +252,7 @@ internal constructor(message: String, cause: Throwable? = null) :
  * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/quotas)
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class QuotaExceededException
@@ -261,7 +261,7 @@ internal constructor(message: String, cause: Throwable? = null) :
 
 /** Streaming session already receiving. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class SessionAlreadyReceivingException :
@@ -271,7 +271,7 @@ public class SessionAlreadyReceivingException :
 
 /** Audio record initialization failures for audio streaming */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class AudioRecordInitializationFailedException(message: String) :
@@ -279,7 +279,7 @@ public class AudioRecordInitializationFailedException(message: String) :
 
 /** Handshake failed with the server */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
@@ -287,7 +287,7 @@ public class ServiceConnectionHandshakeFailedException(message: String, cause: T
 
 /** Catch all case for exceptions not explicitly expected. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :

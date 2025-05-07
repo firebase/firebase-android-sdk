@@ -32,14 +32,14 @@ import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public interface Part {}
 
 /** Represents text or string based data sent to and received from requests. */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class TextPart(public val text: String) : Part {
@@ -54,7 +54,7 @@ public class TextPart(public val text: String) : Part {
  * @param image [Bitmap] to convert into a [Part]
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class ImagePart(public val image: Bitmap) : Part {
@@ -74,7 +74,7 @@ public class ImagePart(public val image: Bitmap) : Part {
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
@@ -96,7 +96,7 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  */
 // TODO(b/410040441): Support id property
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class FunctionCallPart(
@@ -120,7 +120,7 @@ public class FunctionCallPart(
  */
 // TODO(b/410040441): Support id property
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
@@ -145,7 +145,7 @@ public class FunctionResponsePart(public val name: String, public val response: 
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
 @Deprecated(
-  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the Firebase AI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+  """The Firebase VertexAI SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
 For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
 )
 public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
