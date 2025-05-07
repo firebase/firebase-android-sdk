@@ -44,8 +44,12 @@ import com.google.firebase.vertexai.type.HarmProbability;
 import com.google.firebase.vertexai.type.HarmSeverity;
 import com.google.firebase.vertexai.type.ImagePart;
 import com.google.firebase.vertexai.type.InlineDataPart;
-import com.google.firebase.vertexai.type.LiveContentResponse;
 import com.google.firebase.vertexai.type.LiveGenerationConfig;
+import com.google.firebase.vertexai.type.LiveServerContent;
+import com.google.firebase.vertexai.type.LiveServerMessage;
+import com.google.firebase.vertexai.type.LiveServerSetupComplete;
+import com.google.firebase.vertexai.type.LiveServerToolCall;
+import com.google.firebase.vertexai.type.LiveServerToolCallCancellation;
 import com.google.firebase.vertexai.type.MediaData;
 import com.google.firebase.vertexai.type.ModalityTokenCount;
 import com.google.firebase.vertexai.type.Part;
@@ -276,14 +280,14 @@ public class JavaCompileTests {
     session
         .receive()
         .subscribe(
-            new Subscriber<LiveContentResponse>() {
+            new Subscriber<LiveServerMessage>() {
               @Override
               public void onSubscribe(Subscription s) {
                 s.request(Long.MAX_VALUE);
               }
 
               @Override
-              public void onNext(LiveContentResponse response) {
+              public void onNext(LiveServerMessage response) {
                 validateLiveContentResponse(response);
               }
 
@@ -315,17 +319,22 @@ public class JavaCompileTests {
     session.close();
   }
 
-  private void validateLiveContentResponse(LiveContentResponse response) {
-    // int status = response.getStatus();
-    // Assert.assertEquals(status, LiveContentResponse.Status.Companion.getNORMAL());
-    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getINTERRUPTED());
-    // Assert.assertNotEquals(status, LiveContentResponse.Status.Companion.getTURN_COMPLETE());
-    // TODO b/412743328 LiveContentResponse.Status inaccessible for Java users
-    Content data = response.getData();
-    if (data != null) {
-      validateContent(data);
+  private void validateLiveContentResponse(LiveServerMessage message) {
+    if (message instanceof LiveServerContent) {
+      LiveServerContent content = (LiveServerContent) message;
+      validateContent(content.getContent());
+      boolean complete = content.getGenerationComplete();
+      boolean interrupted = content.getInterrupted();
+      boolean turnComplete = content.getTurnComplete();
+    } else if (message instanceof LiveServerSetupComplete) {
+      LiveServerSetupComplete setup = (LiveServerSetupComplete) message;
+      // No methods
+    } else if (message instanceof LiveServerToolCall) {
+      LiveServerToolCall call = (LiveServerToolCall) message;
+      validateFunctionCalls(call.getFunctionCalls());
+    } else if (message instanceof LiveServerToolCallCancellation) {
+      LiveServerToolCallCancellation cancel = (LiveServerToolCallCancellation) message;
+      List<String> functions = cancel.getFunctionIds();
     }
-    String text = response.getText();
-    validateFunctionCalls(response.getFunctionCalls());
   }
 }
