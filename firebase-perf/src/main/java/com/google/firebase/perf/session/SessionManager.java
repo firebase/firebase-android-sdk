@@ -18,10 +18,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
 import java.lang.ref.WeakReference;
@@ -37,7 +35,6 @@ public class SessionManager {
   private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
-  private final AppStateMonitor appStateMonitor;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
@@ -49,23 +46,20 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "Access perf session from manger without aqs ready");
+    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "PerfSession.perfSession()");
 
     return perfSession;
   }
 
   private SessionManager() {
     // session should quickly updated by session subscriber.
-    this(GaugeManager.getInstance(), PerfSession.createWithId(null), AppStateMonitor.getInstance());
+    this(GaugeManager.getInstance(), PerfSession.createWithId(null));
   }
 
   @VisibleForTesting
-  public SessionManager(
-      GaugeManager gaugeManager, PerfSession perfSession, AppStateMonitor appStateMonitor) {
+  public SessionManager(GaugeManager gaugeManager, PerfSession perfSession) {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
-    this.appStateMonitor = appStateMonitor;
   }
 
   /**
@@ -83,8 +77,7 @@ public class SessionManager {
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
     FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession,
-        "Session is not ready while trying to stopGaugeCollectionIfSessionRunningTooLong");
+        perfSession, "SessionManager.stopGaugeCollectionIfSessionRunningTooLong");
 
     if (perfSession.isSessionRunningTooLong()) {
       gaugeManager.stopCollectingGauges();
@@ -123,7 +116,7 @@ public class SessionManager {
     }
 
     // Start of stop the gauge data collection.
-    startOrStopCollectingGauges(appStateMonitor.getAppState());
+    startOrStopCollectingGauges();
   }
 
   /**
@@ -133,7 +126,7 @@ public class SessionManager {
    * this does not reset the perfSession.
    */
   public void initializeGaugeCollection() {
-    startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
+    startOrStopCollectingGauges();
   }
 
   /**
@@ -160,12 +153,11 @@ public class SessionManager {
     }
   }
 
-  private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "Session is not ready while trying to startOrStopCollectingGauges");
+  private void startOrStopCollectingGauges() {
+    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "startOrStopCollectingGauges");
 
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.startCollectingGauges(perfSession, appState);
+    if (perfSession.isVerbose()) {
+      gaugeManager.startCollectingGauges(perfSession);
     } else {
       gaugeManager.stopCollectingGauges();
     }
