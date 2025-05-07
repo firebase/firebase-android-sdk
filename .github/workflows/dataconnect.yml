@@ -66,6 +66,12 @@ jobs:
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+
       - name: Install Firebase Tools ("firebase" command-line tool)
         run: |
           set -euo pipefail
@@ -229,6 +235,15 @@ jobs:
         if: steps.connectedCheck.outcome != 'success'
         run: |
           set -euo pipefail
+
+          if [[ ! -e logcat.log ]] ; then
+            echo "WARNING dsdta43sxk: logcat log file not found; skipping scanning for test failures" >&2
+          else
+            echo "Scanning logcat output for failure details"
+            python firebase-dataconnect/ci/logcat_error_report.py --logcat-file=logcat.log
+            echo
+          fi
+
           echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
           exit 1
 
