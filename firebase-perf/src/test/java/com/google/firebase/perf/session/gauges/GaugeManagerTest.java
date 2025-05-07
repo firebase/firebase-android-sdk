@@ -170,7 +170,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void
       stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequencyInBackground() {
     // PASS 1: Test with 0
@@ -201,7 +201,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void
       startCollectingGaugesOnBackground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
@@ -232,7 +232,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequency() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
@@ -262,7 +262,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void
       startCollectingGaugesOnForeground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
@@ -300,7 +300,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void stopCollectingCPUMetrics_invalidCPUCaptureFrequency_appInForegrounf() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
@@ -318,7 +318,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void stopCollectingGauges_invalidMemoryCollectionFrequency_appInForeground() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
@@ -355,7 +355,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void startCollectingGauges_validGaugeCollectionFrequency_appInForeground() {
     doReturn(25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
     doReturn(15L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
@@ -369,7 +369,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStartCollectingGaugesStartsAJobToConsumeTheGeneratedMetrics() {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.startCollectingGauges(fakeSession);
@@ -404,7 +404,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStopCollectingGaugesStopsCollectingAllGaugeMetrics() {
     PerfSession fakeSession = createTestSession(1);
 
@@ -419,7 +419,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStopCollectingGaugesCreatesOneLastJobToConsumeAnyPendingMetrics() {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.startCollectingGauges(fakeSession);
@@ -448,7 +448,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testGaugeManagerClearsTheQueueEachRun() {
     PerfSession fakeSession = createTestSession(1);
 
@@ -481,7 +481,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStartingGaugeManagerWithNewSessionIdButSameAppState() {
     PerfSession fakeSession1 = createTestSession(1);
 
@@ -540,7 +540,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStartGaugeManagerWithSameSessionIdButDifferentAppState() {
     PerfSession fakeSession = createTestSession(1);
 
@@ -597,7 +597,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // b/394127311
+  @Ignore // TODO(b/394127311): Fix
   public void testStartGaugeManagerWithNewSessionIdAndNewAppState() {
     PerfSession fakeSession1 = createTestSession(1);
 
