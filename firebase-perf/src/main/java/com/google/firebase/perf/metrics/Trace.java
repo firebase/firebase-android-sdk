@@ -233,7 +233,7 @@ public class Trace extends AppStateUpdateHandler
 
     updateSession(perfSession);
 
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
+    if (perfSession.isVerbose()) {
       gaugeManager.collectGaugeMetricOnce(perfSession.getTimer());
     }
   }
@@ -259,7 +259,7 @@ public class Trace extends AppStateUpdateHandler
       if (!name.isEmpty()) {
         transportManager.log(new TraceMetricBuilder(this).build(), getAppState());
 
-        if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
+        if (SessionManager.getInstance().perfSession().isVerbose()) {
           gaugeManager.collectGaugeMetricOnce(
               SessionManager.getInstance().perfSession().getTimer());
         }
