@@ -57,12 +57,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowSystemClock;
 
 /** Unit tests for {@link AppStartTrace}. */
 @RunWith(RobolectricTestRunner.class)
-@LooperMode(LooperMode.Mode.PAUSED)
 public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @Mock private Clock clock;
