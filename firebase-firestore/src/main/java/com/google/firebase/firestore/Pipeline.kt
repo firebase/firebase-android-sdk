@@ -110,23 +110,6 @@ internal constructor(
    * This method provides a way to call stages that are supported by the Firestore backend but that
    * are not implemented in the SDK version being used.
    *
-   * For stages with named parameters, use the [GenericStage] class instead.
-   *
-   * @param name The unique name of the stage to add.
-   * @param arguments A list of ordered parameters to configure the stage's behavior.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun genericStage(name: String, vararg arguments: Any): Pipeline =
-    append(GenericStage.ofName(name).withArguments(arguments))
-
-  /**
-   * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
-   * any type safety on the stage params and requires the caller to know the order (and optionally
-   * names) of parameters accepted by the stage.
-   *
-   * This method provides a way to call stages that are supported by the Firestore backend but that
-   * are not implemented in the SDK version being used.
-   *
    * @param stage An [GenericStage] object that specifies stage name and parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */

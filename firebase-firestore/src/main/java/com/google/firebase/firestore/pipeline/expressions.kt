@@ -290,7 +290,7 @@ abstract class Expr internal constructor() {
       return Field(fieldPath.internalPath)
     }
 
-    @JvmStatic fun generic(name: String, vararg expr: Expr) = FunctionExpr(name, expr)
+    @JvmStatic fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, expr)
 
     /**
      * Creates an expression that performs a logical 'AND' operation.
