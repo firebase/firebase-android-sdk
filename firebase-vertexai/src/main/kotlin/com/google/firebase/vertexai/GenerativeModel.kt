@@ -84,7 +84,7 @@ internal constructor(
       apiKey,
       modelName,
       requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
+      "ai-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
