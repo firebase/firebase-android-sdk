@@ -419,4 +419,9 @@ public class GaugeManager extends AppStateUpdateHandler {
       return memoryGaugeCollectionFrequency;
     }
   }
+
+  @VisibleForTesting
+  void setApplicationProcessState(ApplicationProcessState applicationProcessState) {
+    this.applicationProcessState = applicationProcessState;
+  }
 }
