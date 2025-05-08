@@ -1,8 +1,8 @@
 # Unreleased
-
+* [fixed] Fixed more strict mode violations
 
 # 19.4.3
-* [fixed] Fixed UnbufferedIoViolation [#6822]
+* [fixed] Fixed UnbufferedIoViolation strict mode violation [#6822]
 
 
 ## Kotlin
