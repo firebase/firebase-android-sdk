@@ -19,17 +19,24 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * BasePath represents a path sequence in the Firestore database. It is composed of an ordered
  * sequence of string segments.
  */
-public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
+public abstract class BasePath<B extends BasePath<B>> implements Comparable<B>, Iterable<String> {
   final List<String> segments;
 
   BasePath(List<String> segments) {
     this.segments = segments;
+  }
+
+  @NonNull
+  @Override
+  public Iterator<String> iterator() {
+    return segments.iterator();
   }
 
   public String getSegment(int index) {

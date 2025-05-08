@@ -21,7 +21,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.*
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
