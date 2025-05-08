@@ -2,6 +2,14 @@
     "changesByLibraryName": {
         "firebase-ai": [
             {
+                "commitId": "f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
+                "prId": "f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
+                "author": "Vinay Guthal",
+                "message": "Update headers to track vertex ai/developer usage in kotlin (#6939)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6939"
+            },
+            {
                 "commitId": "4c29e0b467d2bf1318714c75ff011b22995eea16",
                 "prId": "6939",
                 "author": "Vinay Guthal",
@@ -100,6 +108,26 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6940"
             }
         ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "a9960190582812b7298196828509fbb5e49e4b33",
+                "prId": "6945",
+                "author": "Matthew Robertson",
+                "message": "Fixed more strict mode violations (#6945)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9960190582812b7298196828509fbb5e49e4b33",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6945"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "78360ad0ccd55589d37206729916ac57b61b7907",
+                "prId": "6946",
+                "author": "Daymon",
+                "message": "Add crashlytics-ndk changelog entry (#6946)\n\n#6945 was missing a changelog entry for the dependent library. This PR adds that changelog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/78360ad0ccd55589d37206729916ac57b61b7907",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6946"
+            }
+        ],
         "firebase-config/ktx": [
         ],
         "firebase-dataconnect": [
@@ -143,18 +171,6 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/51b4a1c3c03608ad40555113e1189b64dd12505c",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6840"
             }
-        ],
-        "firebase-firestore": [
-            {
-                "commitId": "fda3351722f16582024249bb7d336ca46f2d4068",
-                "prId": "6894",
-                "author": "Tom Andersen",
-                "message": "Handle error when stream was cancelled prior to calling halfClose. (#6894)\n\nThis should fix issue\nhttps://github.com/firebase/firebase-android-sdk/issues/6883",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fda3351722f16582024249bb7d336ca46f2d4068",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6894"
-            }
-        ],
-        "firebase-firestore/ktx": [
         ],
         "firebase-storage": [
             {
@@ -227,11 +243,5 @@
             }
         ]
     },
-    "changedLibrariesWithNoChangelog": [
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-sessions",
-        ":firebase-crashlytics:ktx",
-        ":protolite-well-known-types"
-    ]
+    "changedLibrariesWithNoChangelog": []
 }
