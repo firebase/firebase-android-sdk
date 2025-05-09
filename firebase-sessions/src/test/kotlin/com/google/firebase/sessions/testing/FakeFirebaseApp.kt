@@ -29,7 +29,10 @@ import org.robolectric.Shadows
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 
-internal class FakeFirebaseApp(metadata: Bundle? = null) {
+internal class FakeFirebaseApp(
+  metadata: Bundle? = null,
+  processes: List<ActivityManager.RunningAppProcessInfo> = emptyList(),
+) {
   val firebaseApp: FirebaseApp
 
   init {
@@ -45,12 +48,16 @@ internal class FakeFirebaseApp(metadata: Bundle? = null) {
 
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     val shadowActivityManager: ShadowActivityManager = Shadow.extract(activityManager)
-    val runningAppProcessInfo = ActivityManager.RunningAppProcessInfo()
-    runningAppProcessInfo.pid = 0
-    runningAppProcessInfo.uid = 313
-    runningAppProcessInfo.processName = context.packageName
-    runningAppProcessInfo.importance = 100
-    shadowActivityManager.setProcesses(listOf(runningAppProcessInfo))
+    if (processes.isEmpty()) {
+      val runningAppProcessInfo = ActivityManager.RunningAppProcessInfo()
+      runningAppProcessInfo.pid = 0
+      runningAppProcessInfo.uid = 313
+      runningAppProcessInfo.processName = context.packageName
+      runningAppProcessInfo.importance = 100
+      shadowActivityManager.setProcesses(listOf(runningAppProcessInfo))
+    } else {
+      shadowActivityManager.setProcesses(processes)
+    }
 
     firebaseApp =
       Firebase.initialize(
@@ -59,7 +66,7 @@ internal class FakeFirebaseApp(metadata: Bundle? = null) {
           .setApplicationId(MOCK_APP_ID)
           .setApiKey(MOCK_API_KEY)
           .setProjectId(MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
   }
 

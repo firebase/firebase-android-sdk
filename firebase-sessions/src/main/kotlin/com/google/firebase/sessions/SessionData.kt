@@ -29,17 +29,18 @@ import kotlinx.serialization.json.Json
 @Serializable
 internal data class SessionData(
   val sessionDetails: SessionDetails,
-  val backgroundTime: Time? = null
+  val backgroundTime: Time? = null,
+  val processDataMap: Map<String, ProcessData>? = null,
 )
+
+/** Data about a process, for persistence. */
+@Serializable internal data class ProcessData(val pid: Int, val uuid: String)
 
 /** DataStore json [Serializer] for [SessionData]. */
 @Singleton
 internal class SessionDataSerializer
 @Inject
-constructor(
-  private val sessionGenerator: SessionGenerator,
-  private val timeProvider: TimeProvider,
-) : Serializer<SessionData> {
+constructor(private val sessionGenerator: SessionGenerator) : Serializer<SessionData> {
   override val defaultValue: SessionData
     get() = SessionData(sessionGenerator.generateNewSession(currentSession = null))
 
