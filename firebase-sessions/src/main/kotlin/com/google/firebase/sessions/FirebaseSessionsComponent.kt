@@ -118,6 +118,8 @@ internal interface FirebaseSessionsComponent {
     @Singleton
     fun sharedSessionRepository(impl: SharedSessionRepositoryImpl): SharedSessionRepository
 
+    @Binds @Singleton fun processDataManager(impl: ProcessDataManagerImpl): ProcessDataManager
+
     companion object {
       private const val TAG = "FirebaseSessions"
 

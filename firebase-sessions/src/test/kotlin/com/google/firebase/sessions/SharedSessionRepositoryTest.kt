@@ -27,6 +27,7 @@ import com.google.firebase.sessions.testing.FakeDataStore
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeProcessDataManager
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeUuidGenerator
@@ -67,14 +68,9 @@ class SharedSessionRepositoryTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     val fakeDataStore =
-      FakeDataStore<SessionData>(
+      FakeDataStore(
         SessionData(
-          SessionDetails(
-            SESSION_ID_INIT,
-            SESSION_ID_INIT,
-            0,
-            fakeTimeProvider.currentTime().ms,
-          ),
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
           fakeTimeProvider.currentTime(),
         )
       )
@@ -85,13 +81,55 @@ class SharedSessionRepositoryTest {
         sessionFirelogPublisher = publisher,
         timeProvider = fakeTimeProvider,
         sessionDataStore = fakeDataStore,
+        processDataManager = FakeProcessDataManager(),
         backgroundDispatcher =
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     runCurrent()
     fakeDataStore.close()
     assertThat(sharedSessionRepository.localSessionData.sessionDetails.sessionId)
       .isEqualTo(SESSION_ID_INIT)
+  }
+
+  @Test
+  fun initSharedSessionRepo_coldStart() = runTest {
+    val publisher =
+      SessionFirelogPublisherImpl(
+        fakeFirebaseApp.firebaseApp,
+        firebaseInstallations,
+        sessionsSettings,
+        eventGDTLogger = fakeEventGDTLogger,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+    val fakeDataStore =
+      FakeDataStore(
+        SessionData(
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
+          backgroundTime = fakeTimeProvider.currentTime(),
+          processDataMap = mapOf("" to ProcessData(pid = 10, uuid = "uuid")),
+        )
+      )
+    val sharedSessionRepository =
+      SharedSessionRepositoryImpl(
+        sessionsSettings = sessionsSettings,
+        sessionGenerator = sessionGenerator,
+        sessionFirelogPublisher = publisher,
+        timeProvider = fakeTimeProvider,
+        sessionDataStore = fakeDataStore,
+        processDataManager = FakeProcessDataManager(coldStart = true),
+        backgroundDispatcher =
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+    runCurrent()
+
+    sharedSessionRepository.appForeground()
+    runCurrent()
+    fakeDataStore.close()
+
+    assertThat(sharedSessionRepository.localSessionData.sessionDetails)
+      .isEqualTo(
+        SessionDetails(SESSION_ID_1, SESSION_ID_INIT, 1, fakeTimeProvider.currentTime().us)
+      )
   }
 
   @Test
@@ -105,17 +143,12 @@ class SharedSessionRepositoryTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     val fakeDataStore =
-      FakeDataStore<SessionData>(
+      FakeDataStore(
         SessionData(
-          SessionDetails(
-            SESSION_ID_INIT,
-            SESSION_ID_INIT,
-            0,
-            fakeTimeProvider.currentTime().ms,
-          ),
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
           fakeTimeProvider.currentTime(),
         ),
-        IllegalArgumentException("Datastore init failed")
+        IllegalArgumentException("Datastore init failed"),
       )
     val sharedSessionRepository =
       SharedSessionRepositoryImpl(
@@ -124,8 +157,9 @@ class SharedSessionRepositoryTest {
         sessionFirelogPublisher,
         fakeTimeProvider,
         fakeDataStore,
+        processDataManager = FakeProcessDataManager(),
         backgroundDispatcher =
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     runCurrent()
     fakeDataStore.close()
@@ -144,15 +178,11 @@ class SharedSessionRepositoryTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     val fakeDataStore =
-      FakeDataStore<SessionData>(
+      FakeDataStore(
         SessionData(
-          SessionDetails(
-            SESSION_ID_INIT,
-            SESSION_ID_INIT,
-            0,
-            fakeTimeProvider.currentTime().ms,
-          ),
-          fakeTimeProvider.currentTime(),
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
+          backgroundTime = fakeTimeProvider.currentTime(),
+          processDataMap = mapOf("" to ProcessData(pid = 10, uuid = "uuid")),
         )
       )
     val sharedSessionRepository =
@@ -162,8 +192,9 @@ class SharedSessionRepositoryTest {
         sessionFirelogPublisher,
         fakeTimeProvider,
         fakeDataStore,
+        processDataManager = FakeProcessDataManager(),
         backgroundDispatcher =
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     runCurrent()
 
@@ -190,17 +221,12 @@ class SharedSessionRepositoryTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     val fakeDataStore =
-      FakeDataStore<SessionData>(
+      FakeDataStore(
         SessionData(
-          SessionDetails(
-            SESSION_ID_INIT,
-            SESSION_ID_INIT,
-            0,
-            fakeTimeProvider.currentTime().ms,
-          ),
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
           fakeTimeProvider.currentTime(),
         ),
-        IllegalArgumentException("Datastore init failed")
+        IllegalArgumentException("Datastore init failed"),
       )
     val sharedSessionRepository =
       SharedSessionRepositoryImpl(
@@ -209,8 +235,9 @@ class SharedSessionRepositoryTest {
         sessionFirelogPublisher,
         fakeTimeProvider,
         fakeDataStore,
+        processDataManager = FakeProcessDataManager(),
         backgroundDispatcher =
-          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
     runCurrent()
 

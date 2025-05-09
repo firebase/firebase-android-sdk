@@ -46,6 +46,7 @@ constructor(
   private val sessionFirelogPublisher: SessionFirelogPublisher,
   private val timeProvider: TimeProvider,
   private val sessionDataStore: DataStore<SessionData>,
+  private val processDataManager: ProcessDataManager,
   @Background private val backgroundDispatcher: CoroutineContext,
 ) : SharedSessionRepository {
   /** Local copy of the session data. Can get out of sync, must be double-checked in datastore. */
@@ -57,8 +58,9 @@ constructor(
    */
   internal enum class NotificationType {
     GENERAL,
-    FALLBACK
+    FALLBACK,
   }
+
   internal var previousNotificationType: NotificationType = NotificationType.GENERAL
 
   init {
@@ -68,11 +70,11 @@ constructor(
           val newSession =
             SessionData(
               sessionDetails = sessionGenerator.generateNewSession(null),
-              backgroundTime = null
+              backgroundTime = null,
             )
           Log.d(
             TAG,
-            "Init session datastore failed with exception message: ${it.message}. Emit fallback session ${newSession.sessionDetails.sessionId}"
+            "Init session datastore failed with exception message: ${it.message}. Emit fallback session ${newSession.sessionDetails.sessionId}",
           )
           emit(newSession)
         }
@@ -122,6 +124,7 @@ constructor(
               val newSessionDetails =
                 sessionGenerator.generateNewSession(sessionData.sessionDetails)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
+              processDataManager.onSessionGenerated()
               currentSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
             } else {
               currentSessionData
@@ -153,17 +156,26 @@ constructor(
             "Notified ${subscriber.sessionSubscriberName} of new session $sessionId"
           NotificationType.FALLBACK ->
             "Notified ${subscriber.sessionSubscriberName} of new fallback session $sessionId"
-        }
+        },
       )
     }
   }
 
   private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {
-    sessionData.backgroundTime?.let {
-      val interval = timeProvider.currentTime() - it
-      return interval > sessionsSettings.sessionRestartTimeout
+    sessionData.backgroundTime?.let { backgroundTime ->
+      val interval = timeProvider.currentTime() - backgroundTime
+      if (interval > sessionsSettings.sessionRestartTimeout) {
+        Log.d(TAG, "Passed session restart timeout, so initiate a new session")
+        return true
+      }
     }
-    Log.d(TAG, "No process has backgrounded yet, should not change the session.")
+
+    sessionData.processDataMap?.let { processDataMap ->
+      Log.d(TAG, "Has not passed session restart timeout, so check for cold app start")
+      return processDataManager.isColdStart(processDataMap)
+    }
+
+    Log.d(TAG, "No process has backgrounded yet and no process data, should not change the session")
     return false
   }
 
