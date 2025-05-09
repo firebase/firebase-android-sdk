@@ -29,7 +29,11 @@ firebaseLibrary {
 
   testLab.enabled = true
   publishJavadoc = false
-  releaseNotes { enabled.set(false) }
+
+  releaseNotes {
+    enabled = false
+    hasKTX = false
+  }
 }
 
 android {
