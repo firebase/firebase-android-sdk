@@ -100,7 +100,7 @@ public class GaugeManager extends AppStateUpdateHandler {
 
   @Override
   public void onUpdateAppState(ApplicationProcessState applicationProcessState) {
-    // Update the app state and return.
+    // If it isn't a verbose session (or unset) update the app state and return.
     if (session == null || !session.isVerbose()) {
       this.applicationProcessState = applicationProcessState;
       return;
