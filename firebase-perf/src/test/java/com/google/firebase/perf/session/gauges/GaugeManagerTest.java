@@ -344,10 +344,16 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    // Generate additional metrics, but doesn't start logging them as it hasn't met the threshold.
+    generateMetricsAndIncrementCounter(5);
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
 
-    // It flushes all metrics in the ConcurrentLinkedQueues.
+    // It flushes all the original metrics in the ConcurrentLinkedQueues, but not the new ones
+    // added after the task completed.
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
