@@ -124,6 +124,7 @@ constructor(
               val newSessionDetails =
                 sessionGenerator.generateNewSession(sessionData.sessionDetails)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
+              processDataManager.onSessionGenerated()
               currentSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
             } else {
               currentSessionData
@@ -164,17 +165,17 @@ constructor(
     sessionData.backgroundTime?.let { backgroundTime ->
       val interval = timeProvider.currentTime() - backgroundTime
       if (interval > sessionsSettings.sessionRestartTimeout) {
-        // Passed session restart timeout, so should initiate a new session
+        Log.d(TAG, "Passed session restart timeout, so initiate a new session")
         return true
       }
     }
 
     sessionData.processDataMap?.let { processDataMap ->
-      // Has not passed session restart timeout, so check for cold app start
+      Log.d(TAG, "Has not passed session restart timeout, so check for cold app start")
       return processDataManager.isColdStart(processDataMap)
     }
 
-    // No process has backgrounded yet and no process mapping, should not change the session
+    Log.d(TAG, "No process has backgrounded yet and no process data, should not change the session")
     return false
   }
 

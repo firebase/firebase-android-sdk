@@ -22,8 +22,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeRunningAppProcessInfo
 import com.google.firebase.sessions.testing.FakeUuidGenerator
-import com.google.firebase.sessions.testing.FakeUuidGenerator.Companion.UUID_1 as MY_UUID
-import com.google.firebase.sessions.testing.FakeUuidGenerator.Companion.UUID_2 as OTHER_UUID
+import com.google.firebase.sessions.testing.FakeUuidGenerator.Companion.UUID_1
+import com.google.firebase.sessions.testing.FakeUuidGenerator.Companion.UUID_2
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,10 +33,10 @@ internal class ProcessDataManagerTest {
   @Test
   fun isColdStart_myProcess() {
     val appContext = FakeFirebaseApp().firebaseApp.applicationContext
-    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(MY_UUID))
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
 
     val coldStart =
-      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(MY_PID, MY_UUID)))
+      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(MY_PID, UUID_1)))
 
     assertThat(coldStart).isFalse()
   }
@@ -46,13 +46,13 @@ internal class ProcessDataManagerTest {
       FakeFirebaseApp(processes = listOf(myProcessInfo, otherProcessInfo))
         .firebaseApp
         .applicationContext
-    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(MY_UUID))
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
 
     val coldStart =
       processDataManager.isColdStart(
         mapOf(
-          MY_PROCESS_NAME to ProcessData(MY_PID, MY_UUID),
-          OTHER_PROCESS_NAME to ProcessData(OTHER_PID, OTHER_UUID),
+          MY_PROCESS_NAME to ProcessData(MY_PID, UUID_1),
+          OTHER_PROCESS_NAME to ProcessData(OTHER_PID, UUID_2),
         )
       )
 
@@ -62,10 +62,10 @@ internal class ProcessDataManagerTest {
   @Test
   fun isColdStart_staleProcessPid() {
     val appContext = FakeFirebaseApp().firebaseApp.applicationContext
-    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(MY_UUID))
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
 
     val coldStart =
-      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(OTHER_PID, MY_UUID)))
+      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(OTHER_PID, UUID_1)))
 
     assertThat(coldStart).isTrue()
   }
@@ -73,10 +73,10 @@ internal class ProcessDataManagerTest {
   @Test
   fun isColdStart_staleProcessUuid() {
     val appContext = FakeFirebaseApp().firebaseApp.applicationContext
-    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(MY_UUID))
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
 
     val coldStart =
-      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(MY_PID, OTHER_UUID)))
+      processDataManager.isColdStart(mapOf(MY_PROCESS_NAME to ProcessData(MY_PID, UUID_2)))
 
     assertThat(coldStart).isTrue()
   }
@@ -87,13 +87,13 @@ internal class ProcessDataManagerTest {
       FakeFirebaseApp(processes = listOf(myProcessInfo, otherProcessInfo))
         .firebaseApp
         .applicationContext
-    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(MY_UUID))
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
 
     val coldStart =
       processDataManager.isColdStart(
         mapOf(
-          MY_PROCESS_NAME to ProcessData(OTHER_PID, MY_UUID),
-          OTHER_PROCESS_NAME to ProcessData(OTHER_PID, OTHER_UUID),
+          MY_PROCESS_NAME to ProcessData(OTHER_PID, UUID_1),
+          OTHER_PROCESS_NAME to ProcessData(OTHER_PID, UUID_2),
         )
       )
 
