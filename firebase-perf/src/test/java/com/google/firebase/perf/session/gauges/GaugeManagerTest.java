@@ -44,7 +44,6 @@ import com.google.testing.timing.FakeScheduledExecutorService;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -437,39 +436,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading);
     assertThatMemoryGaugeMetricWasSentToTransport(
         testSessionId(1), recordedGaugeMetric, fakeMemoryMetricReading);
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Update test for GaugeCounter.
-  public void testGaugeManagerClearsTheQueueEachRun() {
-    PerfSession fakeSession = createTestSession(1);
-
-    testGaugeManager.startCollectingGauges(fakeSession);
-
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(200, 100));
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(300, 400));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234));
-
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isEmpty();
-
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(200, 100));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345));
-
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isEmpty();
   }
 
   @Test
