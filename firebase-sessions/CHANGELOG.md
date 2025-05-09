@@ -1,14 +1,9 @@
 # Unreleased
 * [changed] Use multi-process DataStore instead of Preferences DataStore
+* [changed] Update the heuristic to detect cold app starts
 
 # 2.1.1
 * [unchanged] Updated to keep SDK versions aligned.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
 
 # 2.1.0
 * [changed] Add warning for known issue b/328687152
