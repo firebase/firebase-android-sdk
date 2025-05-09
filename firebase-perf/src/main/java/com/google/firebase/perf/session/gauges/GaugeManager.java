@@ -100,11 +100,16 @@ public class GaugeManager extends AppStateUpdateHandler {
 
   @Override
   public void onUpdateAppState(ApplicationProcessState applicationProcessState) {
-    this.applicationProcessState = applicationProcessState;
-
+    // Update the app state and return.
     if (session == null || !session.isVerbose()) {
+      this.applicationProcessState = applicationProcessState;
       return;
     }
+
+    // Log existing gauges to the current app state.
+    logGaugeMetrics();
+    // Update App State.
+    this.applicationProcessState = applicationProcessState;
 
     // If it's a verbose session, start collecting gauges for the new app state.
     startCollectingGauges(this.applicationProcessState, session.getTimer());

@@ -358,6 +358,42 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void testUpdateAppStateFlushesMetricsInTheCurrentAppState() {
+    PerfSession fakeSession = createTestSession(1);
+    fakeSession.setGaugeAndEventCollectionEnabled(true);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(10);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    testGaugeManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    GaugeMetric recordedGaugeMetric =
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+
+    // It flushes all metrics in the ConcurrentLinkedQueues.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(10);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+  }
+
+  @Test
   public void testStopCollectingGaugesStopsCollectingAllGaugeMetrics() {
     PerfSession fakeSession = createTestSession(1);
 
