@@ -78,7 +78,8 @@ constructor(private val appContext: Context, private val uuidGenerator: UuidGene
     processDataMap
       ?.toMutableMap()
       ?.apply { this[myProcessName] = ProcessData(Process.myPid(), myUuid) }
-      ?.toMap() ?: mapOf(myProcessName to ProcessData(Process.myPid(), myUuid))
+      ?.toMap()
+      ?: mapOf(myProcessName to ProcessData(Process.myPid(), myUuid))
 
   /**
    * Returns true if the process is stale, meaning the persisted process data does not match the
