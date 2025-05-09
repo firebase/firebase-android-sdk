@@ -23,7 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger
 object GaugeCounter {
   private const val MAX_METRIC_COUNT = 25
   private val counter = AtomicInteger(0)
-  private val gaugeManager: GaugeManager = GaugeManager.getInstance()
+  // TODO(b/394127311): Setting this as a var for a unit test. Refactor it.
+  var gaugeManager: GaugeManager = GaugeManager.getInstance()
 
   fun incrementCounter() {
     val metricsCount = counter.incrementAndGet()

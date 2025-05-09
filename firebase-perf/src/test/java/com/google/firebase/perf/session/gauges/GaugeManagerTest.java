@@ -41,6 +41,7 @@ import com.google.firebase.perf.v1.CpuMetricReading;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
 import com.google.testing.timing.FakeScheduledExecutorService;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -323,38 +324,37 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Change to verify GaugeCounter.
-  public void testStartCollectingGaugesStartsAJobToConsumeTheGeneratedMetrics() {
+  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
 
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(24);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(2);
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
-        .isEqualTo(
-            getMinimumBackgroundCollectionFrequency()
-                * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC);
-
-    CpuMetricReading fakeCpuMetricReading1 = createFakeCpuMetricReading(200, 100);
-    CpuMetricReading fakeCpuMetricReading2 = createFakeCpuMetricReading(300, 200);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading1);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading2);
-
-    AndroidMemoryReading fakeMemoryMetricReading1 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 123456);
-    AndroidMemoryReading fakeMemoryMetricReading2 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 23454678);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading1);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
 
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading1, fakeCpuMetricReading2);
+    // It flushes all metrics in the ConcurrentLinkedQueues.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
 
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeMemoryMetricReading1, fakeMemoryMetricReading2);
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
 
   @Test
@@ -517,6 +517,20 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   /** @return The minimum background collection frequency of all the Gauges. */
   private long getMinimumBackgroundCollectionFrequency() {
     return DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS;
+  }
+
+  // Simulates the behavior of Cpu and Memory Gauge collector.
+  private void generateMetricsAndIncrementCounter(int count) {
+    Random random = new Random();
+    for (int i = 0; i < count; ++i) {
+      if (random.nextInt(2) == 0) {
+        fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(100, 200));
+        GaugeCounter.INSTANCE.incrementCounter();
+      } else {
+        fakeMemoryGaugeCollector.memoryMetricReadings.add(createFakeAndroidMetricReading(100));
+        GaugeCounter.INSTANCE.incrementCounter();
+      }
+    }
   }
 
   private CpuMetricReading createFakeCpuMetricReading(long userTimeUs, long systemTimeUs) {
