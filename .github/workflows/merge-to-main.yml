@@ -6,8 +6,7 @@ on:
       - main
     types:
       - opened
-      - labeled
-      - unlabeled
+      - synchronize
 
 jobs:
   pr-message:
@@ -15,7 +14,37 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-    - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+    - name: Checkout repo
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+        submodules: false
+
+    - name: Filter paths
+      id: filter
+      run: |
+        MERGE_BASE=$(git merge-base origin/${GITHUB_BASE_REF} origin/${GITHUB_HEAD_REF})
+        FILES=$(git diff --name-only $MERGE_BASE origin/${GITHUB_HEAD_REF})
+        IGNORE=true
+        for FILE in $FILES; do
+          if [[ $FILE != plugins/* && $FILE != .github/* ]]; then
+            IGNORE=false
+            break
+          fi
+        done
+
+        if $IGNORE; then
+          echo "ignore=true" >> $GITHUB_OUTPUT
+          echo "Filter result code: ignore = true"
+        else
+          echo "ignore=false" >> $GITHUB_OUTPUT
+          echo "Filter result code: ignore = false"
+        fi
+      shell: bash
+
+    - name: Add PR comment
+      if: steps.filter.outputs.ignore == 'false'
+      uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
       with:
         message: >
           ### 📝 PRs merging into main branch
@@ -27,4 +56,5 @@ jobs:
           branch when the code complete and ready to be released.
 
     - name: Success
+      if: steps.filter.outputs.ignore == 'false'
       run: exit 0
