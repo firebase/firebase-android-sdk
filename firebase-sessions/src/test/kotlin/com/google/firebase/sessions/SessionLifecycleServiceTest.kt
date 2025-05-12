@@ -39,12 +39,9 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
-import org.robolectric.annotation.LooperMode
-import org.robolectric.annotation.LooperMode.Mode.PAUSED
 import org.robolectric.shadows.ShadowSystemClock
 
 @MediumTest
-@LooperMode(PAUSED)
 @RunWith(RobolectricTestRunner::class)
 internal class SessionLifecycleServiceTest {
   private lateinit var service: ServiceController<SessionLifecycleService>
