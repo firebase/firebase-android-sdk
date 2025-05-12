@@ -27,7 +27,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -344,6 +346,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    shadowOf(Looper.getMainLooper()).idle();
 
     // Generate additional metrics, but doesn't start logging them as it hasn't met the threshold.
     generateMetricsAndIncrementCounter(5);
