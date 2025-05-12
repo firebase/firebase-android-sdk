@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.assertSDKQueryResultsConsistentWithBackend;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
@@ -64,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1497,28 +1497,27 @@ public class FirestoreTest {
   }
 
   @Test
-  public void snapshotListenerSortsQueryByDocumentIdsSameAsGetQuery() {
+  public void snapshotListenerSortsQueryByDocumentIdsSameAsGetQuery() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "A", map("a", 1),
-            "a", map("a", 1),
-            "Aa", map("a", 1),
-            "7", map("a", 1),
-            "12", map("a", 1),
-            "__id7__", map("a", 1),
-            "__id12__", map("a", 1),
-            "__id-2__", map("a", 1),
-            "__id1_", map("a", 1),
-            "_id1__", map("a", 1),
-            "__id", map("a", 1),
-            "__id9223372036854775807__", map("a", 1),
-            "__id-9223372036854775808__", map("a", 1));
+            "A", map("a", 1L),
+            "a", map("a", 1L),
+            "Aa", map("a", 1L),
+            "7", map("a", 1L),
+            "12", map("a", 1L),
+            "__id7__", map("a", 1L),
+            "__id12__", map("a", 1L),
+            "__id-2__", map("a", 1L),
+            "__id1_", map("a", 1L),
+            "_id1__", map("a", 1L),
+            "__id", map("a", 1L),
+            "__id9223372036854775807__", map("a", 1L),
+            "__id-9223372036854775808__", map("a", 1L));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
-
-    // Run get query
     Query orderedQuery = colRef.orderBy(FieldPath.documentId());
-    List<String> expectedDocIds =
+
+    List<String> expectedDocs =
         Arrays.asList(
             "__id-9223372036854775808__",
             "__id-2__",
@@ -1534,106 +1533,61 @@ public class FirestoreTest {
             "_id1__",
             "a");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    // Run query with snapshot listener
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocs);
   }
 
   @Test
-  public void snapshotListenerSortsFilteredQueryByDocumentIdsSameAsGetQuery() {
+  public void snapshotListenerSortsFilteredQueryByDocumentIdsSameAsGetQuery() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "A", map("a", 1),
-            "a", map("a", 1),
-            "Aa", map("a", 1),
-            "7", map("a", 1),
-            "12", map("a", 1),
-            "__id7__", map("a", 1),
-            "__id12__", map("a", 1),
-            "__id-2__", map("a", 1),
-            "__id1_", map("a", 1),
-            "_id1__", map("a", 1),
-            "__id", map("a", 1),
-            "__id9223372036854775807__", map("a", 1),
-            "__id-9223372036854775808__", map("a", 1));
+            "A", map("a", 1L),
+            "a", map("a", 1L),
+            "Aa", map("a", 1L),
+            "7", map("a", 1L),
+            "12", map("a", 1L),
+            "__id7__", map("a", 1L),
+            "__id12__", map("a", 1L),
+            "__id-2__", map("a", 1L),
+            "__id1_", map("a", 1L),
+            "_id1__", map("a", 1L),
+            "__id", map("a", 1L),
+            "__id9223372036854775807__", map("a", 1L),
+            "__id-9223372036854775808__", map("a", 1L));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
-
-    // Run get query
     Query filteredQuery =
         colRef
             .whereGreaterThan(FieldPath.documentId(), "__id7__")
             .whereLessThanOrEqualTo(FieldPath.documentId(), "A")
             .orderBy(FieldPath.documentId());
-    List<String> expectedDocIds =
+
+    List<String> expectedDocs =
         Arrays.asList("__id12__", "__id9223372036854775807__", "12", "7", "A");
 
-    QuerySnapshot getSnapshot = waitFor(filteredQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    // Run query with snapshot listener
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        filteredQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+    assertSDKQueryResultsConsistentWithBackend(colRef, filteredQuery, testDocs, expectedDocs);
   }
 
   @Test
   public void sdkOrdersQueryByDocumentIdTheSameWayOnlineAndOffline() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "A", map("a", 1),
-            "a", map("a", 1),
-            "Aa", map("a", 1),
-            "7", map("a", 1),
-            "12", map("a", 1),
-            "__id7__", map("a", 1),
-            "__id12__", map("a", 1),
-            "__id-2__", map("a", 1),
-            "__id1_", map("a", 1),
-            "_id1__", map("a", 1),
-            "__id", map("a", 1),
-            "__id9223372036854775807__", map("a", 1),
-            "__id-9223372036854775808__", map("a", 1));
+            "A", map("a", 1L),
+            "a", map("a", 1L),
+            "Aa", map("a", 1L),
+            "7", map("a", 1L),
+            "12", map("a", 1L),
+            "__id7__", map("a", 1L),
+            "__id12__", map("a", 1L),
+            "__id-2__", map("a", 1L),
+            "__id1_", map("a", 1L),
+            "_id1__", map("a", 1L),
+            "__id", map("a", 1L),
+            "__id9223372036854775807__", map("a", 1L),
+            "__id-9223372036854775808__", map("a", 1L));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
-    // Test query
     Query orderedQuery = colRef.orderBy(FieldPath.documentId());
+
     List<String> expectedDocIds =
         Arrays.asList(
             "__id-9223372036854775808__",
@@ -1655,7 +1609,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsAsServer() {
+  public void snapshotListenerSortsUnicodeStringsAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1683,36 +1637,15 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
+
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsInArrayAsServer() {
+  public void snapshotListenerSortsUnicodeStringsInArrayAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1740,36 +1673,15 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
+
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsInMapAsServer() {
+  public void snapshotListenerSortsUnicodeStringsInMapAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1797,36 +1709,15 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
+
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsInMapKeyAsServer() {
+  public void snapshotListenerSortsUnicodeStringsInMapKeyAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1854,36 +1745,15 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
+
     List<String> expectedDocIds =
         Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsInDocumentKeyAsServer() {
+  public void snapshotListenerSortsUnicodeStringsInDocumentKeyAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "Łukasiewicz",
@@ -1911,38 +1781,16 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy(FieldPath.documentId());
+
     List<String> expectedDocIds =
         Arrays.asList(
             "Sierpiński", "Łukasiewicz", "你好", "你顥", "岩澤", "︒", "Ｐ", "🄟", "🐵", "😀", "😁");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
-
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, testDocs, expectedDocIds);
   }
 
   @Test
-  public void snapshotListenerSortsInvalidUnicodeStringsAsServer() {
-    // Note: Protocol Buffer converts any invalid surrogates to "?".
+  public void snapshotListenerSortsInvalidUnicodeStringsAsServer() throws Exception {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1962,30 +1810,27 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
+
     List<String> expectedDocIds = Arrays.asList("a", "d", "e", "f", "g", "b", "c");
 
-    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
-    List<String> getSnapshotDocIds =
-        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+    // Note: Protocol Buffer converts any invalid surrogates to "?".
+    Map<String, Map<String, Object>> actualDocs =
+        map(
+            "a",
+            map("value", "Z"),
+            "b",
+            map("value", "你好"),
+            "c",
+            map("value", "😀"),
+            "d",
+            map("value", "ab?"),
+            "e",
+            map("value", "ab?"),
+            "f",
+            map("value", "ab??"),
+            "g",
+            map("value", "ab??"));
 
-    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
-    ListenerRegistration registration =
-        orderedQuery.addSnapshotListener(eventAccumulator.listener());
-
-    List<String> watchSnapshotDocIds = new ArrayList<>();
-    try {
-      QuerySnapshot watchSnapshot = eventAccumulator.await();
-      watchSnapshotDocIds =
-          watchSnapshot.getDocuments().stream()
-              .map(documentSnapshot -> documentSnapshot.getId())
-              .collect(Collectors.toList());
-    } finally {
-      registration.remove();
-    }
-
-    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
-    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
-
-    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+    assertSDKQueryResultsConsistentWithBackend(colRef, orderedQuery, actualDocs, expectedDocIds);
   }
 }
