@@ -22,3 +22,10 @@ type zwda6x9zyy @table {
   timestamp: Timestamp
   any: Any
 }
+
+type Movie @table {
+  title: String!
+  imageUrl: String!
+  genre: String
+}
+

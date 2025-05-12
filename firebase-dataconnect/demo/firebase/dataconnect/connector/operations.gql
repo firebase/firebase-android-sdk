@@ -82,3 +82,26 @@ mutation DeleteItemByKey(
 mutation WorkaroundForBug382688278( $id: UUID!) {
   zwda6x9zyy_insert(data: { id: $id })
 }
+
+query ListMovies @auth(level: PUBLIC) {
+  movies {
+    id
+    title
+    imageUrl
+    genre
+  }
+}
+
+mutation CreateMovie(
+  $title: String!
+  $genre: String!
+  $imageUrl: String!
+) @auth(level: PUBLIC) {
+  movie_insert(
+    data: {
+      title: $title
+      genre: $genre
+      imageUrl: $imageUrl
+    }
+  )
+}

@@ -21,8 +21,6 @@ import android.util.Log
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.logLevel
-import com.google.firebase.dataconnect.minimaldemo.connector.Ctry3q3tp6kzxConnector
-import com.google.firebase.dataconnect.minimaldemo.connector.instance
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +32,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import myapp.connector.MoviesConnector
+import myapp.connector.instance
 
 class MyApplication : Application() {
 
@@ -63,7 +63,7 @@ class MyApplication : Application() {
 
   private val initialLogLevel = FirebaseDataConnect.logLevel.value
   private val connectorMutex = Mutex()
-  private var connector: Ctry3q3tp6kzxConnector? = null
+  private var connector: MoviesConnector? = null
 
   override fun onCreate() {
     super.onCreate()
@@ -75,14 +75,14 @@ class MyApplication : Application() {
     }
   }
 
-  suspend fun getConnector(): Ctry3q3tp6kzxConnector {
+  suspend fun getConnector(): MoviesConnector {
     connectorMutex.withLock {
       val oldConnector = connector
       if (oldConnector !== null) {
         return oldConnector
       }
 
-      val newConnector = Ctry3q3tp6kzxConnector.instance
+      val newConnector = MoviesConnector.instance
 
       if (getUseDataConnectEmulator()) {
         newConnector.dataConnect.useEmulator()

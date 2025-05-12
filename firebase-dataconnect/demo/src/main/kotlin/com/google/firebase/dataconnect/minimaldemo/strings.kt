@@ -20,13 +20,13 @@ import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.AnyValue
 import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.minimaldemo.connector.GetItemByKeyQuery
-import com.google.firebase.dataconnect.minimaldemo.connector.InsertItemMutation
 import com.google.firebase.dataconnect.toJavaLocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import myapp.connector.GetItemByKeyQuery
+import myapp.connector.InsertItemMutation
 
 fun InsertItemMutation.Variables.toDisplayString(): String =
   displayStringForItem(

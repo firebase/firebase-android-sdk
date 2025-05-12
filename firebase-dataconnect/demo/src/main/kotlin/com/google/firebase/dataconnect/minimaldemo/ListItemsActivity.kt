@@ -26,11 +26,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.dataconnect.minimaldemo.connector.GetAllItemsQuery
 import com.google.firebase.dataconnect.minimaldemo.databinding.ActivityListItemsBinding
 import com.google.firebase.dataconnect.minimaldemo.databinding.ListItemBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import myapp.connector.GetAllItemsQuery
 
 class ListItemsActivity : AppCompatActivity() {
 

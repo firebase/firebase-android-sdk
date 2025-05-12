@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.minimaldemo.connector.InsertItemMutation
 import com.google.firebase.dataconnect.toJavaLocalDate
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -41,6 +40,7 @@ import java.time.Year
 import java.time.ZoneOffset
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import myapp.connector.InsertItemMutation
 
 fun Arb.Companion.insertItemVariables(): Arb<InsertItemMutation.Variables> =
   InsertItemMutationVariablesArb()

@@ -23,8 +23,6 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.google.firebase.dataconnect.minimaldemo.connector.GetAllItemsQuery
-import com.google.firebase.dataconnect.minimaldemo.connector.execute
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +32,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import myapp.connector.GetAllItemsQuery
+import myapp.connector.execute
 
 class ListItemsViewModel(private val app: MyApplication) : ViewModel() {
 
