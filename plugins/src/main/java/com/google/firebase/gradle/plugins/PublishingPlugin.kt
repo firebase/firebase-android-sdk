@@ -417,7 +417,6 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-analytics",
           "com.google.firebase:firebase-crashlytics",
           "com.google.firebase:firebase-perf",
-          "com.google.firebase:firebase-vertexai",
           "com.google.firebase:firebase-ai",
           "com.google.firebase:firebase-messaging",
           "com.google.firebase:firebase-auth",
