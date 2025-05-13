@@ -138,6 +138,7 @@ public class GaugeManager extends AppStateUpdateHandler {
       stopCollectingGauges();
     }
 
+    // TODO(b/394127311): Explore always setting the app state as FOREGROUND.
     ApplicationProcessState gaugeCollectionApplicationProcessState = applicationProcessState;
     if (gaugeCollectionApplicationProcessState
         == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
