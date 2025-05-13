@@ -353,7 +353,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
 
     // It flushes all the original metrics in the ConcurrentLinkedQueues, but not the new ones
     // added after the task completed.
@@ -389,8 +389,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    // Generate additional metrics that shouldn't be included in the flush.
+    generateMetricsAndIncrementCounter(5);
+
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
 
     // It flushes all metrics in the ConcurrentLinkedQueues.
     int recordedGaugeMetricsCount =
@@ -440,7 +444,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     assertThatCpuGaugeMetricWasSentToTransport(
         testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading);
     assertThatMemoryGaugeMetricWasSentToTransport(
@@ -456,7 +460,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND);
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -507,7 +511,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         .isTrue();
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -563,16 +567,15 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
    * Gets the last recorded GaugeMetric, and verifies that they were logged for the right {@link
    * ApplicationProcessState}.
    *
-   * @param applicationProcessState The expected {@link ApplicationProcessState} that it was logged
-   *     to.
-   * @param timesLogged Number of {@link GaugeMetric} that were expected to be logged to Transport.
+   * @param expectedApplicationProcessState The expected {@link ApplicationProcessState} that it was logged
+   *                                        to.
    * @return The last logged {@link GaugeMetric}.
    */
   private GaugeMetric getLastRecordedGaugeMetric(
-      ApplicationProcessState applicationProcessState, int timesLogged) {
+      ApplicationProcessState expectedApplicationProcessState) {
     ArgumentCaptor<GaugeMetric> argMetric = ArgumentCaptor.forClass(GaugeMetric.class);
-    verify(mockTransportManager, times(timesLogged))
-        .log(argMetric.capture(), eq(applicationProcessState));
+    verify(mockTransportManager, times(1))
+        .log(argMetric.capture(), eq(expectedApplicationProcessState));
     reset(mockTransportManager);
     // Required after resetting the mock. By default we assume that Transport is initialized.
     when(mockTransportManager.isInitialized()).thenReturn(true);
