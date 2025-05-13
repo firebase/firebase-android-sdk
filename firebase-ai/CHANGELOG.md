@@ -21,4 +21,5 @@
 * [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6910)
 * [feature] Add support for specifying response modalities in `GenerationConfig`. (#6921)
 * [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6922)
+* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
 
