@@ -9,15 +9,15 @@ internal class FunctionDeclarationTest {
 
   @Test
   fun `Basic FunctionDeclaration with name, description and parameters`() {
-    val functionDeclaration = FunctionDeclaration(
-      name = "isUserAGoat",
-      description = "Determine if the user is subject to teleportations.",
-      parameters = mapOf(
-        "userID" to Schema.string("ID of the User making the call")
+    val functionDeclaration =
+      FunctionDeclaration(
+        name = "isUserAGoat",
+        description = "Determine if the user is subject to teleportations.",
+        parameters = mapOf("userID" to Schema.string("ID of the User making the call"))
       )
-    )
 
-    val expectedJson = """
+    val expectedJson =
+      """
       {
           "name": "isUserAGoat",
           "description": "Determine if the user is subject to teleportations.",
@@ -34,24 +34,28 @@ internal class FunctionDeclarationTest {
             ]
           }
         }
-    """.trimIndent()
+    """
+        .trimIndent()
 
     Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
 
   @Test
   fun `FunctionDeclaration with optional parameters`() {
-    val functionDeclaration = FunctionDeclaration(
-      name = "isUserAGoat",
-      description = "Determine if the user is subject to teleportations.",
-      parameters = mapOf(
-        "userID" to Schema.string("ID of the user making the call"),
-        "userName" to Schema.string("Name of the user making the call")
-      ),
-      optionalParameters = listOf("userName")
-    )
+    val functionDeclaration =
+      FunctionDeclaration(
+        name = "isUserAGoat",
+        description = "Determine if the user is subject to teleportations.",
+        parameters =
+          mapOf(
+            "userID" to Schema.string("ID of the user making the call"),
+            "userName" to Schema.string("Name of the user making the call")
+          ),
+        optionalParameters = listOf("userName")
+      )
 
-    val expectedJson = """
+    val expectedJson =
+      """
       {
           "name": "isUserAGoat",
           "description": "Determine if the user is subject to teleportations.",
@@ -72,7 +76,8 @@ internal class FunctionDeclarationTest {
             ]
           }
         }
-    """.trimIndent()
+    """
+        .trimIndent()
 
     Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
