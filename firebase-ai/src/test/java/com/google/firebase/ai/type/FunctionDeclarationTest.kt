@@ -76,6 +76,4 @@ internal class FunctionDeclarationTest {
 
     Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
-
-
 }
