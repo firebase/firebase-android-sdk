@@ -346,7 +346,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // There's still no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    generateMetricsAndIncrementCounter(5);
+    generateMetricsAndIncrementCounter(2);
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
@@ -366,7 +366,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(29);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
@@ -608,6 +608,8 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   // Simulates the behavior of Cpu and Memory Gauge collector.
   private void generateMetricsAndIncrementCounter(int count) {
+    // TODO(b/394127311): Explore actually collecting metrics using the fake Cpu and Memory
+    //  metric collectors.
     Random random = new Random();
     for (int i = 0; i < count; ++i) {
       if (random.nextInt(2) == 0) {
