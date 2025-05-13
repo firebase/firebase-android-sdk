@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Fixed an issue where tests were depending on a deprecated feature of the test framework (#6927)
+* [fixed] Fixed an issue where tests were depending on a deprecated feature of the test framework. (#6927)
 
 # 21.0.1
 * [fixed] Fixed an issue where `maxUploadRetryTimeMillis` parameter is ignored when uploading using
