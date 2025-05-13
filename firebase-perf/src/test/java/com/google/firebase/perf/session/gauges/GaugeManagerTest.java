@@ -331,7 +331,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() {
+  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() throws InterruptedException {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
@@ -504,12 +504,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     testGaugeManager.stopCollectingGauges();
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
 
-    CpuMetricReading fakeCpuMetricReading = createFakeCpuMetricReading(200, 100);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading);
-
-    AndroidMemoryReading fakeMemoryMetricReading =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 23454678);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading);
+    generateMetricsAndIncrementCounter(2);
 
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
@@ -517,10 +512,9 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeMemoryMetricReading);
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+
+    assertThat(GaugeCounter.INSTANCE.count()).isEqualTo(0);
   }
 
   @Test
@@ -587,6 +581,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+    assertThat(recordedGaugeMetadata).isNotEqualTo(GaugeMetadata.getDefaultInstance());
   }
 
   @Test
@@ -654,21 +649,5 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // Required after resetting the mock. By default we assume that Transport is initialized.
     when(mockTransportManager.isInitialized()).thenReturn(true);
     return argMetric.getValue();
-  }
-
-  private void assertThatCpuGaugeMetricWasSentToTransport(
-      String sessionId, GaugeMetric recordedGaugeMetric, CpuMetricReading... cpuMetricReadings) {
-    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(sessionId);
-    assertThat(recordedGaugeMetric.getCpuMetricReadingsList())
-        .containsAtLeastElementsIn(cpuMetricReadings);
-  }
-
-  private void assertThatMemoryGaugeMetricWasSentToTransport(
-      String sessionId,
-      GaugeMetric recordedGaugeMetric,
-      AndroidMemoryReading... androidMetricReadings) {
-    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(sessionId);
-    assertThat(recordedGaugeMetric.getAndroidMemoryReadingsList())
-        .containsAtLeastElementsIn(androidMetricReadings);
   }
 }

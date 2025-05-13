@@ -25,12 +25,20 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeCounter;
 import com.google.firebase.perf.util.ImmutableBundle;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowPackageManager;
 
 public class FirebasePerformanceTestBase {
+  @BeforeClass
+  public static void setUpBeforeClass() {
+    ShadowLog.stream = System.out;
+    GaugeCounter.INSTANCE.resetCounter();
+  }
 
   /**
    * The following values are needed by Firebase to identify the project and application that all
