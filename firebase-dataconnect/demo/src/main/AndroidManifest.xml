@@ -24,7 +24,7 @@ limitations under the License.
         android:theme="@style/Theme.AppCompat"
         >
 
-        <activity android:name=".MainActivity" android:exported="true">
+        <activity android:name=".MainComposeActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
