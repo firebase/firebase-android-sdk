@@ -341,12 +341,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(24);
+    generateMetricsAndIncrementCounter(20);
 
     // There's still no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    generateMetricsAndIncrementCounter(2);
+    generateMetricsAndIncrementCounter(10);
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
@@ -366,7 +366,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(30);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
@@ -501,19 +501,21 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     testGaugeManager.startCollectingGauges(fakeSession);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
+    generateMetricsAndIncrementCounter(2);
+
     testGaugeManager.stopCollectingGauges();
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
-
-    generateMetricsAndIncrementCounter(2);
 
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
 
+    // TODO(b/394127311): Investigate why this isn't 0 on local runs.
     assertThat(GaugeCounter.INSTANCE.count()).isEqualTo(0);
   }
 

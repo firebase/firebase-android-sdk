@@ -36,7 +36,6 @@ import org.robolectric.shadows.ShadowPackageManager;
 public class FirebasePerformanceTestBase {
   @BeforeClass
   public static void setUpBeforeClass() {
-    ShadowLog.stream = System.out;
     GaugeCounter.INSTANCE.resetCounter();
   }
 
@@ -64,6 +63,7 @@ public class FirebasePerformanceTestBase {
 
   @Before
   public void setUpFirebaseApp() {
+    ShadowLog.stream = System.out;
     appContext = ApplicationProvider.getApplicationContext();
 
     ShadowPackageManager shadowPackageManager = shadowOf(appContext.getPackageManager());
