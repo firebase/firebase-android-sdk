@@ -100,6 +100,53 @@ internal class ProcessDataManagerTest {
     assertThat(coldStart).isFalse()
   }
 
+  @Test
+  fun isMyProcessStale() {
+    val appContext =
+      FakeFirebaseApp(processes = listOf(myProcessInfo)).firebaseApp.applicationContext
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
+
+    val myProcessStale =
+      processDataManager.isMyProcessStale(mapOf(MY_PROCESS_NAME to ProcessData(MY_PID, UUID_1)))
+
+    assertThat(myProcessStale).isFalse()
+  }
+
+  @Test
+  fun isMyProcessStale_otherProcessCurrent() {
+    val appContext =
+      FakeFirebaseApp(processes = listOf(myProcessInfo, otherProcessInfo))
+        .firebaseApp
+        .applicationContext
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
+
+    val myProcessStale =
+      processDataManager.isMyProcessStale(
+        mapOf(
+          MY_PROCESS_NAME to ProcessData(OTHER_PID, UUID_1),
+          OTHER_PROCESS_NAME to ProcessData(OTHER_PID, UUID_2),
+        )
+      )
+
+    assertThat(myProcessStale).isTrue()
+  }
+
+  @Test
+  fun isMyProcessStale_missingMyProcessData() {
+    val appContext =
+      FakeFirebaseApp(processes = listOf(myProcessInfo, otherProcessInfo))
+        .firebaseApp
+        .applicationContext
+    val processDataManager = ProcessDataManagerImpl(appContext, FakeUuidGenerator(UUID_1))
+
+    val myProcessStale =
+      processDataManager.isMyProcessStale(
+        mapOf(OTHER_PROCESS_NAME to ProcessData(OTHER_PID, UUID_2))
+      )
+
+    assertThat(myProcessStale).isTrue()
+  }
+
   @After
   fun cleanUp() {
     FirebaseApp.clearInstancesForTest()
