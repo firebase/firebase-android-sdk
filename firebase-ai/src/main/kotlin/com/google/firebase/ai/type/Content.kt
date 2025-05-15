@@ -90,13 +90,9 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   @Serializable
   internal data class Internal(
     @EncodeDefault val role: String? = "user",
-    @EncodeDefault val parts: List<InternalPart>? = emptyList()
+    @EncodeDefault val parts: List<InternalPart> = emptyList()
   ) {
-    // TODO: add unit tests before sending a pull request (see DevAPIStreamingSnapshotTests.kt)
     internal fun toPublic(): Content {
-      if (parts.isNullOrEmpty()) {
-        return Content(role, listOf(TextPart(" ")))
-      }
       val returnedParts =
         parts.map { it.toPublic() }.filterNot { it is TextPart && it.text.isEmpty() }
       // If all returned parts were text and empty, we coalesce them into a single one-character

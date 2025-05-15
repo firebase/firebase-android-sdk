@@ -89,6 +89,21 @@ internal class DevAPIStreamingSnapshotTests {
     }
 
   @Test
+  fun `streaming returned the last Content without parts`() =
+    goldenDevAPIStreamingFile("streaming-success-no-content-parts.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val responseList = responses.toList()
+        responseList.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
+        }
+      }
+    }
+
+  @Test
   fun `stopped for recitation`() =
     goldenDevAPIStreamingFile("streaming-failure-recitation-no-content.txt") {
       val responses = model.generateContentStream("prompt")
