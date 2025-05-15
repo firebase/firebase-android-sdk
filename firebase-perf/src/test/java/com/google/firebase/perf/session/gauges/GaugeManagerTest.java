@@ -27,7 +27,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -41,9 +43,10 @@ import com.google.firebase.perf.v1.CpuMetricReading;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
 import com.google.testing.timing.FakeScheduledExecutorService;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -124,25 +127,31 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new Lazy<>(() -> fakeMemoryGaugeCollector));
   }
 
+  @After
+  public void tearDown() {
+    shadowOf(Looper.getMainLooper()).idle();
+  }
+
   @Test
-  @Ignore // b/394127311
-  public void testStartCollectingGaugesStartsCollectingMetricsInBackgroundState() {
+  public void testStartCollectingGaugesStartsCollectingMetricsDefault() {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(
+        ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     testGaugeManager.startCollectingGauges(fakeSession);
     verify(fakeCpuGaugeCollector)
         .startCollecting(
-            eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS),
+            eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS),
             ArgumentMatchers.nullable(Timer.class));
     verify(fakeMemoryGaugeCollector)
         .startCollecting(
-            eq(DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_BG_MS),
+            eq(DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS),
             ArgumentMatchers.nullable(Timer.class));
   }
 
   @Test
-  @Ignore // b/394127311
   public void testStartCollectingGaugesStartsCollectingMetricsInForegroundState() {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
     verify(fakeCpuGaugeCollector)
         .startCollecting(
@@ -155,27 +164,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void
-      testStartCollectingGaugesStartCollectingMetricsWithUnknownApplicationProcessStateInForegroundState() {
-    PerfSession fakeSession = createTestSession(1);
-    testGaugeManager.startCollectingGauges(fakeSession);
-    verify(fakeCpuGaugeCollector)
-        .startCollecting(
-            eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS),
-            ArgumentMatchers.nullable(Timer.class));
-    verify(fakeMemoryGaugeCollector)
-        .startCollecting(
-            eq(DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS),
-            ArgumentMatchers.nullable(Timer.class));
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Fix
   public void
       stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequencyInBackground() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyBackgroundMs();
     PerfSession fakeSession1 = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
     testGaugeManager.startCollectingGauges(fakeSession1);
 
     // Verify that Cpu metric collection is not started
@@ -201,12 +195,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
   public void
       startCollectingGaugesOnBackground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyBackgroundMs();
     PerfSession fakeSession1 = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
     testGaugeManager.startCollectingGauges(fakeSession1);
 
     // Verify that Memory metric collection is not started
@@ -232,7 +226,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
   public void stopCollectingCPUMetric_invalidCPUCaptureFrequency_OtherMetricsWithValidFrequency() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
@@ -262,12 +255,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
   public void
       startCollectingGaugesOnForeground_invalidMemoryCaptureMs_onlyDisableMemoryCollection() {
     // PASS 1: Test with 0
     doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
     PerfSession fakeSession1 = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession1);
 
     // Verify that Memory metric collection is not started
@@ -293,46 +286,29 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testStartCollectingGaugesDoesNotStartAJobToConsumeMetricsWithUnknownAppState() {
+  // TODO(b/394127311): Explore parametrized tests.
+  public void testStartCollectingGaugesDoesNotStartLogging_default() {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(
+        ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     testGaugeManager.startCollectingGauges(fakeSession);
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void stopCollectingCPUMetrics_invalidCPUCaptureFrequency_appInForegrounf() {
-    // PASS 1: Test with 0
-    doReturn(0L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
-
-    PerfSession fakeSession1 = createTestSession(1);
-    testGaugeManager.startCollectingGauges(fakeSession1);
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
-
-    // PASS 2: Test with -ve value
-    doReturn(-25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
-
-    PerfSession fakeSession2 = createTestSession(1);
-    testGaugeManager.startCollectingGauges(fakeSession2);
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+  public void testStartCollectingGaugesDoesNotStartLogging_appInForeground() {
+    PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void stopCollectingGauges_invalidMemoryCollectionFrequency_appInForeground() {
-    // PASS 1: Test with 0
-    doReturn(0L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
-
-    PerfSession fakeSession1 = createTestSession(1);
-    testGaugeManager.startCollectingGauges(fakeSession1);
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
-
-    // PASS 2: Test with -ve value
-    doReturn(-25L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
-
-    PerfSession fakeSession2 = createTestSession(2);
-    testGaugeManager.startCollectingGauges(fakeSession2);
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+  public void testStartCollectingGaugesDoesNotStartLogging_appInBackground() {
+    PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
   }
 
   @Test
@@ -355,62 +331,162 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void startCollectingGauges_validGaugeCollectionFrequency_appInForeground() {
-    doReturn(25L).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
-    doReturn(15L).when(mockConfigResolver).getSessionsMemoryCaptureFrequencyForegroundMs();
-
+  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() throws InterruptedException {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(20);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(10);
 
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
-        .isEqualTo(15L * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC);
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void testStartCollectingGaugesStartsAJobToConsumeTheGeneratedMetrics() {
-    PerfSession fakeSession = createTestSession(1);
-    testGaugeManager.startCollectingGauges(fakeSession);
-
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
-    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
-        .isEqualTo(
-            getMinimumBackgroundCollectionFrequency()
-                * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC);
-
-    CpuMetricReading fakeCpuMetricReading1 = createFakeCpuMetricReading(200, 100);
-    CpuMetricReading fakeCpuMetricReading2 = createFakeCpuMetricReading(300, 200);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading1);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading2);
-
-    AndroidMemoryReading fakeMemoryMetricReading1 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 123456);
-    AndroidMemoryReading fakeMemoryMetricReading2 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 23454678);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading1);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    // Generate additional metrics, but doesn't start logging them as it hasn't met the threshold.
+    generateMetricsAndIncrementCounter(5);
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
 
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading1, fakeCpuMetricReading2);
+    // It flushes all the original metrics in the ConcurrentLinkedQueues, but not the new ones
+    // added after the task completed.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(30);
 
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeMemoryMetricReading1, fakeMemoryMetricReading2);
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
+  public void testUpdateAppStateHandlesMultipleAppStates() {
+    PerfSession fakeSession = createTestSession(1);
+    fakeSession.setGaugeAndEventCollectionEnabled(true);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(10);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    testGaugeManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Generate additional metrics in the new app state.
+    generateMetricsAndIncrementCounter(26);
+
+    GaugeMetric recordedGaugeMetric =
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+
+    // It flushes all metrics in the ConcurrentLinkedQueues.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(10);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+
+    // Simulate gauges collected in the new app state.
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    recordedGaugeMetric = getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND);
+
+    // Verify the metrics in the new app state.
+    recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+  }
+
+  @Test
+  public void testGaugeManagerHandlesMultipleSessionIds() {
+    PerfSession fakeSession = createTestSession(1);
+    fakeSession.setGaugeAndEventCollectionEnabled(true);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(10);
+
+    PerfSession updatedPerfSession = createTestSession(2);
+    updatedPerfSession.setGaugeAndEventCollectionEnabled(true);
+
+    // A new session and updated app state.
+    testGaugeManager.startCollectingGauges(updatedPerfSession);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Generate metrics for the new session.
+    generateMetricsAndIncrementCounter(26);
+
+    GaugeMetric recordedGaugeMetric =
+        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND);
+
+    // It flushes all metrics in the ConcurrentLinkedQueues.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(10);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+
+    // Simulate gauges collected in the new app state.
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    recordedGaugeMetric = getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+
+    // Verify the metrics in the new app state.
+    recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(2));
+  }
+
+  @Test
   public void testStopCollectingGaugesStopsCollectingAllGaugeMetrics() {
     PerfSession fakeSession = createTestSession(1);
 
     testGaugeManager.startCollectingGauges(fakeSession);
     verify(fakeCpuGaugeCollector)
-        .startCollecting(eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS), ArgumentMatchers.any());
+        .startCollecting(eq(DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS), ArgumentMatchers.any());
+    verify(fakeMemoryGaugeCollector)
+        .startCollecting(
+            eq(DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS), ArgumentMatchers.any());
 
     testGaugeManager.stopCollectingGauges();
 
@@ -419,240 +495,32 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  @Ignore // TODO(b/394127311): Fix
   public void testStopCollectingGaugesCreatesOneLastJobToConsumeAnyPendingMetrics() {
     PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(2);
 
     testGaugeManager.stopCollectingGauges();
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
-
-    CpuMetricReading fakeCpuMetricReading = createFakeCpuMetricReading(200, 100);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading);
-
-    AndroidMemoryReading fakeMemoryMetricReading =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 23454678);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading);
 
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeCpuMetricReading);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric, fakeMemoryMetricReading);
-  }
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(2);
 
-  @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void testGaugeManagerClearsTheQueueEachRun() {
-    PerfSession fakeSession = createTestSession(1);
-
-    testGaugeManager.startCollectingGauges(fakeSession);
-
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(200, 100));
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(300, 400));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234));
-
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isEmpty();
-
-    fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(200, 100));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234));
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345));
-
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isNotEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isNotEmpty();
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    assertThat(fakeCpuGaugeCollector.cpuMetricReadings).isEmpty();
-    assertThat(fakeMemoryGaugeCollector.memoryMetricReadings).isEmpty();
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void testStartingGaugeManagerWithNewSessionIdButSameAppState() {
-    PerfSession fakeSession1 = createTestSession(1);
-
-    // Start collecting Gauges.
-    testGaugeManager.startCollectingGauges(fakeSession1);
-    CpuMetricReading fakeCpuMetricReading1 = createFakeCpuMetricReading(200, 100);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading1);
-    AndroidMemoryReading fakeMemoryMetricReading1 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading1);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric1 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeCpuMetricReading1);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeMemoryMetricReading1);
-
-    // One Cpu and Memory metric was added when the gauge was collecting for the previous sessionId.
-    CpuMetricReading fakeCpuMetricReading2 = createFakeCpuMetricReading(400, 500);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading2);
-    AndroidMemoryReading fakeMemoryMetricReading2 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
-
-    PerfSession fakeSession2 = createTestSession(2);
-
-    // Start collecting gauges for new session, but same app state.
-    testGaugeManager.startCollectingGauges(fakeSession2);
-
-    // The next sweep conducted by GaugeManager still associates metrics to old sessionId and state.
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric2 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeCpuMetricReading2);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeMemoryMetricReading2);
-
-    // Collect some more Cpu and Memory metrics and verify that they're associated with new
-    // sessionId and state.
-    CpuMetricReading fakeCpuMetricReading3 = createFakeCpuMetricReading(500, 600);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading3);
-    AndroidMemoryReading fakeMemoryMetricReading3 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 3456);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading3);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric3 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(2), recordedGaugeMetric3, fakeCpuMetricReading3);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(2), recordedGaugeMetric3, fakeMemoryMetricReading3);
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void testStartGaugeManagerWithSameSessionIdButDifferentAppState() {
-    PerfSession fakeSession = createTestSession(1);
-
-    // Start collecting Gauges.
-    testGaugeManager.startCollectingGauges(fakeSession);
-    CpuMetricReading fakeCpuMetricReading1 = createFakeCpuMetricReading(200, 100);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading1);
-    AndroidMemoryReading fakeMemoryMetricReading1 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading1);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric1 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeCpuMetricReading1);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeMemoryMetricReading1);
-
-    // One Cpu and Memory metric was added when the gauge was collecting for the previous sessionId.
-    CpuMetricReading fakeCpuMetricReading2 = createFakeCpuMetricReading(400, 500);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading2);
-    AndroidMemoryReading fakeMemoryMetricReading2 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
-
-    // Start collecting gauges for same session, but new app state
-    testGaugeManager.startCollectingGauges(fakeSession);
-
-    // The next sweep conducted by GaugeManager still associates metrics to old sessionId and state.
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric2 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeCpuMetricReading2);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeMemoryMetricReading2);
-
-    // Collect some more Cpu and Memory metrics and verify that they're associated with new
-    // sessionId and state.
-    CpuMetricReading fakeCpuMetricReading3 = createFakeCpuMetricReading(500, 600);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading3);
-    AndroidMemoryReading fakeMemoryMetricReading3 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 3456);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading3);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric3 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric3, fakeCpuMetricReading3);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric3, fakeMemoryMetricReading3);
-  }
-
-  @Test
-  @Ignore // TODO(b/394127311): Fix
-  public void testStartGaugeManagerWithNewSessionIdAndNewAppState() {
-    PerfSession fakeSession1 = createTestSession(1);
-
-    // Start collecting Gauges.
-    testGaugeManager.startCollectingGauges(fakeSession1);
-    CpuMetricReading fakeCpuMetricReading1 = createFakeCpuMetricReading(200, 100);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading1);
-    AndroidMemoryReading fakeMemoryMetricReading1 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 1234);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading1);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric1 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeCpuMetricReading1);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric1, fakeMemoryMetricReading1);
-
-    // One Cpu and Memory metric was added when the gauge was collecting for the previous sessionId.
-    CpuMetricReading fakeCpuMetricReading2 = createFakeCpuMetricReading(400, 500);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading2);
-    AndroidMemoryReading fakeMemoryMetricReading2 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 2345);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading2);
-
-    PerfSession fakeSession2 = createTestSession(2);
-
-    // Start collecting gauges for new session and new app state
-    testGaugeManager.startCollectingGauges(fakeSession2);
-
-    // The next sweep conducted by GaugeManager still associates metrics to old sessionId and state.
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric2 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeCpuMetricReading2);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(1), recordedGaugeMetric2, fakeMemoryMetricReading2);
-
-    // Collect some more Cpu and Memory metrics and verify that they're associated with new
-    // sessionId and state.
-    CpuMetricReading fakeCpuMetricReading3 = createFakeCpuMetricReading(500, 600);
-    fakeCpuGaugeCollector.cpuMetricReadings.add(fakeCpuMetricReading3);
-    AndroidMemoryReading fakeMemoryMetricReading3 =
-        createFakeAndroidMetricReading(/* currentUsedAppJavaHeapMemoryKb= */ 3456);
-    fakeMemoryGaugeCollector.memoryMetricReadings.add(fakeMemoryMetricReading3);
-
-    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
-    GaugeMetric recordedGaugeMetric3 =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
-    assertThatCpuGaugeMetricWasSentToTransport(
-        testSessionId(2), recordedGaugeMetric3, fakeCpuMetricReading3);
-    assertThatMemoryGaugeMetricWasSentToTransport(
-        testSessionId(2), recordedGaugeMetric3, fakeMemoryMetricReading3);
+    // TODO(b/394127311): Investigate why this isn't 0 on local runs.
+    //    assertThat(GaugeCounter.INSTANCE.count()).isEqualTo(0);
   }
 
   @Test
@@ -664,7 +532,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND);
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -679,7 +547,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testLogGaugeMetadataDoesNotLogWhenGaugeMetadataManagerNotAvailable() {
-
     testGaugeManager =
         new GaugeManager(
             new Lazy<>(() -> fakeScheduledExecutorService),
@@ -716,10 +583,11 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
         .isTrue();
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND, 1);
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+    assertThat(recordedGaugeMetadata).isNotEqualTo(GaugeMetadata.getDefaultInstance());
   }
 
   @Test
@@ -737,6 +605,22 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   /** @return The minimum background collection frequency of all the Gauges. */
   private long getMinimumBackgroundCollectionFrequency() {
     return DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS;
+  }
+
+  // Simulates the behavior of Cpu and Memory Gauge collector.
+  private void generateMetricsAndIncrementCounter(int count) {
+    // TODO(b/394127311): Explore actually collecting metrics using the fake Cpu and Memory
+    //  metric collectors.
+    Random random = new Random();
+    for (int i = 0; i < count; ++i) {
+      if (random.nextInt(2) == 0) {
+        fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(100, 200));
+        GaugeCounter.INSTANCE.incrementCounter();
+      } else {
+        fakeMemoryGaugeCollector.memoryMetricReadings.add(createFakeAndroidMetricReading(100));
+        GaugeCounter.INSTANCE.incrementCounter();
+      }
+    }
   }
 
   private CpuMetricReading createFakeCpuMetricReading(long userTimeUs, long systemTimeUs) {
@@ -758,35 +642,18 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
    * Gets the last recorded GaugeMetric, and verifies that they were logged for the right {@link
    * ApplicationProcessState}.
    *
-   * @param applicationProcessState The expected {@link ApplicationProcessState} that it was logged
-   *     to.
-   * @param timesLogged Number of {@link GaugeMetric} that were expected to be logged to Transport.
+   * @param expectedApplicationProcessState The expected {@link ApplicationProcessState} that it was logged
+   *                                        to.
    * @return The last logged {@link GaugeMetric}.
    */
   private GaugeMetric getLastRecordedGaugeMetric(
-      ApplicationProcessState applicationProcessState, int timesLogged) {
+      ApplicationProcessState expectedApplicationProcessState) {
     ArgumentCaptor<GaugeMetric> argMetric = ArgumentCaptor.forClass(GaugeMetric.class);
-    verify(mockTransportManager, times(timesLogged))
-        .log(argMetric.capture(), eq(applicationProcessState));
+    verify(mockTransportManager, times(1))
+        .log(argMetric.capture(), eq(expectedApplicationProcessState));
     reset(mockTransportManager);
     // Required after resetting the mock. By default we assume that Transport is initialized.
     when(mockTransportManager.isInitialized()).thenReturn(true);
     return argMetric.getValue();
-  }
-
-  private void assertThatCpuGaugeMetricWasSentToTransport(
-      String sessionId, GaugeMetric recordedGaugeMetric, CpuMetricReading... cpuMetricReadings) {
-    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(sessionId);
-    assertThat(recordedGaugeMetric.getCpuMetricReadingsList())
-        .containsAtLeastElementsIn(cpuMetricReadings);
-  }
-
-  private void assertThatMemoryGaugeMetricWasSentToTransport(
-      String sessionId,
-      GaugeMetric recordedGaugeMetric,
-      AndroidMemoryReading... androidMetricReadings) {
-    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(sessionId);
-    assertThat(recordedGaugeMetric.getAndroidMemoryReadingsList())
-        .containsAtLeastElementsIn(androidMetricReadings);
   }
 }
