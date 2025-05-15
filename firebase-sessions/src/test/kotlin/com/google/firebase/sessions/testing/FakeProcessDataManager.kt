@@ -25,6 +25,9 @@ import com.google.firebase.sessions.ProcessDataManager
  */
 internal class FakeProcessDataManager(
   private val coldStart: Boolean = false,
+  private var myProcessStale: Boolean = false,
+  override val myProcessName: String = "com.google.firebase.sessions.test",
+  override var myPid: Int = 0,
   override var myUuid: String = FakeUuidGenerator.UUID_1,
 ) : ProcessDataManager {
   private var hasGeneratedSession: Boolean = false
@@ -33,8 +36,11 @@ internal class FakeProcessDataManager(
     if (hasGeneratedSession) {
       return false
     }
+
     return coldStart
   }
+
+  override fun isMyProcessStale(processDataMap: Map<String, ProcessData>): Boolean = myProcessStale
 
   override fun onSessionGenerated() {
     hasGeneratedSession = true
