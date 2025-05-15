@@ -7,6 +7,10 @@ import android.os.Build
 import android.os.Process
 import com.google.android.gms.common.util.ProcessUtils
 
+/**
+ * A singleton that contains helper functions to get relevant process details. TODO(b/418041083):
+ * Explore using a common utility.
+ */
 object AppProcessesProvider {
   /** Gets the details for all of this app's running processes. */
   @JvmStatic
@@ -22,18 +26,19 @@ object AppProcessesProvider {
   }
 
   /**
-   * Gets this app's current process details.
+   * Gets this app's current process name.
    *
    * If the current process details are not found for whatever reason, returns app's package name.
    */
   @JvmStatic
   fun getProcessName(context: Context): String {
     val pid = Process.myPid()
-    return getAppProcesses(context).find { it.pid == pid }?.processName ?: getProcessName()
+    return getAppProcesses(context).find { it.pid == pid }?.processName
+      ?: getProcessName(default = context.packageName)
   }
 
-  /** Gets the app's current process name. If it could not be found, returns an empty string. */
-  private fun getProcessName(): String {
+  /** Gets the app's current process name. If it could not be found, return the default. */
+  private fun getProcessName(default: String = ""): String {
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
       return Process.myProcessName()
     }
@@ -49,7 +54,7 @@ object AppProcessesProvider {
       return it
     }
 
-    // Default to an empty string if nothing works.
-    return ""
+    // Returns default if nothing works.
+    return default
   }
 }
