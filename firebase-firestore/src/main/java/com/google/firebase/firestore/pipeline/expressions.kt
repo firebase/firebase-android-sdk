@@ -381,7 +381,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitAnd(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_and", bitsFieldName, bitsOther)
+      FunctionExpr("bit_and", evaluateNotImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise AND operation between an field and constant.
@@ -392,7 +392,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitAnd(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_and", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_and", evaluateNotImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise OR operation between two expressions.
@@ -426,7 +426,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitOr(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_or", bitsFieldName, bitsOther)
+      FunctionExpr("bit_or", evaluateNotImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise OR operation between an field and constant.
@@ -437,7 +437,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitOr(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_or", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_or", evaluateNotImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise XOR operation between two expressions.
@@ -472,7 +472,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitXor(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_xor", bitsFieldName, bitsOther)
+      FunctionExpr("bit_xor", evaluateNotImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise XOR operation between an field and constant.
@@ -483,7 +483,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitXor(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_xor", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_xor", evaluateNotImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise NOT operation to an expression.
@@ -501,7 +501,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitNot(bitsFieldName: String): Expr =
-      FunctionExpr("bit_not", bitsFieldName, evaluateNotImplemented)
+      FunctionExpr("bit_not", evaluateNotImplemented, bitsFieldName)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between two expressions.
@@ -523,7 +523,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise left shift operation.
      */
     @JvmStatic
-    fun bitLeftShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_left_shift", bits, number)
+    fun bitLeftShift(bits: Expr, number: Int): Expr =
+      FunctionExpr("bit_left_shift", evaluateNotImplemented, bits, number)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between a field and an
@@ -535,7 +536,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitLeftShift(bitsFieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_left_shift", bitsFieldName, numberExpr)
+      FunctionExpr("bit_left_shift", evaluateNotImplemented, bitsFieldName, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between a field and a
@@ -547,7 +548,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitLeftShift(bitsFieldName: String, number: Int): Expr =
-      FunctionExpr("bit_left_shift", bitsFieldName, number)
+      FunctionExpr("bit_left_shift", evaluateNotImplemented, bitsFieldName, number)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between two expressions.
@@ -569,7 +570,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise right shift operation.
      */
     @JvmStatic
-    fun bitRightShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_right_shift", bits, number)
+    fun bitRightShift(bits: Expr, number: Int): Expr =
+      FunctionExpr("bit_right_shift", evaluateNotImplemented, bits, number)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between a field and an
@@ -581,7 +583,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitRightShift(bitsFieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_right_shift", bitsFieldName, numberExpr)
+      FunctionExpr("bit_right_shift", evaluateNotImplemented, bitsFieldName, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between a field and a
@@ -593,7 +595,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitRightShift(bitsFieldName: String, number: Int): Expr =
-      FunctionExpr("bit_right_shift", bitsFieldName, number)
+      FunctionExpr("bit_right_shift", evaluateNotImplemented, bitsFieldName, number)
 
     /**
      * Creates an expression that rounds [numericExpr] to nearest integer.
@@ -616,7 +618,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun round(numericField: String): Expr =
-      FunctionExpr("round", numericField, evaluateNotImplemented)
+      FunctionExpr("round", evaluateNotImplemented, numericField)
 
     /**
      * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
@@ -642,7 +644,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Int): Expr =
-      FunctionExpr("round", numericField, constant(decimalPlace))
+      FunctionExpr("round", evaluateNotImplemented, numericField, constant(decimalPlace))
 
     /**
      * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
@@ -668,7 +670,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Expr): Expr =
-      FunctionExpr("round", numericField, decimalPlace)
+      FunctionExpr("round", evaluateNotImplemented, numericField, decimalPlace)
 
     /**
      * Creates an expression that returns the smalled integer that isn't less than [numericExpr].
@@ -687,7 +689,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun ceil(numericField: String): Expr =
-      FunctionExpr("ceil", numericField, evaluateNotImplemented)
+      FunctionExpr("ceil", evaluateNotImplemented, numericField)
 
     /**
      * Creates an expression that returns the largest integer that isn't less than [numericExpr].
@@ -706,7 +708,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun floor(numericField: String): Expr =
-      FunctionExpr("floor", numericField, evaluateNotImplemented)
+      FunctionExpr("floor", evaluateNotImplemented, numericField)
 
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
@@ -732,7 +734,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun pow(numericField: String, exponent: Number): Expr =
-      FunctionExpr("pow", numericField, constant(exponent))
+      FunctionExpr("pow", evaluateNotImplemented, numericField, constant(exponent))
 
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
@@ -758,7 +760,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun pow(numericField: String, exponent: Expr): Expr =
-      FunctionExpr("pow", numericField, exponent)
+      FunctionExpr("pow", evaluateNotImplemented, numericField, exponent)
 
     /**
      * Creates an expression that returns the square root of [numericExpr].
@@ -777,7 +779,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun sqrt(numericField: String): Expr =
-      FunctionExpr("sqrt", numericField, evaluateNotImplemented)
+      FunctionExpr("sqrt", evaluateNotImplemented, numericField)
 
     /**
      * Creates an expression that adds numeric expressions and constants.
@@ -789,7 +791,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(first: Expr, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("add", first, second, *others)
+      FunctionExpr("add", evaluateNotImplemented, first, second, *others)
 
     /**
      * Creates an expression that adds numeric expressions and constants.
@@ -801,7 +803,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(first: Expr, second: Number, vararg others: Any): Expr =
-      FunctionExpr("add", first, second, *others)
+      FunctionExpr("add", evaluateNotImplemented, first, second, *others)
 
     /**
      * Creates an expression that adds a numeric field with numeric expressions and constants.
@@ -813,7 +815,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(numericFieldName: String, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("add", numericFieldName, second, *others)
+      FunctionExpr("add", evaluateNotImplemented, numericFieldName, second, *others)
 
     /**
      * Creates an expression that adds a numeric field with numeric expressions and constants.
@@ -825,7 +827,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(numericFieldName: String, second: Number, vararg others: Any): Expr =
-      FunctionExpr("add", numericFieldName, second, *others)
+      FunctionExpr("add", evaluateNotImplemented, numericFieldName, second, *others)
 
     /**
      * Creates an expression that subtracts two expressions.
@@ -847,7 +849,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(minuend: Expr, subtrahend: Number): Expr =
-      FunctionExpr("subtract", minuend, subtrahend)
+      FunctionExpr("subtract", evaluateNotImplemented, minuend, subtrahend)
 
     /**
      * Creates an expression that subtracts a numeric expressions from numeric field.
@@ -858,7 +860,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(numericFieldName: String, subtrahend: Expr): Expr =
-      FunctionExpr("subtract", numericFieldName, subtrahend)
+      FunctionExpr("subtract", evaluateNotImplemented, numericFieldName, subtrahend)
 
     /**
      * Creates an expression that subtracts a constant from numeric field.
@@ -869,7 +871,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(numericFieldName: String, subtrahend: Number): Expr =
-      FunctionExpr("subtract", numericFieldName, subtrahend)
+      FunctionExpr("subtract", evaluateNotImplemented, numericFieldName, subtrahend)
 
     /**
      * Creates an expression that multiplies numeric expressions and constants.
@@ -881,7 +883,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(first: Expr, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("multiply", first, second, *others)
+      FunctionExpr("multiply", evaluateNotImplemented, first, second, *others)
 
     /**
      * Creates an expression that multiplies numeric expressions and constants.
@@ -893,7 +895,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(first: Expr, second: Number, vararg others: Any): Expr =
-      FunctionExpr("multiply", first, second, *others)
+      FunctionExpr("multiply", evaluateNotImplemented, first, second, *others)
 
     /**
      * Creates an expression that multiplies a numeric field with numeric expressions and constants.
@@ -905,7 +907,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(numericFieldName: String, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("multiply", numericFieldName, second, *others)
+      FunctionExpr("multiply", evaluateNotImplemented, numericFieldName, second, *others)
 
     /**
      * Creates an expression that multiplies a numeric field with numeric expressions and constants.
@@ -917,7 +919,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(numericFieldName: String, second: Number, vararg others: Any): Expr =
-      FunctionExpr("multiply", numericFieldName, second, *others)
+      FunctionExpr("multiply", evaluateNotImplemented, numericFieldName, second, *others)
 
     /**
      * Creates an expression that divides two numeric expressions.
@@ -938,7 +940,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the division operation.
      */
     @JvmStatic
-    fun divide(dividend: Expr, divisor: Number): Expr = FunctionExpr("divide", dividend, divisor)
+    fun divide(dividend: Expr, divisor: Number): Expr =
+      FunctionExpr("divide", evaluateNotImplemented, dividend, divisor)
 
     /**
      * Creates an expression that divides numeric field by a numeric expression.
@@ -949,7 +952,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun divide(dividendFieldName: String, divisor: Expr): Expr =
-      FunctionExpr("divide", dividendFieldName, divisor)
+      FunctionExpr("divide", evaluateNotImplemented, dividendFieldName, divisor)
 
     /**
      * Creates an expression that divides a numeric field by a constant.
@@ -960,7 +963,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun divide(dividendFieldName: String, divisor: Number): Expr =
-      FunctionExpr("divide", dividendFieldName, divisor)
+      FunctionExpr("divide", evaluateNotImplemented, dividendFieldName, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing two numeric
@@ -983,7 +986,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the modulo operation.
      */
     @JvmStatic
-    fun mod(dividend: Expr, divisor: Number): Expr = FunctionExpr("mod", dividend, divisor)
+    fun mod(dividend: Expr, divisor: Number): Expr =
+      FunctionExpr("mod", evaluateNotImplemented, dividend, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
@@ -995,7 +999,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mod(dividendFieldName: String, divisor: Expr): Expr =
-      FunctionExpr("mod", dividendFieldName, divisor)
+      FunctionExpr("mod", evaluateNotImplemented, dividendFieldName, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
@@ -1007,7 +1011,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mod(dividendFieldName: String, divisor: Number): Expr =
-      FunctionExpr("mod", dividendFieldName, divisor)
+      FunctionExpr("mod", evaluateNotImplemented, dividendFieldName, divisor)
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -1220,7 +1224,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateNotImplemented, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the
@@ -1233,7 +1237,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateNotImplemented, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1248,7 +1252,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateNotImplemented, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1261,7 +1265,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateNotImplemented, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1274,7 +1278,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateNotImplemented, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1287,7 +1291,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateNotImplemented, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1302,7 +1306,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateNotImplemented, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1315,7 +1319,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateNotImplemented, fieldName, find, replace)
 
     /**
      * Creates an expression that calculates the character length of a string expression in UTF8.
@@ -1334,7 +1338,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun charLength(fieldName: String): Expr =
-      FunctionExpr("char_length", fieldName, evaluateNotImplemented)
+      FunctionExpr("char_length", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the
@@ -1355,7 +1359,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun byteLength(fieldName: String): Expr =
-      FunctionExpr("byte_length", fieldName, evaluateNotImplemented)
+      FunctionExpr("byte_length", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
@@ -1513,7 +1517,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_max", expr, *others)
+      FunctionExpr("logical_max", evaluateNotImplemented, expr, *others)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1525,7 +1529,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_max", fieldName, *others)
+      FunctionExpr("logical_max", evaluateNotImplemented, fieldName, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1537,7 +1541,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_min", expr, *others)
+      FunctionExpr("logical_min", evaluateNotImplemented, expr, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1549,7 +1553,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_min", fieldName, *others)
+      FunctionExpr("logical_min", evaluateNotImplemented, fieldName, *others)
 
     /**
      * Creates an expression that reverses a string.
@@ -1569,7 +1573,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun reverse(fieldName: String): Expr =
-      FunctionExpr("reverse", fieldName, evaluateNotImplemented)
+      FunctionExpr("reverse", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -1721,7 +1725,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun toLower(fieldName: String): Expr =
-      FunctionExpr("to_lower", fieldName, evaluateNotImplemented)
+      FunctionExpr("to_lower", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that converts a string expression to uppercase.
@@ -1741,7 +1745,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun toUpper(fieldName: String): Expr =
-      FunctionExpr("to_upper", fieldName, evaluateNotImplemented)
+      FunctionExpr("to_upper", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that removes leading and trailing whitespace from a string expression.
@@ -1760,7 +1764,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the trimmed string.
      */
     @JvmStatic
-    fun trim(fieldName: String): Expr = FunctionExpr("trim", fieldName, evaluateNotImplemented)
+    fun trim(fieldName: String): Expr = FunctionExpr("trim", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1771,7 +1775,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(firstString: Expr, vararg otherStrings: Expr): Expr =
-      FunctionExpr("str_concat", firstString, *otherStrings)
+      FunctionExpr("str_concat", evaluateNotImplemented, firstString, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1783,7 +1787,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(firstString: Expr, vararg otherStrings: Any): Expr =
-      FunctionExpr("str_concat", firstString, *otherStrings)
+      FunctionExpr("str_concat", evaluateNotImplemented, firstString, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1794,7 +1798,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg otherStrings: Expr): Expr =
-      FunctionExpr("str_concat", fieldName, *otherStrings)
+      FunctionExpr("str_concat", evaluateNotImplemented, fieldName, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1806,7 +1810,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg otherStrings: Any): Expr =
-      FunctionExpr("str_concat", fieldName, *otherStrings)
+      FunctionExpr("str_concat", evaluateNotImplemented, fieldName, *otherStrings)
 
     internal fun map(elements: Array<out Expr>): Expr =
       FunctionExpr("map", evaluateNotImplemented, elements)
@@ -1829,7 +1833,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the value associated with the given key in the map.
      */
     @JvmStatic
-    fun mapGet(mapExpression: Expr, key: String): Expr = FunctionExpr("map_get", mapExpression, key)
+    fun mapGet(mapExpression: Expr, key: String): Expr =
+      FunctionExpr("map_get", evaluateNotImplemented, mapExpression, key)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -1839,7 +1844,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the value associated with the given key in the map.
      */
     @JvmStatic
-    fun mapGet(fieldName: String, key: String): Expr = FunctionExpr("map_get", fieldName, key)
+    fun mapGet(fieldName: String, key: String): Expr =
+      FunctionExpr("map_get", evaluateNotImplemented, fieldName, key)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
@@ -1852,7 +1858,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", firstMap, secondMap, *otherMaps)
+      FunctionExpr("map_merge", evaluateNotImplemented, firstMap, secondMap, *otherMaps)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
@@ -1865,7 +1871,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapMerge(firstMapFieldName: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", firstMapFieldName, secondMap, *otherMaps)
+      FunctionExpr("map_merge", evaluateNotImplemented, firstMapFieldName, secondMap, *otherMaps)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1886,7 +1892,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapField: String, key: Expr): Expr = FunctionExpr("map_remove", mapField, key)
+    fun mapRemove(mapField: String, key: Expr): Expr =
+      FunctionExpr("map_remove", evaluateNotImplemented, mapField, key)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1896,7 +1903,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapExpr: Expr, key: String): Expr = FunctionExpr("map_remove", mapExpr, key)
+    fun mapRemove(mapExpr: Expr, key: String): Expr =
+      FunctionExpr("map_remove", evaluateNotImplemented, mapExpr, key)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1906,7 +1914,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapField: String, key: String): Expr = FunctionExpr("map_remove", mapField, key)
+    fun mapRemove(mapField: String, key: String): Expr =
+      FunctionExpr("map_remove", evaluateNotImplemented, mapField, key)
 
     /**
      * Calculates the Cosine distance between two vector expressions.
@@ -1939,7 +1948,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("cosine_distance", vector1, vector2)
+      FunctionExpr("cosine_distance", evaluateNotImplemented, vector1, vector2)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector expression.
@@ -1950,7 +1959,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector)
+      FunctionExpr("cosine_distance", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -1961,7 +1970,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector(vector))
+      FunctionExpr("cosine_distance", evaluateNotImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -1972,7 +1981,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector)
+      FunctionExpr("cosine_distance", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between two vector expressions.
@@ -2005,7 +2014,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("dot_product", vector1, vector2)
+      FunctionExpr("dot_product", evaluateNotImplemented, vector1, vector2)
 
     /**
      * Calculates the dot product distance between a vector field and a vector expression.
@@ -2016,7 +2025,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector)
+      FunctionExpr("dot_product", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between vector field and a vector literal.
@@ -2027,7 +2036,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector(vector))
+      FunctionExpr("dot_product", evaluateNotImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the dot product distance between a vector field and a vector literal.
@@ -2038,7 +2047,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector)
+      FunctionExpr("dot_product", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between two vector expressions.
@@ -2071,7 +2080,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("euclidean_distance", vector1, vector2)
+      FunctionExpr("euclidean_distance", evaluateNotImplemented, vector1, vector2)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector expression.
@@ -2082,7 +2091,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector)
+      FunctionExpr("euclidean_distance", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -2093,7 +2102,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector(vector))
+      FunctionExpr("euclidean_distance", evaluateNotImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -2104,7 +2113,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector)
+      FunctionExpr("euclidean_distance", evaluateNotImplemented, vectorFieldName, vector)
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
@@ -2124,7 +2133,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun vectorLength(fieldName: String): Expr =
-      FunctionExpr("vector_length", fieldName, evaluateNotImplemented)
+      FunctionExpr("vector_length", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of microseconds since the
@@ -2146,7 +2155,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixMicrosToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_micros_to_timestamp", fieldName, evaluateNotImplemented)
+      FunctionExpr("unix_micros_to_timestamp", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of microseconds
@@ -2168,7 +2177,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixMicros(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_micros", fieldName, evaluateNotImplemented)
+      FunctionExpr("timestamp_to_unix_micros", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of milliseconds since the
@@ -2190,7 +2199,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixMillisToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_millis_to_timestamp", fieldName, evaluateNotImplemented)
+      FunctionExpr("unix_millis_to_timestamp", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of milliseconds
@@ -2212,7 +2221,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixMillis(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_millis", fieldName, evaluateNotImplemented)
+      FunctionExpr("timestamp_to_unix_millis", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of seconds since the Unix
@@ -2234,7 +2243,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixSecondsToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_seconds_to_timestamp", fieldName, evaluateNotImplemented)
+      FunctionExpr("unix_seconds_to_timestamp", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of seconds since the
@@ -2256,7 +2265,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixSeconds(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_seconds", fieldName, evaluateNotImplemented)
+      FunctionExpr("timestamp_to_unix_seconds", evaluateNotImplemented, fieldName)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2269,7 +2278,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_add", timestamp, unit, amount)
+      FunctionExpr("timestamp_add", evaluateNotImplemented, timestamp, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2282,7 +2291,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_add", timestamp, unit, amount)
+      FunctionExpr("timestamp_add", evaluateNotImplemented, timestamp, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2295,7 +2304,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_add", fieldName, unit, amount)
+      FunctionExpr("timestamp_add", evaluateNotImplemented, fieldName, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2308,7 +2317,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_add", fieldName, unit, amount)
+      FunctionExpr("timestamp_add", evaluateNotImplemented, fieldName, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2321,7 +2330,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_sub", timestamp, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateNotImplemented, timestamp, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2334,7 +2343,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_sub", timestamp, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateNotImplemented, timestamp, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2347,7 +2356,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_sub", fieldName, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateNotImplemented, fieldName, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2360,7 +2369,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_sub", fieldName, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateNotImplemented, fieldName, unit, amount)
 
     /**
      * Creates an expression that checks if two expressions are equal.
@@ -2639,7 +2648,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArray: Expr, secondArray: Expr, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArray, secondArray, *otherArrays)
+      FunctionExpr("array_concat", evaluateNotImplemented, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates an array with other arrays.
@@ -2651,7 +2660,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArray: Expr, secondArray: Any, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArray, secondArray, *otherArrays)
+      FunctionExpr("array_concat", evaluateNotImplemented, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -2663,7 +2672,13 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArrayField: String, secondArray: Expr, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
+      FunctionExpr(
+        "array_concat",
+        evaluateNotImplemented,
+        firstArrayField,
+        secondArray,
+        *otherArrays
+      )
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -2675,7 +2690,13 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArrayField: String, secondArray: Any, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
+      FunctionExpr(
+        "array_concat",
+        evaluateNotImplemented,
+        firstArrayField,
+        secondArray,
+        *otherArrays
+      )
 
     /**
      * Reverses the order of elements in the [array].
@@ -2695,7 +2716,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayReverse(arrayFieldName: String): Expr =
-      FunctionExpr("array_reverse", arrayFieldName, evaluateNotImplemented)
+      FunctionExpr("array_reverse", evaluateNotImplemented, arrayFieldName)
 
     /**
      * Creates an expression that checks if the array contains a specific [element].
@@ -2861,7 +2882,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayLength(arrayFieldName: String): Expr =
-      FunctionExpr("array_length", arrayFieldName, evaluateNotImplemented)
+      FunctionExpr("array_length", evaluateNotImplemented, arrayFieldName)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2900,7 +2921,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayOffset(arrayFieldName: String, offset: Expr): Expr =
-      FunctionExpr("array_offset", arrayFieldName, offset)
+      FunctionExpr("array_offset", evaluateNotImplemented, arrayFieldName, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2913,7 +2934,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayOffset(arrayFieldName: String, offset: Int): Expr =
-      FunctionExpr("array_offset", arrayFieldName, constant(offset))
+      FunctionExpr("array_offset", evaluateNotImplemented, arrayFieldName, constant(offset))
 
     /**
      * Creates a conditional expression that evaluates to a [thenExpr] expression if a condition is
@@ -2926,7 +2947,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenExpr: Expr, elseExpr: Expr): Expr =
-      FunctionExpr("cond", condition, thenExpr, elseExpr)
+      FunctionExpr("cond", evaluateNotImplemented, condition, thenExpr, elseExpr)
 
     /**
      * Creates a conditional expression that evaluates to a [thenValue] if a condition is true or an
@@ -2939,7 +2960,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenValue: Any, elseValue: Any): Expr =
-      FunctionExpr("cond", condition, thenValue, elseValue)
+      FunctionExpr("cond", evaluateNotImplemented, condition, thenValue, elseValue)
 
     /**
      * Creates an expression that checks if a field exists.
@@ -2983,7 +3004,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun ifError(tryExpr: Expr, catchValue: Any): Expr =
-      FunctionExpr("if_error", tryExpr, catchValue)
+      FunctionExpr("if_error", evaluateNotImplemented, tryExpr, catchValue)
 
     /**
      * Creates an expression that returns the document ID from a path.
@@ -4188,9 +4209,10 @@ internal constructor(
   ) : this(name, function, arrayOf(param))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param: Expr,
     vararg params: Any
-  ) : this(name, evaluateNotImplemented, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -4199,24 +4221,22 @@ internal constructor(
   ) : this(name, function, arrayOf(param1, param2))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Expr,
     vararg params: Any
-  ) : this(name, evaluateNotImplemented, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
   internal constructor(
     name: String,
-    fieldName: String,
-    function: EvaluateFunction
+    function: EvaluateFunction,
+    fieldName: String
   ) : this(name, function, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(
-    name,
-    evaluateNotImplemented,
-    arrayOf(field(fieldName), *toArrayOfExprOrConstant(params))
-  )
+  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
