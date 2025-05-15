@@ -18,6 +18,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -26,6 +27,8 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 
 abstract class Stage<T : Stage<T>>
 internal constructor(protected val name: String, internal val options: InternalOptions) {
@@ -86,6 +89,13 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @return New stage with named parameter.
    */
   fun with(key: String, value: Field): T = with(key, value.toProto())
+
+  internal open fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    throw NotImplementedError("Stage does not support offline evaluation")
+  }
 }
 
 /**
@@ -212,6 +222,15 @@ internal constructor(
   }
 
   fun withForceIndex(value: String) = with("force_index", value)
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionPath.canonicalString() == path
+    }
+  }
 }
 
 class CollectionGroupSource
@@ -353,6 +372,14 @@ internal constructor(
   override fun self(options: InternalOptions) = WhereStage(condition, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(condition.toProto(userDataReader))
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val conditionFunction = condition.evaluate(context)
+    return inputs.filter { input -> conditionFunction.invoke(input).value?.booleanValue ?: false }
+  }
 }
 
 /**
@@ -492,10 +519,20 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
 }
 
 internal class SelectStage
-internal constructor(
-  private val fields: Array<out Selectable>,
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SelectStage>("select", options) {
+private constructor(private val fields: Array<out Selectable>, options: InternalOptions) :
+  Stage<SelectStage>("select", options) {
+  companion object {
+    @JvmStatic
+    fun of(selection: Selectable, vararg additionalSelections: Any): SelectStage =
+      SelectStage(
+        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray()),
+        InternalOptions.EMPTY
+      )
+
+    @JvmStatic
+    fun of(fieldName: String, vararg additionalSelections: Any): SelectStage =
+      of(field(fieldName), *additionalSelections)
+  }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
