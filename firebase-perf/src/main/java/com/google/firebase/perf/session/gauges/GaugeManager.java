@@ -100,13 +100,19 @@ public class GaugeManager extends AppStateUpdateHandler {
 
   @Override
   public void onUpdateAppState(ApplicationProcessState applicationProcessState) {
-    this.applicationProcessState = applicationProcessState;
-
+    // If it isn't a verbose session (or unset) update the app state and return.
     if (session == null || !session.isVerbose()) {
+      this.applicationProcessState = applicationProcessState;
       return;
     }
 
-    // If it's a verbose session, start collecting gauges for the new app state.
+    // Log existing gauges to the current app state.
+    logGaugeMetrics();
+
+    // Update App State.
+    this.applicationProcessState = applicationProcessState;
+
+    // Start collecting gauges for the new app state.
     startCollectingGauges(this.applicationProcessState, session.getTimer());
   }
 
@@ -132,6 +138,7 @@ public class GaugeManager extends AppStateUpdateHandler {
       stopCollectingGauges();
     }
 
+    // TODO(b/394127311): Explore always setting the app state as FOREGROUND.
     ApplicationProcessState gaugeCollectionApplicationProcessState = applicationProcessState;
     if (gaugeCollectionApplicationProcessState
         == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
@@ -418,5 +425,10 @@ public class GaugeManager extends AppStateUpdateHandler {
     } else {
       return memoryGaugeCollectionFrequency;
     }
+  }
+
+  @VisibleForTesting
+  void setApplicationProcessState(ApplicationProcessState applicationProcessState) {
+    this.applicationProcessState = applicationProcessState;
   }
 }
