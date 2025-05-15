@@ -130,6 +130,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   @After
   public void tearDown() {
     shadowOf(Looper.getMainLooper()).idle();
+    GaugeCounter.INSTANCE.resetCounter();
   }
 
   @Test
@@ -331,11 +332,11 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() throws InterruptedException {
+  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -377,7 +378,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeSession.setGaugeAndEventCollectionEnabled(true);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
     generateMetricsAndIncrementCounter(10);
@@ -429,7 +430,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeSession.setGaugeAndEventCollectionEnabled(true);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
     generateMetricsAndIncrementCounter(10);
@@ -519,7 +520,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             + recordedGaugeMetric.getCpuMetricReadingsCount();
     assertThat(recordedGaugeMetricsCount).isEqualTo(2);
 
-    // TODO(b/394127311): Investigate why this isn't 0 on local runs.
+    // TODO(b/394127311): Investigate why this isn't 0.
     //    assertThat(GaugeCounter.INSTANCE.count()).isEqualTo(0);
   }
 
