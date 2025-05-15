@@ -9,7 +9,7 @@ import com.google.android.gms.common.util.ProcessUtils
 
 /**
  * A singleton that contains helper functions to get relevant process details. TODO(b/418041083):
- * Explore using a common utility.
+ * Explore using a common utility. See [com.google.firebase.sessions.ProcessDetailsProvider].
  */
 object AppProcessesProvider {
   /** Gets the details for all of this app's running processes. */
