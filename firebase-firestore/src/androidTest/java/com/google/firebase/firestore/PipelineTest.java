@@ -279,13 +279,15 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .genericStage("where", lt(field("published"), 1984))
+            .genericStage(GenericStage.ofName("where").withArguments(lt(field("published"), 1984)))
             .genericStage(
-                "aggregate",
-                ImmutableMap.of("avgRating", AggregateFunction.avg("rating")),
-                ImmutableMap.of("genre", field("genre")))
+                GenericStage.ofName("aggregate")
+                    .withArguments(
+                        ImmutableMap.of("avgRating", AggregateFunction.avg("rating")),
+                        ImmutableMap.of("genre", field("genre"))))
             .genericStage(GenericStage.ofName("where").withArguments(gt("avgRating", 4.3)))
-            .genericStage("sort", field("avgRating").descending())
+            .genericStage(
+                GenericStage.ofName("sort").withArguments(field("avgRating").descending()))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
