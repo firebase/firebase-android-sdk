@@ -81,7 +81,7 @@ internal data class DataCollectionStatus(
 )
 
 /** Container for information about the process */
-data class ProcessDetails(
+internal data class ProcessDetails(
   val processName: String,
   val pid: Int,
   val importance: Int,
