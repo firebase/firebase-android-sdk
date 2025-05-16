@@ -42,13 +42,12 @@ object AppProcessesProvider {
   /**
    * Gets this app's current process name.
    *
-   * If the current process details are not found for whatever reason, returns app's package name.
+   * If the current process details are not found for whatever reason, returns an empty string.
    */
   @JvmStatic
   fun getProcessName(context: Context): String {
     val pid = Process.myPid()
-    return getAppProcesses(context).find { it.pid == pid }?.processName
-      ?: getProcessName(default = context.packageName)
+    return getAppProcesses(context).find { it.pid == pid }?.processName ?: getProcessName()
   }
 
   /** Gets the app's current process name. If it could not be found, return the default. */
