@@ -14,7 +14,7 @@
 
 package com.google.firebase.perf.transport;
 
-import static com.google.firebase.sessions.ProcessDetailsProvider.getProcessDetailsProvider;
+import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -231,8 +231,7 @@ public class TransportManager implements AppStateCallback {
     applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
-        .setProcessName(
-            getProcessDetailsProvider().getCurrentProcessDetails(appContext).getProcessName())
+        .setProcessName(getProcessName(appContext))
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
                 .setPackageName(packageName)

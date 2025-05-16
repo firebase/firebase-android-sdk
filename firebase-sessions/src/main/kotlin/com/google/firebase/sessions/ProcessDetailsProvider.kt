@@ -28,11 +28,7 @@ import com.google.android.gms.common.util.ProcessUtils
  *
  * @hide
  */
-object ProcessDetailsProvider {
-  @JvmStatic
-  fun getProcessDetailsProvider(): ProcessDetailsProvider {
-    return this
-  }
+internal object ProcessDetailsProvider {
   /** Gets the details for all of this app's running processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val appUid = context.applicationInfo.uid
