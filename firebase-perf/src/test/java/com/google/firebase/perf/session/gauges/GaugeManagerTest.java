@@ -335,7 +335,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -377,7 +377,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeSession.setGaugeAndEventCollectionEnabled(true);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
     generateMetricsAndIncrementCounter(10);
