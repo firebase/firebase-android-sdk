@@ -186,6 +186,7 @@ public class CpuGaugeCollector {
                 CpuMetricReading currCpuReading = syncCollectCpuMetric(referenceTime);
                 if (currCpuReading != null) {
                   cpuMetricReadings.add(currCpuReading);
+                  GaugeCounter.INSTANCE.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
