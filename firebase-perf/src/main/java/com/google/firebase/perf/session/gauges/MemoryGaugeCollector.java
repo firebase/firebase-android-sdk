@@ -149,6 +149,7 @@ public class MemoryGaugeCollector {
                 AndroidMemoryReading memoryReading = syncCollectMemoryMetric(referenceTime);
                 if (memoryReading != null) {
                   memoryMetricReadings.add(memoryReading);
+                  GaugeCounter.INSTANCE.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
