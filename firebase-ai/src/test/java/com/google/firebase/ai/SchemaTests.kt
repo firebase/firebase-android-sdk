@@ -218,4 +218,42 @@ internal class SchemaTests {
 
     Json.encodeToString(schemaDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
+
+  enum class TestEnum {
+    BASIC,
+    INTERMEDIATE,
+    ADVANCED
+  }
+
+  @Test
+  fun `basic Kotlin enum class`() {
+    val schema = Schema.fromEnum<TestEnum>()
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["BASIC", "INTERMEDIATE", "ADVANCED"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `basic Java enum`() {
+    val schema = Schema.fromEnum(TestEnum::class.java)
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["BASIC", "INTERMEDIATE", "ADVANCED"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
 }
