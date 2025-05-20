@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.5.0
 * [changed] **Renamed / Replaced:** Vertex AI in Firebase (`firebase-vertexai`) has been renamed and
  replaced by the new Firebase AI SDK: `firebase-ai`. This is to accommodate the evolving set of
  supported features and services. Please [**migrate to the new `firebase-ai` package**](/docs/vertex-ai/migrate-to-latest-sdk).
@@ -15,7 +18,6 @@
   of `LiveServerMessage` that match the responses from the model. (#6941)
 * [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6941)
 * [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6941)
-
 
 # 16.4.0
 * [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
