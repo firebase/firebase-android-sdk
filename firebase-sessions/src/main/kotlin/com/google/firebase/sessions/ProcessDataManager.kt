@@ -63,9 +63,7 @@ constructor(private val appContext: Context, uuidGenerator: UuidGenerator) : Pro
 
   override val myUuid: String by lazy { uuidGenerator.next().toString() }
 
-  private val myProcessDetails by lazy {
-    ProcessDetailsProvider.getCurrentProcessDetails(appContext)
-  }
+  private val myProcessDetails by lazy { ProcessDetailsProvider.getMyProcessDetails(appContext) }
 
   private var hasGeneratedSession: Boolean = false
 
