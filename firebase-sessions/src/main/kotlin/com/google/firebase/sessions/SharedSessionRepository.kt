@@ -19,7 +19,6 @@ package com.google.firebase.sessions
 import android.util.Log
 import androidx.datastore.core.DataStore
 import com.google.firebase.annotations.concurrent.Background
-import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
@@ -92,7 +91,7 @@ constructor(
       return
     }
     val sessionData = localSessionData
-    Log.d(TAG, "App backgrounded on ${getProcessName()} - $sessionData")
+    Log.d(TAG, "App backgrounded on ${processDataManager.myProcessName} - $sessionData")
 
     CoroutineScope(backgroundDispatcher).launch {
       try {
@@ -113,32 +112,58 @@ constructor(
       return
     }
     val sessionData = localSessionData
-    Log.d(TAG, "App foregrounded on ${getProcessName()} - $sessionData")
+    Log.d(TAG, "App foregrounded on ${processDataManager.myProcessName} - $sessionData")
 
-    if (shouldInitiateNewSession(sessionData)) {
+    // Check if maybe the session data needs to be updated
+    if (isSessionExpired(sessionData) || isMyProcessStale(sessionData)) {
       CoroutineScope(backgroundDispatcher).launch {
         try {
           sessionDataStore.updateData { currentSessionData ->
-            // Double-check pattern
-            if (shouldInitiateNewSession(currentSessionData)) {
+            // Check again using the current session data on disk
+            val isSessionExpired = isSessionExpired(currentSessionData)
+            val isColdStart = isColdStart(currentSessionData)
+            val isMyProcessStale = isMyProcessStale(currentSessionData)
+
+            val newProcessDataMap =
+              if (isColdStart) {
+                // Generate a new process data map for cold app start
+                processDataManager.generateProcessDataMap()
+              } else if (isMyProcessStale) {
+                // Update the data map with this process if stale
+                processDataManager.updateProcessDataMap(currentSessionData.processDataMap)
+              } else {
+                // No change
+                currentSessionData.processDataMap
+              }
+
+            // This is an expression, and returns the updated session data
+            if (isSessionExpired || isColdStart) {
               val newSessionDetails =
-                sessionGenerator.generateNewSession(sessionData.sessionDetails)
+                sessionGenerator.generateNewSession(currentSessionData.sessionDetails)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
               processDataManager.onSessionGenerated()
-              currentSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
+              currentSessionData.copy(
+                sessionDetails = newSessionDetails,
+                backgroundTime = null,
+                processDataMap = newProcessDataMap,
+              )
+            } else if (isMyProcessStale) {
+              currentSessionData.copy(
+                processDataMap = processDataManager.updateProcessDataMap(newProcessDataMap)
+              )
             } else {
               currentSessionData
             }
           }
         } catch (ex: Exception) {
           Log.d(TAG, "App appForegrounded, failed to update data. Message: ${ex.message}")
-          val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
-          localSessionData =
-            localSessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
-          sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
-
-          val sessionId = newSessionDetails.sessionId
-          notifySubscribers(sessionId, NotificationType.FALLBACK)
+          if (isSessionExpired(sessionData)) {
+            val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
+            localSessionData =
+              sessionData.copy(sessionDetails = newSessionDetails, backgroundTime = null)
+            sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
+            notifySubscribers(newSessionDetails.sessionId, NotificationType.FALLBACK)
+          }
         }
       }
     }
@@ -161,22 +186,47 @@ constructor(
     }
   }
 
-  private fun shouldInitiateNewSession(sessionData: SessionData): Boolean {
+  /** Checks if the session has expired. If no background time, consider it not expired. */
+  private fun isSessionExpired(sessionData: SessionData): Boolean {
     sessionData.backgroundTime?.let { backgroundTime ->
       val interval = timeProvider.currentTime() - backgroundTime
-      if (interval > sessionsSettings.sessionRestartTimeout) {
-        Log.d(TAG, "Passed session restart timeout, so initiate a new session")
-        return true
+      val sessionExpired = (interval > sessionsSettings.sessionRestartTimeout)
+      if (sessionExpired) {
+        Log.d(TAG, "Session ${sessionData.sessionDetails.sessionId} is expired")
       }
+      return sessionExpired
     }
 
-    sessionData.processDataMap?.let { processDataMap ->
-      Log.d(TAG, "Has not passed session restart timeout, so check for cold app start")
-      return processDataManager.isColdStart(processDataMap)
-    }
-
-    Log.d(TAG, "No process has backgrounded yet and no process data, should not change the session")
+    Log.d(TAG, "Session ${sessionData.sessionDetails.sessionId} has not backgrounded yet")
     return false
+  }
+
+  /** Checks for cold app start. If no process data map, consider it a cold start. */
+  private fun isColdStart(sessionData: SessionData): Boolean {
+    sessionData.processDataMap?.let { processDataMap ->
+      val coldStart = processDataManager.isColdStart(processDataMap)
+      if (coldStart) {
+        Log.d(TAG, "Cold app start detected")
+      }
+      return coldStart
+    }
+
+    Log.d(TAG, "No process data map")
+    return true
+  }
+
+  /** Checks if this process is stale. If no process data map, consider the process stale. */
+  private fun isMyProcessStale(sessionData: SessionData): Boolean {
+    sessionData.processDataMap?.let { processDataMap ->
+      val myProcessStale = processDataManager.isMyProcessStale(processDataMap)
+      if (myProcessStale) {
+        Log.d(TAG, "Process ${processDataManager.myProcessName} is stale")
+      }
+      return myProcessStale
+    }
+
+    Log.d(TAG, "No process data for ${processDataManager.myProcessName}")
+    return true
   }
 
   private companion object {

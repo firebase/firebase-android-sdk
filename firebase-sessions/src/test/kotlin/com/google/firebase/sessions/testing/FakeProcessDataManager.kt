@@ -21,11 +21,12 @@ import com.google.firebase.sessions.ProcessDataManager
 
 /**
  * Fake implementation of ProcessDataManager that returns the provided [coldStart] value for
- * [isColdStart] until [onSessionGenerated] gets called, then returns false.
+ * [isColdStart], and similar for [isMyProcessStale], until [onSessionGenerated] gets called then
+ * returns false.
  */
 internal class FakeProcessDataManager(
   private val coldStart: Boolean = false,
-  private var myProcessStale: Boolean = false,
+  private var myProcessStale: Boolean = coldStart,
   override val myProcessName: String = "com.google.firebase.sessions.test",
   override var myPid: Int = 0,
   override var myUuid: String = FakeUuidGenerator.UUID_1,
@@ -40,7 +41,13 @@ internal class FakeProcessDataManager(
     return coldStart
   }
 
-  override fun isMyProcessStale(processDataMap: Map<String, ProcessData>): Boolean = myProcessStale
+  override fun isMyProcessStale(processDataMap: Map<String, ProcessData>): Boolean {
+    if (hasGeneratedSession) {
+      return false
+    }
+
+    return myProcessStale
+  }
 
   override fun onSessionGenerated() {
     hasGeneratedSession = true
@@ -48,7 +55,5 @@ internal class FakeProcessDataManager(
 
   override fun updateProcessDataMap(
     processDataMap: Map<String, ProcessData>?
-  ): Map<String, ProcessData> {
-    TODO("Not yet implemented")
-  }
+  ): Map<String, ProcessData> = processDataMap ?: emptyMap()
 }
