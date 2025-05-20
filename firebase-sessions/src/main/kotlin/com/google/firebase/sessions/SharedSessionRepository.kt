@@ -119,6 +119,7 @@ constructor(
       CoroutineScope(backgroundDispatcher).launch {
         try {
           sessionDataStore.updateData { currentSessionData ->
+            // Check again using the current session data on disk
             val isSessionExpired = isSessionExpired(currentSessionData)
             val isColdStart = isColdStart(currentSessionData)
             val isMyProcessStale = isMyProcessStale(currentSessionData)
