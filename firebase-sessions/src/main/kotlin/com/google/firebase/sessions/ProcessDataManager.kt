@@ -63,9 +63,7 @@ constructor(private val appContext: Context, uuidGenerator: UuidGenerator) : Pro
 
   override val myUuid: String by lazy { uuidGenerator.next().toString() }
 
-  private val myProcessDetails by lazy {
-    ProcessDetailsProvider.getCurrentProcessDetails(appContext)
-  }
+  private val myProcessDetails by lazy { ProcessDetailsProvider.getMyProcessDetails(appContext) }
 
   private var hasGeneratedSession: Boolean = false
 
@@ -100,8 +98,7 @@ constructor(private val appContext: Context, uuidGenerator: UuidGenerator) : Pro
     processDataMap
       ?.toMutableMap()
       ?.apply { this[myProcessName] = ProcessData(Process.myPid(), myUuid) }
-      ?.toMap()
-      ?: mapOf(myProcessName to ProcessData(Process.myPid(), myUuid))
+      ?.toMap() ?: mapOf(myProcessName to ProcessData(Process.myPid(), myUuid))
 
   /** Gets the current details for all of the app's running processes. */
   private fun getAppProcessDetails() = ProcessDetailsProvider.getAppProcessDetails(appContext)

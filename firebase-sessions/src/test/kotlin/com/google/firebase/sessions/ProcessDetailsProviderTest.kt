@@ -40,9 +40,8 @@ class ProcessDetailsProviderTest {
   }
 
   @Test
-  fun getCurrentProcessDetails() {
-    val processDetails =
-      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
+  fun getMyProcessDetails() {
+    val processDetails = ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext)
     assertThat(processDetails)
       .isEqualTo(ProcessDetails("com.google.firebase.sessions.test", 0, 100, false))
   }
