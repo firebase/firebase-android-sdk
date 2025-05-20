@@ -220,9 +220,8 @@ internal constructor(
     }
 
     /** The [FirebaseAI] instance for the provided [FirebaseApp] using the Google AI Backend. */
-    @JvmStatic public fun getInstance(
-      app: FirebaseApp
-    ): FirebaseAI = getInstance(app, GenerativeBackend.googleAI())
+    @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseAI =
+      getInstance(app, GenerativeBackend.googleAI())
 
     private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
 
