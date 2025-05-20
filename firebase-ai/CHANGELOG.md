@@ -1,5 +1,6 @@
 # Unreleased
 
+* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
 
 # 16.0.0
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous
