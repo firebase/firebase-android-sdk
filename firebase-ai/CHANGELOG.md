@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] **Breaking Change**: Fixed missing builder methods and return types in builders.
 * [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
     * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures object.
