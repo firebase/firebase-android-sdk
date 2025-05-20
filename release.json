@@ -1,0 +1,12 @@
+{
+    "name": "m164",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-dataconnect",
+        ":firebase-storage",
+        ":firebase-storage:ktx",
+        ":firebase-vertexai"
+    ]
+}
