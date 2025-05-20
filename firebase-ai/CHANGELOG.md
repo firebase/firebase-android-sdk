@@ -2,9 +2,14 @@
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous
  Vertex AI in Firebase SDK (`firebase-vertexai`) to accommodate the evolving set of supported
  features and services.
-  * The new Firebase AI SDK provides **public preview** support for the
-  [Gemini Developer API](https://ai.google.dev/gemini-api/docs){: .external}, including its free tier offering.
+  * The new Firebase AI SDK provides **Preview** support for the Gemini Developer API, including its
+  free tier offering.
   * Using the Firebase AI SDK with the Vertex AI Gemini API is still generally available (GA).
+
+ If you're using the old `firebase-vertexai`, we recommend
+ [migrating to `firebase-ai`](/docs/ai-logic/migrate-to-latest-sdk)
+ because all new development and features will be in this new SDK.
+
 * [feature] **Preview:** Added support for specifying response modalities in `GenerationConfig`
  (only available in the new `firebase-ai` package). This includes support for image generation using
  [specific Gemini models](/docs/vertex-ai/models).
