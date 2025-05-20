@@ -28,7 +28,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_vertexai}}")
+    name.set("{{vertex_ai_in_firebase}}")
     versionName.set("vertex-ai")
     hasKTX.set(false)
   }
