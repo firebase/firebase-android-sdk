@@ -6,7 +6,7 @@
  Note: Existing users of the Vertex AI in Firebase SDK (`firebase-vertexai`) may continue to use the 
  SDK and receive bug fixes but, going forward, new features will only be added into the new Firebase
  AI SDK.
- 
+
  The following changes and features are in the Vertex AI in Firebase SDK (`firebase-vertexai`), but
  we recommend that you accommodate them (as applicable) as part of migrating to the `firebase-ai` SDK.
 * [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
