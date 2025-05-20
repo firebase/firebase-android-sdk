@@ -1,18 +1,23 @@
 # Unreleased
-* [changed] **Renamed / Replaced:** Vertex AI in Firebase (`FirebaseVertexAI`) has been renamed and
- replaced by the new Firebase AI SDK: `FirebaseAI`. This is to accommodate the evolving set of
- supported features and services. Please migrate to the new `FirebaseAI` package. See details in the
- [migration guide](/docs/vertex-ai/migrate-to-latest-sdk).
 
- Note: Existing Vertex AI in Firebase users may continue to use the SDK and receive bug fixes but,
- going forward, new features will only be added into the new Firebase AI SDK.
+
+# 16.5.0
+* [changed] **Renamed / Replaced:** Vertex AI in Firebase (`firebase-vertexai`) has been renamed and
+ replaced by the new Firebase AI SDK: `firebase-ai`. This is to accommodate the evolving set of
+ supported features and services. Please [**migrate to the new `firebase-ai` package**](/docs/vertex-ai/migrate-to-latest-sdk).
+
+ Note: Existing users of the Vertex AI in Firebase SDK (`firebase-vertexai`) may continue to use the 
+ SDK and receive bug fixes but, going forward, new features will only be added into the new Firebase
+ AI SDK.
+
+ The following changes and features are in the Vertex AI in Firebase SDK (`firebase-vertexai`), but
+ we recommend that you accommodate them (as applicable) as part of migrating to the `firebase-ai` SDK.
 * [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
   fields as properties of `LiveContentResponse`. (#6941)
 * [changed] **Breaking Change**: Removed the `LiveContentResponse` class, and instead have provided subclasses
   of `LiveServerMessage` that match the responses from the model. (#6941)
 * [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6941)
 * [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6941)
-
 
 # 16.4.0
 * [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
