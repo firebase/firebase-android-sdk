@@ -1,85 +1,42 @@
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.math.LongMath
+import com.google.common.math.LongMath.checkedAdd
+import com.google.common.math.LongMath.checkedMultiply
 import com.google.firebase.firestore.UserDataReader
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.model.Values.isNanValue
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
+import com.google.protobuf.ByteString
+import com.google.protobuf.Timestamp
+import java.math.BigDecimal
+import java.math.RoundingMode
+import kotlin.math.absoluteValue
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 internal class EvaluationContext(val userDataReader: UserDataReader)
 
-internal fun interface EvaluateFunction {
-  fun evaluate(params: Sequence<EvaluateResult>): EvaluateResult
-}
+internal typealias EvaluateDocument = (input: MutableDocument) -> EvaluateResult
 
-private fun evaluateValue(
-  params: Sequence<EvaluateResult>,
-  next: (value: Value) -> EvaluateResult?,
-  complete: () -> EvaluateResult
-): EvaluateResult {
-  for (value in params.map(EvaluateResult::value)) {
-    if (value == null) return EvaluateResultError
-    val result = next(value)
-    if (result != null) return result
-  }
-  return complete()
-}
+internal typealias EvaluateFunction = (params: List<EvaluateDocument>) -> EvaluateDocument
 
-private fun evaluateValueShortCircuitNull(
-  function: (values: List<Value>) -> EvaluateResult
-): EvaluateFunction {
-  return object : EvaluateFunction {
-    override fun evaluate(params: Sequence<EvaluateResult>): EvaluateResult {
-      val values = buildList {
-        for (value in params.map(EvaluateResult::value)) {
-          if (value == null) return EvaluateResultError
-          if (value.hasNullValue()) return EvaluateResult.NULL
-          add(value)
-        }
-      }
-      return function.invoke(values)
-    }
-  }
-}
+internal val notImplemented: EvaluateFunction = { _ -> throw NotImplementedError() }
 
-private fun evaluateBooleanValue(
-  function: (values: List<Boolean>) -> EvaluateResult
-): EvaluateFunction {
-  return object : EvaluateFunction {
-    override fun evaluate(params: Sequence<EvaluateResult>): EvaluateResult {
-      val values = buildList {
-        for (value in params.map(EvaluateResult::value)) {
-          if (value == null) return EvaluateResultError
-          if (value.hasNullValue()) return EvaluateResult.NULL
-          if (!value.hasBooleanValue()) return EvaluateResultError
-          add(value.booleanValue)
-        }
-      }
-      return function.invoke(values)
-    }
-  }
-}
+// === Logical Functions ===
 
-private fun evaluateBooleanValue(
-  params: Sequence<EvaluateResult>,
-  next: (value: Boolean) -> Boolean,
-  complete: () -> EvaluateResult
-): EvaluateResult {
-  for (value in params.map(EvaluateResult::value)) {
-    if (value == null) return EvaluateResultError
-    if (value.hasNullValue()) return EvaluateResult.NULL
-    if (!value.hasBooleanValue()) return EvaluateResultError
-    if (!next(value.booleanValue)) break
-  }
-  return complete()
-}
+internal val evaluateExists: EvaluateFunction = notImplemented
 
-internal val evaluateNotImplemented = EvaluateFunction { _ -> throw NotImplementedError() }
-
-internal val evaluateAnd = EvaluateFunction { params ->
-  var result: EvaluateResult = EvaluateResult.TRUE
-  evaluateValue(
-    params,
-    fun(value: Value): EvaluateResult? {
+internal val evaluateAnd: EvaluateFunction = { params ->
+  fun(input: MutableDocument): EvaluateResult {
+    // We only propagate NULL if all no FALSE parameters exist.
+    var result: EvaluateResult = EvaluateResult.TRUE
+    for (param in params) {
+      val value = param(input).value ?: return EvaluateResultError
       when (value.valueTypeCase) {
         Value.ValueTypeCase.NULL_VALUE -> result = EvaluateResult.NULL
         Value.ValueTypeCase.BOOLEAN_VALUE -> {
@@ -87,16 +44,17 @@ internal val evaluateAnd = EvaluateFunction { params ->
         }
         else -> return EvaluateResultError
       }
-      return null
-    },
-    { result }
-  )
+    }
+    return result
+  }
 }
-internal val evaluateOr = EvaluateFunction { params ->
-  var result: EvaluateResult = EvaluateResult.FALSE
-  evaluateValue(
-    params,
-    fun(value: Value): EvaluateResult? {
+
+internal val evaluateOr: EvaluateFunction = { params ->
+  fun(input: MutableDocument): EvaluateResult {
+    // We only propagate NULL if all no TRUE parameters exist.
+    var result: EvaluateResult = EvaluateResult.FALSE
+    for (param in params) {
+      val value = param(input).value ?: return EvaluateResultError
       when (value.valueTypeCase) {
         Value.ValueTypeCase.NULL_VALUE -> result = EvaluateResult.NULL
         Value.ValueTypeCase.BOOLEAN_VALUE -> {
@@ -104,15 +62,587 @@ internal val evaluateOr = EvaluateFunction { params ->
         }
         else -> return EvaluateResultError
       }
-      return null
+    }
+    return result
+  }
+}
+
+internal val evaluateXor: EvaluateFunction = variadicFunction { values: BooleanArray ->
+  EvaluateResult.boolean(values.fold(false, Boolean::xor))
+}
+
+// === Comparison Functions ===
+
+internal val evaluateEq: EvaluateFunction = comparison(Values::strictEquals)
+
+internal val evaluateNeq: EvaluateFunction = comparison { v1, v2 -> !Values.strictEquals(v1, v2) }
+
+internal val evaluateGt: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) > 0 }
+
+internal val evaluateGte: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) >= 0 }
+
+internal val evaluateLt: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) < 0 }
+
+internal val evaluateLte: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) <= 0 }
+
+internal val evaluateNot: EvaluateFunction = unaryFunction { b: Boolean ->
+  EvaluateResult.boolean(b.not())
+}
+
+// === Type Functions ===
+
+internal val evaluateIsNaN: EvaluateFunction = unaryFunction { v: Value ->
+  EvaluateResult.boolean(isNanValue(v))
+}
+
+internal val evaluateIsNotNaN: EvaluateFunction = unaryFunction { v: Value ->
+  EvaluateResult.boolean(!isNanValue(v))
+}
+
+internal val evaluateIsNull: EvaluateFunction = { params ->
+  if (params.size != 1)
+    throw Assert.fail(
+      "IsNull function should have exactly 1 params, but %d were given.",
+      params.size
+    )
+  val p = params[0]
+  fun(input: MutableDocument): EvaluateResult {
+    val v = p(input).value ?: return EvaluateResultError
+    return EvaluateResult.boolean(v.hasNullValue())
+  }
+}
+
+internal val evaluateIsNotNull: EvaluateFunction = { params ->
+  if (params.size != 1)
+    throw Assert.fail(
+      "IsNotNull function should have exactly 1 params, but %d were given.",
+      params.size
+    )
+  val p = params[0]
+  fun(input: MutableDocument): EvaluateResult {
+    val v = p(input).value ?: return EvaluateResultError
+    return EvaluateResult.boolean(!v.hasNullValue())
+  }
+}
+
+// === Arithmetic Functions ===
+
+internal val evaluateAdd: EvaluateFunction = arithmeticPrimitive(LongMath::checkedAdd, Double::plus)
+
+internal val evaluateCeil = arithmeticPrimitive({ it }, Math::ceil)
+
+internal val evaluateDivide = arithmeticPrimitive(Long::div, Double::div)
+
+internal val evaluateFloor = arithmeticPrimitive({ it }, Math::floor)
+
+internal val evaluateMod = arithmeticPrimitive(Long::mod, Double::mod)
+
+internal val evaluateMultiply: EvaluateFunction =
+  arithmeticPrimitive(Math::multiplyExact, Double::times)
+
+internal val evaluatePow: EvaluateFunction = arithmeticPrimitive(Math::pow)
+
+internal val evaluateRound =
+  arithmeticPrimitive(
+    { it },
+    { input ->
+      if (input.isInfinite()) {
+        val remainder = (input % 1)
+        val truncated = input - remainder
+        if (remainder.absoluteValue >= 0.5) truncated + (if (input < 0) -1 else 1) else truncated
+      } else input
+    }
+  )
+
+internal val evaluateRoundToPrecision =
+  arithmetic(
+    { value: Long, places: Long ->
+      // If has no decimal places to round off.
+      if (places >= 0) {
+        return@arithmetic EvaluateResult.long(value)
+      }
+      // Predict and return when the rounded value will be 0, preventing edge cases where the
+      // traditional conversion could underflow.
+      val numDigits = floor(log10(value.absoluteValue.toDouble())).toLong() + 1
+      if (-places >= numDigits) {
+        return@arithmetic EvaluateResult.LONG_ZERO
+      }
+
+      val roundingFactor: Long = 10.0.pow(-places.toDouble()).toLong()
+      val truncated: Long = value - (value % roundingFactor)
+
+      // Case for when we don't need to round up.
+      if (truncated.absoluteValue < (roundingFactor / 2).absoluteValue) {
+        return@arithmetic EvaluateResult.long(truncated)
+      }
+
+      if (value < 0) {
+        if (value < -Long.MAX_VALUE + roundingFactor) EvaluateResultError
+        else EvaluateResult.long(truncated - roundingFactor)
+      } else {
+        if (value > Long.MAX_VALUE - roundingFactor) EvaluateResultError
+        else EvaluateResult.long(truncated + roundingFactor)
+      }
     },
-    { result }
+    { value: Double, places: Long ->
+      // A double can only represent up to 16 decimal places. Here we return the original value if
+      // attempting to round to more decimal places than the double can represent.
+      if (places >= 16 || !value.isInfinite()) {
+        return@arithmetic EvaluateResult.double(value)
+      }
+
+      // Predict and return when the rounded value will be 0, preventing edge cases where the
+      // traditional conversion could underflow.
+      val numDigits = floor(log10(value.absoluteValue)).toLong() + 1
+      if (-places >= numDigits) {
+        return@arithmetic EvaluateResult.DOUBLE_ZERO
+      }
+
+      val rounded: BigDecimal =
+        BigDecimal.valueOf(value).setScale(places.toInt(), RoundingMode.HALF_UP)
+      val result: Double = rounded.toDouble()
+
+      if (result.isInfinite()) EvaluateResult.double(result)
+      else EvaluateResultError // overflow error
+    }
+  )
+
+internal val evaluateSqrt = arithmetic { value: Double ->
+  if (value < 0) EvaluateResultError else EvaluateResult.double(sqrt(value))
+}
+
+internal val evaluateSubtract = arithmeticPrimitive(Math::subtractExact, Double::minus)
+
+// === Array Functions ===
+
+internal val evaluateEqAny = notImplemented
+
+internal val evaluateNotEqAny = notImplemented
+
+internal val evaluateArrayContains = notImplemented
+
+internal val evaluateArrayContainsAny = notImplemented
+
+internal val evaluateArrayLength = notImplemented
+
+// === String Functions ===
+
+internal val evaluateStrConcat = variadicFunction { strings: List<String> ->
+  EvaluateResult.string(buildString { strings.forEach(::append) })
+}
+
+internal val evaluateStartsWith = binaryFunction { value: String, prefix: String ->
+  EvaluateResult.boolean(value.startsWith(prefix))
+}
+
+internal val evaluateEndsWith = binaryFunction { value: String, suffix: String ->
+  EvaluateResult.boolean(value.endsWith(suffix))
+}
+
+internal val evaluateByteLength =
+  unaryFunction(
+    { b: ByteString -> EvaluateResult.long(b.size()) },
+    { s: String -> EvaluateResult.long(s.toByteArray(Charsets.UTF_8).size) }
+  )
+
+internal val evaluateCharLength = unaryFunction { s: String ->
+  // For strings containing only BMP characters, #length() and #codePointCount() will return
+  // the same value. Once we exceed the first plane, #length() will not provide the correct
+  // result. It is safe to use #length() within #codePointCount() because beyond the BMP,
+  // #length() always yields a larger number.
+  EvaluateResult.long(s.codePointCount(0, s.length))
+}
+
+internal val evaluateToLowercase = notImplemented
+
+internal val evaluateToUppercase = notImplemented
+
+internal val evaluateReverse = notImplemented
+
+internal val evaluateSplit = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateSubstring = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateTrim = notImplemented
+
+internal val evaluateLTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateRTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateStrJoin = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+// === Date / Timestamp Functions ===
+
+internal val evaluateTimestampAdd = notImplemented
+
+internal val evaluateTimestampSub = notImplemented
+
+internal val evaluateTimestampTrunc = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateTimestampToUnixMicros = unaryFunction { t: Timestamp ->
+  EvaluateResult.long(
+    if (t.seconds < Long.MIN_VALUE / 1_000_000) {
+      // To avoid overflow when very close to Long.MIN_VALUE, add 1 second, multiply, then subtract
+      // again.
+      val micros = checkedMultiply(t.seconds + 1, 1_000_000)
+      val adjustment = t.nanos.toLong() / 1_000 - 1_000_000
+      checkedAdd(micros, adjustment)
+    } else {
+      val micros = checkedMultiply(t.seconds, 1_000_000)
+      checkedAdd(micros, t.nanos.toLong() / 1_000)
+    }
   )
 }
-internal val evaluateXor = evaluateBooleanValue { params ->
-  EvaluateResult.booleanValue(params.fold(false, Boolean::xor))
+
+internal val evaluateTimestampToUnixMillis = unaryFunction { t: Timestamp ->
+  EvaluateResult.long(
+    if (t.seconds < 0 && t.nanos > 0) {
+      val millis = checkedMultiply(t.seconds + 1, 1000)
+      val adjustment = t.nanos.toLong() / 1000_000 - 1000
+      checkedAdd(millis, adjustment)
+    } else {
+      val millis = checkedMultiply(t.seconds, 1000)
+      checkedAdd(millis, t.nanos.toLong() / 1000_000)
+    }
+  )
 }
-internal val evaluateEq = evaluateValueShortCircuitNull { values ->
-  Assert.hardAssert(values.size == 2, "Eq function should have exactly 2 params")
-  EvaluateResult.booleanValue(Values.equals(values.get(0), values.get(1)))
+
+internal val evaluateTimestampToUnixSeconds = unaryFunction { t: Timestamp ->
+  if (t.nanos !in 0 until 1_000_000_000) EvaluateResultError else EvaluateResult.long(t.seconds)
+}
+
+internal val evaluateUnixMicrosToTimestamp = unaryFunction { micros: Long ->
+  EvaluateResult.timestamp(Math.floorDiv(micros, 1000_000), Math.floorMod(micros, 1000_000))
+}
+
+internal val evaluateUnixMillisToTimestamp = unaryFunction { millis: Long ->
+  EvaluateResult.timestamp(Math.floorDiv(millis, 1000), Math.floorMod(millis, 1000))
+}
+
+internal val evaluateUnixSecondsToTimestamp = unaryFunction { seconds: Long ->
+  EvaluateResult.timestamp(seconds, 0)
+}
+
+// === Helper Functions ===
+
+private inline fun catch(f: () -> EvaluateResult): EvaluateResult =
+  try {
+    f()
+  } catch (e: Exception) {
+    EvaluateResultError
+  }
+
+@JvmName("unaryValueFunction")
+private inline fun unaryFunction(
+  crossinline function: (Value) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 1)
+    throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+  val p = params[0]
+  block@{ input: MutableDocument ->
+    val v = p(input).value ?: return@block EvaluateResultError
+    if (v.hasNullValue()) return@block EvaluateResult.NULL
+    catch { function(v) }
+  }
+}
+
+@JvmName("unaryBooleanFunction")
+private inline fun unaryFunction(crossinline stringOp: (Boolean) -> EvaluateResult) =
+  unaryFunctionType(
+    Value.ValueTypeCase.BOOLEAN_VALUE,
+    Value::getBooleanValue,
+    stringOp,
+  )
+
+@JvmName("unaryStringFunction")
+private inline fun unaryFunction(crossinline stringOp: (String) -> EvaluateResult) =
+  unaryFunctionType(
+    Value.ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    stringOp,
+  )
+
+@JvmName("unaryLongFunction")
+private inline fun unaryFunction(crossinline longOp: (Long) -> EvaluateResult) =
+  unaryFunctionType(
+    Value.ValueTypeCase.INTEGER_VALUE,
+    Value::getIntegerValue,
+    longOp,
+  )
+
+@JvmName("unaryTimestampFunction")
+private inline fun unaryFunction(crossinline timestampOp: (Timestamp) -> EvaluateResult) =
+  unaryFunctionType(
+    Value.ValueTypeCase.TIMESTAMP_VALUE,
+    Value::getTimestampValue,
+    timestampOp,
+  )
+
+private inline fun unaryFunction(
+  crossinline byteOp: (ByteString) -> EvaluateResult,
+  crossinline stringOp: (String) -> EvaluateResult
+) =
+  unaryFunctionType(
+    Value.ValueTypeCase.BYTES_VALUE,
+    Value::getBytesValue,
+    byteOp,
+    Value.ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    stringOp,
+  )
+
+private inline fun <T> unaryFunctionType(
+  valueTypeCase: Value.ValueTypeCase,
+  crossinline valueExtractor: (Value) -> T,
+  crossinline function: (T) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 1)
+    throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+  val p = params[0]
+  block@{ input: MutableDocument ->
+    val v = p(input).value ?: return@block EvaluateResultError
+    when (v.valueTypeCase) {
+      Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+      valueTypeCase -> catch { function(valueExtractor(v)) }
+      else -> EvaluateResultError
+    }
+  }
+}
+
+private inline fun <T1, T2> unaryFunctionType(
+  valueTypeCase1: Value.ValueTypeCase,
+  crossinline valueExtractor1: (Value) -> T1,
+  crossinline function1: (T1) -> EvaluateResult,
+  valueTypeCase2: Value.ValueTypeCase,
+  crossinline valueExtractor2: (Value) -> T2,
+  crossinline function2: (T2) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 1)
+    throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+  val p = params[0]
+  block@{ input: MutableDocument ->
+    val v = p(input).value ?: return@block EvaluateResultError
+    when (v.valueTypeCase) {
+      Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+      valueTypeCase1 -> catch { function1(valueExtractor1(v)) }
+      valueTypeCase2 -> catch { function2(valueExtractor2(v)) }
+      else -> EvaluateResultError
+    }
+  }
+}
+
+@JvmName("binaryValueValueFunction")
+private inline fun binaryFunction(
+  crossinline function: (Value, Value) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 2)
+    throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  block@{ input: MutableDocument ->
+    val v1 = p1(input).value ?: return@block EvaluateResultError
+    val v2 = p2(input).value ?: return@block EvaluateResultError
+    if (v1.hasNullValue() || v2.hasNullValue()) return@block EvaluateResult.NULL
+    catch { function(v1, v2) }
+  }
+}
+
+@JvmName("binaryStringStringFunction")
+private inline fun binaryFunction(crossinline function: (String, String) -> EvaluateResult) =
+  binaryFunctionType(
+    Value.ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    Value.ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    function
+  )
+
+private inline fun <T1, T2> binaryFunctionType(
+  valueTypeCase1: Value.ValueTypeCase,
+  crossinline valueExtractor1: (Value) -> T1,
+  valueTypeCase2: Value.ValueTypeCase,
+  crossinline valueExtractor2: (Value) -> T2,
+  crossinline function: (T1, T2) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 2)
+    throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  block@{ input: MutableDocument ->
+    val v1 = p1(input).value ?: return@block EvaluateResultError
+    val v2 = p2(input).value ?: return@block EvaluateResultError
+    when (v1.valueTypeCase) {
+      Value.ValueTypeCase.NULL_VALUE ->
+        when (v2.valueTypeCase) {
+          Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          valueTypeCase2 -> EvaluateResult.NULL
+          else -> EvaluateResultError
+        }
+      valueTypeCase1 ->
+        when (v2.valueTypeCase) {
+          Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          valueTypeCase2 -> catch { function(valueExtractor1(v1), valueExtractor2(v2)) }
+          else -> EvaluateResultError
+        }
+      else -> EvaluateResultError
+    }
+  }
+}
+
+@JvmName("variadicValueFunction")
+private inline fun variadicFunction(
+  crossinline function: (List<Value>) -> EvaluateResult
+): EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    val values = ArrayList<Value>(params.size)
+    var nullFound = false
+    for (param in params) {
+      val v = param(input).value ?: return@block EvaluateResultError
+      if (v.hasNullValue()) nullFound = true
+      values.add(v)
+    }
+    if (nullFound) EvaluateResult.NULL else catch { function(values) }
+  }
+}
+
+@JvmName("variadicStringFunction")
+private inline fun variadicFunction(
+  crossinline function: (List<String>) -> EvaluateResult
+): EvaluateFunction =
+  variadicFunctionType(Value.ValueTypeCase.STRING_VALUE, Value::getStringValue, function)
+
+private inline fun <T> variadicFunctionType(
+  valueTypeCase: Value.ValueTypeCase,
+  crossinline valueExtractor: (Value) -> T,
+  crossinline function: (List<T>) -> EvaluateResult,
+): EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    val values = ArrayList<T>(params.size)
+    var nullFound = false
+    for (param in params) {
+      val v = param(input).value ?: return@block EvaluateResultError
+      when (v.valueTypeCase) {
+        Value.ValueTypeCase.NULL_VALUE -> nullFound = true
+        valueTypeCase -> values.add(valueExtractor(v))
+        else -> return@block EvaluateResultError
+      }
+    }
+    if (nullFound) EvaluateResult.NULL else catch { function(values) }
+  }
+}
+
+@JvmName("variadicBooleanFunction")
+private inline fun variadicFunction(
+  crossinline function: (BooleanArray) -> EvaluateResult
+): EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    val values = BooleanArray(params.size)
+    var nullFound = false
+    params.forEachIndexed { i, param ->
+      val v = param(input).value ?: return@block EvaluateResultError
+      when (v.valueTypeCase) {
+        Value.ValueTypeCase.NULL_VALUE -> nullFound = true
+        Value.ValueTypeCase.BOOLEAN_VALUE -> values[i] = v.booleanValue
+        else -> return@block EvaluateResultError
+      }
+    }
+    if (nullFound) EvaluateResult.NULL else catch { function(values) }
+  }
+}
+
+private inline fun comparison(crossinline predicate: (Value, Value) -> Boolean): EvaluateFunction =
+  binaryFunction { p1: Value, p2: Value ->
+    if (isNanValue(p1) or isNanValue(p2)) EvaluateResult.FALSE
+    else catch { EvaluateResult.boolean(predicate(p1, p2)) }
+  }
+
+private inline fun arithmeticPrimitive(
+  crossinline intOp: (Long) -> Long,
+  crossinline doubleOp: (Double) -> Double
+): EvaluateFunction =
+  arithmetic(
+    { x: Long -> EvaluateResult.long(intOp(x)) },
+    { x: Double -> EvaluateResult.double(doubleOp(x)) }
+  )
+
+private inline fun arithmeticPrimitive(
+  crossinline intOp: (Long, Long) -> Long,
+  crossinline doubleOp: (Double, Double) -> Double
+): EvaluateFunction =
+  arithmetic(
+    { x: Long, y: Long -> EvaluateResult.long(intOp(x, y)) },
+    { x: Double, y: Double -> EvaluateResult.double(doubleOp(x, y)) }
+  )
+
+private inline fun arithmeticPrimitive(
+  crossinline doubleOp: (Double, Double) -> Double
+): EvaluateFunction = arithmetic { x: Double, y: Double -> EvaluateResult.double(doubleOp(x, y)) }
+
+private inline fun arithmetic(crossinline doubleOp: (Double) -> EvaluateResult): EvaluateFunction =
+  arithmetic({ n: Long -> doubleOp(n.toDouble()) }, doubleOp)
+
+private inline fun arithmetic(
+  crossinline intOp: (Long) -> EvaluateResult,
+  crossinline doubleOp: (Double) -> EvaluateResult
+): EvaluateFunction =
+  unaryFunctionType(
+    Value.ValueTypeCase.INTEGER_VALUE,
+    Value::getIntegerValue,
+    intOp,
+    Value.ValueTypeCase.DOUBLE_VALUE,
+    Value::getDoubleValue,
+    doubleOp,
+  )
+
+@JvmName("arithmeticNumberLong")
+private inline fun arithmetic(
+  crossinline intOp: (Long, Long) -> EvaluateResult,
+  crossinline doubleOp: (Double, Long) -> EvaluateResult
+): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+  if (p2.hasIntegerValue())
+    when (p1.valueTypeCase) {
+      Value.ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
+      Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.integerValue)
+      else -> EvaluateResultError
+    }
+  else EvaluateResultError
+}
+
+private inline fun arithmetic(
+  crossinline intOp: (Long, Long) -> EvaluateResult,
+  crossinline doubleOp: (Double, Double) -> EvaluateResult
+): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+  when (p1.valueTypeCase) {
+    Value.ValueTypeCase.INTEGER_VALUE ->
+      when (p2.valueTypeCase) {
+        Value.ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
+        Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.integerValue.toDouble(), p2.doubleValue)
+        else -> EvaluateResultError
+      }
+    Value.ValueTypeCase.DOUBLE_VALUE ->
+      when (p2.valueTypeCase) {
+        Value.ValueTypeCase.INTEGER_VALUE -> doubleOp(p1.doubleValue, p2.integerValue.toDouble())
+        Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.doubleValue)
+        else -> EvaluateResultError
+      }
+    else -> EvaluateResultError
+  }
+}
+
+private inline fun arithmetic(
+  crossinline op: (Double, Double) -> EvaluateResult
+): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+  val v1: Double =
+    when (p1.valueTypeCase) {
+      Value.ValueTypeCase.INTEGER_VALUE -> p1.integerValue.toDouble()
+      Value.ValueTypeCase.DOUBLE_VALUE -> p1.doubleValue
+      else -> return@binaryFunction EvaluateResultError
+    }
+  val v2: Double =
+    when (p2.valueTypeCase) {
+      Value.ValueTypeCase.INTEGER_VALUE -> p2.integerValue.toDouble()
+      Value.ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue
+      else -> return@binaryFunction EvaluateResultError
+    }
+  op(v1, v2)
 }

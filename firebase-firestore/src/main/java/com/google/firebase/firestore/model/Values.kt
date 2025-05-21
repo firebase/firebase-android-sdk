@@ -107,6 +107,26 @@ internal object Values {
     }
   }
 
+  fun strictEquals(left: Value, right: Value): Boolean {
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
+    if (leftType != rightType) {
+      return false
+    }
+
+    return when (leftType) {
+      TYPE_ORDER_NULL -> false
+      TYPE_ORDER_NUMBER -> strictNumberEquals(left, right)
+      TYPE_ORDER_ARRAY -> strictArrayEquals(left, right)
+      TYPE_ORDER_VECTOR,
+      TYPE_ORDER_MAP -> strictObjectEquals(left, right)
+      TYPE_ORDER_SERVER_TIMESTAMP ->
+        ServerTimestamps.getLocalWriteTime(left) == ServerTimestamps.getLocalWriteTime(right)
+      TYPE_ORDER_MAX_VALUE -> true
+      else -> left == right
+    }
+  }
+
   @JvmStatic
   fun equals(left: Value?, right: Value?): Boolean {
     if (left === right) {
@@ -135,6 +155,17 @@ internal object Values {
     }
   }
 
+  private fun strictNumberEquals(left: Value, right: Value): Boolean {
+    if (left.valueTypeCase != right.valueTypeCase) {
+      return false
+    }
+    return when (left.valueTypeCase) {
+      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+      ValueTypeCase.DOUBLE_VALUE -> left.doubleValue == right.doubleValue
+      else -> false
+    }
+  }
+
   private fun numberEquals(left: Value, right: Value): Boolean {
     if (left.valueTypeCase != right.valueTypeCase) {
       return false
@@ -145,6 +176,23 @@ internal object Values {
         doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
       else -> false
     }
+  }
+
+  private fun strictArrayEquals(left: Value, right: Value): Boolean {
+    val leftArray = left.arrayValue
+    val rightArray = right.arrayValue
+
+    if (leftArray.valuesCount != rightArray.valuesCount) {
+      return false
+    }
+
+    for (i in 0 until leftArray.valuesCount) {
+      if (!strictEquals(leftArray.getValues(i), rightArray.getValues(i))) {
+        return false
+      }
+    }
+
+    return true
   }
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
@@ -164,6 +212,24 @@ internal object Values {
     return true
   }
 
+  private fun strictObjectEquals(left: Value, right: Value): Boolean {
+    val leftMap = left.mapValue
+    val rightMap = right.mapValue
+
+    if (leftMap.fieldsCount != rightMap.fieldsCount) {
+      return false
+    }
+
+    for ((key, value) in leftMap.fieldsMap) {
+      val otherEntry = rightMap.fieldsMap[key] ?: return false
+      if (!strictEquals(value, otherEntry)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
   private fun objectEquals(left: Value, right: Value): Boolean {
     val leftMap = left.mapValue
     val rightMap = right.mapValue
@@ -173,7 +239,7 @@ internal object Values {
     }
 
     for ((key, value) in leftMap.fieldsMap) {
-      val otherEntry = rightMap.fieldsMap[key]
+      val otherEntry = rightMap.fieldsMap[key] ?: return false
       if (!equals(value, otherEntry)) {
         return false
       }
@@ -592,12 +658,13 @@ internal object Values {
     // the backend to do that.
     val truncatedNanoseconds: Int = timestamp.nanoseconds / 1000 * 1000
 
-    return Value.newBuilder()
-      .setTimestampValue(
-        Timestamp.newBuilder().setSeconds(timestamp.seconds).setNanos(truncatedNanoseconds)
-      )
-      .build()
+    return encodeValue(
+      Timestamp.newBuilder().setSeconds(timestamp.seconds).setNanos(truncatedNanoseconds).build()
+    )
   }
+
+  @JvmStatic
+  fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
 
   @JvmField val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
 

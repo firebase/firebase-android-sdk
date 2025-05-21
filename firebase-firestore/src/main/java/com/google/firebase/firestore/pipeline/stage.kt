@@ -377,8 +377,8 @@ internal constructor(
     context: EvaluationContext,
     inputs: Flow<MutableDocument>
   ): Flow<MutableDocument> {
-    val conditionFunction = condition.evaluate(context)
-    return inputs.filter { input -> conditionFunction.invoke(input).value?.booleanValue ?: false }
+    val conditionFunction = condition.evaluateContext(context)
+    return inputs.filter { input -> conditionFunction(input).value?.booleanValue ?: false }
   }
 }
 

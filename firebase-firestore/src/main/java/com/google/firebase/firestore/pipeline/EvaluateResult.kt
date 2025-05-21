@@ -1,15 +1,31 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firestore.v1.Value
+import com.google.protobuf.Timestamp
 
 internal sealed class EvaluateResult(val value: Value?) {
   companion object {
     val TRUE: EvaluateResultValue = EvaluateResultValue(Values.TRUE_VALUE)
     val FALSE: EvaluateResultValue = EvaluateResultValue(Values.FALSE_VALUE)
     val NULL: EvaluateResultValue = EvaluateResultValue(Values.NULL_VALUE)
-    fun booleanValue(boolean: Boolean) = if (boolean) TRUE else FALSE
+    val DOUBLE_ZERO: EvaluateResultValue = double(0.0)
+    val LONG_ZERO: EvaluateResultValue = long(0)
+    fun boolean(boolean: Boolean) = if (boolean) TRUE else FALSE
+    fun double(double: Double) = EvaluateResultValue(encodeValue(double))
+    fun long(long: Long) = EvaluateResultValue(encodeValue(long))
+    fun long(int: Int) = EvaluateResultValue(encodeValue(int.toLong()))
+    fun string(string: String) = EvaluateResultValue(encodeValue(string))
+    fun timestamp(seconds: Long, nanos: Int): EvaluateResult =
+      if (seconds !in -62_135_596_800 until 253_402_300_800) EvaluateResultError
+      else
+        EvaluateResultValue(
+          encodeValue(Timestamp.newBuilder().setSeconds(seconds).setNanos(nanos).build())
+        )
   }
+  internal inline fun evaluateNonNull(f: (Value) -> EvaluateResult): EvaluateResult =
+    if (value?.hasNullValue() == true) f(value) else this
 }
 
 internal object EvaluateResultError : EvaluateResult(null)

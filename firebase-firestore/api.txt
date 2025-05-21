@@ -1063,7 +1063,7 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr lt(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr lt(Object value);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
-    method public static final com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, Object right);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, Object value);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr lte(com.google.firebase.firestore.pipeline.Expr other);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr lte(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr lte(com.google.firebase.firestore.pipeline.Expr left, Object right);
@@ -1377,7 +1377,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr lt(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr lt(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
-    method public com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, Object right);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr lt(String fieldName, Object value);
     method public com.google.firebase.firestore.pipeline.BooleanExpr lte(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr lte(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr lte(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
