@@ -32,15 +32,18 @@ import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expr
+import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.ExprWithAlias
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
 import com.google.firebase.firestore.pipeline.GenericStage
+import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
 import com.google.firebase.firestore.pipeline.PipelineOptions
+import com.google.firebase.firestore.pipeline.RealtimePipelineOptions
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
@@ -55,12 +58,81 @@ import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
 
-class Pipeline
+open class AbstractPipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
   internal val userDataReader: UserDataReader,
-  private val stages: FluentIterable<Stage<*>>
+  internal val stages: FluentIterable<Stage<*>>
 ) {
+  private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
+    val builder = StructuredPipeline.newBuilder()
+    builder.pipeline = toPipelineProto()
+    options?.forEach(builder::putOptions)
+    return builder.build()
+  }
+
+  internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
+    com.google.firestore.v1.Pipeline.newBuilder()
+      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
+      .build()
+
+  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+    val database = firestore.databaseId
+    val builder = ExecutePipelineRequest.newBuilder()
+    builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
+    builder.structuredPipeline = toStructuredPipelineProto(options)
+    return builder.build()
+  }
+
+  protected fun execute(options: InternalOptions?): Task<PipelineSnapshot> {
+    val request = toExecutePipelineRequest(options)
+    val observerTask = ObserverSnapshotTask()
+    firestore.callClient { call -> call!!.executePipeline(request, observerTask) }
+    return observerTask.task
+  }
+
+  private inner class ObserverSnapshotTask : PipelineResultObserver {
+    private val userDataWriter =
+      UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
+    private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
+    private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
+    override fun onDocument(
+      key: DocumentKey?,
+      data: Map<String, Value>,
+      createTime: Timestamp?,
+      updateTime: Timestamp?
+    ) {
+      results.add(
+        PipelineResult(
+          firestore,
+          userDataWriter,
+          if (key == null) null else DocumentReference(key, firestore),
+          data,
+          createTime,
+          updateTime
+        )
+      )
+    }
+
+    override fun onComplete(executionTime: Timestamp) {
+      taskCompletionSource.setResult(PipelineSnapshot(executionTime, results.build()))
+    }
+
+    override fun onError(exception: FirebaseFirestoreException) {
+      taskCompletionSource.setException(exception)
+    }
+
+    val task: Task<PipelineSnapshot>
+      get() = taskCompletionSource.task
+  }
+}
+
+class Pipeline
+private constructor(
+  firestore: FirebaseFirestore,
+  userDataReader: UserDataReader,
+  stages: FluentIterable<Stage<*>>
+) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
@@ -71,36 +143,13 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.append(stage))
   }
 
-  fun execute(): Task<PipelineSnapshot> = execute(PipelineOptions.DEFAULT)
+  fun execute(): Task<PipelineSnapshot> = execute(null)
 
-  fun execute(options: PipelineOptions): Task<PipelineSnapshot> {
-    val observerTask = ObserverSnapshotTask()
-    firestore.callClient { call -> call!!.executePipeline(toProto(options), observerTask) }
-    return observerTask.task
-  }
+  fun execute(options: RealtimePipelineOptions): Task<PipelineSnapshot> = execute(options.options)
 
   internal fun documentReference(key: DocumentKey): DocumentReference {
     return DocumentReference(key, firestore)
   }
-
-  private fun toProto(options: PipelineOptions): ExecutePipelineRequest {
-    val database = firestore.databaseId
-    val builder = ExecutePipelineRequest.newBuilder()
-    builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
-    builder.structuredPipeline = toStructuredPipelineProto()
-    return builder.build()
-  }
-
-  private fun toStructuredPipelineProto(): StructuredPipeline {
-    val builder = StructuredPipeline.newBuilder()
-    builder.pipeline = toPipelineProto()
-    return builder.build()
-  }
-
-  internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
-    com.google.firestore.v1.Pipeline.newBuilder()
-      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
-      .build()
 
   /**
    * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
@@ -153,9 +202,7 @@ internal constructor(
    */
   fun removeFields(field: String, vararg additionalFields: String): Pipeline =
     append(
-      RemoveFieldsStage(
-        arrayOf(Expr.field(field), *additionalFields.map(Expr::field).toTypedArray())
-      )
+      RemoveFieldsStage(arrayOf(field(field), *additionalFields.map(Expr::field).toTypedArray()))
     )
 
   /**
@@ -178,11 +225,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun select(selection: Selectable, vararg additionalSelections: Any): Pipeline =
-    append(
-      SelectStage(
-        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray())
-      )
-    )
+    append(SelectStage.of(selection, *additionalSelections))
 
   /**
    * Selects or creates a set of fields from the outputs of previous stages.
@@ -204,14 +247,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun select(fieldName: String, vararg additionalSelections: Any): Pipeline =
-    append(
-      SelectStage(
-        arrayOf(
-          Expr.field(fieldName),
-          *additionalSelections.map(Selectable::toSelectable).toTypedArray()
-        )
-      )
-    )
+    append(SelectStage.of(fieldName, *additionalSelections))
 
   /**
    * Sorts the documents from previous stages based on one or more [Ordering] criteria.
@@ -320,10 +356,7 @@ internal constructor(
   fun distinct(groupField: String, vararg additionalGroups: Any): Pipeline =
     append(
       DistinctStage(
-        arrayOf(
-          Expr.field(groupField),
-          *additionalGroups.map(Selectable::toSelectable).toTypedArray()
-        )
+        arrayOf(field(groupField), *additionalGroups.map(Selectable::toSelectable).toTypedArray())
       )
     )
 
@@ -453,7 +486,7 @@ internal constructor(
    * @param field The [String] specifying the field name containing the nested map.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun replace(field: String): Pipeline = replace(Expr.field(field))
+  fun replace(field: String): Pipeline = replace(field(field))
 
   /**
    * Fully overwrites all fields in a document with those coming from a nested map.
@@ -514,8 +547,7 @@ internal constructor(
    * @param alias The name of field to store emitted element of array.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun unnest(arrayField: String, alias: String): Pipeline =
-    unnest(Expr.field(arrayField).alias(alias))
+  fun unnest(arrayField: String, alias: String): Pipeline = unnest(field(arrayField).alias(alias))
 
   /**
    * Takes a specified array from the input documents and outputs a document for each element with
@@ -550,41 +582,6 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
-
-  private inner class ObserverSnapshotTask : PipelineResultObserver {
-    private val userDataWriter =
-      UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
-    private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
-    private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
-    override fun onDocument(
-      key: DocumentKey?,
-      data: Map<String, Value>,
-      createTime: Timestamp?,
-      updateTime: Timestamp?
-    ) {
-      results.add(
-        PipelineResult(
-          firestore,
-          userDataWriter,
-          if (key == null) null else DocumentReference(key, firestore),
-          data,
-          createTime,
-          updateTime
-        )
-      )
-    }
-
-    override fun onComplete(executionTime: Timestamp) {
-      taskCompletionSource.setResult(PipelineSnapshot(executionTime, results.build()))
-    }
-
-    override fun onError(exception: FirebaseFirestoreException) {
-      taskCompletionSource.setException(exception)
-    }
-
-    val task: Task<PipelineSnapshot>
-      get() = taskCompletionSource.task
-  }
 }
 
 /** Start of a Firestore Pipeline */
@@ -644,7 +641,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Set the pipeline's source to the collection specified by CollectionSource.
    *
    * @param stage A [CollectionSource] that will be the source of this pipeline.
-   * @return Pipeline with documents from target collection.
+   * @return A new [Pipeline] object with documents from target collection.
    * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
    * or database than the pipeline.
    */
@@ -659,6 +656,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Set the pipeline's source to the collection group with the given id.
    *
    * @param collectionId The id of a collection group that will be the source of this pipeline.
+   * @return A new [Pipeline] object with documents from target collection group.
    */
   fun collectionGroup(collectionId: String): Pipeline =
     pipeline(CollectionGroupSource.of((collectionId)))
@@ -708,6 +706,87 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       DocumentsSource(documents.map { docRef -> "/" + docRef.path }.toTypedArray())
     )
   }
+}
+
+class RealtimePipelineSource internal constructor(private val firestore: FirebaseFirestore) {
+
+  /**
+   * Set the pipeline's source to the collection specified by the given path.
+   *
+   * @param path A path to a collection that will be the source of this pipeline.
+   * @return A new [RealtimePipeline] object with documents from target collection.
+   */
+  fun collection(path: String): RealtimePipeline = collection(CollectionSource.of(path))
+
+  /**
+   * Set the pipeline's source to the collection specified by the given [CollectionReference].
+   *
+   * @param ref A [CollectionReference] for a collection that will be the source of this pipeline.
+   * @return A new [RealtimePipeline] object with documents from target collection.
+   * @throws [IllegalArgumentException] Thrown if the [ref] provided targets a different project or
+   * database than the pipeline.
+   */
+  fun collection(ref: CollectionReference): RealtimePipeline = collection(CollectionSource.of(ref))
+
+  /**
+   * Set the pipeline's source to the collection specified by CollectionSource.
+   *
+   * @param stage A [CollectionSource] that will be the source of this pipeline.
+   * @return A new [RealtimePipeline] object with documents from target collection.
+   * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
+   * or database than the pipeline.
+   */
+  fun collection(stage: CollectionSource): RealtimePipeline {
+    if (stage.firestore != null && stage.firestore.databaseId != firestore.databaseId) {
+      throw IllegalArgumentException("Provided collection is from a different Firestore instance.")
+    }
+    return RealtimePipeline(firestore, firestore.userDataReader, stage)
+  }
+
+  /**
+   * Set the pipeline's source to the collection group with the given id.
+   *
+   * @param collectionId The id of a collection group that will be the source of this pipeline.
+   * @return A new [RealtimePipeline] object with documents from target collection group.
+   */
+  fun collectionGroup(collectionId: String): RealtimePipeline =
+    pipeline(CollectionGroupSource.of((collectionId)))
+
+  fun pipeline(stage: CollectionGroupSource): RealtimePipeline =
+    RealtimePipeline(firestore, firestore.userDataReader, stage)
+}
+
+class RealtimePipeline
+internal constructor(
+  firestore: FirebaseFirestore,
+  userDataReader: UserDataReader,
+  stages: FluentIterable<Stage<*>>
+) : AbstractPipeline(firestore, userDataReader, stages) {
+  internal constructor(
+    firestore: FirebaseFirestore,
+    userDataReader: UserDataReader,
+    stage: Stage<*>
+  ) : this(firestore, userDataReader, FluentIterable.of(stage))
+
+  private fun append(stage: Stage<*>): RealtimePipeline {
+    return RealtimePipeline(firestore, userDataReader, stages.append(stage))
+  }
+
+  fun execute(): Task<PipelineSnapshot> = execute(null)
+
+  fun execute(options: PipelineOptions): Task<PipelineSnapshot> = execute(options.options)
+
+  fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
+
+  fun offset(offset: Int): RealtimePipeline = append(OffsetStage(offset))
+
+  fun select(selection: Selectable, vararg additionalSelections: Any): RealtimePipeline =
+    append(SelectStage.of(selection, *additionalSelections))
+
+  fun select(fieldName: String, vararg additionalSelections: Any): RealtimePipeline =
+    append(SelectStage.of(fieldName, *additionalSelections))
+
+  fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
 }
 
 /**
