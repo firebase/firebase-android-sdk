@@ -15,13 +15,13 @@
 package com.google.firebase.firestore;
 
 import android.content.Context;
+import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.common.base.Function;
 
 /** Gives access to package private methods in integration tests. */
 public final class AccessHelper {

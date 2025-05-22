@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.remote.Datastore;
@@ -24,7 +25,6 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
-import com.google.common.base.Function;
 
 /** TransactionRunner encapsulates the logic needed to run and retry transactions with backoff. */
 public class TransactionRunner<TResult> {

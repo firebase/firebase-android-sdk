@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
 import androidx.annotation.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -33,7 +34,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
-import com.google.common.base.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;

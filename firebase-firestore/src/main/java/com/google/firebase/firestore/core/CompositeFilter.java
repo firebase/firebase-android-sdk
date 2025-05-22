@@ -16,8 +16,8 @@ package com.google.firebase.firestore.core;
 
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.Document;
 import com.google.common.base.Function;
+import com.google.firebase.firestore.model.Document;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
