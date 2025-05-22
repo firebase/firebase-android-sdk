@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove copy of Guava Function interface, and instead use Guava directly. [#6983](//github.com/firebase/firebase-android-sdk/pull/6983)
 
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.
