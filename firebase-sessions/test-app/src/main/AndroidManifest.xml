@@ -51,6 +51,12 @@
       android:name="firebase_sessions_sessions_restart_timeout"
       android:value="5" />
 
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
+    <receiver android:name=".CrashBroadcastReceiver" />
+
     <receiver
       android:exported="false"
       android:name="CrashWidgetProvider"
@@ -62,8 +68,6 @@
         android:name="android.appwidget.provider"
         android:resource="@xml/homescreen_widget" />
     </receiver>
-
-    <receiver android:name=".CrashBroadcastReceiver" />
 
     <service
       android:enabled="true"

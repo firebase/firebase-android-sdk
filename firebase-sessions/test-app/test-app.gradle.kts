@@ -35,7 +35,7 @@ android {
 
   namespace = "com.google.firebase.testing.sessions"
   compileSdk = compileSdkVersion
-  buildFeatures.buildConfig = true
+
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
     minSdk = minSdkVersion
@@ -50,15 +50,29 @@ android {
     buildConfigField(
       "boolean",
       "SHOULD_CRASH_APP",
-      project.hasProperty("triggerCrashes").toString()
+      project.hasProperty("triggerCrashes").toString(),
     )
   }
+
+  buildTypes {
+    create("benchmark") {
+      initWith(buildTypes["release"])
+      signingConfig = signingConfigs["debug"]
+      matchingFallbacks += "release"
+      isDebuggable = false
+    }
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
-  buildFeatures { viewBinding = true }
+
+  buildFeatures {
+    buildConfig = true
+    viewBinding = true
+  }
 }
 
 dependencies {
