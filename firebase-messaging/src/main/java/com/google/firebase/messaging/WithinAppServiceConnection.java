@@ -27,6 +27,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.stats.ConnectionTracker;
+import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -109,7 +110,9 @@ class WithinAppServiceConnection implements ServiceConnection {
 
   @SuppressLint("ThreadPoolCreation")
   private static ScheduledThreadPoolExecutor createScheduledThreadPoolExecutor() {
-    ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+    ScheduledThreadPoolExecutor threadPoolExecutor =
+        new ScheduledThreadPoolExecutor(
+            1, new NamedThreadFactory("Firebase-FirebaseInstanceIdServiceConnection"));
     threadPoolExecutor.setKeepAliveTime(EnhancedIntentService.MESSAGE_TIMEOUT_S * 2, SECONDS);
     threadPoolExecutor.allowCoreThreadTimeOut(true);
     return threadPoolExecutor;
