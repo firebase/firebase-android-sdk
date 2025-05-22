@@ -52,7 +52,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Function;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.Value;

@@ -47,7 +47,7 @@ import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Function;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.Value;
 import java.io.InputStream;

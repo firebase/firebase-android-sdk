@@ -33,7 +33,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.Function;
+import com.google.common.base.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;

@@ -36,7 +36,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.FileUtil;
-import com.google.firebase.firestore.util.Function;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.File;
