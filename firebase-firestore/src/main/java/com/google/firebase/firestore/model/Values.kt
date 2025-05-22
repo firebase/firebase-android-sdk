@@ -731,4 +731,8 @@ internal object Values {
       is VectorValue -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
+
+  @JvmStatic
+  fun timestamp(seconds: Long, nanos: Int): Timestamp =
+    Timestamp.newBuilder().setSeconds(seconds).setNanos(nanos).build()
 }

@@ -17,12 +17,11 @@ internal sealed class EvaluateResult(val value: Value?) {
     fun long(long: Long) = EvaluateResultValue(encodeValue(long))
     fun long(int: Int) = EvaluateResultValue(encodeValue(int.toLong()))
     fun string(string: String) = EvaluateResultValue(encodeValue(string))
+    fun timestamp(timestamp: Timestamp): EvaluateResult =
+      EvaluateResultValue(encodeValue(timestamp))
     fun timestamp(seconds: Long, nanos: Int): EvaluateResult =
       if (seconds !in -62_135_596_800 until 253_402_300_800) EvaluateResultError
-      else
-        EvaluateResultValue(
-          encodeValue(Timestamp.newBuilder().setSeconds(seconds).setNanos(nanos).build())
-        )
+      else timestamp(Values.timestamp(seconds, nanos))
   }
   internal inline fun evaluateNonNull(f: (Value) -> EvaluateResult): EvaluateResult =
     if (value?.hasNullValue() == true) f(value) else this

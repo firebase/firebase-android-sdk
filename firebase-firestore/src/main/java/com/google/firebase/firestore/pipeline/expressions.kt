@@ -780,8 +780,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(first: Expr, second: Expr): Expr =
-      FunctionExpr("add", evaluateAdd, first, second)
+    fun add(first: Expr, second: Expr): Expr = FunctionExpr("add", evaluateAdd, first, second)
 
     /**
      * Creates an expression that adds numeric expressions with a constant.
@@ -791,8 +790,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(first: Expr, second: Number): Expr =
-      FunctionExpr("add", evaluateAdd, first, second)
+    fun add(first: Expr, second: Number): Expr = FunctionExpr("add", evaluateAdd, first, second)
 
     /**
      * Creates an expression that adds a numeric field with a numeric expression.

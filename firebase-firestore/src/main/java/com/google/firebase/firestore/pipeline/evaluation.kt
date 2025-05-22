@@ -3,6 +3,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.math.LongMath
 import com.google.common.math.LongMath.checkedAdd
 import com.google.common.math.LongMath.checkedMultiply
+import com.google.common.math.LongMath.checkedSubtract
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
@@ -273,9 +274,71 @@ internal val evaluateStrJoin = notImplemented // TODO: Does not exist in express
 
 // === Date / Timestamp Functions ===
 
-internal val evaluateTimestampAdd = notImplemented
+private const val L_NANOS_PER_SECOND: Long = 1000_000_000
+private const val I_NANOS_PER_SECOND: Int = 1000_000_000
 
-internal val evaluateTimestampSub = notImplemented
+private const val L_MICROS_PER_SECOND: Long = 1000_000
+private const val I_MICROS_PER_SECOND: Int = 1000_000
+
+private const val L_MILLIS_PER_SECOND: Long = 1000
+private const val I_MILLIS_PER_SECOND: Int = 1000
+
+internal fun plus(t: Timestamp, seconds: Long, nanos: Long): Timestamp =
+  if (nanos == 0L) {
+    plus(t, seconds)
+  } else {
+    val nanoSum = t.nanos + nanos // Overflow not possible since nanos is 0 to 1 000 000.
+    val secondsSum: Long = checkedAdd(checkedAdd(t.seconds, seconds), nanoSum / L_NANOS_PER_SECOND)
+    Values.timestamp(secondsSum, (nanoSum % I_NANOS_PER_SECOND).toInt())
+  }
+
+private fun plus(t: Timestamp, seconds: Long): Timestamp =
+  if (seconds == 0L) t
+  else Values.timestamp(checkedAdd(t.seconds, seconds), t.nanos)
+
+internal fun minus(t: Timestamp, seconds: Long, nanos: Long): Timestamp =
+  if (nanos == 0L) {
+    minus(t, seconds)
+  } else {
+    val nanoSum = t.nanos - nanos // Overflow not possible since nanos is 0 to 1 000 000.
+    val secondsSum: Long = checkedSubtract(t.seconds, checkedSubtract(seconds, nanoSum / L_NANOS_PER_SECOND))
+    Values.timestamp(secondsSum, (nanoSum % I_NANOS_PER_SECOND).toInt())
+  }
+
+private fun minus(t: Timestamp, seconds: Long): Timestamp =
+  if (seconds == 0L) t
+  else Values.timestamp(checkedSubtract(t.seconds, seconds), t.nanos)
+
+
+internal val evaluateTimestampAdd =
+  ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
+    EvaluateResult.timestamp(
+      when (u) {
+        "microsecond" -> plus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
+        "millisecond" -> plus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
+        "second" -> plus(t, n)
+        "minute" -> plus(t, checkedMultiply(n, 60))
+        "hour" -> plus(t, checkedMultiply(n, 3600))
+        "day" -> plus(t, checkedMultiply(n, 86400))
+        else -> return@ternaryTimestampFunction EvaluateResultError
+      }
+    )
+  }
+
+internal val evaluateTimestampSub =
+  ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
+    EvaluateResult.timestamp(
+      when (u) {
+        "microsecond" -> minus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
+        "millisecond" -> minus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
+        "second" -> minus(t, n)
+        "minute" -> minus(t, checkedMultiply(n, 60))
+        "hour" -> minus(t, checkedMultiply(n, 3600))
+        "day" -> minus(t, checkedMultiply(n, 86400))
+        else -> return@ternaryTimestampFunction EvaluateResultError
+      }
+    )
+  }
 
 internal val evaluateTimestampTrunc = notImplemented // TODO: Does not exist in expressions.kt yet.
 
@@ -284,12 +347,12 @@ internal val evaluateTimestampToUnixMicros = unaryFunction { t: Timestamp ->
     if (t.seconds < Long.MIN_VALUE / 1_000_000) {
       // To avoid overflow when very close to Long.MIN_VALUE, add 1 second, multiply, then subtract
       // again.
-      val micros = checkedMultiply(t.seconds + 1, 1_000_000)
-      val adjustment = t.nanos.toLong() / 1_000 - 1_000_000
+      val micros = checkedMultiply(t.seconds + 1, L_MICROS_PER_SECOND)
+      val adjustment = t.nanos.toLong() / L_MILLIS_PER_SECOND - L_MICROS_PER_SECOND
       checkedAdd(micros, adjustment)
     } else {
-      val micros = checkedMultiply(t.seconds, 1_000_000)
-      checkedAdd(micros, t.nanos.toLong() / 1_000)
+      val micros = checkedMultiply(t.seconds, L_MICROS_PER_SECOND)
+      checkedAdd(micros, t.nanos.toLong() / L_MILLIS_PER_SECOND)
     }
   )
 }
@@ -297,26 +360,33 @@ internal val evaluateTimestampToUnixMicros = unaryFunction { t: Timestamp ->
 internal val evaluateTimestampToUnixMillis = unaryFunction { t: Timestamp ->
   EvaluateResult.long(
     if (t.seconds < 0 && t.nanos > 0) {
-      val millis = checkedMultiply(t.seconds + 1, 1000)
-      val adjustment = t.nanos.toLong() / 1000_000 - 1000
+      val millis = checkedMultiply(t.seconds + 1, L_MILLIS_PER_SECOND)
+      val adjustment = t.nanos.toLong() / L_MICROS_PER_SECOND - L_MILLIS_PER_SECOND
       checkedAdd(millis, adjustment)
     } else {
-      val millis = checkedMultiply(t.seconds, 1000)
-      checkedAdd(millis, t.nanos.toLong() / 1000_000)
+      val millis = checkedMultiply(t.seconds, L_MILLIS_PER_SECOND)
+      checkedAdd(millis, t.nanos.toLong() / L_MICROS_PER_SECOND)
     }
   )
 }
 
 internal val evaluateTimestampToUnixSeconds = unaryFunction { t: Timestamp ->
-  if (t.nanos !in 0 until 1_000_000_000) EvaluateResultError else EvaluateResult.long(t.seconds)
+  if (t.nanos !in 0 until L_NANOS_PER_SECOND) EvaluateResultError
+  else EvaluateResult.long(t.seconds)
 }
 
 internal val evaluateUnixMicrosToTimestamp = unaryFunction { micros: Long ->
-  EvaluateResult.timestamp(Math.floorDiv(micros, 1000_000), Math.floorMod(micros, 1000_000))
+  EvaluateResult.timestamp(
+    Math.floorDiv(micros, L_MICROS_PER_SECOND),
+    Math.floorMod(micros, I_MICROS_PER_SECOND)
+  )
 }
 
 internal val evaluateUnixMillisToTimestamp = unaryFunction { millis: Long ->
-  EvaluateResult.timestamp(Math.floorDiv(millis, 1000), Math.floorMod(millis, 1000))
+  EvaluateResult.timestamp(
+    Math.floorDiv(millis, L_MILLIS_PER_SECOND),
+    Math.floorMod(millis, I_MILLIS_PER_SECOND)
+  )
 }
 
 internal val evaluateUnixSecondsToTimestamp = unaryFunction { seconds: Long ->
@@ -456,6 +526,43 @@ private inline fun binaryFunction(crossinline function: (String, String) -> Eval
     Value::getStringValue,
     function
   )
+
+private inline fun ternaryTimestampFunction(
+  crossinline function: (Timestamp, String, Long) -> EvaluateResult
+): EvaluateFunction = ternaryNullableValueFunction { timestamp: Value, unit: Value, number: Value ->
+  val t: Timestamp =
+    when (timestamp.valueTypeCase) {
+      Value.ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      Value.ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
+      else -> return@ternaryNullableValueFunction EvaluateResultError
+    }
+  val u: String =
+    if (unit.hasStringValue()) unit.stringValue
+    else return@ternaryNullableValueFunction EvaluateResultError
+  val n: Long =
+    when (number.valueTypeCase) {
+      Value.ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      Value.ValueTypeCase.INTEGER_VALUE -> number.integerValue
+      else -> return@ternaryNullableValueFunction EvaluateResultError
+    }
+  function(t, u, n)
+}
+
+private inline fun ternaryNullableValueFunction(
+  crossinline function: (Value, Value, Value) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 3)
+    throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  val p3 = params[2]
+  block@{ input: MutableDocument ->
+    val v1 = p1(input).value ?: return@block EvaluateResultError
+    val v2 = p2(input).value ?: return@block EvaluateResultError
+    val v3 = p3(input).value ?: return@block EvaluateResultError
+    catch { function(v1, v2, v3) }
+  }
+}
 
 private inline fun <T1, T2> binaryFunctionType(
   valueTypeCase1: Value.ValueTypeCase,
