@@ -747,52 +747,48 @@ abstract class Expr internal constructor() {
     @JvmStatic fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", numericField)
 
     /**
-     * Creates an expression that adds numeric expressions and constants.
+     * Creates an expression that adds numeric expressions.
      *
      * @param first Numeric expression to add.
      * @param second Numeric expression to add.
-     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(first: Expr, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("add", first, second, *others)
+    fun add(first: Expr, second: Expr): Expr =
+      FunctionExpr("add", first, second)
 
     /**
-     * Creates an expression that adds numeric expressions and constants.
+     * Creates an expression that adds numeric expressions with a constant.
      *
      * @param first Numeric expression to add.
      * @param second Constant to add.
-     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(first: Expr, second: Number, vararg others: Any): Expr =
-      FunctionExpr("add", first, second, *others)
+    fun add(first: Expr, second: Number): Expr =
+      FunctionExpr("add", first, second)
 
     /**
-     * Creates an expression that adds a numeric field with numeric expressions and constants.
+     * Creates an expression that adds a numeric field with a numeric expression.
      *
      * @param numericFieldName Numeric field to add.
      * @param second Numeric expression to add to field value.
-     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(numericFieldName: String, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("add", numericFieldName, second, *others)
+    fun add(numericFieldName: String, second: Expr): Expr =
+      FunctionExpr("add", numericFieldName, second)
 
     /**
-     * Creates an expression that adds a numeric field with numeric expressions and constants.
+     * Creates an expression that adds a numeric field with constant.
      *
      * @param numericFieldName Numeric field to add.
      * @param second Constant to add.
-     * @param others Additional numeric expressions or constants to add.
      * @return A new [Expr] representing the addition operation.
      */
     @JvmStatic
-    fun add(numericFieldName: String, second: Number, vararg others: Any): Expr =
-      FunctionExpr("add", numericFieldName, second, *others)
+    fun add(numericFieldName: String, second: Number): Expr =
+      FunctionExpr("add", numericFieldName, second)
 
     /**
      * Creates an expression that subtracts two expressions.
@@ -839,52 +835,48 @@ abstract class Expr internal constructor() {
       FunctionExpr("subtract", numericFieldName, subtrahend)
 
     /**
-     * Creates an expression that multiplies numeric expressions and constants.
+     * Creates an expression that multiplies numeric expressions.
      *
      * @param first Numeric expression to multiply.
      * @param second Numeric expression to multiply.
-     * @param others Additional numeric expressions or constants to multiply.
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("multiply", first, second, *others)
+    fun multiply(first: Expr, second: Expr): Expr =
+      FunctionExpr("multiply", first, second)
 
     /**
-     * Creates an expression that multiplies numeric expressions and constants.
+     * Creates an expression that multiplies numeric expressions with a constant.
      *
      * @param first Numeric expression to multiply.
      * @param second Constant to multiply.
-     * @param others Additional numeric expressions or constants to multiply.
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Number, vararg others: Any): Expr =
-      FunctionExpr("multiply", first, second, *others)
+    fun multiply(first: Expr, second: Number): Expr =
+      FunctionExpr("multiply", first, second)
 
     /**
-     * Creates an expression that multiplies a numeric field with numeric expressions and constants.
+     * Creates an expression that multiplies a numeric field with a numeric expression.
      *
      * @param numericFieldName Numeric field to multiply.
-     * @param second Numeric expression to add to field multiply.
-     * @param others Additional numeric expressions or constants to multiply.
+     * @param second Numeric expression to multiply.
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(numericFieldName: String, second: Expr, vararg others: Any): Expr =
-      FunctionExpr("multiply", numericFieldName, second, *others)
+    fun multiply(numericFieldName: String, second: Expr): Expr =
+      FunctionExpr("multiply", numericFieldName, second)
 
     /**
-     * Creates an expression that multiplies a numeric field with numeric expressions and constants.
+     * Creates an expression that multiplies a numeric field with a constant.
      *
      * @param numericFieldName Numeric field to multiply.
      * @param second Constant to multiply.
-     * @param others Additional numeric expressions or constants to multiply.
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(numericFieldName: String, second: Number, vararg others: Any): Expr =
-      FunctionExpr("multiply", numericFieldName, second, *others)
+    fun multiply(numericFieldName: String, second: Number): Expr =
+      FunctionExpr("multiply", numericFieldName, second)
 
     /**
      * Creates an expression that divides two numeric expressions.
@@ -2990,24 +2982,20 @@ abstract class Expr internal constructor() {
   fun documentId(): Expr = Companion.documentId(this)
 
   /**
-   * Creates an expression that adds this numeric expression to other numeric expressions and
-   * constants.
+   * Creates an expression that adds this numeric expression to another numeric expression.
    *
    * @param second Numeric expression to add.
-   * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
-  fun add(second: Expr, vararg others: Any): Expr = Companion.add(this, second, *others)
+  fun add(second: Expr): Expr = Companion.add(this, second)
 
   /**
-   * Creates an expression that adds this numeric expression to other numeric expressions and
-   * constants.
+   * Creates an expression that adds this numeric expression to a constants.
    *
    * @param second Constant to add.
-   * @param others Additional numeric expressions or constants to add.
    * @return A new [Expr] representing the addition operation.
    */
-  fun add(second: Number, vararg others: Any): Expr = Companion.add(this, second, *others)
+  fun add(second: Number): Expr = Companion.add(this, second)
 
   /**
    * Creates an expression that subtracts a constant from this numeric expression.
@@ -3026,24 +3014,20 @@ abstract class Expr internal constructor() {
   fun subtract(subtrahend: Number): Expr = Companion.subtract(this, subtrahend)
 
   /**
-   * Creates an expression that multiplies this numeric expression to other numeric expressions and
-   * constants.
+   * Creates an expression that multiplies this numeric expression with another numeric expression.
    *
    * @param second Numeric expression to multiply.
-   * @param others Additional numeric expressions or constants to multiply.
    * @return A new [Expr] representing the multiplication operation.
    */
-  fun multiply(second: Expr, vararg others: Any): Expr = Companion.multiply(this, second, *others)
+  fun multiply(second: Expr): Expr = Companion.multiply(this, second)
 
   /**
-   * Creates an expression that multiplies this numeric expression to other numeric expressions and
-   * constants.
+   * Creates an expression that multiplies this numeric expression with a constant.
    *
    * @param second Constant to multiply.
-   * @param others Additional numeric expressions or constants to multiply.
    * @return A new [Expr] representing the multiplication operation.
    */
-  fun multiply(second: Number, vararg others: Any): Expr = Companion.multiply(this, second, *others)
+  fun multiply(second: Number): Expr = Companion.multiply(this, second)
 
   /**
    * Creates an expression that divides this numeric expression by another numeric expression.
