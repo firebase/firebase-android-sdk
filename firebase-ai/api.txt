@@ -774,6 +774,9 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public static <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass);
+    method public static <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass, String? description = null);
+    method public static <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass, String? description = null, boolean nullable = false);
     method public String? getDescription();
     method public java.util.List<java.lang.String>? getEnum();
     method public String? getFormat();
@@ -823,6 +826,10 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass);
+    method public <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass, String? description = null);
+    method public <E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(Class<E> enumClass, String? description = null, boolean nullable = false);
+    method public inline <reified E extends java.lang.Enum<E>> com.google.firebase.ai.type.Schema fromEnum(String? description = null, boolean nullable = false);
     method public com.google.firebase.ai.type.Schema numDouble();
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null);
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false);
