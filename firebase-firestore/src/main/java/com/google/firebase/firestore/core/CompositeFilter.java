@@ -170,13 +170,16 @@ public class CompositeFilter extends Filter {
 
   @Override
   BooleanExpr toPipelineExpr() {
-    BooleanExpr[] booleanExprs =
-        filters.stream().map(Filter::toPipelineExpr).toArray(BooleanExpr[]::new);
+    BooleanExpr first = filters.get(0).toPipelineExpr();
+    BooleanExpr[] additional = new BooleanExpr[filters.size() - 1];
+    for (int i = 1, filtersSize = filters.size(); i < filtersSize; i++) {
+      additional[i - 1] = filters.get(i).toPipelineExpr();
+    }
     switch (operator) {
       case AND:
-        return new BooleanExpr("and", booleanExprs);
+        return BooleanExpr.and(first, additional);
       case OR:
-        return new BooleanExpr("or", booleanExprs);
+        return BooleanExpr.or(first, additional);
     }
     // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed
     throw new IllegalArgumentException("Unsupported operator: " + operator);
