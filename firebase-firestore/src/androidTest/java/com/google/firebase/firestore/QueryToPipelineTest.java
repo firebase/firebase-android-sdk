@@ -356,7 +356,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot =
-        waitFor(db.pipeline().convertFrom(collection.whereEqualTo("zip", Double.NaN)).execute());
+        waitFor(db.pipeline().convertFrom(collection.whereNotEqualTo("zip", Double.NaN)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
   }
 
