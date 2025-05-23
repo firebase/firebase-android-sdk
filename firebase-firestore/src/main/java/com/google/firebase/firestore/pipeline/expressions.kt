@@ -2943,6 +2943,20 @@ abstract class Expr internal constructor() {
       FunctionExpr("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
+     * Creates an expression that returns the [catchExpr] argument if there is an error, else return
+     * the result of the [tryExpr] argument evaluation.
+     *
+     * This overload will return [BooleanExpr] when both parameters are also [BooleanExpr].
+     *
+     * @param tryExpr The try boolean expression.
+     * @param catchExpr The catch boolean expression that will be evaluated and returned if the [tryExpr]
+     * produces an error.
+     * @return A new [BooleanExpr] representing the ifError operation.
+     */
+    @JvmStatic
+    fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr = BooleanExpr("if_error", tryExpr, catchExpr)
+
+    /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
      * return the result of the [tryExpr] argument evaluation.
      *
@@ -4201,6 +4215,11 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
     function: EvaluateFunction,
     param: Expr
   ) : this(name, function, arrayOf(param))
+  internal constructor(
+    name: String,
+    param1: Expr,
+    param2: Any
+  ) : this(name, arrayOf(param1, toExprOrConstant(param2)))
   internal constructor(
     name: String,
     function: EvaluateFunction,

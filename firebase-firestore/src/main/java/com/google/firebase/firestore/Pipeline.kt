@@ -37,8 +37,8 @@ import com.google.firebase.firestore.pipeline.ExprWithAlias
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
-import com.google.firebase.firestore.pipeline.GenericStage
 import com.google.firebase.firestore.pipeline.InternalOptions
+import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
@@ -50,7 +50,7 @@ import com.google.firebase.firestore.pipeline.SampleStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
-import com.google.firebase.firestore.pipeline.Stage
+import com.google.firebase.firestore.pipeline.BaseStage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
@@ -62,7 +62,7 @@ open class AbstractPipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
   internal val userDataReader: UserDataReader,
-  internal val stages: FluentIterable<Stage<*>>
+  internal val stages: FluentIterable<BaseStage<*>>
 ) {
   private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
@@ -136,10 +136,10 @@ private constructor(
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
-    stage: Stage<*>
+    stage: BaseStage<*>
   ) : this(firestore, userDataReader, FluentIterable.of(stage))
 
-  private fun append(stage: Stage<*>): Pipeline {
+  private fun append(stage: BaseStage<*>): Pipeline {
     return Pipeline(firestore, userDataReader, stages.append(stage))
   }
 
@@ -159,10 +159,10 @@ private constructor(
    * This method provides a way to call stages that are supported by the Firestore backend but that
    * are not implemented in the SDK version being used.
    *
-   * @param stage An [GenericStage] object that specifies stage name and parameters.
+   * @param stage An [Stage] object that specifies stage name and parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun genericStage(stage: GenericStage): Pipeline = append(stage)
+  fun addStage(stage: Stage): Pipeline = append(stage)
 
   /**
    * Adds new fields to outputs from previous stages.

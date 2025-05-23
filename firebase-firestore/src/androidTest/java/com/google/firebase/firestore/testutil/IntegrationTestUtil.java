@@ -567,9 +567,18 @@ public class IntegrationTestUtil {
    * @param expectedDocs Ordered list of document keys that are expected to match the query
    */
   public static void checkQueryAndPipelineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsFromQuery = waitFor(query.get(Source.SERVER));
-    PipelineSnapshot docsFromPipeline =
-        waitFor(query.getFirestore().pipeline().convertFrom(query).execute());
+    QuerySnapshot docsFromQuery;
+    try {
+      docsFromQuery = waitFor(query.get(Source.SERVER));
+    } catch (Exception e) {
+      throw new RuntimeException("Classic Query FAILED", e);
+    }
+    PipelineSnapshot docsFromPipeline;
+    try {
+        docsFromPipeline = waitFor(query.getFirestore().pipeline().convertFrom(query).execute());
+    } catch (Exception e) {
+      throw new RuntimeException("Pipeline FAILED", e);
+    }
 
     assertEquals(querySnapshotToIds(docsFromQuery), pipelineSnapshotToIds(docsFromPipeline));
     List<String> expected = asList(expectedDocs);
