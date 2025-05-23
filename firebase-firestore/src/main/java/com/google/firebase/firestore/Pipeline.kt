@@ -131,7 +131,7 @@ class Pipeline
 private constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<Stage<*>>
+  stages: FluentIterable<BaseStage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
@@ -760,15 +760,15 @@ class RealtimePipeline
 internal constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<Stage<*>>
+  stages: FluentIterable<BaseStage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
-    stage: Stage<*>
+    stage: BaseStage<*>
   ) : this(firestore, userDataReader, FluentIterable.of(stage))
 
-  private fun append(stage: Stage<*>): RealtimePipeline {
+  private fun append(stage: BaseStage<*>): RealtimePipeline {
     return RealtimePipeline(firestore, userDataReader, stages.append(stage))
   }
 

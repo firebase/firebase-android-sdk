@@ -2954,7 +2954,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the ifError operation.
      */
     @JvmStatic
-    fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr = BooleanExpr("if_error", tryExpr, catchExpr)
+    fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr =
+      BooleanExpr("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
@@ -4217,9 +4218,10 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
   ) : this(name, function, arrayOf(param))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Any
-  ) : this(name, arrayOf(param1, toExprOrConstant(param2)))
+  ) : this(name, function, arrayOf(param1, toExprOrConstant(param2)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
