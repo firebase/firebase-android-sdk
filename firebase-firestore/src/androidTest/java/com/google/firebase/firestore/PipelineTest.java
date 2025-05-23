@@ -47,7 +47,7 @@ import com.google.common.truth.Correspondence;
 import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.Expr;
-import com.google.firebase.firestore.pipeline.GenericStage;
+import com.google.firebase.firestore.pipeline.Stage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -279,15 +279,15 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .genericStage(GenericStage.ofName("where").withArguments(lt(field("published"), 1984)))
-            .genericStage(
-                GenericStage.ofName("aggregate")
+            .addStage(Stage.ofName("where").withArguments(lt(field("published"), 1984)))
+            .addStage(
+                Stage.ofName("aggregate")
                     .withArguments(
                         ImmutableMap.of("avgRating", AggregateFunction.avg("rating")),
                         ImmutableMap.of("genre", field("genre"))))
-            .genericStage(GenericStage.ofName("where").withArguments(gt("avgRating", 4.3)))
-            .genericStage(
-                GenericStage.ofName("sort").withArguments(field("avgRating").descending()))
+            .addStage(Stage.ofName("where").withArguments(gt("avgRating", 4.3)))
+            .addStage(
+                Stage.ofName("sort").withArguments(field("avgRating").descending()))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)

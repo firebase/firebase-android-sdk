@@ -37,7 +37,7 @@ import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.Ordering;
-import com.google.firebase.firestore.pipeline.Stage;
+import com.google.firebase.firestore.pipeline.BaseStage;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -600,7 +600,7 @@ public final class Query {
   }
 
   @NonNull
-  private Stage<?> pipelineSource(FirebaseFirestore firestore) {
+  private BaseStage<?> pipelineSource(FirebaseFirestore firestore) {
     if (isDocumentQuery()) {
       return new DocumentsSource(path.canonicalString());
     } else if (isCollectionGroupQuery()) {
