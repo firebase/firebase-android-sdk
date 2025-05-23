@@ -195,7 +195,7 @@ public class FieldFilter extends Filter {
         if (value.hasNullValue()) {
           return and(exists, x.isNull());
         } else if (isNanValue(value)) {
-          // The isNotNan will error on non-numeric values.
+          // The isNan will error on non-numeric values.
           return and(exists, ifError(x.isNan(), Expr.constant(false)));
         } else {
           return and(exists, x.eq(value));
