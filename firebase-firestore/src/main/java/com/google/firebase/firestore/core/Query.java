@@ -38,6 +38,9 @@ import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.BaseStage;
+import com.google.firebase.firestore.util.BiFunction;
+import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.IntFunction;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +49,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.function.BiFunction;
 
 /**
  * Encapsulates all the query attributes we support in the SDK. It can be run against the
@@ -547,8 +549,7 @@ public final class Query {
     if (fields.size() == 1) {
       p = p.where(fields.get(0).exists());
     } else {
-      BooleanExpr[] conditions =
-          fields.stream().skip(1).map(Expr.Companion::exists).toArray(BooleanExpr[]::new);
+      BooleanExpr[] conditions = skipFirstToArray(fields, BooleanExpr[]::new, Expr.Companion::exists);
       p = p.where(and(fields.get(0).exists(), conditions));
     }
 
@@ -564,21 +565,41 @@ public final class Query {
     if (hasLimit()) {
       // TODO: Handle situation where user enters limit larger than integer.
       if (limitType == LimitType.LIMIT_TO_FIRST) {
-        p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
+        p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
         p = p.limit((int) limit);
       } else {
         p =
             p.sort(
                 orderings.get(0).reverse(),
-                orderings.stream().skip(1).map(Ordering::reverse).toArray(Ordering[]::new));
+                skipFirstToArray(orderings, Ordering[]::new, Ordering::reverse));
         p = p.limit((int) limit);
-        p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
+        p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
       }
     } else {
-      p = p.sort(orderings.get(0), orderings.stream().skip(1).toArray(Ordering[]::new));
+      p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
     }
 
     return p;
+  }
+
+  // Many Pipelines require first parameter to be separated out from rest.
+  private static <T> T[] skipFirstToArray(List<T> list, IntFunction<T[]> generator) {
+    int size = list.size();
+    T[] result = generator.apply(size - 1);
+    for (int i = 1; i < size; i++) {
+      result[i-1] = list.get(i);
+    }
+    return result;
+  }
+
+  // Many Pipelines require first parameter to be separated out from rest.
+  private static <T, R> R[] skipFirstToArray(List<T> list, IntFunction<R[]> generator, Function<T, R> map) {
+    int size = list.size();
+    R[] result = generator.apply(size - 1);
+    for (int i = 1; i < size; i++) {
+      result[i-1] = map.apply(list.get(i));
+    }
+    return result;
   }
 
   private static BooleanExpr whereConditionsFromCursor(
