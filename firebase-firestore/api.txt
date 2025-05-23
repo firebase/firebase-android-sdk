@@ -421,6 +421,7 @@ package com.google.firebase.firestore {
 
   public final class Pipeline {
     method public com.google.firebase.firestore.Pipeline addFields(com.google.firebase.firestore.pipeline.Selectable field, com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public com.google.firebase.firestore.Pipeline addStage(com.google.firebase.firestore.pipeline.Stage stage);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateWithAlias accumulator, com.google.firebase.firestore.pipeline.AggregateWithAlias... additionalAccumulators);
     method public com.google.firebase.firestore.Pipeline distinct(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
@@ -432,7 +433,6 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.FindNearestStage stage);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, com.google.firebase.firestore.VectorValue vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
-    method public com.google.firebase.firestore.Pipeline genericStage(com.google.firebase.firestore.pipeline.GenericStage stage);
     method public com.google.firebase.firestore.Pipeline limit(int limit);
     method public com.google.firebase.firestore.Pipeline offset(int offset);
     method public com.google.firebase.firestore.Pipeline removeFields(com.google.firebase.firestore.pipeline.Field field, com.google.firebase.firestore.pipeline.Field... additionalFields);
@@ -722,7 +722,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.AggregateFunction sum(String fieldName);
   }
 
-  public final class AggregateStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.AggregateStage> {
+  public final class AggregateStage extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.AggregateStage> {
     method public static com.google.firebase.firestore.pipeline.AggregateStage withAccumulators(com.google.firebase.firestore.pipeline.AggregateWithAlias accumulator, com.google.firebase.firestore.pipeline.AggregateWithAlias... additionalAccumulators);
     method public com.google.firebase.firestore.pipeline.AggregateStage withGroups(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
     method public com.google.firebase.firestore.pipeline.AggregateStage withGroups(String groupField, java.lang.Object... additionalGroups);
@@ -734,6 +734,17 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public final class AggregateWithAlias {
+  }
+
+  public abstract class BaseStage<T extends com.google.firebase.firestore.pipeline.BaseStage<T>> {
+    method protected final String getName();
+    method public final T with(String key, boolean value);
+    method public final T with(String key, com.google.firebase.firestore.pipeline.Field value);
+    method public final T with(String key, double value);
+    method protected final T with(String key, error.NonExistentClass value);
+    method public final T with(String key, String value);
+    method public final T with(String key, long value);
+    property protected final String name;
   }
 
   public class BooleanExpr extends com.google.firebase.firestore.pipeline.FunctionExpr {
@@ -749,7 +760,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr generic(String name, com.google.firebase.firestore.pipeline.Expr... expr);
   }
 
-  public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionGroupSource> {
+  public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.CollectionGroupSource> {
     method public static com.google.firebase.firestore.pipeline.CollectionGroupSource of(String collectionId);
     method public error.NonExistentClass withForceIndex(String value);
     field public static final com.google.firebase.firestore.pipeline.CollectionGroupSource.Companion Companion;
@@ -759,7 +770,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.CollectionGroupSource of(String collectionId);
   }
 
-  public final class CollectionSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionSource> {
+  public final class CollectionSource extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.CollectionSource> {
     method public static com.google.firebase.firestore.pipeline.CollectionSource of(com.google.firebase.firestore.CollectionReference ref);
     method public static com.google.firebase.firestore.pipeline.CollectionSource of(String path);
     method public error.NonExistentClass withForceIndex(String value);
@@ -825,12 +836,12 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public abstract class Expr {
-    method public static final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, Number second, java.lang.Object... others);
-    method public final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public final com.google.firebase.firestore.pipeline.Expr add(Number second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, Number second, java.lang.Object... others);
+    method public final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, Number second);
+    method public final com.google.firebase.firestore.pipeline.Expr add(Number second);
+    method public static final com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, Number second);
     method public com.google.firebase.firestore.pipeline.ExprWithAlias alias(String alias);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr and(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
     method public static final com.google.firebase.firestore.pipeline.Expr arrayConcat(com.google.firebase.firestore.pipeline.Expr firstArray, com.google.firebase.firestore.pipeline.Expr secondArray, java.lang.Object... otherArrays);
@@ -1003,6 +1014,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.BooleanExpr gte(Object value);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr gte(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr gte(String fieldName, Object value);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpr ifError(com.google.firebase.firestore.pipeline.BooleanExpr tryExpr, com.google.firebase.firestore.pipeline.BooleanExpr catchExpr);
     method public final com.google.firebase.firestore.pipeline.Expr ifError(com.google.firebase.firestore.pipeline.Expr catchExpr);
     method public static final com.google.firebase.firestore.pipeline.Expr ifError(com.google.firebase.firestore.pipeline.Expr tryExpr, com.google.firebase.firestore.pipeline.Expr catchExpr);
     method public static final com.google.firebase.firestore.pipeline.Expr ifError(com.google.firebase.firestore.pipeline.Expr tryExpr, Object catchValue);
@@ -1069,12 +1081,12 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expr mod(Number divisor);
     method public static final com.google.firebase.firestore.pipeline.Expr mod(String dividendFieldName, com.google.firebase.firestore.pipeline.Expr divisor);
     method public static final com.google.firebase.firestore.pipeline.Expr mod(String dividendFieldName, Number divisor);
-    method public static final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, Number second, java.lang.Object... others);
-    method public final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public final com.google.firebase.firestore.pipeline.Expr multiply(Number second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public static final com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, Number second, java.lang.Object... others);
+    method public final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, Number second);
+    method public final com.google.firebase.firestore.pipeline.Expr multiply(Number second);
+    method public static final com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second);
+    method public static final com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, Number second);
     method public final com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr other);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr left, Object right);
@@ -1211,10 +1223,10 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public static final class Expr.Companion {
-    method public com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, Number second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, Number second, java.lang.Object... others);
+    method public com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second);
+    method public com.google.firebase.firestore.pipeline.Expr add(com.google.firebase.firestore.pipeline.Expr first, Number second);
+    method public com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second);
+    method public com.google.firebase.firestore.pipeline.Expr add(String numericFieldName, Number second);
     method public com.google.firebase.firestore.pipeline.BooleanExpr and(com.google.firebase.firestore.pipeline.BooleanExpr condition, com.google.firebase.firestore.pipeline.BooleanExpr... conditions);
     method public com.google.firebase.firestore.pipeline.Expr arrayConcat(com.google.firebase.firestore.pipeline.Expr firstArray, com.google.firebase.firestore.pipeline.Expr secondArray, java.lang.Object... otherArrays);
     method public com.google.firebase.firestore.pipeline.Expr arrayConcat(com.google.firebase.firestore.pipeline.Expr firstArray, Object secondArray, java.lang.Object... otherArrays);
@@ -1332,6 +1344,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpr gte(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr gte(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
     method public com.google.firebase.firestore.pipeline.BooleanExpr gte(String fieldName, Object value);
+    method public com.google.firebase.firestore.pipeline.BooleanExpr ifError(com.google.firebase.firestore.pipeline.BooleanExpr tryExpr, com.google.firebase.firestore.pipeline.BooleanExpr catchExpr);
     method public com.google.firebase.firestore.pipeline.Expr ifError(com.google.firebase.firestore.pipeline.Expr tryExpr, com.google.firebase.firestore.pipeline.Expr catchExpr);
     method public com.google.firebase.firestore.pipeline.Expr ifError(com.google.firebase.firestore.pipeline.Expr tryExpr, Object catchValue);
     method public com.google.firebase.firestore.pipeline.BooleanExpr isAbsent(com.google.firebase.firestore.pipeline.Expr value);
@@ -1373,10 +1386,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expr mod(com.google.firebase.firestore.pipeline.Expr dividend, Number divisor);
     method public com.google.firebase.firestore.pipeline.Expr mod(String dividendFieldName, com.google.firebase.firestore.pipeline.Expr divisor);
     method public com.google.firebase.firestore.pipeline.Expr mod(String dividendFieldName, Number divisor);
-    method public com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, Number second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second, java.lang.Object... others);
-    method public com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, Number second, java.lang.Object... others);
+    method public com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, com.google.firebase.firestore.pipeline.Expr second);
+    method public com.google.firebase.firestore.pipeline.Expr multiply(com.google.firebase.firestore.pipeline.Expr first, Number second);
+    method public com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expr second);
+    method public com.google.firebase.firestore.pipeline.Expr multiply(String numericFieldName, Number second);
     method public com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr left, com.google.firebase.firestore.pipeline.Expr right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr neq(com.google.firebase.firestore.pipeline.Expr left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpr neq(String fieldName, com.google.firebase.firestore.pipeline.Expr expression);
@@ -1479,7 +1492,7 @@ package com.google.firebase.firestore.pipeline {
   public static final class Field.Companion {
   }
 
-  public final class FindNearestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.FindNearestStage> {
+  public final class FindNearestStage extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.FindNearestStage> {
     method public static com.google.firebase.firestore.pipeline.FindNearestStage of(com.google.firebase.firestore.pipeline.Field vectorField, com.google.firebase.firestore.VectorValue vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public static com.google.firebase.firestore.pipeline.FindNearestStage of(com.google.firebase.firestore.pipeline.Field vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public static com.google.firebase.firestore.pipeline.FindNearestStage of(String vectorField, com.google.firebase.firestore.VectorValue vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
@@ -1516,16 +1529,6 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public static final class GenericOptions.Companion {
-  }
-
-  public final class GenericStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.GenericStage> {
-    method public static com.google.firebase.firestore.pipeline.GenericStage ofName(String name);
-    method public com.google.firebase.firestore.pipeline.GenericStage withArguments(java.lang.Object... arguments);
-    field public static final com.google.firebase.firestore.pipeline.GenericStage.Companion Companion;
-  }
-
-  public static final class GenericStage.Companion {
-    method public com.google.firebase.firestore.pipeline.GenericStage ofName(String name);
   }
 
   public final class InternalOptions {
@@ -1573,7 +1576,7 @@ package com.google.firebase.firestore.pipeline {
   public static final class PipelineOptions.IndexMode.Companion {
   }
 
-  public final class SampleStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SampleStage> {
+  public final class SampleStage extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.SampleStage> {
     method public static com.google.firebase.firestore.pipeline.SampleStage withDocLimit(int documents);
     method public static com.google.firebase.firestore.pipeline.SampleStage withPercentage(double percentage);
     field public static final com.google.firebase.firestore.pipeline.SampleStage.Companion Companion;
@@ -1599,18 +1602,17 @@ package com.google.firebase.firestore.pipeline {
     ctor public Selectable();
   }
 
-  public abstract class Stage<T extends com.google.firebase.firestore.pipeline.Stage<T>> {
-    method protected final String getName();
-    method public final T with(String key, boolean value);
-    method public final T with(String key, com.google.firebase.firestore.pipeline.Field value);
-    method public final T with(String key, double value);
-    method protected final T with(String key, error.NonExistentClass value);
-    method public final T with(String key, String value);
-    method public final T with(String key, long value);
-    property protected final String name;
+  public final class Stage extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.Stage> {
+    method public static com.google.firebase.firestore.pipeline.Stage ofName(String name);
+    method public com.google.firebase.firestore.pipeline.Stage withArguments(java.lang.Object... arguments);
+    field public static final com.google.firebase.firestore.pipeline.Stage.Companion Companion;
   }
 
-  public final class UnnestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.UnnestStage> {
+  public static final class Stage.Companion {
+    method public com.google.firebase.firestore.pipeline.Stage ofName(String name);
+  }
+
+  public final class UnnestStage extends com.google.firebase.firestore.pipeline.BaseStage<com.google.firebase.firestore.pipeline.UnnestStage> {
     method public static com.google.firebase.firestore.pipeline.UnnestStage withField(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias);
     method public static com.google.firebase.firestore.pipeline.UnnestStage withField(String arrayField, String alias);
     method public com.google.firebase.firestore.pipeline.UnnestStage withIndexField(String indexField);

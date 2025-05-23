@@ -599,8 +599,14 @@ internal object Values {
       .build()
   }
 
+  @JvmField
+  val TRUE: Value = Value.newBuilder().setBooleanValue(true).build()
+
+  @JvmField
+  val FALSE: Value = Value.newBuilder().setBooleanValue(false).build()
+
   @JvmStatic
-  fun encodeValue(value: Boolean): Value = Value.newBuilder().setBooleanValue(value).build()
+  fun encodeValue(value: Boolean): Value = if (value) TRUE else FALSE
 
   @JvmStatic
   fun encodeValue(geoPoint: GeoPoint): Value =
