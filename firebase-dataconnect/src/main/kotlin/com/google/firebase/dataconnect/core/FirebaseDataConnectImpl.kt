@@ -493,7 +493,7 @@ internal class FirebaseDataConnectImpl(
   override fun hashCode(): Int = System.identityHashCode(this)
 
   override fun toString(): String =
-    "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
+    "zzyzx FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
 
   private data class EmulatedServiceSettings(val host: String, val port: Int)
 }
