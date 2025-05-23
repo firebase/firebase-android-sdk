@@ -20,6 +20,7 @@ import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +32,7 @@ class StartupBenchmark {
   @Test
   fun startup() =
     benchmarkRule.measureRepeated(
-      packageName = "com.google.firebase.testing.sessions",
+      packageName = PACKAGE_NAME,
       metrics = listOf(StartupTimingMetric()),
       iterations = 5,
       startupMode = StartupMode.COLD,
@@ -39,4 +40,24 @@ class StartupBenchmark {
       pressHome()
       startActivityAndWait()
     }
+
+  @Test
+  fun startup_clearAppData() =
+    benchmarkRule.measureRepeated(
+      packageName = PACKAGE_NAME,
+      metrics = listOf(StartupTimingMetric()),
+      iterations = 5,
+      startupMode = StartupMode.COLD,
+    ) {
+      pressHome()
+      InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand("pm clear $PACKAGE_NAME")
+        .close()
+      startActivityAndWait()
+    }
+
+  private companion object {
+    const val PACKAGE_NAME = "com.google.firebase.testing.sessions"
+  }
 }
