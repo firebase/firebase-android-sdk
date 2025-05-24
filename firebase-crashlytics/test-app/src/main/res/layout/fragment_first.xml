@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2023 Google LLC
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="16dp">
+
+    <!-- Shared / Common Buttons -->
+    <Button
+        android:id="@+id/button_shared_initialize_crashlytics"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shared_Initialize_Crashlytics" />
+
+    <Button
+        android:id="@+id/button_shared_generate_crash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shared_Generate_Crash" />
+
+    <Button
+        android:id="@+id/button_shared_verify_crash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shared_Verify_Crash" />
+
+    <Button
+        android:id="@+id/button_shared_verify_no_crash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shared_Verify_No_Crash" />
+
+    <!-- Core Scenario -->
+    <Button
+        android:id="@+id/button_firebasecore_fatal_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FirebaseCore_Fatal_Error" />
+
+    <!-- Public APIs -->
+    <Button
+        android:id="@+id/button_public_api_log"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_Log" />
+
+    <Button
+        android:id="@+id/button_public_api_setcustomvalue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_SetCustomValue" />
+
+    <Button
+        android:id="@+id/button_public_api_setuserid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_SetUserID" />
+
+    <Button
+        android:id="@+id/button_public_api_didcrashpreviously"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_DidCrashPreviously" />
+
+    <Button
+        android:id="@+id/button_public_api_recordexception"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_RecordException" />
+
+    <!-- Data Collection APIs -->
+    <Button
+        android:id="@+id/button_datacollection_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Default" />
+
+    <Button
+        android:id="@+id/button_datacollection_firebase_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Firebase_Off" />
+
+    <Button
+        android:id="@+id/button_datacollection_crashlytics_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_on"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_On" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_Send" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_Delete" />
+
+    <Button
+        android:id="@+id/button_interoperability_iid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Interoperability_IID" />
+
+    <TextView
+        android:id="@+id/current_user_id_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UserId not set yet"
+        android:paddingTop="16dp" />
+
+    <TextView
+        android:id="@+id/current_has_crashed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HasCrashed not set yet"
+        android:paddingTop="16dp" />
+
+  </LinearLayout>
+</ScrollView>
