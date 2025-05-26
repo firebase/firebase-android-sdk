@@ -35,6 +35,9 @@ object GaugeCounter {
     val metricsCount = counter.incrementAndGet()
 
     if (metricsCount >= MAX_METRIC_COUNT) {
+      // TODO(b/394127311): There can be rare conditions where there's an attempt to log metrics
+      //  even when it's currently logging them. While this is a no-op, it might be worth
+      //  exploring optimizing it further to prevent additional calls to [GaugeManager].
       gaugeManager.logGaugeMetrics()
     }
   }
