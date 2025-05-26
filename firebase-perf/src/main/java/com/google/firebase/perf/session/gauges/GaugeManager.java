@@ -284,7 +284,7 @@ public class GaugeManager extends AppStateUpdateHandler {
               .setSessionId(sessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
-      transportManager.log(gaugeMetric, ApplicationProcessState.FOREGROUND);
+      transportManager.log(gaugeMetric);
       return true;
     }
     return false;
