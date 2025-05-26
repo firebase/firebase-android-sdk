@@ -129,7 +129,7 @@ public class MemoryGaugeCollector {
                 AndroidMemoryReading memoryReading = syncCollectMemoryMetric(referenceTime);
                 if (memoryReading != null) {
                   memoryMetricReadings.add(memoryReading);
-                  GaugeCounter.INSTANCE.incrementCounter();
+                  GaugeCounter.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
@@ -149,7 +149,7 @@ public class MemoryGaugeCollector {
                 AndroidMemoryReading memoryReading = syncCollectMemoryMetric(referenceTime);
                 if (memoryReading != null) {
                   memoryMetricReadings.add(memoryReading);
-                  GaugeCounter.INSTANCE.incrementCounter();
+                  GaugeCounter.incrementCounter();
                 }
               },
               /* initialDelay */ 0,

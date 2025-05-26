@@ -31,6 +31,7 @@ object GaugeCounter {
   @set:JvmStatic
   var gaugeManager: GaugeManager = GaugeManager.getInstance()
 
+  @JvmStatic
   fun incrementCounter() {
     val metricsCount = counter.incrementAndGet()
 
@@ -41,15 +42,17 @@ object GaugeCounter {
     logger.debug("Incremented logger to $metricsCount")
   }
 
+  @JvmStatic
   fun decrementCounter() {
     val curr = counter.decrementAndGet()
     logger.debug("Decremented logger to $curr")
   }
 
   @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+  @JvmStatic
   fun resetCounter() {
     counter.set(0)
   }
 
-  @VisibleForTesting(otherwise = VisibleForTesting.NONE) fun count(): Int = counter.get()
+  @VisibleForTesting(otherwise = VisibleForTesting.NONE) @JvmStatic fun count(): Int = counter.get()
 }
