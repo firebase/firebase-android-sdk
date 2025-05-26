@@ -331,7 +331,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() throws InterruptedException {
+  public void testGaugeCounterStartsAJobToConsumeTheGeneratedMetrics() {
     PerfSession fakeSession = createTestSession(1);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
@@ -372,7 +372,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testGaugeCounterIsDecrementedWhenLogged() throws InterruptedException {
+  public void testGaugeCounterIsDecrementedWhenLogged() {
     int priorGaugeCounter = GaugeCounter.count();
 
     PerfSession fakeSession = createTestSession(1);
