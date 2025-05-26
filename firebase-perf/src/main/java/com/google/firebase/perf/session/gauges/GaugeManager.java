@@ -250,19 +250,18 @@ public class GaugeManager extends AppStateUpdateHandler {
    */
   private void syncFlush(String sessionId, ApplicationProcessState appState) {
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
-    GaugeCounter gaugeCounter = GaugeCounter.INSTANCE;
 
     // Adding CPU metric readings.
     while (!cpuGaugeCollector.get().cpuMetricReadings.isEmpty()) {
       gaugeMetricBuilder.addCpuMetricReadings(cpuGaugeCollector.get().cpuMetricReadings.poll());
-      gaugeCounter.decrementCounter();
+      GaugeCounter.decrementCounter();
     }
 
     // Adding Memory metric readings.
     while (!memoryGaugeCollector.get().memoryMetricReadings.isEmpty()) {
       gaugeMetricBuilder.addAndroidMemoryReadings(
           memoryGaugeCollector.get().memoryMetricReadings.poll());
-      gaugeCounter.decrementCounter();
+      GaugeCounter.decrementCounter();
     }
 
     // Adding Session ID info.
