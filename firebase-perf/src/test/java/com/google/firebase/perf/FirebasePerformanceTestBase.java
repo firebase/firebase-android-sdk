@@ -59,7 +59,7 @@ public class FirebasePerformanceTestBase {
   @BeforeClass
   public static void setUpBeforeClass() {
     // TODO(b/394127311): Explore removing this.
-    GaugeCounter.INSTANCE.resetCounter();
+    GaugeCounter.resetCounter();
   }
 
   @Before

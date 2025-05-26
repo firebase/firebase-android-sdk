@@ -429,7 +429,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     fakeSession.setGaugeAndEventCollectionEnabled(true);
     testGaugeManager.setApplicationProcessState(ApplicationProcessState.BACKGROUND);
     testGaugeManager.startCollectingGauges(fakeSession);
-    GaugeCounter.INSTANCE.setGaugeManager(testGaugeManager);
+    GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
     generateMetricsAndIncrementCounter(10);
@@ -615,10 +615,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     for (int i = 0; i < count; ++i) {
       if (random.nextInt(2) == 0) {
         fakeCpuGaugeCollector.cpuMetricReadings.add(createFakeCpuMetricReading(100, 200));
-        GaugeCounter.INSTANCE.incrementCounter();
+        GaugeCounter.incrementCounter();
       } else {
         fakeMemoryGaugeCollector.memoryMetricReadings.add(createFakeAndroidMetricReading(100));
-        GaugeCounter.INSTANCE.incrementCounter();
+        GaugeCounter.incrementCounter();
       }
     }
   }
