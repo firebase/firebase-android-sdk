@@ -15,7 +15,6 @@
 package com.google.firebase.perf.session.gauges
 
 import androidx.annotation.VisibleForTesting
-import com.google.firebase.perf.logging.AndroidLogger
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -24,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 object GaugeCounter {
   private const val MAX_METRIC_COUNT = 50
+  // For debugging explore re-introducing logging.
   private val counter = AtomicInteger(0)
-  private val logger = AndroidLogger.getInstance()
 
   @set:VisibleForTesting(otherwise = VisibleForTesting.NONE)
   @set:JvmStatic
@@ -38,14 +37,11 @@ object GaugeCounter {
     if (metricsCount >= MAX_METRIC_COUNT) {
       gaugeManager.logGaugeMetrics()
     }
-
-    logger.debug("Incremented logger to $metricsCount")
   }
 
   @JvmStatic
   fun decrementCounter() {
-    val curr = counter.decrementAndGet()
-    logger.debug("Decremented logger to $curr")
+    counter.decrementAndGet()
   }
 
   @VisibleForTesting(otherwise = VisibleForTesting.NONE)
