@@ -404,6 +404,44 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void testDuplicateGaugeLoggingIsAvoided() {
+    int priorGaugeCounter = GaugeCounter.count();
+    PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.setGaugeManager(testGaugeManager);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_BEFORE_LOGGING - 20);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_BEFORE_LOGGING);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    GaugeMetric recordedGaugeMetric =
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+
+    // It flushes all the metrics in the ConcurrentLinkedQueues that were added.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(2 * MAX_GAUGE_COUNTER_BEFORE_LOGGING - 20);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter);
+  }
+
+  @Test
   public void testUpdateAppStateHandlesMultipleAppStates() {
     PerfSession fakeSession = createTestSession(1);
     fakeSession.setGaugeAndEventCollectionEnabled(true);
@@ -564,7 +602,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     testGaugeManager.logGaugeMetadata(testSessionId(1));
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+        getLastRecordedGaugeMetric(ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -609,7 +647,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isTrue();
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+        getLastRecordedGaugeMetric(ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -675,8 +713,16 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   private GaugeMetric getLastRecordedGaugeMetric(
       ApplicationProcessState expectedApplicationProcessState) {
     ArgumentCaptor<GaugeMetric> argMetric = ArgumentCaptor.forClass(GaugeMetric.class);
-    verify(mockTransportManager, times(1))
-        .log(argMetric.capture(), eq(expectedApplicationProcessState));
+
+    // TODO(b/394127311): Revisit transportManager.log method which is only being called in unit
+    //  tests.
+    if (expectedApplicationProcessState
+        == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+      verify(mockTransportManager, times(1)).log(argMetric.capture());
+    } else {
+      verify(mockTransportManager, times(1))
+          .log(argMetric.capture(), eq(expectedApplicationProcessState));
+    }
     reset(mockTransportManager);
     // Required after resetting the mock. By default we assume that Transport is initialized.
     when(mockTransportManager.isInitialized()).thenReturn(true);
