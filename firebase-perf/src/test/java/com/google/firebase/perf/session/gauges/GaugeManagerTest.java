@@ -372,6 +372,36 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void testGaugeCounterIsDecrementedWhenLogged() throws InterruptedException {
+    int priorGaugeCounter = GaugeCounter.count();
+
+    PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.setGaugeManager(testGaugeManager);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
+    generateMetricsAndIncrementCounter(20);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(10);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter + 30);
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter);
+  }
+
+  @Test
   public void testUpdateAppStateHandlesMultipleAppStates() {
     PerfSession fakeSession = createTestSession(1);
     fakeSession.setGaugeAndEventCollectionEnabled(true);
