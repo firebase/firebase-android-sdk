@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
  */
 object GaugeCounter {
-  private const val MAX_METRIC_COUNT = 25
+  private const val MAX_METRIC_COUNT = 50
   private val counter = AtomicInteger(0)
   private val logger = AndroidLogger.getInstance()
 
