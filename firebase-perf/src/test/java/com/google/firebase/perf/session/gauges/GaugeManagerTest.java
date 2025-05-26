@@ -385,8 +385,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(20);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_BEFORE_LOGGING - 10);
 
     // There's still no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -397,7 +396,8 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
-    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter + 30);
+    assertThat(GaugeCounter.count())
+        .isEqualTo(priorGaugeCounter + MAX_GAUGE_COUNTER_BEFORE_LOGGING);
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
 
     assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter);
@@ -561,7 +561,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     when(fakeGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).thenReturn(1000);
     when(fakeGaugeMetadataManager.getMaxEncouragedAppJavaHeapMemoryKb()).thenReturn(800);
 
-    testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND);
+    testGaugeManager.logGaugeMetadata(testSessionId(1));
 
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
@@ -588,9 +588,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new Lazy<>(() -> fakeCpuGaugeCollector),
             new Lazy<>(() -> fakeMemoryGaugeCollector));
 
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isFalse();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isFalse();
   }
 
   @Test
@@ -605,14 +603,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new Lazy<>(() -> fakeCpuGaugeCollector),
             new Lazy<>(() -> fakeMemoryGaugeCollector));
 
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isFalse();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isFalse();
 
     testGaugeManager.initializeGaugeMetadataManager(ApplicationProvider.getApplicationContext());
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isTrue();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isTrue();
 
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);

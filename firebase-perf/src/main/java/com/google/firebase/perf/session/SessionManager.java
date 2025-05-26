@@ -115,6 +115,9 @@ public class SessionManager {
       }
     }
 
+    // Log gauge metadata.
+    logGaugeMetadataIfCollectionEnabled();
+
     // Start of stop the gauge data collection.
     startOrStopCollectingGauges();
   }
@@ -150,6 +153,12 @@ public class SessionManager {
   public void unregisterForSessionUpdates(WeakReference<SessionAwareObject> client) {
     synchronized (clients) {
       clients.remove(client);
+    }
+  }
+
+  private void logGaugeMetadataIfCollectionEnabled() {
+    if (perfSession.isVerbose()) {
+      gaugeManager.logGaugeMetadata(perfSession.sessionId());
     }
   }
 

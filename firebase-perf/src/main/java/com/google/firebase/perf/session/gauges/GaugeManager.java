@@ -274,18 +274,17 @@ public class GaugeManager extends AppStateUpdateHandler {
    * Log the Gauge Metadata information to the transport.
    *
    * @param sessionId The {@link PerfSession#sessionId()} ()} to which the collected Gauge Metrics
-   *     should be associated with.
-   * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
+   *                  should be associated with.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId) {
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()
               .setSessionId(sessionId)
               .setGaugeMetadata(getGaugeMetadata())
               .build();
-      transportManager.log(gaugeMetric, appState);
+      transportManager.log(gaugeMetric, ApplicationProcessState.FOREGROUND);
       return true;
     }
     return false;
