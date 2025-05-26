@@ -18,8 +18,8 @@ import androidx.annotation.VisibleForTesting
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * [GaugeCounter] is a thread-safe counter for gauge metrics. If the metrics count exceeds
- * [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
+ * [GaugeCounter] is a thread-safe counter for gauge metrics. If the metrics count reaches or
+ * exceeds [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
  */
 object GaugeCounter {
   private const val MAX_METRIC_COUNT = 50
