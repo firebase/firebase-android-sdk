@@ -60,7 +60,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   // This is a guesstimate of the max amount of time to wait before any pending metrics' collection
   // might take.
   private static final long TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS = 20;
-  private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS = 100;
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS = 50;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_BG_MS = 120;
