@@ -61,6 +61,7 @@ constructor(
   }
 
   internal var previousNotificationType: NotificationType = NotificationType.GENERAL
+  private var previousSessionId: String = ""
 
   init {
     CoroutineScope(backgroundDispatcher).launch {
@@ -171,6 +172,10 @@ constructor(
 
   private suspend fun notifySubscribers(sessionId: String, type: NotificationType) {
     previousNotificationType = type
+    if (previousSessionId == sessionId) {
+      return
+    }
+    previousSessionId = sessionId
     FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
       // Notify subscribers, regardless of sampling and data collection state
       subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
