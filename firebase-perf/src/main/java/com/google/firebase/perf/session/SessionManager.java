@@ -157,6 +157,8 @@ public class SessionManager {
   }
 
   private void logGaugeMetadataIfCollectionEnabled() {
+    FirebaseSessionsEnforcementCheck.checkSession(
+        perfSession, "logGaugeMetadataIfCollectionEnabled");
     if (perfSession.isVerbose()) {
       gaugeManager.logGaugeMetadata(perfSession.sessionId());
     }
