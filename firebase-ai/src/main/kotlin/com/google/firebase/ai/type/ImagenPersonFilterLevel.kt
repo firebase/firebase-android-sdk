@@ -20,12 +20,24 @@ package com.google.firebase.ai.type
 @PublicPreviewAPI
 public class ImagenPersonFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
-    /** No filters applied. */
+    /** Allow generation of images containing people of all ages.
+    * 
+    * > Important: Generation of images containing people or faces may require your use case to be
+    * reviewed and approved by Cloud support; see the [Responsible AI and usage
+    * guidelines](https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
+    * for more details.
+    */
     @JvmField public val ALLOW_ALL: ImagenPersonFilterLevel = ImagenPersonFilterLevel("allow_all")
-    /** Filters out any images containing depictions of children. */
+    /** Allow generation of images containing adults only; images of children are filtered out.
+    * 
+    * > Important: Generation of images containing people or faces may require your use case to be
+    * reviewed and approved by Cloud support; see the [Responsible AI and usage
+    * guidelines](https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
+    * for more details.
+    */
     @JvmField
     public val ALLOW_ADULT: ImagenPersonFilterLevel = ImagenPersonFilterLevel("allow_adult")
-    /** Filters out any images containing depictions of people. */
+    /** Disallow generation of images containing people or faces; images of people are filtered out. */
     @JvmField public val BLOCK_ALL: ImagenPersonFilterLevel = ImagenPersonFilterLevel("dont_allow")
   }
 }
