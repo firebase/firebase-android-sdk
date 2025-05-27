@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 public class SpeechConfig(
   /** The voice to be used for the server's speech response. */
-  public val voice: Voices,
+  public val voice: Voices
 ) {
 
   @Serializable
