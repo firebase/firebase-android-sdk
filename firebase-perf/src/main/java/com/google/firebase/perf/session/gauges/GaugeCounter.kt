@@ -15,17 +15,16 @@
 package com.google.firebase.perf.session.gauges
 
 import androidx.annotation.VisibleForTesting
-import com.google.firebase.perf.logging.AndroidLogger
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * [GaugeCounter] is a thread-safe counter for gauge metrics. If the metrics count exceeds
- * [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
+ * [GaugeCounter] is a thread-safe counter for gauge metrics. If the metrics count reaches or
+ * exceeds [MAX_METRIC_COUNT], it attempts to log the metrics to Firelog.
  */
 object GaugeCounter {
-  private const val MAX_METRIC_COUNT = 25
+  private const val MAX_METRIC_COUNT = 50
+  // For debugging explore re-introducing logging.
   private val counter = AtomicInteger(0)
-  private val logger = AndroidLogger.getInstance()
 
   @set:VisibleForTesting(otherwise = VisibleForTesting.NONE)
   @set:JvmStatic
@@ -36,16 +35,16 @@ object GaugeCounter {
     val metricsCount = counter.incrementAndGet()
 
     if (metricsCount >= MAX_METRIC_COUNT) {
+      // TODO(b/394127311): There can be rare conditions where there's an attempt to log metrics
+      //  even when it's currently logging them. While this is a no-op, it might be worth
+      //  exploring optimizing it further to prevent additional calls to [GaugeManager].
       gaugeManager.logGaugeMetrics()
     }
-
-    logger.debug("Incremented logger to $metricsCount")
   }
 
   @JvmStatic
   fun decrementCounter() {
-    val curr = counter.decrementAndGet()
-    logger.debug("Decremented logger to $curr")
+    counter.decrementAndGet()
   }
 
   @VisibleForTesting(otherwise = VisibleForTesting.NONE)

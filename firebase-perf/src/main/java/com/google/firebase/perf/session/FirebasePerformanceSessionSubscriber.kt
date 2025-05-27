@@ -17,8 +17,6 @@
 package com.google.firebase.perf.session
 
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck
-import com.google.firebase.perf.session.gauges.GaugeManager
-import com.google.firebase.perf.v1.ApplicationProcessState
 import com.google.firebase.sessions.api.SessionSubscriber
 
 class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled: Boolean) :
@@ -33,7 +31,5 @@ class FirebasePerformanceSessionSubscriber(override val isDataCollectionEnabled:
 
     val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
     SessionManager.getInstance().updatePerfSession(updatedSession)
-    GaugeManager.getInstance()
-      .logGaugeMetadata(updatedSession.sessionId(), ApplicationProcessState.FOREGROUND)
   }
 }

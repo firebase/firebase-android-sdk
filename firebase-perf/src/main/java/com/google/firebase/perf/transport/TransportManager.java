@@ -356,7 +356,6 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
-    // TODO(b/394127311): This *might* potentially be the right place to get AQS.
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }

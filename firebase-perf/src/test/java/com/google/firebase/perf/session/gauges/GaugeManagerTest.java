@@ -60,11 +60,13 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   // This is a guesstimate of the max amount of time to wait before any pending metrics' collection
   // might take.
   private static final long TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS = 20;
-  private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS = 100;
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS = 50;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_BG_MS = 120;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS = 60;
+
+  // See [com.google.firebase.perf.session.gauges.GaugeCounter].
+  private static final long MAX_GAUGE_COUNTER_LIMIT = 50;
 
   private GaugeManager testGaugeManager = null;
   private FakeScheduledExecutorService fakeScheduledExecutorService = null;
@@ -340,8 +342,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(20);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     // There's still no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -366,7 +367,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(30);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(MAX_GAUGE_COUNTER_LIMIT);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
@@ -383,8 +384,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
 
-    // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(20);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     // There's still no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -395,9 +395,47 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
 
-    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter + 30);
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter + MAX_GAUGE_COUNTER_LIMIT);
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
 
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter);
+  }
+
+  @Test
+  public void testDuplicateGaugeLoggingIsAvoided() {
+    int priorGaugeCounter = GaugeCounter.count();
+    PerfSession fakeSession = createTestSession(1);
+    testGaugeManager.setApplicationProcessState(ApplicationProcessState.FOREGROUND);
+    testGaugeManager.startCollectingGauges(fakeSession);
+    GaugeCounter.setGaugeManager(testGaugeManager);
+
+    // There's no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT - 20);
+
+    // There's still no job to log the gauges.
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT);
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
+
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    GaugeMetric recordedGaugeMetric =
+        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+
+    // It flushes all the metrics in the ConcurrentLinkedQueues that were added.
+    int recordedGaugeMetricsCount =
+        recordedGaugeMetric.getAndroidMemoryReadingsCount()
+            + recordedGaugeMetric.getCpuMetricReadingsCount();
+    assertThat(recordedGaugeMetricsCount).isEqualTo(2 * MAX_GAUGE_COUNTER_LIMIT - 20);
+
+    assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
     assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCounter);
   }
 
@@ -410,7 +448,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(10);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     // There's no job to log the gauges.
     assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
@@ -425,7 +463,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     shadowOf(Looper.getMainLooper()).idle();
 
     // Generate additional metrics in the new app state.
-    generateMetricsAndIncrementCounter(26);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT + 1);
 
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
@@ -434,7 +472,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(10);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
 
@@ -448,7 +486,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(MAX_GAUGE_COUNTER_LIMIT + 1);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
   }
@@ -462,7 +500,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeCounter.setGaugeManager(testGaugeManager);
 
     // Generate metrics that don't exceed the GaugeCounter.MAX_COUNT.
-    generateMetricsAndIncrementCounter(10);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     PerfSession updatedPerfSession = createTestSession(2);
     updatedPerfSession.setGaugeAndEventCollectionEnabled(true);
@@ -479,7 +517,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     shadowOf(Looper.getMainLooper()).idle();
 
     // Generate metrics for the new session.
-    generateMetricsAndIncrementCounter(26);
+    generateMetricsAndIncrementCounter(MAX_GAUGE_COUNTER_LIMIT + 1);
 
     GaugeMetric recordedGaugeMetric =
         getLastRecordedGaugeMetric(ApplicationProcessState.BACKGROUND);
@@ -488,7 +526,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     int recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(10);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(MAX_GAUGE_COUNTER_LIMIT - 10);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
 
@@ -502,7 +540,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     recordedGaugeMetricsCount =
         recordedGaugeMetric.getAndroidMemoryReadingsCount()
             + recordedGaugeMetric.getCpuMetricReadingsCount();
-    assertThat(recordedGaugeMetricsCount).isEqualTo(26);
+    assertThat(recordedGaugeMetricsCount).isEqualTo(MAX_GAUGE_COUNTER_LIMIT + 1);
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(2));
   }
@@ -559,10 +597,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     when(fakeGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).thenReturn(1000);
     when(fakeGaugeMetadataManager.getMaxEncouragedAppJavaHeapMemoryKb()).thenReturn(800);
 
-    testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND);
+    testGaugeManager.logGaugeMetadata(testSessionId(1));
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+        getLastRecordedGaugeMetric(ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -586,9 +624,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new Lazy<>(() -> fakeCpuGaugeCollector),
             new Lazy<>(() -> fakeMemoryGaugeCollector));
 
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isFalse();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isFalse();
   }
 
   @Test
@@ -603,17 +639,13 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new Lazy<>(() -> fakeCpuGaugeCollector),
             new Lazy<>(() -> fakeMemoryGaugeCollector));
 
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isFalse();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isFalse();
 
     testGaugeManager.initializeGaugeMetadataManager(ApplicationProvider.getApplicationContext());
-    assertThat(
-            testGaugeManager.logGaugeMetadata(testSessionId(1), ApplicationProcessState.FOREGROUND))
-        .isTrue();
+    assertThat(testGaugeManager.logGaugeMetadata(testSessionId(1))).isTrue();
 
     GaugeMetric recordedGaugeMetric =
-        getLastRecordedGaugeMetric(ApplicationProcessState.FOREGROUND);
+        getLastRecordedGaugeMetric(ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo(testSessionId(1));
@@ -638,7 +670,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   // Simulates the behavior of Cpu and Memory Gauge collector.
-  private void generateMetricsAndIncrementCounter(int count) {
+  private void generateMetricsAndIncrementCounter(long count) {
     // TODO(b/394127311): Explore actually collecting metrics using the fake Cpu and Memory
     //  metric collectors.
     Random random = new Random();
@@ -679,8 +711,16 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   private GaugeMetric getLastRecordedGaugeMetric(
       ApplicationProcessState expectedApplicationProcessState) {
     ArgumentCaptor<GaugeMetric> argMetric = ArgumentCaptor.forClass(GaugeMetric.class);
-    verify(mockTransportManager, times(1))
-        .log(argMetric.capture(), eq(expectedApplicationProcessState));
+
+    // TODO(b/394127311): Revisit transportManager.log method which is only being called in unit
+    //  tests.
+    if (expectedApplicationProcessState
+        == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+      verify(mockTransportManager, times(1)).log(argMetric.capture());
+    } else {
+      verify(mockTransportManager, times(1))
+          .log(argMetric.capture(), eq(expectedApplicationProcessState));
+    }
     reset(mockTransportManager);
     // Required after resetting the mock. By default we assume that Transport is initialized.
     when(mockTransportManager.isInitialized()).thenReturn(true);
