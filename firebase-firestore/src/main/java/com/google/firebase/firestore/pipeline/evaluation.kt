@@ -1,3 +1,4 @@
+@file:JvmName("Evaluation")
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.math.LongMath
@@ -7,6 +8,7 @@ import com.google.common.math.LongMath.checkedSubtract
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.model.Values.isNanValue
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
@@ -391,6 +393,24 @@ internal val evaluateUnixMillisToTimestamp = unaryFunction { millis: Long ->
 
 internal val evaluateUnixSecondsToTimestamp = unaryFunction { seconds: Long ->
   EvaluateResult.timestamp(seconds, 0)
+}
+
+// === Map Functions ===
+
+internal val evaluateMap: EvaluateFunction = { params ->
+  if (params.size % 2 != 0)
+    throw Assert.fail("Function should have even number of params, but %d were given.", params.size)
+  else block@{ input: MutableDocument ->
+    val map: MutableMap<String, Value> = HashMap(params.size / 2)
+    for (i in params.indices step 2) {
+      val k = params[i](input).value ?: return@block EvaluateResultError
+      if (!k.hasStringValue()) return@block EvaluateResultError
+      val v = params[i + 1](input).value ?: return@block EvaluateResultError
+      // It is against the API contract to include a key more than once.
+      if (map.put(k.stringValue, v) != null) return@block EvaluateResultError
+    }
+    EvaluateResultValue(encodeValue(map))
+  }
 }
 
 // === Helper Functions ===

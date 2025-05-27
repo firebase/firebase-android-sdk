@@ -1786,7 +1786,7 @@ abstract class Expr internal constructor() {
       FunctionExpr("str_concat", evaluateStrConcat, fieldName, *otherStrings)
 
     internal fun map(elements: Array<out Expr>): Expr =
-      FunctionExpr("map", notImplemented, elements)
+      FunctionExpr("map", evaluateMap, elements)
 
     /**
      * Creates an expression that creates a Firestore map value from an input object.
