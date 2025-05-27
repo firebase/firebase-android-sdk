@@ -218,6 +218,8 @@ internal val evaluateSubtract = arithmeticPrimitive(Math::subtractExact, Double:
 
 // === Array Functions ===
 
+internal val evaluateArray = variadicNullableValueFunction(EvaluateResult.Companion::list)
+
 internal val evaluateEqAny = notImplemented
 
 internal val evaluateNotEqAny = notImplemented
@@ -629,6 +631,15 @@ private inline fun variadicFunction(
       values.add(v)
     }
     if (nullFound) EvaluateResult.NULL else catch { function(values) }
+  }
+}
+
+@JvmName("variadicNullableValueFunction")
+private inline fun variadicNullableValueFunction(
+  crossinline function: (List<Value>) -> EvaluateResult
+): EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    catch { function(params.map { p -> p(input).value ?: return@block EvaluateResultError }) }
   }
 }
 

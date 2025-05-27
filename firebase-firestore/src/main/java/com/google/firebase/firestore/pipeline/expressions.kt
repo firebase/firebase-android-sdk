@@ -2602,6 +2602,26 @@ abstract class Expr internal constructor() {
       BooleanExpr("lte", evaluateLte, fieldName, value)
 
     /**
+     * Creates an expression that creates a Firestore array value from an input array.
+     *
+     * @param elements The input array to evaluate in the expression.
+     * @return A new [Expr] representing the array function.
+     */
+    @JvmStatic
+    fun array(vararg elements: Expr): Expr =
+      FunctionExpr("array", evaluateArray, elements)
+
+    /**
+     * Creates an expression that creates a Firestore array value from an input array.
+     *
+     * @param elements The input array to evaluate in the expression.
+     * @return A new [Expr] representing the array function.
+     */
+    @JvmStatic
+    fun array(elements: List<Expr>): Expr =
+      FunctionExpr("array", evaluateArray, elements.toTypedArray())
+
+    /**
      * Creates an expression that concatenates an array with other arrays.
      *
      * @param firstArray The first array expression to concatenate to.

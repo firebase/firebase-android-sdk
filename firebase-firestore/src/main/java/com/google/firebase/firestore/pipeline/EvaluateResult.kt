@@ -17,6 +17,7 @@ internal sealed class EvaluateResult(val value: Value?) {
     fun long(long: Long) = EvaluateResultValue(encodeValue(long))
     fun long(int: Int) = EvaluateResultValue(encodeValue(int.toLong()))
     fun string(string: String) = EvaluateResultValue(encodeValue(string))
+    fun list(list: List<Value>) = EvaluateResultValue(encodeValue(list))
     fun timestamp(timestamp: Timestamp): EvaluateResult =
       EvaluateResultValue(encodeValue(timestamp))
     fun timestamp(seconds: Long, nanos: Int): EvaluateResult =

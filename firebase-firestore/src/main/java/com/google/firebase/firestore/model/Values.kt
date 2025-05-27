@@ -652,16 +652,8 @@ internal object Values {
   @JvmStatic fun encodeValue(date: Date): Value = encodeValue(com.google.firebase.Timestamp((date)))
 
   @JvmStatic
-  fun encodeValue(timestamp: com.google.firebase.Timestamp): Value {
-    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
-    // the same with regards to truncation, perform the truncation immediately without waiting for
-    // the backend to do that.
-    val truncatedNanoseconds: Int = timestamp.nanoseconds / 1000 * 1000
-
-    return encodeValue(
-      Timestamp.newBuilder().setSeconds(timestamp.seconds).setNanos(truncatedNanoseconds).build()
-    )
-  }
+  fun encodeValue(timestamp: com.google.firebase.Timestamp): Value =
+    encodeValue(timestamp(timestamp.seconds, timestamp.nanoseconds))
 
   @JvmStatic
   fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
@@ -736,6 +728,12 @@ internal object Values {
     }
 
   @JvmStatic
-  fun timestamp(seconds: Long, nanos: Int): Timestamp =
-    Timestamp.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+  fun timestamp(seconds: Long, nanos: Int): Timestamp {
+    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
+    // the same with regards to truncation, perform the truncation immediately without waiting for
+    // the backend to do that.
+    val truncatedNanoseconds: Int = nanos / 1000 * 1000
+
+    return Timestamp.newBuilder().setSeconds(seconds).setNanos(truncatedNanoseconds).build()
+  }
 }
