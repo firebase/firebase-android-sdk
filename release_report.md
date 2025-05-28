@@ -26,28 +26,8 @@
 * Add crashlytics-ndk changelog entry (#6946)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/6946) [commit](https://github.com/firebase/firebase-android-sdk/commit/78360ad0ccd55589d37206729916ac57b61b7907)  [Daymon]
 
-## firebase-sessions
-      
-* Add macrobenchmark module for sessions test app (#6982)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6982) [commit](https://github.com/firebase/firebase-android-sdk/commit/9f5839fd4e823703629e60e876034b791f589c6e)  [Matthew Robertson]
 
 ## firebase-crashlytics/ktx
-      
-
-## firebase-dataconnect
-      
-* Update changelog and Vertex version from M164 (#6970)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6970) [commit](https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90)  [Daymon]
-
-* dataconnect: update dependencies in demo app (#6952)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6952) [commit](https://github.com/firebase/firebase-android-sdk/commit/f2257e48b1a9f307dcfcb49b3b63202f213d556f)  [Denver Coneybeare]
-
-## firebase-storage
-      
-* Update changelog and Vertex version from M164 (#6970)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6970) [commit](https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90)  [Daymon]
-
-## firebase-storage/ktx
       
 
 ## SDKs with changes, but no changelogs

@@ -5,9 +5,6 @@
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
-        ":firebase-crashlytics:ktx",
-        ":firebase-dataconnect",
-        ":firebase-storage",
-        ":firebase-storage:ktx"
+        ":firebase-crashlytics:ktx"
     ]
 }

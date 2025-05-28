@@ -73,36 +73,6 @@
             }
         ],
         "firebase-crashlytics/ktx": [
-        ],
-        "firebase-dataconnect": [
-            {
-                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prId": "6970",
-                "author": "Daymon",
-                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
-            },
-            {
-                "commitId": "f2257e48b1a9f307dcfcb49b3b63202f213d556f",
-                "prId": "6952",
-                "author": "Denver Coneybeare",
-                "message": "dataconnect: update dependencies in demo app (#6952)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2257e48b1a9f307dcfcb49b3b63202f213d556f",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6952"
-            }
-        ],
-        "firebase-storage": [
-            {
-                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prId": "6970",
-                "author": "Daymon",
-                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
-            }
-        ],
-        "firebase-storage/ktx": [
         ]
     },
     "changedLibrariesWithNoChangelog": [
