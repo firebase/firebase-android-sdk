@@ -1,0 +1,160 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "4e027a9f2751584cf5f8d411c9a031e72ef208a2",
+                "prId": "6995",
+                "author": "Rosário P. Fernandes",
+                "message": "Update ImagenPersonFilterLevel refdocs to match the iOS SDK (#6995)\n\nThis PR updates the ImagenPersonFilter refdocs to match the [iOS\nSDK](https://github.com/firebase/firebase-ios-sdk/blob/4f6c342424df416d78dfc12d08c97769fd4e1152/FirebaseAI/Sources/Types/Public/Imagen/ImagenPersonFilterLevel.swift#L33-L45),\nincluding the information about the [Person and face generation\nallowlist](https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4e027a9f2751584cf5f8d411c9a031e72ef208a2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6995"
+            },
+            {
+                "commitId": "82ad185491d1134f66ce5bfa6020b1d1ab8b8270",
+                "prId": "6972",
+                "author": "emilypgoogle",
+                "message": "Fix Firebase AI StackOverflow (#6972)\n\nSee #6971",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/82ad185491d1134f66ce5bfa6020b1d1ab8b8270",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6972"
+            },
+            {
+                "commitId": "9c004772e550ac5f83eb95afb4c27b05ff8f1f0d",
+                "prId": "6957",
+                "author": "Rosário P. Fernandes",
+                "message": "fix(ai): pass FunctionDeclaration#description arg to internal class (#6957)\n\nIt seems like the value set in `FunctionDeclaration#description` was\nnever making it to the API.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9c004772e550ac5f83eb95afb4c27b05ff8f1f0d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6957"
+            },
+            {
+                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prId": "6970",
+                "author": "Daymon",
+                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
+            },
+            {
+                "commitId": "2a1776413caaa70182c1c782fe7efcc5d73b2303",
+                "prId": "6948",
+                "author": "Vinay Guthal",
+                "message": "update headers in the correct location (#6948)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2a1776413caaa70182c1c782fe7efcc5d73b2303",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6948"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prId": "6970",
+                "author": "Daymon",
+                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "a9960190582812b7298196828509fbb5e49e4b33",
+                "prId": "6945",
+                "author": "Matthew Robertson",
+                "message": "Update Crashlytics changelog (#6945)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9960190582812b7298196828509fbb5e49e4b33",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6945"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "78360ad0ccd55589d37206729916ac57b61b7907",
+                "prId": "6946",
+                "author": "Daymon",
+                "message": "Add crashlytics-ndk changelog entry (#6946)\n\n#6945 was missing a changelog entry for the dependent library. This PR\nadds that changelog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/78360ad0ccd55589d37206729916ac57b61b7907",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6946"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "9f5839fd4e823703629e60e876034b791f589c6e",
+                "prId": "6982",
+                "author": "Matthew Robertson",
+                "message": "Add macrobenchmark module for sessions test app (#6982)\n\nAdd macrobenchmark module for sessions test app. This is just the setup\nand the example startup benchmark. I will add more in the PerfAQS\nproject, and write instructions in the readme then.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9f5839fd4e823703629e60e876034b791f589c6e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6982"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prId": "6970",
+                "author": "Daymon",
+                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
+            },
+            {
+                "commitId": "f2257e48b1a9f307dcfcb49b3b63202f213d556f",
+                "prId": "6952",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: update dependencies in demo app (#6952)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2257e48b1a9f307dcfcb49b3b63202f213d556f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6952"
+            }
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prId": "6970",
+                "author": "Daymon",
+                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
+            }
+        ],
+        "firebase-storage/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "5db7bfb3c92ca14a3a5a8a5a9091c98a7e7c0ccf",
+                "prId": "6976",
+                "author": "Rodrigo Lazo",
+                "message": "Use correct name in release notes for vertexai (#6976)\n\nThe release note name has been updated to use the correct value.\n\nContext cl/761183261",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5db7bfb3c92ca14a3a5a8a5a9091c98a7e7c0ccf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6976"
+            },
+            {
+                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prId": "6970",
+                "author": "Daymon",
+                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
+            },
+            {
+                "commitId": "eee76b4f7faf740c6e935888e0d26c0cb9411699",
+                "prId": "6949",
+                "author": "Daymon",
+                "message": "Revert \"Update headers to track vertex ai/developer usage in kotlin (… (#6949)\n\nThis reverts commit #6944.\n\nThe change was meant to be for `firebase-ai`, which we corrected with\n#6948.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eee76b4f7faf740c6e935888e0d26c0cb9411699",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6949"
+            },
+            {
+                "commitId": "f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
+                "prId": "6944",
+                "author": "Vinay Guthal",
+                "message": "Update headers to track vertex ai/developer usage in kotlin (#6944)\n\nThis change is required to track the usage of vertex ai/developer api in\nkotlin. This change adds a suffix to the version value in the headers we\nsend to the backend (This will mainly distinguish between the 16.0.0\nversions from the old sdk and the new one)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6944"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx"
+    ]
+}
