@@ -16,14 +16,6 @@
 * update headers in the correct location (#6948)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/6948) [commit](https://github.com/firebase/firebase-android-sdk/commit/2a1776413caaa70182c1c782fe7efcc5d73b2303)  [Vinay Guthal]
 
-## firebase-config
-      
-* Update changelog and Vertex version from M164 (#6970)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6970) [commit](https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90)  [Daymon]
-
-## firebase-config/ktx
-      
-
 ## firebase-crashlytics
       
 * Update Crashlytics changelog (#6945)   

@@ -2,8 +2,6 @@
     "name": "m165",
     "libraries": [
         ":firebase-ai",
-        ":firebase-config",
-        ":firebase-config:ktx",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
