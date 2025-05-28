@@ -1,5 +1,6 @@
 # Unreleased
 
+* [feature] Add support for `ThinkingConfig` and `Part.thought`.
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
 

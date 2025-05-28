@@ -362,6 +362,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
@@ -373,6 +374,7 @@ package com.google.firebase.ai.type {
     field public com.google.firebase.ai.type.Schema? responseSchema;
     field public java.util.List<java.lang.String>? stopSequences;
     field public Float? temperature;
+    field public com.google.firebase.ai.type.ThinkingConfig? thinkingConfig;
     field public Integer? topK;
     field public Float? topP;
   }
@@ -879,6 +881,14 @@ package com.google.firebase.ai.type {
     ctor public TextPart(String text);
     method public String getText();
     property public final String text;
+  }
+
+  public final class ThinkingConfig {
+    ctor public ThinkingConfig(Boolean? includeThoughts, Integer? thinkingBudget);
+    method public Boolean? getIncludeThoughts();
+    method public Integer? getThinkingBudget();
+    property public final Boolean? includeThoughts;
+    property public final Integer? thinkingBudget;
   }
 
   public final class Tool {
