@@ -1,5 +1,6 @@
 # Unreleased
 
+* [feat] Added support for setting thinking budget for the Gemini models that support it. (#6990)
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
 

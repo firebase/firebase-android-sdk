@@ -91,6 +91,7 @@ private constructor(
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
   internal val responseModalities: List<ResponseModality>?,
+  internal val thinkingConfig: ThinkingConfig?,
 ) {
 
   /**
@@ -135,6 +136,7 @@ private constructor(
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
+    @JvmField public var thinkingConfig: ThinkingConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -165,6 +167,9 @@ private constructor(
     public fun setResponseModalities(responseModalities: List<ResponseModality>?): Builder = apply {
       this.responseModalities = responseModalities
     }
+    public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
+      this.thinkingConfig = thinkingConfig
+    }
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -179,7 +184,8 @@ private constructor(
         frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
-        responseModalities = responseModalities
+        responseModalities = responseModalities,
+        thinkingConfig = thinkingConfig
       )
   }
 
@@ -195,7 +201,8 @@ private constructor(
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
       responseSchema = responseSchema?.toInternal(),
-      responseModalities = responseModalities?.map { it.toInternal() }
+      responseModalities = responseModalities?.map { it.toInternal() },
+      thinkingConfig = thinkingConfig?.toInternal()
     )
 
   @Serializable
@@ -210,7 +217,8 @@ private constructor(
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
     @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
-    @SerialName("response_modalities") val responseModalities: List<String>? = null
+    @SerialName("response_modalities") val responseModalities: List<String>? = null,
+    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null
   )
 
   public companion object {
