@@ -103,40 +103,6 @@
             }
         ],
         "firebase-storage/ktx": [
-        ],
-        "firebase-vertexai": [
-            {
-                "commitId": "5db7bfb3c92ca14a3a5a8a5a9091c98a7e7c0ccf",
-                "prId": "6976",
-                "author": "Rodrigo Lazo",
-                "message": "Use correct name in release notes for vertexai (#6976)\n\nThe release note name has been updated to use the correct value.\n\nContext cl/761183261",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5db7bfb3c92ca14a3a5a8a5a9091c98a7e7c0ccf",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6976"
-            },
-            {
-                "commitId": "129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prId": "6970",
-                "author": "Daymon",
-                "message": "Update changelog and Vertex version from M164 (#6970)\n\nPer [b/419000235](https://b.corp.google.com/issues/419000235),\n\nThis updates the changelogs and vai version changes we made on the\nrelease branch for M164. This should be merged before we create the\nmerge-back branch, such that the merge-back works as expected.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6970"
-            },
-            {
-                "commitId": "eee76b4f7faf740c6e935888e0d26c0cb9411699",
-                "prId": "6949",
-                "author": "Daymon",
-                "message": "Revert \"Update headers to track vertex ai/developer usage in kotlin (… (#6949)\n\nThis reverts commit #6944.\n\nThe change was meant to be for `firebase-ai`, which we corrected with\n#6948.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eee76b4f7faf740c6e935888e0d26c0cb9411699",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6949"
-            },
-            {
-                "commitId": "f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
-                "prId": "6944",
-                "author": "Vinay Guthal",
-                "message": "Update headers to track vertex ai/developer usage in kotlin (#6944)\n\nThis change is required to track the usage of vertex ai/developer api in\nkotlin. This change adds a suffix to the version value in the headers we\nsend to the backend (This will mainly distinguish between the 16.0.0\nversions from the old sdk and the new one)",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f4649cde3b0c603a7ac06db68d14ede1b6efa23e",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6944"
-            }
         ]
     },
     "changedLibrariesWithNoChangelog": [

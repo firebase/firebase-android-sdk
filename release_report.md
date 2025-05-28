@@ -50,21 +50,6 @@
 ## firebase-storage/ktx
       
 
-## firebase-vertexai
-      
-* Use correct name in release notes for vertexai (#6976)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6976) [commit](https://github.com/firebase/firebase-android-sdk/commit/5db7bfb3c92ca14a3a5a8a5a9091c98a7e7c0ccf)  [Rodrigo Lazo]
-
-* Update changelog and Vertex version from M164 (#6970)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6970) [commit](https://github.com/firebase/firebase-android-sdk/commit/129cb89fb28d3d76519e85471e6fcaad90db3b90)  [Daymon]
-
-* Revert "Update headers to track vertex ai/developer usage in kotlin (… (#6949)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6949) [commit](https://github.com/firebase/firebase-android-sdk/commit/eee76b4f7faf740c6e935888e0d26c0cb9411699)  [Daymon]
-
-* Update headers to track vertex ai/developer usage in kotlin (#6944)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/6944) [commit](https://github.com/firebase/firebase-android-sdk/commit/f4649cde3b0c603a7ac06db68d14ede1b6efa23e)  [Vinay Guthal]
-
-
 ## SDKs with changes, but no changelogs
 :firebase-inappmessaging  
 :firebase-inappmessaging-display  

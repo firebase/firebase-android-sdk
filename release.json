@@ -8,7 +8,6 @@
         ":firebase-crashlytics:ktx",
         ":firebase-dataconnect",
         ":firebase-storage",
-        ":firebase-storage:ktx",
-        ":firebase-vertexai"
+        ":firebase-storage:ktx"
     ]
 }
