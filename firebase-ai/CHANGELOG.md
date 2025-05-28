@@ -1,7 +1,8 @@
 # Unreleased
 
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
-* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
+* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
+* [changed] **Breaking Change**: Updated `Voices` to accept a voice name as an attribute
 
 # 16.0.0
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous

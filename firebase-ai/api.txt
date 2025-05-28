@@ -915,8 +915,9 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class Voices {
-    method public int getOrdinal();
-    property public final int ordinal;
+    ctor public Voices(String voiceName);
+    method public String getVoiceName();
+    property public final String voiceName;
     field public static final com.google.firebase.ai.type.Voices AOEDE;
     field public static final com.google.firebase.ai.type.Voices CHARON;
     field public static final com.google.firebase.ai.type.Voices.Companion Companion;
