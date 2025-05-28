@@ -19,17 +19,38 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Various voices supported by the server. The list of all voices can be found
- * [here](https://cloud.google.com/text-to-speech/docs/chirp3-hd)
- */
+/** Various voices supported by the server */
+@Deprecated("Please use the Voice class instead.")
 @PublicPreviewAPI
-public class Voices public constructor(public val voiceName: String) {
+public class Voices private constructor(public val ordinal: Int) {
 
   @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
 
+  @Serializable
+  internal enum class InternalEnum {
+    CHARON,
+    AOEDE,
+    FENRIR,
+    KORE,
+    PUCK;
+    internal fun toPublic() =
+      when (this) {
+        CHARON -> Voices.CHARON
+        AOEDE -> Voices.AOEDE
+        FENRIR -> Voices.FENRIR
+        KORE -> Voices.KORE
+        else -> Voices.PUCK
+      }
+  }
+
   internal fun toInternal(): Internal {
-    return Internal(this.voiceName)
+    return when (this) {
+      CHARON -> Internal(InternalEnum.CHARON.name)
+      AOEDE -> Internal(InternalEnum.AOEDE.name)
+      FENRIR -> Internal(InternalEnum.FENRIR.name)
+      KORE -> Internal(InternalEnum.KORE.name)
+      else -> Internal(InternalEnum.PUCK.name)
+    }
   }
 
   public companion object {
@@ -38,21 +59,21 @@ public class Voices public constructor(public val voiceName: String) {
      *
      * Will use the default voice of the model.
      */
-    @JvmField public val UNSPECIFIED: Voices = Voices("Puck")
+    @JvmField public val UNSPECIFIED: Voices = Voices(0)
 
     /** Represents the Charon voice. */
-    @JvmField public val CHARON: Voices = Voices("Charon")
+    @JvmField public val CHARON: Voices = Voices(1)
 
     /** Represents the Aoede voice. */
-    @JvmField public val AOEDE: Voices = Voices("Aoede")
+    @JvmField public val AOEDE: Voices = Voices(2)
 
     /** Represents the Fenrir voice. */
-    @JvmField public val FENRIR: Voices = Voices("Fenrir")
+    @JvmField public val FENRIR: Voices = Voices(3)
 
     /** Represents the Kore voice. */
-    @JvmField public val KORE: Voices = Voices("Kore")
+    @JvmField public val KORE: Voices = Voices(4)
 
     /** Represents the Puck voice. */
-    @JvmField public val PUCK: Voices = Voices("Puck")
+    @JvmField public val PUCK: Voices = Voices(5)
   }
 }
