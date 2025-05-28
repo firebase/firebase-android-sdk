@@ -258,10 +258,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class FileDataPart implements com.google.firebase.ai.type.Part {
-    ctor public FileDataPart(String uri, String mimeType);
+    ctor public FileDataPart(String uri, String mimeType, boolean thought = false);
     method public String getMimeType();
+    method public boolean getThought();
     method public String getUri();
     property public final String mimeType;
+    property public boolean thought;
     property public final String uri;
   }
 
@@ -292,12 +294,15 @@ package com.google.firebase.ai.type {
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null);
+    ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null, boolean thought = false);
     method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
     method public String? getId();
     method public String getName();
+    method public boolean getThought();
     property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
     property public final String? id;
     property public final String name;
+    property public boolean thought;
   }
 
   public final class FunctionCallingConfig {
@@ -322,12 +327,15 @@ package com.google.firebase.ai.type {
   public final class FunctionResponsePart implements com.google.firebase.ai.type.Part {
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response);
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null);
+    ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null, boolean thought = false);
     method public String? getId();
     method public String getName();
     method public kotlinx.serialization.json.JsonObject getResponse();
+    method public boolean getThought();
     property public final String? id;
     property public final String name;
     property public final kotlinx.serialization.json.JsonObject response;
+    property public boolean thought;
   }
 
   public final class GenerateContentResponse {
@@ -469,9 +477,11 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagePart implements com.google.firebase.ai.type.Part {
-    ctor public ImagePart(android.graphics.Bitmap image);
+    ctor public ImagePart(android.graphics.Bitmap image, boolean thought = false);
     method public android.graphics.Bitmap getImage();
+    method public boolean getThought();
     property public final android.graphics.Bitmap image;
+    property public boolean thought;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenAspectRatio {
@@ -580,11 +590,13 @@ package com.google.firebase.ai.type {
   }
 
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {
-    ctor public InlineDataPart(byte[] inlineData, String mimeType);
+    ctor public InlineDataPart(byte[] inlineData, String mimeType, boolean thought = false);
     method public byte[] getInlineData();
     method public String getMimeType();
+    method public boolean getThought();
     property public final byte[] inlineData;
     property public final String mimeType;
+    property public boolean thought;
   }
 
   public final class InvalidAPIKeyException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -692,6 +704,8 @@ package com.google.firebase.ai.type {
   }
 
   public interface Part {
+    method public boolean getThought();
+    property public abstract boolean thought;
   }
 
   public final class PartKt {
@@ -878,9 +892,11 @@ package com.google.firebase.ai.type {
   }
 
   public final class TextPart implements com.google.firebase.ai.type.Part {
-    ctor public TextPart(String text);
+    ctor public TextPart(String text, boolean thought = false);
     method public String getText();
+    method public boolean getThought();
     property public final String text;
+    property public boolean thought;
   }
 
   public final class ThinkingConfig {
@@ -911,16 +927,18 @@ package com.google.firebase.ai.type {
   }
 
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails);
+    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, Integer? thoughtsTokenCount);
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
+    method public Integer? getThoughtsTokenCount();
     method public int getTotalTokenCount();
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
+    property public final Integer? thoughtsTokenCount;
     property public final int totalTokenCount;
   }
 
