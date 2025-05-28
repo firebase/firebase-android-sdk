@@ -19,22 +19,16 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Speech configuration class for setting up the voice of the server's response. */
+/**
+ * Various voices supported by the server. The list of all voices can be found
+ * [here](https://cloud.google.com/text-to-speech/docs/chirp3-hd)
+ */
 @PublicPreviewAPI
-public class SpeechConfig(
-  /** The voice to be used for the server's speech response. */
-  public val voice: Voice
-) {
+public class Voice public constructor(public val voiceName: String) {
 
-  @Serializable
-  internal data class Internal(@SerialName("voice_config") val voiceConfig: VoiceConfigInternal) {
-    @Serializable
-    internal data class VoiceConfigInternal(
-      @SerialName("prebuilt_voice_config") val prebuiltVoiceConfig: Voice.Internal,
-    )
-  }
+  @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
 
   internal fun toInternal(): Internal {
-    return Internal(Internal.VoiceConfigInternal(prebuiltVoiceConfig = voice.toInternal()))
+    return Internal(this.voiceName)
   }
 }
