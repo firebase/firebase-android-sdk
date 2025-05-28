@@ -31,12 +31,15 @@ import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
-public interface Part {}
+public interface Part {
+  public val thought: Boolean
+}
 
 /** Represents text or string based data sent to and received from requests. */
-public class TextPart(public val text: String) : Part {
+public class TextPart(public val text: String, override val thought: Boolean) : Part {
 
-  @Serializable internal data class Internal(val text: String) : InternalPart
+  @Serializable
+  internal data class Internal(val text: String) : InternalPart
 }
 
 /**
@@ -45,12 +48,16 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part {
+public class ImagePart(
+  public val image: Bitmap,
+  override val thought: Boolean
+) : Part {
 
   internal fun toInlineDataPart() =
     InlineDataPart(
       android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
-      "image/jpeg"
+      "image/jpeg",
+      thought
     )
 }
 
@@ -61,7 +68,11 @@ public class ImagePart(public val image: Bitmap) : Part {
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
-public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
+public class InlineDataPart(
+  public val inlineData: ByteArray,
+  public val mimeType: String,
+  override val thought: Boolean
+) : Part {
 
   @Serializable
   internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
@@ -168,7 +179,11 @@ internal typealias Base64 = String
 
 internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
-@Serializable(PartSerializer::class) internal sealed interface InternalPart
+@Serializable(PartSerializer::class)
+internal sealed interface InternalPart {
+  @SerialName("thought")
+  val thought: Boolean
+}
 
 internal object PartSerializer :
   JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
@@ -192,6 +207,7 @@ internal fun Part.toInternal(): InternalPart {
       InlineDataPart.Internal(
         InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
       )
+
     is InlineDataPart ->
       InlineDataPart.Internal(
         InlineDataPart.Internal.InlineData(
@@ -199,14 +215,18 @@ internal fun Part.toInternal(): InternalPart {
           android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
         )
       )
+
     is FunctionCallPart ->
       FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id))
+
     is FunctionResponsePart ->
       FunctionResponsePart.Internal(
         FunctionResponsePart.Internal.FunctionResponse(name, response, id)
       )
+
     is FileDataPart ->
       FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
+
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
@@ -232,14 +252,17 @@ internal fun InternalPart.toPublic(): Part {
         InlineDataPart(data, inlineData.mimeType)
       }
     }
+
     is FunctionCallPart.Internal ->
       FunctionCallPart(
         functionCall.name,
         functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
         functionCall.id
       )
+
     is FunctionResponsePart.Internal ->
       FunctionResponsePart(functionResponse.name, functionResponse.response, functionResponse.id)
+
     is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
