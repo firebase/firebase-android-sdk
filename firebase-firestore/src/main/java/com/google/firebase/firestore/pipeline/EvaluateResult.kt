@@ -6,6 +6,8 @@ import com.google.firestore.v1.Value
 import com.google.protobuf.Timestamp
 
 internal sealed class EvaluateResult(val value: Value?) {
+  abstract val isError: Boolean
+
   companion object {
     val TRUE: EvaluateResultValue = EvaluateResultValue(Values.TRUE_VALUE)
     val FALSE: EvaluateResultValue = EvaluateResultValue(Values.FALSE_VALUE)
@@ -24,12 +26,16 @@ internal sealed class EvaluateResult(val value: Value?) {
       if (seconds !in -62_135_596_800 until 253_402_300_800) EvaluateResultError
       else timestamp(Values.timestamp(seconds, nanos))
   }
-  internal inline fun evaluateNonNull(f: (Value) -> EvaluateResult): EvaluateResult =
-    if (value?.hasNullValue() == true) f(value) else this
 }
 
-internal object EvaluateResultError : EvaluateResult(null)
+internal object EvaluateResultError : EvaluateResult(null) {
+  override val isError: Boolean = true
+}
 
-internal object EvaluateResultUnset : EvaluateResult(null)
+internal object EvaluateResultUnset : EvaluateResult(null) {
+  override val isError: Boolean = false
+}
 
-internal class EvaluateResultValue(value: Value) : EvaluateResult(value)
+internal class EvaluateResultValue(value: Value) : EvaluateResult(value) {
+  override val isError: Boolean = false
+}

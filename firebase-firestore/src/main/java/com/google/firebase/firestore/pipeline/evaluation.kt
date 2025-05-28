@@ -138,7 +138,7 @@ internal val evaluateDivide = arithmeticPrimitive(Long::div, Double::div)
 
 internal val evaluateFloor = arithmeticPrimitive({ it }, Math::floor)
 
-internal val evaluateMod = arithmeticPrimitive(Long::mod, Double::mod)
+internal val evaluateMod = arithmeticPrimitive(Long::rem, Double::rem)
 
 internal val evaluateMultiply: EvaluateFunction =
   arithmeticPrimitive(Math::multiplyExact, Double::times)
