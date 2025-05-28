@@ -4,12 +4,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.minus
-import com.google.firebase.firestore.pipeline.plus
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import com.google.protobuf.Timestamp
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -29,34 +25,5 @@ internal class PipelineTests {
     val list = runPipeline(pipeline, flowOf(doc1, doc2, doc3)).toList()
 
     assertThat(list).hasSize(1)
-  }
-
-  @Test
-  fun xxx(): Unit = runBlocking {
-    val zero: Timestamp = Values.timestamp(0, 0)
-    
-    assertThat(plus(zero, 0, 0))
-      .isEqualTo(zero)
-
-    assertThat(plus(Values.timestamp(1, 1), 1, 1))
-      .isEqualTo(Values.timestamp(2, 2))
-
-    assertThat(plus(Values.timestamp(1, 1), 0, 1))
-      .isEqualTo(Values.timestamp(1, 2))
-
-    assertThat(plus(Values.timestamp(1, 1), 1, 0))
-      .isEqualTo(Values.timestamp(2, 1))
-
-    assertThat(minus(zero, 0, 0))
-      .isEqualTo(zero)
-
-    assertThat(minus(Values.timestamp(1, 1), 1, 1))
-      .isEqualTo(zero)
-
-    assertThat(minus(Values.timestamp(1, 1), 0, 1))
-      .isEqualTo(Values.timestamp(1, 0))
-
-    assertThat(minus(Values.timestamp(1, 1), 1, 0))
-      .isEqualTo(Values.timestamp(0, 1))
   }
 }
