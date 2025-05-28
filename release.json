@@ -1,0 +1,10 @@
+{
+    "name": "m165",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx"
+    ]
+}

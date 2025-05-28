@@ -863,9 +863,9 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
-    ctor public SpeechConfig(com.google.firebase.ai.type.Voices voice);
-    method public com.google.firebase.ai.type.Voices getVoice();
-    property public final com.google.firebase.ai.type.Voices voice;
+    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
+    method public com.google.firebase.ai.type.Voice getVoice();
+    property public final com.google.firebase.ai.type.Voice voice;
   }
 
   public abstract class StringFormat {
@@ -914,19 +914,25 @@ package com.google.firebase.ai.type {
     property public final int totalTokenCount;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class Voices {
-    method public int getOrdinal();
-    property public final int ordinal;
-    field public static final com.google.firebase.ai.type.Voices AOEDE;
-    field public static final com.google.firebase.ai.type.Voices CHARON;
-    field public static final com.google.firebase.ai.type.Voices.Companion Companion;
-    field public static final com.google.firebase.ai.type.Voices FENRIR;
-    field public static final com.google.firebase.ai.type.Voices KORE;
-    field public static final com.google.firebase.ai.type.Voices PUCK;
-    field public static final com.google.firebase.ai.type.Voices UNSPECIFIED;
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class Voice {
+    ctor public Voice(String voiceName);
+    method public String getVoiceName();
+    property public final String voiceName;
   }
 
-  public static final class Voices.Companion {
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class Voices {
+    method @Deprecated public int getOrdinal();
+    property @Deprecated public final int ordinal;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices AOEDE;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices CHARON;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices FENRIR;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices KORE;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices PUCK;
+    field @Deprecated public static final com.google.firebase.ai.type.Voices UNSPECIFIED;
+  }
+
+  @Deprecated public static final class Voices.Companion {
   }
 
 }

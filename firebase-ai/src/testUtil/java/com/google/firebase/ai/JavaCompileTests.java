@@ -61,7 +61,7 @@ import com.google.firebase.ai.type.Schema;
 import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.UsageMetadata;
-import com.google.firebase.ai.type.Voices;
+import com.google.firebase.ai.type.Voice;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -137,7 +137,7 @@ public class JavaCompileTests {
         .setFrequencyPenalty(1.0F)
         .setPresencePenalty(2.0F)
         .setResponseModality(ResponseModality.AUDIO)
-        .setSpeechConfig(new SpeechConfig(Voices.AOEDE))
+        .setSpeechConfig(new SpeechConfig(new Voice("AOEDE")))
         .build();
   }
 
