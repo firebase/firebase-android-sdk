@@ -3,7 +3,10 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-public class ThinkingConfig(public val includeThoughts: Boolean?, public val thinkingBudget: Int?) {
+public class ThinkingConfig(
+  public val includeThoughts: Boolean? = null,
+  public val thinkingBudget: Int? = null
+) {
 
   internal fun toInternal() = Internal(includeThoughts, thinkingBudget)
 
