@@ -1,4 +1,5 @@
 @file:JvmName("Evaluation")
+
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.math.LongMath
@@ -10,6 +11,8 @@ import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.model.Values.isNanValue
+import com.google.firebase.firestore.model.Values.strictCompare
+import com.google.firebase.firestore.model.Values.strictEquals
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
 import com.google.protobuf.ByteString
@@ -76,17 +79,37 @@ internal val evaluateXor: EvaluateFunction = variadicFunction { values: BooleanA
 
 // === Comparison Functions ===
 
-internal val evaluateEq: EvaluateFunction = comparison(Values::strictEquals)
+internal val evaluateEq: EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+  EvaluateResult.boolean(strictEquals(p1, p2))
+}
 
-internal val evaluateNeq: EvaluateFunction = comparison { v1, v2 -> !Values.strictEquals(v1, v2) }
+internal val evaluateNeq: EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+  EvaluateResult.boolean(strictEquals(p1, p2)?.not())
+}
 
-internal val evaluateGt: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) > 0 }
+internal val evaluateGt: EvaluateFunction = comparison { v1, v2 ->
+  (strictCompare(v1, v2) ?: return@comparison false) > 0
+}
 
-internal val evaluateGte: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) >= 0 }
+internal val evaluateGte: EvaluateFunction = comparison { v1, v2 ->
+  when (strictEquals(v1, v2)) {
+    true -> true
+    false -> (strictCompare(v1, v2) ?: return@comparison false) > 0
+    null -> null
+  }
+}
 
-internal val evaluateLt: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) < 0 }
+internal val evaluateLt: EvaluateFunction = comparison { v1, v2 ->
+  (strictCompare(v1, v2) ?: return@comparison false) < 0
+}
 
-internal val evaluateLte: EvaluateFunction = comparison { v1, v2 -> Values.compare(v1, v2) <= 0 }
+internal val evaluateLte: EvaluateFunction = comparison { v1, v2 ->
+  when (strictEquals(v1, v2)) {
+    true -> true
+    false -> (strictCompare(v1, v2) ?: return@comparison false) < 0
+    null -> null
+  }
+}
 
 internal val evaluateNot: EvaluateFunction = unaryFunction { b: Boolean ->
   EvaluateResult.boolean(b.not())
@@ -297,52 +320,48 @@ internal fun plus(t: Timestamp, seconds: Long, nanos: Long): Timestamp =
   }
 
 private fun plus(t: Timestamp, seconds: Long): Timestamp =
-  if (seconds == 0L) t
-  else Values.timestamp(checkedAdd(t.seconds, seconds), t.nanos)
+  if (seconds == 0L) t else Values.timestamp(checkedAdd(t.seconds, seconds), t.nanos)
 
 internal fun minus(t: Timestamp, seconds: Long, nanos: Long): Timestamp =
   if (nanos == 0L) {
     minus(t, seconds)
   } else {
     val nanoSum = t.nanos - nanos // Overflow not possible since nanos is 0 to 1 000 000.
-    val secondsSum: Long = checkedSubtract(t.seconds, checkedSubtract(seconds, nanoSum / L_NANOS_PER_SECOND))
+    val secondsSum: Long =
+      checkedSubtract(t.seconds, checkedSubtract(seconds, nanoSum / L_NANOS_PER_SECOND))
     Values.timestamp(secondsSum, (nanoSum % I_NANOS_PER_SECOND).toInt())
   }
 
 private fun minus(t: Timestamp, seconds: Long): Timestamp =
-  if (seconds == 0L) t
-  else Values.timestamp(checkedSubtract(t.seconds, seconds), t.nanos)
+  if (seconds == 0L) t else Values.timestamp(checkedSubtract(t.seconds, seconds), t.nanos)
 
+internal val evaluateTimestampAdd = ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
+  EvaluateResult.timestamp(
+    when (u) {
+      "microsecond" -> plus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
+      "millisecond" -> plus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
+      "second" -> plus(t, n)
+      "minute" -> plus(t, checkedMultiply(n, 60))
+      "hour" -> plus(t, checkedMultiply(n, 3600))
+      "day" -> plus(t, checkedMultiply(n, 86400))
+      else -> return@ternaryTimestampFunction EvaluateResultError
+    }
+  )
+}
 
-internal val evaluateTimestampAdd =
-  ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
-    EvaluateResult.timestamp(
-      when (u) {
-        "microsecond" -> plus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
-        "millisecond" -> plus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
-        "second" -> plus(t, n)
-        "minute" -> plus(t, checkedMultiply(n, 60))
-        "hour" -> plus(t, checkedMultiply(n, 3600))
-        "day" -> plus(t, checkedMultiply(n, 86400))
-        else -> return@ternaryTimestampFunction EvaluateResultError
-      }
-    )
-  }
-
-internal val evaluateTimestampSub =
-  ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
-    EvaluateResult.timestamp(
-      when (u) {
-        "microsecond" -> minus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
-        "millisecond" -> minus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
-        "second" -> minus(t, n)
-        "minute" -> minus(t, checkedMultiply(n, 60))
-        "hour" -> minus(t, checkedMultiply(n, 3600))
-        "day" -> minus(t, checkedMultiply(n, 86400))
-        else -> return@ternaryTimestampFunction EvaluateResultError
-      }
-    )
-  }
+internal val evaluateTimestampSub = ternaryTimestampFunction { t: Timestamp, u: String, n: Long ->
+  EvaluateResult.timestamp(
+    when (u) {
+      "microsecond" -> minus(t, n / L_MICROS_PER_SECOND, (n % L_MICROS_PER_SECOND) * 1000)
+      "millisecond" -> minus(t, n / L_MILLIS_PER_SECOND, (n % L_MILLIS_PER_SECOND) * 1000_000)
+      "second" -> minus(t, n)
+      "minute" -> minus(t, checkedMultiply(n, 60))
+      "hour" -> minus(t, checkedMultiply(n, 3600))
+      "day" -> minus(t, checkedMultiply(n, 86400))
+      else -> return@ternaryTimestampFunction EvaluateResultError
+    }
+  )
+}
 
 internal val evaluateTimestampTrunc = notImplemented // TODO: Does not exist in expressions.kt yet.
 
@@ -402,17 +421,18 @@ internal val evaluateUnixSecondsToTimestamp = unaryFunction { seconds: Long ->
 internal val evaluateMap: EvaluateFunction = { params ->
   if (params.size % 2 != 0)
     throw Assert.fail("Function should have even number of params, but %d were given.", params.size)
-  else block@{ input: MutableDocument ->
-    val map: MutableMap<String, Value> = HashMap(params.size / 2)
-    for (i in params.indices step 2) {
-      val k = params[i](input).value ?: return@block EvaluateResultError
-      if (!k.hasStringValue()) return@block EvaluateResultError
-      val v = params[i + 1](input).value ?: return@block EvaluateResultError
-      // It is against the API contract to include a key more than once.
-      if (map.put(k.stringValue, v) != null) return@block EvaluateResultError
+  else
+    block@{ input: MutableDocument ->
+      val map: MutableMap<String, Value> = HashMap(params.size / 2)
+      for (i in params.indices step 2) {
+        val k = params[i](input).value ?: return@block EvaluateResultError
+        if (!k.hasStringValue()) return@block EvaluateResultError
+        val v = params[i + 1](input).value ?: return@block EvaluateResultError
+        // It is against the API contract to include a key more than once.
+        if (map.put(k.stringValue, v) != null) return@block EvaluateResultError
+      }
+      EvaluateResultValue(encodeValue(map))
     }
-    EvaluateResultValue(encodeValue(map))
-  }
 }
 
 // === Helper Functions ===
@@ -688,10 +708,10 @@ private inline fun variadicFunction(
   }
 }
 
-private inline fun comparison(crossinline predicate: (Value, Value) -> Boolean): EvaluateFunction =
+private inline fun comparison(crossinline f: (Value, Value) -> Boolean?): EvaluateFunction =
   binaryFunction { p1: Value, p2: Value ->
     if (isNanValue(p1) or isNanValue(p2)) EvaluateResult.FALSE
-    else catch { EvaluateResult.boolean(predicate(p1, p2)) }
+    else EvaluateResult.boolean(f(p1, p2))
   }
 
 private inline fun arithmeticPrimitive(

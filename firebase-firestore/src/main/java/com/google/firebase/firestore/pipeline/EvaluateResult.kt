@@ -7,6 +7,10 @@ import com.google.protobuf.Timestamp
 
 internal sealed class EvaluateResult(val value: Value?) {
   abstract val isError: Boolean
+  val isSuccess: Boolean
+    get() = this is EvaluateResultValue
+  val isUnset: Boolean
+    get() = this is EvaluateResultUnset
 
   companion object {
     val TRUE: EvaluateResultValue = EvaluateResultValue(Values.TRUE_VALUE)
@@ -14,6 +18,7 @@ internal sealed class EvaluateResult(val value: Value?) {
     val NULL: EvaluateResultValue = EvaluateResultValue(Values.NULL_VALUE)
     val DOUBLE_ZERO: EvaluateResultValue = double(0.0)
     val LONG_ZERO: EvaluateResultValue = long(0)
+    fun boolean(boolean: Boolean?) = if (boolean === null) NULL else boolean(boolean)
     fun boolean(boolean: Boolean) = if (boolean) TRUE else FALSE
     fun double(double: Double) = EvaluateResultValue(encodeValue(double))
     fun long(long: Long) = EvaluateResultValue(encodeValue(long))

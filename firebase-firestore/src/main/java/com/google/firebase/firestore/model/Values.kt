@@ -107,7 +107,8 @@ internal object Values {
     }
   }
 
-  fun strictEquals(left: Value, right: Value): Boolean {
+  fun strictEquals(left: Value, right: Value): Boolean? {
+    if (left.hasNullValue() || right.hasNullValue()) return null
     val leftType = typeOrder(left)
     val rightType = typeOrder(right)
     if (leftType != rightType) {
@@ -115,7 +116,7 @@ internal object Values {
     }
 
     return when (leftType) {
-      TYPE_ORDER_NULL -> false
+      TYPE_ORDER_NULL -> null
       TYPE_ORDER_NUMBER -> strictNumberEquals(left, right)
       TYPE_ORDER_ARRAY -> strictArrayEquals(left, right)
       TYPE_ORDER_VECTOR,
@@ -125,6 +126,15 @@ internal object Values {
       TYPE_ORDER_MAX_VALUE -> true
       else -> left == right
     }
+  }
+
+  fun strictCompare(left: Value, right: Value): Int? {
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
+    if (leftType != rightType) {
+      return null
+    }
+    return compareInternal(leftType, left, right)
   }
 
   @JvmStatic
@@ -156,29 +166,33 @@ internal object Values {
   }
 
   private fun strictNumberEquals(left: Value, right: Value): Boolean {
-    if (left.valueTypeCase != right.valueTypeCase) {
-      return false
-    }
-    return when (left.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
-      ValueTypeCase.DOUBLE_VALUE -> left.doubleValue == right.doubleValue
-      else -> false
-    }
+    if (left.doubleValue.isNaN() || right.doubleValue.isNaN()) return false
+    return numberEquals(left, right)
   }
 
-  private fun numberEquals(left: Value, right: Value): Boolean {
-    if (left.valueTypeCase != right.valueTypeCase) {
-      return false
-    }
-    return when (left.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+  private fun numberEquals(left: Value, right: Value): Boolean =
+    when (left.valueTypeCase) {
+      ValueTypeCase.INTEGER_VALUE ->
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+          ValueTypeCase.DOUBLE_VALUE -> right.doubleValue.compareTo(left.integerValue) == 0
+          else -> false
+        }
       ValueTypeCase.DOUBLE_VALUE ->
-        doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE ->
+            compareDoubleWithLong(left.doubleValue, right.integerValue) == 0
+          ValueTypeCase.DOUBLE_VALUE ->
+            doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+          else -> false
+        }
       else -> false
     }
-  }
 
-  private fun strictArrayEquals(left: Value, right: Value): Boolean {
+  private fun compareDoubleWithLong(double: Double, long: Long): Int =
+    if (double.isNaN()) -1 else double.compareTo(long)
+
+  private fun strictArrayEquals(left: Value, right: Value): Boolean? {
     val leftArray = left.arrayValue
     val rightArray = right.arrayValue
 
@@ -186,13 +200,16 @@ internal object Values {
       return false
     }
 
+    var foundNull = false
     for (i in 0 until leftArray.valuesCount) {
-      if (!strictEquals(leftArray.getValues(i), rightArray.getValues(i))) {
+      val equals = strictEquals(leftArray.getValues(i), rightArray.getValues(i))
+      if (equals === null) {
+        foundNull = true
+      } else if (!equals) {
         return false
       }
     }
-
-    return true
+    return if (foundNull) null else true
   }
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
@@ -212,7 +229,7 @@ internal object Values {
     return true
   }
 
-  private fun strictObjectEquals(left: Value, right: Value): Boolean {
+  private fun strictObjectEquals(left: Value, right: Value): Boolean? {
     val leftMap = left.mapValue
     val rightMap = right.mapValue
 
@@ -220,14 +237,18 @@ internal object Values {
       return false
     }
 
+    var foundNull = false
     for ((key, value) in leftMap.fieldsMap) {
       val otherEntry = rightMap.fieldsMap[key] ?: return false
-      if (!strictEquals(value, otherEntry)) {
+      val equals = strictEquals(value, otherEntry)
+      if (equals === null) {
+        foundNull = true
+      } else if (!equals) {
         return false
       }
     }
 
-    return true
+    return if (foundNull) null else true
   }
 
   private fun objectEquals(left: Value, right: Value): Boolean {
@@ -268,7 +289,11 @@ internal object Values {
       return Util.compareIntegers(leftType, rightType)
     }
 
-    return when (leftType) {
+    return compareInternal(leftType, left, right)
+  }
+
+  private fun compareInternal(leftType: Int, left: Value, right: Value): Int =
+    when (leftType) {
       TYPE_ORDER_NULL,
       TYPE_ORDER_MAX_VALUE -> 0
       TYPE_ORDER_BOOLEAN -> Util.compareBooleans(left.booleanValue, right.booleanValue)
@@ -288,7 +313,6 @@ internal object Values {
       TYPE_ORDER_VECTOR -> compareVectors(left.mapValue, right.mapValue)
       else -> throw Assert.fail("Invalid value type: $leftType")
     }
-  }
 
   @JvmStatic
   fun lowerBoundCompare(
@@ -658,14 +682,11 @@ internal object Values {
   @JvmStatic
   fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
 
-  @JvmField
-  val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
+  @JvmField val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
 
-  @JvmField
-  val FALSE_VALUE: Value = Value.newBuilder().setBooleanValue(false).build()
+  @JvmField val FALSE_VALUE: Value = Value.newBuilder().setBooleanValue(false).build()
 
-  @JvmStatic
-  fun encodeValue(value: Boolean): Value = if (value) TRUE_VALUE else FALSE_VALUE
+  @JvmStatic fun encodeValue(value: Boolean): Value = if (value) TRUE_VALUE else FALSE_VALUE
 
   @JvmStatic
   fun encodeValue(geoPoint: GeoPoint): Value =

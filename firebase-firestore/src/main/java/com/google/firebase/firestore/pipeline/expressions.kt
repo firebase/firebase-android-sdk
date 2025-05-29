@@ -48,10 +48,13 @@ import java.util.Date
  */
 abstract class Expr internal constructor() {
 
-  private class ValueConstant(val value: Value) : Expr() {
+  private class Constant(val value: Value) : Expr() {
     override fun toProto(userDataReader: UserDataReader): Value = value
     override fun evaluateContext(context: EvaluationContext) = { _: MutableDocument ->
       EvaluateResultValue(value)
+    }
+    override fun toString(): String {
+      return "Constant(value=$value)"
     }
   }
 
@@ -78,7 +81,7 @@ abstract class Expr internal constructor() {
         is DocumentReference -> constant(value)
         is ByteArray -> constant(value)
         is VectorValue -> constant(value)
-        is Value -> ValueConstant(value)
+        is Value -> Constant(value)
         is Map<*, *> ->
           map(
             value
@@ -100,7 +103,7 @@ abstract class Expr internal constructor() {
     internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<out Expr> =
       others.map(::toExprOrConstant).toTypedArray()
 
-    private val NULL: Expr = ValueConstant(Values.NULL_VALUE)
+    private val NULL: Expr = Constant(Values.NULL_VALUE)
 
     /**
      * Create a constant for a [String] value.
@@ -110,7 +113,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: String): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -121,7 +124,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Number): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -132,7 +135,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Date): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -143,7 +146,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Timestamp): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -178,8 +181,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] constant instance.
      */
     @JvmStatic
-    fun constant(value: GeoPoint): Expr {
-      return ValueConstant(encodeValue(value))
+    fun constant(value: GeoPoint): Expr { // Ensure this overload exists or is correctly placed
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -190,7 +193,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: ByteArray): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -201,7 +204,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Blob): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -235,7 +238,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: VectorValue): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -256,7 +259,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun vector(vector: DoubleArray): Expr {
-      return ValueConstant(Values.encodeVectorValue(vector))
+      return Constant(Values.encodeVectorValue(vector))
     }
 
     /**
@@ -267,7 +270,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun vector(vector: VectorValue): Expr {
-      return ValueConstant(encodeValue(vector))
+      return Constant(encodeValue(vector))
     }
 
     /**
@@ -1785,8 +1788,7 @@ abstract class Expr internal constructor() {
     fun strConcat(fieldName: String, vararg otherStrings: Any): Expr =
       FunctionExpr("str_concat", evaluateStrConcat, fieldName, *otherStrings)
 
-    internal fun map(elements: Array<out Expr>): Expr =
-      FunctionExpr("map", evaluateMap, elements)
+    internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", evaluateMap, elements)
 
     /**
      * Creates an expression that creates a Firestore map value from an input object.
@@ -2608,8 +2610,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the array function.
      */
     @JvmStatic
-    fun array(vararg elements: Expr): Expr =
-      FunctionExpr("array", evaluateArray, elements)
+    fun array(vararg elements: Expr): Expr = FunctionExpr("array", evaluateArray, elements)
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
@@ -2969,8 +2970,8 @@ abstract class Expr internal constructor() {
      * This overload will return [BooleanExpr] when both parameters are also [BooleanExpr].
      *
      * @param tryExpr The try boolean expression.
-     * @param catchExpr The catch boolean expression that will be evaluated and returned if the [tryExpr]
-     * produces an error.
+     * @param catchExpr The catch boolean expression that will be evaluated and returned if the
+     * [tryExpr] produces an error.
      * @return A new [BooleanExpr] representing the ifError operation.
      */
     @JvmStatic
