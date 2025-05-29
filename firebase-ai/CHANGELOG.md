@@ -1,24 +1,27 @@
 # Unreleased
-* [fixed] **Breaking Change**: Fixed missing builder methods and return types in builders.
-* [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
-    * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures object.
-    * **Action Required:** Change type of variable handling `LiveModelFutures.connect` to `ListenableFuture<LiveSessionsFutures>`
-* [changed] **Breaking Change**: Removed `UNSPECIFIED` value for enum class `ResponseModality`
-    * **Action Required:** Remove all references to `ResponseModality.UNSPECIFIED`
-* [changed] **Breaking Change**: Renamed `LiveGenerationConfig.setResponseModalities` to `LiveGenerationConfig.setResponseModality`
-    * **Action Required:** Replace all references of `LiveGenerationConfig.setResponseModalities` with `LiveGenerationConfig.setResponseModality`
-* [feature] Added support for `HarmBlockThreshold.OFF`. See the
-  [model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/configure-safety-filters#how_to_configure_content_filters){: .external}
-  for more information.
-* [fixed] Improved thread usage when using a `LiveGenerativeModel`. (#6870)
-* [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
-  interrupted or the turn completed. (#6870)
-* [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
-* * [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
-  fields as properties of `LiveContentResponse`. (#6906)
-* [changed] **Breaking Change**: Removed the `LiveContentResponse` class, and instead have provided subclasses
-  of `LiveServerMessage` that match the responses from the model. (#6910)
-* [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6910)
-* [feature] Add support for specifying response modalities in `GenerationConfig`. (#6921)
-* [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6922)
+
+* [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
+* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
+* [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
+* [changed] **Breaking Change**: Updated `SpeechConfig` to take in `Voice` class instead of `Voices` class.
+    * **Action Required:** Update all references of `SpeechConfig` initialization to use `Voice` class.
+
+ 
+# 16.0.0
+* [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous
+ Vertex AI in Firebase SDK (`firebase-vertexai`) to accommodate the evolving set of supported
+ features and services.
+  * The new Firebase AI SDK provides **Preview** support for the Gemini Developer API, including its
+  free tier offering.
+  * Using the Firebase AI SDK with the Vertex AI Gemini API is still generally available (GA).
+
+ If you're using the old `firebase-vertexai`, we recommend
+ [migrating to `firebase-ai`](/docs/ai-logic/migrate-to-latest-sdk)
+ because all new development and features will be in this new SDK.
+* [feature] **Preview:** Added support for specifying response modalities in `GenerationConfig`
+ (only available in the new `firebase-ai` package). This includes support for image generation using
+ [specific Gemini models](/docs/vertex-ai/models).
+
+ Note: This feature is in Public Preview, which means that it is not subject to any SLA or
+ deprecation policy and could change in backwards-incompatible ways.
 

@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service 
+  connection Executor.
 
 # 24.1.1
 * [changed] Bug fix in SyncTask to always unregister the receiver on the same

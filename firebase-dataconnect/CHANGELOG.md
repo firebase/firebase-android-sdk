@@ -1,8 +1,10 @@
 # Unreleased
-* [changed] Code robustness improvements related to state management in
+
+
+# 16.0.2
+* [changed] Improved code robustness related to state management in
   `FirebaseDataConnect` objects.
   ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
-
 
 # 16.0.1
 * [changed] Internal improvements.

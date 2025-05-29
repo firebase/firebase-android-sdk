@@ -1,5 +1,15 @@
 # Unreleased
-* [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting HttpURLConnection only on API levels 26 and higher.
+
+
+# 22.1.2
+* [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting 
+  `HttpURLConnection` only on API levels 26 and higher. GitHub Issue [#6934]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
 
 # 22.1.1
 * [fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain
