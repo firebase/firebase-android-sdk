@@ -20,23 +20,30 @@ internal fun evaluate(expr: Expr, doc: MutableDocument): EvaluateResult {
 }
 
 // Helper to check for successful evaluation to a boolean value
-internal fun assertEvaluatesTo(result: EvaluateResult, expected: Boolean, message: () -> String) {
-  assertWithMessage(message()).that(result.isSuccess).isTrue()
-  assertWithMessage(message()).that(result.value).isEqualTo(encodeValue(expected))
+internal fun assertEvaluatesTo(
+  result: EvaluateResult,
+  expected: Boolean,
+  format: String,
+  vararg args: Any?
+) {
+  assertWithMessage(format, *args).that(result.isSuccess).isTrue()
+  assertWithMessage(format, *args).that(result.value).isEqualTo(encodeValue(expected))
 }
 
 // Helper to check for evaluation resulting in NULL
-internal fun assertEvaluatesToNull(result: EvaluateResult, message: () -> String) {
-  assertWithMessage(message()).that(result.isSuccess).isTrue() // Null is a successful evaluation
-  assertWithMessage(message()).that(result.value).isEqualTo(NULL_VALUE)
+internal fun assertEvaluatesToNull(result: EvaluateResult, format: String, vararg args: Any?) {
+  assertWithMessage(format, *args)
+    .that(result.isSuccess)
+    .isTrue() // Null is a successful evaluation
+  assertWithMessage(format, *args).that(result.value).isEqualTo(NULL_VALUE)
 }
 
 // Helper to check for evaluation resulting in UNSET (e.g. field not found)
-internal fun assertEvaluatesToUnset(result: EvaluateResult, message: () -> String) {
-  assertWithMessage(message()).that(result).isSameInstanceAs(EvaluateResultUnset)
+internal fun assertEvaluatesToUnset(result: EvaluateResult, format: String, vararg args: Any?) {
+  assertWithMessage(format, *args).that(result).isSameInstanceAs(EvaluateResultUnset)
 }
 
 // Helper to check for evaluation resulting in an error
-internal fun assertEvaluatesToError(result: EvaluateResult, message: () -> String) {
-  assertWithMessage(message()).that(result).isSameInstanceAs(EvaluateResultError)
+internal fun assertEvaluatesToError(result: EvaluateResult, format: String, vararg args: Any?) {
+  assertWithMessage(format, *args).that(result).isSameInstanceAs(EvaluateResultError)
 }
