@@ -524,9 +524,6 @@ internal class ComparisonTests {
   fun lt_lessThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
       val result = evaluate(lt(v1, v2))
-      if (result.value?.booleanValue == false) {
-        return
-      }
       assertEvaluatesTo(result, true) { "lt($v1, $v2)" }
     }
   }
