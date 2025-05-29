@@ -90,7 +90,7 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   @Serializable
   internal data class Internal(
     @EncodeDefault val role: String? = "user",
-    @EncodeDefault val parts: List<InternalPart> = emptyList()
+    val parts: List<InternalPart> = emptyList()
   ) {
     internal fun toPublic(): Content {
       val returnedParts =
