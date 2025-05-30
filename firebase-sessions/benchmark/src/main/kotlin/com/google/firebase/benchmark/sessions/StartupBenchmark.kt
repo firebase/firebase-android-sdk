@@ -21,6 +21,7 @@ import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.FileInputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,14 +49,25 @@ class StartupBenchmark {
       metrics = listOf(StartupTimingMetric()),
       iterations = 5,
       startupMode = StartupMode.COLD,
+      setupBlock = { clearAppData(packageName) },
     ) {
       pressHome()
-      InstrumentationRegistry.getInstrumentation()
-        .uiAutomation
-        .executeShellCommand("pm clear $PACKAGE_NAME")
-        .close()
       startActivityAndWait()
     }
+
+  private fun clearAppData(packageName: String) {
+    val fileDescriptor =
+      InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand("pm clear $packageName")
+    val fileInputStream = FileInputStream(fileDescriptor.fileDescriptor)
+    // Read the output to ensure the app data was cleared successfully
+    val result = fileInputStream.bufferedReader().use { it.readText().trim() }
+    fileDescriptor.close()
+    if (result != "Success") {
+      throw IllegalStateException("Unable to clear app data for $packageName - $result")
+    }
+  }
 
   private companion object {
     const val PACKAGE_NAME = "com.google.firebase.testing.sessions"
