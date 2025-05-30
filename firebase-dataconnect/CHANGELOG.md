@@ -1,7 +1,7 @@
 # Unreleased
 * [fixed] Fixed occasional `NullPointerException` when registering with
   FirebaseAuth, leading to erroneous UNAUTHENTICATED exceptions.
-  ([#nnnn](https://github.com/firebase/firebase-android-sdk/pull/nnnn))
+  ([#7001](https://github.com/firebase/firebase-android-sdk/pull/7001))
 
 # 16.0.2
 * [changed] Improved code robustness related to state management in
