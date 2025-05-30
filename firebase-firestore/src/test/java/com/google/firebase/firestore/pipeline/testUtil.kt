@@ -7,6 +7,7 @@ import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
+import com.google.firestore.v1.Value
 
 val DATABASE_ID = UserDataReader(DatabaseId.forDatabase("project", "(default)"))
 val EMPTY_DOC: MutableDocument = doc("foo/1", 0, mapOf())
@@ -25,9 +26,17 @@ internal fun assertEvaluatesTo(
   expected: Boolean,
   format: String,
   vararg args: Any?
+) = assertEvaluatesTo(result, encodeValue(expected), format, *args)
+
+// Helper to check for successful evaluation to a value
+internal fun assertEvaluatesTo(
+  result: EvaluateResult,
+  expected: Value,
+  format: String,
+  vararg args: Any?
 ) {
   assertWithMessage(format, *args).that(result.isSuccess).isTrue()
-  assertWithMessage(format, *args).that(result.value).isEqualTo(encodeValue(expected))
+  assertWithMessage(format, *args).that(result.value).isEqualTo(expected)
 }
 
 // Helper to check for evaluation resulting in NULL

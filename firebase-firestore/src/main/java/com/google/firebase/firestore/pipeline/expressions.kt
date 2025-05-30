@@ -1497,7 +1497,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_max", notImplemented, expr, *others)
+      FunctionExpr("logical_max", evaluateLogicalMaximum, expr, *others)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1509,7 +1509,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_max", notImplemented, fieldName, *others)
+      FunctionExpr("logical_max", evaluateLogicalMaximum, fieldName, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1521,7 +1521,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_min", notImplemented, expr, *others)
+      FunctionExpr("logical_min", evaluateLogicalMinimum, expr, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1533,7 +1533,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_min", notImplemented, fieldName, *others)
+      FunctionExpr("logical_min", evaluateLogicalMinimum, fieldName, *others)
 
     /**
      * Creates an expression that reverses a string.
@@ -2920,7 +2920,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenExpr: Expr, elseExpr: Expr): Expr =
-      FunctionExpr("cond", notImplemented, condition, thenExpr, elseExpr)
+      FunctionExpr("cond", evaluateCond, condition, thenExpr, elseExpr)
 
     /**
      * Creates a conditional expression that evaluates to a [thenValue] if a condition is true or an
@@ -2933,7 +2933,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenValue: Any, elseValue: Any): Expr =
-      FunctionExpr("cond", notImplemented, condition, thenValue, elseValue)
+      FunctionExpr("cond", evaluateCond, condition, thenValue, elseValue)
 
     /**
      * Creates an expression that checks if a field exists.

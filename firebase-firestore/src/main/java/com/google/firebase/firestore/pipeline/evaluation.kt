@@ -15,6 +15,7 @@ import com.google.firebase.firestore.model.Values.strictCompare
 import com.google.firebase.firestore.model.Values.strictEquals
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
+import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
 import java.math.BigDecimal
@@ -51,43 +52,76 @@ internal val evaluateExists: EvaluateFunction = unaryFunction { r: EvaluateResul
 
 internal val evaluateAnd: EvaluateFunction = { params ->
   fun(input: MutableDocument): EvaluateResult {
-    // We only propagate NULL if all no FALSE parameters exist.
-    var result: EvaluateResult = EvaluateResult.TRUE
+    var isError = false
+    var isNull = false
     for (param in params) {
-      val value = param(input).value ?: return EvaluateResultError
-      when (value.valueTypeCase) {
-        Value.ValueTypeCase.NULL_VALUE -> result = EvaluateResult.NULL
-        Value.ValueTypeCase.BOOLEAN_VALUE -> {
-          if (!value.booleanValue) return EvaluateResult.FALSE
+      val value = param(input).value
+      if (value === null) isError = true
+      else
+        when (value.valueTypeCase) {
+          ValueTypeCase.NULL_VALUE -> isNull = true
+          ValueTypeCase.BOOLEAN_VALUE -> {
+            if (!value.booleanValue) return EvaluateResult.FALSE
+          }
+          else -> return EvaluateResultError
         }
-        else -> return EvaluateResultError
-      }
     }
-    return result
+    return if (isError) EvaluateResultError
+    else if (isNull) EvaluateResult.NULL else EvaluateResult.TRUE
   }
 }
 
 internal val evaluateOr: EvaluateFunction = { params ->
   fun(input: MutableDocument): EvaluateResult {
-    // We only propagate NULL if all no TRUE parameters exist.
-    var result: EvaluateResult = EvaluateResult.FALSE
+    var isError = false
+    var isNull = false
     for (param in params) {
-      val value = param(input).value ?: return EvaluateResultError
-      when (value.valueTypeCase) {
-        Value.ValueTypeCase.NULL_VALUE -> result = EvaluateResult.NULL
-        Value.ValueTypeCase.BOOLEAN_VALUE -> {
-          if (value.booleanValue) return EvaluateResult.TRUE
+      val value = param(input).value
+      if (value === null) isError = true
+      else
+        when (value.valueTypeCase) {
+          ValueTypeCase.NULL_VALUE -> isNull = true
+          ValueTypeCase.BOOLEAN_VALUE -> {
+            if (value.booleanValue) return EvaluateResult.TRUE
+          }
+          else -> return EvaluateResultError
         }
-        else -> return EvaluateResultError
-      }
     }
-    return result
+    return if (isError) EvaluateResultError
+    else if (isNull) EvaluateResult.NULL else EvaluateResult.FALSE
   }
 }
 
 internal val evaluateXor: EvaluateFunction = variadicFunction { values: BooleanArray ->
   EvaluateResult.boolean(values.fold(false, Boolean::xor))
 }
+
+internal val evaluateCond: EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
+  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
+  when (v1.valueTypeCase) {
+    ValueTypeCase.BOOLEAN_VALUE -> if (v1.booleanValue) p2() else p3()
+    ValueTypeCase.NULL_VALUE -> p3()
+    else -> EvaluateResultError
+  }
+}
+
+internal val evaluateLogicalMaximum: EvaluateFunction =
+  variadicResultFunction { l: List<EvaluateResult> ->
+    val value =
+      l.mapNotNull(EvaluateResult::value)
+        .filterNot(Value::hasNullValue)
+        .maxWithOrNull(Values::compare)
+    if (value === null) EvaluateResult.NULL else EvaluateResultValue(value)
+  }
+
+internal val evaluateLogicalMinimum: EvaluateFunction =
+  variadicResultFunction { l: List<EvaluateResult> ->
+    val value =
+      l.mapNotNull(EvaluateResult::value)
+        .filterNot(Value::hasNullValue)
+        .minWithOrNull(Values::compare)
+    if (value === null) EvaluateResult.NULL else EvaluateResultValue(value)
+  }
 
 // === Comparison Functions ===
 
@@ -129,13 +163,17 @@ internal val evaluateNot: EvaluateFunction = unaryFunction { b: Boolean ->
 
 // === Type Functions ===
 
-internal val evaluateIsNaN: EvaluateFunction = unaryFunction { v: Value ->
-  EvaluateResult.boolean(isNanValue(v))
-}
+internal val evaluateIsNaN: EvaluateFunction =
+  arithmetic(
+    { _: Long -> EvaluateResult.FALSE },
+    { v: Double -> EvaluateResult.boolean(v.isNaN()) }
+  )
 
-internal val evaluateIsNotNaN: EvaluateFunction = unaryFunction { v: Value ->
-  EvaluateResult.boolean(!isNanValue(v))
-}
+internal val evaluateIsNotNaN: EvaluateFunction =
+  arithmetic(
+    { _: Long -> EvaluateResult.TRUE },
+    { v: Double -> EvaluateResult.boolean(!v.isNaN()) }
+  )
 
 internal val evaluateIsNull: EvaluateFunction = { params ->
   if (params.size != 1)
@@ -255,15 +293,11 @@ internal val evaluateSubtract = arithmeticPrimitive(Math::subtractExact, Double:
 
 internal val evaluateArray = variadicNullableValueFunction(EvaluateResult.Companion::list)
 
-internal val evaluateEqAny = binaryFunction { list: List<Value>, value: Value ->
-  eqAny(value, list)
-}
+internal val evaluateEqAny = binaryFunction(::eqAny)
 
-internal val evaluateNotEqAny = notImplemented
+internal val evaluateNotEqAny = binaryFunction(::notEqAny)
 
-internal val evaluateArrayContains = binaryFunction { array: Value, value: Value ->
-  if (array.hasArrayValue()) eqAny(value, array.arrayValue.valuesList) else EvaluateResultError
-}
+internal val evaluateArrayContains = binaryFunction { l: List<Value>, v: Value -> eqAny(v, l) }
 
 internal val evaluateArrayContainsAny =
   binaryFunction { array: List<Value>, searchValues: List<Value> ->
@@ -311,6 +345,16 @@ private fun eqAny(value: Value, list: List<Value>): EvaluateResult {
     null -> foundNull = true
   }
   return if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
+}
+
+private fun notEqAny(value: Value, list: List<Value>): EvaluateResult {
+  var foundNull = false
+  for (element in list) when (strictEquals(value, element)) {
+    true -> return EvaluateResult.FALSE
+    false -> {}
+    null -> foundNull = true
+  }
+  return if (foundNull) EvaluateResult.NULL else EvaluateResult.TRUE
 }
 
 // === String Functions ===
@@ -525,7 +569,7 @@ private inline fun unaryFunction(
 @JvmName("unaryBooleanFunction")
 private inline fun unaryFunction(crossinline stringOp: (Boolean) -> EvaluateResult) =
   unaryFunctionType(
-    Value.ValueTypeCase.BOOLEAN_VALUE,
+    ValueTypeCase.BOOLEAN_VALUE,
     Value::getBooleanValue,
     stringOp,
   )
@@ -533,7 +577,7 @@ private inline fun unaryFunction(crossinline stringOp: (Boolean) -> EvaluateResu
 @JvmName("unaryStringFunction")
 private inline fun unaryFunction(crossinline stringOp: (String) -> EvaluateResult) =
   unaryFunctionType(
-    Value.ValueTypeCase.STRING_VALUE,
+    ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
     stringOp,
   )
@@ -541,7 +585,7 @@ private inline fun unaryFunction(crossinline stringOp: (String) -> EvaluateResul
 @JvmName("unaryLongFunction")
 private inline fun unaryFunction(crossinline longOp: (Long) -> EvaluateResult) =
   unaryFunctionType(
-    Value.ValueTypeCase.INTEGER_VALUE,
+    ValueTypeCase.INTEGER_VALUE,
     Value::getIntegerValue,
     longOp,
   )
@@ -549,7 +593,7 @@ private inline fun unaryFunction(crossinline longOp: (Long) -> EvaluateResult) =
 @JvmName("unaryTimestampFunction")
 private inline fun unaryFunction(crossinline timestampOp: (Timestamp) -> EvaluateResult) =
   unaryFunctionType(
-    Value.ValueTypeCase.TIMESTAMP_VALUE,
+    ValueTypeCase.TIMESTAMP_VALUE,
     Value::getTimestampValue,
     timestampOp,
   )
@@ -557,7 +601,7 @@ private inline fun unaryFunction(crossinline timestampOp: (Timestamp) -> Evaluat
 @JvmName("unaryArrayFunction")
 private inline fun unaryFunction(crossinline longOp: (List<Value>) -> EvaluateResult) =
   unaryFunctionType(
-    Value.ValueTypeCase.ARRAY_VALUE,
+    ValueTypeCase.ARRAY_VALUE,
     { it.arrayValue.valuesList },
     longOp,
   )
@@ -567,32 +611,34 @@ private inline fun unaryFunction(
   crossinline stringOp: (String) -> EvaluateResult
 ) =
   unaryFunctionType(
-    Value.ValueTypeCase.BYTES_VALUE,
+    ValueTypeCase.BYTES_VALUE,
     Value::getBytesValue,
     byteOp,
-    Value.ValueTypeCase.STRING_VALUE,
+    ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
     stringOp,
   )
 
 private inline fun <T> unaryFunctionType(
-  valueTypeCase: Value.ValueTypeCase,
+  valueTypeCase: ValueTypeCase,
   crossinline valueExtractor: (Value) -> T,
   crossinline function: (T) -> EvaluateResult
 ): EvaluateFunction = unaryFunction { r: EvaluateResult ->
   val v = r.value
-  if (v === null) EvaluateResultError else  when (v.valueTypeCase) {
-    Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-    valueTypeCase -> catch { function(valueExtractor(v)) }
-    else -> EvaluateResultError
-  }
+  if (v === null) EvaluateResultError
+  else
+    when (v.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+      valueTypeCase -> catch { function(valueExtractor(v)) }
+      else -> EvaluateResultError
+    }
 }
 
 private inline fun <T1, T2> unaryFunctionType(
-  valueTypeCase1: Value.ValueTypeCase,
+  valueTypeCase1: ValueTypeCase,
   crossinline valueExtractor1: (Value) -> T1,
   crossinline function1: (T1) -> EvaluateResult,
-  valueTypeCase2: Value.ValueTypeCase,
+  valueTypeCase2: ValueTypeCase,
   crossinline valueExtractor2: (Value) -> T2,
   crossinline function2: (T2) -> EvaluateResult
 ): EvaluateFunction = { params ->
@@ -602,7 +648,7 @@ private inline fun <T1, T2> unaryFunctionType(
   block@{ input: MutableDocument ->
     val v = p(input).value ?: return@block EvaluateResultError
     when (v.valueTypeCase) {
-      Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+      ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
       valueTypeCase1 -> catch { function1(valueExtractor1(v)) }
       valueTypeCase2 -> catch { function2(valueExtractor2(v)) }
       else -> EvaluateResultError
@@ -643,9 +689,9 @@ private inline fun binaryFunction(
 @JvmName("binaryStringStringFunction")
 private inline fun binaryFunction(crossinline function: (String, String) -> EvaluateResult) =
   binaryFunctionType(
-    Value.ValueTypeCase.STRING_VALUE,
+    ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
-    Value.ValueTypeCase.STRING_VALUE,
+    ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
     function
   )
@@ -655,20 +701,32 @@ private inline fun binaryFunction(
   crossinline function: (List<Value>, List<Value>) -> EvaluateResult
 ) =
   binaryFunctionType(
-    Value.ValueTypeCase.ARRAY_VALUE,
+    ValueTypeCase.ARRAY_VALUE,
     { it.arrayValue.valuesList },
-    Value.ValueTypeCase.ARRAY_VALUE,
+    ValueTypeCase.ARRAY_VALUE,
     { it.arrayValue.valuesList },
     function
   )
+
+private inline fun ternaryLazyFunction(
+  crossinline function:
+    (() -> EvaluateResult, () -> EvaluateResult, () -> EvaluateResult) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 3)
+    throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  val p3 = params[2]
+  { input: MutableDocument -> catch { function({ p1(input) }, { p2(input) }, { p3(input) }) } }
+}
 
 private inline fun ternaryTimestampFunction(
   crossinline function: (Timestamp, String, Long) -> EvaluateResult
 ): EvaluateFunction = ternaryNullableValueFunction { timestamp: Value, unit: Value, number: Value ->
   val t: Timestamp =
     when (timestamp.valueTypeCase) {
-      Value.ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      Value.ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
+      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
       else -> return@ternaryNullableValueFunction EvaluateResultError
     }
   val u: String =
@@ -676,8 +734,8 @@ private inline fun ternaryTimestampFunction(
     else return@ternaryNullableValueFunction EvaluateResultError
   val n: Long =
     when (number.valueTypeCase) {
-      Value.ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      Value.ValueTypeCase.INTEGER_VALUE -> number.integerValue
+      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      ValueTypeCase.INTEGER_VALUE -> number.integerValue
       else -> return@ternaryNullableValueFunction EvaluateResultError
     }
   function(t, u, n)
@@ -685,24 +743,17 @@ private inline fun ternaryTimestampFunction(
 
 private inline fun ternaryNullableValueFunction(
   crossinline function: (Value, Value, Value) -> EvaluateResult
-): EvaluateFunction = { params ->
-  if (params.size != 3)
-    throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
-  val p1 = params[0]
-  val p2 = params[1]
-  val p3 = params[2]
-  block@{ input: MutableDocument ->
-    val v1 = p1(input).value ?: return@block EvaluateResultError
-    val v2 = p2(input).value ?: return@block EvaluateResultError
-    val v3 = p3(input).value ?: return@block EvaluateResultError
-    catch { function(v1, v2, v3) }
-  }
+): EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
+  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
+  val v2 = p2().value ?: return@ternaryLazyFunction EvaluateResultError
+  val v3 = p3().value ?: return@ternaryLazyFunction EvaluateResultError
+  function(v1, v2, v3)
 }
 
 private inline fun <T1, T2> binaryFunctionType(
-  valueTypeCase1: Value.ValueTypeCase,
+  valueTypeCase1: ValueTypeCase,
   crossinline valueExtractor1: (Value) -> T1,
-  valueTypeCase2: Value.ValueTypeCase,
+  valueTypeCase2: ValueTypeCase,
   crossinline valueExtractor2: (Value) -> T2,
   crossinline function: (T1, T2) -> EvaluateResult
 ): EvaluateFunction = { params ->
@@ -714,15 +765,15 @@ private inline fun <T1, T2> binaryFunctionType(
     val v1 = p1(input).value ?: return@block EvaluateResultError
     val v2 = p2(input).value ?: return@block EvaluateResultError
     when (v1.valueTypeCase) {
-      Value.ValueTypeCase.NULL_VALUE ->
+      ValueTypeCase.NULL_VALUE ->
         when (v2.valueTypeCase) {
-          Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
           valueTypeCase2 -> EvaluateResult.NULL
           else -> EvaluateResultError
         }
       valueTypeCase1 ->
         when (v2.valueTypeCase) {
-          Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
           valueTypeCase2 -> catch { function(valueExtractor1(v1), valueExtractor2(v2)) }
           else -> EvaluateResultError
         }
@@ -731,39 +782,30 @@ private inline fun <T1, T2> binaryFunctionType(
   }
 }
 
-@JvmName("variadicValueFunction")
-private inline fun variadicFunction(
-  crossinline function: (List<Value>) -> EvaluateResult
+private inline fun variadicResultFunction(
+  crossinline function: (List<EvaluateResult>) -> EvaluateResult
 ): EvaluateFunction = { params ->
-  block@{ input: MutableDocument ->
-    val values = ArrayList<Value>(params.size)
-    var nullFound = false
-    for (param in params) {
-      val v = param(input).value ?: return@block EvaluateResultError
-      if (v.hasNullValue()) nullFound = true
-      values.add(v)
-    }
-    if (nullFound) EvaluateResult.NULL else catch { function(values) }
+  { input: MutableDocument ->
+    val results = params.map { it(input) }
+    catch { function(results) }
   }
 }
 
 @JvmName("variadicNullableValueFunction")
 private inline fun variadicNullableValueFunction(
   crossinline function: (List<Value>) -> EvaluateResult
-): EvaluateFunction = { params ->
-  block@{ input: MutableDocument ->
-    catch { function(params.map { p -> p(input).value ?: return@block EvaluateResultError }) }
-  }
+): EvaluateFunction = variadicResultFunction { l: List<EvaluateResult> ->
+  function(l.map { it.value ?: return@variadicResultFunction EvaluateResultError })
 }
 
 @JvmName("variadicStringFunction")
 private inline fun variadicFunction(
   crossinline function: (List<String>) -> EvaluateResult
 ): EvaluateFunction =
-  variadicFunctionType(Value.ValueTypeCase.STRING_VALUE, Value::getStringValue, function)
+  variadicFunctionType(ValueTypeCase.STRING_VALUE, Value::getStringValue, function)
 
 private inline fun <T> variadicFunctionType(
-  valueTypeCase: Value.ValueTypeCase,
+  valueTypeCase: ValueTypeCase,
   crossinline valueExtractor: (Value) -> T,
   crossinline function: (List<T>) -> EvaluateResult,
 ): EvaluateFunction = { params ->
@@ -773,7 +815,7 @@ private inline fun <T> variadicFunctionType(
     for (param in params) {
       val v = param(input).value ?: return@block EvaluateResultError
       when (v.valueTypeCase) {
-        Value.ValueTypeCase.NULL_VALUE -> nullFound = true
+        ValueTypeCase.NULL_VALUE -> nullFound = true
         valueTypeCase -> values.add(valueExtractor(v))
         else -> return@block EvaluateResultError
       }
@@ -792,8 +834,8 @@ private inline fun variadicFunction(
     params.forEachIndexed { i, param ->
       val v = param(input).value ?: return@block EvaluateResultError
       when (v.valueTypeCase) {
-        Value.ValueTypeCase.NULL_VALUE -> nullFound = true
-        Value.ValueTypeCase.BOOLEAN_VALUE -> values[i] = v.booleanValue
+        ValueTypeCase.NULL_VALUE -> nullFound = true
+        ValueTypeCase.BOOLEAN_VALUE -> values[i] = v.booleanValue
         else -> return@block EvaluateResultError
       }
     }
@@ -837,10 +879,10 @@ private inline fun arithmetic(
   crossinline doubleOp: (Double) -> EvaluateResult
 ): EvaluateFunction =
   unaryFunctionType(
-    Value.ValueTypeCase.INTEGER_VALUE,
+    ValueTypeCase.INTEGER_VALUE,
     Value::getIntegerValue,
     intOp,
-    Value.ValueTypeCase.DOUBLE_VALUE,
+    ValueTypeCase.DOUBLE_VALUE,
     Value::getDoubleValue,
     doubleOp,
   )
@@ -852,8 +894,8 @@ private inline fun arithmetic(
 ): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
   if (p2.hasIntegerValue())
     when (p1.valueTypeCase) {
-      Value.ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
-      Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.integerValue)
+      ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
+      ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.integerValue)
       else -> EvaluateResultError
     }
   else EvaluateResultError
@@ -864,16 +906,16 @@ private inline fun arithmetic(
   crossinline doubleOp: (Double, Double) -> EvaluateResult
 ): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
   when (p1.valueTypeCase) {
-    Value.ValueTypeCase.INTEGER_VALUE ->
+    ValueTypeCase.INTEGER_VALUE ->
       when (p2.valueTypeCase) {
-        Value.ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
-        Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.integerValue.toDouble(), p2.doubleValue)
+        ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
+        ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.integerValue.toDouble(), p2.doubleValue)
         else -> EvaluateResultError
       }
-    Value.ValueTypeCase.DOUBLE_VALUE ->
+    ValueTypeCase.DOUBLE_VALUE ->
       when (p2.valueTypeCase) {
-        Value.ValueTypeCase.INTEGER_VALUE -> doubleOp(p1.doubleValue, p2.integerValue.toDouble())
-        Value.ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.doubleValue)
+        ValueTypeCase.INTEGER_VALUE -> doubleOp(p1.doubleValue, p2.integerValue.toDouble())
+        ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.doubleValue)
         else -> EvaluateResultError
       }
     else -> EvaluateResultError
@@ -885,14 +927,14 @@ private inline fun arithmetic(
 ): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
   val v1: Double =
     when (p1.valueTypeCase) {
-      Value.ValueTypeCase.INTEGER_VALUE -> p1.integerValue.toDouble()
-      Value.ValueTypeCase.DOUBLE_VALUE -> p1.doubleValue
+      ValueTypeCase.INTEGER_VALUE -> p1.integerValue.toDouble()
+      ValueTypeCase.DOUBLE_VALUE -> p1.doubleValue
       else -> return@binaryFunction EvaluateResultError
     }
   val v2: Double =
     when (p2.valueTypeCase) {
-      Value.ValueTypeCase.INTEGER_VALUE -> p2.integerValue.toDouble()
-      Value.ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue
+      ValueTypeCase.INTEGER_VALUE -> p2.integerValue.toDouble()
+      ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue
       else -> return@binaryFunction EvaluateResultError
     }
   op(v1, v2)

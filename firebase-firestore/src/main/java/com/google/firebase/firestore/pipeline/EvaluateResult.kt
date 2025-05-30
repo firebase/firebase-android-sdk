@@ -48,4 +48,3 @@ internal object EvaluateResultUnset : EvaluateResult(null) {
   override val isError: Boolean = false
   override val isUnset: Boolean = true
 }
-

@@ -9,7 +9,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.isError
 import com.google.firebase.firestore.pipeline.Expr.Companion.map
 import com.google.firebase.firestore.pipeline.Expr.Companion.not
 import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
-import com.google.firebase.firestore.testutil.TestUtil
 import com.google.firebase.firestore.testutil.TestUtil.doc
 import org.junit.Test
 import org.junit.runner.RunWith
