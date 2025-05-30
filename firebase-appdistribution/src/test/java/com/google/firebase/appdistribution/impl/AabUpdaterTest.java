@@ -23,7 +23,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
-import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -54,11 +53,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
-@LooperMode(PAUSED)
 public class AabUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
