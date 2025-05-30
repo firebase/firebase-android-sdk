@@ -22,6 +22,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
 import javax.inject.Inject
@@ -122,8 +123,6 @@ constructor(
   }
 
   internal companion object {
-    private const val TAG = "SessionFirelogPublisher"
-
     private val randomValueForSampling: Double = Math.random()
   }
 }
