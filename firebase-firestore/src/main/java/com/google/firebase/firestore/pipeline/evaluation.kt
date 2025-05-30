@@ -33,9 +33,21 @@ internal typealias EvaluateFunction = (params: List<EvaluateDocument>) -> Evalua
 
 internal val notImplemented: EvaluateFunction = { _ -> throw NotImplementedError() }
 
+// === Debug Functions ===
+
+internal val evaluateIsError: EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  EvaluateResult.boolean(r.isError)
+}
+
 // === Logical Functions ===
 
-internal val evaluateExists: EvaluateFunction = notImplemented
+internal val evaluateExists: EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  when (r) {
+    EvaluateResultError -> r
+    EvaluateResultUnset -> EvaluateResult.FALSE
+    is EvaluateResultValue -> EvaluateResult.TRUE
+  }
+}
 
 internal val evaluateAnd: EvaluateFunction = { params ->
   fun(input: MutableDocument): EvaluateResult {
@@ -492,18 +504,22 @@ private inline fun catch(f: () -> EvaluateResult): EvaluateResult =
     EvaluateResultError
   }
 
-@JvmName("unaryValueFunction")
 private inline fun unaryFunction(
-  crossinline function: (Value) -> EvaluateResult
+  crossinline function: (EvaluateResult) -> EvaluateResult
 ): EvaluateFunction = { params ->
   if (params.size != 1)
     throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
   val p = params[0]
-  block@{ input: MutableDocument ->
-    val v = p(input).value ?: return@block EvaluateResultError
-    if (v.hasNullValue()) return@block EvaluateResult.NULL
-    catch { function(v) }
-  }
+  { input: MutableDocument -> catch { function(p(input)) } }
+}
+
+@JvmName("unaryValueFunction")
+private inline fun unaryFunction(
+  crossinline function: (Value) -> EvaluateResult
+): EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  val v = r.value
+  if (v === null) EvaluateResultError
+  else if (v.hasNullValue()) EvaluateResult.NULL else function(v)
 }
 
 @JvmName("unaryBooleanFunction")
@@ -563,17 +579,12 @@ private inline fun <T> unaryFunctionType(
   valueTypeCase: Value.ValueTypeCase,
   crossinline valueExtractor: (Value) -> T,
   crossinline function: (T) -> EvaluateResult
-): EvaluateFunction = { params ->
-  if (params.size != 1)
-    throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
-  val p = params[0]
-  block@{ input: MutableDocument ->
-    val v = p(input).value ?: return@block EvaluateResultError
-    when (v.valueTypeCase) {
-      Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-      valueTypeCase -> catch { function(valueExtractor(v)) }
-      else -> EvaluateResultError
-    }
+): EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  val v = r.value
+  if (v === null) EvaluateResultError else  when (v.valueTypeCase) {
+    Value.ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+    valueTypeCase -> catch { function(valueExtractor(v)) }
+    else -> EvaluateResultError
   }
 }
 

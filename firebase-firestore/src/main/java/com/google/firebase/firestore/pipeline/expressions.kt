@@ -27,6 +27,7 @@ import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.pipeline.Expr.Companion
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
@@ -2980,6 +2981,14 @@ abstract class Expr internal constructor() {
       BooleanExpr("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
+     * Creates an expression that checks if a given expression produces an error.
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the `isError` check.
+     */
+    @JvmStatic fun isError(expr: Expr): BooleanExpr = BooleanExpr("is_error", evaluateIsError, expr)
+
+    /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
      * return the result of the [tryExpr] argument evaluation.
      *
@@ -4082,6 +4091,13 @@ abstract class Expr internal constructor() {
    */
   fun ifError(catchValue: Any): Expr = Companion.ifError(this, catchValue)
 
+  /**
+   * Creates an expression that checks if this expression produces an error.
+   *
+   * @return A new [BooleanExpr] representing the `isError` check.
+   */
+  fun isError(): BooleanExpr = Companion.isError(this)
+
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateContext(context: EvaluationContext): EvaluateDocument
@@ -4145,7 +4161,7 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
 
   private fun evaluateInternal(input: MutableDocument): EvaluateResult {
     val value: Value? = input.getField(fieldPath)
-    return if (value == null) EvaluateResultUnset else EvaluateResultValue(value)
+    return if (value === null) EvaluateResultUnset else EvaluateResultValue(value)
   }
 }
 
@@ -4311,6 +4327,18 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
    * @return A new [BooleanExpr] representing the not operation.
    */
   fun not(): BooleanExpr = Expr.Companion.not(this)
+
+  /**
+   * Creates an expression that returns the [catchExpr] argument if there is an error, else return
+   * the result of this expression.
+   *
+   * This overload will return [BooleanExpr] because the [catchExpr] is a [BooleanExpr].
+   *
+   * @param catchExpr The catch expression that will be evaluated and returned if the this
+   * expression produces an error.
+   * @return A new [BooleanExpr] representing the ifError operation.
+   */
+  fun ifError(catchExpr: BooleanExpr): BooleanExpr = Expr.Companion.ifError(this, catchExpr)
 }
 
 /**

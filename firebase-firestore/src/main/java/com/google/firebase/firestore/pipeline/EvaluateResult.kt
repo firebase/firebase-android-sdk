@@ -7,10 +7,8 @@ import com.google.protobuf.Timestamp
 
 internal sealed class EvaluateResult(val value: Value?) {
   abstract val isError: Boolean
-  val isSuccess: Boolean
-    get() = this is EvaluateResultValue
-  val isUnset: Boolean
-    get() = this is EvaluateResultUnset
+  abstract val isSuccess: Boolean
+  abstract val isUnset: Boolean
 
   companion object {
     val TRUE: EvaluateResultValue = EvaluateResultValue(Values.TRUE_VALUE)
@@ -33,14 +31,21 @@ internal sealed class EvaluateResult(val value: Value?) {
   }
 }
 
+internal class EvaluateResultValue(value: Value) : EvaluateResult(value) {
+  override val isSuccess: Boolean = true
+  override val isError: Boolean = false
+  override val isUnset: Boolean = false
+}
+
 internal object EvaluateResultError : EvaluateResult(null) {
+  override val isSuccess: Boolean = false
   override val isError: Boolean = true
+  override val isUnset: Boolean = false
 }
 
 internal object EvaluateResultUnset : EvaluateResult(null) {
+  override val isSuccess: Boolean = false
   override val isError: Boolean = false
+  override val isUnset: Boolean = true
 }
 
-internal class EvaluateResultValue(value: Value) : EvaluateResult(value) {
-  override val isError: Boolean = false
-}
