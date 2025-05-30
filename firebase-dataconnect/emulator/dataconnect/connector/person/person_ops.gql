@@ -100,3 +100,8 @@ mutation createPersonWithPartialFailure($id: String!, $name: String!) @auth(leve
   person2: person_insert(data: { id_expr: "uuidV4()", name: $name })
 }
 
+mutation createPersonWithPartialFailureInTransaction($id: String!, $name: String!) @auth(level: PUBLIC) @transaction {
+  person1: person_insert(data: { id: $id, name: $name })
+  person2: person_insert(data: { id_expr: "uuidV4()", name: $name }) @check(expr: "false", message: "te36b3zkvn")
+}
+
