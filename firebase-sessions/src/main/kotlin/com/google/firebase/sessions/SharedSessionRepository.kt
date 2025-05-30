@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import android.util.Log
 import androidx.datastore.core.DataStore
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
@@ -232,9 +233,5 @@ constructor(
 
     Log.d(TAG, "No process data for ${processDataManager.myProcessName}")
     return true
-  }
-
-  private companion object {
-    const val TAG = "SharedSessionRepository"
   }
 }
