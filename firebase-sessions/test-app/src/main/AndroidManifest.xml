@@ -43,7 +43,7 @@
       android:process=":second"
       android:theme="@style/Theme.Widget_test_app.NoActionBar" />
 
-    <!--    Update value to 100.0 to always have a fireperf verbose session-->
+    <!-- Override value to 100.0 to always have a fireperf verbose session -->
     <meta-data
         android:name="sessions_sampling_percentage"
         android:value="1.0" />
