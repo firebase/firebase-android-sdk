@@ -107,6 +107,36 @@ internal object Values {
     }
   }
 
+  fun strictEquals(left: Value, right: Value): Boolean? {
+    if (left.hasNullValue() || right.hasNullValue()) return null
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
+    if (leftType != rightType) {
+      return false
+    }
+
+    return when (leftType) {
+      TYPE_ORDER_NULL -> null
+      TYPE_ORDER_NUMBER -> strictNumberEquals(left, right)
+      TYPE_ORDER_ARRAY -> strictArrayEquals(left, right)
+      TYPE_ORDER_VECTOR,
+      TYPE_ORDER_MAP -> strictObjectEquals(left, right)
+      TYPE_ORDER_SERVER_TIMESTAMP ->
+        ServerTimestamps.getLocalWriteTime(left) == ServerTimestamps.getLocalWriteTime(right)
+      TYPE_ORDER_MAX_VALUE -> true
+      else -> left == right
+    }
+  }
+
+  fun strictCompare(left: Value, right: Value): Int? {
+    val leftType = typeOrder(left)
+    val rightType = typeOrder(right)
+    if (leftType != rightType) {
+      return null
+    }
+    return compareInternal(leftType, left, right)
+  }
+
   @JvmStatic
   fun equals(left: Value?, right: Value?): Boolean {
     if (left === right) {
@@ -135,16 +165,51 @@ internal object Values {
     }
   }
 
-  private fun numberEquals(left: Value, right: Value): Boolean {
-    if (left.valueTypeCase != right.valueTypeCase) {
-      return false
-    }
-    return when (left.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+  private fun strictNumberEquals(left: Value, right: Value): Boolean {
+    if (left.doubleValue.isNaN() || right.doubleValue.isNaN()) return false
+    return numberEquals(left, right)
+  }
+
+  private fun numberEquals(left: Value, right: Value): Boolean =
+    when (left.valueTypeCase) {
+      ValueTypeCase.INTEGER_VALUE ->
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+          ValueTypeCase.DOUBLE_VALUE -> right.doubleValue.compareTo(left.integerValue) == 0
+          else -> false
+        }
       ValueTypeCase.DOUBLE_VALUE ->
-        doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE ->
+            compareDoubleWithLong(left.doubleValue, right.integerValue) == 0
+          ValueTypeCase.DOUBLE_VALUE ->
+            doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+          else -> false
+        }
       else -> false
     }
+
+  private fun compareDoubleWithLong(double: Double, long: Long): Int =
+    if (double.isNaN()) -1 else double.compareTo(long)
+
+  private fun strictArrayEquals(left: Value, right: Value): Boolean? {
+    val leftArray = left.arrayValue
+    val rightArray = right.arrayValue
+
+    if (leftArray.valuesCount != rightArray.valuesCount) {
+      return false
+    }
+
+    var foundNull = false
+    for (i in 0 until leftArray.valuesCount) {
+      val equals = strictEquals(leftArray.getValues(i), rightArray.getValues(i))
+      if (equals === null) {
+        foundNull = true
+      } else if (!equals) {
+        return false
+      }
+    }
+    return if (foundNull) null else true
   }
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
@@ -164,6 +229,28 @@ internal object Values {
     return true
   }
 
+  private fun strictObjectEquals(left: Value, right: Value): Boolean? {
+    val leftMap = left.mapValue
+    val rightMap = right.mapValue
+
+    if (leftMap.fieldsCount != rightMap.fieldsCount) {
+      return false
+    }
+
+    var foundNull = false
+    for ((key, value) in leftMap.fieldsMap) {
+      val otherEntry = rightMap.fieldsMap[key] ?: return false
+      val equals = strictEquals(value, otherEntry)
+      if (equals === null) {
+        foundNull = true
+      } else if (!equals) {
+        return false
+      }
+    }
+
+    return if (foundNull) null else true
+  }
+
   private fun objectEquals(left: Value, right: Value): Boolean {
     val leftMap = left.mapValue
     val rightMap = right.mapValue
@@ -173,7 +260,7 @@ internal object Values {
     }
 
     for ((key, value) in leftMap.fieldsMap) {
-      val otherEntry = rightMap.fieldsMap[key]
+      val otherEntry = rightMap.fieldsMap[key] ?: return false
       if (!equals(value, otherEntry)) {
         return false
       }
@@ -202,7 +289,11 @@ internal object Values {
       return Util.compareIntegers(leftType, rightType)
     }
 
-    return when (leftType) {
+    return compareInternal(leftType, left, right)
+  }
+
+  private fun compareInternal(leftType: Int, left: Value, right: Value): Int =
+    when (leftType) {
       TYPE_ORDER_NULL,
       TYPE_ORDER_MAX_VALUE -> 0
       TYPE_ORDER_BOOLEAN -> Util.compareBooleans(left.booleanValue, right.booleanValue)
@@ -222,7 +313,6 @@ internal object Values {
       TYPE_ORDER_VECTOR -> compareVectors(left.mapValue, right.mapValue)
       else -> throw Assert.fail("Invalid value type: $leftType")
     }
-  }
 
   @JvmStatic
   fun lowerBoundCompare(
@@ -586,27 +676,17 @@ internal object Values {
   @JvmStatic fun encodeValue(date: Date): Value = encodeValue(com.google.firebase.Timestamp((date)))
 
   @JvmStatic
-  fun encodeValue(timestamp: com.google.firebase.Timestamp): Value {
-    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
-    // the same with regards to truncation, perform the truncation immediately without waiting for
-    // the backend to do that.
-    val truncatedNanoseconds: Int = timestamp.nanoseconds / 1000 * 1000
-
-    return Value.newBuilder()
-      .setTimestampValue(
-        Timestamp.newBuilder().setSeconds(timestamp.seconds).setNanos(truncatedNanoseconds)
-      )
-      .build()
-  }
-
-  @JvmField
-  val TRUE: Value = Value.newBuilder().setBooleanValue(true).build()
-
-  @JvmField
-  val FALSE: Value = Value.newBuilder().setBooleanValue(false).build()
+  fun encodeValue(timestamp: com.google.firebase.Timestamp): Value =
+    encodeValue(timestamp(timestamp.seconds, timestamp.nanoseconds))
 
   @JvmStatic
-  fun encodeValue(value: Boolean): Value = if (value) TRUE else FALSE
+  fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
+
+  @JvmField val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
+
+  @JvmField val FALSE_VALUE: Value = Value.newBuilder().setBooleanValue(false).build()
+
+  @JvmStatic fun encodeValue(value: Boolean): Value = if (value) TRUE_VALUE else FALSE_VALUE
 
   @JvmStatic
   fun encodeValue(geoPoint: GeoPoint): Value =
@@ -667,4 +747,14 @@ internal object Values {
       is VectorValue -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
+
+  @JvmStatic
+  fun timestamp(seconds: Long, nanos: Int): Timestamp {
+    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
+    // the same with regards to truncation, perform the truncation immediately without waiting for
+    // the backend to do that.
+    val truncatedNanoseconds: Int = nanos / 1000 * 1000
+
+    return Timestamp.newBuilder().setSeconds(seconds).setNanos(truncatedNanoseconds).build()
+  }
 }
