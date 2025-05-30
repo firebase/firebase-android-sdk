@@ -75,7 +75,7 @@ constructor(
   }
 
   companion object {
-    private const val TAG = "FirebaseSessions"
+    internal const val TAG = "FirebaseSessions"
 
     val instance: FirebaseSessions
       get() = Firebase.app[FirebaseSessions::class.java]
