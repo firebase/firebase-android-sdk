@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Fail snapshot listeners when Firestore terminates. [#6136](//github.com/firebase/firebase-android-sdk/pull/6136)
 
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.

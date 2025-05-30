@@ -289,15 +289,17 @@ public final class SourceTest {
     // Create an initial listener for this query (to attempt to disrupt the gets below) and wait for
     // the listener to deliver its initial snapshot before continuing.
     TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    docRef.addSnapshotListener(
-        (docSnap, error) -> {
-          if (error != null) {
-            source.setException(error);
-          } else {
-            source.setResult(null);
-          }
-        });
+    ListenerRegistration listener =
+        docRef.addSnapshotListener(
+            (docSnap, error) -> {
+              if (error != null) {
+                source.setException(error);
+              } else {
+                source.setResult(null);
+              }
+            });
     waitFor(source.getTask());
+    listener.remove();
 
     Task<DocumentSnapshot> docTask = docRef.get(Source.CACHE);
     waitFor(docTask);
@@ -339,15 +341,17 @@ public final class SourceTest {
     // Create an initial listener for this query (to attempt to disrupt the gets below) and wait for
     // the listener to deliver its initial snapshot before continuing.
     TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    colRef.addSnapshotListener(
-        (qrySnap, error) -> {
-          if (error != null) {
-            source.setException(error);
-          } else {
-            source.setResult(null);
-          }
-        });
+    ListenerRegistration listener =
+        colRef.addSnapshotListener(
+            (qrySnap, error) -> {
+              if (error != null) {
+                source.setException(error);
+              } else {
+                source.setResult(null);
+              }
+            });
     waitFor(source.getTask());
+    listener.remove();
 
     Task<QuerySnapshot> qrySnapTask = colRef.get(Source.CACHE);
     waitFor(qrySnapTask);
