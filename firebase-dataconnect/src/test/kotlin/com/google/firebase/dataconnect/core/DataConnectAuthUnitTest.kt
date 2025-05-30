@@ -224,6 +224,30 @@ class DataConnectAuthUnitTest {
   }
 
   @Test
+  fun `forceRefresh() should throw if invoked before initialize() close()`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectAuth.forceRefresh() }
+
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "forceRefresh()"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "initialize() must be called"
+    }
+  }
+
+  @Test
+  fun `getToken() should throw if invoked before initialize() close()`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectAuth.getToken(requestId) }
+
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "getToken()"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "initialize() must be called"
+    }
+  }
+
+  @Test
   fun `getToken() should return null if InternalAuthProvider is not available`() = runTest {
     val dataConnectAuth = newDataConnectAuth(deferredInternalAuthProvider = UnavailableDeferred())
     dataConnectAuth.initialize()
