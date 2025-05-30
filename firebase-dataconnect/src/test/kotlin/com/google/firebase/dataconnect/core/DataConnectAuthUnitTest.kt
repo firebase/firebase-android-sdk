@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
@@ -39,6 +40,7 @@ import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesCo
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import io.kotest.assertions.asClue
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.nondeterministic.continually
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.nondeterministic.eventuallyConfig
@@ -93,8 +95,54 @@ class DataConnectAuthUnitTest {
   private val mockLogger = newMockLogger("ecvqkga56c")
 
   @Test
-  fun `close() should succeed if called on a brand new instance()`() = runTest {
+  fun `initialize() should succeed if called on a brand new instance`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+  }
+
+  @Test
+  fun `initialize() should log a message`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("initialize()")
+  }
+
+  @Test
+  fun `initialize() should throw if called twice`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectAuth.initialize() }
+
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "initialize()"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "already been called"
+    }
+  }
+
+  @Test
+  fun `initialize() should throw if called after close()`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.close()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectAuth.initialize() }
+
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "initialize()"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "called after close()"
+    }
+  }
+
+  @Test
+  fun `close() should succeed if called on a brand new instance`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.close()
+  }
+
+  @Test
+  fun `close() should succeed if called immediately after initialize()`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     dataConnectAuth.close()
   }
 
@@ -110,6 +158,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `close() should cancel in-flight requests to get a token`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
 
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
@@ -132,6 +181,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `close() should remove the IdTokenListener`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
 
     val idTokenListenerSlot = slot<IdTokenListener>()
@@ -146,6 +196,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `close() should be callable multiple times, from multiple threads`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
 
     val latch = SuspendingCountDownLatch(100)
@@ -175,6 +226,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should return null if InternalAuthProvider is not available`() = runTest {
     val dataConnectAuth = newDataConnectAuth(deferredInternalAuthProvider = UnavailableDeferred())
+    dataConnectAuth.initialize()
     advanceUntilIdle()
 
     val result = dataConnectAuth.getToken(requestId)
@@ -204,6 +256,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should return null if no user is signed in`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
       Tasks.forException(FirebaseNoSignedInUserException("j8rkghbcnz"))
@@ -219,6 +272,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should return the token returned from FirebaseAuth`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns taskForToken(accessToken)
 
@@ -239,6 +293,7 @@ class DataConnectAuthUnitTest {
 
       val exception = TestException("xqtbckcn6w")
       val dataConnectAuth = newDataConnectAuth()
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
         Tasks.forException(exception)
@@ -260,6 +315,7 @@ class DataConnectAuthUnitTest {
 
       val exception = TestException("s4c4xr9z4p")
       val dataConnectAuth = newDataConnectAuth()
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers { throw exception }
 
@@ -276,6 +332,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should force refresh the access token after calling forceRefresh()`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns taskForToken(accessToken)
 
@@ -297,6 +354,7 @@ class DataConnectAuthUnitTest {
   fun `getToken() should NOT force refresh the access token without calling forceRefresh()`() =
     runTest {
       val dataConnectAuth = newDataConnectAuth()
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns taskForToken(accessToken)
 
@@ -311,6 +369,7 @@ class DataConnectAuthUnitTest {
   fun `getToken() should NOT force refresh the access token after it is force refreshed`() =
     runTest {
       val dataConnectAuth = newDataConnectAuth()
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns taskForToken(accessToken)
 
@@ -328,6 +387,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should ask for a token from FirebaseAuth on every invocation`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     val tokens = CopyOnWriteArrayList<String>()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
@@ -343,6 +403,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should conflate concurrent requests`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     val tokens = CopyOnWriteArrayList<String>()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
@@ -372,6 +433,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should re-fetch token if invalidated concurrently`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     val invocationCount = AtomicInteger(0)
     val tokens = CopyOnWriteArrayList<String>().apply { add(accessToken) }
@@ -406,6 +468,7 @@ class DataConnectAuthUnitTest {
   @Test
   fun `getToken() should ignore results with lower sequence number`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
     advanceUntilIdle()
     val invocationCount = AtomicInteger(0)
     val tokens = CopyOnWriteArrayList<String>()
@@ -447,6 +510,7 @@ class DataConnectAuthUnitTest {
     }
     val dataConnectAuth =
       newDataConnectAuth(deferredInternalAuthProvider = deferredInternalAuthProvider)
+    dataConnectAuth.initialize()
     advanceUntilIdle()
 
     val result = dataConnectAuth.getToken(requestId)
@@ -467,6 +531,7 @@ class DataConnectAuthUnitTest {
       val deferredInternalAuthProvider: DeferredInternalAuthProvider = mockk(relaxed = true)
       val dataConnectAuth =
         newDataConnectAuth(deferredInternalAuthProvider = deferredInternalAuthProvider)
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       dataConnectAuth.close()
       val deferredInternalAuthProviderHandlerSlot = slot<DeferredHandler<InternalAuthProvider>>()
@@ -488,6 +553,7 @@ class DataConnectAuthUnitTest {
       val deferredInternalAuthProvider = DelayedDeferred(mockInternalAuthProvider)
       val dataConnectAuth =
         newDataConnectAuth(deferredInternalAuthProvider = deferredInternalAuthProvider)
+      dataConnectAuth.initialize()
       advanceUntilIdle()
       every { mockInternalAuthProvider.addIdTokenListener(any()) } answers
         {
