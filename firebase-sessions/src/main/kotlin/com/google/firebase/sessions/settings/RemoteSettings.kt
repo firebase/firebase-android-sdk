@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.InstallationId
 import com.google.firebase.sessions.TimeProvider
 import javax.inject.Inject
@@ -150,8 +151,6 @@ constructor(
   private fun sanitize(s: String) = s.replace(sanitizeRegex, "")
 
   private companion object {
-    const val TAG = "SessionConfigFetcher"
-
     val defaultCacheDuration = 24.hours.inWholeSeconds.toInt()
 
     val sanitizeRegex = "/".toRegex()
