@@ -243,15 +243,63 @@ internal val evaluateSubtract = arithmeticPrimitive(Math::subtractExact, Double:
 
 internal val evaluateArray = variadicNullableValueFunction(EvaluateResult.Companion::list)
 
-internal val evaluateEqAny = notImplemented
+internal val evaluateEqAny = binaryFunction { list: List<Value>, value: Value ->
+  eqAny(value, list)
+}
 
 internal val evaluateNotEqAny = notImplemented
 
-internal val evaluateArrayContains = notImplemented
+internal val evaluateArrayContains = binaryFunction { array: Value, value: Value ->
+  if (array.hasArrayValue()) eqAny(value, array.arrayValue.valuesList) else EvaluateResultError
+}
 
-internal val evaluateArrayContainsAny = notImplemented
+internal val evaluateArrayContainsAny =
+  binaryFunction { array: List<Value>, searchValues: List<Value> ->
+    var foundNull = false
+    for (value in array) for (search in searchValues) when (strictEquals(value, search)) {
+      true -> return@binaryFunction EvaluateResult.TRUE
+      false -> {}
+      null -> foundNull = true
+    }
+    return@binaryFunction if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
+  }
 
-internal val evaluateArrayLength = notImplemented
+internal val evaluateArrayContainsAll =
+  binaryFunction { array: List<Value>, searchValues: List<Value> ->
+    var foundNullAtLeastOnce = false
+    for (search in searchValues) {
+      var found = false
+      var foundNull = false
+      for (value in array) when (strictEquals(value, search)) {
+        true -> {
+          found = true
+          break
+        }
+        false -> {}
+        null -> foundNull = true
+      }
+      if (foundNull) {
+        foundNullAtLeastOnce = true
+      } else if (!found) {
+        return@binaryFunction EvaluateResult.FALSE
+      }
+    }
+    return@binaryFunction if (foundNullAtLeastOnce) EvaluateResult.NULL else EvaluateResult.TRUE
+  }
+
+internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
+  EvaluateResult.long(array.size)
+}
+
+private fun eqAny(value: Value, list: List<Value>): EvaluateResult {
+  var foundNull = false
+  for (element in list) when (strictEquals(value, element)) {
+    true -> return EvaluateResult.TRUE
+    false -> {}
+    null -> foundNull = true
+  }
+  return if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
+}
 
 // === String Functions ===
 
@@ -490,6 +538,14 @@ private inline fun unaryFunction(crossinline timestampOp: (Timestamp) -> Evaluat
     timestampOp,
   )
 
+@JvmName("unaryArrayFunction")
+private inline fun unaryFunction(crossinline longOp: (List<Value>) -> EvaluateResult) =
+  unaryFunctionType(
+    Value.ValueTypeCase.ARRAY_VALUE,
+    { it.arrayValue.valuesList },
+    longOp,
+  )
+
 private inline fun unaryFunction(
   crossinline byteOp: (ByteString) -> EvaluateResult,
   crossinline stringOp: (String) -> EvaluateResult
@@ -559,6 +615,20 @@ private inline fun binaryFunction(
   }
 }
 
+@JvmName("binaryValueArrayFunction")
+private inline fun binaryFunction(
+  crossinline function: (Value, List<Value>) -> EvaluateResult
+): EvaluateFunction = binaryFunction { v1: Value, v2: Value ->
+  if (v2.hasArrayValue()) function(v1, v2.arrayValue.valuesList) else EvaluateResultError
+}
+
+@JvmName("binaryArrayValueFunction")
+private inline fun binaryFunction(
+  crossinline function: (List<Value>, Value) -> EvaluateResult
+): EvaluateFunction = binaryFunction { v1: Value, v2: Value ->
+  if (v1.hasArrayValue()) function(v1.arrayValue.valuesList, v2) else EvaluateResultError
+}
+
 @JvmName("binaryStringStringFunction")
 private inline fun binaryFunction(crossinline function: (String, String) -> EvaluateResult) =
   binaryFunctionType(
@@ -566,6 +636,18 @@ private inline fun binaryFunction(crossinline function: (String, String) -> Eval
     Value::getStringValue,
     Value.ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
+    function
+  )
+
+@JvmName("binaryArrayArrayFunction")
+private inline fun binaryFunction(
+  crossinline function: (List<Value>, List<Value>) -> EvaluateResult
+) =
+  binaryFunctionType(
+    Value.ValueTypeCase.ARRAY_VALUE,
+    { it.arrayValue.valuesList },
+    Value.ValueTypeCase.ARRAY_VALUE,
+    { it.arrayValue.valuesList },
     function
   )
 

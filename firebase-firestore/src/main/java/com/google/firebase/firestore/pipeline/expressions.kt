@@ -2610,7 +2610,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the array function.
      */
     @JvmStatic
-    fun array(vararg elements: Expr): Expr = FunctionExpr("array", evaluateArray, elements)
+    fun array(vararg elements: Any?): Expr =
+      FunctionExpr("array", evaluateArray, elements.map(::toExprOrConstant).toTypedArray<Expr>())
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
@@ -2619,8 +2620,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the array function.
      */
     @JvmStatic
-    fun array(elements: List<Expr>): Expr =
-      FunctionExpr("array", evaluateArray, elements.toTypedArray())
+    fun array(elements: List<Any?>): Expr =
+      FunctionExpr("array", evaluateArray, elements.map(::toExprOrConstant).toTypedArray())
 
     /**
      * Creates an expression that concatenates an array with other arrays.
@@ -2753,7 +2754,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(array: Expr, arrayExpression: Expr) =
-      BooleanExpr("array_contains_all", notImplemented, array, arrayExpression)
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, array, arrayExpression)
 
     /**
      * Creates an expression that checks if array field contains all the specified [values].
@@ -2766,7 +2767,7 @@ abstract class Expr internal constructor() {
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
       BooleanExpr(
         "array_contains_all",
-        notImplemented,
+        evaluateArrayContainsAll,
         arrayFieldName,
         ListOfExprs(toArrayOfExprOrConstant(values))
       )
@@ -2780,7 +2781,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, arrayExpression: Expr) =
-      BooleanExpr("array_contains_all", notImplemented, arrayFieldName, arrayExpression)
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, arrayFieldName, arrayExpression)
 
     /**
      * Creates an expression that checks if [array] contains any of the specified [values].
