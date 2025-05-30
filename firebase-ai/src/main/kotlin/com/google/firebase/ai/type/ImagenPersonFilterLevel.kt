@@ -24,9 +24,8 @@ public class ImagenPersonFilterLevel private constructor(internal val internalVa
      * Allow generation of images containing people of all ages.
      *
      * > Important: Generation of images containing people or faces may require your use case to be
-     * reviewed and approved by Cloud support; see the
-     * [Responsible AI and usage
-     * guidelines](https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
+     * reviewed and approved by Cloud support; see the [Responsible AI and usage guidelines]
+     * (https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
      * for more details.
      */
     @JvmField public val ALLOW_ALL: ImagenPersonFilterLevel = ImagenPersonFilterLevel("allow_all")
@@ -34,9 +33,8 @@ public class ImagenPersonFilterLevel private constructor(internal val internalVa
      * Allow generation of images containing adults only; images of children are filtered out.
      *
      * > Important: Generation of images containing people or faces may require your use case to be
-     * reviewed and approved by Cloud support; see the
-     * [Responsible AI and usage
-     * guidelines](https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
+     * reviewed and approved by Cloud support; see the [Responsible AI and usage guidelines]
+     * (https://cloud.google.com/vertex-ai/generative-ai/docs/image/responsible-ai-imagen#person-face-gen)
      * for more details.
      */
     @JvmField
