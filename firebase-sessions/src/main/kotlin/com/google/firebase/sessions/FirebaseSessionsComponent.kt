@@ -31,6 +31,7 @@ import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.RemoteSettings
@@ -121,8 +122,6 @@ internal interface FirebaseSessionsComponent {
     @Binds @Singleton fun processDataManager(impl: ProcessDataManagerImpl): ProcessDataManager
 
     companion object {
-      private const val TAG = "FirebaseSessions"
-
       @Provides @Singleton fun timeProvider(): TimeProvider = TimeProviderImpl
 
       @Provides @Singleton fun uuidGenerator(): UuidGenerator = UuidGeneratorImpl

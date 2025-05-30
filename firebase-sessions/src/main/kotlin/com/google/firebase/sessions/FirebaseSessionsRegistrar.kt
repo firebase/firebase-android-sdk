@@ -31,6 +31,7 @@ import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -71,7 +72,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     )
 
   private companion object {
-    const val TAG = "FirebaseSessions"
     const val LIBRARY_NAME = "fire-sessions"
 
     val appContext = unqualified(Context::class.java)

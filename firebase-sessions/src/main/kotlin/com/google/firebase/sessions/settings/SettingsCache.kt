@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.TimeProvider
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
@@ -107,8 +108,4 @@ constructor(
     } catch (ex: IOException) {
       Log.w(TAG, "Failed to remove config values: $ex")
     }
-
-  private companion object {
-    const val TAG = "SettingsCache"
-  }
 }
