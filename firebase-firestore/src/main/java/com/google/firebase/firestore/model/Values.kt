@@ -750,11 +750,32 @@ internal object Values {
 
   @JvmStatic
   fun timestamp(seconds: Long, nanos: Int): Timestamp {
+    validateRange(seconds, nanos)
+
     // Firestore backend truncates precision down to microseconds. To ensure offline mode works
     // the same with regards to truncation, perform the truncation immediately without waiting for
     // the backend to do that.
     val truncatedNanoseconds: Int = nanos / 1000 * 1000
-
     return Timestamp.newBuilder().setSeconds(seconds).setNanos(truncatedNanoseconds).build()
+  }
+
+  /**
+   * Ensures that the date and time are within what we consider valid ranges.
+   *
+   * More specifically, the nanoseconds need to be less than 1 billion- otherwise it would trip over
+   * into seconds, and need to be greater than zero.
+   *
+   * The seconds need to be after the date `1/1/1` and before the date `1/1/10000`.
+   *
+   * @throws IllegalArgumentException if the date and time are considered invalid
+   */
+  private fun validateRange(seconds: Long, nanoseconds: Int) {
+    require(nanoseconds in 0 until 1_000_000_000) {
+      "Timestamp nanoseconds out of range: $nanoseconds"
+    }
+
+    require(seconds in -62_135_596_800 until 253_402_300_800) {
+      "Timestamp seconds out of range: $seconds"
+    }
   }
 }

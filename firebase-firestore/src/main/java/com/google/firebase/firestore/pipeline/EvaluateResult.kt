@@ -26,8 +26,11 @@ internal sealed class EvaluateResult(val value: Value?) {
     fun timestamp(timestamp: Timestamp): EvaluateResult =
       EvaluateResultValue(encodeValue(timestamp))
     fun timestamp(seconds: Long, nanos: Int): EvaluateResult =
-      if (seconds !in -62_135_596_800 until 253_402_300_800) EvaluateResultError
-      else timestamp(Values.timestamp(seconds, nanos))
+      try {
+        timestamp(Values.timestamp(seconds, nanos))
+      } catch (e: IllegalArgumentException) {
+        EvaluateResultError
+      }
   }
 }
 

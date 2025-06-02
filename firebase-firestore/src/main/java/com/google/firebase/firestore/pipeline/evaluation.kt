@@ -568,14 +568,14 @@ internal val evaluateTimestampToUnixSeconds = unaryFunction { t: Timestamp ->
 internal val evaluateUnixMicrosToTimestamp = unaryFunction { micros: Long ->
   EvaluateResult.timestamp(
     Math.floorDiv(micros, L_MICROS_PER_SECOND),
-    Math.floorMod(micros, I_MICROS_PER_SECOND)
+    Math.floorMod(micros, I_MICROS_PER_SECOND) * 1000
   )
 }
 
 internal val evaluateUnixMillisToTimestamp = unaryFunction { millis: Long ->
   EvaluateResult.timestamp(
     Math.floorDiv(millis, L_MILLIS_PER_SECOND),
-    Math.floorMod(millis, I_MILLIS_PER_SECOND)
+    Math.floorMod(millis, I_MILLIS_PER_SECOND) * 1000_000
   )
 }
 
