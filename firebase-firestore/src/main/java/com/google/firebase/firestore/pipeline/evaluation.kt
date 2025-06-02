@@ -359,6 +359,12 @@ private fun notEqAny(value: Value, list: List<Value>): EvaluateResult {
   return if (foundNull) EvaluateResult.NULL else EvaluateResult.TRUE
 }
 
+// === Map Functions ===
+
+internal val evaluateMapGet = binaryFunction { map: Map<String, Value>, key: String ->
+  EvaluateResultValue(map[key] ?: return@binaryFunction EvaluateResultUnset)
+}
+
 // === String Functions ===
 
 internal val evaluateStrConcat = variadicFunction { strings: List<String> ->
@@ -740,6 +746,18 @@ private inline fun binaryFunction(
     catch { function(v1, v2) }
   }
 }
+
+@JvmName("binaryMapStringFunction")
+private inline fun binaryFunction(
+  crossinline function: (Map<String, Value>, String) -> EvaluateResult
+): EvaluateFunction =
+  binaryFunctionType(
+    ValueTypeCase.MAP_VALUE,
+    { v: Value -> v.mapValue.fieldsMap },
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    function
+  )
 
 @JvmName("binaryValueArrayFunction")
 private inline fun binaryFunction(

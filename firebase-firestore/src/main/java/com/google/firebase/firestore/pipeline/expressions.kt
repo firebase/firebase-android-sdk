@@ -1821,7 +1821,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapGet(mapExpression: Expr, key: String): Expr =
-      FunctionExpr("map_get", notImplemented, mapExpression, key)
+      FunctionExpr("map_get", evaluateMapGet, mapExpression, key)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -1832,7 +1832,29 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapGet(fieldName: String, key: String): Expr =
-      FunctionExpr("map_get", notImplemented, fieldName, key)
+      FunctionExpr("map_get", evaluateMapGet, fieldName, key)
+
+    /**
+     * Accesses a value from a map (object) field using the provided [keyExpression].
+     *
+     * @param mapExpression The expression representing the map.
+     * @param keyExpression The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
+    @JvmStatic
+    fun mapGet(mapExpression: Expr, keyExpression: Expr): Expr =
+      FunctionExpr("map_get", evaluateMapGet, mapExpression, keyExpression)
+
+    /**
+     * Accesses a value from a map (object) field using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map field.
+     * @param keyExpression The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
+    @JvmStatic
+    fun mapGet(fieldName: String, keyExpression: Expr): Expr =
+      FunctionExpr("map_get", evaluateMapGet, fieldName, keyExpression)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
