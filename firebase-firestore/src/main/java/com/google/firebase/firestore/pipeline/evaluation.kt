@@ -18,6 +18,8 @@ import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
+import com.google.re2j.Pattern
+import com.google.re2j.PatternSyntaxException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.absoluteValue
@@ -363,6 +365,10 @@ internal val evaluateStrConcat = variadicFunction { strings: List<String> ->
   EvaluateResult.string(buildString { strings.forEach(::append) })
 }
 
+internal val evaluateStrContains = binaryFunction { value: String, substring: String ->
+  EvaluateResult.boolean(value.contains(substring))
+}
+
 internal val evaluateStartsWith = binaryFunction { value: String, prefix: String ->
   EvaluateResult.boolean(value.startsWith(prefix))
 }
@@ -385,23 +391,80 @@ internal val evaluateCharLength = unaryFunction { s: String ->
   EvaluateResult.long(s.codePointCount(0, s.length))
 }
 
-internal val evaluateToLowercase = notImplemented
+internal val evaluateToLowercase = unaryFunctionPrimitive(String::lowercase)
 
-internal val evaluateToUppercase = notImplemented
+internal val evaluateToUppercase = unaryFunctionPrimitive(String::uppercase)
 
-internal val evaluateReverse = notImplemented
+internal val evaluateReverse = unaryFunctionPrimitive(String::reversed)
 
 internal val evaluateSplit = notImplemented // TODO: Does not exist in expressions.kt yet.
 
 internal val evaluateSubstring = notImplemented // TODO: Does not exist in expressions.kt yet.
 
-internal val evaluateTrim = notImplemented
+internal val evaluateTrim = unaryFunctionPrimitive(String::trim)
 
 internal val evaluateLTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
 
 internal val evaluateRTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
 
 internal val evaluateStrJoin = notImplemented // TODO: Does not exist in expressions.kt yet.
+
+internal val evaluateReplaceAll = notImplemented // TODO: Does not exist in backend yet.
+
+internal val evaluateReplaceFirst = notImplemented // TODO: Does not exist in backend yet.
+
+internal val evaluateRegexContains = binaryPatternFunction { pattern: Pattern, value: String ->
+  pattern.matcher(value).find()
+}
+
+internal val evaluateRegexMatch = binaryPatternFunction(Pattern::matches)
+
+internal val evaluateLike =
+  binaryPatternConstructorFunction(
+    { likeString: String ->
+      try {
+        Pattern.compile(likeToRegex(likeString))
+      } catch (e: Exception) {
+        null
+      }
+    },
+    Pattern::matches
+  )
+
+private fun likeToRegex(like: String): String = buildString {
+  var escape = false
+  for (c in like) {
+    if (escape) {
+      escape = false
+      when (c) {
+        '\\' -> append("\\\\")
+        else -> append(c)
+      }
+    } else
+      when (c) {
+        '\\' -> escape = true
+        '_' -> append('.')
+        '%' -> append(".*")
+        '.' -> append("\\.")
+        '*' -> append("\\*")
+        '?' -> append("\\?")
+        '+' -> append("\\+")
+        '^' -> append("\\^")
+        '$' -> append("\\$")
+        '|' -> append("\\|")
+        '(' -> append("\\(")
+        ')' -> append("\\)")
+        '[' -> append("\\[")
+        ']' -> append("\\]")
+        '{' -> append("\\{")
+        '}' -> append("\\}")
+        else -> append(c)
+      }
+  }
+  if (escape) {
+    throw Exception("LIKE pattern ends in backslash")
+  }
+}
 
 // === Date / Timestamp Functions ===
 
@@ -574,6 +637,12 @@ private inline fun unaryFunction(crossinline stringOp: (Boolean) -> EvaluateResu
     stringOp,
   )
 
+@JvmName("unaryStringFunctionPrimitive")
+private inline fun unaryFunctionPrimitive(crossinline stringOp: (String) -> String) =
+  unaryFunction { s: String ->
+    EvaluateResult.string(stringOp(s))
+  }
+
 @JvmName("unaryStringFunction")
 private inline fun unaryFunction(crossinline stringOp: (String) -> EvaluateResult) =
   unaryFunctionType(
@@ -696,6 +765,49 @@ private inline fun binaryFunction(crossinline function: (String, String) -> Eval
     function
   )
 
+@JvmName("binaryStringPatternConstructorFunction")
+private inline fun binaryPatternConstructorFunction(
+  crossinline patternConstructor: (String) -> Pattern?,
+  crossinline function: (Pattern, String) -> Boolean
+) =
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue
+  ) {
+    val cache = cache(patternConstructor)
+    ({ value: String, regex: String ->
+      val pattern = cache(regex)
+      if (pattern == null) EvaluateResultError else EvaluateResult.boolean(function(pattern, value))
+    })
+  }
+
+@JvmName("binaryStringPatternFunction")
+private inline fun binaryPatternFunction(crossinline function: (Pattern, String) -> Boolean) =
+  binaryPatternConstructorFunction(
+    { s: String ->
+      try {
+        Pattern.compile(s)
+      } catch (e: PatternSyntaxException) {
+        null
+      }
+    },
+    function
+  )
+
+private inline fun <T> cache(crossinline ifAbsent: (String) -> T): (String) -> T? {
+  var cache: Pair<String?, T?> = Pair(null, null)
+  return block@{ s: String ->
+    var (regex, pattern) = cache
+    if (regex != s) {
+      pattern = ifAbsent(s)
+      cache = Pair(s, pattern)
+    }
+    return@block pattern
+  }
+}
+
 @JvmName("binaryArrayArrayFunction")
 private inline fun binaryFunction(
   crossinline function: (List<Value>, List<Value>) -> EvaluateResult
@@ -759,11 +871,9 @@ private inline fun <T1, T2> binaryFunctionType(
 ): EvaluateFunction = { params ->
   if (params.size != 2)
     throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
-  val p1 = params[0]
-  val p2 = params[1]
-  block@{ input: MutableDocument ->
-    val v1 = p1(input).value ?: return@block EvaluateResultError
-    val v2 = p2(input).value ?: return@block EvaluateResultError
+  (block@{ input: MutableDocument ->
+    val v1 = params[0](input).value ?: return@block EvaluateResultError
+    val v2 = params[1](input).value ?: return@block EvaluateResultError
     when (v1.valueTypeCase) {
       ValueTypeCase.NULL_VALUE ->
         when (v2.valueTypeCase) {
@@ -779,7 +889,40 @@ private inline fun <T1, T2> binaryFunctionType(
         }
       else -> EvaluateResultError
     }
-  }
+  })
+}
+
+private inline fun <T1, T2> binaryFunctionConstructorType(
+  valueTypeCase1: ValueTypeCase,
+  crossinline valueExtractor1: (Value) -> T1,
+  valueTypeCase2: ValueTypeCase,
+  crossinline valueExtractor2: (Value) -> T2,
+  crossinline functionConstructor: () -> (T1, T2) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 2)
+    throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  val f = functionConstructor()
+  (block@{ input: MutableDocument ->
+    val v1 = p1(input).value ?: return@block EvaluateResultError
+    val v2 = p2(input).value ?: return@block EvaluateResultError
+    when (v1.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE ->
+        when (v2.valueTypeCase) {
+          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          valueTypeCase2 -> EvaluateResult.NULL
+          else -> EvaluateResultError
+        }
+      valueTypeCase1 ->
+        when (v2.valueTypeCase) {
+          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+          valueTypeCase2 -> catch { f(valueExtractor1(v1), valueExtractor2(v2)) }
+          else -> EvaluateResultError
+        }
+      else -> EvaluateResultError
+    }
+  })
 }
 
 private inline fun variadicResultFunction(

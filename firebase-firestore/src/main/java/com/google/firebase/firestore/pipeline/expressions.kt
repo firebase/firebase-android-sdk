@@ -243,6 +243,17 @@ abstract class Expr internal constructor() {
     }
 
     /**
+     * Create a [Blob] constant from a [ByteArray].
+     *
+     * @param bytes The [ByteArray] to convert to a Blob.
+     * @return A new [Expr] constant instance representing the Blob.
+     */
+    @JvmStatic
+    fun blob(bytes: ByteArray): Expr {
+      return constant(Blob.fromBytes(bytes))
+    }
+
+    /**
      * Constant for a null value.
      *
      * @return A [Expr] constant instance.
@@ -1204,7 +1215,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", notImplemented, stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the
@@ -1217,7 +1228,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", notImplemented, stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1232,7 +1243,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", notImplemented, fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1245,7 +1256,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", notImplemented, fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1258,7 +1269,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", notImplemented, stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1271,7 +1282,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", notImplemented, stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1286,7 +1297,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", notImplemented, fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1299,7 +1310,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", notImplemented, fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, fieldName, find, replace)
 
     /**
      * Creates an expression that calculates the character length of a string expression in UTF8.
@@ -1350,7 +1361,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("like", notImplemented, stringExpression, pattern)
+      BooleanExpr("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
@@ -1361,7 +1372,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("like", notImplemented, stringExpression, pattern)
+      BooleanExpr("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -1373,7 +1384,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: Expr): BooleanExpr =
-      BooleanExpr("like", notImplemented, fieldName, pattern)
+      BooleanExpr("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -1385,7 +1396,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: String): BooleanExpr =
-      BooleanExpr("like", notImplemented, fieldName, pattern)
+      BooleanExpr("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that return a pseudo-random number of type double in the range of [0,
@@ -1405,7 +1416,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_contains", notImplemented, stringExpression, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -1417,7 +1428,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_contains", notImplemented, stringExpression, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -1429,7 +1440,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: Expr) =
-      BooleanExpr("regex_contains", notImplemented, fieldName, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -1441,7 +1452,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: String) =
-      BooleanExpr("regex_contains", notImplemented, fieldName, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1452,7 +1463,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_match", notImplemented, stringExpression, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1463,7 +1474,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_match", notImplemented, stringExpression, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1474,7 +1485,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: Expr) =
-      BooleanExpr("regex_match", notImplemented, fieldName, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1485,7 +1496,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: String) =
-      BooleanExpr("regex_match", notImplemented, fieldName, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1563,7 +1574,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(stringExpression: Expr, substring: Expr): BooleanExpr =
-      BooleanExpr("str_contains", notImplemented, stringExpression, substring)
+      BooleanExpr("str_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -1574,7 +1585,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(stringExpression: Expr, substring: String): BooleanExpr =
-      BooleanExpr("str_contains", notImplemented, stringExpression, substring)
+      BooleanExpr("str_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -1585,7 +1596,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: Expr): BooleanExpr =
-      BooleanExpr("str_contains", notImplemented, fieldName, substring)
+      BooleanExpr("str_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -1596,7 +1607,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: String): BooleanExpr =
-      BooleanExpr("str_contains", notImplemented, fieldName, substring)
+      BooleanExpr("str_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
