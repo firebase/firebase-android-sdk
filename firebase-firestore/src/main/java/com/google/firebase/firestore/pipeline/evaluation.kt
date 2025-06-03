@@ -617,6 +617,11 @@ private inline fun catch(f: () -> EvaluateResult): EvaluateResult =
     EvaluateResultError
   }
 
+/**
+ * Basic Unary Function
+ * - Validates there is exactly 1 parameter.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun unaryFunction(
   crossinline function: (EvaluateResult) -> EvaluateResult
 ): EvaluateFunction = { params ->
@@ -626,6 +631,13 @@ private inline fun unaryFunction(
   { input: MutableDocument -> catch { function(p(input)) } }
 }
 
+/**
+ * Unary Value Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryValueFunction")
 private inline fun unaryFunction(
   crossinline function: (Value) -> EvaluateResult
@@ -635,44 +647,97 @@ private inline fun unaryFunction(
   else if (v.hasNullValue()) EvaluateResult.NULL else function(v)
 }
 
+/**
+ * Unary Boolean Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Extracts Boolean for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryBooleanFunction")
-private inline fun unaryFunction(crossinline stringOp: (Boolean) -> EvaluateResult) =
+private inline fun unaryFunction(crossinline function: (Boolean) -> EvaluateResult) =
   unaryFunctionType(
     ValueTypeCase.BOOLEAN_VALUE,
     Value::getBooleanValue,
-    stringOp,
+    function,
   )
 
+/**
+ * Unary String Function that wraps the String result
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Extracts Boolean for [function] evaluation.
+ * - Wraps the primitive String result as [EvaluateResult].
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryStringFunctionPrimitive")
-private inline fun unaryFunctionPrimitive(crossinline stringOp: (String) -> String) =
-  unaryFunction { s: String ->
-    EvaluateResult.string(stringOp(s))
-  }
+private inline fun unaryFunctionPrimitive(crossinline function: (String) -> String) =
+  unaryFunction { s: String -> EvaluateResult.string(function(s)) }
 
+/**
+ * Unary String Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Extracts String for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryStringFunction")
-private inline fun unaryFunction(crossinline stringOp: (String) -> EvaluateResult) =
+private inline fun unaryFunction(crossinline function: (String) -> EvaluateResult) =
   unaryFunctionType(
     ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
-    stringOp,
+    function,
   )
 
+/**
+ * Unary String Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Extracts String for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryLongFunction")
-private inline fun unaryFunction(crossinline longOp: (Long) -> EvaluateResult) =
+private inline fun unaryFunction(crossinline function: (Long) -> EvaluateResult) =
   unaryFunctionType(
     ValueTypeCase.INTEGER_VALUE,
     Value::getIntegerValue,
-    longOp,
+    function,
   )
 
+/**
+ * Unary Timestamp Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Extracts Timestamp for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryTimestampFunction")
-private inline fun unaryFunction(crossinline timestampOp: (Timestamp) -> EvaluateResult) =
+private inline fun unaryFunction(crossinline function: (Timestamp) -> EvaluateResult) =
   unaryFunctionType(
     ValueTypeCase.TIMESTAMP_VALUE,
     Value::getTimestampValue,
-    timestampOp,
+    function,
   )
 
+/**
+ * Unary Timestamp Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value], however NULL [Value]s can appear inside of array.
+ * - Extracts Timestamp from [Value] for evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("unaryArrayFunction")
 private inline fun unaryFunction(crossinline longOp: (List<Value>) -> EvaluateResult) =
   unaryFunctionType(
@@ -681,6 +746,16 @@ private inline fun unaryFunction(crossinline longOp: (List<Value>) -> EvaluateRe
     longOp,
   )
 
+/**
+ * Unary Bytes/String Function
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - Depending on [Value] type, either the Timestamp or String is extracted and evaluated by
+ * either [byteOp] or [stringOp].
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun unaryFunction(
   crossinline byteOp: (ByteString) -> EvaluateResult,
   crossinline stringOp: (String) -> EvaluateResult
@@ -694,6 +769,15 @@ private inline fun unaryFunction(
     stringOp,
   )
 
+/**
+ * For building type specific Unary Functions
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - If [Value] type is [valueTypeCase] then use [valueExtractor] for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun <T> unaryFunctionType(
   valueTypeCase: ValueTypeCase,
   crossinline valueExtractor: (Value) -> T,
@@ -709,6 +793,16 @@ private inline fun <T> unaryFunctionType(
     }
 }
 
+/**
+ * For building type specific Unary Functions that can have 2 possible types.
+ * - Validates there is exactly 1 parameter.
+ * - Short circuits UNSET and ERROR parameter to return ERROR.
+ * - Short circuits NULL [Value] parameter to return NULL [Value].
+ * - If [Value] type is [valueTypeCase1] then use [valueExtractor1] for [function1] evaluation.
+ * - If [Value] type is [valueTypeCase2] then use [valueExtractor2] for [function2] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun <T1, T2> unaryFunctionType(
   valueTypeCase1: ValueTypeCase,
   crossinline valueExtractor1: (Value) -> T1,
@@ -731,6 +825,13 @@ private inline fun <T1, T2> unaryFunctionType(
   }
 }
 
+/**
+ * Binary (Value, Value) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryValueValueFunction")
 private inline fun binaryFunction(
   crossinline function: (Value, Value) -> EvaluateResult
@@ -747,6 +848,15 @@ private inline fun binaryFunction(
   }
 }
 
+/**
+ * Binary (Map, String) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can appear inside of Map.
+ * - Extracts Map and String for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryMapStringFunction")
 private inline fun binaryFunction(
   crossinline function: (Map<String, Value>, String) -> EvaluateResult
@@ -759,6 +869,15 @@ private inline fun binaryFunction(
     function
   )
 
+/**
+ * Binary (Value, Array) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can appear inside of Array.
+ * - Extracts Value and Array for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryValueArrayFunction")
 private inline fun binaryFunction(
   crossinline function: (Value, List<Value>) -> EvaluateResult
@@ -766,6 +885,15 @@ private inline fun binaryFunction(
   if (v2.hasArrayValue()) function(v1, v2.arrayValue.valuesList) else EvaluateResultError
 }
 
+/**
+ * Binary (Array, Value) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can appear inside of Array.
+ * - Extracts Array and Value for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryArrayValueFunction")
 private inline fun binaryFunction(
   crossinline function: (List<Value>, Value) -> EvaluateResult
@@ -773,6 +901,15 @@ private inline fun binaryFunction(
   if (v1.hasArrayValue()) function(v1.arrayValue.valuesList, v2) else EvaluateResultError
 }
 
+/**
+ * Binary (String, String) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Extracts String and String for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryStringStringFunction")
 private inline fun binaryFunction(crossinline function: (String, String) -> EvaluateResult) =
   binaryFunctionType(
@@ -783,6 +920,16 @@ private inline fun binaryFunction(crossinline function: (String, String) -> Eval
     function
   )
 
+/**
+ * For building binary functions that perform Regex evaluation.
+ * - Separates the Regex compilation via [patternConstructor] from the [function] evaluation.
+ * - Caches previously seen Regex to avoid compilation overhead.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Extracts String and Regex via [patternConstructor] for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryStringPatternConstructorFunction")
 private inline fun binaryPatternConstructorFunction(
   crossinline patternConstructor: (String) -> Pattern?,
@@ -801,6 +948,16 @@ private inline fun binaryPatternConstructorFunction(
     })
   }
 
+/**
+ * Binary (String, Regex from String) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Extracts String and Regex for [function] evaluation.
+ * - Caches previously seen Regex to avoid compilation overhead.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryStringPatternFunction")
 private inline fun binaryPatternFunction(crossinline function: (Pattern, String) -> Boolean) =
   binaryPatternConstructorFunction(
@@ -814,6 +971,9 @@ private inline fun binaryPatternFunction(crossinline function: (Pattern, String)
     function
   )
 
+/**
+ * Simple one entry cache.
+ */
 private inline fun <T> cache(crossinline ifAbsent: (String) -> T): (String) -> T? {
   var cache: Pair<String?, T?> = Pair(null, null)
   return block@{ s: String ->
@@ -826,6 +986,15 @@ private inline fun <T> cache(crossinline ifAbsent: (String) -> T): (String) -> T
   }
 }
 
+/**
+ * Binary (Array, Array) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can appear inside of Array.
+ * - Extracts Array and Array for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("binaryArrayArrayFunction")
 private inline fun binaryFunction(
   crossinline function: (List<Value>, List<Value>) -> EvaluateResult
@@ -838,48 +1007,17 @@ private inline fun binaryFunction(
     function
   )
 
-private inline fun ternaryLazyFunction(
-  crossinline function:
-    (() -> EvaluateResult, () -> EvaluateResult, () -> EvaluateResult) -> EvaluateResult
-): EvaluateFunction = { params ->
-  if (params.size != 3)
-    throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
-  val p1 = params[0]
-  val p2 = params[1]
-  val p3 = params[2]
-  { input: MutableDocument -> catch { function({ p1(input) }, { p2(input) }, { p3(input) }) } }
-}
-
-private inline fun ternaryTimestampFunction(
-  crossinline function: (Timestamp, String, Long) -> EvaluateResult
-): EvaluateFunction = ternaryNullableValueFunction { timestamp: Value, unit: Value, number: Value ->
-  val t: Timestamp =
-    when (timestamp.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
-      else -> return@ternaryNullableValueFunction EvaluateResultError
-    }
-  val u: String =
-    if (unit.hasStringValue()) unit.stringValue
-    else return@ternaryNullableValueFunction EvaluateResultError
-  val n: Long =
-    when (number.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      ValueTypeCase.INTEGER_VALUE -> number.integerValue
-      else -> return@ternaryNullableValueFunction EvaluateResultError
-    }
-  function(t, u, n)
-}
-
-private inline fun ternaryNullableValueFunction(
-  crossinline function: (Value, Value, Value) -> EvaluateResult
-): EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
-  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
-  val v2 = p2().value ?: return@ternaryLazyFunction EvaluateResultError
-  val v3 = p3().value ?: return@ternaryLazyFunction EvaluateResultError
-  function(v1, v2, v3)
-}
-
+/**
+ * For building type specific Binary Functions
+ * - Validates there is exactly 2 parameter.
+ * - First short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - First parameter must be [Value] of [valueTypeCase1].
+ * - Second parameter must be [Value] of [valueTypeCase2].
+ * - Extract parameter values via [valueExtractor1] and [valueExtractor2] for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun <T1, T2> binaryFunctionType(
   valueTypeCase1: ValueTypeCase,
   crossinline valueExtractor1: (Value) -> T1,
@@ -910,6 +1048,18 @@ private inline fun <T1, T2> binaryFunctionType(
   })
 }
 
+/**
+ * For building type specific Binary Functions
+ * - Has [functionConstructor] for creating stateful evaluation function.
+ * - Validates there is exactly 2 parameter.
+ * - First short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - First parameter must be [Value] of [valueTypeCase1].
+ * - Second parameter must be [Value] of [valueTypeCase2].
+ * - Extract parameter values via [valueExtractor1] and [valueExtractor2] for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun <T1, T2> binaryFunctionConstructorType(
   valueTypeCase1: ValueTypeCase,
   crossinline valueExtractor1: (Value) -> T1,
@@ -943,6 +1093,76 @@ private inline fun <T1, T2> binaryFunctionConstructorType(
   })
 }
 
+/**
+ * Ternary (Timestamp, String, Long) Function
+ * - Validates there is exactly 3 parameters.
+ * - Passes lazy parameters that delay evaluation of parameters.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
+private inline fun ternaryLazyFunction(
+  crossinline function:
+    (() -> EvaluateResult, () -> EvaluateResult, () -> EvaluateResult) -> EvaluateResult
+): EvaluateFunction = { params ->
+  if (params.size != 3)
+    throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
+  val p1 = params[0]
+  val p2 = params[1]
+  val p3 = params[2]
+  { input: MutableDocument -> catch { function({ p1(input) }, { p2(input) }, { p3(input) }) } }
+}
+
+/**
+ * Ternary (Timestamp, String, Long) Function
+ * - Validates there is exactly 3 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - If 2nd parameter is NULL, short circuit and return ERROR.
+ * - If 1st or 3rd parameter is NULL, short circuit and return NULL.
+ * - Extracts Timestamp, String and Long for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
+private inline fun ternaryTimestampFunction(
+  crossinline function: (Timestamp, String, Long) -> EvaluateResult
+): EvaluateFunction = ternaryNullableValueFunction { timestamp: Value, unit: Value, number: Value ->
+  val t: Timestamp =
+    when (timestamp.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
+      else -> return@ternaryNullableValueFunction EvaluateResultError
+    }
+  val u: String =
+    if (unit.hasStringValue()) unit.stringValue
+    else return@ternaryNullableValueFunction EvaluateResultError
+  val n: Long =
+    when (number.valueTypeCase) {
+      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
+      ValueTypeCase.INTEGER_VALUE -> number.integerValue
+      else -> return@ternaryNullableValueFunction EvaluateResultError
+    }
+  function(t, u, n)
+}
+
+/**
+ * Ternary Value Function
+ * - Validates there is exactly 3 parameters.
+ * - Short circuits UNSET and ERROR parameters to return ERROR.
+ * - Allows passing of NULL [Value]s to [function] for evaluation.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
+private inline fun ternaryNullableValueFunction(
+  crossinline function: (Value, Value, Value) -> EvaluateResult
+): EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
+  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
+  val v2 = p2().value ?: return@ternaryLazyFunction EvaluateResultError
+  val v3 = p3().value ?: return@ternaryLazyFunction EvaluateResultError
+  function(v1, v2, v3)
+}
+
+/**
+ * Basic Variadic Function
+ * - No short circuiting of parameter evaluation.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun variadicResultFunction(
   crossinline function: (List<EvaluateResult>) -> EvaluateResult
 ): EvaluateFunction = { params ->
@@ -952,6 +1172,12 @@ private inline fun variadicResultFunction(
   }
 }
 
+/**
+ * Variadic Value Function with NULLS
+ * - Short circuits UNSET and ERROR parameters to return ERROR.
+ * - Allows passing of NULL [Value]s to [function] for evaluation.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("variadicNullableValueFunction")
 private inline fun variadicNullableValueFunction(
   crossinline function: (List<Value>) -> EvaluateResult
@@ -959,12 +1185,29 @@ private inline fun variadicNullableValueFunction(
   function(l.map { it.value ?: return@variadicResultFunction EvaluateResultError })
 }
 
+/**
+ * Variadic String Function
+ * - First short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Extract String parameters into List for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("variadicStringFunction")
 private inline fun variadicFunction(
   crossinline function: (List<String>) -> EvaluateResult
 ): EvaluateFunction =
   variadicFunctionType(ValueTypeCase.STRING_VALUE, Value::getStringValue, function)
 
+/**
+ * For building type specific Variadic Functions
+ * - First short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Parameter must be [Value] of [valueTypeCase].
+ * - Extract parameter values via [valueExtractor] into List for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun <T> variadicFunctionType(
   valueTypeCase: ValueTypeCase,
   crossinline valueExtractor: (Value) -> T,
@@ -985,6 +1228,14 @@ private inline fun <T> variadicFunctionType(
   }
 }
 
+/**
+ * Variadic String Function
+ * - First short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Extract String parameters into BooleanArray for [function] evaluation.
+ * - All other [Value] types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 @JvmName("variadicBooleanFunction")
 private inline fun variadicFunction(
   crossinline function: (BooleanArray) -> EvaluateResult
@@ -1004,6 +1255,15 @@ private inline fun variadicFunction(
   }
 }
 
+/**
+ * Binary (Value, Value) Function for Comparisons
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - Third short circuits Double.NaN [Value] parameters to return FALSE.
+ * - Wraps result as EvaluateResult.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
 private inline fun comparison(crossinline f: (Value, Value) -> Boolean?): EvaluateFunction =
   binaryFunction { p1: Value, p2: Value ->
     if (isNanValue(p1) or isNanValue(p2)) EvaluateResult.FALSE
