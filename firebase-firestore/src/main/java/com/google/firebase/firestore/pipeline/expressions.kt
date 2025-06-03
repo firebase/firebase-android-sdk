@@ -27,7 +27,6 @@ import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
