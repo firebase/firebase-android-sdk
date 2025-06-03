@@ -84,7 +84,9 @@ internal class DataConnectGrpcRPCs(
   val instanceId: String
     get() = logger.nameWithId
 
-  private val rateLimiter = RateLimiter(30)
+  // Requests get throttled at 1200 requests/minute/user
+  // https://firebase.google.com/docs/data-connect/manage-services-and-databases
+  private val rateLimiter = RateLimiter(1100)
 
   private val mutex = Mutex()
   private var closed = false
