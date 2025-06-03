@@ -181,7 +181,7 @@ sealed interface DataConnectBackend {
      */
     fun fromInstrumentationArguments(): DataConnectBackend {
       val argument = getInstrumentationArgument(INSTRUMENTATION_ARGUMENT)
-      return fromInstrumentationArgument(argument) ?: Emulator()
+      return fromInstrumentationArgument(argument) ?: Production
     }
 
     private fun URL.hostOrNull(): String? = host.ifEmpty { null }

@@ -47,6 +47,7 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
@@ -193,7 +194,7 @@ class AnyScalarIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun anyScalarNullable_MutationVariableNormalCases() =
-    runTest(timeout = 60.seconds) {
+    runTest(timeout = Duration.INFINITE) {
       checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any()) { value ->
         verifyAnyScalarRoundTrip(
           value,
@@ -1095,6 +1096,9 @@ class AnyScalarIntegrationTest : DataConnectIntegrationTestBase() {
   private companion object {
 
     val normalCasePropTestConfig =
-      PropTestConfig(iterations = 5, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0))
+      PropTestConfig(
+        iterations = Int.MAX_VALUE,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0)
+      )
   }
 }

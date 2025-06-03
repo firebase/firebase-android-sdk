@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.core
 
 import android.content.Context
+import android.os.SystemClock
+import android.util.Log
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
@@ -44,14 +46,20 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
+import java.text.NumberFormat
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -75,6 +83,8 @@ internal class DataConnectGrpcRPCs(
     }
   val instanceId: String
     get() = logger.nameWithId
+
+  private val rateLimiter = RateLimiter(30)
 
   private val mutex = Mutex()
   private var closed = false
@@ -141,6 +151,8 @@ internal class DataConnectGrpcRPCs(
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeMutation(${request.operationName})"
+    counts.onExecuteMutation(request.operationName)
+    rateLimiter.throttle()
 
     logger.logGrpcSending(
       requestId = requestId,
@@ -179,6 +191,8 @@ internal class DataConnectGrpcRPCs(
   ): ExecuteQueryResponse {
     val metadata = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
+    counts.onExecuteQuery(request.operationName)
+    rateLimiter.throttle()
 
     logger.logGrpcSending(
       requestId = requestId,
@@ -345,5 +359,94 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName: String,
       throwable: Throwable,
     ) = warn(throwable) { "$kotlinMethodName [rid=$requestId] FAILED: $throwable" }
+  }
+}
+
+private val counts: MutableStateFlow<Counts> = MutableStateFlow(Counts(0, 0, emptyMap()))
+
+private fun MutableStateFlow<Counts>.onExecuteQuery(operationName: String) {
+  val newCounts = updateAndGet { it.incrementedForQuery(operationName) }
+  println("zzyzx newCounts=${newCounts}")
+}
+
+private fun MutableStateFlow<Counts>.onExecuteMutation(operationName: String) {
+  val newCounts = updateAndGet { it.incrementedForMutation(operationName) }
+  println("zzyzx newCounts=${newCounts}")
+}
+
+private data class Counts(
+  val executeQueryCount: Int,
+  val executeMutationCount: Int,
+  val countByOperation: Map<String, Int>,
+) {
+  fun incrementedForQuery(operationName: String): Counts {
+    return Counts(
+      executeQueryCount = executeQueryCount + 1,
+      executeMutationCount = executeMutationCount,
+      countByOperation = countByOperationIncrementedForOperation(operationName)
+    )
+  }
+  fun incrementedForMutation(operationName: String): Counts {
+    return Counts(
+      executeQueryCount = executeQueryCount,
+      executeMutationCount = executeMutationCount + 1,
+      countByOperation = countByOperationIncrementedForOperation(operationName)
+    )
+  }
+  fun countByOperationIncrementedForOperation(operationName: String): Map<String, Int> {
+    return countByOperation.toMutableMap().also {
+      val oldCount = it.getOrPut(operationName) { 0 }
+      it[operationName] = oldCount + 1
+    }
+  }
+}
+
+private class RateLimiter(val maxPerMinute: Int) {
+
+  init {
+    require(maxPerMinute > 0) { "invalid maxPerMinute: ${maxPerMinute}" }
+  }
+
+  private val mutex = Mutex()
+
+  private val samples = ArrayDeque<Long>()
+
+  suspend fun throttle() =
+    mutex.withLock {
+      while (true) {
+        val currentTimeMillis = SystemClock.elapsedRealtime()
+        samples.removeFirstWhile { currentTimeMillis - it > MILLIS_PER_MINUTE }
+        Log.i("RateLimiter", "${samples.size} requests/min")
+
+        if (samples.size < maxPerMinute) {
+          samples.addLast(currentTimeMillis)
+          return
+        }
+
+        val oldestSample = samples.first()
+        val delayMs = MILLIS_PER_MINUTE - (currentTimeMillis - oldestSample)
+        Log.i(
+          "RateLimiter",
+          "delaying for ${delayMs.toFormattedString()} ms " +
+            "(currentTimeMillis=${currentTimeMillis}, oldestSample=${oldestSample})"
+        )
+        withContext(Dispatchers.IO) { delay(delayMs) }
+      }
+    }
+
+  private companion object {
+    const val MILLIS_PER_SECOND = 1000
+    const val MILLIS_PER_MINUTE = MILLIS_PER_SECOND * 60
+
+    inline fun ArrayDeque<Long>.removeFirstWhile(predicate: (Long) -> Boolean) {
+      while (isNotEmpty()) {
+        if (!predicate(first())) {
+          return
+        }
+        removeFirst()
+      }
+    }
+
+    fun Long.toFormattedString(): String = NumberFormat.getInstance(Locale.US).format(this)
   }
 }
