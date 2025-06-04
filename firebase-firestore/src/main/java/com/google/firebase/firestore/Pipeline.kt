@@ -786,6 +786,9 @@ internal constructor(
   fun select(fieldName: String, vararg additionalSelections: Any): RealtimePipeline =
     append(SelectStage.of(fieldName, *additionalSelections))
 
+  fun sort(order: Ordering, vararg additionalOrders: Ordering): RealtimePipeline =
+    append(SortStage(arrayOf(order, *additionalOrders)))
+
   fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
 }
 

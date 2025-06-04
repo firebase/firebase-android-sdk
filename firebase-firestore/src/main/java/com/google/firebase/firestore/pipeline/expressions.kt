@@ -23,6 +23,9 @@ import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
+import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
+import com.google.firebase.firestore.model.FieldPath.KEY_PATH
+import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
 import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
@@ -295,10 +298,12 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun field(name: String): Field {
-      if (name == DocumentKey.KEY_FIELD_NAME) {
-        return Field(ModelFieldPath.KEY_PATH)
+      return when (name) {
+        DocumentKey.KEY_FIELD_NAME -> Field(KEY_PATH)
+        ModelFieldPath.CREATE_TIME_NAME -> Field(CREATE_TIME_PATH)
+        ModelFieldPath.UPDATE_TIME_NAME -> Field(UPDATE_TIME_PATH)
+        else -> Field(FieldPath.fromDotSeparatedPath(name).internalPath)
       }
-      return Field(FieldPath.fromDotSeparatedPath(name).internalPath)
     }
 
     /**
@@ -4189,11 +4194,13 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 
-  override fun evaluateContext(context: EvaluationContext) = ::evaluateInternal
-
-  private fun evaluateInternal(input: MutableDocument): EvaluateResult {
-    val value: Value? = input.getField(fieldPath)
-    return if (value === null) EvaluateResultUnset else EvaluateResultValue(value)
+  override fun evaluateContext(context: EvaluationContext) = block@{ input: MutableDocument ->
+    EvaluateResultValue(when (fieldPath) {
+      KEY_PATH -> encodeValue(DocumentReference.forPath(input.key.path, context.db))
+      CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
+      UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
+      else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
+    })
   }
 }
 

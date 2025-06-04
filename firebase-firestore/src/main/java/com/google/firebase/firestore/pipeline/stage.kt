@@ -30,7 +30,9 @@ import com.google.firestore.v1.Value
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 
 sealed class BaseStage<T : BaseStage<T>>(
@@ -244,6 +246,13 @@ private constructor(private val collectionId: String, options: InternalOptions) 
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    // TODO: Does this need to do more?
+    return inputs
+  }
 
   companion object {
 
@@ -511,6 +520,11 @@ internal class LimitStage
 internal constructor(private val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
   BaseStage<LimitStage>("limit", options) {
   override fun self(options: InternalOptions) = LimitStage(limit, options)
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> = if (limit > 0) inputs.take(limit) else flowOf()
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
 }

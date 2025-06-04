@@ -19,6 +19,7 @@ import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -39,7 +40,7 @@ internal class PipelineTests {
     val doc2: MutableDocument = doc("foo/2", 0, mapOf("bar" to "43"))
     val doc3: MutableDocument = doc("xxx/1", 0, mapOf("bar" to 42))
 
-    val list = runPipeline(pipeline, flowOf(doc1, doc2, doc3)).toList()
+    val list = runPipeline(firestore, pipeline, flowOf(doc1, doc2, doc3)).toList()
 
     assertThat(list).hasSize(1)
   }
