@@ -23,10 +23,10 @@ import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
+import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
 import com.google.firebase.firestore.model.FieldPath.KEY_PATH
 import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
-import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -1022,8 +1022,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the 'IN' comparison.
      */
     @JvmStatic
-    fun eqAny(expression: Expr, values: List<Any>): BooleanExpr =
-      eqAny(expression, array(values))
+    fun eqAny(expression: Expr, values: List<Any>): BooleanExpr = eqAny(expression, array(values))
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -1047,8 +1046,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the 'IN' comparison.
      */
     @JvmStatic
-    fun eqAny(fieldName: String, values: List<Any>): BooleanExpr =
-      eqAny(fieldName, array(values))
+    fun eqAny(fieldName: String, values: List<Any>): BooleanExpr = eqAny(fieldName, array(values))
 
     /**
      * Creates an expression that checks if a field's value is equal to any of the elements of
@@ -2780,8 +2778,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(array: Expr, values: List<Any>) =
-      arrayContainsAll(array, array(values))
+    fun arrayContainsAll(array: Expr, values: List<Any>) = arrayContainsAll(array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains all elements of [arrayExpression].
@@ -2803,12 +2800,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr(
-        "array_contains_all",
-        evaluateArrayContainsAll,
-        arrayFieldName,
-        array(values)
-      )
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains all elements of [arrayExpression].
@@ -2830,12 +2822,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expr, values: List<Any>) =
-      BooleanExpr(
-        "array_contains_any",
-        evaluateArrayContainsAny,
-        array,
-        array(values)
-      )
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains any elements of [arrayExpression].
@@ -2857,12 +2844,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr(
-        "array_contains_any",
-        evaluateArrayContainsAny,
-        arrayFieldName,
-        array(values)
-      )
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains any elements of [arrayExpression].
@@ -4194,14 +4176,17 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 
-  override fun evaluateContext(context: EvaluationContext) = block@{ input: MutableDocument ->
-    EvaluateResultValue(when (fieldPath) {
-      KEY_PATH -> encodeValue(DocumentReference.forPath(input.key.path, context.db))
-      CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
-      UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
-      else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
-    })
-  }
+  override fun evaluateContext(context: EvaluationContext) =
+    block@{ input: MutableDocument ->
+      EvaluateResultValue(
+        when (fieldPath) {
+          KEY_PATH -> encodeValue(DocumentReference.forPath(input.key.path, context.db))
+          CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
+          UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
+          else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
+        }
+      )
+    }
 }
 
 /**

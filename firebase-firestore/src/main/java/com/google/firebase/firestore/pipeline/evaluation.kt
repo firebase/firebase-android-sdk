@@ -43,10 +43,7 @@ import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-internal class EvaluationContext(
-  val db: FirebaseFirestore,
-  val userDataReader: UserDataReader
-)
+internal class EvaluationContext(val db: FirebaseFirestore, val userDataReader: UserDataReader)
 
 internal typealias EvaluateDocument = (input: MutableDocument) -> EvaluateResult
 

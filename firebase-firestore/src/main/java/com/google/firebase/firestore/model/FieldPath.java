@@ -22,7 +22,12 @@ import java.util.List;
 /** A dot separated path for navigating sub-objects with in a document */
 public final class FieldPath extends BasePath<FieldPath> {
 
+  public static final String UPDATE_TIME_NAME = "__update_time__";
+  public static final String CREATE_TIME_NAME = "__create_time__";
+
   public static final FieldPath KEY_PATH = fromSingleSegment(DocumentKey.KEY_FIELD_NAME);
+  public static final FieldPath UPDATE_TIME_PATH = fromSingleSegment(UPDATE_TIME_NAME);
+  public static final FieldPath CREATE_TIME_PATH = fromSingleSegment(CREATE_TIME_NAME);
   public static final FieldPath EMPTY_PATH = new FieldPath(Collections.emptyList());
 
   private FieldPath(List<String> segments) {
