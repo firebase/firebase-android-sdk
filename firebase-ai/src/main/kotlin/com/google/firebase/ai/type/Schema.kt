@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import java.util.EnumSet
 import kotlinx.serialization.Serializable
 
 public abstract class StringFormat private constructor(internal val value: String) {
@@ -179,7 +180,11 @@ internal constructor(
     ): Schema {
       if (!properties.keys.containsAll(optionalProperties)) {
         throw IllegalArgumentException(
-          "All optional properties must be present in properties. Missing: ${optionalProperties.minus(properties.keys)}"
+          "All optional properties must be present in properties. Missing: ${
+            optionalProperties.minus(
+              properties.keys
+            )
+          }"
         )
       }
       return Schema(
@@ -239,6 +244,49 @@ internal constructor(
         enum = values,
         type = "STRING",
       )
+
+    /**
+     * Returns a [Schema] for the given Kotlin Enum.
+     *
+     * For example, the cardinal directions can be represented as:
+     *
+     * ```
+     * enum class CardinalDirection { NORTH, EAST, SOUTH, WEST }
+     *
+     * Schema.fromEnum<CardinalDirection>()
+     * ```
+     *
+     * @param description The description of what the parameter should contain or represent
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     */
+    @JvmOverloads
+    public inline fun <reified E : Enum<E>> fromEnum(
+      description: String? = null,
+      nullable: Boolean = false
+    ): Schema = enumeration(enumValues<E>().map { it.toString() }, description, nullable)
+
+    /**
+     * Returns a [Schema] for the given Java Enum.
+     *
+     * For example, the cardinal directions can be represented as:
+     *
+     * ```
+     * enum CardinalDirection { NORTH, EAST, SOUTH, WEST }
+     *
+     * Schema.fromEnum(CardinalDirection.class);
+     * ```
+     *
+     * @param enumClass The Enum's Java class.
+     * @param description The description of what the parameter should contain or represent
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun <E : Enum<E>> fromEnum(
+      enumClass: Class<E>,
+      description: String? = null,
+      nullable: Boolean = false
+    ): Schema = enumeration(EnumSet.allOf(enumClass).map { it.name }, description, nullable)
   }
 
   internal fun toInternal(): Internal =
@@ -252,6 +300,7 @@ internal constructor(
       required,
       items?.toInternal(),
     )
+
   @Serializable
   internal data class Internal(
     val type: String,
