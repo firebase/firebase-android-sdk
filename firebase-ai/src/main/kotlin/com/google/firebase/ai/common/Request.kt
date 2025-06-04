@@ -18,6 +18,7 @@
 package com.google.firebase.ai.common
 
 import com.google.firebase.ai.common.util.fullModelName
+import com.google.firebase.ai.common.util.trimmedModelName
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.ImagenImageFormat
@@ -57,7 +58,7 @@ internal data class CountTokensRequest(
       CountTokensRequest(
         generateContentRequest =
           generateContentRequest.model?.let {
-            generateContentRequest.copy(model = fullModelName(it))
+            generateContentRequest.copy(model = fullModelName(trimmedModelName(it)))
           }
             ?: generateContentRequest
       )
