@@ -92,7 +92,7 @@ abstract class Expr internal constructor() {
               }
               .toTypedArray()
           )
-        is List<*> -> ListOfExprs(value.map(toExpr).toTypedArray())
+        is List<*> -> array(value)
         else -> null
       }
     }
@@ -1018,7 +1018,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun eqAny(expression: Expr, values: List<Any>): BooleanExpr =
-      eqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
+      eqAny(expression, array(values))
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -1043,7 +1043,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun eqAny(fieldName: String, values: List<Any>): BooleanExpr =
-      eqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+      eqAny(fieldName, array(values))
 
     /**
      * Creates an expression that checks if a field's value is equal to any of the elements of
@@ -1068,7 +1068,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(expression: Expr, values: List<Any>): BooleanExpr =
-      notEqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
+      notEqAny(expression, array(values))
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
@@ -1093,7 +1093,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(fieldName: String, values: List<Any>): BooleanExpr =
-      notEqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+      notEqAny(fieldName, array(values))
 
     /**
      * Creates an expression that checks if a field's value is not equal to all of the elements of
@@ -2776,7 +2776,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(array: Expr, values: List<Any>) =
-      arrayContainsAll(array, ListOfExprs(toArrayOfExprOrConstant(values)))
+      arrayContainsAll(array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains all elements of [arrayExpression].
@@ -2802,7 +2802,7 @@ abstract class Expr internal constructor() {
         "array_contains_all",
         evaluateArrayContainsAll,
         arrayFieldName,
-        ListOfExprs(toArrayOfExprOrConstant(values))
+        array(values)
       )
 
     /**
@@ -2829,7 +2829,7 @@ abstract class Expr internal constructor() {
         "array_contains_any",
         evaluateArrayContainsAny,
         array,
-        ListOfExprs(toArrayOfExprOrConstant(values))
+        array(values)
       )
 
     /**
@@ -2856,7 +2856,7 @@ abstract class Expr internal constructor() {
         "array_contains_any",
         evaluateArrayContainsAny,
         arrayFieldName,
-        ListOfExprs(toArrayOfExprOrConstant(values))
+        array(values)
       )
 
     /**
@@ -4197,17 +4197,6 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
   }
 }
 
-internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
-  override fun toProto(userDataReader: UserDataReader): Value =
-    encodeValue(expressions.map { it.toProto(userDataReader) })
-
-  override fun evaluateContext(
-    context: EvaluationContext
-  ): (input: MutableDocument) -> EvaluateResult {
-    TODO("Not yet implemented")
-  }
-}
-
 /**
  * This class defines the base class for Firestore [Pipeline] functions, which can be evaluated
  * within pipeline execution.
@@ -4378,7 +4367,7 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-class Ordering private constructor(val expr: Expr, private val dir: Direction) {
+class Ordering private constructor(val expr: Expr, internal val dir: Direction) {
   companion object {
 
     /**
@@ -4416,12 +4405,9 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
     fun descending(fieldName: String): Ordering = Ordering(field(fieldName), Direction.DESCENDING)
   }
 
-  private class Direction private constructor(val proto: Value) {
-    private constructor(protoString: String) : this(encodeValue(protoString))
-    companion object {
-      val ASCENDING = Direction("ascending")
-      val DESCENDING = Direction("descending")
-    }
+  internal enum class Direction(val proto: Value) {
+    ASCENDING(encodeValue("ascending")),
+    DESCENDING(encodeValue("descending"))
   }
 
   internal fun toProto(userDataReader: UserDataReader): Value =

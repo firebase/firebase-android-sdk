@@ -25,6 +25,7 @@ import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AggregateWithAlias
+import com.google.firebase.firestore.pipeline.BaseStage
 import com.google.firebase.firestore.pipeline.BooleanExpr
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
@@ -38,11 +39,11 @@ import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpr
 import com.google.firebase.firestore.pipeline.InternalOptions
-import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
 import com.google.firebase.firestore.pipeline.PipelineOptions
+import com.google.firebase.firestore.pipeline.RawStage
 import com.google.firebase.firestore.pipeline.RealtimePipelineOptions
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
@@ -50,7 +51,6 @@ import com.google.firebase.firestore.pipeline.SampleStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
-import com.google.firebase.firestore.pipeline.BaseStage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
@@ -159,10 +159,10 @@ private constructor(
    * This method provides a way to call stages that are supported by the Firestore backend but that
    * are not implemented in the SDK version being used.
    *
-   * @param stage An [Stage] object that specifies stage name and parameters.
+   * @param rawStage An [RawStage] object that specifies stage name and parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun addStage(stage: Stage): Pipeline = append(stage)
+  fun addStage(rawStage: RawStage): Pipeline = append(rawStage)
 
   /**
    * Adds new fields to outputs from previous stages.

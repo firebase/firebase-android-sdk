@@ -29,9 +29,14 @@ import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 
-abstract class BaseStage<T : BaseStage<T>>
-internal constructor(protected val name: String, internal val options: InternalOptions) {
+sealed class BaseStage<T : BaseStage<T>>(
+  protected val name: String,
+  internal val options: InternalOptions
+) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
@@ -106,32 +111,32 @@ internal constructor(protected val name: String, internal val options: InternalO
  * This class provides a way to call stages that are supported by the Firestore backend but that are
  * not implemented in the SDK version being used.
  */
-class Stage
+class RawStage
 private constructor(
   name: String,
   private val arguments: List<GenericArg>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<Stage>(name, options) {
+) : BaseStage<RawStage>(name, options) {
   companion object {
     /**
      * Specify name of stage
      *
      * @param name The unique name of the stage to add.
-     * @return [Stage] with specified parameters.
+     * @return [RawStage] with specified parameters.
      */
-    @JvmStatic fun ofName(name: String) = Stage(name, emptyList(), InternalOptions.EMPTY)
+    @JvmStatic fun ofName(name: String) = RawStage(name, emptyList(), InternalOptions.EMPTY)
   }
 
-  override fun self(options: InternalOptions) = Stage(name, arguments, options)
+  override fun self(options: InternalOptions) = RawStage(name, arguments, options)
 
   /**
    * Specify arguments to stage.
    *
    * @param arguments A list of ordered parameters to configure the stage's behavior.
-   * @return [Stage] with specified parameters.
+   * @return [RawStage] with specified parameters.
    */
-  fun withArguments(vararg arguments: Any): Stage =
-    Stage(name, arguments.map(GenericArg::from), options)
+  fun withArguments(vararg arguments: Any): RawStage =
+    RawStage(name, arguments.map(GenericArg::from), options)
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     arguments.asSequence().map { it.toProto(userDataReader) }
@@ -546,6 +551,43 @@ internal constructor(
   override fun self(options: InternalOptions) = SortStage(orders, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val evaluates: Array<EvaluateDocument> =
+      orders.map { it.expr.evaluateContext(context) }.toTypedArray()
+    val directions: Array<Ordering.Direction> = orders.map { it.dir }.toTypedArray()
+    return flow {
+      inputs
+        // For each document, lazily evaluate order expression values.
+        .map { doc ->
+          val orderValues =
+            evaluates
+              .map { lazy(LazyThreadSafetyMode.PUBLICATION) { it(doc).value ?: Values.MIN_VALUE } }
+              .toTypedArray<Lazy<Value>>()
+          Pair(doc, orderValues)
+        }
+        .toList()
+        .sortedWith(
+          Comparator { px, py ->
+            val x = px.second
+            val y = py.second
+            directions.forEachIndexed<Ordering.Direction> { i, dir ->
+              val r =
+                when (dir) {
+                  Ordering.Direction.ASCENDING -> Values.compare(x[i].value, y[i].value)
+                  Ordering.Direction.DESCENDING -> Values.compare(y[i].value, x[i].value)
+                }
+              if (r != 0) return@Comparator r
+            }
+            0
+          }
+        )
+        .forEach { p -> emit(p.first) }
+    }
+  }
 }
 
 internal class DistinctStage

@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.firestore.AbstractPipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.model.MutableDocument
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import com.google.firestore.v1.Value
+import kotlinx.coroutines.flow.Flow
 
 val DATABASE_ID = UserDataReader(DatabaseId.forDatabase("project", "(default)"))
 val EMPTY_DOC: MutableDocument = doc("foo/1", 0, mapOf())
@@ -69,4 +71,14 @@ internal fun assertEvaluatesToUnset(result: EvaluateResult, format: String, vara
 // Helper to check for evaluation resulting in an error
 internal fun assertEvaluatesToError(result: EvaluateResult, format: String, vararg args: Any?) {
   assertWithMessage(format, *args).that(result).isSameInstanceAs(EvaluateResultError)
+}
+
+internal fun runPipeline(
+  pipeline: AbstractPipeline,
+  input: Flow<MutableDocument>
+): Flow<MutableDocument> {
+  val context = EvaluationContext(pipeline.userDataReader)
+  return pipeline.stages.fold(input) { documentFlow, stage ->
+    stage.evaluate(context, documentFlow)
+  }
 }
