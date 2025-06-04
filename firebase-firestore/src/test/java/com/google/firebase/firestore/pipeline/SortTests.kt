@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
@@ -31,7 +32,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import com.google.firebase.firestore.FieldPath as PublicFieldPath
 
 @RunWith(RobolectricTestRunner::class)
 internal class SortTests {
@@ -41,10 +41,7 @@ internal class SortTests {
   @Test
   fun `empty ascending`(): Unit = runBlocking {
     val documents = emptyList<MutableDocument>()
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").ascending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -53,10 +50,7 @@ internal class SortTests {
   @Test
   fun `empty descending`(): Unit = runBlocking {
     val documents = emptyList<MutableDocument>()
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").descending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").descending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -66,10 +60,7 @@ internal class SortTests {
   fun `single result ascending`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 10L))
     val documents = listOf(doc1)
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").ascending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -121,10 +112,7 @@ internal class SortTests {
   fun `single result descending`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 10L))
     val documents = listOf(doc1)
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").descending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").descending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -167,24 +155,25 @@ internal class SortTests {
     val doc5 = doc("users/e", 1000, mapOf("name" to "eric", "age" to 10.0))
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").descending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").descending())
 
     // Order: doc3 (100.0), doc1 (75.5), doc2 (25.0), then doc4 and doc5 (10.0) are ambiguous
     // Firestore backend sorts by document key as a tie-breaker.
-    // So expected order: doc3, doc1, doc2, doc4, doc5 (if 'd' < 'e') or doc3, doc1, doc2, doc5, doc4 (if 'e' < 'd')
+    // So expected order: doc3, doc1, doc2, doc4, doc5 (if 'd' < 'e') or doc3, doc1, doc2, doc5,
+    // doc4 (if 'e' < 'd')
     // Since the C++ test uses UnorderedElementsAre, we'll use containsExactlyElementsIn.
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc1, doc2, doc4, doc5)).inOrder()
-    // Actually, the local pipeline implementation might not guarantee tie-breaking by key unless explicitly added.
-    // The C++ test uses UnorderedElementsAre, which means the exact order of doc4 and doc5 is not tested.
-    // Let's stick to what the C++ test implies: the overall set is correct, but the order of tied elements is not strictly defined by this single sort.
+    // Actually, the local pipeline implementation might not guarantee tie-breaking by key unless
+    // explicitly added.
+    // The C++ test uses UnorderedElementsAre, which means the exact order of doc4 and doc5 is not
+    // tested.
+    // Let's stick to what the C++ test implies: the overall set is correct, but the order of tied
+    // elements is not strictly defined by this single sort.
     // However, the local pipeline *does* sort by key as a final tie-breaker.
     // Expected: doc3 (100.0), doc1 (75.5), doc2 (25.0), doc4 (10.0, key d), doc5 (10.0, key e)
     // So the order should be doc3, doc1, doc2, doc4, doc5
-     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
+    assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
   @Test
@@ -271,7 +260,7 @@ internal class SortTests {
     val doc2 = doc("users/b", 1000, mapOf("name" to "bob"))
     val doc3 = doc("users/c", 1000, mapOf("age" to 100.0))
     val doc4 = doc("users/d", 1000, mapOf("other_name" to "diane")) // Matches
-    val doc5 = doc("users/e", 1000, mapOf("other_age" to 10.0))      // Matches
+    val doc5 = doc("users/e", 1000, mapOf("other_age" to 10.0)) // Matches
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -332,7 +321,7 @@ internal class SortTests {
     val doc2 = doc("users/b", 1000, mapOf("age" to 25.0)) // name missing -> Match
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie", "age" to 100.0))
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane")) // age missing, name exists
-    val doc5 = doc("users/e", 1000, mapOf("name" to "eric"))  // age missing, name exists
+    val doc5 = doc("users/e", 1000, mapOf("name" to "eric")) // age missing, name exists
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -345,13 +334,14 @@ internal class SortTests {
     assertThat(result).containsExactly(doc2)
   }
 
- @Test
-  fun `multiple results full order partial explicit not exists sort on non exist field first`(): Unit = runBlocking {
+  @Test
+  fun `multiple results full order partial explicit not exists sort on non exist field first`():
+    Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 75.5))
     val doc2 = doc("users/b", 1000, mapOf("age" to 25.0)) // name missing -> Match
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie", "age" to 100.0))
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane")) // age missing, name exists
-    val doc5 = doc("users/e", 1000, mapOf("name" to "eric"))  // age missing, name exists
+    val doc5 = doc("users/e", 1000, mapOf("name" to "eric")) // age missing, name exists
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -393,9 +383,7 @@ internal class SortTests {
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("not_age").descending())
+      RealtimePipelineSource(db).collection("users").sort(field("not_age").descending())
 
     // Sorting by a missing field results in undefined order relative to each other,
     // but documents are secondarily sorted by key.
@@ -427,10 +415,7 @@ internal class SortTests {
     val doc5 = doc("users/e", 1000, mapOf("name" to "eric", "age" to 10.0))
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").ascending())
+    val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").ascending())
 
     // Missing fields sort first in ascending order, then by key. b < d
     // Then existing fields sorted by value: e (10.0) < a (75.5) < c (100.0)
@@ -525,7 +510,7 @@ internal class SortTests {
     val doc2 = doc("users/b", 1000, mapOf("age" to 25.0)) // name missing
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie", "age" to 100.0))
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane")) // age missing -> Match
-    val doc5 = doc("users/e", 1000, mapOf("name" to "eric"))  // age missing -> Match
+    val doc5 = doc("users/e", 1000, mapOf("name" to "eric")) // age missing -> Match
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -544,10 +529,7 @@ internal class SortTests {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 75.5))
     val documents = listOf(doc1)
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .sort(field("age").ascending())
-        .limit(0)
+      RealtimePipelineSource(db).collection("users").sort(field("age").ascending()).limit(0)
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -599,7 +581,7 @@ internal class SortTests {
     val doc2 = doc("users/b", 1000, mapOf("age" to 25.0))
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie", "age" to 100.0))
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane")) // Match
-    val doc5 = doc("users/e", 1000, mapOf("name" to "eric"))  // Match
+    val doc5 = doc("users/e", 1000, mapOf("name" to "eric")) // Match
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -638,10 +620,7 @@ internal class SortTests {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 75.5))
     val documents = listOf(doc1)
     val pipeline =
-      RealtimePipelineSource(db)
-        .collectionGroup("users")
-        .limit(0)
-        .sort(field("age").ascending())
+      RealtimePipelineSource(db).collectionGroup("users").limit(0).sort(field("age").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -704,7 +683,7 @@ internal class SortTests {
     val doc2 = doc("users/b", 1000, mapOf("age" to 30L))
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie", "age" to 50L))
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane")) // age missing -> Match
-    val doc5 = doc("users/e", 1000, mapOf("name" to "eric"))  // age missing -> Match
+    val doc5 = doc("users/e", 1000, mapOf("name" to "eric")) // age missing -> Match
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
@@ -714,7 +693,8 @@ internal class SortTests {
         .sort(add(field("age"), constant(10L)).descending()) // Sort by missing field -> key order
 
     // Filtered: doc4, doc5
-    // Sort by (age+10) desc where age is missing. This means they are treated as null for the expression.
+    // Sort by (age+10) desc where age is missing. This means they are treated as null for the
+    // expression.
     // Then tie-broken by key: d, e
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
@@ -732,11 +712,15 @@ internal class SortTests {
         .collection("users")
         .where(exists(field(PublicFieldPath.documentId()))) // Ensure __name__ is considered
         .sort(field(PublicFieldPath.documentId()).ascending()) // Sort by key: 1, 2, 3
-        .sort(field("age").ascending()) // Sort by age: 2(30), 1(40), 3(50) - Last sort takes precedence
+        .sort(
+          field("age").ascending()
+        ) // Sort by age: 2(30), 1(40), 3(50) - Last sort takes precedence
 
     // The C++ test implies that the *last* sort stage defines the primary sort order.
-    // This is different from how multiple orderBy clauses usually work in Firestore (they form a composite sort).
-    // However, if these are separate stages, the last one would indeed re-sort the entire output of the previous.
+    // This is different from how multiple orderBy clauses usually work in Firestore (they form a
+    // composite sort).
+    // However, if these are separate stages, the last one would indeed re-sort the entire output of
+    // the previous.
     // Let's assume the Kotlin pipeline behaves this way for separate .orderBy() calls.
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
@@ -760,9 +744,11 @@ internal class SortTests {
     assertThat(result).containsExactly(doc1, doc2, doc3).inOrder()
   }
 
-  // The C++ tests `SortOnKeyAndOtherFieldOnMultipleStages` and `SortOnOtherFieldAndKeyOnMultipleStages`
+  // The C++ tests `SortOnKeyAndOtherFieldOnMultipleStages` and
+  // `SortOnOtherFieldAndKeyOnMultipleStages`
   // are identical to the `Path` versions because `kDocumentKeyPath` is used.
-  // These are effectively duplicates of the above two tests in Kotlin if we use `PublicFieldPath.documentId()`.
+  // These are effectively duplicates of the above two tests in Kotlin if we use
+  // `PublicFieldPath.documentId()`.
   // I'll include them for completeness, mirroring the C++ structure.
 
   @Test

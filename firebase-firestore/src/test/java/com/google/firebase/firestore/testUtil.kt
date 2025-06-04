@@ -5,9 +5,9 @@ import com.google.firebase.firestore.pipeline.EvaluationContext
 import kotlinx.coroutines.flow.Flow
 
 internal fun runPipeline(
-    db: FirebaseFirestore,
-    pipeline: AbstractPipeline,
-    input: Flow<MutableDocument>
+  db: FirebaseFirestore,
+  pipeline: AbstractPipeline,
+  input: Flow<MutableDocument>
 ): Flow<MutableDocument> {
   val context = EvaluationContext(db, db.userDataReader)
   return pipeline.stages.fold(input) { documentFlow, stage ->

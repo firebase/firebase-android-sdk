@@ -40,9 +40,9 @@ import org.robolectric.Robolectric;
 
 public class TestUtil {
 
-  private static final FirebaseFirestore FIRESTORE = mock(FirebaseFirestore.class);
+  public static final FirebaseFirestore FIRESTORE = mock(FirebaseFirestore.class);
   private static final DatabaseId DATABASE_ID = DatabaseId.forProject("project");
-  private static final UserDataReader USER_DATA_READER = new UserDataReader(DATABASE_ID);
+  public static final UserDataReader USER_DATA_READER = new UserDataReader(DATABASE_ID);
 
   static {
     when(FIRESTORE.getDatabaseId()).thenReturn(DATABASE_ID);

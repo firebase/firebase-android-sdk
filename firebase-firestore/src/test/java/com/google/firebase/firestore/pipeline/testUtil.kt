@@ -69,4 +69,3 @@ internal fun assertEvaluatesToUnset(result: EvaluateResult, format: String, vara
 internal fun assertEvaluatesToError(result: EvaluateResult, format: String, vararg args: Any?) {
   assertWithMessage(format, *args).that(result).isSameInstanceAs(EvaluateResultError)
 }
-

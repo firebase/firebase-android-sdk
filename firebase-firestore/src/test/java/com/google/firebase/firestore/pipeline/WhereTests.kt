@@ -40,7 +40,7 @@ import org.robolectric.RobolectricTestRunner
 internal class WhereTests {
 
   private val db = TestUtil.firestore()
-  
+
   @Test
   fun `empty database returns no results`(): Unit = runBlocking {
     val documents = emptyList<MutableDocument>()
