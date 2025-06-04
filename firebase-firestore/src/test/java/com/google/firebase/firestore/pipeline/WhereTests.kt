@@ -309,7 +309,7 @@ internal class WhereTests {
   }
 
   @Test
-  fun `exists`(): Unit = runBlocking {
+  fun exists(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 75.5)) // Match
     val doc2 = doc("users/b", 1000, mapOf("name" to "bob", "age" to 25.0)) // Match
     val doc3 = doc("users/c", 1000, mapOf("name" to "charlie")) // Match
