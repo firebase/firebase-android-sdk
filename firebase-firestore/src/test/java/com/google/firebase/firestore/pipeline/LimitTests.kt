@@ -161,7 +161,11 @@ internal class LimitTests {
   fun `limit max duplicated`(): Unit = runBlocking {
     val documents = createDocs()
     val pipeline =
-      RealtimePipelineSource(db).collection("k").limit(Int.MAX_VALUE).limit(Int.MAX_VALUE).limit(Int.MAX_VALUE)
+      RealtimePipelineSource(db)
+        .collection("k")
+        .limit(Int.MAX_VALUE)
+        .limit(Int.MAX_VALUE)
+        .limit(Int.MAX_VALUE)
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4)
