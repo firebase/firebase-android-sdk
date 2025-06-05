@@ -191,25 +191,25 @@ internal object Values {
       else -> false
     }
 
-    private fun strictArrayEquals(left: Value, right: Value): Boolean? {
-        val leftArray = left.arrayValue
-        val rightArray = right.arrayValue
+  private fun strictArrayEquals(left: Value, right: Value): Boolean? {
+    val leftArray = left.arrayValue
+    val rightArray = right.arrayValue
 
-        if (leftArray.valuesCount != rightArray.valuesCount) {
-            return false
-        }
-
-        var foundNull = false
-        for (i in 0 until leftArray.valuesCount) {
-            val equals = strictEquals(leftArray.getValues(i), rightArray.getValues(i))
-            if (equals === null) {
-                foundNull = true
-            } else if (!equals) {
-                return false
-            }
-        }
-        return if (foundNull) null else true
+    if (leftArray.valuesCount != rightArray.valuesCount) {
+      return false
     }
+
+    var foundNull = false
+    for (i in 0 until leftArray.valuesCount) {
+      val equals = strictEquals(leftArray.getValues(i), rightArray.getValues(i))
+      if (equals === null) {
+        foundNull = true
+      } else if (!equals) {
+        return false
+      }
+    }
+    return if (foundNull) null else true
+  }
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
     val leftArray = left.arrayValue
@@ -677,7 +677,8 @@ internal object Values {
   fun encodeValue(timestamp: com.google.firebase.Timestamp): Value =
     encodeValue(timestamp(timestamp.seconds, timestamp.nanoseconds))
 
-  @JvmStatic fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
+  @JvmStatic
+  fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
 
   @JvmField val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
 
