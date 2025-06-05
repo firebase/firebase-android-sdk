@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.firestore.model
 
+import com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCompareDoubleWithLong
+import com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCompareDoubles
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
@@ -28,7 +30,6 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.NullValue
 import com.google.protobuf.Timestamp
 import com.google.type.LatLng
-import java.lang.Double.doubleToLongBits
 import java.util.Date
 import java.util.TreeMap
 import kotlin.math.min
@@ -135,17 +136,25 @@ internal object Values {
     }
   }
 
-  private fun numberEquals(left: Value, right: Value): Boolean {
-    if (left.valueTypeCase != right.valueTypeCase) {
-      return false
-    }
-    return when (left.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+  private fun numberEquals(left: Value, right: Value): Boolean =
+    when (left.valueTypeCase) {
+      ValueTypeCase.INTEGER_VALUE ->
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
+          ValueTypeCase.DOUBLE_VALUE ->
+            firestoreCompareDoubleWithLong(right.doubleValue, left.integerValue) == 0
+          else -> false
+        }
       ValueTypeCase.DOUBLE_VALUE ->
-        doubleToLongBits(left.doubleValue) == doubleToLongBits(right.doubleValue)
+        when (right.valueTypeCase) {
+          ValueTypeCase.INTEGER_VALUE ->
+            firestoreCompareDoubleWithLong(left.doubleValue, right.integerValue) == 0
+          ValueTypeCase.DOUBLE_VALUE ->
+            firestoreCompareDoubles(left.doubleValue, right.doubleValue) == 0
+          else -> false
+        }
       else -> false
     }
-  }
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
     val leftArray = left.arrayValue
@@ -199,13 +208,13 @@ internal object Values {
     val rightType = typeOrder(right)
 
     if (leftType != rightType) {
-      return Util.compareIntegers(leftType, rightType)
+      return leftType.compareTo(rightType)
     }
 
     return when (leftType) {
       TYPE_ORDER_NULL,
       TYPE_ORDER_MAX_VALUE -> 0
-      TYPE_ORDER_BOOLEAN -> Util.compareBooleans(left.booleanValue, right.booleanValue)
+      TYPE_ORDER_BOOLEAN -> left.booleanValue.compareTo(right.booleanValue)
       TYPE_ORDER_NUMBER -> compareNumbers(left, right)
       TYPE_ORDER_TIMESTAMP -> compareTimestamps(left.timestampValue, right.timestampValue)
       TYPE_ORDER_SERVER_TIMESTAMP ->
@@ -269,15 +278,15 @@ internal object Values {
   private fun compareNumbers(left: Value, right: Value): Int {
     if (left.hasDoubleValue()) {
       if (right.hasDoubleValue()) {
-        return Util.compareDoubles(left.doubleValue, right.doubleValue)
+        return firestoreCompareDoubles(left.doubleValue, right.doubleValue)
       } else if (right.hasIntegerValue()) {
-        return Util.compareMixed(left.doubleValue, right.integerValue)
+        return firestoreCompareDoubleWithLong(left.doubleValue, right.integerValue)
       }
     } else if (left.hasIntegerValue()) {
       if (right.hasIntegerValue()) {
-        return Util.compareLongs(left.integerValue, right.integerValue)
+        return java.lang.Long.compare(left.integerValue, right.integerValue)
       } else if (right.hasDoubleValue()) {
-        return -1 * Util.compareMixed(right.doubleValue, left.integerValue)
+        return -1 * firestoreCompareDoubleWithLong(right.doubleValue, left.integerValue)
       }
     }
 
@@ -285,11 +294,11 @@ internal object Values {
   }
 
   private fun compareTimestamps(left: Timestamp, right: Timestamp): Int {
-    val cmp = Util.compareLongs(left.seconds, right.seconds)
+    val cmp = left.seconds.compareTo(right.seconds)
     if (cmp != 0) {
       return cmp
     }
-    return Util.compareIntegers(left.nanos, right.nanos)
+    return left.nanos.compareTo(right.nanos)
   }
 
   private fun compareReferences(leftPath: String, rightPath: String): Int {
@@ -303,13 +312,13 @@ internal object Values {
         return cmp
       }
     }
-    return Util.compareIntegers(leftSegments.size, rightSegments.size)
+    return leftSegments.size.compareTo(rightSegments.size)
   }
 
   private fun compareGeoPoints(left: LatLng, right: LatLng): Int {
-    val comparison = Util.compareDoubles(left.latitude, right.latitude)
+    val comparison = firestoreCompareDoubles(left.latitude, right.latitude)
     if (comparison == 0) {
-      return Util.compareDoubles(left.longitude, right.longitude)
+      return firestoreCompareDoubles(left.longitude, right.longitude)
     }
     return comparison
   }
@@ -322,7 +331,7 @@ internal object Values {
         return cmp
       }
     }
-    return Util.compareIntegers(left.valuesCount, right.valuesCount)
+    return left.valuesCount.compareTo(right.valuesCount)
   }
 
   private fun compareMaps(left: MapValue, right: MapValue): Int {
@@ -342,7 +351,7 @@ internal object Values {
     }
 
     // Only equal if both iterators are exhausted.
-    return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext())
+    return iterator1.hasNext().compareTo(iterator2.hasNext())
   }
 
   private fun compareVectors(left: MapValue, right: MapValue): Int {
@@ -353,8 +362,7 @@ internal object Values {
     val leftArrayValue = leftMap[VECTOR_MAP_VECTORS_KEY]!!.arrayValue
     val rightArrayValue = rightMap[VECTOR_MAP_VECTORS_KEY]!!.arrayValue
 
-    val lengthCompare =
-      Util.compareIntegers(leftArrayValue.valuesCount, rightArrayValue.valuesCount)
+    val lengthCompare = leftArrayValue.valuesCount.compareTo(rightArrayValue.valuesCount)
     if (lengthCompare != 0) {
       return lengthCompare
     }
