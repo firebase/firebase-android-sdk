@@ -107,7 +107,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B>, 
       }
       i++;
     }
-    return Util.compareIntegers(myLength, theirLength);
+    return Integer.compare(myLength, theirLength);
   }
 
   private static int compareSegments(String lhs, String rhs) {
