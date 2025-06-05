@@ -123,7 +123,6 @@ public final class RemoteSerializerTest {
   private void assertRoundTrip(Value actual, Value proto, Value.ValueTypeCase typeCase) {
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertTrue(Values.equals(actual, proto));
   }
 
   @Test
