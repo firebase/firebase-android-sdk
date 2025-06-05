@@ -1855,28 +1855,6 @@ abstract class Expr internal constructor() {
       FunctionExpr("map_get", evaluateMapGet, fieldName, keyExpression)
 
     /**
-     * Accesses a value from a map (object) field using the provided [keyExpression].
-     *
-     * @param mapExpression The expression representing the map.
-     * @param keyExpression The key to access in the map.
-     * @return A new [Expr] representing the value associated with the given key in the map.
-     */
-    @JvmStatic
-    fun mapGet(mapExpression: Expr, keyExpression: Expr): Expr =
-      FunctionExpr("map_get", mapExpression, keyExpression)
-
-    /**
-     * Accesses a value from a map (object) field using the provided [keyExpression].
-     *
-     * @param fieldName The field name of the map field.
-     * @param keyExpression The key to access in the map.
-     * @return A new [Expr] representing the value associated with the given key in the map.
-     */
-    @JvmStatic
-    fun mapGet(fieldName: String, keyExpression: Expr): Expr =
-      FunctionExpr("map_get", fieldName, keyExpression)
-
-    /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
      * same key, the later value is used.
      *
@@ -2677,25 +2655,6 @@ abstract class Expr internal constructor() {
     fun array(elements: List<Any?>): Expr =
       FunctionExpr("array", evaluateArray, elements.map(::toExprOrConstant).toTypedArray())
 
-    /**
-     * Creates an expression that creates a Firestore array value from an input array.
-     *
-     * @param elements The input array to evaluate in the expression.
-     * @return A new [Expr] representing the array function.
-     */
-    @JvmStatic
-    fun array(vararg elements: Any?): Expr =
-      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray<Expr>())
-
-    /**
-     * Creates an expression that creates a Firestore array value from an input array.
-     *
-     * @param elements The input array to evaluate in the expression.
-     * @return A new [Expr] representing the array function.
-     */
-    @JvmStatic
-    fun array(elements: List<Any?>): Expr =
-      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray())
     /**
      * Creates an expression that concatenates an array with other arrays.
      *

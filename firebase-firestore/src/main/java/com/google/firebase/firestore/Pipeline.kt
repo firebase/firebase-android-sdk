@@ -25,7 +25,6 @@ import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AggregateWithAlias
-import com.google.firebase.firestore.pipeline.BaseStage
 import com.google.firebase.firestore.pipeline.BooleanExpr
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
@@ -132,7 +131,7 @@ class Pipeline
 private constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<BaseStage<*>>
+  stages: FluentIterable<Stage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
@@ -761,15 +760,15 @@ class RealtimePipeline
 internal constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<BaseStage<*>>
+  stages: FluentIterable<Stage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
-    stage: BaseStage<*>
+    stage: Stage<*>
   ) : this(firestore, userDataReader, FluentIterable.of(stage))
 
-  private fun append(stage: BaseStage<*>): RealtimePipeline {
+  private fun append(stage: Stage<*>): RealtimePipeline {
     return RealtimePipeline(firestore, userDataReader, stages.append(stage))
   }
 
