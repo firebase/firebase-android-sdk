@@ -679,8 +679,7 @@ internal object Values {
   fun encodeValue(timestamp: com.google.firebase.Timestamp): Value =
     encodeValue(timestamp(timestamp.seconds, timestamp.nanoseconds))
 
-  @JvmStatic
-  fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
+  @JvmStatic fun encodeValue(value: Timestamp): Value = Value.newBuilder().setTimestampValue(value).build()
 
   @JvmField val TRUE_VALUE: Value = Value.newBuilder().setBooleanValue(true).build()
 

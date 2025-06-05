@@ -51,6 +51,7 @@ import com.google.firebase.firestore.pipeline.SampleStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
+import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
@@ -62,7 +63,7 @@ open class AbstractPipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
   internal val userDataReader: UserDataReader,
-  internal val stages: FluentIterable<BaseStage<*>>
+  internal val stages: FluentIterable<Stage<*>>
 ) {
   private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
@@ -136,10 +137,10 @@ private constructor(
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
-    stage: BaseStage<*>
+    stage: Stage<*>
   ) : this(firestore, userDataReader, FluentIterable.of(stage))
 
-  private fun append(stage: BaseStage<*>): Pipeline {
+  private fun append(stage: Stage<*>): Pipeline {
     return Pipeline(firestore, userDataReader, stages.append(stage))
   }
 
@@ -152,9 +153,9 @@ private constructor(
   }
 
   /**
-   * Adds a stage to the pipeline by specifying the stage name as an argument. This does not offer
-   * any type safety on the stage params and requires the caller to know the order (and optionally
-   * names) of parameters accepted by the stage.
+   * Adds a raw stage to the pipeline by specifying the stage name as an argument. This does not
+   * offer any type safety on the stage params and requires the caller to know the order (and
+   * optionally names) of parameters accepted by the stage.
    *
    * This method provides a way to call stages that are supported by the Firestore backend but that
    * are not implemented in the SDK version being used.
@@ -162,7 +163,7 @@ private constructor(
    * @param rawStage An [RawStage] object that specifies stage name and parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun addStage(rawStage: RawStage): Pipeline = append(rawStage)
+  fun rawStage(rawStage: RawStage): Pipeline = append(rawStage)
 
   /**
    * Adds new fields to outputs from previous stages.

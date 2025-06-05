@@ -37,7 +37,7 @@ import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.Ordering;
-import com.google.firebase.firestore.pipeline.BaseStage;
+import com.google.firebase.firestore.pipeline.Stage;
 import com.google.firebase.firestore.util.BiFunction;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.IntFunction;
@@ -549,7 +549,8 @@ public final class Query {
     if (fields.size() == 1) {
       p = p.where(fields.get(0).exists());
     } else {
-      BooleanExpr[] conditions = skipFirstToArray(fields, BooleanExpr[]::new, Expr.Companion::exists);
+      BooleanExpr[] conditions =
+          skipFirstToArray(fields, BooleanExpr[]::new, Expr.Companion::exists);
       p = p.where(and(fields.get(0).exists(), conditions));
     }
 
@@ -587,17 +588,18 @@ public final class Query {
     int size = list.size();
     T[] result = generator.apply(size - 1);
     for (int i = 1; i < size; i++) {
-      result[i-1] = list.get(i);
+      result[i - 1] = list.get(i);
     }
     return result;
   }
 
   // Many Pipelines require first parameter to be separated out from rest.
-  private static <T, R> R[] skipFirstToArray(List<T> list, IntFunction<R[]> generator, Function<T, R> map) {
+  private static <T, R> R[] skipFirstToArray(
+      List<T> list, IntFunction<R[]> generator, Function<T, R> map) {
     int size = list.size();
     R[] result = generator.apply(size - 1);
     for (int i = 1; i < size; i++) {
-      result[i-1] = map.apply(list.get(i));
+      result[i - 1] = map.apply(list.get(i));
     }
     return result;
   }
@@ -621,7 +623,7 @@ public final class Query {
   }
 
   @NonNull
-  private BaseStage<?> pipelineSource(FirebaseFirestore firestore) {
+  private Stage<?> pipelineSource(FirebaseFirestore firestore) {
     if (isDocumentQuery()) {
       return new DocumentsSource(path.canonicalString());
     } else if (isCollectionGroupQuery()) {
