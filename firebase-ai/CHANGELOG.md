@@ -5,6 +5,8 @@
 * [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
 * [changed] **Breaking Change**: Updated `SpeechConfig` to take in `Voice` class instead of `Voices` class.
     * **Action Required:** Update all references of `SpeechConfig` initialization to use `Voice` class.
+* [feature] Added support for extra schema properties like `title`, `minItems`, `maxItems`, `minimum`
+ and `maximum`. As well as support for the `anyOf` schema. 
 
  
 # 16.0.0
