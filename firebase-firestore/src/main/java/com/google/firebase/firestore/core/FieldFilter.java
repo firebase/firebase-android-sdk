@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.pipeline.Expr.ifError;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
-
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
@@ -29,7 +28,6 @@ import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -219,14 +217,16 @@ public class FieldFilter extends Filter {
         return and(exists, x.arrayContainsAny(value.getArrayValue().getValuesList()));
       case IN:
         return and(exists, x.eqAny(value.getArrayValue().getValuesList()));
-      case NOT_IN: {
-        List<Value> list = value.getArrayValue().getValuesList();
-        if (hasNaN(list)) {
-          return and(exists, x.notEqAny(filterNaN(list)), ifError(x.isNotNan(), Expr.constant(true)));
-        } else {
-          return and(exists, x.notEqAny(list));
+      case NOT_IN:
+        {
+          List<Value> list = value.getArrayValue().getValuesList();
+          if (hasNaN(list)) {
+            return and(
+                exists, x.notEqAny(filterNaN(list)), ifError(x.isNotNan(), Expr.constant(true)));
+          } else {
+            return and(exists, x.notEqAny(list));
+          }
         }
-      }
       default:
         // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed
         throw new IllegalArgumentException("Unsupported operator: " + operator);

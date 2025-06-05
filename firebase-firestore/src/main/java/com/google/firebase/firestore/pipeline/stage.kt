@@ -27,7 +27,7 @@ import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
-abstract class BaseStage<T : BaseStage<T>>
+abstract class Stage<T : Stage<T>>
 internal constructor(protected val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
@@ -96,32 +96,32 @@ internal constructor(protected val name: String, internal val options: InternalO
  * This class provides a way to call stages that are supported by the Firestore backend but that are
  * not implemented in the SDK version being used.
  */
-class Stage
+class RawStage
 private constructor(
   name: String,
   private val arguments: List<GenericArg>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<Stage>(name, options) {
+) : Stage<RawStage>(name, options) {
   companion object {
     /**
      * Specify name of stage
      *
      * @param name The unique name of the stage to add.
-     * @return [Stage] with specified parameters.
+     * @return [RawStage] with specified parameters.
      */
-    @JvmStatic fun ofName(name: String) = Stage(name, emptyList(), InternalOptions.EMPTY)
+    @JvmStatic fun ofName(name: String) = RawStage(name, emptyList(), InternalOptions.EMPTY)
   }
 
-  override fun self(options: InternalOptions) = Stage(name, arguments, options)
+  override fun self(options: InternalOptions) = RawStage(name, arguments, options)
 
   /**
    * Specify arguments to stage.
    *
    * @param arguments A list of ordered parameters to configure the stage's behavior.
-   * @return [Stage] with specified parameters.
+   * @return [RawStage] with specified parameters.
    */
-  fun withArguments(vararg arguments: Any): Stage =
-    Stage(name, arguments.map(GenericArg::from), options)
+  fun withArguments(vararg arguments: Any): RawStage =
+    RawStage(name, arguments.map(GenericArg::from), options)
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     arguments.asSequence().map { it.toProto(userDataReader) }
@@ -167,7 +167,7 @@ internal sealed class GenericArg {
 internal class DatabaseSource
 @JvmOverloads
 internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
-  BaseStage<DatabaseSource>("database", options) {
+  Stage<DatabaseSource>("database", options) {
   override fun self(options: InternalOptions) = DatabaseSource(options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
 }
@@ -178,7 +178,7 @@ internal constructor(
   // We validate [firestore.databaseId] when adding to pipeline.
   internal val firestore: FirebaseFirestore?,
   options: InternalOptions
-) : BaseStage<CollectionSource>("collection", options) {
+) : Stage<CollectionSource>("collection", options) {
   override fun self(options: InternalOptions): CollectionSource =
     CollectionSource(path, firestore, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -216,7 +216,7 @@ internal constructor(
 
 class CollectionGroupSource
 private constructor(private val collectionId: String, options: InternalOptions) :
-  BaseStage<CollectionGroupSource>("collection_group", options) {
+  Stage<CollectionGroupSource>("collection_group", options) {
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
@@ -246,7 +246,7 @@ internal class DocumentsSource
 internal constructor(
   private val documents: Array<out String>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<DocumentsSource>("documents", options) {
+) : Stage<DocumentsSource>("documents", options) {
   internal constructor(document: String) : this(arrayOf(document))
   override fun self(options: InternalOptions) = DocumentsSource(documents, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -257,7 +257,7 @@ internal class AddFieldsStage
 internal constructor(
   private val fields: Array<out Selectable>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<AddFieldsStage>("add_fields", options) {
+) : Stage<AddFieldsStage>("add_fields", options) {
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
@@ -284,7 +284,7 @@ internal constructor(
   private val accumulators: Map<String, AggregateFunction>,
   private val groups: Map<String, Expr>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<AggregateStage>("aggregate", options) {
+) : Stage<AggregateStage>("aggregate", options) {
   private constructor(accumulators: Map<String, AggregateFunction>) : this(accumulators, emptyMap())
   companion object {
 
@@ -349,7 +349,7 @@ internal class WhereStage
 internal constructor(
   private val condition: BooleanExpr,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<WhereStage>("where", options) {
+) : Stage<WhereStage>("where", options) {
   override fun self(options: InternalOptions) = WhereStage(condition, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(condition.toProto(userDataReader))
@@ -365,7 +365,7 @@ internal constructor(
   private val vector: Expr,
   private val distanceMeasure: DistanceMeasure,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<FindNearestStage>("find_nearest", options) {
+) : Stage<FindNearestStage>("find_nearest", options) {
 
   companion object {
 
@@ -477,7 +477,7 @@ internal constructor(
 
 internal class LimitStage
 internal constructor(private val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
-  BaseStage<LimitStage>("limit", options) {
+  Stage<LimitStage>("limit", options) {
   override fun self(options: InternalOptions) = LimitStage(limit, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
@@ -485,7 +485,7 @@ internal constructor(private val limit: Int, options: InternalOptions = Internal
 
 internal class OffsetStage
 internal constructor(private val offset: Int, options: InternalOptions = InternalOptions.EMPTY) :
-  BaseStage<OffsetStage>("offset", options) {
+  Stage<OffsetStage>("offset", options) {
   override fun self(options: InternalOptions) = OffsetStage(offset, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
@@ -495,7 +495,7 @@ internal class SelectStage
 internal constructor(
   private val fields: Array<out Selectable>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<SelectStage>("select", options) {
+) : Stage<SelectStage>("select", options) {
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
@@ -505,7 +505,7 @@ internal class SortStage
 internal constructor(
   private val orders: Array<out Ordering>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<SortStage>("sort", options) {
+) : Stage<SortStage>("sort", options) {
   override fun self(options: InternalOptions) = SortStage(orders, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
@@ -515,7 +515,7 @@ internal class DistinctStage
 internal constructor(
   private val groups: Array<out Selectable>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<DistinctStage>("distinct", options) {
+) : Stage<DistinctStage>("distinct", options) {
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(groups.associate { it.getAlias() to it.toProto(userDataReader) }))
@@ -525,7 +525,7 @@ internal class RemoveFieldsStage
 internal constructor(
   private val fields: Array<out Field>,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<RemoveFieldsStage>("remove_fields", options) {
+) : Stage<RemoveFieldsStage>("remove_fields", options) {
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     fields.asSequence().map(Field::toProto)
@@ -536,7 +536,7 @@ internal constructor(
   private val mapValue: Expr,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<ReplaceStage>("replace", options) {
+) : Stage<ReplaceStage>("replace", options) {
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
@@ -563,7 +563,7 @@ private constructor(
   private val size: Number,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<SampleStage>("sample", options) {
+) : Stage<SampleStage>("sample", options) {
   override fun self(options: InternalOptions) = SampleStage(size, mode, options)
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
@@ -606,7 +606,7 @@ internal class UnionStage
 internal constructor(
   private val other: com.google.firebase.firestore.Pipeline,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<UnionStage>("union", options) {
+) : Stage<UnionStage>("union", options) {
   override fun self(options: InternalOptions) = UnionStage(other, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
@@ -620,7 +620,7 @@ class UnnestStage
 internal constructor(
   private val selectable: Selectable,
   options: InternalOptions = InternalOptions.EMPTY
-) : BaseStage<UnnestStage>("unnest", options) {
+) : Stage<UnnestStage>("unnest", options) {
   companion object {
 
     /**

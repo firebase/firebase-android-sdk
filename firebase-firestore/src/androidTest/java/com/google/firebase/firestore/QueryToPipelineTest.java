@@ -613,40 +613,39 @@ public class QueryToPipelineTest {
     FirebaseFirestore db = collection.firestore;
 
     // Search for "array" to contain [42, 43].
-    Pipeline pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", asList(42L, 43L)));
+    Pipeline pipeline =
+        db.pipeline().convertFrom(collection.whereArrayContainsAny("array", asList(42L, 43L)));
     PipelineSnapshot snapshot = waitFor(pipeline.execute());
     assertEquals(asList(docA, docB, docD, docE), pipelineSnapshotToValues(snapshot));
 
     // With objects.
-    pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", asList(map("a", 42L))));
+    pipeline =
+        db.pipeline().convertFrom(collection.whereArrayContainsAny("array", asList(map("a", 42L))));
     snapshot = waitFor(pipeline.execute());
     assertEquals(asList(docF), pipelineSnapshotToValues(snapshot));
 
     // With null.
-    pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", nullList()));
+    pipeline = db.pipeline().convertFrom(collection.whereArrayContainsAny("array", nullList()));
     snapshot = waitFor(pipeline.execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
     // With null and a value.
     List<Object> inputList = nullList();
     inputList.add(43L);
-    pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", inputList));
+    pipeline = db.pipeline().convertFrom(collection.whereArrayContainsAny("array", inputList));
     snapshot = waitFor(pipeline.execute());
     assertEquals(asList(docE), pipelineSnapshotToValues(snapshot));
 
     // With NaN.
-    pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN)));
+    pipeline =
+        db.pipeline().convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN)));
     snapshot = waitFor(pipeline.execute());
     assertEquals(new ArrayList<>(), pipelineSnapshotToValues(snapshot));
 
     // With NaN and a value.
-    pipeline = db.pipeline()
-        .convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN, 43L)));
+    pipeline =
+        db.pipeline()
+            .convertFrom(collection.whereArrayContainsAny("array", asList(Double.NaN, 43L)));
     snapshot = waitFor(pipeline.execute());
     assertEquals(asList(docE), pipelineSnapshotToValues(snapshot));
   }

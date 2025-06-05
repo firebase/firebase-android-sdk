@@ -31,7 +31,6 @@ import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 import java.util.Date
-import kotlin.reflect.KFunction1
 
 /**
  * Represents an expression that can be evaluated to a value within the execution of a [Pipeline].
@@ -48,8 +47,11 @@ import kotlin.reflect.KFunction1
  */
 abstract class Expr internal constructor() {
 
-  private class ValueConstant(val value: Value) : Expr() {
+  private class Constant(val value: Value) : Expr() {
     override fun toProto(userDataReader: UserDataReader): Value = value
+    override fun toString(): String {
+      return "Constant(value=$value)"
+    }
   }
 
   companion object {
@@ -61,7 +63,7 @@ abstract class Expr internal constructor() {
       toExpr(value, ::pojoToExprOrConstant)
         ?: throw IllegalArgumentException("Unknown type: $value")
 
-    private fun toExpr(value: Any?, toExpr: KFunction1<Any?, Expr>): Expr? {
+    private inline fun toExpr(value: Any?, toExpr: (Any?) -> Expr): Expr? {
       if (value == null) return NULL
       return when (value) {
         is Expr -> value
@@ -75,7 +77,7 @@ abstract class Expr internal constructor() {
         is DocumentReference -> constant(value)
         is ByteArray -> constant(value)
         is VectorValue -> constant(value)
-        is Value -> ValueConstant(value)
+        is Value -> Constant(value)
         is Map<*, *> ->
           map(
             value
@@ -86,18 +88,18 @@ abstract class Expr internal constructor() {
               }
               .toTypedArray()
           )
-        is List<*> -> ListOfExprs(value.map(toExpr).toTypedArray())
+        is List<*> -> array(value)
         else -> null
       }
     }
 
-    internal fun toArrayOfExprOrConstant(others: Iterable<Any>): Array<out Expr> =
+    private fun toArrayOfExprOrConstant(others: Iterable<Any>): Array<out Expr> =
       others.map(::toExprOrConstant).toTypedArray()
 
     internal fun toArrayOfExprOrConstant(others: Array<out Any>): Array<out Expr> =
       others.map(::toExprOrConstant).toTypedArray()
 
-    private val NULL: Expr = ValueConstant(Values.NULL_VALUE)
+    private val NULL: Expr = Constant(Values.NULL_VALUE)
 
     /**
      * Create a constant for a [String] value.
@@ -107,7 +109,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: String): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -118,7 +120,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Number): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -129,7 +131,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Date): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -140,7 +142,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Timestamp): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -174,8 +176,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] constant instance.
      */
     @JvmStatic
-    fun constant(value: GeoPoint): Expr {
-      return ValueConstant(encodeValue(value))
+    fun constant(value: GeoPoint): Expr { // Ensure this overload exists or is correctly placed
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -186,7 +188,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: ByteArray): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -197,7 +199,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: Blob): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
     }
 
     /**
@@ -224,7 +226,18 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(value: VectorValue): Expr {
-      return ValueConstant(encodeValue(value))
+      return Constant(encodeValue(value))
+    }
+
+    /**
+     * Create a [Blob] constant from a [ByteArray].
+     *
+     * @param bytes The [ByteArray] to convert to a Blob.
+     * @return A new [Expr] constant instance representing the Blob.
+     */
+    @JvmStatic
+    fun blob(bytes: ByteArray): Expr {
+      return constant(Blob.fromBytes(bytes))
     }
 
     /**
@@ -245,7 +258,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun vector(vector: DoubleArray): Expr {
-      return ValueConstant(Values.encodeVectorValue(vector))
+      return Constant(Values.encodeVectorValue(vector))
     }
 
     /**
@@ -256,7 +269,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun vector(vector: VectorValue): Expr {
-      return ValueConstant(encodeValue(vector))
+      return Constant(encodeValue(vector))
     }
 
     /**
@@ -296,7 +309,7 @@ abstract class Expr internal constructor() {
      * Creates an expression that performs a logical 'AND' operation.
      *
      * @param condition The first [BooleanExpr].
-     * @param conditions Addition [BooleanExpr]s.
+     * @param conditions Additional [BooleanExpr]s.
      * @return A new [BooleanExpr] representing the logical 'AND' operation.
      */
     @JvmStatic
@@ -307,7 +320,7 @@ abstract class Expr internal constructor() {
      * Creates an expression that performs a logical 'OR' operation.
      *
      * @param condition The first [BooleanExpr].
-     * @param conditions Addition [BooleanExpr]s.
+     * @param conditions Additional [BooleanExpr]s.
      * @return A new [BooleanExpr] representing the logical 'OR' operation.
      */
     @JvmStatic
@@ -318,7 +331,7 @@ abstract class Expr internal constructor() {
      * Creates an expression that performs a logical 'XOR' operation.
      *
      * @param condition The first [BooleanExpr].
-     * @param conditions Addition [BooleanExpr]s.
+     * @param conditions Additional [BooleanExpr]s.
      * @return A new [BooleanExpr] representing the logical 'XOR' operation.
      */
     @JvmStatic
@@ -753,9 +766,7 @@ abstract class Expr internal constructor() {
      * @param second Numeric expression to add.
      * @return A new [Expr] representing the addition operation.
      */
-    @JvmStatic
-    fun add(first: Expr, second: Expr): Expr =
-      FunctionExpr("add", first, second)
+    @JvmStatic fun add(first: Expr, second: Expr): Expr = FunctionExpr("add", first, second)
 
     /**
      * Creates an expression that adds numeric expressions with a constant.
@@ -764,9 +775,7 @@ abstract class Expr internal constructor() {
      * @param second Constant to add.
      * @return A new [Expr] representing the addition operation.
      */
-    @JvmStatic
-    fun add(first: Expr, second: Number): Expr =
-      FunctionExpr("add", first, second)
+    @JvmStatic fun add(first: Expr, second: Number): Expr = FunctionExpr("add", first, second)
 
     /**
      * Creates an expression that adds a numeric field with a numeric expression.
@@ -842,8 +851,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Expr): Expr =
-      FunctionExpr("multiply", first, second)
+    fun multiply(first: Expr, second: Expr): Expr = FunctionExpr("multiply", first, second)
 
     /**
      * Creates an expression that multiplies numeric expressions with a constant.
@@ -853,8 +861,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Number): Expr =
-      FunctionExpr("multiply", first, second)
+    fun multiply(first: Expr, second: Number): Expr = FunctionExpr("multiply", first, second)
 
     /**
      * Creates an expression that multiplies a numeric field with a numeric expression.
@@ -974,8 +981,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the 'IN' comparison.
      */
     @JvmStatic
-    fun eqAny(expression: Expr, values: List<Any>): BooleanExpr =
-      eqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(expression: Expr, values: List<Any>): BooleanExpr = eqAny(expression, array(values))
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -999,8 +1005,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the 'IN' comparison.
      */
     @JvmStatic
-    fun eqAny(fieldName: String, values: List<Any>): BooleanExpr =
-      eqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun eqAny(fieldName: String, values: List<Any>): BooleanExpr = eqAny(fieldName, array(values))
 
     /**
      * Creates an expression that checks if a field's value is equal to any of the elements of
@@ -1025,7 +1030,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(expression: Expr, values: List<Any>): BooleanExpr =
-      notEqAny(expression, ListOfExprs(toArrayOfExprOrConstant(values)))
+      notEqAny(expression, array(values))
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
@@ -1050,7 +1055,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(fieldName: String, values: List<Any>): BooleanExpr =
-      notEqAny(fieldName, ListOfExprs(toArrayOfExprOrConstant(values)))
+      notEqAny(fieldName, array(values))
 
     /**
      * Creates an expression that checks if a field's value is not equal to all of the elements of
@@ -1760,6 +1765,28 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapGet(fieldName: String, key: String): Expr = FunctionExpr("map_get", fieldName, key)
+
+    /**
+     * Accesses a value from a map (object) field using the provided [keyExpression].
+     *
+     * @param mapExpression The expression representing the map.
+     * @param keyExpression The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
+    @JvmStatic
+    fun mapGet(mapExpression: Expr, keyExpression: Expr): Expr =
+      FunctionExpr("map_get", mapExpression, keyExpression)
+
+    /**
+     * Accesses a value from a map (object) field using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map field.
+     * @param keyExpression The key to access in the map.
+     * @return A new [Expr] representing the value associated with the given key in the map.
+     */
+    @JvmStatic
+    fun mapGet(fieldName: String, keyExpression: Expr): Expr =
+      FunctionExpr("map_get", fieldName, keyExpression)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
@@ -2512,6 +2539,25 @@ abstract class Expr internal constructor() {
     fun lte(fieldName: String, value: Any): BooleanExpr = BooleanExpr("lte", fieldName, value)
 
     /**
+     * Creates an expression that creates a Firestore array value from an input array.
+     *
+     * @param elements The input array to evaluate in the expression.
+     * @return A new [Expr] representing the array function.
+     */
+    @JvmStatic
+    fun array(vararg elements: Any?): Expr =
+      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray<Expr>())
+
+    /**
+     * Creates an expression that creates a Firestore array value from an input array.
+     *
+     * @param elements The input array to evaluate in the expression.
+     * @return A new [Expr] representing the array function.
+     */
+    @JvmStatic
+    fun array(elements: List<Any?>): Expr =
+      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray())
+    /**
      * Creates an expression that concatenates an array with other arrays.
      *
      * @param firstArray The first array expression to concatenate to.
@@ -2628,8 +2674,7 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(array: Expr, values: List<Any>) =
-      arrayContainsAll(array, ListOfExprs(toArrayOfExprOrConstant(values)))
+    fun arrayContainsAll(array: Expr, values: List<Any>) = arrayContainsAll(array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains all elements of [arrayExpression].
@@ -2651,11 +2696,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr(
-        "array_contains_all",
-        arrayFieldName,
-        ListOfExprs(toArrayOfExprOrConstant(values))
-      )
+      BooleanExpr("array_contains_all", arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains all elements of [arrayExpression].
@@ -2677,7 +2718,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expr, values: List<Any>) =
-      BooleanExpr("array_contains_any", array, ListOfExprs(toArrayOfExprOrConstant(values)))
+      BooleanExpr("array_contains_any", array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains any elements of [arrayExpression].
@@ -2699,11 +2740,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr(
-        "array_contains_any",
-        arrayFieldName,
-        ListOfExprs(toArrayOfExprOrConstant(values))
-      )
+      BooleanExpr("array_contains_any", arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains any elements of [arrayExpression].
@@ -2845,12 +2882,21 @@ abstract class Expr internal constructor() {
      * This overload will return [BooleanExpr] when both parameters are also [BooleanExpr].
      *
      * @param tryExpr The try boolean expression.
-     * @param catchExpr The catch boolean expression that will be evaluated and returned if the [tryExpr]
-     * produces an error.
+     * @param catchExpr The catch boolean expression that will be evaluated and returned if the
+     * [tryExpr] produces an error.
      * @return A new [BooleanExpr] representing the ifError operation.
      */
     @JvmStatic
-    fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr = BooleanExpr("if_error", tryExpr, catchExpr)
+    fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr =
+      BooleanExpr("if_error", tryExpr, catchExpr)
+
+    /**
+     * Creates an expression that checks if a given expression produces an error.
+     *
+     * @param expr The expression to check.
+     * @return A new [BooleanExpr] representing the `isError` check.
+     */
+    @JvmStatic fun isError(expr: Expr): BooleanExpr = BooleanExpr("is_error", expr)
 
     /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
@@ -3953,6 +3999,13 @@ abstract class Expr internal constructor() {
    */
   fun ifError(catchValue: Any): Expr = Companion.ifError(this, catchValue)
 
+  /**
+   * Creates an expression that checks if this expression produces an error.
+   *
+   * @return A new [BooleanExpr] representing the `isError` check.
+   */
+  fun isError(): BooleanExpr = Companion.isError(this)
+
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 }
 
@@ -4008,11 +4061,6 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
 
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
-}
-
-internal class ListOfExprs(private val expressions: Array<out Expr>) : Expr() {
-  override fun toProto(userDataReader: UserDataReader): Value =
-    encodeValue(expressions.map { it.toProto(userDataReader) })
 }
 
 /**
@@ -4132,6 +4180,18 @@ open class BooleanExpr internal constructor(name: String, params: Array<out Expr
    * @return A new [BooleanExpr] representing the not operation.
    */
   fun not(): BooleanExpr = Expr.Companion.not(this)
+
+  /**
+   * Creates an expression that returns the [catchExpr] argument if there is an error, else return
+   * the result of this expression.
+   *
+   * This overload will return [BooleanExpr] because the [catchExpr] is a [BooleanExpr].
+   *
+   * @param catchExpr The catch expression that will be evaluated and returned if the this
+   * expression produces an error.
+   * @return A new [BooleanExpr] representing the ifError operation.
+   */
+  fun ifError(catchExpr: BooleanExpr): BooleanExpr = Expr.Companion.ifError(this, catchExpr)
 }
 
 /**
@@ -4177,12 +4237,9 @@ class Ordering private constructor(val expr: Expr, private val dir: Direction) {
     fun descending(fieldName: String): Ordering = Ordering(field(fieldName), Direction.DESCENDING)
   }
 
-  private class Direction private constructor(val proto: Value) {
-    private constructor(protoString: String) : this(encodeValue(protoString))
-    companion object {
-      val ASCENDING = Direction("ascending")
-      val DESCENDING = Direction("descending")
-    }
+  internal enum class Direction(val proto: Value) {
+    ASCENDING(encodeValue("ascending")),
+    DESCENDING(encodeValue("descending"))
   }
 
   internal fun toProto(userDataReader: UserDataReader): Value =
