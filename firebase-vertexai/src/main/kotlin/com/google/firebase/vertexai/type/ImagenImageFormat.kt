@@ -27,6 +27,10 @@ import kotlinx.serialization.Serializable
  * for every MIME type.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
 
@@ -41,11 +45,13 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      * @param compressionQuality an int (1-100) representing the quality of the image; a lower
      * number means the image is permitted to be lower quality to reduce size.
      */
+    @JvmStatic
     public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
       return ImagenImageFormat("image/jpeg", compressionQuality)
     }
 
     /** An [ImagenImageFormat] representing a PNG image */
+    @JvmStatic
     public fun png(): ImagenImageFormat {
       return ImagenImageFormat("image/png", null)
     }

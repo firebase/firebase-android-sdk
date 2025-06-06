@@ -483,9 +483,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     val noName1Query =
       schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName1>())
 
-    backgroundScope.launch { noName1Query.subscribe().flow.collect() }
-
-    noName1Query.execute()
+    keepCacheAlive(noName1Query)
 
     schema.updatePerson(id = personId, name = "Name1").execute()
 
@@ -571,7 +569,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
    */
   private suspend fun TestScope.keepCacheAlive(query: QueryRef<*, *>) {
     val cachePrimed = SuspendingFlag()
-    backgroundScope.launch { query.subscribe().flow.onEach { cachePrimed.set() }.collect() }
+    backgroundScope.launch { query.subscribe().flow.collect { cachePrimed.set() } }
     cachePrimed.await()
   }
 

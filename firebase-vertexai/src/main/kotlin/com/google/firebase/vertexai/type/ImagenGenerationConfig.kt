@@ -26,7 +26,13 @@ package com.google.firebase.vertexai.type
  * @param imageFormat The file format/compression of the generated images.
  * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
  */
+import kotlin.jvm.JvmField
+
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
   public val numberOfImages: Int? = 1,
@@ -39,20 +45,42 @@ public class ImagenGenerationConfig(
    *
    * This is mainly intended for Java interop. For Kotlin, use [imagenGenerationConfig] for a more
    * idiomatic experience.
-   *
-   * @property negativePrompt See [ImagenGenerationConfig.negativePrompt].
-   * @property numberOfImages See [ImagenGenerationConfig.numberOfImages].
-   * @property aspectRatio See [ImagenGenerationConfig.aspectRatio].
-   * @property imageFormat See [ImagenGenerationConfig.imageFormat]
-   * @property addWatermark See [ImagenGenerationConfig.addWatermark]
-   * @see [imagenGenerationConfig]
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var negativePrompt: String? = null
     @JvmField public var numberOfImages: Int? = 1
     @JvmField public var aspectRatio: ImagenAspectRatio? = null
     @JvmField public var imageFormat: ImagenImageFormat? = null
     @JvmField public var addWatermark: Boolean? = null
+
+    /** See [ImagenGenerationConfig.negativePrompt]. */
+    public fun setNegativePrompt(negativePrompt: String): Builder = apply {
+      this.negativePrompt = negativePrompt
+    }
+
+    /** See [ImagenGenerationConfig.numberOfImages]. */
+    public fun setNumberOfImages(numberOfImages: Int): Builder = apply {
+      this.numberOfImages = numberOfImages
+    }
+
+    /** See [ImagenGenerationConfig.aspectRatio]. */
+    public fun setAspectRatio(aspectRatio: ImagenAspectRatio): Builder = apply {
+      this.aspectRatio = aspectRatio
+    }
+
+    /** See [ImagenGenerationConfig.imageFormat]. */
+    public fun setImageFormat(imageFormat: ImagenImageFormat): Builder = apply {
+      this.imageFormat = imageFormat
+    }
+
+    /** See [ImagenGenerationConfig.addWatermark]. */
+    public fun setAddWatermark(addWatermark: Boolean): Builder = apply {
+      this.addWatermark = addWatermark
+    }
 
     /**
      * Alternative casing for [ImagenGenerationConfig.Builder]:

@@ -21,6 +21,8 @@ import com.google.android.datatransport.Encoding
 import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * The [EventGDTLoggerInterface] is for testing purposes so that we can mock EventGDTLogger in other
@@ -38,19 +40,17 @@ internal fun interface EventGDTLoggerInterface {
  *
  * @hide
  */
-internal class EventGDTLogger(private val transportFactoryProvider: Provider<TransportFactory>) :
+@Singleton
+internal class EventGDTLogger
+@Inject
+constructor(private val transportFactoryProvider: Provider<TransportFactory>) :
   EventGDTLoggerInterface {
 
   // Logs a [SessionEvent] to FireLog
   override fun log(sessionEvent: SessionEvent) {
     transportFactoryProvider
       .get()
-      .getTransport(
-        AQS_LOG_SOURCE,
-        SessionEvent::class.java,
-        Encoding.of("json"),
-        this::encode,
-      )
+      .getTransport(AQS_LOG_SOURCE, SessionEvent::class.java, Encoding.of("json"), this::encode)
       .send(Event.ofData(sessionEvent))
   }
 

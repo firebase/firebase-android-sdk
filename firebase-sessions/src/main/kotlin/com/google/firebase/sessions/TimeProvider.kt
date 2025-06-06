@@ -23,11 +23,12 @@ import kotlin.time.Duration.Companion.milliseconds
 /** Time provider interface, for testing purposes. */
 internal interface TimeProvider {
   fun elapsedRealtime(): Duration
+
   fun currentTimeUs(): Long
 }
 
-/** "Wall clock" time provider. */
-internal object WallClock : TimeProvider {
+/** "Wall clock" time provider implementation. */
+internal object TimeProviderImpl : TimeProvider {
   /**
    * Gets the [Duration] elapsed in "wall clock" time since device boot.
    *

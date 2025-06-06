@@ -69,6 +69,8 @@ import kotlinx.serialization.Serializable
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
  * [responseMimeType] must also be set.
  *
+ * @property responseModalities The format of data in which the model should respond with.
+ *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
  *
@@ -76,6 +78,10 @@ import kotlinx.serialization.Serializable
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -88,6 +94,7 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
+  internal val responseModalities: List<ResponseModality>?,
 ) {
 
   /**
@@ -115,8 +122,15 @@ private constructor(
    * @property responseMimeType See [GenerationConfig.responseMimeType].
    *
    * @property responseSchema See [GenerationConfig.responseSchema].
+   *
+   * @property responseModalities See [GenerationConfig.responseModalities].
+   *
    * @see [generationConfig]
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null
@@ -128,6 +142,7 @@ private constructor(
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
+    @JvmField public var responseModalities: List<ResponseModality>? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -142,6 +157,7 @@ private constructor(
         frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
+        responseModalities = responseModalities
       )
   }
 
@@ -156,7 +172,8 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal()
+      responseSchema = responseSchema?.toInternal(),
+      responseModalities = responseModalities?.map { it.toInternal() }
     )
 
   @Serializable
@@ -171,6 +188,7 @@ private constructor(
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
     @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
+    @SerialName("response_modalities") val responseModalities: List<String>? = null
   )
 
   public companion object {

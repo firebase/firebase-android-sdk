@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
+import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
@@ -40,11 +41,16 @@ import com.google.firebase.vertexai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
  * types.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerativeModel
 internal constructor(
   private val modelName: String,
@@ -58,6 +64,7 @@ internal constructor(
   internal constructor(
     modelName: String,
     apiKey: String,
+    firebaseApp: FirebaseApp,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
@@ -78,6 +85,7 @@ internal constructor(
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
+      firebaseApp,
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
   )
@@ -199,6 +207,7 @@ internal constructor(
     return countTokens(content { image(prompt) })
   }
 
+  @OptIn(ExperimentalSerializationApi::class)
   private fun constructRequest(vararg prompt: Content) =
     GenerateContentRequest(
       modelName,

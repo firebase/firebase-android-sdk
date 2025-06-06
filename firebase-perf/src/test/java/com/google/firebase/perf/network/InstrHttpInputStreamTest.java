@@ -30,6 +30,7 @@ import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.NetworkRequestMetric.NetworkClientErrorReason;
 import java.io.IOException;
 import java.io.InputStream;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,10 +41,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
-/** Unit tests for {@link com.google.firebase.perf.network.InstrHttpInputStream}. */
+/**
+ * Unit tests for {@link com.google.firebase.perf.network.InstrHttpInputStream}.
+ *
+ * @noinspection ResultOfMethodCallIgnored
+ */
 @RunWith(RobolectricTestRunner.class)
 public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
-
+  private AutoCloseable closeable;
   @Mock InputStream mInputStream;
   @Mock TransportManager transportManager;
   @Mock Timer timer;
@@ -53,10 +58,15 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    closeable = MockitoAnnotations.openMocks(this);
     when(timer.getMicros()).thenReturn((long) 1000);
     when(timer.getDurationMicros()).thenReturn((long) 2000);
     networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+  }
+
+  @After
+  public void releaseMocks() throws Exception {
+    closeable.close();
   }
 
   @Test
@@ -80,7 +90,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testMark() throws IOException {
+  public void testMark() {
     int markInput = 256;
 
     new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).mark(markInput);
@@ -89,7 +99,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testMarkSupported() throws IOException {
+  public void testMarkSupported() {
     when(mInputStream.markSupported()).thenReturn(true);
     boolean ret =
         new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).markSupported();
@@ -106,6 +116,20 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
 
     assertThat(ret).isEqualTo(readVal);
     verify(mInputStream).read();
+  }
+
+  @Test
+  public void testReadBufferOffsetZero() throws IOException {
+    byte[] b = new byte[0];
+    int off = 0;
+    int len = 0;
+    when(mInputStream.read(b, off, len)).thenReturn(len);
+    int ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(b, off, len);
+
+    NetworkRequestMetric metric = networkMetricBuilder.build();
+    assertThat(ret).isEqualTo(0);
+    assertThat(metric.getResponsePayloadBytes()).isEqualTo(0);
+    verify(mInputStream).read(b, off, len);
   }
 
   @Test

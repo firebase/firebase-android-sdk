@@ -34,6 +34,8 @@ public class NotInFilter extends FieldFilter {
       return false;
     }
     Value other = doc.getField(getField());
-    return other != null && !Values.contains(getValue().getArrayValue(), other);
+    return other != null
+        && !other.hasNullValue()
+        && !Values.contains(getValue().getArrayValue(), other);
   }
 }

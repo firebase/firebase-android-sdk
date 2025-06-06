@@ -323,7 +323,8 @@ public class VectorTest {
     Query orderedQuery = randomColl.orderBy("embedding");
 
     // Run query with snapshot listener
-    checkOnlineAndOfflineResultsMatch(orderedQuery, docIds.stream().toArray(String[]::new));
+    checkOnlineAndOfflineResultsMatch(
+        randomColl, orderedQuery, docIds.stream().toArray(String[]::new));
   }
 
   /** Verifies that the SDK filters vector fields the same way for online and offline queries*/
@@ -363,13 +364,15 @@ public class VectorTest {
             .orderBy("embedding")
             .whereLessThan("embedding", FieldValue.vector(new double[] {1, 2, 100, 4, 4}));
     checkOnlineAndOfflineResultsMatch(
-        orderedQueryLessThan, docIds.subList(2, 11).stream().toArray(String[]::new));
+        randomColl, orderedQueryLessThan, docIds.subList(2, 11).stream().toArray(String[]::new));
 
     Query orderedQueryGreaterThan =
         randomColl
             .orderBy("embedding")
             .whereGreaterThan("embedding", FieldValue.vector(new double[] {1, 2, 100, 4, 4}));
     checkOnlineAndOfflineResultsMatch(
-        orderedQueryGreaterThan, docIds.subList(12, 13).stream().toArray(String[]::new));
+        randomColl,
+        orderedQueryGreaterThan,
+        docIds.subList(12, 13).stream().toArray(String[]::new));
   }
 }

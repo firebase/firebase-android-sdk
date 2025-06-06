@@ -107,16 +107,17 @@ class SessionsSettingsTest {
       val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
       val remoteSettings =
-        RemoteSettings(
+        RemoteSettingsTest.buildRemoteSettings(
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
+          SettingsCache(
             PreferenceDataStoreFactory.create(
               scope = this,
               produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+            )
+          ),
         )
 
       val sessionsSettings =
@@ -149,16 +150,17 @@ class SessionsSettingsTest {
       val fakeFetcher = FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE))
 
       val remoteSettings =
-        RemoteSettings(
+        RemoteSettingsTest.buildRemoteSettings(
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
+          SettingsCache(
             PreferenceDataStoreFactory.create(
               scope = this,
               produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+            )
+          ),
         )
 
       val sessionsSettings =
@@ -197,16 +199,17 @@ class SessionsSettingsTest {
       fakeFetcher.responseJSONObject = JSONObject(invalidResponse)
 
       val remoteSettings =
-        RemoteSettings(
+        RemoteSettingsTest.buildRemoteSettings(
           TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(firebaseApp),
           fakeFetcher,
-          dataStore =
+          SettingsCache(
             PreferenceDataStoreFactory.create(
               scope = this,
               produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
-            ),
+            )
+          ),
         )
 
       val sessionsSettings =

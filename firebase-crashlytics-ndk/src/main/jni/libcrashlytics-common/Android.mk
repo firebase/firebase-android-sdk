@@ -18,7 +18,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_CPPFLAGS := \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -s \
