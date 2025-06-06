@@ -159,6 +159,12 @@ class PipelineOptions private constructor(options: InternalOptions) :
     with("explain_options", options.options)
 }
 
+class RealtimePipelineOptions private constructor(options: InternalOptions) :
+  AbstractOptions<RealtimePipelineOptions>(options) {
+
+  override fun self(options: InternalOptions) = RealtimePipelineOptions(options)
+}
+
 class ExplainOptions private constructor(options: InternalOptions) :
   AbstractOptions<ExplainOptions>(options) {
   override fun self(options: InternalOptions) = ExplainOptions(options)
