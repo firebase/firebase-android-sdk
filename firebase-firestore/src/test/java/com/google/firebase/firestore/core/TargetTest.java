@@ -353,7 +353,8 @@ public class TargetTest {
           String.format(
               "Values should be equal: Expected: %s, Actual: %s",
               Values.canonicalId(expectedValue), Values.canonicalId(position.get(i))),
-          expectedValue, position.get(i));
+          expectedValue,
+          position.get(i));
     }
   }
 }

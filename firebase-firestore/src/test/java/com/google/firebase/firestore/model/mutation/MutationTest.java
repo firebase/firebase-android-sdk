@@ -32,7 +32,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import androidx.annotation.Nullable;
 import com.google.common.collect.Collections2;
@@ -45,7 +44,6 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ServerTimestamps;
-import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collection;
