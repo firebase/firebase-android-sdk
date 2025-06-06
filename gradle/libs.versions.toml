@@ -11,6 +11,7 @@ appcompat = "1.7.0"
 autoValueParcel = "0.2.6"
 autovalue = "1.10.1"
 awaitility = "3.1.0"
+benchmarkMacro = "1.3.4"
 browser = "1.3.0"
 cardview = "1.0.0"
 checkerQual = "2.5.2"
@@ -18,15 +19,16 @@ constraintlayout = "2.1.4"
 coreKtx = "1.12.0"
 coroutines = "1.7.3"
 dagger = "2.43.2"
+datastore = "1.1.3"
 dexmaker = "2.28.1"
 dexmakerVersion = "1.2"
 espressoCore = "3.6.1"
 featureDelivery = "2.1.0"
-firebaseAppdistributionGradle = "5.0.0"
+firebaseAppdistributionGradle = "5.1.1"
 firebaseCommon = "21.0.0"
-firebaseComponents = "18.0.0"
+firebaseComponents = "18.0.1"
 firebaseCrashlyticsGradle = "3.0.2"
-glide = "4.11.0"
+glide = "4.16.0"
 googleApiClient = "1.30.9"
 googleServices = "4.3.15"
 gradleErrorpronePlugin = "3.1.0"
@@ -36,13 +38,13 @@ hamcrest = "2.2"
 hamcrestJunit = "2.0.0.0"
 hamcrestLibrary = "2.2"
 httpclientAndroid = "4.3.5.1"
-integrity = "1.2.0"
+integrity = "1.4.0"
 jacksonCore = "2.13.1"
-jacksonDatabind = "2.13.1"
+jacksonDatabind = "2.18.2"
 javalite = "3.25.5"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
-kotestAssertionsCore = "5.5.5"
+kotestAssertionsCore = "5.8.1"
 kotlin = "1.8.22"
 ktorVersion = "2.3.2"
 legacySupportV4 = "1.0.0"
@@ -67,11 +69,10 @@ runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.1.14"
 serialization = "1.5.1"
-serialization-plugin = "1.8.22"
 slf4jNop = "2.0.9"
 spotless = "7.0.0.BETA3"
 testServices = "1.2.0"
-truth = "1.4.2"
+truth = "1.4.4"
 truthProtoExtension = "1.0"
 wiremockStandalone = "2.26.3"
 
@@ -86,11 +87,13 @@ android-lint-tests = { module = "com.android.tools.lint:lint-tests", version.ref
 android-lint-testutils = { module = "com.android.tools:testutils", version.ref = "android-lint" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-androidx-core = { module = "androidx.core:core", version = "1.2.0" }
+androidx-core = { module = "androidx.core:core", version = "1.13.1" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espressoCore" }
 androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espressoCore" }
@@ -152,6 +155,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorVer
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorVersion" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktorVersion" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorVersion" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktorVersion" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorVersion" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 maven-resolver-api = { module = "org.apache.maven.resolver:maven-resolver-api", version.ref = "mavenResolverApi" }
@@ -205,7 +209,7 @@ spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradl
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
 truth-proto-extension = { module = "com.google.truth.extensions:truth-proto-extension", version.ref = "truthProtoExtension" }
-turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
+turbine = { module = "app.cash.turbine:turbine", version = "1.2.0" }
 
 # Remove three-ten-abp once minSdkVersion is changed to 26 or later, and, instead use the
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.
@@ -229,7 +233,7 @@ maven-resolver = [
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "gradleErrorpronePlugin" }

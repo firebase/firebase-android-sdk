@@ -14,6 +14,9 @@
 
 package com.google.firebase.storage;
 
+import static org.robolectric.Shadows.shadowOf;
+
+import android.os.Looper;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -26,7 +29,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
-import org.robolectric.Robolectric;
 
 /** Test helpers. */
 public class TestUtil {
@@ -138,7 +140,7 @@ public class TestUtil {
     long timeoutMillis = timeUnit.toMillis(timeout);
 
     for (int i = 0; i < timeoutMillis; i++) {
-      Robolectric.flushForegroundThreadScheduler();
+      shadowOf(Looper.getMainLooper()).runToEndOfTasks();
       if (task.isComplete()) {
         // success!
         return;

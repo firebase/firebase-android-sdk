@@ -31,9 +31,17 @@ import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public interface Part {}
 
 /** Represents text or string based data sent to and received from requests. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class TextPart(public val text: String) : Part {
 
   @Serializable internal data class Internal(val text: String) : InternalPart
@@ -45,7 +53,18 @@ public class TextPart(public val text: String) : Part {
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
+public class ImagePart(public val image: Bitmap) : Part {
+
+  internal fun toInlineDataPart() =
+    InlineDataPart(
+      android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
+      "image/jpeg"
+    )
+}
 
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
@@ -54,14 +73,18 @@ public class ImagePart(public val image: Bitmap) : Part
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
 
   @Serializable
-  internal data class Internal(@SerialName("inline_data") val inlineData: InlineData) :
+  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
+    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
   }
 }
 
@@ -70,30 +93,65 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  *
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
+ * @param id Unique id of the function call. If present, the returned [FunctionResponsePart] should
+ * have a matching `id` field.
  */
-public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
-  Part {
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
+public class FunctionCallPart
+@JvmOverloads
+constructor(
+  public val name: String,
+  public val args: Map<String, JsonElement>,
+  public val id: String? = null
+) : Part {
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
 
     @Serializable
-    internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
+    internal data class FunctionCall(
+      val name: String,
+      val args: Map<String, JsonElement?>? = null,
+      val id: String? = null
+    )
   }
 }
 
 /**
  * Represents function call output to be returned to the model when it requests a function call.
  *
- * @param name the name of the called function
- * @param response the response produced by the function as a [JSONObject]
+ * @param name The name of the called function.
+ * @param response The response produced by the function as a [JSONObject].
+ * @param id Matching `id` for a [FunctionCallPart], if one was provided.
  */
-public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part {
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
+public class FunctionResponsePart
+@JvmOverloads
+constructor(
+  public val name: String,
+  public val response: JsonObject,
+  public val id: String? = null
+) : Part {
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
 
-    @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+    @Serializable
+    internal data class FunctionResponse(
+      val name: String,
+      val response: JsonObject,
+      val id: String? = null
+    )
+  }
+
+  internal fun toInternalFunctionCall(): Internal.FunctionResponse {
+    return Internal.FunctionResponse(name, response, id)
   }
 }
 
@@ -105,6 +163,10 @@ public class FunctionResponsePart(public val name: String, public val response: 
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
 
   @Serializable
@@ -156,7 +218,7 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Png(image))
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
@@ -166,9 +228,11 @@ internal fun Part.toInternal(): InternalPart {
         )
       )
     is FunctionCallPart ->
-      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args))
+      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id))
     is FunctionResponsePart ->
-      FunctionResponsePart.Internal(FunctionResponsePart.Internal.FunctionResponse(name, response))
+      FunctionResponsePart.Internal(
+        FunctionResponsePart.Internal.FunctionResponse(name, response, id)
+      )
     is FileDataPart ->
       FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
     else ->
@@ -178,7 +242,7 @@ internal fun Part.toInternal(): InternalPart {
   }
 }
 
-private fun encodeBitmapToBase64Png(input: Bitmap): String {
+private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
   ByteArrayOutputStream().let {
     input.compress(Bitmap.CompressFormat.JPEG, 80, it)
     return android.util.Base64.encodeToString(it.toByteArray(), BASE_64_FLAGS)
@@ -199,13 +263,11 @@ internal fun InternalPart.toPublic(): Part {
     is FunctionCallPart.Internal ->
       FunctionCallPart(
         functionCall.name,
-        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+        functionCall.id
       )
     is FunctionResponsePart.Internal ->
-      FunctionResponsePart(
-        functionResponse.name,
-        functionResponse.response,
-      )
+      FunctionResponsePart(functionResponse.name, functionResponse.response, functionResponse.id)
     is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw com.google.firebase.vertexai.type.SerializationException(

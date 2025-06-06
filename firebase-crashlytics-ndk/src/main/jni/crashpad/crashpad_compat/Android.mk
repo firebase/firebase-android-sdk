@@ -21,7 +21,7 @@ LOCAL_EXPORT_C_INCLUDES := \
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
     -Wall \
-    -std=c++17 \
+    -std=c++20 \
     -Os \
     -flto \
     -fvisibility=hidden \

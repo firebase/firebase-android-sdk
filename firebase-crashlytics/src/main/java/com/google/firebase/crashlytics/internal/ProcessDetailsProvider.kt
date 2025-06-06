@@ -29,6 +29,8 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
  * @hide
  */
 internal object ProcessDetailsProvider {
+  // TODO(mrober): Merge this with [com.google.firebase.sessions.ProcessDetailsProvider].
+
   /** Gets the details for all of this app's running processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val appUid = context.applicationInfo.uid
@@ -70,7 +72,7 @@ internal object ProcessDetailsProvider {
     processName: String,
     pid: Int = 0,
     importance: Int = 0,
-    isDefaultProcess: Boolean = false
+    isDefaultProcess: Boolean = false,
   ) =
     ProcessDetails.builder()
       .setProcessName(processName)
@@ -81,7 +83,7 @@ internal object ProcessDetailsProvider {
 
   /** Gets the app's current process name. If the API is not available, returns an empty string. */
   private fun getProcessName(): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
       Process.myProcessName()
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       Application.getProcessName() ?: ""

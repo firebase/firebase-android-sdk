@@ -22,6 +22,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Content part modality. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ContentModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
@@ -46,6 +50,15 @@ public class ContentModality private constructor(public val ordinal: Int) {
       }
   }
 
+  internal fun toInternal() =
+    when (this) {
+      TEXT -> "TEXT"
+      IMAGE -> "IMAGE"
+      VIDEO -> "VIDEO"
+      AUDIO -> "AUDIO"
+      DOCUMENT -> "DOCUMENT"
+      else -> "UNSPECIFIED"
+    }
   public companion object {
     /** Unspecified modality. */
     @JvmField public val UNSPECIFIED: ContentModality = ContentModality(0)

@@ -25,7 +25,10 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import com.google.firebase.sessions.SessionConfigsDataStore
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -37,7 +40,10 @@ internal data class SessionConfigs(
   val cacheUpdatedTime: Long?,
 )
 
-internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
+@Singleton
+internal class SettingsCache
+@Inject
+constructor(@SessionConfigsDataStore private val dataStore: DataStore<Preferences>) {
   private lateinit var sessionConfigs: SessionConfigs
 
   init {
@@ -54,7 +60,7 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         sessionSamplingRate = preferences[SAMPLING_RATE],
         sessionRestartTimeout = preferences[RESTART_TIMEOUT_SECONDS],
         cacheDuration = preferences[CACHE_DURATION_SECONDS],
-        cacheUpdatedTime = preferences[CACHE_UPDATED_TIME]
+        cacheUpdatedTime = preferences[CACHE_UPDATED_TIME],
       )
   }
 
@@ -105,10 +111,7 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         updateSessionConfigs(preferences)
       }
     } catch (e: IOException) {
-      Log.w(
-        TAG,
-        "Failed to remove config values: $e",
-      )
+      Log.w(TAG, "Failed to remove config values: $e")
     }
   }
 

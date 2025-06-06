@@ -16,7 +16,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/mini_chromium \
 
 LOCAL_CPPFLAGS := \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -s \

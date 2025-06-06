@@ -30,7 +30,6 @@ import com.google.firebase.inject.Provider
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import com.google.firebase.util.nextAlphanumericString
 import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
@@ -46,23 +45,21 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
 internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   private val deferredProvider: com.google.firebase.inject.Deferred<T>,
   parentCoroutineScope: CoroutineScope,
-  blockingDispatcher: CoroutineDispatcher,
+  private val blockingDispatcher: CoroutineDispatcher,
   protected val logger: Logger,
 ) {
   val instanceId: String
     get() = logger.nameWithId
-
-  private val _providerAvailable = MutableStateFlow(false)
-  val providerAvailable: StateFlow<Boolean> = _providerAvailable.asStateFlow()
 
   @Suppress("LeakingThis") private val weakThis = WeakReference(this)
 
@@ -78,58 +75,51 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
         }
     )
 
-  init {
-    // Call `whenAvailable()` on a non-main thread because it accesses SharedPreferences, which
-    // performs disk i/o, violating the StrictMode policy android.os.strictmode.DiskReadViolation.
-    val coroutineName = CoroutineName("k6rwgqg9gh $instanceId whenAvailable")
-    coroutineScope.launch(coroutineName + blockingDispatcher) {
-      deferredProvider.whenAvailable(DeferredProviderHandlerImpl(weakThis))
-    }
-  }
-
-  private interface ProviderProvider<T> {
-    val provider: T?
-  }
-
   private sealed interface State<out T> {
+
+    /**
+     * State indicating that the object has just been created and [initialize] has not yet been
+     * called.
+     */
+    object New : State<Nothing>
+
+    /**
+     * State indicating that [initialize] has been invoked but the token provider is not (yet?)
+     * available.
+     */
+    data class Initialized(override val forceTokenRefresh: Boolean) :
+      StateWithForceTokenRefresh<Nothing> {
+      constructor() : this(false)
+    }
 
     /** State indicating that [close] has been invoked. */
     object Closed : State<Nothing>
 
-    /** State indicating that there is no outstanding "get token" request. */
-    class Idle<T>(
-
-      /**
-       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider]; may be null if the deferred
-       * has not yet given us a provider.
-       */
-      override val provider: T?,
-
+    sealed interface StateWithForceTokenRefresh<out T> : State<T> {
       /** The value to specify for `forceRefresh` on the next invocation of [getToken]. */
       val forceTokenRefresh: Boolean
-    ) : State<T>, ProviderProvider<T>
+    }
+
+    sealed interface StateWithProvider<out T> : State<T> {
+      /** The token provider, [InternalAuthProvider] or [InteropAppCheckTokenProvider] */
+      val provider: T
+    }
+
+    /** State indicating that there is no outstanding "get token" request. */
+    data class Idle<T>(override val provider: T, override val forceTokenRefresh: Boolean) :
+      StateWithProvider<T>, StateWithForceTokenRefresh<T>
 
     /** State indicating that there _is_ an outstanding "get token" request. */
-    class Active<T>(
-
-      /**
-       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider] that is performing the "get
-       * token" request.
-       */
+    data class Active<out T>(
       override val provider: T,
 
       /** The job that is performing the "get token" request. */
       val job: Deferred<SequencedReference<Result<GetTokenResult>>>
-    ) : State<T>, ProviderProvider<T>
+    ) : StateWithProvider<T>
   }
 
-  /**
-   * The current state of this object. The value should only be changed in a compare-and-swap loop
-   * in order to be thread-safe. Such a loop should call `yield()` on each iteration to allow other
-   * coroutines to run on the thread.
-   */
-  private val state =
-    AtomicReference<State<T>>(State.Idle(provider = null, forceTokenRefresh = false))
+  /** The current state of this object. */
+  private val state = MutableStateFlow<State<T>>(State.New)
 
   /**
    * Adds the token listener to the given provider.
@@ -152,6 +142,34 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   protected abstract suspend fun getToken(provider: T, forceRefresh: Boolean): GetTokenResult
 
   /**
+   * Initializes this object.
+   *
+   * Before calling this method, the _only_ other methods that are allowed to be called on this
+   * object are [awaitTokenProvider] and [close].
+   *
+   * This method may only be called once; subsequent calls result in an exception.
+   */
+  fun initialize() {
+    logger.debug { "initialize()" }
+
+    state.update { currentState ->
+      when (currentState) {
+        is State.New -> State.Initialized()
+        is State.Closed ->
+          throw IllegalStateException("initialize() cannot be called after close()")
+        else -> throw IllegalStateException("initialize() has already been called")
+      }
+    }
+
+    // Call `whenAvailable()` on a non-main thread because it accesses SharedPreferences, which
+    // performs disk i/o, violating the StrictMode policy android.os.strictmode.DiskReadViolation.
+    val coroutineName = CoroutineName("k6rwgqg9gh $instanceId whenAvailable")
+    coroutineScope.launch(coroutineName + blockingDispatcher) {
+      deferredProvider.whenAvailable(DeferredProviderHandlerImpl(weakThis))
+    }
+  }
+
+  /**
    * Closes this object, releasing its resources, unregistering any registered listeners, and
    * cancelling any in-flight token requests.
    *
@@ -163,27 +181,45 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    */
   fun close() {
     logger.debug { "close()" }
+
     weakThis.clear()
     coroutineScope.cancel()
-    setClosedState()
-  }
 
-  // This function must ONLY be called from close().
-  private fun setClosedState() {
-    while (true) {
-      val oldState = state.get()
-      val providerProvider: ProviderProvider<T> =
-        when (oldState) {
-          is State.Closed -> return
-          is State.Idle -> oldState
-          is State.Active -> oldState
-        }
-
-      if (state.compareAndSet(oldState, State.Closed)) {
-        providerProvider.provider?.let { removeTokenListener(it) }
-        break
+    val oldState = state.getAndUpdate { State.Closed }
+    when (oldState) {
+      is State.New -> {}
+      is State.Initialized -> {}
+      is State.Closed -> {}
+      is State.StateWithProvider -> {
+        removeTokenListener(oldState.provider)
       }
     }
+  }
+
+  /**
+   * Suspends until the token provider becomes available to this object.
+   *
+   * This method _may_ be called before [initialize], which is the method that asynchronously gets
+   * the token provider.
+   *
+   * If [close] has been invoked, or is invoked _before_ a token provider becomes available, then
+   * this method returns normally, as if a token provider _had_ become available.
+   */
+  suspend fun awaitTokenProvider() {
+    logger.debug { "awaitTokenProvider() start" }
+    val currentState =
+      state
+        .filter {
+          when (it) {
+            State.Closed -> true
+            is State.New -> false
+            is State.Initialized -> false
+            is State.Idle -> true
+            is State.Active -> true
+          }
+        }
+        .first()
+    logger.debug { "awaitTokenProvider() done: currentState=$currentState" }
   }
 
   /**
@@ -191,27 +227,46 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    *
    * If [close] has been called, this method does nothing.
    */
-  suspend fun forceRefresh() {
+  fun forceRefresh() {
     logger.debug { "forceRefresh()" }
-    while (true) {
-      val oldState = state.get()
-      val oldStateProviderProvider =
-        when (oldState) {
-          is State.Closed -> return
-          is State.Idle -> oldState
-          is State.Active -> {
-            val message = "needs token refresh (wgrwbrvjxt)"
-            oldState.job.cancel(message, ForceRefresh(message))
-            oldState
+    val oldState =
+      state.getAndUpdate { currentState ->
+        val newState =
+          when (currentState) {
+            is State.Closed -> State.Closed
+            is State.New -> currentState
+            is State.Initialized -> currentState.copy(forceTokenRefresh = true)
+            is State.Idle -> currentState.copy(forceTokenRefresh = true)
+            is State.Active -> State.Idle(currentState.provider, forceTokenRefresh = true)
+          }
+
+        check(
+          newState is State.New ||
+            newState is State.Closed ||
+            newState is State.StateWithForceTokenRefresh<T>
+        ) {
+          "internal error gbazc7qr66: newState should have been Closed or " +
+            "StateWithForceTokenRefresh, but got: $newState"
+        }
+        if (newState is State.StateWithForceTokenRefresh<T>) {
+          check(newState.forceTokenRefresh) {
+            "internal error fnzwyrsez2: newState.forceTokenRefresh should have been true"
           }
         }
 
-      val newState = State.Idle(oldStateProviderProvider.provider, forceTokenRefresh = true)
-      if (state.compareAndSet(oldState, newState)) {
-        break
+        newState
       }
 
-      yield()
+    when (oldState) {
+      is State.Closed -> {}
+      is State.New ->
+        throw IllegalStateException("initialize() must be called before forceRefresh()")
+      is State.Initialized -> {}
+      is State.Idle -> {}
+      is State.Active -> {
+        val message = "needs token refresh (wgrwbrvjxt)"
+        oldState.job.cancel(message, ForceRefresh(message))
+      }
     }
   }
 
@@ -246,10 +301,12 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
       val attemptSequenceNumber = nextSequenceNumber()
-      val oldState = state.get()
+      val oldState = state.value
 
       val newState: State.Active<T> =
         when (oldState) {
+          is State.New ->
+            throw IllegalStateException("initialize() must be called before getToken()")
           is State.Closed -> {
             logger.debug {
               "$invocationId getToken() throws CredentialsTokenManagerClosedException" +
@@ -257,13 +314,13 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
             }
             throw CredentialsTokenManagerClosedException(this)
           }
-          is State.Idle -> {
-            if (oldState.provider === null) {
-              logger.debug {
-                "$invocationId getToken() returns null (token provider is not (yet?) available)"
-              }
-              return null
+          is State.Initialized -> {
+            logger.debug {
+              "$invocationId getToken() returns null (token provider is not (yet?) available)"
             }
+            return null
+          }
+          is State.Idle -> {
             newActiveState(invocationId, oldState.provider, oldState.forceTokenRefresh)
           }
           is State.Active -> {
@@ -341,33 +398,38 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     logger.debug { "onProviderAvailable(newProvider=$newProvider)" }
     addTokenListener(newProvider)
 
-    while (true) {
-      val oldState = state.get()
-      val newState =
-        when (oldState) {
-          is State.Closed -> {
-            logger.debug {
-              "onProviderAvailable(newProvider=$newProvider)" +
-                " unregistering token listener that was just added"
-            }
-            removeTokenListener(newProvider)
-            break
-          }
-          is State.Idle -> State.Idle(newProvider, oldState.forceTokenRefresh)
-          is State.Active -> {
-            val newProviderClassName = newProvider::class.qualifiedName
-            val message = "a new provider $newProviderClassName is available (symhxtmazy)"
-            oldState.job.cancel(message, NewProvider(message))
-            State.Idle(newProvider, forceTokenRefresh = false)
-          }
+    val oldState =
+      state.getAndUpdate { currentState ->
+        when (currentState) {
+          is State.New -> currentState
+          is State.Closed -> State.Closed
+          is State.Initialized -> State.Idle(newProvider, currentState.forceTokenRefresh)
+          is State.Idle -> State.Idle(newProvider, currentState.forceTokenRefresh)
+          is State.Active -> State.Idle(newProvider, forceTokenRefresh = false)
         }
+      }
 
-      if (state.compareAndSet(oldState, newState)) {
-        break
+    when (oldState) {
+      is State.New ->
+        throw IllegalStateException(
+          "internal error sdpzwhmhd3: " +
+            "initialize() should have been called before onProviderAvailable()"
+        )
+      is State.Closed -> {
+        logger.debug {
+          "onProviderAvailable(newProvider=$newProvider)" +
+            " unregistering token listener that was just added"
+        }
+        removeTokenListener(newProvider)
+      }
+      is State.Initialized -> {}
+      is State.Idle -> {}
+      is State.Active -> {
+        val newProviderClassName = newProvider::class.qualifiedName
+        val message = "a new provider $newProviderClassName is available (symhxtmazy)"
+        oldState.job.cancel(message, NewProvider(message))
       }
     }
-
-    _providerAvailable.value = true
   }
 
   /**

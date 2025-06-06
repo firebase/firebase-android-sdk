@@ -16,16 +16,22 @@
 
 package com.google.firebase.vertexai.type
 
+import android.util.Base64
+import com.google.firebase.vertexai.ImagenModel
 import kotlinx.serialization.Serializable
 
 /**
- * Represents a response from a call to [ImagenModel#generateImages]
+ * Represents a response from a call to [ImagenModel.generateImages]
  *
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
  * the reason they were filtered out.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenGenerationResponse<T>
 internal constructor(public val images: List<T>, public val filteredReason: String?) {
 
@@ -52,7 +58,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     val raiFilteredReason: String? = null,
   ) {
     internal fun toPublicInline() =
-      ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType!!)
+      ImagenInlineImage(Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP), mimeType!!)
 
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }

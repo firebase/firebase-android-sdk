@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
@@ -35,6 +36,10 @@ import com.google.firebase.vertexai.type.RequestOptions
  * types.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenModel
 internal constructor(
   private val modelName: String,
@@ -46,6 +51,7 @@ internal constructor(
   internal constructor(
     modelName: String,
     apiKey: String,
+    firebaseApp: FirebaseApp,
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
@@ -60,6 +66,7 @@ internal constructor(
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
+      firebaseApp,
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
     ),
   )

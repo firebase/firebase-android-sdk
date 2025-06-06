@@ -20,7 +20,6 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.sourceLocation
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.common.ExperimentalKotest
@@ -99,7 +98,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false for a different type`() = runTest {
-    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.sourceLocation())
+    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.errorPath())
     checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
       settings.equals(other) shouldBe false
     }

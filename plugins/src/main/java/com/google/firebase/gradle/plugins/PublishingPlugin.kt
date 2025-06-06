@@ -346,7 +346,6 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-database-connection",
           "com.google.firebase:firebase-database-connection-license",
           "com.google.firebase:firebase-database-license",
-          "com.google.firebase:firebase-dataconnect",
           "com.google.firebase:firebase-datatransport",
           "com.google.firebase:firebase-appdistribution-ktx",
           "com.google.firebase:firebase-appdistribution",
@@ -418,7 +417,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-analytics",
           "com.google.firebase:firebase-crashlytics",
           "com.google.firebase:firebase-perf",
-          "com.google.firebase:firebase-vertexai",
+          "com.google.firebase:firebase-ai",
           "com.google.firebase:firebase-messaging",
           "com.google.firebase:firebase-auth",
           "com.google.firebase:firebase-database",
@@ -792,6 +791,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-crashlytics-ktx",
         "com.google.firebase:firebase-crashlytics-ndk",
         "com.google.firebase:firebase-database",
+        "com.google.firebase:firebase-dataconnect",
         "com.google.firebase:firebase-database-ktx",
         "com.google.firebase:firebase-dynamic-links",
         "com.google.firebase:firebase-dynamic-links-ktx",
@@ -816,11 +816,18 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-storage",
         "com.google.firebase:firebase-storage-ktx",
         "com.google.firebase:firebase-vertexai",
+        "com.google.firebase:firebase-ai",
       )
 
     /** Artifacts that we use in the tutorial bundle, but _not_ in the bom. */
     val EXTRA_TUTORIAL_ARTIFACTS =
-      listOf("com.google.android.gms:play-services-ads", "com.google.firebase:firebase-ml-vision")
+      listOf(
+        "com.google.android.gms:play-services-ads",
+        "com.google.firebase:firebase-ml-vision",
+        "androidx.credentials:credentials",
+        "androidx.credentials:credentials-play-services-auth",
+        "com.google.android.libraries.identity.googleid:googleid",
+      )
   }
 }
 

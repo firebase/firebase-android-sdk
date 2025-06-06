@@ -18,6 +18,7 @@ package com.google.firebase.vertexai.common
 
 import android.util.Log
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.options
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
@@ -35,6 +36,9 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -91,6 +95,9 @@ internal constructor(
   private val requestOptions: RequestOptions,
   httpEngine: HttpClientEngine,
   private val apiClient: String,
+  private val firebaseApp: FirebaseApp,
+  private val appVersion: Int = 0,
+  private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
 ) {
 
@@ -99,8 +106,19 @@ internal constructor(
     model: String,
     requestOptions: RequestOptions,
     apiClient: String,
+    firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
-  ) : this(key, model, requestOptions, OkHttp.create(), apiClient, headerProvider)
+  ) : this(
+    key,
+    model,
+    requestOptions,
+    OkHttp.create(),
+    apiClient,
+    firebaseApp,
+    getVersionNumber(firebaseApp),
+    firebaseApp.options.applicationId,
+    headerProvider
+  )
 
   private val model = fullModelName(model)
 
@@ -111,6 +129,7 @@ internal constructor(
         socketTimeoutMillis =
           max(180.seconds.inWholeMilliseconds, requestOptions.timeout.inWholeMilliseconds)
       }
+      install(WebSockets)
       install(ContentNegotiation) { json(JSON) }
     }
 
@@ -140,6 +159,12 @@ internal constructor(
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }
+
+  private fun getBidiEndpoint(location: String): String =
+    "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+
+  suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
+    client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
 
   fun generateContentStream(
     request: GenerateContentRequest
@@ -172,9 +197,18 @@ internal constructor(
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
       is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
     }
+
+    applyCommonHeaders()
+  }
+
+  private fun HttpRequestBuilder.applyCommonHeaders() {
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
+    if (firebaseApp.isDataCollectionDefaultEnabled) {
+      header("X-Firebase-AppId", googleAppId)
+      header("X-Firebase-AppVersion", appVersion)
+    }
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
@@ -240,6 +274,16 @@ internal constructor(
 
   companion object {
     private val TAG = APIController::class.java.simpleName
+
+    private fun getVersionNumber(app: FirebaseApp): Int {
+      try {
+        val context = app.applicationContext
+        return context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+      } catch (e: Exception) {
+        Log.d(TAG, "Error while getting app version: ${e.message}")
+        return 0
+      }
+    }
   }
 }
 

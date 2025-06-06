@@ -27,6 +27,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, Variables>) :
@@ -57,7 +58,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
         }
 
       collectJob = launch {
-        val queryManager = query.dataConnect.lazyQueryManager.get()
+        val queryManager = query.dataConnect.queryManager
         queryManager.subscribe(query, executeQuery = shouldExecuteQuery) { sequencedResult ->
           val querySubscriptionResult = QuerySubscriptionResultImpl(query, sequencedResult)
           send(querySubscriptionResult)
@@ -69,7 +70,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
 
   override suspend fun reload() {
     val query = query // save query to a local variable in case it changes.
-    val sequencedResult = query.dataConnect.lazyQueryManager.get().execute(query)
+    val sequencedResult = query.dataConnect.queryManager.execute(query)
     updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
     sequencedResult.ref.getOrThrow()
   }
@@ -80,22 +81,17 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
   }
 
   private fun updateLastResult(prospectiveLastResult: QuerySubscriptionResultImpl) {
-    // Update the last result in a compare-and-swap loop so that there is no possibility of
-    // clobbering a newer result with an older result, compared using their sequence numbers.
     // TODO: Fix this so that results from an old query do not clobber results from a new query,
     //  as set by a call to update()
-    while (true) {
-      val currentLastResult = _lastResult.value
-      if (currentLastResult.ref != null) {
-        val currentSequenceNumber = currentLastResult.ref.sequencedResult.sequenceNumber
-        val prospectiveSequenceNumber = prospectiveLastResult.sequencedResult.sequenceNumber
-        if (currentSequenceNumber >= prospectiveSequenceNumber) {
-          return
-        }
-      }
-
-      if (_lastResult.compareAndSet(currentLastResult, NullableReference(prospectiveLastResult))) {
-        return
+    _lastResult.update { currentLastResult ->
+      if (
+        currentLastResult.ref != null &&
+          currentLastResult.ref.sequencedResult.sequenceNumber >=
+            prospectiveLastResult.sequencedResult.sequenceNumber
+      ) {
+        currentLastResult
+      } else {
+        NullableReference(prospectiveLastResult)
       }
     }
   }

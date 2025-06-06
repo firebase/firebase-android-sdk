@@ -54,6 +54,8 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       )
 
   object CreatePersonMutation {
+    const val operationName = "createPerson"
+
     @Serializable
     data class Data(val person_insert: PersonKey) {
       @Serializable data class PersonKey(val id: String)
@@ -63,7 +65,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   fun createPerson(variables: CreatePersonMutation.Variables) =
     dataConnect.mutation(
-      operationName = "createPerson",
+      operationName = CreatePersonMutation.operationName,
       variables = variables,
       dataDeserializer = serializer<CreatePersonMutation.Data>(),
       variablesSerializer = serializer<CreatePersonMutation.Variables>(),
@@ -141,6 +143,8 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   fun deletePerson(id: String) = deletePerson(DeletePersonMutation.Variables(id = id))
 
   object GetPersonQuery {
+    const val operationName = "getPerson"
+
     @Serializable
     data class Data(val person: Person?) {
       @Serializable data class Person(val name: String, val age: Int? = null)
@@ -151,7 +155,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   fun getPerson(variables: GetPersonQuery.Variables) =
     dataConnect.query(
-      operationName = "getPerson",
+      operationName = GetPersonQuery.operationName,
       variables = variables,
       dataDeserializer = serializer<GetPersonQuery.Data>(),
       variablesSerializer = serializer<GetPersonQuery.Variables>(),

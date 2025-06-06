@@ -18,15 +18,19 @@ package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Base64
 
 /**
- * Represents an Imagen-generated image that is contained inline
+ * Represents an Imagen-generated image that is returned as inline data.
  *
- * @param data Contains the raw bytes of the image
- * @param mimeType Contains the MIME type of the image (for example, `"image/png"`)
+ * @property data The raw image bytes in JPEG or PNG format, as specified by [mimeType].
+ * @property mimeType The IANA standard MIME type of the image data; either `"image/png"` or
+ * `"image/jpeg"`; to request a different format, see [ImagenGenerationConfig.imageFormat].
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenInlineImage
 internal constructor(public val data: ByteArray, public val mimeType: String) {
 
@@ -34,7 +38,6 @@ internal constructor(public val data: ByteArray, public val mimeType: String) {
    * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.
    */
   public fun asBitmap(): Bitmap {
-    val data = Base64.decode(data, Base64.NO_WRAP)
     return BitmapFactory.decodeByteArray(data, 0, data.size)
   }
 }

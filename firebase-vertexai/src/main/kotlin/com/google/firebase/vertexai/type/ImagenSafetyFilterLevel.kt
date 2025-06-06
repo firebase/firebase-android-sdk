@@ -18,6 +18,10 @@ package com.google.firebase.vertexai.type
 
 /** Used for safety filtering. */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenSafetyFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
     /** Strongest filtering level, most strict blocking. */

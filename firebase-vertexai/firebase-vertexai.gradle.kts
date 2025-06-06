@@ -28,7 +28,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_vertexai}}")
+    name.set("{{vertex_ai_in_firebase}}")
     versionName.set("vertex-ai")
     hasKTX.set(false)
   }
@@ -63,7 +63,11 @@ android {
       isReturnDefaultValues = true
     }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    targetSdk = targetSdkVersion
+    baseline = file("lint-baseline.xml")
+  }
+  sourceSets { getByName("test").java.srcDirs("src/testUtil") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -83,6 +87,7 @@ tasks.withType<KotlinCompile>().all {
 dependencies {
   implementation(libs.ktor.client.okhttp)
   implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.websockets)
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.ktor.client.logging)
@@ -115,6 +120,7 @@ dependencies {
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
+  testImplementation(libs.mockito.core)
 
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)
