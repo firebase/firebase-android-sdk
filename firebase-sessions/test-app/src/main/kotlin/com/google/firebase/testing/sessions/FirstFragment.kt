@@ -30,7 +30,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.trace
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +55,7 @@ class FirstFragment : Fragment() {
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
-    savedInstanceState: Bundle?
+    savedInstanceState: Bundle?,
   ): View? {
 
     _binding = FragmentFirstBinding.inflate(inflater, container, false)
@@ -77,6 +80,28 @@ class FirstFragment : Fragment() {
         performanceTrace.start()
         delay(1000)
         performanceTrace.stop()
+      }
+    }
+    binding.createTrace2.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace_2")
+        performanceTrace.start()
+        delay(1200)
+        performanceTrace.stop()
+      }
+    }
+    binding.createNetworkTrace.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val url = URL("https://www.google.com")
+        val metric =
+          performance.newHttpMetric("https://www.google.com", FirebasePerformance.HttpMethod.GET)
+        metric.trace {
+          val conn = url.openConnection() as HttpURLConnection
+          val content = conn.inputStream.bufferedReader().use { it.readText() }
+          setHttpResponseCode(conn.responseCode)
+          setResponsePayloadSize(content.length.toLong())
+          conn.disconnect()
+        }
       }
     }
     binding.buttonForegroundProcess.setOnClickListener {
