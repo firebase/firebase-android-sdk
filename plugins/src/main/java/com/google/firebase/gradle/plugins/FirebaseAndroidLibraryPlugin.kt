@@ -160,6 +160,18 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
           .getLatestReleasedVersion()
       )
     }
+
+    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
+      apiTxtFile.set(project.file("api.txt"))
+      output.set(project.file("new_api.txt"))
+    }
+
+    project.tasks.register<SemVerTask>("metalavaSemver") {
+      apiTxtFile.set(project.file("new_api.txt"))
+      otherApiFile.set(project.file("api.txt"))
+      currentVersionString.value(firebaseLibrary.version)
+      previousVersionString.value(firebaseLibrary.previousVersion)
+    }
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {

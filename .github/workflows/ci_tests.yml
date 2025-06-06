@@ -16,13 +16,13 @@ jobs:
     outputs:
       modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 2
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
@@ -44,30 +44,25 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 2
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
           cache: gradle
 
-      - name: Pull genai-common
+      - name: Clone vertexai mock responses
         if: matrix.module == ':firebase-vertexai'
-        run: |
-          git clone https://github.com/google-gemini/generative-ai-android.git
-          cd generative-ai-android
-          ./gradlew :common:updateVersion common:publishToMavenLocal
-          cd ..
+        run: firebase-vertexai/update_responses.sh
 
-      - name: Clone mock responses
-        if: matrix.module == ':firebase-vertexai'
-        run: |
-          firebase-vertexai/update_responses.sh
+      - name: Clone ai mock responses
+        if: matrix.module == ':firebase-ai'
+        run: firebase-ai/update_responses.sh
 
       - name: Add google-services.json
         env:
@@ -85,7 +80,7 @@ jobs:
           MODULE=${{matrix.module}}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: always()
         with:
           name: unit-test-result-${{env.ARTIFACT_NAME}}
@@ -122,13 +117,13 @@ jobs:
           - module: :firebase-functions:ktx
 
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 2
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
@@ -139,10 +134,10 @@ jobs:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
       - name: ${{ matrix.module }} Integ Tests
         env:
           FIREBASE_CI: 1
@@ -168,11 +163,11 @@ jobs:
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           path: artifacts
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@82082dac68ad6a19d980f8ce817e108b9f496c2a
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
         with:
           files: "artifacts/**/*.xml"

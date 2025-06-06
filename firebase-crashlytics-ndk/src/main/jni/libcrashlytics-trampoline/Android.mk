@@ -9,7 +9,7 @@ endif
 LOCAL_MODULE := crashlytics-trampoline
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_CPPFLAGS := \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -s \

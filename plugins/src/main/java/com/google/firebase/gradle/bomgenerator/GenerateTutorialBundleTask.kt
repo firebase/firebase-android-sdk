@@ -235,8 +235,8 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
           ArtifactTutorialMapping("Crashlytics", "crashlytics-dependency"),
         "com.google.firebase:firebase-perf" to
           ArtifactTutorialMapping("Performance Monitoring", "perf-dependency"),
-        "com.google.firebase:firebase-vertexai" to
-          ArtifactTutorialMapping("Vertex AI in Firebase", "vertex-dependency"),
+        "com.google.firebase:firebase-ai" to
+          ArtifactTutorialMapping("Firebase AI Logic", "firebase-ai-depedency"),
         "com.google.firebase:firebase-messaging" to
           ArtifactTutorialMapping("Cloud Messaging", "messaging-dependency"),
         "com.google.firebase:firebase-auth" to
@@ -257,6 +257,12 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
           ArtifactTutorialMapping("FIAM Display", "fiamd-dependency"),
         "com.google.firebase:firebase-ml-vision" to
           ArtifactTutorialMapping("Firebase MLKit Vision", "ml-vision-dependency"),
+        "androidx.credentials:credentials" to
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-first-dependency"),
+        "androidx.credentials:credentials-play-services-auth" to
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-second-dependency"),
+        "com.google.android.libraries.identity.googleid:googleid" to
+          ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-third-dependency"),
         "com.google.firebase:firebase-appdistribution-gradle" to
           ArtifactTutorialMapping(
             "App Distribution",

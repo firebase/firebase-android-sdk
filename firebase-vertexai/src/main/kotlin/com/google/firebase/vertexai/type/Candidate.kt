@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
@@ -32,6 +34,10 @@ import kotlinx.serialization.json.JsonNames
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exist.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Candidate
 internal constructor(
   public val content: Content,
@@ -49,7 +55,7 @@ internal constructor(
     val groundingMetadata: GroundingMetadata? = null,
   ) {
     internal fun toPublic(): Candidate {
-      val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
+      val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       val citations = citationMetadata?.toPublic()
       val finishReason = finishReason?.toPublic()
 
@@ -104,6 +110,10 @@ internal constructor(
  * @property severity The severity of the potential harm.
  * @property severityScore A numerical score representing the severity of harm.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class SafetyRating
 internal constructor(
   public val category: HarmCategory,
@@ -118,8 +128,8 @@ internal constructor(
   internal data class Internal
   @JvmOverloads
   constructor(
-    val category: HarmCategory.Internal,
-    val probability: HarmProbability.Internal,
+    val category: HarmCategory.Internal? = null,
+    val probability: HarmProbability.Internal? = null,
     val blocked: Boolean? = null, // TODO(): any reason not to default to false?
     val probabilityScore: Float? = null,
     val severity: HarmSeverity.Internal? = null,
@@ -127,14 +137,23 @@ internal constructor(
   ) {
 
     internal fun toPublic() =
-      SafetyRating(
-        category = category.toPublic(),
-        probability = probability.toPublic(),
-        probabilityScore = probabilityScore ?: 0f,
-        blocked = blocked,
-        severity = severity?.toPublic(),
-        severityScore = severityScore
-      )
+      /**
+       * Due to a bug in the backend, it's possible that we receive an invalid `SafetyRating` value,
+       * without either category or probability. We return null in those cases to enable filtering
+       * by the higher level types.
+       */
+      if (category == null || probability == null) {
+        null
+      } else {
+        SafetyRating(
+          category = category.toPublic(),
+          probability = probability.toPublic(),
+          probabilityScore = probabilityScore ?: 0f,
+          blocked = blocked,
+          severity = severity?.toPublic(),
+          severityScore = severityScore
+        )
+      }
   }
 }
 
@@ -144,6 +163,10 @@ internal constructor(
  * @property citations A list of individual cited sources and the parts of the content to which they
  * apply.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class CitationMetadata internal constructor(public val citations: List<Citation>) {
 
   @Serializable
@@ -171,6 +194,10 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
  * @property license The license under which the cited content is distributed under, if available.
  * @property publicationDate The date of publication of the cited source, if available.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Citation
 internal constructor(
   public val title: String? = null,
@@ -237,6 +264,10 @@ internal constructor(
  * @property name The name of the finish reason.
  * @property ordinal The ordinal value of the finish reason.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FinishReason private constructor(public val name: String, public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)

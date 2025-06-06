@@ -11,11 +11,14 @@ concurrency:
 
 jobs:
   plugins-check:
+    permissions:
+      checks: write
+      pull-requests: write
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
@@ -26,7 +29,7 @@ jobs:
         run: |
           ./gradlew plugins:check
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@82082dac68ad6a19d980f8ce817e108b9f496c2a
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
         with:
           files: "**/build/test-results/**/*.xml"
           check_name: "plugins test results"

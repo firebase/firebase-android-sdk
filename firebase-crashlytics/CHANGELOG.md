@@ -1,5 +1,36 @@
 # Unreleased
+* [fixed] Fixed more strict mode violations
 
+# 19.4.3
+* [fixed] Fixed UnbufferedIoViolation strict mode violation [#6822]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.4.2
+* [changed] Internal changes to read version control info more efficiently [#6754]
+* [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]
+* [changed] Updated `firebase-sessions` dependency to v2.1.0
+  * [changed] Add warning for known issue [b/328687152](https://issuetracker.google.com/328687152) [#6755]
+  * [changed] Updated datastore dependency to v1.1.3 to fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.4.1
+* [changed] Updated `firebase-sessions` dependency to v2.0.9
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.4.0
 * [feature] Added an overload for `recordException` that allows logging additional custom
@@ -324,10 +355,10 @@ updates.
 
 # 18.2.10
 * [fixed] Fixed a bug that could prevent unhandled exceptions from being
-  propogated to the default handler when the network is unavailable.
+  propagated to the default handler when the network is unavailable.
 * [changed] Internal changes to support on-demand fatal crash reporting for
   Flutter apps.
-* [fixed] Fixed a bug that prevented [crashlytics] from initalizing on some
+* [fixed] Fixed a bug that prevented [crashlytics] from initializing on some
   devices in some cases. (#3269)
 
 

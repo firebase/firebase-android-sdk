@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalSerializationApi::class)
 
 package com.google.firebase.vertexai.common
 
@@ -24,6 +25,7 @@ import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -47,16 +49,9 @@ internal data class CountTokensRequest(
   val contents: List<Content.Internal>? = null,
   val tools: List<Tool.Internal>? = null,
   @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
+  val generationConfig: GenerationConfig.Internal? = null
 ) : Request {
   companion object {
-    fun forGenAI(generateContentRequest: GenerateContentRequest) =
-      CountTokensRequest(
-        generateContentRequest =
-          generateContentRequest.model?.let {
-            generateContentRequest.copy(model = fullModelName(it))
-          }
-            ?: generateContentRequest
-      )
 
     fun forVertexAI(generateContentRequest: GenerateContentRequest) =
       CountTokensRequest(
@@ -64,6 +59,7 @@ internal data class CountTokensRequest(
         contents = generateContentRequest.contents,
         tools = generateContentRequest.tools,
         systemInstruction = generateContentRequest.systemInstruction,
+        generationConfig = generateContentRequest.generationConfig,
       )
   }
 }

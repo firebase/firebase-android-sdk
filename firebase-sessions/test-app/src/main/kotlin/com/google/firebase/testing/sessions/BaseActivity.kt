@@ -24,12 +24,16 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
+import com.google.firebase.perf.FirebasePerformance
 
 open class BaseActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     FirebaseApp.initializeApp(this)
+    setProcessAttribute()
+    logProcessDetails()
+    logFirebaseDetails()
     Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
   }
 
@@ -64,8 +68,30 @@ open class BaseActivity : AppCompatActivity() {
     return processInfo.importance
   }
 
-  private fun getProcessName(): String =
+  protected fun getProcessName(): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else "unknown"
+
+  private fun logProcessDetails() {
+    val pid = android.os.Process.myPid()
+    val uid = android.os.Process.myUid()
+    val activity = javaClass.name
+    val process = getProcessName()
+    Log.i(TAG, "activity: $activity process: $process, pid: $pid, uid: $uid")
+  }
+
+  private fun logFirebaseDetails() {
+    val activity = javaClass.name
+    val firebaseApps = FirebaseApp.getApps(this)
+    val defaultFirebaseApp = FirebaseApp.getInstance()
+    Log.i(
+      TAG,
+      "activity: $activity firebase: ${defaultFirebaseApp.name} appsCount: ${firebaseApps.count()}"
+    )
+  }
+
+  private fun setProcessAttribute() {
+    FirebasePerformance.getInstance().putAttribute("process_name", getProcessName())
+  }
 
   companion object {
     val TAG = "BaseActivity"

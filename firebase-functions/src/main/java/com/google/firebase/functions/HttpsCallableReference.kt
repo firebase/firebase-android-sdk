@@ -17,6 +17,7 @@ import androidx.annotation.VisibleForTesting
 import com.google.android.gms.tasks.Task
 import java.net.URL
 import java.util.concurrent.TimeUnit
+import org.reactivestreams.Publisher
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
 public class HttpsCallableReference {
@@ -61,10 +62,8 @@ public class HttpsCallableReference {
    *
    * * Any primitive type, including null, int, long, float, and boolean.
    * * [String]
-   * * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
-   * types.
-   * * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
-   * types.
+   * * [List<?>][java.util.List], where the contained objects are also one of these types.
+   * * [Map<String, ?>][java.util.Map], where the values are also one of these types.
    * * [org.json.JSONArray]
    * * [org.json.JSONObject]
    * * [org.json.JSONObject.NULL]
@@ -122,6 +121,55 @@ public class HttpsCallableReference {
       functionsClient.call(name, null, options)
     } else {
       functionsClient.call(url!!, null, options)
+    }
+  }
+
+  /**
+   * Streams data to the specified HTTPS endpoint.
+   *
+   * The data passed into the trigger can be any of the following types:
+   *
+   * * Any primitive type, including null, int, long, float, and boolean.
+   * * [String]
+   * * [List<?>][java.util.List], where the contained objects are also one of these types.
+   * * [Map<String, ?>][java.util.Map], where the values are also one of these types.
+   * * [org.json.JSONArray]
+   * * [org.json.JSONObject]
+   * * [org.json.JSONObject.NULL]
+   *
+   * If the returned streamResponse fails, the exception will be one of the following types:
+   *
+   * * [java.io.IOException]
+   * - if the HTTPS request failed to connect.
+   * * [FirebaseFunctionsException]
+   * - if the request connected, but the function returned an error.
+   *
+   * The request to the Cloud Functions backend made by this method automatically includes a
+   * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
+   * Auth, an auth token for the user will also be automatically included.
+   *
+   * Firebase Instance ID sends data to the Firebase backend periodically to collect information
+   * regarding the app instance. To stop this, see
+   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
+   * Instance ID the next time you call this method.
+   *
+   * @param data Parameters to pass to the endpoint. Defaults to `null` if not provided.
+   * @return [Publisher] that will emit intermediate data, and the final result, as it is generated
+   * by the function.
+   * @see org.json.JSONArray
+   *
+   * @see org.json.JSONObject
+   *
+   * @see java.io.IOException
+   *
+   * @see FirebaseFunctionsException
+   */
+  @JvmOverloads
+  public fun stream(data: Any? = null): Publisher<StreamResponse> {
+    return if (name != null) {
+      functionsClient.stream(name, data, options)
+    } else {
+      functionsClient.stream(requireNotNull(url), data, options)
     }
   }
 

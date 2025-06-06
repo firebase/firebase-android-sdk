@@ -19,11 +19,13 @@ package com.google.firebase.sessions.settings
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.InstallationId
+import dagger.Lazy
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -34,14 +36,19 @@ import kotlinx.coroutines.sync.withLock
 import org.json.JSONException
 import org.json.JSONObject
 
-internal class RemoteSettings(
-  private val backgroundDispatcher: CoroutineContext,
+@Singleton
+internal class RemoteSettings
+@Inject
+constructor(
+  @Background private val backgroundDispatcher: CoroutineContext,
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher,
-  dataStore: DataStore<Preferences>,
+  private val lazySettingsCache: Lazy<SettingsCache>,
 ) : SettingsProvider {
-  private val settingsCache by lazy { SettingsCache(dataStore) }
+  private val settingsCache: SettingsCache
+    get() = lazySettingsCache.get()
+
   private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?

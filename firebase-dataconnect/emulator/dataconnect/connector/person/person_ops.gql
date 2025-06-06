@@ -88,3 +88,20 @@ query getPersonAuth($id: String!) @auth(level: USER_ANON) {
     age
   }
 }
+
+query getPersonWithPartialFailure($id: String!) @auth(level: PUBLIC) {
+  person1: person(id: $id) { name }
+  person2: person(id: $id) @check(expr: "false", message: "c8azjdwz2x") { name }
+}
+
+mutation createPersonWithPartialFailure($id: String!, $name: String!) @auth(level: PUBLIC) {
+  person1: person_insert(data: { id: $id, name: $name })
+  query @redact { person(id: $id) { id @check(expr: "false", message: "ecxpjy4qfy") } }
+  person2: person_insert(data: { id_expr: "uuidV4()", name: $name })
+}
+
+mutation createPersonWithPartialFailureInTransaction($id: String!, $name: String!) @auth(level: PUBLIC) @transaction {
+  person1: person_insert(data: { id: $id, name: $name })
+  person2: person_insert(data: { id_expr: "uuidV4()", name: $name }) @check(expr: "false", message: "te36b3zkvn")
+}
+

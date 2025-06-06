@@ -26,7 +26,7 @@ firebaseLibrary {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.21.11"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
@@ -41,6 +41,7 @@ protobuf {
         }
     }
 }
+
 android {
     namespace "firebase.com.protolitewrapper"
     compileSdkVersion project.compileSdkVersion
@@ -64,9 +65,9 @@ android {
 
 
 dependencies {
-    protobuf("com.google.api.grpc:proto-google-common-protos:1.18.0"){
+    protobuf(libs.proto.google.common.protos){
         exclude group: "com.google.protobuf", module: "protobuf-java"
     }
 
-    implementation "com.google.protobuf:protobuf-javalite:3.21.11"
+    implementation libs.protobuf.java.lite
 }

@@ -61,7 +61,7 @@ dependencies {
 
   implementation("com.google.guava:guava:31.1-jre")
   implementation("org.ow2.asm:asm-tree:9.5")
-  implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
+  implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
   implementation(libs.kotlinx.serialization.json)
   implementation("com.google.code.gson:gson:2.8.9")
   implementation(libs.android.gradlePlugin.gradle)

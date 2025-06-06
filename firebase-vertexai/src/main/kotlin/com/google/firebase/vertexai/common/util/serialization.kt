@@ -23,6 +23,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
@@ -36,7 +37,12 @@ import kotlinx.serialization.encoding.Encoder
  */
 internal class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) :
   KSerializer<T> {
-  override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FirstOrdinalSerializer")
+  override val descriptor: SerialDescriptor =
+    buildClassSerialDescriptor("FirstOrdinalSerializer") {
+      for (enumValue in enumClass.enumValues()) {
+        element<String>(enumValue.toString())
+      }
+    }
 
   override fun deserialize(decoder: Decoder): T {
     val name = decoder.decodeString()
