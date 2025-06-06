@@ -250,8 +250,9 @@ private constructor(private val collectionId: String, options: InternalOptions) 
     context: EvaluationContext,
     inputs: Flow<MutableDocument>
   ): Flow<MutableDocument> {
-    // TODO: Does this need to do more?
-    return inputs
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionGroup == collectionId
+    }
   }
 
   companion object {
