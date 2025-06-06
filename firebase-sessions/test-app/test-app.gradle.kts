@@ -38,7 +38,7 @@ android {
 
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    // applicationIdSuffix = "app3"
+    applicationIdSuffix = "" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     versionCode = 1
