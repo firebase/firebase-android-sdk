@@ -1,5 +1,5 @@
 # Unreleased
-
+* [feature] Pipelines
 
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.

@@ -38,6 +38,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
+import com.google.firebase.firestore.PipelineResult;
+import com.google.firebase.firestore.PipelineSnapshot;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
@@ -98,7 +100,7 @@ public class IntegrationTestUtil {
 
   // Set this to the desired enum value to change the target backend when running tests locally.
   // Note: DO NOT change this variable except for local testing.
-  private static final TargetBackend backendForLocalTesting = null;
+  private static final TargetBackend backendForLocalTesting = TargetBackend.NIGHTLY;
 
   private static final TargetBackend backend = getTargetBackend();
   private static final String EMULATOR_HOST = "10.0.2.2";
@@ -465,10 +467,28 @@ public class IntegrationTestUtil {
     return res;
   }
 
+  public static List<Map<String, Object>> pipelineSnapshotToValues(
+      PipelineSnapshot pipelineSnapshot) {
+    List<Map<String, Object>> res = new ArrayList<>();
+    for (PipelineResult result : pipelineSnapshot) {
+      res.add(result.getData());
+    }
+    return res;
+  }
+
   public static List<String> querySnapshotToIds(QuerySnapshot querySnapshot) {
     List<String> res = new ArrayList<>();
     for (DocumentSnapshot doc : querySnapshot) {
       res.add(doc.getId());
+    }
+    return res;
+  }
+
+  public static List<String> pipelineSnapshotToIds(PipelineSnapshot pipelineResults) {
+    List<String> res = new ArrayList<>();
+    for (PipelineResult result : pipelineResults) {
+      DocumentReference ref = result.getRef();
+      res.add(ref == null ? null : ref.getId());
     }
     return res;
   }
@@ -559,6 +579,35 @@ public class IntegrationTestUtil {
     List<String> expectedDocIds = asList(expectedDocs);
     if (!expectedDocIds.isEmpty()) {
       assertEquals(expectedDocIds, querySnapshotToIds(docsFromServer));
+    }
+  }
+
+  /**
+   * Checks that running the query while online (against the backend/emulator) results in the same
+   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
+   * that both online and offline query result is equal to the expected documents.
+   *
+   * @param query The query to check
+   * @param expectedDocs Ordered list of document keys that are expected to match the query
+   */
+  public static void checkQueryAndPipelineResultsMatch(Query query, String... expectedDocs) {
+    QuerySnapshot docsFromQuery;
+    try {
+      docsFromQuery = waitFor(query.get(Source.SERVER));
+    } catch (Exception e) {
+      throw new RuntimeException("Classic Query FAILED", e);
+    }
+    PipelineSnapshot docsFromPipeline;
+    try {
+      docsFromPipeline = waitFor(query.getFirestore().pipeline().convertFrom(query).execute());
+    } catch (Exception e) {
+      throw new RuntimeException("Pipeline FAILED", e);
+    }
+
+    assertEquals(querySnapshotToIds(docsFromQuery), pipelineSnapshotToIds(docsFromPipeline));
+    List<String> expected = asList(expectedDocs);
+    if (!expected.isEmpty()) {
+      assertEquals(expected, querySnapshotToIds(docsFromQuery));
     }
   }
 }

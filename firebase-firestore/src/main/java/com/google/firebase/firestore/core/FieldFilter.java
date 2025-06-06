@@ -14,13 +14,21 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.model.Values.isNanValue;
+import static com.google.firebase.firestore.pipeline.Expr.and;
+import static com.google.firebase.firestore.pipeline.Expr.ifError;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firebase.firestore.pipeline.BooleanExpr;
+import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -172,6 +180,78 @@ public class FieldFilter extends Filter {
   public List<Filter> getFilters() {
     // This is the only filter within this object, so we return a list of size one.
     return Collections.singletonList(this);
+  }
+
+  @Override
+  BooleanExpr toPipelineExpr() {
+    Field x = new Field(field);
+    BooleanExpr exists = x.exists();
+    switch (operator) {
+      case LESS_THAN:
+        return and(exists, x.lt(value));
+      case LESS_THAN_OR_EQUAL:
+        return and(exists, x.lte(value));
+      case EQUAL:
+        if (value.hasNullValue()) {
+          return and(exists, x.isNull());
+        } else if (isNanValue(value)) {
+          // The isNan will error on non-numeric values.
+          return and(exists, ifError(x.isNan(), Expr.constant(false)));
+        } else {
+          return and(exists, x.eq(value));
+        }
+      case NOT_EQUAL:
+        if (value.hasNullValue()) {
+          return and(exists, x.isNotNull());
+        } else if (isNanValue(value)) {
+          // The isNotNan will error on non-numeric values.
+          return and(exists, ifError(x.isNotNan(), Expr.constant(true)));
+        } else {
+          return and(exists, x.neq(value));
+        }
+      case GREATER_THAN:
+        return and(exists, x.gt(value));
+      case GREATER_THAN_OR_EQUAL:
+        return and(exists, x.gte(value));
+      case ARRAY_CONTAINS:
+        return and(exists, x.arrayContains(value));
+      case ARRAY_CONTAINS_ANY:
+        return and(exists, x.arrayContainsAny(value.getArrayValue().getValuesList()));
+      case IN:
+        return and(exists, x.eqAny(value.getArrayValue().getValuesList()));
+      case NOT_IN:
+        {
+          List<Value> list = value.getArrayValue().getValuesList();
+          if (hasNaN(list)) {
+            return and(
+                exists, x.notEqAny(filterNaN(list)), ifError(x.isNotNan(), Expr.constant(true)));
+          } else {
+            return and(exists, x.notEqAny(list));
+          }
+        }
+      default:
+        // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed
+        throw new IllegalArgumentException("Unsupported operator: " + operator);
+    }
+  }
+
+  private static boolean hasNaN(List<Value> list) {
+    for (Value v : list) {
+      if (isNanValue(v)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @NonNull
+  private static List<Value> filterNaN(List<Value> list) {
+    List<Value> listWithoutNan = new ArrayList<>(list.size() - 1);
+    for (Value v : list) {
+      if (isNanValue(v)) continue;
+      listWithoutNan.add(v);
+    }
+    return listWithoutNan;
   }
 
   @Override
