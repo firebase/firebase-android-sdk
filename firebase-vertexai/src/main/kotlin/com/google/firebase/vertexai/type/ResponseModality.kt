@@ -18,16 +18,17 @@ package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Modality for bidirectional streaming. */
-@PublicPreviewAPI
+/** Represents the type of content present in a response (e.g., text, image, audio). */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
-    @SerialName("MODALITY_UNSPECIFIED") UNSPECIFIED,
     TEXT,
     IMAGE,
     AUDIO;
@@ -38,8 +39,7 @@ public class ResponseModality private constructor(public val ordinal: Int) {
       when (this) {
         TEXT -> ResponseModality.TEXT
         IMAGE -> ResponseModality.IMAGE
-        AUDIO -> ResponseModality.AUDIO
-        else -> ResponseModality.UNSPECIFIED
+        else -> ResponseModality.AUDIO
       }
   }
 
@@ -47,20 +47,17 @@ public class ResponseModality private constructor(public val ordinal: Int) {
     when (this) {
       TEXT -> "TEXT"
       IMAGE -> "IMAGE"
-      AUDIO -> "AUDIO"
-      else -> "UNSPECIFIED"
+      else -> "AUDIO"
     }
   public companion object {
-    /** Unspecified modality. */
-    @JvmField public val UNSPECIFIED: ResponseModality = ResponseModality(0)
 
-    /** Plain text. */
+    /** Represents a plain text response modality. */
     @JvmField public val TEXT: ResponseModality = ResponseModality(1)
 
-    /** Image. */
+    /** Represents an image response modality. */
     @JvmField public val IMAGE: ResponseModality = ResponseModality(2)
 
-    /** Audio. */
+    /** Represents an audio response modality. */
     @JvmField public val AUDIO: ResponseModality = ResponseModality(4)
   }
 }

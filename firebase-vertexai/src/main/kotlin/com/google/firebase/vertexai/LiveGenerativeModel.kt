@@ -17,13 +17,14 @@
 package com.google.firebase.vertexai
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.AppCheckHeaderProvider
-import com.google.firebase.vertexai.type.BidiGenerateContentClientMessage
+import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.LiveClientSetupMessage
 import com.google.firebase.vertexai.type.LiveGenerationConfig
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
@@ -38,16 +39,21 @@ import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Represents a multimodal model (like Gemini) capable of real-time content generation based on
  * various input types, supporting bidirectional streaming.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class LiveGenerativeModel
 internal constructor(
   private val modelName: String,
-  @Background private val backgroundDispatcher: CoroutineContext,
+  @Blocking private val blockingDispatcher: CoroutineContext,
   private val config: LiveGenerationConfig? = null,
   private val tools: List<Tool>? = null,
   private val systemInstruction: Content? = null,
@@ -58,7 +64,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
-    backgroundDispatcher: CoroutineContext,
+    blockingDispatcher: CoroutineContext,
     config: LiveGenerationConfig? = null,
     tools: List<Tool>? = null,
     systemInstruction: Content? = null,
@@ -68,7 +74,7 @@ internal constructor(
     internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
     modelName,
-    backgroundDispatcher,
+    blockingDispatcher,
     config,
     tools,
     systemInstruction,
@@ -93,7 +99,7 @@ internal constructor(
   @OptIn(ExperimentalSerializationApi::class)
   public suspend fun connect(): LiveSession {
     val clientMessage =
-      BidiGenerateContentClientMessage(
+      LiveClientSetupMessage(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },
@@ -104,10 +110,11 @@ internal constructor(
     try {
       val webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
-      val receivedJson = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-      // TODO: Try to decode the json instead of string matching.
-      return if (receivedJson.contains("setupComplete")) {
-        LiveSession(session = webSession, backgroundDispatcher = backgroundDispatcher)
+      val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+      val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+
+      return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+        LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")

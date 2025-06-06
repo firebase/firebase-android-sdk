@@ -24,7 +24,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 abstract class SemVerTask : DefaultTask() {
@@ -33,7 +32,7 @@ abstract class SemVerTask : DefaultTask() {
   @get:Input abstract val currentVersionString: Property<String>
   @get:Input abstract val previousVersionString: Property<String>
 
-  @get:OutputFile abstract val outputApiFile: RegularFileProperty
+  // TODO cache output
 
   @TaskAction
   fun run() {

@@ -19,7 +19,6 @@ package com.google.firebase.vertexai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.LiveGenerativeModel
-import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedException
 
@@ -29,19 +28,23 @@ import com.google.firebase.vertexai.type.ServiceConnectionHandshakeFailedExcepti
  * @see [LiveGenerativeModel]
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public abstract class LiveModelFutures internal constructor() {
 
   /**
-   * Start a [LiveSession] with the server for bidirectional streaming.
-   * @return A [LiveSession] that you can use to stream messages to and from the server.
+   * Start a [LiveSessionFutures] with the server for bidirectional streaming.
+   * @return A [LiveSessionFutures] that you can use to stream messages to and from the server.
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
-  public abstract fun connect(): ListenableFuture<LiveSession>
+  public abstract fun connect(): ListenableFuture<LiveSessionFutures>
 
   private class FuturesImpl(private val model: LiveGenerativeModel) : LiveModelFutures() {
-    override fun connect(): ListenableFuture<LiveSession> {
-      return SuspendToFutureAdapter.launchFuture { model.connect() }
+    override fun connect(): ListenableFuture<LiveSessionFutures> {
+      return SuspendToFutureAdapter.launchFuture { LiveSessionFutures.from(model.connect()) }
     }
   }
 

@@ -20,7 +20,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Configuration parameters to use for content generation.
+ * Configuration parameters to use for live content generation.
  *
  * @property temperature A parameter controlling the degree of randomness in token selection. A
  * temperature of 0 means that the highest probability tokens are always selected. In this case,
@@ -65,6 +65,10 @@ import kotlinx.serialization.Serializable
  * guide for more details.
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class LiveGenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -102,6 +106,10 @@ private constructor(
    *
    * @property speechConfig See [LiveGenerationConfig.speechConfig]
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null
@@ -130,8 +138,8 @@ private constructor(
     public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
       this.frequencyPenalty = frequencyPenalty
     }
-    public fun setResponseModalities(responseModalities: ResponseModality?): Builder = apply {
-      this.responseModality = responseModalities
+    public fun setResponseModality(responseModality: ResponseModality?): Builder = apply {
+      this.responseModality = responseModality
     }
     public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
       this.speechConfig = speechConfig

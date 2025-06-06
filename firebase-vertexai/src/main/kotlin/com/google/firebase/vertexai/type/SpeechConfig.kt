@@ -21,7 +21,14 @@ import kotlinx.serialization.Serializable
 
 /** Speech configuration class for setting up the voice of the server's response. */
 @PublicPreviewAPI
-public class SpeechConfig(public val voice: Voices) {
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
+public class SpeechConfig(
+  /** The voice to be used for the server's speech response. */
+  public val voice: Voices
+) {
 
   @Serializable
   internal data class Internal(@SerialName("voice_config") val voiceConfig: VoiceConfigInternal) {

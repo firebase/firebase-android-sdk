@@ -19,7 +19,7 @@ package com.google.firebase.vertexai
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
@@ -37,11 +37,11 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import kotlin.coroutines.CoroutineContext
 
-/** Entry point for all _Vertex AI for Firebase_ functionality. */
+/** Entry point for all _Vertex AI in Firebase_ functionality. */
 public class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
-  @Background private val backgroundDispatcher: CoroutineContext,
+  @Blocking private val blockingDispatcher: CoroutineContext,
   private val location: String,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
@@ -133,7 +133,7 @@ internal constructor(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       firebaseApp,
-      backgroundDispatcher,
+      blockingDispatcher,
       generationConfig,
       tools,
       systemInstruction,

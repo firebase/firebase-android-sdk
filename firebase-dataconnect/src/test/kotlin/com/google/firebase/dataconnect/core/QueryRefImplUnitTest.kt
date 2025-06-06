@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -577,11 +576,9 @@ class QueryRefImplUnitTest {
       querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { lazyQueryManager } returns
-          SuspendingLazy {
-            mockk<QueryManager> {
-              coEvery { execute(capture(querySlot)) } returns SequencedReference(123, result)
-            }
+        every { queryManager } returns
+          mockk<QueryManager> {
+            coEvery { execute(capture(querySlot)) } returns SequencedReference(123, result)
           }
       }
   }

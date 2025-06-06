@@ -1470,10 +1470,16 @@ public class QueryTest {
 
     // Two equalities: a==1 || b==1.
     checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 1), equalTo("b", 1))), "doc1", "doc2", "doc4", "doc5");
+        collection,
+        collection.where(or(equalTo("a", 1), equalTo("b", 1))),
+        "doc1",
+        "doc2",
+        "doc4",
+        "doc5");
 
     // (a==1 && b==0) || (a==3 && b==2)
     checkOnlineAndOfflineResultsMatch(
+        collection,
         collection.where(
             or(and(equalTo("a", 1), equalTo("b", 0)), and(equalTo("a", 3), equalTo("b", 2)))),
         "doc1",
@@ -1481,19 +1487,21 @@ public class QueryTest {
 
     // a==1 && (b==0 || b==3).
     checkOnlineAndOfflineResultsMatch(
+        collection,
         collection.where(and(equalTo("a", 1), or(equalTo("b", 0), equalTo("b", 3)))),
         "doc1",
         "doc4");
 
     // (a==2 || b==2) && (a==3 || b==3)
     checkOnlineAndOfflineResultsMatch(
+        collection,
         collection.where(
             and(or(equalTo("a", 2), equalTo("b", 2)), or(equalTo("a", 3), equalTo("b", 3)))),
         "doc3");
 
     // Test with limits without orderBy (the __name__ ordering is the tie breaker).
     checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1), "doc2");
+        collection, collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1), "doc2");
   }
 
   @Test
@@ -1510,7 +1518,11 @@ public class QueryTest {
 
     // a==2 || b in [2,3]
     checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), inArray("b", asList(2, 3)))), "doc3", "doc4", "doc6");
+        collection,
+        collection.where(or(equalTo("a", 2), inArray("b", asList(2, 3)))),
+        "doc3",
+        "doc4",
+        "doc6");
   }
 
   @Test
@@ -1527,10 +1539,15 @@ public class QueryTest {
 
     // a==2 || b array-contains 7
     checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), arrayContains("b", 7))), "doc3", "doc4", "doc6");
+        collection,
+        collection.where(or(equalTo("a", 2), arrayContains("b", 7))),
+        "doc3",
+        "doc4",
+        "doc6");
 
     // a==2 || b array-contains-any [0, 3]
     checkOnlineAndOfflineResultsMatch(
+        collection,
         collection.where(or(equalTo("a", 2), arrayContainsAny("b", asList(0, 3)))),
         "doc1",
         "doc4",
@@ -1551,12 +1568,12 @@ public class QueryTest {
 
     // Two IN operations on different fields with disjunction.
     Query query1 = collection.where(or(inArray("a", asList(2, 3)), inArray("b", asList(0, 2))));
-    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc6");
+    checkOnlineAndOfflineResultsMatch(collection, query1, "doc1", "doc3", "doc6");
 
     // Two IN operations on the same field with disjunction.
     // a IN [0,3] || a IN [0,2] should union them (similar to: a IN [0,2,3]).
     Query query2 = collection.where(or(inArray("a", asList(0, 3)), inArray("a", asList(0, 2))));
-    checkOnlineAndOfflineResultsMatch(query2, "doc3", "doc6");
+    checkOnlineAndOfflineResultsMatch(collection, query2, "doc3", "doc6");
   }
 
   @Test
@@ -1573,14 +1590,14 @@ public class QueryTest {
 
     Query query1 =
         collection.where(or(inArray("a", asList(2, 3)), arrayContainsAny("b", asList(0, 7))));
-    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc4", "doc6");
+    checkOnlineAndOfflineResultsMatch(collection, query1, "doc1", "doc3", "doc4", "doc6");
 
     Query query2 =
         collection.where(
             or(
                 and(inArray("a", asList(2, 3)), equalTo("c", 10)),
                 arrayContainsAny("b", asList(0, 7))));
-    checkOnlineAndOfflineResultsMatch(query2, "doc1", "doc3", "doc4");
+    checkOnlineAndOfflineResultsMatch(collection, query2, "doc1", "doc3", "doc4");
   }
 
   @Test
@@ -1596,20 +1613,20 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     Query query1 = collection.where(or(inArray("a", asList(2, 3)), arrayContains("b", 3)));
-    checkOnlineAndOfflineResultsMatch(query1, "doc3", "doc4", "doc6");
+    checkOnlineAndOfflineResultsMatch(collection, query1, "doc3", "doc4", "doc6");
 
     Query query2 = collection.where(and(inArray("a", asList(2, 3)), arrayContains("b", 7)));
-    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+    checkOnlineAndOfflineResultsMatch(collection, query2, "doc3");
 
     Query query3 =
         collection.where(
             or(inArray("a", asList(2, 3)), and(arrayContains("b", 3), equalTo("a", 1))));
-    checkOnlineAndOfflineResultsMatch(query3, "doc3", "doc4", "doc6");
+    checkOnlineAndOfflineResultsMatch(collection, query3, "doc3", "doc4", "doc6");
 
     Query query4 =
         collection.where(
             and(inArray("a", asList(2, 3)), or(arrayContains("b", 7), equalTo("a", 1))));
-    checkOnlineAndOfflineResultsMatch(query4, "doc3");
+    checkOnlineAndOfflineResultsMatch(collection, query4, "doc3");
   }
 
   @Test
@@ -1625,9 +1642,58 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     Query query1 = collection.where(equalTo("a", 1)).orderBy("a");
-    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc4", "doc5");
+    checkOnlineAndOfflineResultsMatch(collection, query1, "doc1", "doc4", "doc5");
 
     Query query2 = collection.where(inArray("a", asList(2, 3))).orderBy("a");
-    checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
+    checkOnlineAndOfflineResultsMatch(collection, query2, "doc6", "doc3");
+  }
+
+  @Test
+  public void testSDKUsesNotEqualFiltersSameAsServer() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a", map("zip", Double.NaN),
+            "b", map("zip", 91102L),
+            "c", map("zip", 98101L),
+            "d", map("zip", "98101"),
+            "e", map("zip", asList(98101L)),
+            "f", map("zip", asList(98101L, 98102L)),
+            "g", map("zip", asList("98101", map("zip", 98101L))),
+            "h", map("zip", map("code", 500L)),
+            "i", map("zip", null),
+            "j", map("code", 500L));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query = collection.whereNotEqualTo("zip", 98101L);
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "d", "e", "f", "g", "h");
+
+    query = collection.whereNotEqualTo("zip", Double.NaN);
+    checkOnlineAndOfflineResultsMatch(collection, query, "b", "c", "d", "e", "f", "g", "h");
+
+    query = collection.whereNotEqualTo("zip", null);
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "c", "d", "e", "f", "g", "h");
+  }
+
+  @Test
+  public void testSDKUsesNotInFiltersSameAsServer() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a", map("zip", Double.NaN),
+            "b", map("zip", 91102L),
+            "c", map("zip", 98101L),
+            "d", map("zip", "98101"),
+            "e", map("zip", asList(98101L)),
+            "f", map("zip", asList(98101L, 98102L)),
+            "g", map("zip", asList("98101", map("zip", 98101L))),
+            "h", map("zip", map("code", 500L)),
+            "i", map("zip", null),
+            "j", map("code", 500L));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query = collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L)));
+    checkOnlineAndOfflineResultsMatch(collection, query, "a", "b", "d", "e", "g", "h");
+
+    query = collection.whereNotIn("zip", nullList());
+    checkOnlineAndOfflineResultsMatch(collection, query);
   }
 }

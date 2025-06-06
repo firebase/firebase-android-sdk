@@ -54,6 +54,7 @@ android {
   }
 
   compileOptions {
+    coreLibraryDesugaringEnabled true
     sourceCompatibility 1.8
     targetCompatibility 1.8
   }
@@ -97,6 +98,9 @@ dependencies {
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
   androidTestImplementation libs.junit
+
+  // Desugaring library
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
 
 clean.doLast {

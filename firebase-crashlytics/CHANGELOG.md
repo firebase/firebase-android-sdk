@@ -1,5 +1,14 @@
 # Unreleased
+* [fixed] Fixed more strict mode violations
 
+# 19.4.3
+* [fixed] Fixed UnbufferedIoViolation strict mode violation [#6822]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.4.2
 * [changed] Internal changes to read version control info more efficiently [#6754]

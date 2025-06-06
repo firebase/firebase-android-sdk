@@ -38,9 +38,9 @@ import java.io.File
 import kotlinx.coroutines.launch
 import org.mockito.Mockito
 
-private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
-private val TEST_APP_ID = "1:android:12345"
-private val TEST_VERSION = 1
+internal val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+internal val TEST_APP_ID = "1:android:12345"
+internal val TEST_VERSION = 1
 
 /** String separator used in SSE communication to signal the end of a message. */
 internal const val SSE_SEPARATOR = "\r\n\r\n"
@@ -98,6 +98,7 @@ internal typealias CommonTest = suspend CommonTestScope.() -> Unit
  * @param block The test contents themselves, with the [CommonTestScope] implicitly provided
  * @see CommonTestScope
  */
+@OptIn(PublicPreviewAPI::class)
 internal fun commonTest(
   status: HttpStatusCode = HttpStatusCode.OK,
   requestOptions: RequestOptions = RequestOptions(),
@@ -188,15 +189,16 @@ internal fun goldenUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) =
+) = doBlocking {
   commonTest(httpStatusCode) {
     val goldenFile = loadGoldenFile(name)
     val message = goldenFile.readText()
 
-    channel.send(message.toByteArray())
+    launch { channel.send(message.toByteArray()) }
 
     block()
   }
+}
 
 /**
  * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically

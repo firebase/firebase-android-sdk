@@ -11,6 +11,7 @@ appcompat = "1.7.0"
 autoValueParcel = "0.2.6"
 autovalue = "1.10.1"
 awaitility = "3.1.0"
+benchmarkMacro = "1.3.4"
 browser = "1.3.0"
 cardview = "1.0.0"
 checkerQual = "2.5.2"
@@ -25,9 +26,9 @@ espressoCore = "3.6.1"
 featureDelivery = "2.1.0"
 firebaseAppdistributionGradle = "5.1.1"
 firebaseCommon = "21.0.0"
-firebaseComponents = "18.0.0"
+firebaseComponents = "18.0.1"
 firebaseCrashlyticsGradle = "3.0.2"
-glide = "4.11.0"
+glide = "4.16.0"
 googleApiClient = "1.30.9"
 googleServices = "4.3.15"
 gradleErrorpronePlugin = "3.1.0"
@@ -37,7 +38,7 @@ hamcrest = "2.2"
 hamcrestJunit = "2.0.0.0"
 hamcrestLibrary = "2.2"
 httpclientAndroid = "4.3.5.1"
-integrity = "1.2.0"
+integrity = "1.4.0"
 jacksonCore = "2.13.1"
 jacksonDatabind = "2.18.2"
 javalite = "3.25.5"
@@ -86,6 +87,7 @@ android-lint-tests = { module = "com.android.tools.lint:lint-tests", version.ref
 android-lint-testutils = { module = "com.android.tools:testutils", version.ref = "android-lint" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }

@@ -1,6 +1,16 @@
 # Unreleased
 
 
+# 25.1.4
+* [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.
+* [fixed] Catch exception when stream is already cancelled during close. [#6894](//github.com/firebase/firebase-android-sdk/pull/6894)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
 # 25.1.3
 * [fixed] Use lazy encoding in UTF-8 encoded byte comparison for strings to solve performance issues. [#6706](//github.com/firebase/firebase-android-sdk/pull/6706)
 * [changed] Updated `protolite-well-known-types` dependency to `18.0.1`. [#6716]

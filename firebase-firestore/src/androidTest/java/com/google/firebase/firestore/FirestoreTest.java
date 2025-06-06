@@ -1651,7 +1651,7 @@ public class FirestoreTest {
             "a");
 
     // Run query with snapshot listener
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1708,7 +1708,7 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1765,7 +1765,7 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1822,7 +1822,7 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1879,7 +1879,7 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1937,7 +1937,7 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
@@ -1986,6 +1986,6 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 }

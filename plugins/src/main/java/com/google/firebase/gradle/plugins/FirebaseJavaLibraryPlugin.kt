@@ -22,10 +22,10 @@ import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getPlugin
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -106,13 +106,12 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.tasks.register<CopyApiTask>("copyApiTxtFile") {
       apiTxtFile.set(project.file("api.txt"))
-      output.set(project.file("previous_api.txt"))
+      output.set(project.file("new_api.txt"))
     }
 
     project.tasks.register<SemVerTask>("metalavaSemver") {
-      apiTxtFile.set(project.file("api.txt"))
-      otherApiFile.set(project.file("previous_api.txt"))
-      outputApiFile.set(project.file("opi.txt"))
+      apiTxtFile.set(project.file("new_api.txt"))
+      otherApiFile.set(project.file("api.txt"))
       currentVersionString.value(firebaseLibrary.version)
       previousVersionString.value(firebaseLibrary.previousVersion)
     }
@@ -121,8 +120,8 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   private fun setupApiInformationAnalysis(project: Project) {
     val srcDirs =
       project.files(
-        project.convention
-          .getPlugin<JavaPluginConvention>()
+        project.extensions
+          .getByType<JavaPluginExtension>()
           .sourceSets
           .getByName("main")
           .java

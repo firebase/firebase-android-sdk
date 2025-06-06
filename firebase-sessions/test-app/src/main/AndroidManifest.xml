@@ -43,6 +43,11 @@
       android:process=":second"
       android:theme="@style/Theme.Widget_test_app.NoActionBar" />
 
+    <!-- Override value to 1.0 to always have a fireperf verbose session -->
+    <meta-data
+        android:name="sessions_sampling_percentage"
+        android:value="0.01" />
+
     <meta-data
       android:name="firebase_performance_logcat_enabled"
       android:value="true" />
@@ -50,6 +55,12 @@
     <meta-data
       android:name="firebase_sessions_sessions_restart_timeout"
       android:value="5" />
+
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
+    <receiver android:name=".CrashBroadcastReceiver" />
 
     <receiver
       android:exported="false"
@@ -62,8 +73,6 @@
         android:name="android.appwidget.provider"
         android:resource="@xml/homescreen_widget" />
     </receiver>
-
-    <receiver android:name=".CrashBroadcastReceiver" />
 
     <service
       android:enabled="true"

@@ -16,16 +16,19 @@
 
 package com.google.firebase.vertexai.java
 
+import android.Manifest.permission.RECORD_AUDIO
+import androidx.annotation.RequiresPermission
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionResponsePart
-import com.google.firebase.vertexai.type.LiveContentResponse
+import com.google.firebase.vertexai.type.LiveServerMessage
 import com.google.firebase.vertexai.type.LiveSession
 import com.google.firebase.vertexai.type.MediaData
 import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.SessionAlreadyReceivingException
+import io.ktor.websocket.close
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
@@ -35,32 +38,57 @@ import org.reactivestreams.Publisher
  * @see [LiveSession]
  */
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public abstract class LiveSessionFutures internal constructor() {
 
   /**
-   * Starts an audio conversation with the Gemini server, which can only be stopped using
-   * [stopAudioConversation].
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
    *
-   * @param functionCallHandler A callback function to map function calls from the server to their
-   * response parts.
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call.
    */
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
 
   /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation].
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
    * Stops the audio conversation with the Gemini Server.
    *
-   * @see [startAudioConversation]
-   * @see [stopReceiving]
+   * This only needs to be called after a previous call to [startAudioConversation].
+   *
+   * If there is no audio conversation currently active, this function does nothing.
    */
+  @RequiresPermission(RECORD_AUDIO)
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
-  /** Stop receiving from the server. */
+  /**
+   * Stops receiving from the model.
+   *
+   * If this function is called during an ongoing audio conversation, the model's response will not
+   * be received, and no audio will be played; the live session object will no longer receive data
+   * from the server.
+   *
+   * To resume receiving data, you must either handle it directly using [receive], or indirectly by
+   * using [startAudioConversation].
+   *
+   * @see close
+   */
+  // TODO(b/410059569): Remove when fixed
   public abstract fun stopReceiving()
 
   /**
-   * Sends the function response from the client to the server.
+   * Sends function calling responses to the model.
    *
    * @param functionList The list of [FunctionResponsePart] instances indicating the function
    * response from the client.
@@ -70,41 +98,57 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
-   * Streams client data to the server.
+   * Streams client data to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
-   * Sends [data][Content] to the server.
+   * Sends [data][Content] to the model.
    *
-   * @param content Client [Content] to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
    */
   public abstract fun send(content: Content): ListenableFuture<Unit>
 
   /**
-   * Sends text to the server
+   * Sends text to the model.
    *
-   * @param text Text to be sent to the server.
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param text Text to be sent to the model.
    */
   public abstract fun send(text: String): ListenableFuture<Unit>
 
-  /** Closes the client session. */
+  /**
+   * Closes the client session.
+   *
+   * Once a [LiveSession] is closed, it can not be reopened; you'll need to start a new
+   * [LiveSession].
+   *
+   * @see stopReceiving
+   */
   public abstract fun close(): ListenableFuture<Unit>
 
   /**
-   * Receives responses from the server for both streaming and standard requests.
+   * Receives responses from the model for both streaming and standard requests.
    *
-   * @return A [Publisher] which will emit [LiveContentResponse] as and when it receives it.
+   * Call [close] to stop receiving responses from the model.
    *
-   * @throws [SessionAlreadyReceivingException] When the session is already receiving.
+   * @return A [Publisher] which will emit [LiveServerMessage] from the model.
+   *
+   * @throws [SessionAlreadyReceivingException] when the session is already receiving.
+   * @see stopReceiving
    */
-  public abstract fun receive(): Publisher<LiveContentResponse>
+  public abstract fun receive(): Publisher<LiveServerMessage>
 
   private class FuturesImpl(private val session: LiveSession) : LiveSessionFutures() {
 
-    override fun receive(): Publisher<LiveContentResponse> = session.receive().asPublisher()
+    override fun receive(): Publisher<LiveServerMessage> = session.receive().asPublisher()
 
     override fun close(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.close() }
@@ -120,9 +164,14 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
+    @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation() =
+      SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
