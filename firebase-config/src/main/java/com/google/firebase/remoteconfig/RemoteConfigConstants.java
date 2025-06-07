@@ -97,12 +97,14 @@ public final class RemoteConfigConstants {
    */
   @StringDef({
     ExperimentDescriptionFieldKey.EXPERIMENT_ID,
-    ExperimentDescriptionFieldKey.VARIANT_ID
+    ExperimentDescriptionFieldKey.VARIANT_ID,
+    ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ExperimentDescriptionFieldKey {
     String EXPERIMENT_ID = "experimentId";
     String VARIANT_ID = "variantId";
+    String AFFECTED_PARAMETER_KEYS = "affectedParameterKeys";
   }
 
   private RemoteConfigConstants() {}
