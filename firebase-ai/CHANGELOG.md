@@ -1,5 +1,7 @@
 # Unreleased
 
+* [fixed] Fixed a serialization error that was thrown for the last message when using
+  `generateContentStream()` with `googleAI()`.
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
 * [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
