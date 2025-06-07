@@ -174,11 +174,14 @@ public class BundleTest {
 
   @Test
   public void testLoadedDocumentsShouldNotBeGarbageCollectedRightAway() throws Exception {
-    // This test really only makes sense with memory persistence, as SQLite persistence only ever
+    // This test really only makes sense with memory eager GC, as LRU GCs
     // lazily deletes data
     db.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder()
-            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryLruGcSettings.newBuilder().build())
+                    .build())
             .build());
 
     InputStream bundle = new ByteArrayInputStream(createBundle());
