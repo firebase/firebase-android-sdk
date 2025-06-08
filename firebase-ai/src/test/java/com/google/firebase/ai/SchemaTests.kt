@@ -218,4 +218,80 @@ internal class SchemaTests {
 
     Json.encodeToString(schemaDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
+
+  enum class TestEnum {
+    RED,
+    GREEN,
+    BLUE
+  }
+
+  enum class TestEnumWithValues(val someValue: String) {
+    RED("FF0000"),
+    GREEN("00FF00"),
+    BLUE("0000FF")
+  }
+
+  @Test
+  fun `basic Kotlin enum class`() {
+    val schema = Schema.fromEnum<TestEnum>()
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["RED", "GREEN", "BLUE"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `basic Java enum`() {
+    val schema = Schema.fromEnum(TestEnum::class.java)
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["RED", "GREEN", "BLUE"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `Kotlin enum with values`() {
+    val schema = Schema.fromEnum<TestEnumWithValues>()
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["RED", "GREEN", "BLUE"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `Java enum with values`() {
+    val schema = Schema.fromEnum(TestEnumWithValues::class.java)
+    val expectedJson =
+      """
+      {
+        "type": "STRING",
+        "format": "enum",
+        "enum": ["RED", "GREEN", "BLUE"]
+      }
+    """
+        .trimIndent()
+
+    Json.encodeToString(schema.toInternal()).shouldEqualJson(expectedJson)
+  }
 }
