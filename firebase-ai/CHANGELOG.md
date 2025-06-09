@@ -1,5 +1,7 @@
 # Unreleased
 
+
+# 16.1.0
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
 * [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
@@ -7,7 +9,6 @@
     * **Action Required:** Update all references of `SpeechConfig` initialization to use `Voice` class.
 * [fixed] Fix incorrect model name in count token requests to the developer API backend
 
- 
 # 16.0.0
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous
  Vertex AI in Firebase SDK (`firebase-vertexai`) to accommodate the evolving set of supported
