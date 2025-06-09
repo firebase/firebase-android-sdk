@@ -63,7 +63,15 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           field("name")
-            .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric")))
+            .eqAny(
+              array(
+                constant("alice"),
+                constant("bob"),
+                constant("charlie"),
+                constant("diane"),
+                constant("eric")
+              )
+            )
         )
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
@@ -85,7 +93,15 @@ internal class DisjunctiveTests {
         .where(
           and(
             field("name")
-              .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric"))),
+              .eqAny(
+                array(
+                  constant("alice"),
+                  constant("bob"),
+                  constant("charlie"),
+                  constant("diane"),
+                  constant("eric")
+                )
+              ),
             field("age").eqAny(array(constant(10.0), constant(25.0)))
           )
         )
@@ -108,7 +124,15 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           field("name")
-            .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric")))
+            .eqAny(
+              array(
+                constant("alice"),
+                constant("bob"),
+                constant("charlie"),
+                constant("diane"),
+                constant("eric")
+              )
+            )
         )
         .where(field("age").eqAny(array(constant(10.0), constant(25.0))))
 
@@ -151,7 +175,10 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collectionGroup("users")
-        .where(field("name").eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric"))))
+        .where(
+          field("name")
+            .eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric")))
+        )
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
@@ -169,7 +196,10 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("name").eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric"))))
+        .where(
+          field("name")
+            .eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric")))
+        )
         .sort(field("age").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
@@ -188,7 +218,10 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("name").eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric"))))
+        .where(
+          field("name")
+            .eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric")))
+        )
         .sort(field("name").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
@@ -210,7 +243,15 @@ internal class DisjunctiveTests {
         .where(
           and(
             field("name")
-              .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric"))),
+              .eqAny(
+                array(
+                  constant("alice"),
+                  constant("bob"),
+                  constant("charlie"),
+                  constant("diane"),
+                  constant("eric")
+                )
+              ),
             field("age").eq(constant(10.0))
           )
         )
@@ -278,7 +319,10 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           and(
-            field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))),
+            field("name")
+              .eqAny(
+                array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+              ),
             field("age").gt(constant(10.0)),
             field("age").lt(constant(100.0))
           )
@@ -302,7 +346,10 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           and(
-            field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))),
+            field("name")
+              .eqAny(
+                array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+              ),
             field("age").gte(constant(10.0)),
             field("age").lte(constant(100.0))
           )
@@ -326,7 +373,10 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           and(
-            field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))),
+            field("name")
+              .eqAny(
+                array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+              ),
             field("age").gt(constant(10.0)),
             field("age").lt(constant(100.0))
           )
@@ -351,7 +401,10 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           and(
-            field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))),
+            field("name")
+              .eqAny(
+                array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+              ),
             field("age").neq(constant(100.0))
           )
         )
@@ -372,7 +425,12 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))))
+        .where(
+          field("name")
+            .eqAny(
+              array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+            )
+        )
         .sort(field("name").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
@@ -412,7 +470,15 @@ internal class DisjunctiveTests {
         .where(
           and(
             field("name")
-              .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric"))),
+              .eqAny(
+                array(
+                  constant("alice"),
+                  constant("bob"),
+                  constant("charlie"),
+                  constant("diane"),
+                  constant("eric")
+                )
+              ),
             field("age").eq(constant(10.0))
           )
         )
@@ -437,7 +503,15 @@ internal class DisjunctiveTests {
         .where(
           and(
             field("name")
-              .eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"), constant("eric"))),
+              .eqAny(
+                array(
+                  constant("alice"),
+                  constant("bob"),
+                  constant("charlie"),
+                  constant("diane"),
+                  constant("eric")
+                )
+              ),
             field("age").eq(constant(10.0))
           )
         )
@@ -484,7 +558,10 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           and(
-            field("name").eqAny(array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))),
+            field("name")
+              .eqAny(
+                array(constant("alice"), constant("bob"), constant("charlie"), constant("diane"))
+              ),
             field("age").gt(constant(20.0))
           )
         )
@@ -584,11 +661,7 @@ internal class DisjunctiveTests {
       doc(
         "users/a",
         1000,
-        mapOf(
-          "name" to "alice",
-          "groups" to listOf(1L, 2L, 3L),
-          "records" to listOf("a", "b", "c")
-        )
+        mapOf("name" to "alice", "groups" to listOf(1L, 2L, 3L), "records" to listOf("a", "b", "c"))
       )
     val doc2 =
       doc(
@@ -610,11 +683,7 @@ internal class DisjunctiveTests {
       doc(
         "users/d",
         1000,
-        mapOf(
-          "name" to "diane",
-          "groups" to listOf(2L, 3L, 5L),
-          "records" to listOf("c", "d", "e")
-        )
+        mapOf("name" to "diane", "groups" to listOf(2L, 3L, 5L), "records" to listOf("c", "d", "e"))
       )
     val doc5 =
       doc(
@@ -643,7 +712,11 @@ internal class DisjunctiveTests {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "groups" to listOf(1L, 2L, 3L)))
     val doc2 = doc("users/b", 1000, mapOf("name" to "bob", "groups" to listOf(1L, 2L, 4L)))
     val doc3 =
-      doc("users/c", 1000, mapOf("name" to "charlie", "groups" to listOf(2L, 3L, 4L))) // Filtered by LT
+      doc(
+        "users/c",
+        1000,
+        mapOf("name" to "charlie", "groups" to listOf(2L, 3L, 4L))
+      ) // Filtered by LT
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane", "groups" to listOf(2L, 3L, 5L)))
     val doc5 = doc("users/e", 1000, mapOf("name" to "eric", "groups" to listOf(3L, 4L, 5L)))
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
@@ -905,7 +978,11 @@ internal class DisjunctiveTests {
     val doc1 = doc("users/a", 1000, mapOf("name" to "alice", "age" to 25.0, "height" to 170.0))
     val doc2 = doc("users/b", 1000, mapOf("name" to "bob", "age" to 25.0, "height" to 180.0))
     val doc3 =
-      doc("users/c", 1000, mapOf("name" to "charlie", "age" to 100.0, "height" to 155.0)) // Not matched
+      doc(
+        "users/c",
+        1000,
+        mapOf("name" to "charlie", "age" to 100.0, "height" to 155.0)
+      ) // Not matched
     val doc4 = doc("users/d", 1000, mapOf("name" to "diane", "age" to 10.0, "height" to 150.0))
     val doc5 = doc("users/e", 1000, mapOf("name" to "eric", "age" to 25.0, "height" to 170.0))
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
@@ -914,11 +991,7 @@ internal class DisjunctiveTests {
       RealtimePipelineSource(db)
         .collection("/users")
         .where(or(field("age").lt(constant(80.0)), field("height").gt(constant(160.0))))
-        .sort(
-          field("age").ascending(),
-          field("height").descending(),
-          field("name").ascending()
-        )
+        .sort(field("age").ascending(), field("height").descending(), field("name").ascending())
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc2, doc1, doc5).inOrder()
@@ -1494,7 +1567,9 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("score").eqAny(array(constant(50L), constant(97L), constant(97L), constant(97L))))
+        .where(
+          field("score").eqAny(array(constant(50L), constant(97L), constant(97L), constant(97L)))
+        )
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
@@ -1526,7 +1601,10 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("scores").arrayContainsAny(array(constant(1L), constant(2L), constant(2L), constant(2L))))
+        .where(
+          field("scores")
+            .arrayContainsAny(array(constant(1L), constant(2L), constant(2L), constant(2L)))
+        )
 
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -1543,7 +1621,9 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(
           field("scores")
-            .arrayContainsAll(array(constant(1L), constant(2L), constant(2L), constant(2L), constant(3L)))
+            .arrayContainsAll(
+              array(constant(1L), constant(2L), constant(2L), constant(2L), constant(3L))
+            )
         )
     val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
     // The C++ test `EXPECT_THAT(RunPipeline(pipeline, documents), ElementsAre(doc1, doc2));`
