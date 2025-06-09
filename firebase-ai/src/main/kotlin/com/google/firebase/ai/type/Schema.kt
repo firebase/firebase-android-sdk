@@ -34,7 +34,7 @@ public abstract class StringFormat private constructor(internal val value: Strin
  */
 public class Schema
 internal constructor(
-  public val type: String? = null,
+  public val type: String,
   public val description: String? = null,
   public val format: String? = null,
   public val nullable: Boolean? = null,
@@ -47,7 +47,7 @@ internal constructor(
   public val maxItems: Int? = null,
   public val minimum: Double? = null,
   public val maximum: Double? = null,
-  public val anyOf: List<Schema>? = null
+  public val anyOf: List<Schema>? = null,
 ) {
 
   public companion object {
@@ -62,7 +62,7 @@ internal constructor(
     public fun boolean(
       description: String? = null,
       nullable: Boolean = false,
-      title: String? = null
+      title: String? = null,
     ): Schema =
       Schema(description = description, nullable = nullable, type = "BOOLEAN", title = title)
 
@@ -84,7 +84,7 @@ internal constructor(
       nullable: Boolean = false,
       title: String? = null,
       minimum: Double? = null,
-      maximum: Double? = null
+      maximum: Double? = null,
     ): Schema =
       Schema(
         description = description,
@@ -110,7 +110,7 @@ internal constructor(
       nullable: Boolean = false,
       title: String? = null,
       minimum: Double? = null,
-      maximum: Double? = null
+      maximum: Double? = null,
     ): Schema =
       Schema(
         description = description,
@@ -135,7 +135,7 @@ internal constructor(
       nullable: Boolean = false,
       title: String? = null,
       minimum: Double? = null,
-      maximum: Double? = null
+      maximum: Double? = null,
     ): Schema =
       Schema(
         description = description,
@@ -165,7 +165,7 @@ internal constructor(
       nullable: Boolean = false,
       title: String? = null,
       minimum: Double? = null,
-      maximum: Double? = null
+      maximum: Double? = null,
     ): Schema =
       Schema(
         description = description,
@@ -198,7 +198,7 @@ internal constructor(
         format = format?.value,
         nullable = nullable,
         type = "STRING",
-        title = title
+        title = title,
       )
 
     /**
@@ -208,6 +208,7 @@ internal constructor(
      * `String` and values of type [Schema].
      *
      * **Example:** A `city` could be represented with the following object `Schema`.
+     *
      * ```
      * Schema.obj(mapOf(
      *   "name"  to Schema.string(),
@@ -229,7 +230,7 @@ internal constructor(
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
-      title: String? = null
+      title: String? = null,
     ): Schema {
       if (!properties.keys.containsAll(optionalProperties)) {
         throw IllegalArgumentException(
@@ -242,7 +243,7 @@ internal constructor(
         properties = properties,
         required = properties.keys.minus(optionalProperties.toSet()).toList(),
         type = "OBJECT",
-        title = title
+        title = title,
       )
     }
 
@@ -261,7 +262,7 @@ internal constructor(
       nullable: Boolean = false,
       title: String? = null,
       minItems: Int? = null,
-      maxItems: Int? = null
+      maxItems: Int? = null,
     ): Schema =
       Schema(
         description = description,
@@ -270,14 +271,13 @@ internal constructor(
         type = "ARRAY",
         title = title,
         minItems = minItems,
-        maxItems = maxItems
+        maxItems = maxItems,
       )
 
     /**
      * Returns a [Schema] for an enumeration.
      *
      * For example, the cardinal directions can be represented as:
-     *
      * ```
      * Schema.enumeration(listOf("north", "east", "south", "west"), "Cardinal directions")
      * ```
@@ -300,7 +300,7 @@ internal constructor(
         nullable = nullable,
         enum = values,
         type = "STRING",
-        title = title
+        title = title,
       )
 
     /**
@@ -310,23 +310,29 @@ internal constructor(
      * Example: A field that can hold either a simple userID or a more detailed user object.
      *
      * Schema.anyOf( listOf( Schema.integer(description = "User ID"), Schema.obj(mapOf(
+     *
      * ```
      *     "userID" to Schema.integer(description = "User ID"),
      *     "username" to Schema.string(description = "Username")
      * ```
+     *
      * )) )
      *
      * @param schemas The list of valid schemas which could be here
      */
     @JvmStatic
-    public fun anyOf(
-      schemas: List<Schema>,
-    ): Schema = Schema(anyOf = schemas)
+    public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "anyOf", anyOf = schemas)
   }
 
-  internal fun toInternal(): Internal =
-    Internal(
-      type,
+  internal fun toInternal(): Internal {
+    val cleanedType =
+      if (type == "anyOf") {
+        null
+      } else {
+        type
+      }
+    return Internal(
+      cleanedType,
       description,
       format,
       nullable,
@@ -341,6 +347,8 @@ internal constructor(
       maximum,
       anyOf?.map { it.toInternal() },
     )
+  }
+
   @Serializable
   internal data class Internal(
     val type: String? = null,
@@ -356,6 +364,6 @@ internal constructor(
     val maxItems: Int? = null,
     val minimum: Double? = null,
     val maximum: Double? = null,
-    val anyOf: List<Internal>? = null
+    val anyOf: List<Internal>? = null,
   )
 }

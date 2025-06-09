@@ -793,7 +793,7 @@ package com.google.firebase.ai.type {
     method public java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema>? getProperties();
     method public java.util.List<java.lang.String>? getRequired();
     method public String? getTitle();
-    method public String? getType();
+    method public String getType();
     method public static com.google.firebase.ai.type.Schema numDouble();
     method public static com.google.firebase.ai.type.Schema numDouble(String? description = null);
     method public static com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false);
@@ -841,7 +841,7 @@ package com.google.firebase.ai.type {
     property public final java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema>? properties;
     property public final java.util.List<java.lang.String>? required;
     property public final String? title;
-    property public final String? type;
+    property public final String type;
     field public static final com.google.firebase.ai.type.Schema.Companion Companion;
   }
 
