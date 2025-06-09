@@ -1,5 +1,7 @@
 # Unreleased
 
+
+# 16.1.0
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
 * [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
 * [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
@@ -9,7 +11,6 @@
 * [feature] Added support for extra schema properties like `title`, `minItems`, `maxItems`, `minimum`
  and `maximum`. As well as support for the `anyOf` schema. 
 
- 
 # 16.0.0
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous
  Vertex AI in Firebase SDK (`firebase-vertexai`) to accommodate the evolving set of supported
