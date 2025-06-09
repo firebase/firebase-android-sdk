@@ -321,12 +321,12 @@ internal constructor(
      * @param schemas The list of valid schemas which could be here
      */
     @JvmStatic
-    public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "anyOf", anyOf = schemas)
+    public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "ANYOF", anyOf = schemas)
   }
 
   internal fun toInternal(): Internal {
     val cleanedType =
-      if (type == "anyOf") {
+      if (type == "ANYOF") {
         null
       } else {
         type
