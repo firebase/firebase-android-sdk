@@ -23,6 +23,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.annotations.concurrent.Background
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 
@@ -32,6 +33,10 @@ import kotlinx.coroutines.runBlocking
  * Automatically migrates data from any `SharedPreferences` that share the same context and name.
  *
  * There should only ever be _one_ instance of this class per context and name variant.
+ *
+ * Note that most of the methods in this class **block** on the _current_ thread, as to help keep
+ * parity with existing Java code. Typically, you'd want to dispatch this work to another thread
+ * like [@Background][Background].
  *
  * > Do **NOT** use this _unless_ you're bridging Java code. If you're writing new code, or your
  * code is in Kotlin, then you should create your own singleton that uses [DataStore] directly.
@@ -43,6 +48,8 @@ import kotlinx.coroutines.runBlocking
  *
  * @property context The [Context] that this data will be saved under.
  * @property name What the storage file should be named.
+ *
+ * @hide
  */
 class DataStorage(val context: Context, val name: String) {
   /**
