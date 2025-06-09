@@ -368,7 +368,7 @@ public class ValuesTest {
 
     @Override
     public boolean equals(Object o) {
-      return o instanceof EqualsWrapper && Values.equals(proto, ((EqualsWrapper) o).proto);
+      return o instanceof EqualsWrapper && proto.equals(((EqualsWrapper) o).proto);
     }
 
     @Override

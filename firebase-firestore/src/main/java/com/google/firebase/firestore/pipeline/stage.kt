@@ -18,6 +18,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -26,9 +27,18 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 
-abstract class Stage<T : Stage<T>>
-internal constructor(protected val name: String, internal val options: InternalOptions) {
+sealed class Stage<T : Stage<T>>(
+  protected val name: String,
+  internal val options: InternalOptions
+) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
@@ -86,6 +96,13 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @return New stage with named parameter.
    */
   fun with(key: String, value: Field): T = with(key, value.toProto())
+
+  internal open fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    throw NotImplementedError("Stage does not support offline evaluation")
+  }
 }
 
 /**
@@ -212,6 +229,15 @@ internal constructor(
   }
 
   fun withForceIndex(value: String) = with("force_index", value)
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionPath.canonicalString() == path
+    }
+  }
 }
 
 class CollectionGroupSource
@@ -220,6 +246,14 @@ private constructor(private val collectionId: String, options: InternalOptions) 
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionGroup == collectionId
+    }
+  }
 
   companion object {
 
@@ -353,6 +387,14 @@ internal constructor(
   override fun self(options: InternalOptions) = WhereStage(condition, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(condition.toProto(userDataReader))
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val conditionFunction = condition.evaluateContext(context)
+    return inputs.filter { input -> conditionFunction(input).value?.booleanValue ?: false }
+  }
 }
 
 /**
@@ -479,6 +521,11 @@ internal class LimitStage
 internal constructor(private val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<LimitStage>("limit", options) {
   override fun self(options: InternalOptions) = LimitStage(limit, options)
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> = if (limit > 0) inputs.take(limit) else flowOf()
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
 }
@@ -492,10 +539,20 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
 }
 
 internal class SelectStage
-internal constructor(
-  private val fields: Array<out Selectable>,
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SelectStage>("select", options) {
+private constructor(private val fields: Array<out Selectable>, options: InternalOptions) :
+  Stage<SelectStage>("select", options) {
+  companion object {
+    @JvmStatic
+    fun of(selection: Selectable, vararg additionalSelections: Any): SelectStage =
+      SelectStage(
+        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray()),
+        InternalOptions.EMPTY
+      )
+
+    @JvmStatic
+    fun of(fieldName: String, vararg additionalSelections: Any): SelectStage =
+      of(field(fieldName), *additionalSelections)
+  }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
@@ -509,6 +566,43 @@ internal constructor(
   override fun self(options: InternalOptions) = SortStage(orders, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val evaluates: Array<EvaluateDocument> =
+      orders.map { it.expr.evaluateContext(context) }.toTypedArray()
+    val directions: Array<Ordering.Direction> = orders.map { it.dir }.toTypedArray()
+    return flow {
+      inputs
+        // For each document, lazily evaluate order expression values.
+        .map { doc ->
+          val orderValues =
+            evaluates
+              .map { lazy(LazyThreadSafetyMode.PUBLICATION) { it(doc).value ?: Values.MIN_VALUE } }
+              .toTypedArray<Lazy<Value>>()
+          Pair(doc, orderValues)
+        }
+        .toList()
+        .sortedWith(
+          Comparator { px, py ->
+            val x = px.second
+            val y = py.second
+            directions.forEachIndexed<Ordering.Direction> { i, dir ->
+              val r =
+                when (dir) {
+                  Ordering.Direction.ASCENDING -> Values.compare(x[i].value, y[i].value)
+                  Ordering.Direction.DESCENDING -> Values.compare(y[i].value, x[i].value)
+                }
+              if (r != 0) return@Comparator r
+            }
+            0
+          }
+        )
+        .forEach { p -> emit(p.first) }
+    }
+  }
 }
 
 internal class DistinctStage
