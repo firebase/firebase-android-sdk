@@ -91,6 +91,9 @@ dependencies {
     implementation(project(":firebase-sessions"))
   }
 
+  implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+  implementation("com.squareup.okhttp3:okhttp")
+
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.7.0")

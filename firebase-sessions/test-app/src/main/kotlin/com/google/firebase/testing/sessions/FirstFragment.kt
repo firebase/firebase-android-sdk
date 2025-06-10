@@ -36,11 +36,15 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
   val crashlytics = FirebaseCrashlytics.getInstance()
   val performance = FirebasePerformance.getInstance()
+  val okHttp = OkHttpClient()
 
   private var _binding: FragmentFirstBinding? = null
 
@@ -77,6 +81,23 @@ class FirstFragment : Fragment() {
         performanceTrace.start()
         delay(1000)
         performanceTrace.stop()
+      }
+    }
+    binding.makeNetworkRequest.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val request = Request.Builder()
+          .url("https://publicobject.com/helloworld.txt")
+          .build()
+
+        okHttp.newCall(request).execute().use { response ->
+          if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+          for ((name, value) in response.headers) {
+            println("$name: $value")
+          }
+
+          println(response.body!!.string())
+        }
       }
     }
     binding.buttonForegroundProcess.setOnClickListener {
