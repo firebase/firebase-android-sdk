@@ -61,6 +61,13 @@ dokka {
   moduleName.set("Data Connect Demo")
   dokkaSourceSets.main {
     sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+    includes.from(
+      layout.buildDirectory
+        .dir(
+          "dataConnect/generatedSources/com/google/firebase/dataconnect/minimaldemo/connector/README.md"
+        )
+        .get()
+    )
   }
 }
 
@@ -133,6 +140,11 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val nodeExecutableDirectory: Property<String>
 
+  @get:InputFile
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.ABSOLUTE)
+  abstract val dataConnectEmulatorExecutable: RegularFileProperty
+
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @get:Internal abstract val workDirectory: DirectoryProperty
@@ -149,6 +161,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
     val firebaseToolsVersion: String = firebaseToolsVersion.get()
     val firebaseCommand: String = firebaseCommand.get()
     val nodeExecutableDirectory: String? = nodeExecutableDirectory.orNull
+    val dataConnectEmulatorExecutable: File? = dataConnectEmulatorExecutable.orNull?.asFile
     val outputDirectory: File = outputDirectory.get().asFile
     val workDirectory: File = workDirectory.get().asFile
 
@@ -156,6 +169,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
     logger.info("firebaseToolsVersion: {}", firebaseToolsVersion)
     logger.info("firebaseCommand: {}", firebaseCommand)
     logger.info("nodeExecutableDirectory: {}", nodeExecutableDirectory)
+    logger.info("dataConnectEmulatorExecutable: {}", dataConnectEmulatorExecutable)
     logger.info("outputDirectory: {}", outputDirectory.absolutePath)
     logger.info("workDirectory: {}", workDirectory.absolutePath)
 
@@ -179,6 +193,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
               this,
               firebaseCommand = firebaseCommand,
               nodeExecutableDirectory = nodeExecutableDirectory,
+              dataConnectEmulatorExecutable = dataConnectEmulatorExecutable,
               path = providerFactory.environmentVariable("PATH").orNull,
             )
             args("--debug", "dataconnect:sdk:generate")
@@ -206,6 +221,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
       execSpec: ExecSpec,
       firebaseCommand: String,
       nodeExecutableDirectory: String?,
+      dataConnectEmulatorExecutable: File?,
       path: String?,
     ) {
       execSpec.setCommandLine(firebaseCommand)
@@ -223,6 +239,10 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 
       if (newPath !== null) {
         execSpec.environment("PATH", newPath)
+      }
+
+      if (dataConnectEmulatorExecutable !== null) {
+        execSpec.environment("DATACONNECT_EMULATOR_BINARY_PATH", dataConnectEmulatorExecutable)
       }
     }
   }
@@ -282,6 +302,11 @@ run {
           projectDirectory.dir(it).asFile.absolutePath
         }
 
+      dataConnectEmulatorExecutable =
+        project.providers
+          .gradleProperty("dataConnect.minimalApp.dataConnectEmulatorExecutable")
+          .map { projectDirectory.file(it) }
+
       val path = providers.environmentVariable("PATH")
       firebaseToolsVersion =
         providers
@@ -290,6 +315,7 @@ run {
               this,
               firebaseCommand = firebaseCommand.get(),
               nodeExecutableDirectory = nodeExecutableDirectory.orNull,
+              dataConnectEmulatorExecutable = dataConnectEmulatorExecutable.orNull?.asFile,
               path = path.orNull,
             )
             args("--version")
