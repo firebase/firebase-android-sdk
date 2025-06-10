@@ -7,3 +7,4 @@ schema:
     postgresql: null
 connectorDirs:
  - ./connector
+ - ./demo
