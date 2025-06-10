@@ -49,6 +49,37 @@ query GetItemByKey(
   }
 }
 
+query GetItemsByValues(
+  $string: String,
+  $int: Int,
+  $int64: Int64,
+  $float: Float,
+  $boolean: Boolean,
+  $date: Date,
+  $timestamp: Timestamp,
+  $any: Any,
+) @auth(level: PUBLIC) {
+  items: zwda6x9zyys(where: {
+    string: { eq: $string },
+    int: { eq: $int },
+    int64: { eq: $int64 },
+    float: { eq: $float },
+    boolean: { eq: $boolean },
+    date: { eq: $date },
+    timestamp: { eq: $timestamp },
+    any: { eq: $any },
+  }) {
+    string
+    int
+    int64
+    float
+    boolean
+    date
+    timestamp
+    any
+  }
+}
+
 query GetAllItems @auth(level: PUBLIC) {
   items: zwda6x9zyys {
     id
