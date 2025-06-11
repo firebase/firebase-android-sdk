@@ -55,6 +55,7 @@ android {
   }
 
   buildTypes {
+    release { signingConfig = signingConfigs["debug"] }
     create("benchmark") {
       initWith(buildTypes["release"])
       signingConfig = signingConfigs["debug"]

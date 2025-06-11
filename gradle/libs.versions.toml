@@ -28,6 +28,7 @@ firebaseAppdistributionGradle = "5.1.1"
 firebaseCommon = "21.0.0"
 firebaseComponents = "18.0.1"
 firebaseCrashlyticsGradle = "3.0.4"
+firebasePerfGradle = "1.4.2"
 glide = "4.16.0"
 googleApiClient = "1.30.9"
 googleServices = "4.3.15"
@@ -239,3 +240,4 @@ protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "gradleErrorpronePlugin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsGradle" }
+firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "firebasePerfGradle" }
