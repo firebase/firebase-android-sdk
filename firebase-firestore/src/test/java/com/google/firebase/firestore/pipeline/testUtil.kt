@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.TestUtil.FIRESTORE
 import com.google.firebase.firestore.TestUtil.USER_DATA_READER
 import com.google.firebase.firestore.model.MutableDocument
@@ -24,7 +25,8 @@ import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import com.google.firestore.v1.Value
 
 val EMPTY_DOC: MutableDocument = doc("foo/1", 0, mapOf())
-internal val EVALUATION_CONTEXT: EvaluationContext = EvaluationContext(FIRESTORE, USER_DATA_READER)
+internal val EVALUATION_CONTEXT: EvaluationContext =
+  EvaluationContext(RealtimePipeline(FIRESTORE, USER_DATA_READER, emptyList()))
 
 internal fun evaluate(expr: Expr): EvaluateResult = evaluate(expr, EMPTY_DOC)
 

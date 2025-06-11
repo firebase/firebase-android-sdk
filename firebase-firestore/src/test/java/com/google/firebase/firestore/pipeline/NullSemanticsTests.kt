@@ -70,7 +70,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(isNull(field("score")))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -88,7 +88,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(isNotNull(field("score")))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4, doc5, doc6))
   }
 
@@ -105,7 +105,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(and(isNull(field("score")), isNotNull(field("score"))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -122,7 +122,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(eq(field("score"), nullValue())) // Equality filters never match null or missing
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -140,7 +140,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(eq(field("score"), field("rank"))) // Equality filters never match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -157,7 +157,7 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(eq(field("score.bonus"), nullValue()))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -176,7 +176,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(and(eq(field("score.bonus"), nullValue()), eq(field("rank"), nullValue())))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -190,7 +190,7 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("k").where(eq(field("foo"), array(nullValue())))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -207,7 +207,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), array(constant(1.0), nullValue())))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -223,7 +223,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), array(nullValue(), constant(Double.NaN))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -239,7 +239,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to nullValue()))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -256,7 +256,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to constant(1.0), "b" to nullValue()))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -272,7 +272,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to nullValue(), "b" to constant(Double.NaN)))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -292,7 +292,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to array(nullValue())))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -313,7 +313,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to array(constant(1.0), nullValue())))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -333,7 +333,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(eq(field("foo"), map(mapOf("a" to array(nullValue(), constant(Double.NaN))))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -348,7 +348,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(and(eq(field("score"), constant(42L)), eq(field("rank"), nullValue())))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -364,7 +364,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(eqAny(field("score"), array(nullValue()))) // IN filters never match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -382,7 +382,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(eqAny(field("score"), array(nullValue(), constant(100L))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -404,7 +404,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(arrayContains(field("score"), nullValue())) // arrayContains does not match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -428,7 +428,7 @@ internal class NullSemanticsTests {
           arrayContainsAny(field("score"), array(nullValue()))
         ) // arrayContainsAny does not match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -450,7 +450,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(arrayContainsAny(field("score"), array(nullValue(), constant("foo"))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc6)
   }
 
@@ -474,7 +474,7 @@ internal class NullSemanticsTests {
           arrayContainsAll(field("score"), array(nullValue()))
         ) // arrayContainsAll does not match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -498,7 +498,7 @@ internal class NullSemanticsTests {
           arrayContainsAll(field("score"), array(nullValue(), constant(42L)))
         ) // arrayContainsAll does not match null
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -515,7 +515,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(neq(field("score"), nullValue())) // != null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -533,7 +533,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(neq(field("score"), field("rank"))) // != null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -549,7 +549,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(neq(field("foo"), array(nullValue()))) // != [null] is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -568,7 +568,7 @@ internal class NullSemanticsTests {
           neq(field("foo"), array(constant(1.0), nullValue()))
         ) // != [1.0, null] is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -586,7 +586,7 @@ internal class NullSemanticsTests {
           neq(field("foo"), array(nullValue(), constant(Double.NaN)))
         ) // != [null, NaN] is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -602,7 +602,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(neq(field("foo"), map(mapOf("a" to nullValue())))) // != {a:null} is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -621,7 +621,7 @@ internal class NullSemanticsTests {
           neq(field("foo"), map(mapOf("a" to constant(1.0), "b" to nullValue())))
         ) // != {a:1.0,b:null} not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -639,7 +639,7 @@ internal class NullSemanticsTests {
           neq(field("foo"), map(mapOf("a" to nullValue(), "b" to constant(Double.NaN))))
         ) // != {a:null,b:NaN} not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -654,7 +654,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(notEqAny(field("score"), array(nullValue()))) // NOT IN [null] is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -672,7 +672,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(gt(field("score"), nullValue())) // > null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -690,7 +690,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(gte(field("score"), nullValue())) // >= null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -708,7 +708,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(lt(field("score"), nullValue())) // < null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -726,7 +726,7 @@ internal class NullSemanticsTests {
         .collection("users")
         .where(lte(field("score"), nullValue())) // <= null is not supported
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -743,7 +743,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(and(eq(field("a"), constant(true)), eq(field("b"), constant(true))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -774,7 +774,7 @@ internal class NullSemanticsTests {
     // (missing AND null) -> error
     // (null AND missing) -> error
     // (missing AND missing) -> error
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc6))
   }
 
@@ -835,7 +835,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(isError(and(eq(field("a"), constant(true)), eq(field("b"), constant(true)))))
     // This happens if either a or b is missing.
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
   }
 
@@ -851,7 +851,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(or(eq(field("a"), constant(true)), eq(field("b"), constant(true))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -879,7 +879,7 @@ internal class NullSemanticsTests {
     // (null OR true) -> true
     // (missing OR false) -> error
     // (false OR missing) -> error
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4, doc7))
   }
 
@@ -939,7 +939,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(isError(or(eq(field("a"), constant(true)), eq(field("b"), constant(true)))))
     // This happens if either a or b is missing.
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
   }
 
@@ -957,7 +957,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(xor(eq(field("a"), constant(true)), eq(field("b"), constant(true))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -985,7 +985,7 @@ internal class NullSemanticsTests {
     // (null XOR null) -> null (doc1)
     // (missing XOR true) -> error
     // (true XOR missing) -> error
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4, doc6, doc7))
   }
 
@@ -1046,7 +1046,7 @@ internal class NullSemanticsTests {
         .collection("k")
         .where(isError(xor(eq(field("a"), constant(true)), eq(field("b"), constant(true)))))
     // This happens if either a or b is missing.
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
   }
 
@@ -1061,7 +1061,7 @@ internal class NullSemanticsTests {
       RealtimePipelineSource(db).collection("k").where(not(eq(field("a"), constant(true))))
 
     // Based on C++ test's interpretation of TS behavior for NOT
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -1077,7 +1077,7 @@ internal class NullSemanticsTests {
     // NOT(null_operand) -> null. So ISNULL(null) -> true.
     // NOT(true) -> false. ISNULL(false) -> false.
     // NOT(false) -> true. ISNULL(true) -> false.
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -1098,7 +1098,7 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("k").where(isError(not(eq(field("a"), constant(true)))))
     // This happens if a is missing.
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -1120,7 +1120,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("k").sort(field("foo").ascending())
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result)
       .containsExactly(doc0, doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
       .inOrder()
@@ -1141,7 +1141,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("k").sort(field("foo").descending())
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result)
       .containsExactly(doc8, doc7, doc6, doc5, doc4, doc3, doc2, doc1, doc0)
       .inOrder()
@@ -1162,7 +1162,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("k").sort(field("foo").ascending())
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result)
       .containsExactly(doc0, doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
       .inOrder()
@@ -1183,7 +1183,7 @@ internal class NullSemanticsTests {
 
     val pipeline = RealtimePipelineSource(db).collection("k").sort(field("foo").descending())
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result)
       .containsExactly(doc8, doc7, doc6, doc5, doc4, doc3, doc2, doc1, doc0)
       .inOrder()

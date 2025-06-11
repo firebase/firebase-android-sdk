@@ -43,7 +43,7 @@ internal class CollectionGroupTests {
   fun `returns no result from empty db`(): Unit = runBlocking {
     val pipeline = RealtimePipelineSource(db).collectionGroup("users")
     val documents = emptyList<MutableDocument>()
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -52,7 +52,7 @@ internal class CollectionGroupTests {
     val pipeline = RealtimePipelineSource(db).collectionGroup("users")
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L, "rank" to 1L))
     val documents = listOf(doc1)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -63,8 +63,9 @@ internal class CollectionGroupTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L, "rank" to 3L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L, "rank" to 2L))
     val documents = listOf(doc1, doc2, doc3)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(documents)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    // Expected order by key: alice, bob, charlie
+    assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
   }
 
   @Test
@@ -77,9 +78,10 @@ internal class CollectionGroupTests {
     val doc5 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val doc6 = doc("users-other/charlie", 1000, mapOf("score" to 97L))
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6)
-    val expectedDocs = listOf(doc1, doc3, doc5) // alice, bob, charlie (from 'users' only)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    val expectedDocs =
+      listOf(doc3, doc1, doc5) // Expected order by key: alice, bob, charlie (from 'users' only)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -97,7 +99,7 @@ internal class CollectionGroupTests {
 
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7)
     val expectedDocs = listOf(doc1, doc2, doc3, doc4, doc5, doc6)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
@@ -126,8 +128,8 @@ internal class CollectionGroupTests {
     // users/bob/games/5
     // users/charlie/games/4
     val expectedDocs = listOf(doc2, doc6, doc1, doc3, doc5, doc4)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -149,7 +151,7 @@ internal class CollectionGroupTests {
 
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7)
     val expectedDocs = listOf(doc2, doc6, doc1, doc3, doc5, doc4)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
@@ -172,10 +174,10 @@ internal class CollectionGroupTests {
       ) // Different path, same collection ID
 
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
-    // Expected: bob(users), charlie(users), diane(users), bob(profiles/admin/users)
-    val expectedDocs = listOf(doc1, doc3, doc4, doc5)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    // Expected: bob(profiles), bob(users), charlie(users), diane(users) - sorted by key
+    val expectedDocs = listOf(doc5, doc1, doc3, doc4)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -189,10 +191,10 @@ internal class CollectionGroupTests {
     val doc4 = doc("profiles/admin/users/bob", 1000, mapOf("score" to 90L)) // Different path
 
     val documents = listOf(doc1, doc2, doc3, doc4)
-    // Expected: bob(users), charlie(users), bob(profiles)
-    val expectedDocs = listOf(doc1, doc3, doc4)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    // Expected: bob(profiles), bob(users), charlie(users) - sorted by key
+    val expectedDocs = listOf(doc4, doc1, doc3)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -206,10 +208,10 @@ internal class CollectionGroupTests {
     val doc4 = doc("profiles/admin/users/bob", 1000, mapOf("score" to 90L)) // Different path
 
     val documents = listOf(doc1, doc2, doc3, doc4)
-    // Expected: bob(users), charlie(users), bob(profiles)
-    val expectedDocs = listOf(doc1, doc3, doc4)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    // Expected: bob(profiles), bob(users), charlie(users) - sorted by key
+    val expectedDocs = listOf(doc4, doc1, doc3)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -236,10 +238,10 @@ internal class CollectionGroupTests {
       ) // Different path
 
     val documents = listOf(doc1, doc2, doc3, doc4)
-    // Expected: bob(users), charlie(users), bob(profiles)
-    val expectedDocs = listOf(doc1, doc3, doc4)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(expectedDocs)
+    // Expected: bob(profiles), bob(users), charlie(users) - sorted by key
+    val expectedDocs = listOf(doc4, doc1, doc3)
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
   @Test
@@ -254,10 +256,10 @@ internal class CollectionGroupTests {
 
     val documents = listOf(doc1, doc2, doc3, doc4)
     // Expected: charlie(97), bob(profiles, 90), bob(users, 90), alice(50)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    // Tie exists for doc1 and doc4, so check both orders are valid.
-    assertThat(result).containsAtLeast(doc3, doc1, doc2).inOrder()
-    assertThat(result).containsAtLeast(doc3, doc4, doc2).inOrder()
+    // Tie is broken by document key (ascending), where "profiles/admin/users/bob" (doc4)
+    // comes before "users/bob" (doc1).
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc3, doc4, doc1, doc2).inOrder()
   }
 
   @Test
@@ -275,10 +277,12 @@ internal class CollectionGroupTests {
     // So, charlie (doc3) with missing 'score' comes after alice (doc2) with score 50.
     // Order for scores: 90, 90, 50, missing.
     val expectedDocs = listOf(doc4, doc1, doc2, doc3)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
-    // Tie exists for doc1 and doc4, so check both orders are valid.
-    assertThat(result).containsAtLeast(doc1, doc2, doc3).inOrder()
-    assertThat(result).containsAtLeast(doc4, doc2, doc3).inOrder()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    // Tie for 'score' is broken by document key (ascending), where "profiles/admin/users/bob"
+    // (doc4)
+    // comes before "users/bob" (doc1). Documents with missing 'score' (doc3) sort after
+    // documents with 'score' when sorting descending by 'score'.
+    assertThat(result).containsExactly(doc4, doc1, doc2, doc3).inOrder()
   }
 
   @Test
@@ -300,7 +304,7 @@ internal class CollectionGroupTests {
     // users/bob (doc1)
     // users/charlie (doc3)
     val expectedDocs = listOf(doc4, doc2, doc1, doc3)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
@@ -322,7 +326,7 @@ internal class CollectionGroupTests {
     // profiles/admin/users/bob (doc4)
     // users/alice (doc2)
     val expectedDocs = listOf(doc4, doc2)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 }

@@ -20,8 +20,7 @@ import com.google.common.math.LongMath
 import com.google.common.math.LongMath.checkedAdd
 import com.google.common.math.LongMath.checkedMultiply
 import com.google.common.math.LongMath.checkedSubtract
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.UserDataReader
+import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -43,7 +42,7 @@ import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-internal class EvaluationContext(val db: FirebaseFirestore, val userDataReader: UserDataReader)
+internal class EvaluationContext(val pipeline: RealtimePipeline)
 
 internal typealias EvaluateDocument = (input: MutableDocument) -> EvaluateResult
 

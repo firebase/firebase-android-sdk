@@ -45,7 +45,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(0)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -54,7 +54,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(0).limit(0).limit(0)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -63,7 +63,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(1)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(1)
   }
 
@@ -72,7 +72,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(1).limit(1).limit(1)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(1)
   }
 
@@ -81,7 +81,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(2)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(2)
   }
 
@@ -90,7 +90,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(2).limit(2).limit(2)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(2)
   }
 
@@ -99,7 +99,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(3)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(3)
   }
 
@@ -108,7 +108,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(3).limit(3).limit(3)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(3)
   }
 
@@ -117,7 +117,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(4)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4)
   }
 
@@ -126,7 +126,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(4).limit(4).limit(4)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4)
   }
 
@@ -135,7 +135,7 @@ internal class LimitTests {
     val documents = createDocs() // Only 4 docs created
     val pipeline = RealtimePipelineSource(db).collection("k").limit(5)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4) // Limited by actual doc count
   }
 
@@ -144,7 +144,7 @@ internal class LimitTests {
     val documents = createDocs() // Only 4 docs created
     val pipeline = RealtimePipelineSource(db).collection("k").limit(5).limit(5).limit(5)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4) // Limited by actual doc count
   }
 
@@ -153,7 +153,7 @@ internal class LimitTests {
     val documents = createDocs()
     val pipeline = RealtimePipelineSource(db).collection("k").limit(Int.MAX_VALUE)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4)
   }
 
@@ -167,7 +167,7 @@ internal class LimitTests {
         .limit(Int.MAX_VALUE)
         .limit(Int.MAX_VALUE)
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).hasSize(4)
   }
 }

@@ -18,6 +18,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
@@ -292,9 +293,17 @@ internal constructor(
   private val fields: Array<out Selectable>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AddFieldsStage>("add_fields", options) {
+  init {
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is reserved" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is reserved" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is reserved" })
+    }
+  }
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 /**
@@ -368,8 +377,8 @@ internal constructor(
   fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
       accumulators,
-      mapOf(group.getAlias() to group.getExpr())
-        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
+      mapOf(group.alias to group.expr)
+        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias))
     )
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -539,7 +548,7 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
 }
 
 internal class SelectStage
-private constructor(private val fields: Array<out Selectable>, options: InternalOptions) :
+private constructor(internal val fields: Array<out Selectable>, options: InternalOptions) :
   Stage<SelectStage>("select", options) {
   companion object {
     @JvmStatic
@@ -555,7 +564,7 @@ private constructor(private val fields: Array<out Selectable>, options: Internal
   }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class SortStage
@@ -563,6 +572,10 @@ internal constructor(
   private val orders: Array<out Ordering>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SortStage>("sort", options) {
+  companion object {
+    internal val BY_DOCUMENT_ID = SortStage(arrayOf(Field.DOCUMENT_ID.ascending()))
+  }
+
   override fun self(options: InternalOptions) = SortStage(orders, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
@@ -603,6 +616,16 @@ internal constructor(
         .forEach { p -> emit(p.first) }
     }
   }
+
+  internal fun withStableOrdering(): SortStage {
+    val position = orders.indexOfFirst { (it.expr as? Field)?.alias == KEY_FIELD_NAME }
+    return if (position < 0) {
+      // Append the DocumentId to orders to make ordering stable.
+      SortStage(orders.asList().plus(Field.DOCUMENT_ID.ascending()).toTypedArray(), options)
+    } else {
+      this
+    }
+  }
 }
 
 internal class DistinctStage
@@ -612,7 +635,7 @@ internal constructor(
 ) : Stage<DistinctStage>("distinct", options) {
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(groups.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(groups.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class RemoveFieldsStage
@@ -620,6 +643,14 @@ internal constructor(
   private val fields: Array<out Field>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<RemoveFieldsStage>("remove_fields", options) {
+  init {
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is required" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is required" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is required" })
+    }
+  }
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     fields.asSequence().map(Field::toProto)
@@ -746,11 +777,11 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Expr.field(arrayField).alias(alias))
+      UnnestStage(Expr.Companion.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto(userDataReader))
+    sequenceOf(encodeValue(selectable.alias), selectable.toProto(userDataReader))
 
   /**
    * Adds index field to emitted documents

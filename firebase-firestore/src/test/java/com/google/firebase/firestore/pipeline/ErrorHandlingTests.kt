@@ -59,7 +59,7 @@ internal class ErrorHandlingTests {
           )
         )
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // In Firestore, comparisons between different types are generally false.
     // The OR evaluates to true if *any* of the fields 'a', 'b', or 'c' is the
     // boolean value `true`. All documents have at least one field that is boolean
@@ -89,7 +89,7 @@ internal class ErrorHandlingTests {
           )
         )
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // AND requires all conditions to be true. Type mismatches evaluate EqExpr to
     // false. Only doc7 has a=true, b=true, AND c=true.
     assertThat(result).containsExactly(doc7)
@@ -117,7 +117,7 @@ internal class ErrorHandlingTests {
           )
         )
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // XOR is true if an odd number of inputs are true.
     // Assuming type mismatches evaluate EqExpr to false:
     // doc1: F xor T xor F = T
@@ -141,7 +141,7 @@ internal class ErrorHandlingTests {
     // resulting in a condition `field("a") == false`.
     val pipeline = RealtimePipelineSource(db).collection("k").where(eq(field("a"), constant(false)))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // Only doc1 has a == false.
     assertThat(result).containsExactly(doc1)
   }
@@ -158,7 +158,7 @@ internal class ErrorHandlingTests {
         .collection("k")
         .where(eq(divide(constant("100"), constant("50")), constant(2L)))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // Division of string constants should cause an evaluation error,
     // leading to no documents matching.
     assertThat(result).isEmpty()

@@ -16,8 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
-import com.google.common.collect.FluentIterable
-import com.google.common.collect.ImmutableList
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.Values
@@ -62,7 +60,7 @@ open class AbstractPipeline
 internal constructor(
   internal val firestore: FirebaseFirestore,
   internal val userDataReader: UserDataReader,
-  internal val stages: FluentIterable<Stage<*>>
+  internal val stages: List<Stage<*>>
 ) {
   private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
@@ -95,7 +93,7 @@ internal constructor(
     private val userDataWriter =
       UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
     private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
-    private val results: ImmutableList.Builder<PipelineResult> = ImmutableList.builder()
+    private val results: MutableList<PipelineResult> = mutableListOf()
     override fun onDocument(
       key: DocumentKey?,
       data: Map<String, Value>,
@@ -115,7 +113,7 @@ internal constructor(
     }
 
     override fun onComplete(executionTime: Timestamp) {
-      taskCompletionSource.setResult(PipelineSnapshot(executionTime, results.build()))
+      taskCompletionSource.setResult(PipelineSnapshot(executionTime, results))
     }
 
     override fun onError(exception: FirebaseFirestoreException) {
@@ -131,16 +129,16 @@ class Pipeline
 private constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<Stage<*>>
+  stages: List<Stage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
     stage: Stage<*>
-  ) : this(firestore, userDataReader, FluentIterable.of(stage))
+  ) : this(firestore, userDataReader, listOf(stage))
 
   private fun append(stage: Stage<*>): Pipeline {
-    return Pipeline(firestore, userDataReader, stages.append(stage))
+    return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
   fun execute(): Task<PipelineSnapshot> = execute(null)
@@ -760,17 +758,18 @@ class RealtimePipeline
 internal constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
-  stages: FluentIterable<Stage<*>>
+  stages: List<Stage<*>>
 ) : AbstractPipeline(firestore, userDataReader, stages) {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
     stage: Stage<*>
-  ) : this(firestore, userDataReader, FluentIterable.of(stage))
+  ) : this(firestore, userDataReader, listOf(stage))
 
-  private fun append(stage: Stage<*>): RealtimePipeline {
-    return RealtimePipeline(firestore, userDataReader, stages.append(stage))
-  }
+  private fun with(stages: List<Stage<*>>): RealtimePipeline =
+    RealtimePipeline(firestore, userDataReader, stages)
+
+  private fun append(stage: Stage<*>): RealtimePipeline = with(stages.plus(stage))
 
   fun execute(): Task<PipelineSnapshot> = execute(null)
 
@@ -790,6 +789,33 @@ internal constructor(
     append(SortStage(arrayOf(order, *additionalOrders)))
 
   fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
+
+  internal fun rewriteStages(): RealtimePipeline {
+    var hasOrder = false
+    return with(
+      buildList {
+        for (stage in stages) when (stage) {
+          // Stages whose semantics depend on ordering
+          is LimitStage,
+          is OffsetStage -> {
+            if (!hasOrder) {
+              hasOrder = true
+              add(SortStage.BY_DOCUMENT_ID)
+            }
+            add(stage)
+          }
+          is SortStage -> {
+            hasOrder = true
+            add(stage.withStableOrdering())
+          }
+          else -> add(stage)
+        }
+        if (!hasOrder) {
+          add(SortStage.BY_DOCUMENT_ID)
+        }
+      }
+    )
+  }
 }
 
 /**

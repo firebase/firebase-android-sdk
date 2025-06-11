@@ -40,7 +40,7 @@ internal class PipelineTests {
     val doc2: MutableDocument = doc("foo/2", 0, mapOf("bar" to "43"))
     val doc3: MutableDocument = doc("xxx/1", 0, mapOf("bar" to 42))
 
-    val list = runPipeline(firestore, pipeline, flowOf(doc1, doc2, doc3)).toList()
+    val list = runPipeline(pipeline, flowOf(doc1, doc2, doc3)).toList()
 
     assertThat(list).hasSize(1)
   }

@@ -227,7 +227,7 @@ abstract class Expr internal constructor() {
         override fun evaluateContext(
           context: EvaluationContext
         ): (input: MutableDocument) -> EvaluateResult {
-          val result = EvaluateResultValue(toProto(context.userDataReader))
+          val result = EvaluateResultValue(toProto(context.pipeline.userDataReader))
           return { _ -> result }
         }
       }
@@ -4124,8 +4124,8 @@ abstract class Expr internal constructor() {
 
 /** Expressions that have an alias are [Selectable] */
 abstract class Selectable : Expr() {
-  internal abstract fun getAlias(): String
-  internal abstract fun getExpr(): Expr
+  internal abstract val alias: String
+  internal abstract val expr: Expr
 
   internal companion object {
     fun toSelectable(o: Any): Selectable {
@@ -4140,10 +4140,8 @@ abstract class Selectable : Expr() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+class ExprWithAlias internal constructor(override val alias: String, override val expr: Expr) :
   Selectable() {
-  override fun getAlias() = alias
-  override fun getExpr() = expr
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
   override fun evaluateContext(context: EvaluationContext) = expr.evaluateContext(context)
 }
@@ -4164,12 +4162,16 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
      *
      * @return An [Field] representing the document ID.
      */
-    @JvmField val DOCUMENT_ID: Field = field(FieldPath.documentId())
+    @JvmField val DOCUMENT_ID: Field = Field(KEY_PATH)
+
+    @JvmField internal val UPDATE_TIME: Field = Field(UPDATE_TIME_PATH)
+
+    @JvmField internal val CREATE_TIME: Field = Field(CREATE_TIME_PATH)
   }
 
-  override fun getAlias(): String = fieldPath.canonicalString()
+  override val alias: String = fieldPath.canonicalString()
 
-  override fun getExpr(): Expr = this
+  override val expr: Expr = this
 
   override fun toProto(userDataReader: UserDataReader) = toProto()
 
@@ -4180,7 +4182,8 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
     block@{ input: MutableDocument ->
       EvaluateResultValue(
         when (fieldPath) {
-          KEY_PATH -> encodeValue(DocumentReference.forPath(input.key.path, context.db))
+          KEY_PATH ->
+            encodeValue(DocumentReference.forPath(input.key.path, context.pipeline.firestore))
           CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
           UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
           else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset

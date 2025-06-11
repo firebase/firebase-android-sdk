@@ -47,7 +47,7 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore()).collection("users").where(field("age").gte(10L))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -66,7 +66,7 @@ internal class WhereTests {
         .where(and(field("age").gte(10.0), field("age").gte(20.0)))
     // age >= 10.0 AND age >= 20.0 => age >= 20.0
     // Matches: doc1 (75.5), doc2 (25.0), doc3 (100.0)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3)
   }
 
@@ -85,8 +85,8 @@ internal class WhereTests {
         .collection("users")
         .where(constant(25.0).eq(field("age")))
 
-    val result1 = runPipeline(db, pipeline1, flowOf(*documents.toTypedArray())).toList()
-    val result2 = runPipeline(db, pipeline2, flowOf(*documents.toTypedArray())).toList()
+    val result1 = runPipeline(pipeline1, flowOf(*documents.toTypedArray())).toList()
+    val result2 = runPipeline(pipeline2, flowOf(*documents.toTypedArray())).toList()
 
     assertThat(result1).containsExactly(doc2)
     assertThat(result1).isEqualTo(result2)
@@ -109,8 +109,8 @@ internal class WhereTests {
         .collection("users")
         .where(and(field("age").lt(70.0), field("age").gt(10.0)))
 
-    val result1 = runPipeline(db, pipeline1, flowOf(*documents.toTypedArray())).toList()
-    val result2 = runPipeline(db, pipeline2, flowOf(*documents.toTypedArray())).toList()
+    val result1 = runPipeline(pipeline1, flowOf(*documents.toTypedArray())).toList()
+    val result2 = runPipeline(pipeline2, flowOf(*documents.toTypedArray())).toList()
 
     assertThat(result1).containsExactly(doc2)
     assertThat(result1).isEqualTo(result2)
@@ -132,8 +132,8 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(or(field("age").gt(80.0), field("age").lt(10.0)))
-    val result1 = runPipeline(db, pipeline1, flowOf(*documents.toTypedArray())).toList()
-    val result2 = runPipeline(db, pipeline2, flowOf(*documents.toTypedArray())).toList()
+    val result1 = runPipeline(pipeline1, flowOf(*documents.toTypedArray())).toList()
+    val result2 = runPipeline(pipeline2, flowOf(*documents.toTypedArray())).toList()
 
     assertThat(result1).containsExactly(doc3)
     assertThat(result1).isEqualTo(result2)
@@ -158,8 +158,8 @@ internal class WhereTests {
         .collection("users")
         .where(eqAny(field("name"), array(values)))
 
-    val result1 = runPipeline(db, pipeline1, flowOf(*documents.toTypedArray())).toList()
-    val result2 = runPipeline(db, pipeline2, flowOf(*documents.toTypedArray())).toList()
+    val result1 = runPipeline(pipeline1, flowOf(*documents.toTypedArray())).toList()
+    val result2 = runPipeline(pipeline2, flowOf(*documents.toTypedArray())).toList()
 
     assertThat(result1).containsExactly(doc1)
     assertThat(result1).isEqualTo(result2)
@@ -182,7 +182,7 @@ internal class WhereTests {
 
     // age >= 10.0 THEN age >= 20.0 => age >= 20.0
     // Matches: doc1 (75.5), doc2 (25.0), doc3 (100.0)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3)
   }
 
@@ -201,7 +201,7 @@ internal class WhereTests {
         .where(field("age").eq(75L))
         .where(field("height").eq(55L)) // 55L will also match 55.0
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -226,7 +226,7 @@ internal class WhereTests {
     // doc3: 75 > 50 (T) AND 55.0 < 75 (T) -> True
     // doc4: 41 > 50 (F)
     // doc5: 75 > 50 (T) AND 80 < 75 (F) -> False
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3)
   }
 
@@ -253,7 +253,7 @@ internal class WhereTests {
     // doc3: charlie (yes), baker (yes) -> Match
     // doc4: diane (yes), miller (yes) -> Match
     // doc5: eric (no), davis (no)
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4)
   }
 
@@ -304,7 +304,7 @@ internal class WhereTests {
     // doc3: 75==75 (T), 50>45 (T), baker ends er (T) -> True
     // doc4: 75==75 (T), 50>45 (T), miller ends er (T) -> True
     // doc5: 80==75 (F) -> False
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4)
   }
 
@@ -320,7 +320,7 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore()).collection("users").where(exists(field("name")))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3)
   }
 
@@ -338,7 +338,7 @@ internal class WhereTests {
         .collection("users")
         .where(not(exists(field("name"))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5)
   }
 
@@ -356,7 +356,7 @@ internal class WhereTests {
         .collection("users")
         .where(not(not(exists(field("name")))))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3)
   }
 
@@ -373,7 +373,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(and(exists(field("name")), exists(field("age"))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2)
   }
 
@@ -390,7 +390,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(or(exists(field("name")), exists(field("age"))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3, doc4)
   }
 
@@ -407,7 +407,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(not(and(exists(field("name")), exists(field("age")))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4, doc5)
   }
 
@@ -424,7 +424,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(not(or(exists(field("name")), exists(field("age")))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5)
   }
 
@@ -444,7 +444,7 @@ internal class WhereTests {
     // NOT ( (name exists AND NOT age exists) OR (NOT name exists AND age exists) )
     // = (name exists AND age exists) OR (NOT name exists AND NOT age exists)
     // Matches: doc1, doc2, doc5
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc5)
   }
 
@@ -461,7 +461,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(and(not(exists(field("name"))), not(exists(field("age")))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5)
   }
 
@@ -478,7 +478,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(or(not(exists(field("name"))), not(exists(field("age")))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4, doc5)
   }
 
@@ -498,7 +498,7 @@ internal class WhereTests {
     // (NOT name exists AND NOT (NOT age exists)) OR (NOT (NOT name exists) AND NOT age exists)
     // (NOT name exists AND age exists) OR (name exists AND NOT age exists)
     // Matches: doc3, doc4
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4)
   }
 
@@ -515,7 +515,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(and(not(exists(field("name"))), exists(field("age"))))
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -534,7 +534,7 @@ internal class WhereTests {
         .where(or(not(exists(field("name"))), exists(field("age"))))
     // (NOT name exists) OR (age exists)
     // Matches: doc1, doc2, doc4, doc5
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc4, doc5)
   }
 
@@ -553,7 +553,7 @@ internal class WhereTests {
         .where(xor(not(exists(field("name"))), exists(field("age"))))
     // (NOT name exists AND NOT age exists) OR (name exists AND age exists)
     // Matches: doc1, doc2, doc5
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc5)
   }
 
@@ -572,7 +572,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(and(equalityArgument1, equalityArgument2))
-    val resultAnd1 = runPipeline(db, pipelineAnd1, flowOf(*documents.toTypedArray())).toList()
+    val resultAnd1 = runPipeline(pipelineAnd1, flowOf(*documents.toTypedArray())).toList()
     assertThat(resultAnd1).containsExactly(doc2)
 
     // Combined AND (reversed order)
@@ -580,7 +580,7 @@ internal class WhereTests {
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
         .where(and(equalityArgument2, equalityArgument1))
-    val resultAnd2 = runPipeline(db, pipelineAnd2, flowOf(*documents.toTypedArray())).toList()
+    val resultAnd2 = runPipeline(pipelineAnd2, flowOf(*documents.toTypedArray())).toList()
     assertThat(resultAnd2).containsExactly(doc2)
 
     // Separate Stages
@@ -589,7 +589,7 @@ internal class WhereTests {
         .collection("users")
         .where(equalityArgument1)
         .where(equalityArgument2)
-    val resultSep1 = runPipeline(db, pipelineSep1, flowOf(*documents.toTypedArray())).toList()
+    val resultSep1 = runPipeline(pipelineSep1, flowOf(*documents.toTypedArray())).toList()
     assertThat(resultSep1).containsExactly(doc2)
 
     // Separate Stages (reversed order)
@@ -598,7 +598,7 @@ internal class WhereTests {
         .collection("users")
         .where(equalityArgument2)
         .where(equalityArgument1)
-    val resultSep2 = runPipeline(db, pipelineSep2, flowOf(*documents.toTypedArray())).toList()
+    val resultSep2 = runPipeline(pipelineSep2, flowOf(*documents.toTypedArray())).toList()
     assertThat(resultSep2).containsExactly(doc2)
   }
 }

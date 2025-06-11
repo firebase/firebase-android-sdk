@@ -69,7 +69,7 @@ internal class ComplexTests {
       pipeline = pipeline.where(field("field_$i").gt(0L))
     }
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documents)
   }
 
@@ -87,7 +87,7 @@ internal class ComplexTests {
     val pipeline =
       RealtimePipelineSource(db).collection(collectionId).where(field("field_1").eqAny(values))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documentsSource)
   }
 
@@ -109,7 +109,7 @@ internal class ComplexTests {
         .collection(collectionId)
         .where(and(conditions.first(), *conditions.drop(1).toTypedArray()))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documentsSource)
   }
 
@@ -127,7 +127,7 @@ internal class ComplexTests {
     val pipeline =
       RealtimePipelineSource(db).collection(collectionId).where(field("field_1").notEqAny(values))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactly(matchingDoc)
   }
 
@@ -169,7 +169,7 @@ internal class ComplexTests {
         .collection(collectionId)
         .where(or(conditions.first(), *conditions.drop(1).toTypedArray()))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     // matchingDoc: field_1=3001 (not in values) -> true. Other fields are in values. So OR is true.
     // documentsSource: All fields have values from 1 to 1000. All are IN `values`. So notEqAny is
     // false for all fields. OR is false.
@@ -195,7 +195,7 @@ internal class ComplexTests {
         .collection(collectionId)
         .where(field("field_1").arrayContainsAny(valuesToSearch))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documentsSource)
   }
 
@@ -227,7 +227,7 @@ internal class ComplexTests {
         .collection(collectionId)
         .where(or(conditions.first(), *conditions.drop(1).toTypedArray()))
 
-    val result = runPipeline(db, pipeline, flowOf(*allDocuments.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*allDocuments.toTypedArray())).toList()
     // documentsSource: each field_i has a list like [some_value_between_1_and_1000].
     // Since valuesToSearch is [1..3000], arrayContainsAny will be true for each field. So OR is
     // true.
@@ -256,7 +256,7 @@ internal class ComplexTests {
     // Since all field values are the same, sort order is determined by document ID.
     val expectedDocs = documents.sortedBy { it.key }
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
   }
 
@@ -277,7 +277,7 @@ internal class ComplexTests {
     val pipeline =
       RealtimePipelineSource(db).collection(collectionId).where(addExpr.gt(0L)) // 31 > 0L is true
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documents)
   }
 
@@ -305,7 +305,7 @@ internal class ComplexTests {
         .collection(collectionId)
         .where(or(orConditions.first(), *orConditions.drop(1).toTypedArray()))
 
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // Every document will have at least one field_i <= maxValueInDb (actually all fields are)
     assertThat(result).containsExactlyElementsIn(documents)
   }
@@ -333,7 +333,7 @@ internal class ComplexTests {
             and(andConditions2.first(), *andConditions2.drop(1).toTypedArray())
           )
         )
-    val result = runPipeline(db, pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
     // All seeded values are > 0 and < Long.MAX_VALUE, so all documents match.
     assertThat(result).containsExactlyElementsIn(documents)
   }
