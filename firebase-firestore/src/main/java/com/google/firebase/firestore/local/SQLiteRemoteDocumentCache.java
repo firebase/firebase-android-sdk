@@ -159,7 +159,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit, /*filter*/ null);
+      return getAll(collections, offset, limit, /*filter*/ null, /*context*/ null);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -170,7 +170,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 collections.subList(i, Math.min(collections.size(), i + pageSize)),
                 offset,
                 limit,
-                /*filter*/ null));
+                /*filter*/ null,
+                /*context*/ null));
       }
       return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
@@ -218,25 +219,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    db.query(sql.toString())
+    int cnt = db.query(sql.toString())
         .binding(bindVars)
-        .forEach(
-            row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
-              if (context != null) {
-                context.incrementDocumentReadCount();
-              }
-            });
+        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+    if (context != null) {
+      context.incrementDocumentReadCount(cnt);
+    }
     backgroundQueue.drain();
     return results;
-  }
-
-  private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections,
-      IndexOffset offset,
-      int count,
-      @Nullable Predicate<MutableDocument> filter) {
-    return getAll(collections, offset, count, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
