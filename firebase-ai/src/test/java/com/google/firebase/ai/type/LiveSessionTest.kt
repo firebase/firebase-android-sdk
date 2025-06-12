@@ -35,7 +35,7 @@ import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnitRunner
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, PublicPreviewAPI::class)
 @RunWith(MockitoJUnitRunner::class)
 class LiveSessionTest {
 
