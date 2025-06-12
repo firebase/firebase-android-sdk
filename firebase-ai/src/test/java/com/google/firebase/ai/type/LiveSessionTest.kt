@@ -63,9 +63,7 @@ class LiveSessionTest {
   @Test
   fun `startAudioConversation with RECORD_AUDIO permission proceeds normally`() = runTest {
     // Arrange
-    `when`(
-        mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-      )
+    `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
       .thenReturn(PackageManager.PERMISSION_GRANTED)
 
     // Act & Assert
@@ -77,9 +75,7 @@ class LiveSessionTest {
   fun `startAudioConversation without RECORD_AUDIO permission throws PermissionMissingException`() =
     runTest {
       // Arrange
-      `when`(
-          mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-        )
+      `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
         .thenReturn(PackageManager.PERMISSION_DENIED)
 
       // Act & Assert
