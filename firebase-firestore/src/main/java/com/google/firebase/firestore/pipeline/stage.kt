@@ -29,10 +29,13 @@ import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.skip
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 
@@ -533,8 +536,21 @@ internal constructor(private val limit: Int, options: InternalOptions = Internal
   override fun evaluate(
     context: EvaluationContext,
     inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> = if (limit > 0) inputs.take(limit) else flowOf()
-
+  ): Flow<MutableDocument> =
+    when {
+      limit > 0 -> inputs.take(limit)
+      limit < 0 ->
+        flow {
+          val limitLast = -limit
+          val buffer = ArrayDeque<MutableDocument>(limitLast)
+          inputs.collect { doc ->
+            if (buffer.size == limitLast) buffer.removeFirst()
+            buffer.add(doc)
+          }
+          buffer.forEach { emit(it) }
+        }
+      else -> emptyFlow()
+    }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
 }
@@ -545,6 +561,23 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
   override fun self(options: InternalOptions) = OffsetStage(offset, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> =
+    when {
+      offset > 0 -> inputs.drop(offset)
+      offset < 0 ->
+        flow {
+          val offsetLast = -offset
+          val buffer = ArrayDeque<MutableDocument>(offsetLast)
+          inputs.collect { doc ->
+            if (buffer.size == offsetLast) emit(buffer.removeFirst())
+            buffer.add(doc)
+          }
+        }
+      else -> inputs
+    }
 }
 
 internal class SelectStage
