@@ -68,6 +68,11 @@ dokka {
         )
         .get()
     )
+    includes.from(
+      layout.buildDirectory
+        .dir("dataConnect/generatedSources/a/b/fdccon/demo/README.md")
+        .get()
+    )
   }
 }
 
