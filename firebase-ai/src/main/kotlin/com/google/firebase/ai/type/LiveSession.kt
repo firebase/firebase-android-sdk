@@ -17,6 +17,7 @@
 package com.google.firebase.ai.type
 
 import android.Manifest
+import android.Manifest.permission.RECORD_AUDIO
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
@@ -97,8 +98,7 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    if (
-      context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+    if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
         PackageManager.PERMISSION_GRANTED
     ) {
       throw PermissionMissingException("Missing RECORD_AUDIO")
