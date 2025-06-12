@@ -18,51 +18,38 @@
 
 package com.google.firebase.vertexai.common.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.GenerateContentRequest
-import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.server.Candidate
-import com.google.firebase.vertexai.common.shared.Content
-import com.google.firebase.vertexai.common.shared.TextPart
+import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Content
+import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.RequestOptions
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.nulls.shouldNotBeNull
+import com.google.firebase.vertexai.type.TextPart
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.close
-import io.ktor.utils.io.writeFully
-import java.io.File
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
+import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
+private val TEST_APP_ID = "1:android:12345"
+private val TEST_VERSION = 1
 
-internal fun prepareStreamingResponse(response: List<GenerateContentResponse>): List<ByteArray> =
-  response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
-
-internal fun prepareResponse(response: GenerateContentResponse) =
-  JSON.encodeToString(response).toByteArray()
-
-@OptIn(ExperimentalSerializationApi::class)
-internal fun createRequest(vararg text: String): GenerateContentRequest {
-  val contents = text.map { Content(parts = listOf(TextPart(it))) }
-
-  return GenerateContentRequest("gemini", contents)
-}
-
-internal fun createResponse(text: String) = createResponses(text).single()
+internal fun prepareStreamingResponse(
+  response: List<GenerateContentResponse.Internal>
+): List<ByteArray> = response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
 @OptIn(ExperimentalSerializationApi::class)
-internal fun createResponses(vararg text: String): List<GenerateContentResponse> {
-  val candidates = text.map { Candidate(Content(parts = listOf(TextPart(it)))) }
+internal fun createResponses(vararg text: String): List<GenerateContentResponse.Internal> {
+  val candidates =
+    text.map { Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(it)))) }
 
-  return candidates.map { GenerateContentResponse(candidates = listOf(it)) }
+  return candidates.map { GenerateContentResponse.Internal(candidates = listOf(it)) }
 }
 
 /**
@@ -107,6 +94,9 @@ internal fun commonTest(
   requestOptions: RequestOptions = RequestOptions(),
   block: CommonTest,
 ) = doBlocking {
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val channel = ByteChannel(autoFlush = true)
   val apiController =
     APIController(
@@ -117,85 +107,10 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   CommonTestScope(channel, apiController).block()
-}
-
-/**
- * A variant of [commonTest] for performing *streaming-based* snapshot tests.
- *
- * Loads the *Golden File* and automatically parses the messages from it; providing it to the
- * channel.
- *
- * @param name The name of the *Golden File* to load
- * @param httpStatusCode An optional [HttpStatusCode] to return as a response
- * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenUnaryFile
- */
-internal fun goldenStreamingFile(
-  name: String,
-  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
-  block: CommonTest,
-) = doBlocking {
-  val goldenFile = loadGoldenFile("streaming/$name")
-  val messages = goldenFile.readLines().filter { it.isNotBlank() }
-
-  commonTest(httpStatusCode) {
-    launch {
-      for (message in messages) {
-        channel.writeFully("$message$SSE_SEPARATOR".toByteArray())
-      }
-      channel.close()
-    }
-
-    block()
-  }
-}
-
-/**
- * A variant of [commonTest] for performing snapshot tests.
- *
- * Loads the *Golden File* and automatically provides it to the channel.
- *
- * @param name The name of the *Golden File* to load
- * @param httpStatusCode An optional [HttpStatusCode] to return as a response
- * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenStreamingFile
- */
-internal fun goldenUnaryFile(
-  name: String,
-  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
-  block: CommonTest,
-) =
-  commonTest(httpStatusCode) {
-    val goldenFile = loadGoldenFile("unary/$name")
-    val message = goldenFile.readText()
-
-    channel.send(message.toByteArray())
-
-    block()
-  }
-
-/**
- * Loads a *Golden File* from the resource directory.
- *
- * Expects golden files to live under `golden-files` in the resource files.
- *
- * @see goldenUnaryFile
- */
-internal fun loadGoldenFile(path: String): File = loadResourceFile("golden-files/$path")
-
-/** Loads a file from the test resources directory. */
-internal fun loadResourceFile(path: String) = File("src/test/resources/$path")
-
-/**
- * Ensures that a collection is neither null or empty.
- *
- * Syntax sugar for [shouldNotBeNull] and [shouldNotBeEmpty].
- */
-inline fun <reified T : Any> Collection<T>?.shouldNotBeNullOrEmpty(): Collection<T> {
-  shouldNotBeNull()
-  shouldNotBeEmpty()
-  return this
 }

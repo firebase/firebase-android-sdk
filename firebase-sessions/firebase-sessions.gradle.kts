@@ -18,6 +18,7 @@
 
 plugins {
   id("firebase-library")
+  id("firebase-vendor")
   id("kotlin-android")
   id("kotlin-kapt")
 }
@@ -67,12 +68,18 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
-  implementation("com.google.android.datatransport:transport-api:3.2.0")
+
   api("com.google.firebase:firebase-annotations:16.2.0")
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
+
+  implementation("com.google.android.datatransport:transport-api:3.2.0")
+  implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
+  implementation(libs.androidx.datastore.preferences)
+
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
+
   compileOnly(libs.errorprone.annotations)
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
@@ -85,6 +92,7 @@ dependencies {
   }
 
   kapt(project(":encoders:firebase-encoders-processor"))
+  kapt(libs.dagger.compiler)
 
   testImplementation(project(":integ-testing")) {
     exclude(group = "com.google.firebase", module = "firebase-common")

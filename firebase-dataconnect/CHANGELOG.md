@@ -1,4 +1,28 @@
 # Unreleased
+* [fixed] Fixed occasional `NullPointerException` when registering with
+  FirebaseAuth, leading to erroneous UNAUTHENTICATED exceptions.
+  ([#7001](https://github.com/firebase/firebase-android-sdk/pull/7001))
+
+# 16.0.2
+* [changed] Improved code robustness related to state management in
+  `FirebaseDataConnect` objects.
+  ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
+
+# 16.0.1
+* [changed] Internal improvements.
+
+# 16.0.0
+* [changed] DataConnectOperationException added, enabling support for partial
+  errors; that is, any data that was received and/or was able to be decoded is
+  now available via the "response" property of the exception thrown when a
+  query or mutation is executed.
+  ([#6794](https://github.com/firebase/firebase-android-sdk/pull/6794))
+
+# 16.0.0-beta05
+* [changed] Changed gRPC proto package to v1 (was v1beta).
+  ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
+
+# 16.0.0-beta04
 * [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
   `MutableStateFlow<LogLevel>`. This enables apps to "collect" the flow to,
   for example, update a UI component when the log level changes.

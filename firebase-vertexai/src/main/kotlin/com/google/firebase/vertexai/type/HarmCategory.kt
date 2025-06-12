@@ -16,8 +16,49 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.makeMissingCaseException
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Category for a given harm rating. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class HarmCategory private constructor(public val ordinal: Int) {
+  internal fun toInternal() =
+    when (this) {
+      HARASSMENT -> Internal.HARASSMENT
+      HATE_SPEECH -> Internal.HATE_SPEECH
+      SEXUALLY_EXPLICIT -> Internal.SEXUALLY_EXPLICIT
+      DANGEROUS_CONTENT -> Internal.DANGEROUS_CONTENT
+      CIVIC_INTEGRITY -> Internal.CIVIC_INTEGRITY
+      UNKNOWN -> Internal.UNKNOWN
+      else -> throw makeMissingCaseException("HarmCategory", ordinal)
+    }
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
+    UNKNOWN,
+    @SerialName("HARM_CATEGORY_HARASSMENT") HARASSMENT,
+    @SerialName("HARM_CATEGORY_HATE_SPEECH") HATE_SPEECH,
+    @SerialName("HARM_CATEGORY_SEXUALLY_EXPLICIT") SEXUALLY_EXPLICIT,
+    @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT,
+    @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY;
+
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+
+    internal fun toPublic() =
+      when (this) {
+        HARASSMENT -> HarmCategory.HARASSMENT
+        HATE_SPEECH -> HarmCategory.HATE_SPEECH
+        SEXUALLY_EXPLICIT -> HarmCategory.SEXUALLY_EXPLICIT
+        DANGEROUS_CONTENT -> HarmCategory.DANGEROUS_CONTENT
+        CIVIC_INTEGRITY -> HarmCategory.CIVIC_INTEGRITY
+        else -> HarmCategory.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: HarmCategory = HarmCategory(0)

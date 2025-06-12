@@ -19,12 +19,12 @@ import java.nio.charset.StandardCharsets
 
 plugins {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of December 03, 2024.
+  // The versions shown here were the latest versions as of May 09, 2025.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
   // in general, match the version of kotlin("android").
-  id("com.android.application") version "8.7.3"
+  id("com.android.application") version "8.9.2"
   id("com.google.gms.google-services") version "4.4.2"
-  val kotlinVersion = "2.1.0"
+  val kotlinVersion = "2.1.10"
   kotlin("android") version kotlinVersion
   kotlin("plugin.serialization") version kotlinVersion
 
@@ -35,19 +35,19 @@ plugins {
 
 dependencies {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of December 03, 2024.
-  implementation("com.google.firebase:firebase-dataconnect:16.0.0-beta03")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3")
+  // The versions shown here were the latest versions as of May 09, 2025.
+  implementation("com.google.firebase:firebase-dataconnect:16.0.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0")
   implementation("androidx.appcompat:appcompat:1.7.0")
-  implementation("androidx.activity:activity-ktx:1.9.3")
-  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+  implementation("androidx.activity:activity-ktx:1.10.1")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0")
   implementation("com.google.android.material:material:1.12.0")
 
   // The following code in this "dependencies" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
-  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
   implementation("io.kotest:kotest-property:5.9.1")
   implementation("io.kotest.extensions:kotest-property-arbs:2.1.2")
 }

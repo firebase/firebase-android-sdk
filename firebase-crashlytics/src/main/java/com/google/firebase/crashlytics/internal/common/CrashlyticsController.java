@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -76,6 +77,8 @@ class CrashlyticsController {
   private static final String VERSION_CONTROL_INFO_KEY = "com.crashlytics.version-control-info";
   private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
   private static final String META_INF_FOLDER = "META-INF/";
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
@@ -628,13 +631,23 @@ class CrashlyticsController {
   }
 
   String getVersionControlInfo() throws IOException {
-    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
-    if (is == null) {
-      return null;
+    // Attempt to read from an Android string resource
+    String versionControlInfo = CommonUtils.getVersionControlInfo(context);
+    if (versionControlInfo != null) {
+      Logger.getLogger().d("Read version control info from string resource");
+      return Base64.encodeToString(versionControlInfo.getBytes(UTF_8), 0);
     }
 
-    Logger.getLogger().d("Read version control info");
-    return Base64.encodeToString(readResource(is), 0);
+    // Fallback to reading the file
+    try (InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE)) {
+      if (is != null) {
+        Logger.getLogger().d("Read version control info from file");
+        return Base64.encodeToString(readResource(is), 0);
+      }
+    }
+
+    Logger.getLogger().i("No version control information found");
+    return null;
   }
 
   private InputStream getResourceAsStream(String resource) {
@@ -644,25 +657,19 @@ class CrashlyticsController {
       return null;
     }
 
-    InputStream is = classLoader.getResourceAsStream(resource);
-    if (is == null) {
-      Logger.getLogger().i("No version control information found");
-      return null;
-    }
-
-    return is;
+    return classLoader.getResourceAsStream(resource);
   }
 
   private static byte[] readResource(InputStream is) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int length;
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      byte[] buffer = new byte[1024];
+      int length;
 
-    while ((length = is.read(buffer)) != -1) {
-      out.write(buffer, 0, length);
+      while ((length = is.read(buffer)) != -1) {
+        out.write(buffer, 0, length);
+      }
+      return out.toByteArray();
     }
-
-    return out.toByteArray();
   }
 
   private void finalizePreviousNativeSession(String previousSessionId) {

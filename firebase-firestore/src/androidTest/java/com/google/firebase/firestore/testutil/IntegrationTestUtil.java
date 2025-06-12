@@ -524,17 +524,41 @@ public class IntegrationTestUtil {
    * documents as running the query while offline. If `expectedDocs` is provided, it also checks
    * that both online and offline query result is equal to the expected documents.
    *
+   * This function first performs a "get" for the entire COLLECTION from the server.
+   * It then performs the QUERY from CACHE which, results in `executeFullCollectionScan()`
+   * It then performs the QUERY from SERVER.
+   * It then performs the QUERY from CACHE again, which results in `performQueryUsingRemoteKeys()`.
+   * It then ensure that all the above QUERY results are the same.
+   *
+   * @param collection The collection on which the query is performed.
    * @param query The query to check
    * @param expectedDocs Ordered list of document keys that are expected to match the query
    */
-  public static void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
-    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
+  public static void checkOnlineAndOfflineResultsMatch(
+      Query collection, Query query, String... expectedDocs) {
+    // Note: Order matters. The following has to be done in the specific order:
 
-    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
-    List<String> expected = asList(expectedDocs);
-    if (!expected.isEmpty()) {
-      assertEquals(expected, querySnapshotToIds(docsFromCache));
+    // 1- Pre-populate the cache with the entire collection.
+    waitFor(collection.get(Source.SERVER));
+
+    // 2- This performs the query against the cache using full collection scan.
+    QuerySnapshot docsFromCacheFullCollectionScan = waitFor(query.get(Source.CACHE));
+
+    // 3- This goes to the server (backend/emulator).
+    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
+
+    // 4- This performs the query against the cache using remote keys.
+    QuerySnapshot docsFromCacheUsingRemoteKeys = waitFor(query.get(Source.CACHE));
+
+    assertEquals(
+        querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCacheFullCollectionScan));
+    assertEquals(
+        querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCacheUsingRemoteKeys));
+
+    // Expected document IDs.
+    List<String> expectedDocIds = asList(expectedDocs);
+    if (!expectedDocIds.isEmpty()) {
+      assertEquals(expectedDocIds, querySnapshotToIds(docsFromServer));
     }
   }
 }

@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Defines a function that the model can use as a tool.
  *
@@ -50,6 +52,10 @@ package com.google.firebase.vertexai.type
  * function.
  * @see Schema
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FunctionDeclaration(
   internal val name: String,
   internal val description: String,
@@ -58,4 +64,13 @@ public class FunctionDeclaration(
 ) {
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
+
+  internal fun toInternal() = Internal(name, "", schema.toInternal())
+
+  @Serializable
+  internal data class Internal(
+    val name: String,
+    val description: String,
+    val parameters: Schema.Internal
+  )
 }

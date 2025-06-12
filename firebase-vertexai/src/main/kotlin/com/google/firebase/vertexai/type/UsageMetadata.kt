@@ -16,15 +16,47 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Usage metadata about response(s).
  *
  * @param promptTokenCount Number of tokens in the request.
  * @param candidatesTokenCount Number of tokens in the response(s).
  * @param totalTokenCount Total number of tokens.
+ * @param promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
+ * prompt.
+ * @param candidatesTokensDetails The breakdown, by modality, of how many tokens are consumed by the
+ * candidates.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class UsageMetadata(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
-  public val totalTokenCount: Int
-)
+  public val totalTokenCount: Int,
+  public val promptTokensDetails: List<ModalityTokenCount>,
+  public val candidatesTokensDetails: List<ModalityTokenCount>,
+) {
+
+  @Serializable
+  internal data class Internal(
+    val promptTokenCount: Int? = null,
+    val candidatesTokenCount: Int? = null,
+    val totalTokenCount: Int? = null,
+    val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
+    val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
+  ) {
+
+    internal fun toPublic(): UsageMetadata =
+      UsageMetadata(
+        promptTokenCount ?: 0,
+        candidatesTokenCount ?: 0,
+        totalTokenCount ?: 0,
+        promptTokensDetails = promptTokensDetails?.map { it.toPublic() } ?: emptyList(),
+        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList()
+      )
+  }
+}

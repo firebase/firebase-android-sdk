@@ -14,6 +14,16 @@
 
 const assert = require('assert');
 const functions = require('firebase-functions');
+const functionsV2 = require('firebase-functions/v2');
+
+/**
+ * Pauses the execution for a specified amount of time.
+ * @param {number} ms - The number of milliseconds to sleep.
+ * @return {Promise<void>} A promise that resolves after the specified time.
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 exports.dataTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {
@@ -126,3 +136,105 @@ exports.timeoutTest = functions.https.onRequest((request, response) => {
 exports.headersTest = functions.https.onRequest((request, response) => {
   response.status(200).send({data: request.headers});
 });
+
+const streamData = ['hello', 'world', 'this', 'is', 'cool'];
+
+/**
+ * Generates chunks of text asynchronously, yielding one chunk at a time.
+ * @async
+ * @generator
+ * @yields {string} A chunk of text from the data array.
+ */
+async function* generateText() {
+  for (const chunk of streamData) {
+    yield chunk;
+    await sleep(100);
+  }
+}
+
+exports.genStream = functionsV2.https.onCall(async (request, response) => {
+  if (request.acceptsStreaming) {
+    for await (const chunk of generateText()) {
+      response.sendChunk(chunk);
+    }
+  }
+  else {
+      console.log("CLIENT DOES NOT SUPPORT STEAMING");
+  }
+  return streamData.join(' ');
+});
+
+exports.genStreamError = functionsV2.https.onCall(
+    async (request, response) => {
+      // Note: The functions backend does not pass the error message to the
+      // client at this time.
+      throw Error("BOOM")
+    });
+
+const weatherForecasts = {
+  Toronto: { conditions: 'snowy', temperature: 25 },
+  London: { conditions: 'rainy', temperature: 50 },
+  Dubai: { conditions: 'sunny', temperature: 75 }
+};
+
+/**
+ * Generates weather forecasts asynchronously for the given locations.
+ * @async
+ * @generator
+ * @param {Array<{name: string}>} locations - An array of location objects.
+ */
+async function* generateForecast(locations) {
+  for (const location of locations) {
+    yield { 'location': location,  ...weatherForecasts[location.name] };
+    await sleep(100);
+  }
+};
+
+exports.genStreamWeather = functionsV2.https.onCall(
+    async (request, response) => {
+      const locations = request.data && request.data.data?
+      request.data.data: [];
+      const forecasts = [];
+      if (request.acceptsStreaming) {
+        for await (const chunk of generateForecast(locations)) {
+          forecasts.push(chunk);
+          response.sendChunk(chunk);
+        }
+      }
+      return {forecasts};
+    });
+
+exports.genStreamEmpty = functionsV2.https.onCall(
+  async (request, response) => {
+    if (request.acceptsStreaming) {
+      // Send no chunks
+    }
+    // Implicitly return null.
+  }
+);
+
+exports.genStreamResultOnly = functionsV2.https.onCall(
+  async (request, response) => {
+    if (request.acceptsStreaming) {
+      // Do not send any chunks.
+    }
+    return "Only a result";
+  }
+);
+
+exports.genStreamLargeData = functionsV2.https.onCall(
+  async (request, response) => {
+    if (request.acceptsStreaming) {
+      const largeString = 'A'.repeat(10000);
+      const chunkSize = 1024;
+      for (let i = 0; i < largeString.length; i += chunkSize) {
+        const chunk = largeString.substring(i, i + chunkSize);
+        response.sendChunk(chunk);
+        await sleep(100);
+      }
+    } else {
+      console.log("CLIENT DOES NOT SUPPORT STEAMING")
+    }
+    return "Stream Completed";
+  }
+);

@@ -39,7 +39,9 @@ import org.gradle.kotlin.dsl.provideDelegate
  * @property releasedVersion A [ModuleVersion] of what to bump from. Defaults to the project
  *   version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
- *   higher than [releasedVersion]
+ *   higher than [releasedVersion].
+ * @property bumpVersion If set, then the default provided by [newVersion] will be bumped by one
+ *   patch. Defaults to `true`.
  * @see PostReleasePlugin
  */
 abstract class VersionBumpTask : DefaultTask() {
@@ -52,16 +54,23 @@ abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional Input]
   abstract val newVersion: Property<ModuleVersion>
 
+  @get:[Optional Input]
+  abstract val bumpVersion: Property<Boolean>
+
   init {
     configure()
   }
 
   @TaskAction
   fun build() {
+    val latestVersion = releasedVersion.get()
+    val version =
+      newVersion.orNull ?: if (bumpVersion.get()) latestVersion.bump() else latestVersion
+
     versionFile.get().asFile.rewriteLines {
       when {
-        it.startsWith("version=") -> "version=${newVersion.get()}"
-        it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${releasedVersion.get()}"
+        it.startsWith("version=") -> "version=${version}"
+        it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${latestVersion}"
         else -> it
       }
     }
@@ -70,7 +79,7 @@ abstract class VersionBumpTask : DefaultTask() {
   fun configure() {
     versionFile.convention(project.layout.projectDirectory.file("gradle.properties"))
     releasedVersion.convention(computeReleasedVersion())
-    newVersion.convention(releasedVersion.map { it.bump() })
+    bumpVersion.convention(true)
   }
 
   fun computeReleasedVersion(): ModuleVersion? {

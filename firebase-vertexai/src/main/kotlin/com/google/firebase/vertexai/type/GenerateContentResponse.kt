@@ -16,6 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * A response from the model.
  *
@@ -24,6 +26,10 @@ package com.google.firebase.vertexai.type
  * When streaming, it's only populated in the first response.
  * @property usageMetadata Information about the number of tokens in the prompt and in the response.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerateContentResponse(
   public val candidates: List<Candidate>,
   public val promptFeedback: PromptFeedback?,
@@ -40,5 +46,32 @@ public class GenerateContentResponse(
   /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
   public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+  }
+
+  /**
+   * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
+   *
+   * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
+   */
+  public val inlineDataParts: List<InlineDataPart> by lazy {
+    candidates.first().content.parts.let { parts ->
+      parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
+        parts.filterIsInstance<InlineDataPart>()
+    }
+  }
+
+  @Serializable
+  internal data class Internal(
+    val candidates: List<Candidate.Internal>? = null,
+    val promptFeedback: PromptFeedback.Internal? = null,
+    val usageMetadata: UsageMetadata.Internal? = null,
+  ) : Response {
+    internal fun toPublic(): GenerateContentResponse {
+      return GenerateContentResponse(
+        candidates?.map { it.toPublic() }.orEmpty(),
+        promptFeedback?.toPublic(),
+        usageMetadata?.toPublic()
+      )
+    }
   }
 }

@@ -1,10 +1,10 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.installations {
 
   @com.google.auto.value.AutoValue public abstract class InstallationTokenResult {
     ctor public InstallationTokenResult();
-    method @NonNull public abstract String getToken();
-    method @NonNull public abstract long getTokenExpirationTimestamp();
+    method public abstract String getToken();
+    method public abstract long getTokenExpirationTimestamp();
   }
 
 }

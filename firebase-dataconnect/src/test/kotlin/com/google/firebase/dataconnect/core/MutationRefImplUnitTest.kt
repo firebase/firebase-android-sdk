@@ -26,9 +26,9 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
@@ -37,7 +37,6 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -181,7 +180,7 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
     val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = listOf(Arb.dataConnect.dataConnectError().next())
+    val errors = Arb.dataConnect.operationErrors().next()
     val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
     val variablesSlot: CapturingSlot<Struct> = slot()
     val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)
@@ -673,18 +672,16 @@ class MutationRefImplUnitTest {
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
-        every { lazyGrpcClient } returns
-          SuspendingLazy {
-            mockk<DataConnectGrpcClient> {
-              coEvery {
-                executeMutation(
-                  capture(requestIdSlot),
-                  capture(operationNameSlot),
-                  capture(variablesSlot),
-                  capture(callerSdkTypeSlot),
-                )
-              } returns result.getOrThrow()
-            }
+        every { grpcClient } returns
+          mockk<DataConnectGrpcClient> {
+            coEvery {
+              executeMutation(
+                capture(requestIdSlot),
+                capture(operationNameSlot),
+                capture(variablesSlot),
+                capture(callerSdkTypeSlot),
+              )
+            } returns result.getOrThrow()
           }
       }
   }

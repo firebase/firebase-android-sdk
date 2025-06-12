@@ -1,5 +1,16 @@
 # Unreleased
+* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service 
+  connection Executor.
 
+# 24.1.1
+* [changed] Bug fix in SyncTask to always unregister the receiver on the same
+  context on which it was registered.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.1.0
 * [deprecated] Deprecated additional FCM upstream messaging methods and updated

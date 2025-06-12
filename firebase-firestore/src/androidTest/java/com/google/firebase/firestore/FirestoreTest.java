@@ -1651,24 +1651,40 @@ public class FirestoreTest {
             "a");
 
     // Run query with snapshot listener
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
   public void snapshotListenerSortsUnicodeStringsAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "a", map("value", "Łukasiewicz"),
-            "b", map("value", "Sierpiński"),
-            "c", map("value", "岩澤"),
-            "d", map("value", "🄟"),
-            "e", map("value", "Ｐ"),
-            "f", map("value", "︒"),
-            "g", map("value", "🐵"));
+            "a",
+            map("value", "Łukasiewicz"),
+            "b",
+            map("value", "Sierpiński"),
+            "c",
+            map("value", "岩澤"),
+            "d",
+            map("value", "🄟"),
+            "e",
+            map("value", "Ｐ"),
+            "f",
+            map("value", "︒"),
+            "g",
+            map("value", "🐵"),
+            "h",
+            map("value", "你好"),
+            "i",
+            map("value", "你顥"),
+            "j",
+            map("value", "😁"),
+            "k",
+            map("value", "😀"));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
-    List<String> expectedDocIds = Arrays.asList("b", "a", "c", "f", "e", "d", "g");
+    List<String> expectedDocIds =
+        Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
@@ -1692,24 +1708,40 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
   public void snapshotListenerSortsUnicodeStringsInArrayAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "a", map("value", Arrays.asList("Łukasiewicz")),
-            "b", map("value", Arrays.asList("Sierpiński")),
-            "c", map("value", Arrays.asList("岩澤")),
-            "d", map("value", Arrays.asList("🄟")),
-            "e", map("value", Arrays.asList("Ｐ")),
-            "f", map("value", Arrays.asList("︒")),
-            "g", map("value", Arrays.asList("🐵")));
+            "a",
+            map("value", Arrays.asList("Łukasiewicz")),
+            "b",
+            map("value", Arrays.asList("Sierpiński")),
+            "c",
+            map("value", Arrays.asList("岩澤")),
+            "d",
+            map("value", Arrays.asList("🄟")),
+            "e",
+            map("value", Arrays.asList("Ｐ")),
+            "f",
+            map("value", Arrays.asList("︒")),
+            "g",
+            map("value", Arrays.asList("🐵")),
+            "h",
+            map("value", Arrays.asList("你好")),
+            "i",
+            map("value", Arrays.asList("你顥")),
+            "j",
+            map("value", Arrays.asList("😁")),
+            "k",
+            map("value", Arrays.asList("😀")));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
-    List<String> expectedDocIds = Arrays.asList("b", "a", "c", "f", "e", "d", "g");
+    List<String> expectedDocIds =
+        Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
@@ -1733,24 +1765,40 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
   public void snapshotListenerSortsUnicodeStringsInMapAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "a", map("value", map("foo", "Łukasiewicz")),
-            "b", map("value", map("foo", "Sierpiński")),
-            "c", map("value", map("foo", "岩澤")),
-            "d", map("value", map("foo", "🄟")),
-            "e", map("value", map("foo", "Ｐ")),
-            "f", map("value", map("foo", "︒")),
-            "g", map("value", map("foo", "🐵")));
+            "a",
+            map("value", map("foo", "Łukasiewicz")),
+            "b",
+            map("value", map("foo", "Sierpiński")),
+            "c",
+            map("value", map("foo", "岩澤")),
+            "d",
+            map("value", map("foo", "🄟")),
+            "e",
+            map("value", map("foo", "Ｐ")),
+            "f",
+            map("value", map("foo", "︒")),
+            "g",
+            map("value", map("foo", "🐵")),
+            "h",
+            map("value", map("foo", "你好")),
+            "i",
+            map("value", map("foo", "你顥")),
+            "j",
+            map("value", map("foo", "😁")),
+            "k",
+            map("value", map("foo", "😀")));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
-    List<String> expectedDocIds = Arrays.asList("b", "a", "c", "f", "e", "d", "g");
+    List<String> expectedDocIds =
+        Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
@@ -1774,24 +1822,40 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
   public void snapshotListenerSortsUnicodeStringsInMapKeyAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "a", map("value", map("Łukasiewicz", "foo")),
-            "b", map("value", map("Sierpiński", "foo")),
-            "c", map("value", map("岩澤", "foo")),
-            "d", map("value", map("🄟", "foo")),
-            "e", map("value", map("Ｐ", "foo")),
-            "f", map("value", map("︒", "foo")),
-            "g", map("value", map("🐵", "foo")));
+            "a",
+            map("value", map("Łukasiewicz", "foo")),
+            "b",
+            map("value", map("Sierpiński", "foo")),
+            "c",
+            map("value", map("岩澤", "foo")),
+            "d",
+            map("value", map("🄟", "foo")),
+            "e",
+            map("value", map("Ｐ", "foo")),
+            "f",
+            map("value", map("︒", "foo")),
+            "g",
+            map("value", map("🐵", "foo")),
+            "h",
+            map("value", map("你好", "foo")),
+            "i",
+            map("value", map("你顥", "foo")),
+            "j",
+            map("value", map("😁", "foo")),
+            "k",
+            map("value", map("😀", "foo")));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy("value");
-    List<String> expectedDocIds = Arrays.asList("b", "a", "c", "f", "e", "d", "g");
+    List<String> expectedDocIds =
+        Arrays.asList("b", "a", "h", "i", "c", "f", "e", "d", "g", "k", "j");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
@@ -1815,25 +1879,41 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
   @Test
   public void snapshotListenerSortsUnicodeStringsInDocumentKeyAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
-            "Łukasiewicz", map("value", "foo"),
-            "Sierpiński", map("value", "foo"),
-            "岩澤", map("value", "foo"),
-            "🄟", map("value", "foo"),
-            "Ｐ", map("value", "foo"),
-            "︒", map("value", "foo"),
-            "🐵", map("value", "foo"));
+            "Łukasiewicz",
+            map("value", "foo"),
+            "Sierpiński",
+            map("value", "foo"),
+            "岩澤",
+            map("value", "foo"),
+            "🄟",
+            map("value", "foo"),
+            "Ｐ",
+            map("value", "foo"),
+            "︒",
+            map("value", "foo"),
+            "🐵",
+            map("value", "foo"),
+            "你好",
+            map("value", "foo"),
+            "你顥",
+            map("value", "foo"),
+            "😁",
+            map("value", "foo"),
+            "😀",
+            map("value", "foo"));
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy(FieldPath.documentId());
     List<String> expectedDocIds =
-        Arrays.asList("Sierpiński", "Łukasiewicz", "岩澤", "︒", "Ｐ", "🄟", "🐵");
+        Arrays.asList(
+            "Sierpiński", "Łukasiewicz", "你好", "你顥", "岩澤", "︒", "Ｐ", "🄟", "🐵", "😀", "😁");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
@@ -1857,6 +1937,55 @@ public class FirestoreTest {
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
-    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+  }
+
+  @Test
+  public void snapshotListenerSortsInvalidUnicodeStringsAsServer() {
+    // Note: Protocol Buffer converts any invalid surrogates to "?".
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "a",
+            map("value", "Z"),
+            "b",
+            map("value", "你好"),
+            "c",
+            map("value", "😀"),
+            "d",
+            map("value", "ab\uD800"), // Lone high surrogate
+            "e",
+            map("value", "ab\uDC00"), // Lone low surrogate
+            "f",
+            map("value", "ab\uD800\uD800"), // Unpaired high surrogate
+            "g",
+            map("value", "ab\uDC00\uDC00")); // Unpaired low surrogate
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+    Query orderedQuery = colRef.orderBy("value");
+    List<String> expectedDocIds = Arrays.asList("a", "d", "e", "f", "g", "b", "c");
+
+    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
+    List<String> getSnapshotDocIds =
+        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+        orderedQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+          watchSnapshot.getDocuments().stream()
+              .map(documentSnapshot -> documentSnapshot.getId())
+              .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
+    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+
+    checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 }

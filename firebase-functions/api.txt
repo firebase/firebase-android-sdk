@@ -1,39 +1,37 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.functions {
 
   public final class FirebaseFunctions {
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String name);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String name, @NonNull com.google.firebase.functions.HttpsCallableOptions options);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL url);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL url, @NonNull com.google.firebase.functions.HttpsCallableOptions options);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp app, @NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp app);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
-    method public void useEmulator(@NonNull String host, int port);
-    method @Deprecated public void useFunctionsEmulator(@NonNull String origin);
-    field @NonNull public static final com.google.firebase.functions.FirebaseFunctions.Companion Companion;
+    method public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(String name);
+    method public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(String name, com.google.firebase.functions.HttpsCallableOptions options);
+    method public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(java.net.URL url);
+    method public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(java.net.URL url, com.google.firebase.functions.HttpsCallableOptions options);
+    method public static com.google.firebase.functions.FirebaseFunctions getInstance();
+    method public static com.google.firebase.functions.FirebaseFunctions getInstance(com.google.firebase.FirebaseApp app);
+    method public static com.google.firebase.functions.FirebaseFunctions getInstance(com.google.firebase.FirebaseApp app, String regionOrCustomDomain);
+    method public static com.google.firebase.functions.FirebaseFunctions getInstance(String regionOrCustomDomain);
+    method public void useEmulator(String host, int port);
+    method @Deprecated public void useFunctionsEmulator(String origin);
+    field public static final com.google.firebase.functions.FirebaseFunctions.Companion Companion;
   }
 
   public static final class FirebaseFunctions.Companion {
-    method @NonNull public com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp app, @NonNull String regionOrCustomDomain);
-    method @NonNull public com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp app);
-    method @NonNull public com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain);
-    method @NonNull public com.google.firebase.functions.FirebaseFunctions getInstance();
+    method public com.google.firebase.functions.FirebaseFunctions getInstance();
+    method public com.google.firebase.functions.FirebaseFunctions getInstance(com.google.firebase.FirebaseApp app);
+    method public com.google.firebase.functions.FirebaseFunctions getInstance(com.google.firebase.FirebaseApp app, String regionOrCustomDomain);
+    method public com.google.firebase.functions.FirebaseFunctions getInstance(String regionOrCustomDomain);
   }
 
   public final class FirebaseFunctionsException extends com.google.firebase.FirebaseException {
-    method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code getCode();
-    method @Nullable public Object getDetails();
-    property @NonNull public final com.google.firebase.functions.FirebaseFunctionsException.Code code;
-    property @Nullable public final Object details;
+    method public com.google.firebase.functions.FirebaseFunctionsException.Code getCode();
+    method public Object? getDetails();
+    property public final com.google.firebase.functions.FirebaseFunctionsException.Code code;
+    property public final Object? details;
   }
 
   public enum FirebaseFunctionsException.Code {
-    method @NonNull public static final com.google.firebase.functions.FirebaseFunctionsException.Code fromHttpStatus(int status);
-    method @NonNull public static final com.google.firebase.functions.FirebaseFunctionsException.Code fromValue(int value);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctionsException.Code valueOf(@NonNull String name) throws java.lang.IllegalArgumentException;
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctionsException.Code[] values();
+    method public static com.google.firebase.functions.FirebaseFunctionsException.Code fromHttpStatus(int status);
+    method public static com.google.firebase.functions.FirebaseFunctionsException.Code fromValue(int value);
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code ABORTED;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code ALREADY_EXISTS;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code CANCELLED;
@@ -51,21 +49,21 @@ package com.google.firebase.functions {
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNAVAILABLE;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNIMPLEMENTED;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNKNOWN;
-    field @NonNull public static final com.google.firebase.functions.FirebaseFunctionsException.Code.Companion Companion;
+    field public static final com.google.firebase.functions.FirebaseFunctionsException.Code.Companion Companion;
   }
 
   public static final class FirebaseFunctionsException.Code.Companion {
-    method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code fromHttpStatus(int status);
-    method @NonNull public com.google.firebase.functions.FirebaseFunctionsException.Code fromValue(int value);
+    method public com.google.firebase.functions.FirebaseFunctionsException.Code fromHttpStatus(int status);
+    method public com.google.firebase.functions.FirebaseFunctionsException.Code fromValue(int value);
   }
 
   public final class FunctionsKt {
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.Firebase, @NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getFunctions(@NonNull com.google.firebase.Firebase);
-    method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-    method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull java.net.URL url, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app);
+    method public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, String regionOrCustomDomain);
+    method public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.Firebase, String regionOrCustomDomain);
+    method public static com.google.firebase.functions.FirebaseFunctions getFunctions(com.google.firebase.Firebase);
+    method public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(com.google.firebase.functions.FirebaseFunctions, String name, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(com.google.firebase.functions.FirebaseFunctions, java.net.URL url, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
   }
 
   public final class HttpsCallableOptions {
@@ -75,24 +73,41 @@ package com.google.firebase.functions {
 
   public static final class HttpsCallableOptions.Builder {
     ctor public HttpsCallableOptions.Builder();
-    method @NonNull public com.google.firebase.functions.HttpsCallableOptions build();
+    method public com.google.firebase.functions.HttpsCallableOptions build();
     method public boolean getLimitedUseAppCheckTokens();
-    method @NonNull public com.google.firebase.functions.HttpsCallableOptions.Builder setLimitedUseAppCheckTokens(boolean limitedUse);
+    method public com.google.firebase.functions.HttpsCallableOptions.Builder setLimitedUseAppCheckTokens(boolean limitedUse);
     field public boolean limitedUseAppCheckTokens;
   }
 
   public final class HttpsCallableReference {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@Nullable Object data);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(Object? data);
     method public long getTimeout();
-    method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
+    method public void setTimeout(long timeout, java.util.concurrent.TimeUnit units);
+    method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream();
+    method public org.reactivestreams.Publisher<com.google.firebase.functions.StreamResponse> stream(Object? data = null);
+    method public com.google.firebase.functions.HttpsCallableReference withTimeout(long timeout, java.util.concurrent.TimeUnit units);
     property public final long timeout;
   }
 
   public final class HttpsCallableResult {
-    method @Nullable public Object getData();
-    field @Nullable public final Object data;
+    method public Object? getData();
+    field public final Object? data;
+  }
+
+  public abstract class StreamResponse {
+  }
+
+  public static final class StreamResponse.Message extends com.google.firebase.functions.StreamResponse {
+    ctor public StreamResponse.Message(com.google.firebase.functions.HttpsCallableResult message);
+    method public com.google.firebase.functions.HttpsCallableResult getMessage();
+    property public final com.google.firebase.functions.HttpsCallableResult message;
+  }
+
+  public static final class StreamResponse.Result extends com.google.firebase.functions.StreamResponse {
+    ctor public StreamResponse.Result(com.google.firebase.functions.HttpsCallableResult result);
+    method public com.google.firebase.functions.HttpsCallableResult getResult();
+    property public final com.google.firebase.functions.HttpsCallableResult result;
   }
 
 }
@@ -100,12 +115,12 @@ package com.google.firebase.functions {
 package com.google.firebase.functions.ktx {
 
   public final class FunctionsKt {
-    method @Deprecated @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull String regionOrCustomDomain);
-    method @Deprecated @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
-    method @Deprecated @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String regionOrCustomDomain);
-    method @Deprecated @NonNull public static com.google.firebase.functions.FirebaseFunctions getFunctions(@NonNull com.google.firebase.ktx.Firebase);
-    method @Deprecated @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-    method @Deprecated @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull java.net.URL url, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
+    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
+    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app, String regionOrCustomDomain);
+    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, String regionOrCustomDomain);
+    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions getFunctions(com.google.firebase.ktx.Firebase);
+    method @Deprecated public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(com.google.firebase.functions.FirebaseFunctions, String name, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
+    method @Deprecated public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(com.google.firebase.functions.FirebaseFunctions, java.net.URL url, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
   }
 
 }

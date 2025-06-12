@@ -31,6 +31,7 @@ import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSessionLifecycleServiceBinder
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
+import com.google.firebase.sessions.testing.FirebaseSessionsFakeComponent
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -46,7 +47,7 @@ import org.robolectric.Shadows
 @RunWith(AndroidJUnit4::class)
 internal class SessionsActivityLifecycleCallbacksTest {
   private lateinit var fakeService: FakeSessionLifecycleServiceBinder
-  private lateinit var lifecycleServiceBinder: FakeSessionLifecycleServiceBinder
+  private lateinit var lifecycleServiceBinder: SessionLifecycleServiceBinder
   private val fakeActivity = Activity()
 
   @Before
@@ -63,17 +64,17 @@ internal class SessionsActivityLifecycleCallbacksTest {
       )
     )
 
-    val firebaseApp =
-      Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
-        FirebaseOptions.Builder()
-          .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
-          .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
-          .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build(),
-      )
-    fakeService = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
-    lifecycleServiceBinder = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
+        .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
+        .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
+        .build(),
+    )
+
+    fakeService = FirebaseSessionsFakeComponent.instance.fakeSessionLifecycleServiceBinder
+    lifecycleServiceBinder = FirebaseSessionsFakeComponent.instance.sessionLifecycleServiceBinder
   }
 
   @After

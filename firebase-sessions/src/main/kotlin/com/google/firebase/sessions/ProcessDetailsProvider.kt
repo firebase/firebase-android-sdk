@@ -74,7 +74,7 @@ internal object ProcessDetailsProvider {
 
   /** Gets the app's current process name. If it could not be found, returns an empty string. */
   internal fun getProcessName(): String {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
       return Process.myProcessName()
     }
 

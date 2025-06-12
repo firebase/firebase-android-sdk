@@ -18,19 +18,27 @@ package com.google.firebase.vertexai.common
 
 import android.util.Log
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.options
-import com.google.firebase.vertexai.common.server.FinishReason
-import com.google.firebase.vertexai.common.server.GRpcError
-import com.google.firebase.vertexai.common.server.GRpcErrorDetails
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
+import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.GRpcErrorResponse
+import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.ImagenGenerationResponse
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
+import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -56,12 +64,15 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 internal val JSON = Json {
   ignoreUnknownKeys = true
   prettyPrint = false
   isLenient = true
+  explicitNulls = false
 }
 
 /**
@@ -76,6 +87,7 @@ internal val JSON = Json {
  * @property apiClient The value to pass in the `x-goog-api-client` header.
  * @property headerProvider A provider that generates extra headers to include in all HTTP requests.
  */
+@OptIn(PublicPreviewAPI::class)
 internal class APIController
 internal constructor(
   private val key: String,
@@ -83,6 +95,9 @@ internal constructor(
   private val requestOptions: RequestOptions,
   httpEngine: HttpClientEngine,
   private val apiClient: String,
+  private val firebaseApp: FirebaseApp,
+  private val appVersion: Int = 0,
+  private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
 ) {
 
@@ -91,8 +106,19 @@ internal constructor(
     model: String,
     requestOptions: RequestOptions,
     apiClient: String,
+    firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
-  ) : this(key, model, requestOptions, OkHttp.create(), apiClient, headerProvider)
+  ) : this(
+    key,
+    model,
+    requestOptions,
+    OkHttp.create(),
+    apiClient,
+    firebaseApp,
+    getVersionNumber(firebaseApp),
+    firebaseApp.options.applicationId,
+    headerProvider
+  )
 
   private val model = fullModelName(model)
 
@@ -103,10 +129,11 @@ internal constructor(
         socketTimeoutMillis =
           max(180.seconds.inWholeMilliseconds, requestOptions.timeout.inWholeMilliseconds)
       }
+      install(WebSockets)
       install(ContentNegotiation) { json(JSON) }
     }
 
-  suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
+  suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:generateContent") {
@@ -114,15 +141,36 @@ internal constructor(
           applyHeaderProvider()
         }
         .also { validateResponse(it) }
-        .body<GenerateContentResponse>()
+        .body<GenerateContentResponse.Internal>()
         .validate()
     } catch (e: Throwable) {
       throw FirebaseCommonAIException.from(e)
     }
 
-  fun generateContentStream(request: GenerateContentRequest): Flow<GenerateContentResponse> =
+  suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
+    try {
+      client
+        .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<ImagenGenerationResponse.Internal>()
+    } catch (e: Throwable) {
+      throw FirebaseCommonAIException.from(e)
+    }
+
+  private fun getBidiEndpoint(location: String): String =
+    "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+
+  suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
+    client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
+
+  fun generateContentStream(
+    request: GenerateContentRequest
+  ): Flow<GenerateContentResponse.Internal> =
     client
-      .postStream<GenerateContentResponse>(
+      .postStream<GenerateContentResponse.Internal>(
         "${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:streamGenerateContent?alt=sse"
       ) {
         applyCommonConfiguration(request)
@@ -130,7 +178,7 @@ internal constructor(
       .map { it.validate() }
       .catch { throw FirebaseCommonAIException.from(it) }
 
-  suspend fun countTokens(request: CountTokensRequest): CountTokensResponse =
+  suspend fun countTokens(request: CountTokensRequest): CountTokensResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:countTokens") {
@@ -147,10 +195,20 @@ internal constructor(
     when (request) {
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
+      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
     }
+
+    applyCommonHeaders()
+  }
+
+  private fun HttpRequestBuilder.applyCommonHeaders() {
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
+    if (firebaseApp.isDataCollectionDefaultEnabled) {
+      header("X-Firebase-AppId", googleAppId)
+      header("X-Firebase-AppVersion", appVersion)
+    }
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
@@ -216,6 +274,16 @@ internal constructor(
 
   companion object {
     private val TAG = APIController::class.java.simpleName
+
+    private fun getVersionNumber(app: FirebaseApp): Int {
+      try {
+        val context = app.applicationContext
+        return context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+      } catch (e: Exception) {
+        Log.d(TAG, "Error while getting app version: ${e.message}")
+        return 0
+      }
+    }
   }
 }
 
@@ -254,6 +322,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
   }
+  if (message.contains("The prompt could not be submitted")) {
+    throw PromptBlockedException(message)
+  }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
@@ -275,19 +346,21 @@ private suspend fun validateResponse(response: HttpResponse) {
   throw ServerException(message)
 }
 
-private fun getServiceDisabledErrorDetailsOrNull(error: GRpcError): GRpcErrorDetails? {
+private fun getServiceDisabledErrorDetailsOrNull(
+  error: GRpcErrorResponse.GRpcError
+): GRpcErrorResponse.GRpcError.GRpcErrorDetails? {
   return error.details?.firstOrNull {
     it.reason == "SERVICE_DISABLED" && it.domain == "googleapis.com"
   }
 }
 
-private fun GenerateContentResponse.validate() = apply {
+private fun GenerateContentResponse.Internal.validate() = apply {
   if ((candidates?.isEmpty() != false) && promptFeedback == null) {
     throw SerializationException("Error deserializing response, found no valid fields")
   }
   promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
   candidates
     ?.mapNotNull { it.finishReason }
-    ?.firstOrNull { it != FinishReason.STOP }
+    ?.firstOrNull { it != FinishReason.Internal.STOP }
     ?.let { throw ResponseStoppedException(this) }
 }

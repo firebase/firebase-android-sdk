@@ -30,13 +30,7 @@ public final class InstrHttpInputStream extends InputStream {
   private long timeToResponseInitiated;
   private long timeToResponseLastRead = -1;
 
-  /**
-   * Instrumented inputStream object
-   *
-   * @param inputStream
-   * @param builder
-   * @param timer
-   */
+  /** Instrumented inputStream object */
   public InstrHttpInputStream(
       final InputStream inputStream, final NetworkRequestMetricBuilder builder, Timer timer) {
     this.timer = timer;
@@ -99,12 +93,13 @@ public final class InstrHttpInputStream extends InputStream {
       if (timeToResponseInitiated == -1) {
         timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+      boolean endOfStream = bytesRead == -1;
+      if (endOfStream && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
         networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
         networkMetricBuilder.build();
       } else {
-        this.bytesRead++;
+        incrementBytesRead(1);
         networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
@@ -124,12 +119,13 @@ public final class InstrHttpInputStream extends InputStream {
       if (timeToResponseInitiated == -1) {
         timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+      boolean endOfStream = bytesRead == -1;
+      if (endOfStream && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
         networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
         networkMetricBuilder.build();
       } else {
-        this.bytesRead += bytesRead;
+        incrementBytesRead(bytesRead);
         networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
@@ -148,12 +144,13 @@ public final class InstrHttpInputStream extends InputStream {
       if (timeToResponseInitiated == -1) {
         timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+      boolean endOfStream = bytesRead == -1;
+      if (endOfStream && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
         networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
         networkMetricBuilder.build();
       } else {
-        this.bytesRead += bytesRead;
+        incrementBytesRead(bytesRead);
         networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
@@ -183,11 +180,13 @@ public final class InstrHttpInputStream extends InputStream {
       if (timeToResponseInitiated == -1) {
         timeToResponseInitiated = tempTime;
       }
-      if (skipped == -1 && timeToResponseLastRead == -1) {
+      // InputStream.skip will return 0 for both end of stream and for 0 bytes skipped.
+      boolean endOfStream = (skipped == 0 && byteCount != 0);
+      if (endOfStream && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
         networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
       } else {
-        bytesRead += skipped;
+        incrementBytesRead(skipped);
         networkMetricBuilder.setResponsePayloadBytes(bytesRead);
       }
       return skipped;
@@ -195,6 +194,14 @@ public final class InstrHttpInputStream extends InputStream {
       networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
       NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
+    }
+  }
+
+  private void incrementBytesRead(long bytesRead) {
+    if (this.bytesRead == -1) {
+      this.bytesRead = bytesRead;
+    } else {
+      this.bytesRead += bytesRead;
     }
   }
 }

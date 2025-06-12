@@ -16,6 +16,9 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Configuration parameters to use for content generation.
  *
@@ -66,6 +69,8 @@ package com.google.firebase.vertexai.type
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
  * [responseMimeType] must also be set.
  *
+ * @property responseModalities The format of data in which the model should respond with.
+ *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
  *
@@ -73,6 +78,10 @@ package com.google.firebase.vertexai.type
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class GenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -85,6 +94,7 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
+  internal val responseModalities: List<ResponseModality>?,
 ) {
 
   /**
@@ -112,8 +122,15 @@ private constructor(
    * @property responseMimeType See [GenerationConfig.responseMimeType].
    *
    * @property responseSchema See [GenerationConfig.responseSchema].
+   *
+   * @property responseModalities See [GenerationConfig.responseModalities].
+   *
    * @see [generationConfig]
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null
@@ -125,6 +142,7 @@ private constructor(
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
+    @JvmField public var responseModalities: List<ResponseModality>? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -139,8 +157,39 @@ private constructor(
         frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
+        responseModalities = responseModalities
       )
   }
+
+  internal fun toInternal() =
+    Internal(
+      temperature = temperature,
+      topP = topP,
+      topK = topK,
+      candidateCount = candidateCount,
+      maxOutputTokens = maxOutputTokens,
+      stopSequences = stopSequences,
+      frequencyPenalty = frequencyPenalty,
+      presencePenalty = presencePenalty,
+      responseMimeType = responseMimeType,
+      responseSchema = responseSchema?.toInternal(),
+      responseModalities = responseModalities?.map { it.toInternal() }
+    )
+
+  @Serializable
+  internal data class Internal(
+    val temperature: Float?,
+    @SerialName("top_p") val topP: Float?,
+    @SerialName("top_k") val topK: Int?,
+    @SerialName("candidate_count") val candidateCount: Int?,
+    @SerialName("max_output_tokens") val maxOutputTokens: Int?,
+    @SerialName("stop_sequences") val stopSequences: List<String>?,
+    @SerialName("response_mime_type") val responseMimeType: String? = null,
+    @SerialName("presence_penalty") val presencePenalty: Float? = null,
+    @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
+    @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
+    @SerialName("response_modalities") val responseModalities: List<String>? = null
+  )
 
   public companion object {
 

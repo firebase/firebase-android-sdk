@@ -43,6 +43,7 @@ class PostReleasePlugin : Plugin<Project> {
     val updatePinnedDependencies = registerUpdatePinnedDependenciesTask(project)
 
     project.tasks.register("postReleaseCleanup") {
+      // TODO(b/394606626): Add task for tagging releases
       dependsOn(versionBump, moveUnreleasedChanges, updatePinnedDependencies)
     }
   }
@@ -62,7 +63,12 @@ class PostReleasePlugin : Plugin<Project> {
    * @see VersionBumpTask
    */
   fun registerVersionBumpTask(project: Project) =
-    project.tasks.register<VersionBumpTask>("versionBump")
+    project.tasks.register<VersionBumpTask>("versionBump") {
+      // TODO(b/285892320): Remove condition when bug fixed
+      bumpVersion.set(
+        project.firebaseLibrary.artifactId.map { it !== "protolite-well-known-types" }
+      )
+    }
 
   /**
    * Registers the `moveUnreleasedChanges` task for the provided [Project].

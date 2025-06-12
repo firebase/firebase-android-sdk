@@ -16,11 +16,18 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * The configuration that specifies the function calling behavior.
  *
  * See the static methods in the `companion object` for the list of available behaviors.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class FunctionCallingConfig
 internal constructor(
   internal val mode: Mode,
@@ -42,7 +49,21 @@ internal constructor(
      * The model will never predict a function call to answer a query. This can also be achieved by
      * not passing any tools to the model.
      */
-    NONE
+    NONE,
+  }
+
+  @Serializable
+  internal data class Internal(
+    val mode: Mode,
+    @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
+  ) {
+    @Serializable
+    enum class Mode {
+      @SerialName("MODE_UNSPECIFIED") UNSPECIFIED,
+      AUTO,
+      ANY,
+      NONE,
+    }
   }
 
   public companion object {

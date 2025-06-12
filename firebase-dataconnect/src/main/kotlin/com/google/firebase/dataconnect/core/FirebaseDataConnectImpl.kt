@@ -33,8 +33,6 @@ import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
-import com.google.firebase.dataconnect.util.NullableReference
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
@@ -54,11 +52,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -72,8 +68,8 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
-  val lazyGrpcClient: SuspendingLazy<DataConnectGrpcClient>
-  val lazyQueryManager: SuspendingLazy<QueryManager>
+  val grpcClient: DataConnectGrpcClient
+  val queryManager: QueryManager
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -120,183 +116,197 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
-  private val authProviderAvailable = MutableStateFlow(false)
-  private val appCheckProviderAvailable = MutableStateFlow(false)
-
-  // Protects `closed`, `grpcClient`, `emulatorSettings`, and `queryManager`.
-  private val mutex = Mutex()
-
-  // All accesses to this variable _must_ have locked `mutex`.
-  private var emulatorSettings: EmulatedServiceSettings? = null
-
-  // All accesses to this variable _must_ have locked `mutex`.
-  private var closed = false
-
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
-      deferredAuthProvider = deferredAuthProvider,
-      parentCoroutineScope = coroutineScope,
-      blockingDispatcher = blockingDispatcher,
-      logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
-    )
+        deferredAuthProvider = deferredAuthProvider,
+        parentCoroutineScope = coroutineScope,
+        blockingDispatcher = blockingDispatcher,
+        logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
+      )
+      .apply { initialize() }
 
   override suspend fun awaitAuthReady() {
-    authProviderAvailable.first { it }
-  }
-
-  init {
-    val name = CoroutineName("DataConnectAuth isProviderAvailable pipe for $instanceId")
-    coroutineScope.launch(name) {
-      dataConnectAuth.providerAvailable.collect { isProviderAvailable ->
-        logger.debug { "authProviderAvailable=$isProviderAvailable" }
-        authProviderAvailable.value = isProviderAvailable
-      }
-    }
+    dataConnectAuth.awaitTokenProvider()
   }
 
   private val dataConnectAppCheck: DataConnectAppCheck =
     DataConnectAppCheck(
-      deferredAppCheckTokenProvider = deferredAppCheckProvider,
-      parentCoroutineScope = coroutineScope,
-      blockingDispatcher = blockingDispatcher,
-      logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
-    )
+        deferredAppCheckTokenProvider = deferredAppCheckProvider,
+        parentCoroutineScope = coroutineScope,
+        blockingDispatcher = blockingDispatcher,
+        logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
+      )
+      .apply { initialize() }
 
   override suspend fun awaitAppCheckReady() {
-    appCheckProviderAvailable.first { it }
+    dataConnectAppCheck.awaitTokenProvider()
   }
 
-  init {
-    val name = CoroutineName("DataConnectAppCheck isProviderAvailable pipe for $instanceId")
-    coroutineScope.launch(name) {
-      dataConnectAppCheck.providerAvailable.collect { isProviderAvailable ->
-        logger.debug { "appCheckProviderAvailable=$isProviderAvailable" }
-        appCheckProviderAvailable.value = isProviderAvailable
-      }
+  private sealed interface State {
+    data class New(val emulatorSettings: EmulatedServiceSettings?) : State {
+      constructor() : this(null)
     }
+    data class Initialized(
+      val grpcRPCs: DataConnectGrpcRPCs,
+      val grpcClient: DataConnectGrpcClient,
+      val queryManager: QueryManager
+    ) : State
+    data class Closing(val grpcRPCs: DataConnectGrpcRPCs, val closeJob: Deferred<Unit>) : State
+    object Closed : State
   }
 
-  private val lazyGrpcRPCs =
-    SuspendingLazy(mutex) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+  private val state = MutableStateFlow<State>(State.New())
 
-      data class DataConnectBackendInfo(
-        val host: String,
-        val sslEnabled: Boolean,
-        val isEmulator: Boolean
-      )
-      val backendInfoFromSettings =
-        DataConnectBackendInfo(
-          host = settings.host,
-          sslEnabled = settings.sslEnabled,
-          isEmulator = false
-        )
-      val backendInfoFromEmulatorSettings =
-        emulatorSettings?.run {
-          DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
-        }
-      val backendInfo =
-        if (backendInfoFromEmulatorSettings == null) {
-          backendInfoFromSettings
-        } else {
-          if (!settings.isDefaultHost()) {
-            logger.warn(
-              "Host has been set in DataConnectSettings and useEmulator, " +
-                "emulator host will be used."
-            )
+  override val grpcClient: DataConnectGrpcClient
+    get() = initialize().grpcClient
+  override val queryManager: QueryManager
+    get() = initialize().queryManager
+
+  private fun initialize(): State.Initialized {
+    val newState =
+      state.updateAndGet { currentState ->
+        when (currentState) {
+          is State.New -> {
+            val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
+            val grpcClient = createDataConnectGrpcClient(grpcRPCs)
+            val queryManager = createQueryManager(grpcClient)
+            State.Initialized(grpcRPCs, grpcClient, queryManager)
           }
-          backendInfoFromEmulatorSettings
+          is State.Initialized -> currentState
+          is State.Closing -> currentState
+          is State.Closed -> currentState
         }
-
-      logger.debug { "connecting to Data Connect backend: $backendInfo" }
-      val grpcMetadata =
-        DataConnectGrpcMetadata.forSystemVersions(
-          firebaseApp = app,
-          dataConnectAuth = dataConnectAuth,
-          dataConnectAppCheck = dataConnectAppCheck,
-          connectorLocation = config.location,
-          parentLogger = logger,
-        )
-      val dataConnectGrpcRPCs =
-        DataConnectGrpcRPCs(
-          context = context,
-          host = backendInfo.host,
-          sslEnabled = backendInfo.sslEnabled,
-          blockingCoroutineDispatcher = blockingDispatcher,
-          grpcMetadata = grpcMetadata,
-          parentLogger = logger,
-        )
-
-      if (backendInfo.isEmulator) {
-        logEmulatorVersion(dataConnectGrpcRPCs)
-        streamEmulatorErrors(dataConnectGrpcRPCs)
       }
 
-      dataConnectGrpcRPCs
+    return when (newState) {
+      is State.New ->
+        throw IllegalStateException(
+          "newState should be Initialized, but got New (error code sh2rf4wwjx)"
+        )
+      is State.Initialized -> newState
+      is State.Closing,
+      State.Closed -> throw IllegalStateException("FirebaseDataConnect instance has been closed")
     }
+  }
 
-  override val lazyGrpcClient =
-    SuspendingLazy(mutex) {
-      DataConnectGrpcClient(
-        projectId = projectId,
-        connector = config,
-        grpcRPCs = lazyGrpcRPCs.getLocked(),
+  private fun createDataConnectGrpcRPCs(
+    emulatorSettings: EmulatedServiceSettings?
+  ): DataConnectGrpcRPCs {
+    data class DataConnectBackendInfo(
+      val host: String,
+      val sslEnabled: Boolean,
+      val isEmulator: Boolean
+    )
+    val backendInfoFromSettings =
+      DataConnectBackendInfo(
+        host = settings.host,
+        sslEnabled = settings.sslEnabled,
+        isEmulator = false
+      )
+    val backendInfoFromEmulatorSettings =
+      emulatorSettings?.run {
+        DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
+      }
+    val backendInfo =
+      if (backendInfoFromEmulatorSettings == null) {
+        backendInfoFromSettings
+      } else {
+        if (!settings.isDefaultHost()) {
+          logger.warn(
+            "Host has been set in DataConnectSettings and useEmulator, " +
+              "emulator host will be used."
+          )
+        }
+        backendInfoFromEmulatorSettings
+      }
+
+    logger.debug { "connecting to Data Connect backend: $backendInfo" }
+    val grpcMetadata =
+      DataConnectGrpcMetadata.forSystemVersions(
+        firebaseApp = app,
         dataConnectAuth = dataConnectAuth,
         dataConnectAppCheck = dataConnectAppCheck,
-        logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
+        connectorLocation = config.location,
+        parentLogger = logger,
       )
+    val dataConnectGrpcRPCs =
+      DataConnectGrpcRPCs(
+        context = context,
+        host = backendInfo.host,
+        sslEnabled = backendInfo.sslEnabled,
+        blockingCoroutineDispatcher = blockingDispatcher,
+        grpcMetadata = grpcMetadata,
+        parentLogger = logger,
+      )
+
+    if (backendInfo.isEmulator) {
+      logEmulatorVersion(dataConnectGrpcRPCs)
+      streamEmulatorErrors(dataConnectGrpcRPCs)
     }
 
-  override val lazyQueryManager =
-    SuspendingLazy(mutex) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      val grpcClient = lazyGrpcClient.getLocked()
+    return dataConnectGrpcRPCs
+  }
 
-      val registeredDataDeserializerFactory =
-        object : LiveQuery.RegisteredDataDeserializerFactory {
-          override fun <T> newInstance(
-            dataDeserializer: DeserializationStrategy<T>,
-            dataSerializersModule: SerializersModule?,
-            parentLogger: Logger
-          ) =
-            RegisteredDataDeserializer(
-              dataDeserializer = dataDeserializer,
-              dataSerializersModule = dataSerializersModule,
-              blockingCoroutineDispatcher = blockingDispatcher,
-              parentLogger = parentLogger,
-            )
-        }
-      val liveQueryFactory =
-        object : LiveQueries.LiveQueryFactory {
-          override fun newLiveQuery(
-            key: LiveQuery.Key,
-            operationName: String,
-            variables: Struct,
-            parentLogger: Logger
-          ) =
-            LiveQuery(
-              key = key,
-              operationName = operationName,
-              variables = variables,
-              parentCoroutineScope = coroutineScope,
-              nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
-              grpcClient = grpcClient,
-              registeredDataDeserializerFactory = registeredDataDeserializerFactory,
-              parentLogger = parentLogger,
-            )
-        }
-      val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
-      QueryManager(liveQueries)
-    }
+  private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
+    DataConnectGrpcClient(
+      projectId = projectId,
+      connector = config,
+      grpcRPCs = grpcRPCs,
+      dataConnectAuth = dataConnectAuth,
+      dataConnectAppCheck = dataConnectAppCheck,
+      logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
+    )
+
+  private fun createQueryManager(grpcClient: DataConnectGrpcClient): QueryManager {
+    val registeredDataDeserializerFactory =
+      object : LiveQuery.RegisteredDataDeserializerFactory {
+        override fun <T> newInstance(
+          dataDeserializer: DeserializationStrategy<T>,
+          dataSerializersModule: SerializersModule?,
+          parentLogger: Logger
+        ) =
+          RegisteredDataDeserializer(
+            dataDeserializer = dataDeserializer,
+            dataSerializersModule = dataSerializersModule,
+            blockingCoroutineDispatcher = blockingDispatcher,
+            parentLogger = parentLogger,
+          )
+      }
+    val liveQueryFactory =
+      object : LiveQueries.LiveQueryFactory {
+        override fun newLiveQuery(
+          key: LiveQuery.Key,
+          operationName: String,
+          variables: Struct,
+          parentLogger: Logger
+        ) =
+          LiveQuery(
+            key = key,
+            operationName = operationName,
+            variables = variables,
+            parentCoroutineScope = coroutineScope,
+            nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
+            grpcClient = grpcClient,
+            registeredDataDeserializerFactory = registeredDataDeserializerFactory,
+            parentLogger = parentLogger,
+          )
+      }
+    val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
+    return QueryManager(liveQueries)
+  }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
-    mutex.withLock {
-      if (lazyGrpcClient.initializedValueOrNull != null) {
-        throw IllegalStateException(
-          "Cannot call useEmulator() after instance has already been initialized."
-        )
+    state.update { currentState ->
+      when (currentState) {
+        is State.New ->
+          currentState.copy(emulatorSettings = EmulatedServiceSettings(host = host, port = port))
+        is State.Initialized ->
+          throw IllegalStateException(
+            "Cannot call useEmulator() after instance has already been initialized."
+          )
+        is State.Closing -> currentState
+        is State.Closed -> currentState
       }
-      emulatorSettings = EmulatedServiceSettings(host = host, port = port)
     }
   }
 
@@ -404,19 +414,17 @@ internal class FirebaseDataConnectImpl(
     )
   }
 
-  private val closeJob = MutableStateFlow(NullableReference<Deferred<Unit>>(null))
-
   override fun close() {
     logger.debug { "close() called" }
-    @Suppress("DeferredResultUnused") runBlocking { nonBlockingClose() }
+    @Suppress("DeferredResultUnused") closeInternal()
   }
 
   override suspend fun suspendingClose() {
     logger.debug { "suspendingClose() called" }
-    nonBlockingClose().await()
+    closeInternal()?.await()
   }
 
-  private suspend fun nonBlockingClose(): Deferred<Unit> {
+  private fun closeInternal(): Deferred<Unit>? {
     coroutineScope.cancel()
 
     // Remove the reference to this `FirebaseDataConnect` instance from the
@@ -424,41 +432,59 @@ internal class FirebaseDataConnectImpl(
     // called with the same arguments that a new instance of `FirebaseDataConnect` will be created.
     creator.remove(this)
 
-    mutex.withLock { closed = true }
-
     // Close Auth and AppCheck synchronously to avoid race conditions with auth callbacks.
     // Since close() is re-entrant, this is safe even if they have already been closed.
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    // Start the job to asynchronously close the gRPC client.
-    while (true) {
-      val oldCloseJob = closeJob.value
-
-      oldCloseJob.ref?.let {
-        if (!it.isCancelled) {
-          return it
-        }
-      }
-
+    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs): Deferred<Unit> {
       @OptIn(DelicateCoroutinesApi::class)
-      val newCloseJob =
-        GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcRPCs.initializedValueOrNull?.close()
-        }
-
-      newCloseJob.invokeOnCompletion { exception ->
-        if (exception === null) {
-          logger.debug { "close() completed successfully" }
-        } else {
+      val closeJob = GlobalScope.async(start = CoroutineStart.LAZY) { grpcRPCs.close() }
+      closeJob.invokeOnCompletion { exception ->
+        if (exception !== null) {
           logger.warn(exception) { "close() failed" }
+        } else {
+          logger.debug { "close() completed successfully" }
+          state.update { currentState ->
+            check(currentState is State.Closing) {
+              "currentState is ${currentState}, but expected Closing (error code hsee7gfxvz)"
+            }
+            check(currentState.closeJob === closeJob) {
+              "currentState.closeJob is ${currentState.closeJob}, but expected $closeJob " +
+                "(error code n3x86pr6qn)"
+            }
+            State.Closed
+          }
+        }
+      }
+      return closeJob
+    }
+
+    val newState =
+      state.updateAndGet { currentState ->
+        when (currentState) {
+          is State.New -> State.Closed
+          is State.Initialized ->
+            State.Closing(currentState.grpcRPCs, createCloseJob(currentState.grpcRPCs))
+          is State.Closing ->
+            if (currentState.closeJob.isCancelled) {
+              currentState.copy(closeJob = createCloseJob(currentState.grpcRPCs))
+            } else {
+              currentState
+            }
+          is State.Closed -> State.Closed
         }
       }
 
-      if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
-        newCloseJob.start()
-        return newCloseJob
-      }
+    return when (newState) {
+      is State.Initialized,
+      is State.New ->
+        throw IllegalStateException(
+          "internal error: newState is $newState, but expected Closing or Closed " +
+            "(error code n3x86pr6qn)"
+        )
+      is State.Closing -> newState.closeJob.apply { start() }
+      is State.Closed -> null
     }
   }
 

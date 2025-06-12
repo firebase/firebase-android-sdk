@@ -24,12 +24,14 @@ buildscript {
 
   dependencies {
     classpath "com.android.tools.build:gradle:8.3.2"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
     classpath "com.google.gms:google-services:4.3.14"
     classpath "com.google.firebase:firebase-crashlytics-gradle:2.8.1"
   }
 }
 
 apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
 
 android {
   compileSdkVersion 34
@@ -52,6 +54,7 @@ android {
   }
 
   compileOptions {
+    coreLibraryDesugaringEnabled true
     sourceCompatibility 1.8
     targetCompatibility 1.8
   }
@@ -95,6 +98,9 @@ dependencies {
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
   androidTestImplementation libs.junit
+
+  // Desugaring library
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
 
 clean.doLast {

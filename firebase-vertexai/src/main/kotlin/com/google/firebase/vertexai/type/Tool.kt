@@ -16,14 +16,28 @@
 
 package com.google.firebase.vertexai.type
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+
 /**
  * Contains a set of function declarations that the model has access to. These can be used to gather
  * information, or complete tasks
  *
  * @param functionDeclarations The set of functions that this tool allows the model access to
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Tool
 internal constructor(internal val functionDeclarations: List<FunctionDeclaration>?) {
+  internal fun toInternal() = Internal(functionDeclarations?.map { it.toInternal() } ?: emptyList())
+  @Serializable
+  internal data class Internal(
+    val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
+    // This is a json object because it is not possible to make a data class with no parameters.
+    val codeExecution: JsonObject? = null,
+  )
   public companion object {
 
     /**

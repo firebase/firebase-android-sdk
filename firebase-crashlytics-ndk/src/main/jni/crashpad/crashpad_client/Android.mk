@@ -17,7 +17,7 @@ LOCAL_CPPFLAGS := \
     -Wall \
     -Os \
     -flto \
-    -std=c++17 \
+    -std=c++20 \
 
 LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/client/annotation.cc \

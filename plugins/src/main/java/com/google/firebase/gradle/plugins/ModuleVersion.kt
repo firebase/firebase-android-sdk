@@ -92,7 +92,7 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
      */
     fun fromStringsOrNull(type: String, build: String): PreReleaseVersion? =
       runCatching {
-          val preType = PreReleaseVersionType.valueOf(type.toUpperCase())
+          val preType = PreReleaseVersionType.valueOf(type.uppercase())
           val buildNumber = build.takeUnless { it.isBlank() }?.toInt() ?: 1
 
           PreReleaseVersion(preType, buildNumber)
@@ -115,7 +115,7 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
    * PreReleaseVersion(RC, 12).toString() // "rc12"
    * ```
    */
-  override fun toString() = "${type.name.toLowerCase()}${build.toString().padStart(2, '0')}"
+  override fun toString() = "${type.name.lowercase()}${build.toString().padStart(2, '0')}"
 }
 
 /**
@@ -140,7 +140,7 @@ data class ModuleVersion(
 ) : Comparable<ModuleVersion> {
 
   /** Formatted as `MAJOR.MINOR.PATCH-PRE` */
-  override fun toString() = "$major.$minor.$patch${pre?.let { "-${it.toString()}" } ?: ""}"
+  override fun toString() = "$major.$minor.$patch${pre?.let { "-$it" } ?: ""}"
 
   override fun compareTo(other: ModuleVersion) =
     compareValuesBy(
@@ -149,7 +149,7 @@ data class ModuleVersion(
       { it.major },
       { it.minor },
       { it.patch },
-      { it.pre == null }, // a version with no prerelease version takes precedence
+      { it.pre == null }, // a version with no pre-release version takes precedence
       { it.pre },
     )
 
@@ -176,7 +176,7 @@ data class ModuleVersion(
      * ```
      */
     val VERSION_REGEX =
-      "(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\-\\b)?(?<pre>\\w\\D+)?(?<build>\\B\\d+)?"
+      "(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:-\\b)?(?<pre>\\w\\D+)?(?<build>\\B\\d+)?"
         .toRegex()
 
     /**
@@ -209,6 +209,53 @@ data class ModuleVersion(
           }
         }
         .getOrNull()
+
+    /**
+     * Parse a [ModuleVersion] from a string.
+     *
+     * You should use [fromStringOrNull] when you don't know the `artifactId` of the corresponding
+     * artifact, if you don't need to throw on failure, or if you need to throw a more specific
+     * message.
+     *
+     * This method exists to cover the common ground of getting [ModuleVersion] representations of
+     * artifacts.
+     *
+     * @param artifactId The artifact that this version belongs to. Will be used in the error
+     *   message on failure.
+     * @param version The version to parse into a [ModuleVersion].
+     * @return A [ModuleVersion] created from the string.
+     * @throws IllegalArgumentException If the string doesn't represent a valid semver version.
+     * @see fromStringOrNull
+     */
+    fun fromString(artifactId: String, version: String): ModuleVersion =
+      fromStringOrNull(version)
+        ?: throw IllegalArgumentException(
+          "Invalid module version found for '${artifactId}': $version"
+        )
+  }
+
+  /**
+   * Determine the [VersionType] representing the bump that would be required to reach [other], if
+   * any.
+   *
+   * ```
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(2,1,3)).shouldBeEqual(VersionType.MAJOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,1,3)).shouldBeEqual(VersionType.MINOR)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,3)).shouldBeEqual(VersionType.PATCH)
+   * ModuleVersion(1,0,0).bumpFrom(ModuleVersion(1,0,0)).shouldBeNull()
+   * ```
+   *
+   * @param other The target version to get the bump for.
+   * @return A [VersionType] representing the bump that this version would need to reach [other], or
+   *   null if they're the same version.
+   */
+  fun bumpFrom(other: ModuleVersion): VersionType? {
+    if (other.major != this.major) return VersionType.MAJOR
+    if (other.minor != this.minor) return VersionType.MINOR
+    if (other.patch != this.patch) return VersionType.PATCH
+    if (other.pre != this.pre) return VersionType.PRE
+
+    return null
   }
 
   /**
@@ -222,9 +269,10 @@ data class ModuleVersion(
       .let { it ?: if (pre != null) VersionType.PRE else VersionType.PATCH }
       .let {
         when (it) {
-          VersionType.MAJOR -> copy(major = major + 1)
-          VersionType.MINOR -> copy(minor = minor + 1)
-          VersionType.PATCH -> copy(patch = patch + 1)
+          VersionType.MAJOR ->
+            copy(major = major + 1, minor = 0, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.MINOR -> copy(minor = minor + 1, patch = 0, pre = pre?.copy(build = 1))
+          VersionType.PATCH -> copy(patch = patch + 1, pre = pre?.copy(build = 1))
           VersionType.PRE -> copy(pre = pre?.bump())
         }
       }

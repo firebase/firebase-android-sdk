@@ -6,10 +6,10 @@ on:
       - 'main'
 
 jobs:
-  build:
+  release-notes-changed:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -18,22 +18,26 @@ jobs:
 
       - name: Get changed changelog files
         id: changed-files
-        uses: tj-actions/changed-files@v41.0.0
-        with:
-          files_ignore: |
-            plugins/**
-          files: |
-            **/CHANGELOG.md
+        run: |
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha}} | grep CHANGELOG.md > /tmp/changelog_file_list.txt
+          if [[ "$?" == "0" ]]
+          then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "all_changed_files=$(cat /tmp/changelog_file_list.txt)" >> $GITHUB_OUTPUT
+          rm /tmp/changelog_file_list.txt
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
           cache: gradle
 
       - name: Set up Python 3.10
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         if: ${{ steps.changed-files.outputs.any_changed == 'true' }}
         with:
           python-version: '3.10'
@@ -50,7 +54,7 @@ jobs:
           fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
 
       - name: Add PR Comment
-        uses: mshick/add-pr-comment@v2.8.1
+        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
         continue-on-error: true
         with:
           status: ${{ steps.generate-comment.outcome }}

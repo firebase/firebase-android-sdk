@@ -1,6 +1,65 @@
 # Unreleased
 
 
+# 16.5.0
+* [changed] **Renamed / Replaced:** Vertex AI in Firebase (`firebase-vertexai`) has been renamed and
+ replaced by the new Firebase AI SDK: `firebase-ai`. This is to accommodate the evolving set of
+ supported features and services. Please [**migrate to the new `firebase-ai` package**](/docs/vertex-ai/migrate-to-latest-sdk).
+
+ Note: Existing users of the Vertex AI in Firebase SDK (`firebase-vertexai`) may continue to use the 
+ SDK and receive bug fixes but, going forward, new features will only be added into the new Firebase
+ AI SDK.
+
+ The following changes and features are in the Vertex AI in Firebase SDK (`firebase-vertexai`), but
+ we recommend that you accommodate them (as applicable) as part of migrating to the `firebase-ai` SDK.
+* [changed] **Breaking Change**: Removed the `LiveContentResponse.Status` class, and instead have nested the status
+  fields as properties of `LiveContentResponse`. (#6941)
+* [changed] **Breaking Change**: Removed the `LiveContentResponse` class, and instead have provided subclasses
+  of `LiveServerMessage` that match the responses from the model. (#6941)
+* [feature] Added support for the `id` field on `FunctionResponsePart` and `FunctionCallPart`. (#6941)
+* [feature] Added a helper field for getting all the `InlineDataPart` from a `GenerateContentResponse`. (#6941)
+
+# 16.4.0
+* [changed] **Breaking Change**: `LiveModelFutures.connect` now returns `ListenableFuture<LiveSessionFutures>` instead of `ListenableFuture<LiveSession>`.
+    * **Action Required:** Remove any transformations from LiveSession object to LiveSessionFutures object. 
+    * **Action Required:** Change type of variable handling `LiveModelFutures.connect` to `ListenableFuture<LiveSessionsFutures>`
+* [changed] **Breaking Change**: Removed `UNSPECIFIED` value for enum class `ResponseModality`
+    * **Action Required:** Remove all references to `ResponseModality.UNSPECIFIED`
+* [changed] **Breaking Change**: Renamed `LiveGenerationConfig.setResponseModalities` to `LiveGenerationConfig.setResponseModality`
+    * **Action Required:** Replace all references of `LiveGenerationConfig.setResponseModalities` with `LiveGenerationConfig.setResponseModality`
+* [feature] Added support for `HarmBlockThreshold.OFF`. See the
+  [model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/configure-safety-filters#how_to_configure_content_filters){: .external}
+  for more information.
+* [fixed] Improved thread usage when using a `LiveGenerativeModel`. (#6870)
+* [fixed] Fixed an issue with `LiveContentResponse` audio data not being present when the model was
+  interrupted or the turn completed. (#6870)
+* [fixed] Fixed an issue with `LiveSession` not converting exceptions to `FirebaseVertexAIException`. (#6870)
+* [feature] Enable response generation in multiple modalities. (#6901)
+* [changed] Removed the `LiveContentResponse.Status` class, and instead have nested the status
+  fields as properties of `LiveContentResponse`. (#6906)
+
+# 16.3.0
+* [feature] Emits a warning when attempting to use an incompatible model with
+  `GenerativeModel` or `ImagenModel`.
+* [changed] Added new exception type for quota exceeded scenarios.
+* [feature] `CountTokenRequest` now includes `GenerationConfig` from the model.
+* [feature] **Public Preview:** Added support for streaming input and output (including audio) using the [Gemini Live API](/docs/vertex-ai/live-api?platform=android)
+  **Note**: This feature is in Public Preview, which means that it is not subject to any SLA or deprecation policy and could change in backwards-incompatible ways.
+* [changed] **Breaking Change**: `ImagenInlineImage.data` now returns the raw
+  image bytes (in JPEG or PNG format, as specified in
+  `ImagenInlineImage.mimeType`) instead of Base64-encoded data. (#6800)
+    * **Action Required:** Remove any Base64 decoding from your
+      `ImagenInlineImage.data` usage.
+    * The `asBitmap()` helper method is unaffected and requires no code changes.
+
+# 16.2.0
+* [fixed] Added support for new values sent by the server for `FinishReason` and `BlockReason`.
+* [changed] Added support for modality-based token count. (#6658)
+* [feature] Added support for generating images with Imagen models.
+
+# 16.1.0
+* [changed] Internal improvements to correctly handle empty model responses.
+
 # 16.0.2
 * [fixed] Improved error message when using an invalid location. (#6428)
 * [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)

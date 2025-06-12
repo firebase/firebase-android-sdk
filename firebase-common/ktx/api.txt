@@ -1,8 +1,1 @@
-// Signature format: 2.0
-package com.google.firebase.ktx {
-
-  public final class LoggingKt {
-  }
-
-}
-
+// Signature format: 3.0

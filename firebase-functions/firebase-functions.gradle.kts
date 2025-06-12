@@ -112,6 +112,8 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.playservices.base)
   implementation(libs.playservices.basement)
+  api(libs.reactive.streams)
+
   api(libs.playservices.tasks)
 
   kapt(libs.autovalue)
@@ -131,6 +133,7 @@ dependencies {
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.kotlinx.coroutines.reactive)
   androidTestImplementation(libs.mockito.core)
   androidTestImplementation(libs.mockito.dexmaker)
   kapt("com.google.dagger:dagger-android-processor:2.43.2")

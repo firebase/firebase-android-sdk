@@ -16,8 +16,37 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.common.util.FirstOrdinalSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Represents the severity of a [HarmCategory] being applicable in a [SafetyRating]. */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class HarmSeverity private constructor(public val ordinal: Int) {
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
+    UNKNOWN,
+    @SerialName("HARM_SEVERITY_UNSPECIFIED") UNSPECIFIED,
+    @SerialName("HARM_SEVERITY_NEGLIGIBLE") NEGLIGIBLE,
+    @SerialName("HARM_SEVERITY_LOW") LOW,
+    @SerialName("HARM_SEVERITY_MEDIUM") MEDIUM,
+    @SerialName("HARM_SEVERITY_HIGH") HIGH;
+
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+
+    internal fun toPublic() =
+      when (this) {
+        HIGH -> HarmSeverity.HIGH
+        MEDIUM -> HarmSeverity.MEDIUM
+        LOW -> HarmSeverity.LOW
+        NEGLIGIBLE -> HarmSeverity.NEGLIGIBLE
+        else -> HarmSeverity.UNKNOWN
+      }
+  }
   public companion object {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: HarmSeverity = HarmSeverity(0)

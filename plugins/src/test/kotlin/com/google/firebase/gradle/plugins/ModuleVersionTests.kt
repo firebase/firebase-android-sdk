@@ -96,6 +96,16 @@ class ModuleVersionTests : FunSpec() {
   }
 
   @Test
+  fun `Bump resets the smaller version types`() {
+    val version = ModuleVersion(1, 1, 1, PreReleaseVersion(ALPHA, 2))
+
+    version.bump(PRE) shouldBe ModuleVersion(1, 1, 1, PreReleaseVersion(ALPHA, 3))
+    version.bump(PATCH) shouldBe ModuleVersion(1, 1, 2, PreReleaseVersion(ALPHA, 1))
+    version.bump(MINOR) shouldBe ModuleVersion(1, 2, 0, PreReleaseVersion(ALPHA, 1))
+    version.bump(MAJOR) shouldBe ModuleVersion(2, 0, 0, PreReleaseVersion(ALPHA, 1))
+  }
+
+  @Test
   fun `Bump correctly chooses the smallest by default`() {
     ModuleVersion(1, 1, 1).bump().patch shouldBe 2
     ModuleVersion(1, 1, 1, PreReleaseVersion(ALPHA, 1)).bump().pre?.build shouldBe 2

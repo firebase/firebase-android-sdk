@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(PublicPreviewAPI::class)
+
 package com.google.firebase.vertexai.util
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.ImagenModel
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.type.PublicPreviewAPI
 import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -31,8 +36,11 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import org.mockito.Mockito
 
-private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+internal val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+internal val TEST_APP_ID = "1:android:12345"
+internal val TEST_VERSION = 1
 
 /** String separator used in SSE communication to signal the end of a message. */
 internal const val SSE_SEPARATOR = "\r\n\r\n"
@@ -57,7 +65,11 @@ internal suspend fun ByteChannel.send(bytes: ByteArray) {
  * @see commonTest
  * @see send
  */
-internal data class CommonTestScope(val channel: ByteChannel, val model: GenerativeModel)
+internal data class CommonTestScope(
+  val channel: ByteChannel,
+  val model: GenerativeModel,
+  val imagenModel: ImagenModel,
+)
 
 /** A test that runs under a [CommonTestScope]. */
 internal typealias CommonTest = suspend CommonTestScope.() -> Unit
@@ -86,12 +98,16 @@ internal typealias CommonTest = suspend CommonTestScope.() -> Unit
  * @param block The test contents themselves, with the [CommonTestScope] implicitly provided
  * @see CommonTestScope
  */
+@OptIn(PublicPreviewAPI::class)
 internal fun commonTest(
   status: HttpStatusCode = HttpStatusCode.OK,
   requestOptions: RequestOptions = RequestOptions(),
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
+  val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+
   val apiController =
     APIController(
       "super_cool_test_key",
@@ -101,10 +117,14 @@ internal fun commonTest(
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
+      mockFirebaseApp,
+      TEST_VERSION,
+      TEST_APP_ID,
       null,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
-  CommonTestScope(channel, model).block()
+  val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
+  CommonTestScope(channel, model, imagenModel).block()
 }
 
 /**
@@ -116,7 +136,7 @@ internal fun commonTest(
  * @param name The name of the *Golden File* to load
  * @param httpStatusCode An optional [HttpStatusCode] to return as a response
  * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenUnaryFile
+ * @see goldenVertexUnaryFile
  */
 internal fun goldenStreamingFile(
   name: String,
@@ -139,6 +159,23 @@ internal fun goldenStreamingFile(
 }
 
 /**
+ * A variant of [goldenStreamingFile] for testing vertexAI
+ *
+ * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexStreamingFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenStreamingFile("vertexai/$name", httpStatusCode, block)
+
+/**
  * A variant of [commonTest] for performing snapshot tests.
  *
  * Loads the *Golden File* and automatically provides it to the channel.
@@ -152,15 +189,31 @@ internal fun goldenUnaryFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
-) =
+) = doBlocking {
   commonTest(httpStatusCode) {
     val goldenFile = loadGoldenFile(name)
     val message = goldenFile.readText()
 
-    channel.send(message.toByteArray())
+    launch { channel.send(message.toByteArray()) }
 
     block()
   }
+}
+
+/**
+ * A variant of [goldenUnaryFile] for vertexai tests Loads the *Golden File* and automatically
+ * provides it to the channel.
+ *
+ * @param name The name of the *Golden File* to load
+ * @param httpStatusCode An optional [HttpStatusCode] to return as a response
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenUnaryFile
+ */
+internal fun goldenVertexUnaryFile(
+  name: String,
+  httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  block: CommonTest,
+) = goldenUnaryFile("vertexai/$name", httpStatusCode, block)
 
 /**
  * Loads a *Golden File* from the resource directory.

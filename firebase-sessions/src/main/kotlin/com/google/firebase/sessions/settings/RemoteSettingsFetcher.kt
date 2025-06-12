@@ -17,10 +17,13 @@
 package com.google.firebase.sessions.settings
 
 import android.net.Uri
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.sessions.ApplicationInfo
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import javax.inject.Inject
+import javax.inject.Singleton
 import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
@@ -30,20 +33,22 @@ internal fun interface CrashlyticsSettingsFetcher {
   suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
-    onFailure: suspend (msg: String) -> Unit
+    onFailure: suspend (msg: String) -> Unit,
   )
 }
 
-internal class RemoteSettingsFetcher(
+@Singleton
+internal class RemoteSettingsFetcher
+@Inject
+constructor(
   private val appInfo: ApplicationInfo,
-  private val blockingDispatcher: CoroutineContext,
-  private val baseUrl: String = FIREBASE_SESSIONS_BASE_URL_STRING,
+  @Background private val blockingDispatcher: CoroutineContext,
 ) : CrashlyticsSettingsFetcher {
   @Suppress("BlockingMethodInNonBlockingContext") // blockingDispatcher is safe for blocking calls.
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
-    onFailure: suspend (String) -> Unit
+    onFailure: suspend (String) -> Unit,
   ) =
     withContext(blockingDispatcher) {
       try {
@@ -78,7 +83,7 @@ internal class RemoteSettingsFetcher(
     val uri =
       Uri.Builder()
         .scheme("https")
-        .authority(baseUrl)
+        .authority(FIREBASE_SESSIONS_BASE_URL_STRING)
         .appendPath("spi")
         .appendPath("v2")
         .appendPath("platforms")
