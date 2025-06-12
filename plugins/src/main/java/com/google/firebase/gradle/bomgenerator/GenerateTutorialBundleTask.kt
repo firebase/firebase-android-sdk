@@ -236,7 +236,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
         "com.google.firebase:firebase-perf" to
           ArtifactTutorialMapping("Performance Monitoring", "perf-dependency"),
         "com.google.firebase:firebase-ai" to
-          ArtifactTutorialMapping("Firebase AI Logic", "firebase-ai-depedency"),
+          ArtifactTutorialMapping("Firebase AI Logic", "firebase-ai-dependency"),
         "com.google.firebase:firebase-messaging" to
           ArtifactTutorialMapping("Cloud Messaging", "messaging-dependency"),
         "com.google.firebase:firebase-auth" to

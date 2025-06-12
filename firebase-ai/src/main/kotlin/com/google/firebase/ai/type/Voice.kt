@@ -20,8 +20,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. The list of all voices can be found
- * [here](https://cloud.google.com/text-to-speech/docs/chirp3-hd)
+ * Various voices supported by the server. In the documentation, find the list of
+ * [all supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
  */
 @PublicPreviewAPI
 public class Voice public constructor(public val voiceName: String) {

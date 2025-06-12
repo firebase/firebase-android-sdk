@@ -1,6 +1,8 @@
 # Unreleased
-* [changed] Updated `firebase-crashlytics` dependency to v19.4.4
 
+
+# 19.4.4
+* [changed] Updated `firebase-crashlytics` dependency to v19.4.4
 
 # 19.4.3
 * [changed] Updated internal Crashpad version to commit `21a20e`.
