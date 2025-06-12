@@ -19,18 +19,21 @@ package com.google.firebase.ai.type
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import com.google.firebase.ai.common.PermissionMissingException
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.MockedStatic
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnitRunner
@@ -44,6 +47,7 @@ class LiveSessionTest {
   @Mock private lateinit var mockSession: ClientWebSocketSession
   @Mock private lateinit var mockAudioHelper: AudioHelper
 
+  private lateinit var mockedBuildVersion: MockedStatic<Build.VERSION>
   private lateinit var testDispatcher: CoroutineContext
   private lateinit var liveSession: LiveSession
 
@@ -51,18 +55,31 @@ class LiveSessionTest {
   fun setUp() {
     testDispatcher = UnconfinedTestDispatcher()
     `when`(mockContext.packageManager).thenReturn(mockPackageManager)
+    mockedBuildVersion = mockStatic(Build.VERSION::class.java)
 
     // Mock AudioHelper.build() to return our mockAudioHelper
     // Need to use mockStatic for static methods
-    mockStatic(AudioHelper::class.java).use { mockedAudioHelper ->
-      mockedAudioHelper.`when`<AudioHelper> { AudioHelper.build() }.thenReturn(mockAudioHelper)
+    // Note: It's generally better to manage static mocks with try-with-resources or @ExtendWith if
+    // the runner supports it well, but for this structure, @Before/@After is common.
+    // AudioHelper static mock is managed with try-with-resources where it's used for instance
+    // creation.
+    mockStatic(AudioHelper::class.java).use { mockedAudioHelperStatic ->
+      mockedAudioHelperStatic
+        .`when`<AudioHelper> { AudioHelper.build() }
+        .thenReturn(mockAudioHelper)
       liveSession = LiveSession(mockContext, mockSession, testDispatcher, null)
     }
   }
 
+  @After
+  fun tearDown() {
+    mockedBuildVersion.close()
+  }
+
   @Test
-  fun `startAudioConversation with RECORD_AUDIO permission proceeds normally`() = runTest {
+  fun `startAudioConversation on API M+ with permission proceeds normally`() = runTest {
     // Arrange
+    mockedBuildVersion.`when` { Build.VERSION.SDK_INT }.thenReturn(Build.VERSION_CODES.M)
     `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
       .thenReturn(PackageManager.PERMISSION_GRANTED)
 
@@ -72,9 +89,10 @@ class LiveSessionTest {
   }
 
   @Test
-  fun `startAudioConversation without RECORD_AUDIO permission throws PermissionMissingException`() =
+  fun `startAudioConversation on API M+ without permission throws PermissionMissingException`() =
     runTest {
       // Arrange
+      mockedBuildVersion.`when` { Build.VERSION.SDK_INT }.thenReturn(Build.VERSION_CODES.M)
       `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
         .thenReturn(PackageManager.PERMISSION_DENIED)
 
@@ -85,4 +103,28 @@ class LiveSessionTest {
         }
       assertEquals("Missing RECORD_AUDIO", exception.message)
     }
+
+  @Test
+  fun `startAudioConversation on API Pre-M with denied permission proceeds normally`() = runTest {
+    // Arrange
+    mockedBuildVersion.`when` { Build.VERSION.SDK_INT }.thenReturn(Build.VERSION_CODES.LOLLIPOP)
+    `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
+      .thenReturn(PackageManager.PERMISSION_DENIED) // This shouldn't be checked
+
+    // Act & Assert
+    // No exception should be thrown
+    liveSession.startAudioConversation()
+  }
+
+  @Test
+  fun `startAudioConversation on API Pre-M with granted permission proceeds normally`() = runTest {
+    // Arrange
+    mockedBuildVersion.`when` { Build.VERSION.SDK_INT }.thenReturn(Build.VERSION_CODES.LOLLIPOP)
+    `when`(mockContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
+      .thenReturn(PackageManager.PERMISSION_GRANTED) // This shouldn't be checked
+
+    // Act & Assert
+    // No exception should be thrown
+    liveSession.startAudioConversation()
+  }
 }
