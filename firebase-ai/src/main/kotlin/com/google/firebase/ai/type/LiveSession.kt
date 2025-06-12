@@ -16,12 +16,15 @@
 
 package com.google.firebase.ai.type
 
-import android.Manifest.permission.RECORD_AUDIO
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.firebase.ai.common.JSON
+import com.google.firebase.ai.common.PermissionMissingException
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
@@ -56,6 +59,7 @@ import kotlinx.serialization.json.Json
 @OptIn(ExperimentalSerializationApi::class)
 public class LiveSession
 internal constructor(
+  private val context: Context,
   private val session: ClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null
@@ -93,6 +97,12 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
+    if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+        PackageManager.PERMISSION_GRANTED
+    ) {
+      throw PermissionMissingException("Missing RECORD_AUDIO")
+    }
+
     FirebaseAIException.catchAsync {
       if (scope.isActive) {
         Log.w(
