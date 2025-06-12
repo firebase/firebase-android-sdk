@@ -33,7 +33,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.Predicate;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -182,7 +183,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable Function<MutableDocument, Boolean> filter,
+      @Nullable Predicate<MutableDocument> filter,
       @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
@@ -234,7 +235,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Predicate<MutableDocument> filter) {
     return getAll(collections, offset, count, filter, /*context*/ null);
   }
 
@@ -242,7 +243,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Predicate<MutableDocument> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
@@ -254,7 +255,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          if (filter == null || filter.apply(document)) {
+          if (filter == null || filter.test(document)) {
             synchronized (results) {
               results.put(document.getKey(), document);
             }
