@@ -2,11 +2,14 @@ connectorId: demo
 authMode: PUBLIC
 generate:
   kotlinSdk:
-    outputDir: /usr/local/google/home/dconeybe/tmp/codegen_SbahhI02Ze/kotlin
-    package: a.b.fdccon
+    outputDir: ../../../build/dataConnect/generatedSources
+    package: a.b.fdccon.demo
   swiftSdk:
-    outputDir: /usr/local/google/home/dconeybe/tmp/codegen_SbahhI02Ze/swift
-    package: fdc
+    outputDir: ../../../build/dataConnect/swiftgen
+    package: fdcdemo
   javascriptSdk:
-    outputDir: /usr/local/google/home/dconeybe/tmp/codegen_SbahhI02Ze/js
-    package: fdc.con
+    outputDir: ../../../build/dataConnect/jsgen
+    package: fdc.con.demo
+  dartSdk:
+    outputDir: ../../../build/dataConnect/dartgen
+    package: fdc.con.demo
