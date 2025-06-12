@@ -22,6 +22,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.google.firebase.ai.common.JSON
@@ -98,11 +99,13 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    if (
-      context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
-        PackageManager.PERMISSION_GRANTED
-    ) {
-      throw PermissionMissingException("Missing RECORD_AUDIO")
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      if (
+        context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+          PackageManager.PERMISSION_GRANTED
+      ) {
+        throw PermissionMissingException("Missing RECORD_AUDIO")
+      }
     }
 
     FirebaseAIException.catchAsync {
