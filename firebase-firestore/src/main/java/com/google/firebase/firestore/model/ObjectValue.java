@@ -122,11 +122,13 @@ public final class ObjectValue implements Cloneable {
    * invocations are based on this memoized result.
    */
   private Value buildProto() {
-    synchronized (overlayMap) {
-      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult != null) {
-        partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-        overlayMap.clear();
+    if (!overlayMap.isEmpty()) {
+      synchronized (overlayMap) {
+        MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+        if (mergedResult != null) {
+          partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+          overlayMap.clear();
+        }
       }
     }
     return partialValue;
