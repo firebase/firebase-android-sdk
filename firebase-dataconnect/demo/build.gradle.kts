@@ -277,9 +277,7 @@ run {
       outputDirectory = layout.buildDirectory.dir("dataConnect/generatedSources")
 
       firebaseCommand =
-        project.providers
-          .gradleProperty("dataConnect.demo.firebaseCommand")
-          .orElse("firebase")
+        project.providers.gradleProperty("dataConnect.demo.firebaseCommand").orElse("firebase")
 
       nodeExecutableDirectory =
         project.providers.gradleProperty("dataConnect.demo.nodeExecutableDirectory").map {
@@ -287,9 +285,9 @@ run {
         }
 
       dataConnectEmulatorExecutable =
-        project.providers
-          .gradleProperty("dataConnect.demo.dataConnectEmulatorExecutable")
-          .map { projectDirectory.file(it) }
+        project.providers.gradleProperty("dataConnect.demo.dataConnectEmulatorExecutable").map {
+          projectDirectory.file(it)
+        }
 
       val path = providers.environmentVariable("PATH")
       firebaseToolsVersion =
