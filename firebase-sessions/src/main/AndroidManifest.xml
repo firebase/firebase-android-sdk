@@ -18,6 +18,7 @@
   <!--<uses-sdk android:minSdkVersion="21"/>-->
 
   <application>
+    <meta-data android:name="firebase_performance_logcat_enabled" android:value="true" />
     <service
       android:name="com.google.firebase.sessions.SessionLifecycleService"
       android:enabled="true"

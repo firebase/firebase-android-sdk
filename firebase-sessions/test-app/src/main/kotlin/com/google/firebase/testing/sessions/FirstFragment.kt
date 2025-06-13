@@ -30,6 +30,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.metrics.AddTrace
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
 import java.util.Date
 import java.util.Locale
@@ -47,6 +48,14 @@ class FirstFragment : Fragment() {
   val okHttp = OkHttpClient()
 
   private var _binding: FragmentFirstBinding? = null
+
+  @AddTrace(name = "randomFunction")
+  private fun randomFun() {
+    val trace = FirebasePerformance.getInstance().newTrace("randomFunction_Manual")
+    trace.start()
+    println("test")
+    trace.stop()
+  }
 
   // This property is only valid between onCreateView and
   // onDestroyView.
@@ -84,6 +93,8 @@ class FirstFragment : Fragment() {
       }
     }
     binding.makeNetworkRequest.setOnClickListener {
+      randomFun()
+
       lifecycleScope.launch(Dispatchers.IO) {
         val request = Request.Builder()
           .url("https://publicobject.com/helloworld.txt")
