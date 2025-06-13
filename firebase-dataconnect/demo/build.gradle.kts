@@ -235,7 +235,10 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
       }
 
       if (dataConnectEmulatorExecutable !== null) {
-        execSpec.environment("DATACONNECT_EMULATOR_BINARY_PATH", dataConnectEmulatorExecutable)
+        execSpec.environment(
+          "DATACONNECT_EMULATOR_BINARY_PATH",
+          dataConnectEmulatorExecutable.absolutePath,
+        )
       }
     }
   }
