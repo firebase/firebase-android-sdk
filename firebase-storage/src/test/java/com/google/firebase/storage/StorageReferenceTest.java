@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
-import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -38,7 +37,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Config.OLDEST_SDK)
 public class StorageReferenceTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);
