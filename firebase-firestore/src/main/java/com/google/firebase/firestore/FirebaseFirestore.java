@@ -581,8 +581,8 @@ public class FirebaseFirestore {
    * <p>To restart after termination, simply create a new instance of {@code FirebaseFirestore} with
    * {@link #getInstance()} or {@link #getInstance(FirebaseApp)}.
    *
-   * <p>{@code terminate()} does not cancel any pending writes and any tasks that are awaiting a
-   * response from the server will not be resolved. The next time you start this instance, it will
+   * <p>{@code terminate()} does not cancel any pending writes but any write tasks that are awaiting
+   * a response from the server will not be resolved. The next time you start this instance, it will
    * resume attempting to send these writes to the server.
    *
    * <p>Note: Under normal circumstances, calling {@code terminate()} is not required. This method
