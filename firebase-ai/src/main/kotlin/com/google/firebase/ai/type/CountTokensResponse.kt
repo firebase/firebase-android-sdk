@@ -46,14 +46,14 @@ public class CountTokensResponse(
 
   @Serializable
   internal data class Internal(
-    val totalTokens: Int,
+    val totalTokens: Int? = null,
     val totalBillableCharacters: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null
   ) : Response {
 
     internal fun toPublic(): CountTokensResponse {
       return CountTokensResponse(
-        totalTokens,
+        totalTokens ?: 0,
         totalBillableCharacters ?: 0,
         promptTokensDetails?.map { it.toPublic() } ?: emptyList()
       )
