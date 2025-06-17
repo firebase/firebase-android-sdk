@@ -30,6 +30,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.AccessHelper;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -52,9 +53,11 @@ import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -124,6 +127,10 @@ public class IntegrationTestUtil {
   private static boolean strictModeEnabled = false;
 
   private static boolean backendPrimed = false;
+
+  private static final Random RANDOM = new Random();
+
+  private static final int MAX_BYTES_PER_FIELD_VALUE = 1048487;
 
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =
@@ -560,5 +567,18 @@ public class IntegrationTestUtil {
     if (!expectedDocIds.isEmpty()) {
       assertEquals(expectedDocIds, querySnapshotToIds(docsFromServer));
     }
+  }
+
+  /**Add commentMore actions
+   * Returns a Blob with the size equal to the largest number of bytes allowed to
+   * be stored in a Firestore document.
+   */
+  public static Map<String, Object> getLargestDocContent() {
+    // Subtract 8 for '__name__', 20 for its value, and 4 for 'blob'.
+    int numBytesToUse = MAX_BYTES_PER_FIELD_VALUE - 8 - 20 - 4;
+    byte[] bytes = new byte[numBytesToUse];
+    // Fill the byte array with random values
+    RANDOM.nextBytes(bytes);
+    return Collections.singletonMap("blob", Blob.fromBytes(bytes));
   }
 }
