@@ -240,9 +240,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] constant instance.
      */
     @JvmStatic
-    fun constant(value: VectorValue): Expr {
-      return Constant(encodeValue(value))
-    }
+    fun constant(value: VectorValue): Expr = Constant(encodeValue(value))
 
     /**
      * Create a [Blob] constant from a [ByteArray].
@@ -251,9 +249,7 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] constant instance representing the Blob.
      */
     @JvmStatic
-    fun blob(bytes: ByteArray): Expr {
-      return constant(Blob.fromBytes(bytes))
-    }
+    fun blob(bytes: ByteArray): Expr = constant(Blob.fromBytes(bytes))
 
     /**
      * Constant for a null value.
@@ -261,9 +257,7 @@ abstract class Expr internal constructor() {
      * @return A [Expr] constant instance.
      */
     @JvmStatic
-    fun nullValue(): Expr {
-      return NULL
-    }
+    fun nullValue(): Expr = NULL
 
     /**
      * Create a vector constant for a [DoubleArray] value.
@@ -272,9 +266,7 @@ abstract class Expr internal constructor() {
      * @return A [Expr] constant instance.
      */
     @JvmStatic
-    fun vector(vector: DoubleArray): Expr {
-      return Constant(Values.encodeVectorValue(vector))
-    }
+    fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
 
     /**
      * Create a vector constant for a [VectorValue] value.
@@ -283,9 +275,7 @@ abstract class Expr internal constructor() {
      * @return A [Expr] constant instance.
      */
     @JvmStatic
-    fun vector(vector: VectorValue): Expr {
-      return Constant(encodeValue(vector))
-    }
+    fun vector(vector: VectorValue): Expr = Constant(encodeValue(vector))
 
     /**
      * Creates a [Field] instance representing the field at the given path.
@@ -316,9 +306,7 @@ abstract class Expr internal constructor() {
      * @return A new [Field] instance representing the specified path.
      */
     @JvmStatic
-    fun field(fieldPath: FieldPath): Field {
-      return Field(fieldPath.internalPath)
-    }
+    fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
 
     @JvmStatic
     fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, notImplemented, expr)
@@ -3626,6 +3614,14 @@ abstract class Expr internal constructor() {
   fun strConcat(vararg strings: Any): Expr = Companion.strConcat(this, *strings)
 
   /**
+   * Accesses a map (object) value using the provided [keyExpression].
+   *
+   * @param keyExpression The name of the key to remove from this map expression.
+   * @return A new [Expr] representing the value associated with the given key in the map.
+   */
+  fun mapGet(keyExpression: Expr) = Companion.mapGet(this, keyExpression)
+
+  /**
    * Accesses a map (object) value using the provided [key].
    *
    * @param key The key to access in the map.
@@ -3647,10 +3643,10 @@ abstract class Expr internal constructor() {
   /**
    * Creates an expression that removes a key from this map expression.
    *
-   * @param key The name of the key to remove from this map expression.
+   * @param keyExpression The name of the key to remove from this map expression.
    * @return A new [Expr] that evaluates to a modified map.
    */
-  fun mapRemove(key: Expr) = Companion.mapRemove(this, key)
+  fun mapRemove(keyExpression: Expr) = Companion.mapRemove(this, keyExpression)
 
   /**
    * Creates an expression that removes a key from this map expression.
