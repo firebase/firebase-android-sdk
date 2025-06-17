@@ -43,6 +43,7 @@ public class ConfigAutoFetch {
   private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
+  private static final String REALTIME_RETRY_INTERVAL = "retryIntervalSeconds";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -106,7 +107,7 @@ public class ConfigAutoFetch {
 
   // Check connection and establish InputStream
   @VisibleForTesting
-  public void listenForNotifications() {
+  public void listenForNotifications(ConfigRealtimeHttpClient configRealtimeHttpClient) {
     if (httpURLConnection == null) {
       return;
     }
@@ -116,7 +117,7 @@ public class ConfigAutoFetch {
     InputStream inputStream = null;
     try {
       inputStream = httpURLConnection.getInputStream();
-      handleNotifications(inputStream);
+      handleNotifications(inputStream, configRealtimeHttpClient);
     } catch (IOException ex) {
       // If the real-time connection is at an unexpected lifecycle state when the app is
       // backgrounded, it's expected closing the httpURLConnection will throw an exception.
@@ -138,7 +139,9 @@ public class ConfigAutoFetch {
   }
 
   // Auto-fetch new config and execute callbacks on each new message
-  private void handleNotifications(InputStream inputStream) throws IOException {
+  private void handleNotifications(
+      InputStream inputStream, ConfigRealtimeHttpClient configRealtimeHttpClient)
+      throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String partialConfigUpdateMessage;
     String currentConfigUpdateMessage = "";
@@ -189,6 +192,11 @@ public class ConfigAutoFetch {
             if (targetTemplateVersion > oldTemplateVersion) {
               autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
             }
+          }
+
+          if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
+            int realtimeRetryInterval = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
+            configRealtimeHttpClient.updateBackoffMetadataWithRetryInterval(realtimeRetryInterval);
           }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this
