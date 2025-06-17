@@ -110,8 +110,7 @@ dependencies {
 }
 ```
 
-where the version number can be found in `~/.m2/repository/com/google/firebase/firebase-perf/maven-metadata-local.xml`.
-See [Reference](https://github.com/firebase/firebase-android-sdk#commands) for detail.
+See [Reference](https://github.com/firebase/firebase-android-sdk#commands) for more details.
 
 ## Check Code Coverage
 
