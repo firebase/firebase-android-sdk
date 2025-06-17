@@ -36,7 +36,8 @@ import kotlinx.serialization.Serializable
  */
 public class CountTokensResponse(
   public val totalTokens: Int,
-  @Deprecated("This field is deprecated and will be removed in a future version.") public val totalBillableCharacters: Int? = null,
+  @Deprecated("This field is deprecated and will be removed in a future version.")
+  public val totalBillableCharacters: Int? = null,
   public val promptTokensDetails: List<ModalityTokenCount> = emptyList(),
 ) {
   public operator fun component1(): Int = totalTokens
