@@ -13,4 +13,4 @@
 // limitations under the License.
 
 /** @hide */
-package com.google.firebase.datastore;
+package com.google.firebase.datastorage;

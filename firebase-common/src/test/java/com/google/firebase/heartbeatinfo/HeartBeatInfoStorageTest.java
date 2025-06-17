@@ -21,7 +21,7 @@ import androidx.datastore.preferences.core.Preferences;
 import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
-import com.google.firebase.datastore.DataStorage;
+import com.google.firebase.datastorage.JavaDataStorage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -38,8 +38,8 @@ public class HeartBeatInfoStorageTest {
   private final Preferences.Key<Long> GLOBAL = PreferencesKeys.longKey("fire-global");
   private static final int HEART_BEAT_COUNT_LIMIT = 30;
   private static Context applicationContext = ApplicationProvider.getApplicationContext();
-  private static DataStorage heartBeatDataStore =
-      new DataStorage(applicationContext, "testHeartBeat");
+  private static JavaDataStorage heartBeatDataStore =
+      new JavaDataStorage(applicationContext, "testHeartBeat");
   private HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
 
   @Before

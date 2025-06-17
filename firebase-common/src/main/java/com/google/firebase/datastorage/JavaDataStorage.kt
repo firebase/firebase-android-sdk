@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.datastore
+package com.google.firebase.datastorage
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -43,7 +43,7 @@ import kotlinx.coroutines.runBlocking
  *
  * Example:
  * ```java
- * DataStorage heartBeatStorage = new DataStorage(applicationContext, "FirebaseHeartBeat");
+ * JavaDataStorage heartBeatStorage = new JavaDataStorage(applicationContext, "FirebaseHeartBeat");
  * ```
  *
  * @property context The [Context] that this data will be saved under.
@@ -51,7 +51,7 @@ import kotlinx.coroutines.runBlocking
  *
  * @hide
  */
-class DataStorage(val context: Context, val name: String) {
+class JavaDataStorage(val context: Context, val name: String) {
   /**
    * Used to ensure that there's only ever one call to [editSync] per thread; as to avoid deadlocks.
    */
@@ -195,7 +195,7 @@ class DataStorage(val context: Context, val name: String) {
     if (editLock.get() == true) {
       throw IllegalStateException(
         """
-        Don't call DataStorage.edit() from within an existing edit() callback.
+        Don't call JavaDataStorage.edit() from within an existing edit() callback.
         This causes deadlocks, and is generally indicative of a code smell.
         Instead, either pass around the initial `MutablePreferences` instance, or don't do everything in a single callback. 
       """
@@ -216,7 +216,7 @@ class DataStorage(val context: Context, val name: String) {
  * to the default value.
  *
  * This is primarily useful when working with an instance of [MutablePreferences]
- * - like when working within an [DataStorage.editSync] callback.
+ * - like when working within an [JavaDataStorage.editSync] callback.
  *
  * Example:
  * ```java

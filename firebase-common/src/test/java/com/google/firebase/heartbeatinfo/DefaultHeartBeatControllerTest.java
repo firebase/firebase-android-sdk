@@ -28,7 +28,7 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.collect.ImmutableSet;
-import com.google.firebase.datastore.DataStorage;
+import com.google.firebase.datastorage.JavaDataStorage;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,7 +107,7 @@ public class DefaultHeartBeatControllerTest {
   public void firstNewThenOld_synchronizedCorrectly()
       throws InterruptedException, TimeoutException {
     Context context = ApplicationProvider.getApplicationContext();
-    DataStorage heartBeatDataStore = new DataStorage(context, "testHeartBeat");
+    JavaDataStorage heartBeatDataStore = new JavaDataStorage(context, "testHeartBeat");
     HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
@@ -128,7 +128,7 @@ public class DefaultHeartBeatControllerTest {
   public void firstOldThenNew_synchronizedCorrectly()
       throws InterruptedException, TimeoutException {
     Context context = ApplicationProvider.getApplicationContext();
-    DataStorage heartBeatDataStore = new DataStorage(context, "testHeartBeat");
+    JavaDataStorage heartBeatDataStore = new JavaDataStorage(context, "testHeartBeat");
     HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(

@@ -20,8 +20,8 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.datastore.preferences.core.*;
 import androidx.datastore.preferences.core.Preferences;
-import com.google.firebase.datastore.DataStorage;
-import com.google.firebase.datastore.DataStoreKt;
+import com.google.firebase.datastorage.JavaDataStorage;
+import com.google.firebase.datastorage.JavaDataStorageKt;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -58,17 +58,17 @@ class HeartBeatInfoStorage {
   // As soon as you hit the limit of heartbeats. The number of stored heartbeats is halved.
   private static final int HEART_BEAT_COUNT_LIMIT = 30;
 
-  private final DataStorage firebaseDataStore;
+  private final JavaDataStorage firebaseDataStore;
 
   public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
     this.firebaseDataStore =
-        new DataStorage(applicationContext, HEARTBEAT_PREFERENCES_NAME + persistenceKey);
+        new JavaDataStorage(applicationContext, HEARTBEAT_PREFERENCES_NAME + persistenceKey);
   }
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  HeartBeatInfoStorage(DataStorage dataStorage) {
-    this.firebaseDataStore = dataStorage;
+  HeartBeatInfoStorage(JavaDataStorage javaDataStorage) {
+    this.firebaseDataStore = javaDataStorage;
   }
 
   @VisibleForTesting
@@ -146,7 +146,7 @@ class HeartBeatInfoStorage {
       MutablePreferences preferences, Preferences.Key<Set<String>> userAgent, String dateString) {
     removeStoredDate(preferences, dateString);
     Set<String> userAgentDateSet =
-        new HashSet<>(DataStoreKt.getOrDefault(preferences, userAgent, new HashSet<>()));
+        new HashSet<>(JavaDataStorageKt.getOrDefault(preferences, userAgent, new HashSet<>()));
     userAgentDateSet.add(dateString);
     preferences.set(userAgent, userAgentDateSet);
   }
@@ -158,7 +158,7 @@ class HeartBeatInfoStorage {
       return;
     }
     Set<String> userAgentDateSet =
-        new HashSet<>(DataStoreKt.getOrDefault(preferences, userAgent, new HashSet<>()));
+        new HashSet<>(JavaDataStorageKt.getOrDefault(preferences, userAgent, new HashSet<>()));
     userAgentDateSet.remove(dateString);
     if (userAgentDateSet.isEmpty()) {
       preferences.remove(userAgent);
@@ -193,7 +193,7 @@ class HeartBeatInfoStorage {
     Preferences.Key<Set<String>> userAgent = PreferencesKeys.stringSetKey(userAgentString);
     firebaseDataStore.editSync(
         (pref) -> {
-          String lastDateString = DataStoreKt.getOrDefault(pref, LAST_STORED_DATE, "");
+          String lastDateString = JavaDataStorageKt.getOrDefault(pref, LAST_STORED_DATE, "");
           if (lastDateString.equals(dateString)) {
             Preferences.Key<Set<String>> storedUserAgent =
                 getStoredUserAgentString(pref, dateString);
@@ -208,12 +208,12 @@ class HeartBeatInfoStorage {
               return null;
             }
           }
-          long heartBeatCount = DataStoreKt.getOrDefault(pref, HEART_BEAT_COUNT_TAG, 0L);
+          long heartBeatCount = JavaDataStorageKt.getOrDefault(pref, HEART_BEAT_COUNT_TAG, 0L);
           if (heartBeatCount + 1 == HEART_BEAT_COUNT_LIMIT) {
             heartBeatCount = cleanUpStoredHeartBeats(pref);
           }
           Set<String> userAgentDateSet =
-              new HashSet<>(DataStoreKt.getOrDefault(pref, userAgent, new HashSet<>()));
+              new HashSet<>(JavaDataStorageKt.getOrDefault(pref, userAgent, new HashSet<>()));
           userAgentDateSet.add(dateString);
           heartBeatCount += 1;
 
@@ -226,7 +226,7 @@ class HeartBeatInfoStorage {
   }
 
   private synchronized long cleanUpStoredHeartBeats(MutablePreferences preferences) {
-    long heartBeatCount = DataStoreKt.getOrDefault(preferences, HEART_BEAT_COUNT_TAG, 0L);
+    long heartBeatCount = JavaDataStorageKt.getOrDefault(preferences, HEART_BEAT_COUNT_TAG, 0L);
 
     String lowestDate = null;
     String userAgentString = "";
