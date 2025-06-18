@@ -29,9 +29,9 @@ import kotlinx.serialization.Serializable
  * @property totalBillableCharacters The total number of billable characters in the text input given
  * to the model as a prompt. **Important:** this property does not include billable image, video or
  * other non-text input. See
- * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details. 
+ * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
  * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
- * prompt. 
+ * prompt.
  */
 public class CountTokensResponse(
   public val totalTokens: Int,
