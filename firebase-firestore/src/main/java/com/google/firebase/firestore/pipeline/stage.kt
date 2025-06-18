@@ -33,9 +33,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.skip
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 
@@ -54,7 +52,7 @@ sealed class Stage<T : Stage<T>>(
 
   internal abstract fun self(options: InternalOptions): T
 
-  protected fun with(key: String, value: Value): T = self(options.with(key, value))
+  protected fun withOption(key: String, value: Value): T = self(options.with(key, value))
 
   /**
    * Specify named [String] parameter
@@ -63,7 +61,7 @@ sealed class Stage<T : Stage<T>>(
    * @param value The [String] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: String): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: String): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Boolean] parameter
@@ -72,7 +70,7 @@ sealed class Stage<T : Stage<T>>(
    * @param value The [Boolean] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Boolean): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Boolean): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Long] parameter
@@ -81,7 +79,7 @@ sealed class Stage<T : Stage<T>>(
    * @param value The [Long] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Long): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Long): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Double] parameter
@@ -90,7 +88,7 @@ sealed class Stage<T : Stage<T>>(
    * @param value The [Double] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Double): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Double): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Field] parameter
@@ -99,7 +97,7 @@ sealed class Stage<T : Stage<T>>(
    * @param value The [Field] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Field): T = with(key, value.toProto())
+  fun withOption(key: String, value: Field): T = withOption(key, value.toProto())
 
   internal open fun evaluate(
     context: EvaluationContext,
@@ -232,7 +230,7 @@ internal constructor(
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
 
   override fun evaluate(
     context: EvaluationContext,
@@ -276,7 +274,7 @@ private constructor(private val collectionId: String, options: InternalOptions) 
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
 }
 
 internal class DocumentsSource
@@ -508,7 +506,7 @@ internal constructor(
    * @param limit must be a positive integer.
    * @return [FindNearestStage] with specified [limit].
    */
-  fun withLimit(limit: Long): FindNearestStage = with("limit", limit)
+  fun withLimit(limit: Long): FindNearestStage = withOption("limit", limit)
 
   /**
    * Add a field containing the distance to the result.
@@ -517,7 +515,7 @@ internal constructor(
    * @return [FindNearestStage] with specified [distanceField].
    */
   fun withDistanceField(distanceField: Field): FindNearestStage =
-    with("distance_field", distanceField)
+    withOption("distance_field", distanceField)
 
   /**
    * Add a field containing the distance to the result.
@@ -825,5 +823,5 @@ internal constructor(
    * @param indexField The field name of index field.
    * @return [SampleStage] that includes specified index field.
    */
-  fun withIndexField(indexField: String): UnnestStage = with("index_field", indexField)
+  fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }
