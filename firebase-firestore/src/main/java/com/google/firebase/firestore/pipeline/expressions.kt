@@ -239,8 +239,7 @@ abstract class Expr internal constructor() {
      * @param value The [VectorValue] value.
      * @return A new [Expr] constant instance.
      */
-    @JvmStatic
-    fun constant(value: VectorValue): Expr = Constant(encodeValue(value))
+    @JvmStatic fun constant(value: VectorValue): Expr = Constant(encodeValue(value))
 
     /**
      * Create a [Blob] constant from a [ByteArray].
@@ -248,16 +247,14 @@ abstract class Expr internal constructor() {
      * @param bytes The [ByteArray] to convert to a Blob.
      * @return A new [Expr] constant instance representing the Blob.
      */
-    @JvmStatic
-    fun blob(bytes: ByteArray): Expr = constant(Blob.fromBytes(bytes))
+    @JvmStatic fun blob(bytes: ByteArray): Expr = constant(Blob.fromBytes(bytes))
 
     /**
      * Constant for a null value.
      *
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun nullValue(): Expr = NULL
+    @JvmStatic fun nullValue(): Expr = NULL
 
     /**
      * Create a vector constant for a [DoubleArray] value.
@@ -265,8 +262,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
+    @JvmStatic fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
 
     /**
      * Create a vector constant for a [VectorValue] value.
@@ -274,8 +270,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: VectorValue): Expr = Constant(encodeValue(vector))
+    @JvmStatic fun vector(vector: VectorValue): Expr = Constant(encodeValue(vector))
 
     /**
      * Creates a [Field] instance representing the field at the given path.
@@ -305,8 +300,7 @@ abstract class Expr internal constructor() {
      * @param fieldPath The [FieldPath] to the field.
      * @return A new [Field] instance representing the specified path.
      */
-    @JvmStatic
-    fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
+    @JvmStatic fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
 
     @JvmStatic
     fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, notImplemented, expr)

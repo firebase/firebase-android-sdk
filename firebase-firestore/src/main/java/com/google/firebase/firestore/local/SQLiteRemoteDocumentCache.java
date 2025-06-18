@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -219,9 +218,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    int cnt = db.query(sql.toString())
-        .binding(bindVars)
-        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+    int cnt =
+        db.query(sql.toString())
+            .binding(bindVars)
+            .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
     if (context != null) {
       context.incrementDocumentReadCount(cnt);
     }
