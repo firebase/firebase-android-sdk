@@ -569,7 +569,7 @@ public class IntegrationTestUtil {
     }
   }
 
-  /**Add commentMore actions
+  /**
    * Returns a Blob with the size equal to the largest number of bytes allowed to
    * be stored in a Firestore document.
    */
