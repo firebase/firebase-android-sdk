@@ -285,30 +285,6 @@ public class ConfigRealtimeHttpClient {
     return timeOutDurationInMillis / 2 + random.nextInt((int) timeOutDurationInMillis);
   }
 
-  /**
-   * Increase the backoff duration with a new end time based on {@code realtimeRetryInterval},
-   * and persist the new values to disk-backed metadata.
-   */
-  public void updateBackoffMetadataWithRetryInterval(int realtimeRetryInterval) {
-    Date currentTime = new Date(clock.currentTimeMillis());
-    long backoffDurationInMillis = retryIntervalWithRandomBuffer(realtimeRetryInterval);
-    Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
-    int numFailedStreams = sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams();
-    sharedPrefsClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
-  }
-
-  /**
-   * Returns a random backoff duration that combines the specified {@code realtimeRetryInterval} with a random buffer
-   * ranging from 0 up to 50% of the {@code realtimeRetryInterval}.
-   */
-  private long retryIntervalWithRandomBuffer(int realtimeRetryInterval) {
-    // Convert the base retry interval from seconds to milliseconds.
-    long timeOutDurationInMillis = realtimeRetryInterval * 1000L;
-
-    // A random duration that includes retry interval with random buffer of 50% of retry interval.
-    return timeOutDurationInMillis + random.nextInt((int) (timeOutDurationInMillis / 2));
-  }
-
   private synchronized void enableBackoff() {
     this.isRealtimeDisabled = true;
   }
@@ -578,7 +554,7 @@ public class ConfigRealtimeHttpClient {
 
                   // Start listening for realtime notifications.
                   configAutoFetch = startAutoFetch(httpURLConnection);
-                  configAutoFetch.listenForNotifications(this);
+                  configAutoFetch.listenForNotifications(sharedPrefsClient);
                 }
               } catch (IOException e) {
                 if (isInBackground) {
