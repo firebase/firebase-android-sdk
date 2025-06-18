@@ -158,7 +158,7 @@ constructor(
             }
           }
         } catch (ex: Exception) {
-          Log.d(TAG, "App appForegrounded, failed to update data. Message: ${ex.message}")
+          Log.d(TAG, "App foregrounded, failed to update data. Message: ${ex.message}")
           if (isSessionExpired(sessionData)) {
             val newSessionDetails = sessionGenerator.generateNewSession(sessionData.sessionDetails)
             localSessionData =
