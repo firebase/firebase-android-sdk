@@ -20,14 +20,14 @@ import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
 import static com.google.firebase.DataCollectionTestUtil.withApp;
 
 import android.content.SharedPreferences;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(sdk = Config.OLDEST_SDK)
 public class DataCollectionPreNDefaultDisabledTest {
 
