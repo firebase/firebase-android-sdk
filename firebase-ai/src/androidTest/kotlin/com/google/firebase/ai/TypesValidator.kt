@@ -9,8 +9,7 @@ import com.google.firebase.ai.type.TextPart
 class TypesValidator {
 
   fun validateResponse(response: GenerateContentResponse) {
-    if (hasText(response.candidates[0].content)) {
-      assert(response.candidates.isNotEmpty())
+    if (response.candidates.isNotEmpty() && hasText(response.candidates[0].content)) {
       assert(response.text!!.isNotEmpty())
     } else if (response.candidates.isNotEmpty()) {
       assert(!hasText(response.candidates[0].content))

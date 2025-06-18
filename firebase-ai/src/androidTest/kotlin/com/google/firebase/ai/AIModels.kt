@@ -32,7 +32,8 @@ class AIModels {
     }
 
     fun setup() {
-      val context = InstrumentationRegistry.getInstrumentation().context;
+      val context = InstrumentationRegistry.getInstrumentation().context
+      app =
         FirebaseApp.initializeApp(
           context,
           FirebaseOptions.Builder()

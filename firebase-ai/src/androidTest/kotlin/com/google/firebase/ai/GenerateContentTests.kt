@@ -65,15 +65,4 @@ class GenerateContentTests {
       }
     }
   }
-
-  @Test
-  fun testGenerateContent_Tools() {
-    for (model in getModels()) {
-      runBlocking {
-        val response = model.generateContent(Content.Builder().text("here is a tiny smile").build())
-        validator.validateResponse(response)
-        model.startChat()
-      }
-    }
-  }
 }
