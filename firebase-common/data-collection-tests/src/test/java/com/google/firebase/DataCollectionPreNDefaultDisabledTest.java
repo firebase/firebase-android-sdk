@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 
 @RunWith(AndroidJUnit4.class)
-@Config(sdk = 21)
+@Config(sdk = Config.OLDEST_SDK)
 public class DataCollectionPreNDefaultDisabledTest {
 
   @Test
