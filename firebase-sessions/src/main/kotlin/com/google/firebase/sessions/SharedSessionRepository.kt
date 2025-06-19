@@ -98,7 +98,6 @@ constructor(
     CoroutineScope(backgroundDispatcher).launch {
       try {
         sessionDataStore.updateData {
-          // TODO(mrober): Double check time makes sense?
           sessionData.copy(backgroundTime = timeProvider.currentTime())
         }
       } catch (ex: Exception) {
@@ -138,10 +137,17 @@ constructor(
                 currentSessionData.processDataMap
               }
 
+            val currentSession =
+              if (isColdStart) {
+                // For a cold start, do not keep the current session
+                null
+              } else {
+                currentSessionData.sessionDetails
+              }
+
             // This is an expression, and returns the updated session data
             if (isSessionExpired || isColdStart) {
-              val newSessionDetails =
-                sessionGenerator.generateNewSession(currentSessionData.sessionDetails)
+              val newSessionDetails = sessionGenerator.generateNewSession(currentSession)
               sessionFirelogPublisher.mayLogSession(sessionDetails = newSessionDetails)
               processDataManager.onSessionGenerated()
               currentSessionData.copy(

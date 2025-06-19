@@ -127,9 +127,7 @@ class SharedSessionRepositoryTest {
     fakeDataStore.close()
 
     assertThat(sharedSessionRepository.localSessionData.sessionDetails)
-      .isEqualTo(
-        SessionDetails(SESSION_ID_1, SESSION_ID_INIT, 1, fakeTimeProvider.currentTime().us)
-      )
+      .isEqualTo(SessionDetails(SESSION_ID_1, SESSION_ID_1, 0, fakeTimeProvider.currentTime().us))
   }
 
   @Test
