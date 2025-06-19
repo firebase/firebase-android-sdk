@@ -124,9 +124,6 @@ constructor(
             val isSessionExpired = isSessionExpired(currentSessionData)
             val isColdStart = isColdStart(currentSessionData)
             val isMyProcessStale = isMyProcessStale(currentSessionData)
-            println(
-              "isSessionExpired: $isSessionExpired isColdStart: $isColdStart isMyProcessStale: $isMyProcessStale"
-            )
 
             val newProcessDataMap =
               if (isColdStart) {
