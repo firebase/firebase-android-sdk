@@ -143,7 +143,7 @@ private constructor(
 
   fun execute(): Task<PipelineSnapshot> = execute(null)
 
-  fun execute(options: RealtimePipelineOptions): Task<PipelineSnapshot> = execute(options.options)
+  fun execute(options: PipelineOptions): Task<PipelineSnapshot> = execute(options.options)
 
   internal fun documentReference(key: DocumentKey): DocumentReference {
     return DocumentReference(key, firestore)
@@ -773,7 +773,7 @@ internal constructor(
 
   fun execute(): Task<PipelineSnapshot> = execute(null)
 
-  fun execute(options: PipelineOptions): Task<PipelineSnapshot> = execute(options.options)
+  fun execute(options: RealtimePipelineOptions): Task<PipelineSnapshot> = execute(options.options)
 
   fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
 
