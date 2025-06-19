@@ -128,10 +128,6 @@ public class IntegrationTestUtil {
 
   private static boolean backendPrimed = false;
 
-  private static final Random RANDOM = new Random();
-
-  private static final int MAX_BYTES_PER_FIELD_VALUE = 1048487;
-
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =
       new FirebaseOptions.Builder()
@@ -574,11 +570,14 @@ public class IntegrationTestUtil {
    * be stored in a Firestore document.
    */
   public static Map<String, Object> getLargestDocContent() {
+    int MAX_BYTES_PER_FIELD_VALUE = 1048487;
     // Subtract 8 for '__name__', 20 for its value, and 4 for 'blob'.
     int numBytesToUse = MAX_BYTES_PER_FIELD_VALUE - 8 - 20 - 4;
+
     byte[] bytes = new byte[numBytesToUse];
     // Fill the byte array with random values
-    RANDOM.nextBytes(bytes);
+    Random random = new Random();
+    random.nextBytes(bytes);
     return Collections.singletonMap("blob", Blob.fromBytes(bytes));
   }
 }
