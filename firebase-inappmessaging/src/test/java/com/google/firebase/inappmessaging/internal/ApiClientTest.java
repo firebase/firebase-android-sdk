@@ -52,7 +52,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 22, qualifiers = "es")
+@Config(manifest = Config.NONE, sdk = Config.OLDEST_SDK, qualifiers = "es")
 public class ApiClientTest {
 
   public static final String TIME_ZONE = "Europe/London";
