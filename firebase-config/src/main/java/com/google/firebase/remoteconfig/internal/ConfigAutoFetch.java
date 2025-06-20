@@ -19,6 +19,8 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdate;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +46,7 @@ public class ConfigAutoFetch {
   private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
+  private static final String REALTIME_RETRY_INTERVAL = "retryIntervalSeconds";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -54,6 +58,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private final Clock clock;
   private boolean isInBackground;
 
   public ConfigAutoFetch(
@@ -71,6 +76,18 @@ public class ConfigAutoFetch {
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
     this.isInBackground = false;
+    clock = DefaultClock.getInstance();
+  }
+
+  // Increase the backoff duration with a new end time based on Retry Interval
+  private synchronized void updateBackoffMetadataWithRetryInterval(
+      int realtimeRetryInterval, ConfigSharedPrefsClient sharedPrefsClient) {
+    Date currentTime = new Date(clock.currentTimeMillis());
+    long backoffDurationInMillis = realtimeRetryInterval * 1000L;
+    Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
+
+    // Persist the new values to disk-backed metadata.
+    sharedPrefsClient.setRealtimeBackoffEndTime(backoffEndTime);
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -106,7 +123,7 @@ public class ConfigAutoFetch {
 
   // Check connection and establish InputStream
   @VisibleForTesting
-  public void listenForNotifications() {
+  public void listenForNotifications(ConfigSharedPrefsClient sharedPrefsClient) {
     if (httpURLConnection == null) {
       return;
     }
@@ -116,7 +133,7 @@ public class ConfigAutoFetch {
     InputStream inputStream = null;
     try {
       inputStream = httpURLConnection.getInputStream();
-      handleNotifications(inputStream);
+      handleNotifications(inputStream, sharedPrefsClient);
     } catch (IOException ex) {
       // If the real-time connection is at an unexpected lifecycle state when the app is
       // backgrounded, it's expected closing the httpURLConnection will throw an exception.
@@ -138,7 +155,8 @@ public class ConfigAutoFetch {
   }
 
   // Auto-fetch new config and execute callbacks on each new message
-  private void handleNotifications(InputStream inputStream) throws IOException {
+  private void handleNotifications(
+      InputStream inputStream, ConfigSharedPrefsClient sharedPrefsClient) throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String partialConfigUpdateMessage;
     String currentConfigUpdateMessage = "";
@@ -189,6 +207,11 @@ public class ConfigAutoFetch {
             if (targetTemplateVersion > oldTemplateVersion) {
               autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
             }
+          }
+
+          if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
+            int realtimeRetryInterval = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
+            updateBackoffMetadataWithRetryInterval(realtimeRetryInterval, sharedPrefsClient);
           }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this

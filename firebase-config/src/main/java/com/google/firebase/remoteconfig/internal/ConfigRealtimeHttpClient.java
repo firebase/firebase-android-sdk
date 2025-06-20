@@ -554,7 +554,7 @@ public class ConfigRealtimeHttpClient {
 
                   // Start listening for realtime notifications.
                   configAutoFetch = startAutoFetch(httpURLConnection);
-                  configAutoFetch.listenForNotifications();
+                  configAutoFetch.listenForNotifications(sharedPrefsClient);
                 }
               } catch (IOException e) {
                 if (isInBackground) {

@@ -1,5 +1,8 @@
 # Unreleased
-
+* [changed] This update introduces improvements to how the SDK handles real-time requests when a 
+  Firebase project has exceeded its available quota for real-time services. Released in anticipation
+  of future quota enforcement, this change is designed to fetch the latest template even when the 
+  quota is exhausted.
 
 # 22.1.2
 * [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting 
