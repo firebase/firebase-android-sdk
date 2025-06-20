@@ -25,10 +25,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.collect.ImmutableSet;
+import com.google.firebase.datastorage.JavaDataStorage;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,10 +107,8 @@ public class DefaultHeartBeatControllerTest {
   public void firstNewThenOld_synchronizedCorrectly()
       throws InterruptedException, TimeoutException {
     Context context = ApplicationProvider.getApplicationContext();
-    SharedPreferences heartBeatSharedPreferences =
-        context.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
-    HeartBeatInfoStorage heartBeatInfoStorage =
-        new HeartBeatInfoStorage(heartBeatSharedPreferences);
+    JavaDataStorage heartBeatDataStore = new JavaDataStorage(context, "testHeartBeat");
+    HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
@@ -130,10 +128,8 @@ public class DefaultHeartBeatControllerTest {
   public void firstOldThenNew_synchronizedCorrectly()
       throws InterruptedException, TimeoutException {
     Context context = ApplicationProvider.getApplicationContext();
-    SharedPreferences heartBeatSharedPreferences =
-        context.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
-    HeartBeatInfoStorage heartBeatInfoStorage =
-        new HeartBeatInfoStorage(heartBeatSharedPreferences);
+    JavaDataStorage heartBeatDataStore = new JavaDataStorage(context, "testHeartBeat");
+    HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);

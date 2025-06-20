@@ -1,6 +1,7 @@
 # Unreleased
 * [fixed] Correctly declare dependency on firebase-components, issue #5732
 * [changed] Added extension method `Random.nextAlphanumericString()` (PR #5818)
+* [changed] Migrated internal `SharedPreferences` usages to `DataStore`. ([GitHub PR #6801](https://github.com/firebase/firebase-android-sdk/pull/6801){ .external})
 
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-common-ktx`
