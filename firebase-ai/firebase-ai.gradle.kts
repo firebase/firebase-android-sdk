@@ -28,7 +28,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_ai}}")
+    name.set("{{firebase_ai_logic}}")
     versionName.set("ai")
     hasKTX.set(false)
   }
