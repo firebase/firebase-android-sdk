@@ -16,7 +16,6 @@
 
 package com.google.firebase.testing.sessions
 
-import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -31,6 +30,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.trace
+import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
 import java.net.HttpURLConnection
 import java.net.URL
@@ -128,7 +128,7 @@ class FirstFragment : Fragment() {
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
-    binding.processName.text = getProcessName()
+    binding.processName.text = myProcessName
   }
 
   override fun onResume() {
@@ -150,10 +150,6 @@ class FirstFragment : Fragment() {
     fun getDateText(): String =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-      else "unknown"
-
-    fun getProcessName(): String =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
       else "unknown"
   }
 }
