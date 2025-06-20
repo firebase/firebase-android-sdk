@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
@@ -48,6 +49,7 @@ import kotlinx.serialization.json.JsonObject
 @PublicPreviewAPI
 public class LiveGenerativeModel
 internal constructor(
+  private val context: Context,
   private val modelName: String,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val config: LiveGenerationConfig? = null,
@@ -69,6 +71,7 @@ internal constructor(
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
+    firebaseApp.applicationContext,
     modelName,
     blockingDispatcher,
     config,
@@ -110,7 +113,11 @@ internal constructor(
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
       return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
+        LiveSession(
+          context = context,
+          session = webSession,
+          blockingDispatcher = blockingDispatcher
+        )
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
