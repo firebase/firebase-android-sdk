@@ -25,6 +25,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -56,7 +57,7 @@ class SecondActivity : BaseActivity() {
           .killBackgroundProcesses("com.google.firebase.testing.sessions")
       }
     }
-    findViewById<TextView>(R.id.process_name_second).text = getProcessName()
+    findViewById<TextView>(R.id.process_name_second).text = myProcessName
   }
 
   override fun onResume() {
