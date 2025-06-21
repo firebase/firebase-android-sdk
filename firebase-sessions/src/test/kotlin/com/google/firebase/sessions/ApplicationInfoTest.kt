@@ -36,9 +36,9 @@ class ApplicationInfoTest {
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
     val firebaseApp = FakeFirebaseApp().firebaseApp
-    val actualCurrentProcessDetails =
-      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
-    val actualAppProcessDetails =
+    val myProcessDetails =
+      ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext)
+    val appProcessDetails =
       ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
     val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
     assertThat(applicationInfo)
@@ -54,15 +54,15 @@ class ApplicationInfoTest {
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
             appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
             deviceManufacturer = Build.MANUFACTURER,
-            actualCurrentProcessDetails,
-            actualAppProcessDetails,
-          )
+            myProcessDetails,
+            appProcessDetails,
+          ),
         )
       )
   }
 
   @Test
-  fun applicationInfo_missiongVersionCode_populatesInfoCorrectly() {
+  fun applicationInfo_missingVersionCode_populatesInfoCorrectly() {
     // Initialize Firebase with no version code set.
     val firebaseApp =
       Firebase.initialize(
@@ -71,12 +71,12 @@ class ApplicationInfoTest {
           .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
           .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
           .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
 
-    val actualCurrentProcessDetails =
-      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
-    val actualAppProcessDetails =
+    val myProcessDetails =
+      ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext)
+    val appProcessDetails =
       ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
 
     val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
@@ -94,9 +94,9 @@ class ApplicationInfoTest {
             versionName = "0",
             appBuildVersion = "0",
             deviceManufacturer = Build.MANUFACTURER,
-            actualCurrentProcessDetails,
-            actualAppProcessDetails,
-          )
+            myProcessDetails,
+            appProcessDetails,
+          ),
         )
       )
   }

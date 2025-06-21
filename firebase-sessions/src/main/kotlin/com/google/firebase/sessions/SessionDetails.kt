@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions.testing
+package com.google.firebase.sessions
 
-import com.google.firebase.sessions.SessionDatastore
+import kotlinx.serialization.Serializable
 
-/**
- * Fake implementaiton of the [SessionDatastore] that allows for inspecting and modifying the
- * currently stored values in unit tests.
- */
-internal class FakeSessionDatastore : SessionDatastore {
-
-  /** The currently stored value */
-  private var currentSessionId: String? = null
-
-  override fun updateSessionId(sessionId: String) {
-    currentSessionId = sessionId
-  }
-
-  override fun getCurrentSessionId() = currentSessionId
-}
+/** Details about the current session. */
+@Serializable
+internal data class SessionDetails(
+  val sessionId: String,
+  val firstSessionId: String,
+  val sessionIndex: Int,
+  val sessionStartTimestampUs: Long,
+)

@@ -21,6 +21,7 @@ plugins {
   id("firebase-vendor")
   id("kotlin-android")
   id("kotlin-kapt")
+  id("kotlinx-serialization")
 }
 
 firebaseLibrary {
@@ -28,7 +29,11 @@ firebaseLibrary {
 
   testLab.enabled = true
   publishJavadoc = false
-  releaseNotes { enabled.set(false) }
+
+  releaseNotes {
+    enabled = false
+    hasKTX = false
+  }
 }
 
 android {
@@ -76,7 +81,8 @@ dependencies {
   implementation("com.google.android.datatransport:transport-api:3.2.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
-  implementation(libs.androidx.datastore.preferences)
+  implementation(libs.androidx.datastore)
+  implementation(libs.kotlinx.serialization.json)
 
   vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
 

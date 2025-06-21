@@ -19,12 +19,22 @@ package com.google.firebase.sessions
 import android.os.SystemClock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.serialization.Serializable
+
+/** Time with accessors for microseconds, milliseconds, and seconds. */
+@Serializable
+internal data class Time(val ms: Long) {
+  val us = ms * 1_000
+  val seconds = ms / 1_000
+
+  operator fun minus(time: Time): Duration = (ms - time.ms).milliseconds
+}
 
 /** Time provider interface, for testing purposes. */
 internal interface TimeProvider {
   fun elapsedRealtime(): Duration
 
-  fun currentTimeUs(): Long
+  fun currentTime(): Time
 }
 
 /** "Wall clock" time provider implementation. */
@@ -38,14 +48,11 @@ internal object TimeProviderImpl : TimeProvider {
   override fun elapsedRealtime(): Duration = SystemClock.elapsedRealtime().milliseconds
 
   /**
-   * Gets the current "wall clock" time in microseconds.
+   * Gets the current "wall clock" time.
    *
    * This clock can be set by the user or the phone network, so the time may jump backwards or
    * forwards unpredictably. This clock should only be used when correspondence with real-world
    * dates and times is important, such as in a calendar or alarm clock application.
    */
-  override fun currentTimeUs(): Long = System.currentTimeMillis() * US_PER_MILLIS
-
-  /** Microseconds per millisecond. */
-  private const val US_PER_MILLIS = 1000L
+  override fun currentTime(): Time = Time(ms = System.currentTimeMillis())
 }

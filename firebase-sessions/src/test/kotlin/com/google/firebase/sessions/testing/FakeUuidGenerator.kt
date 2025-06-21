@@ -24,6 +24,8 @@ internal class FakeUuidGenerator(private val names: List<String> = listOf(UUID_1
   UuidGenerator {
   private var index = -1
 
+  constructor(vararg names: String) : this(names.toList())
+
   override fun next(): UUID {
     index = (index + 1).coerceAtMost(names.size - 1)
     return UUID.fromString(names[index])

@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import com.google.firebase.testing.sessions.TestApplication.Companion.TAG
 
 class CrashBroadcastReceiver : BroadcastReceiver() {
 
@@ -42,7 +43,6 @@ class CrashBroadcastReceiver : BroadcastReceiver() {
   }
 
   companion object {
-    val TAG = "CrashBroadcastReceiver"
     val CRASH_ACTION = "com.google.firebase.testing.sessions.CrashBroadcastReceiver.CRASH_ACTION"
     val TOAST_ACTION = "com.google.firebase.testing.sessions.CrashBroadcastReceiver.TOAST_ACTION"
   }

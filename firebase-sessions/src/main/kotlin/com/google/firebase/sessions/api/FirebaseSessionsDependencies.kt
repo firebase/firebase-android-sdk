@@ -18,6 +18,7 @@ package com.google.firebase.sessions.api
 
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import java.util.Collections.synchronizedMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -30,8 +31,6 @@ import kotlinx.coroutines.sync.withLock
  * This is important because the Sessions SDK starts up before dependent SDKs.
  */
 object FirebaseSessionsDependencies {
-  private const val TAG = "SessionsDependencies"
-
   private val dependencies = synchronizedMap(mutableMapOf<SessionSubscriber.Name, Dependency>())
 
   /**
@@ -40,19 +39,6 @@ object FirebaseSessionsDependencies {
    */
   @JvmStatic
   fun addDependency(subscriberName: SessionSubscriber.Name) {
-    if (subscriberName == SessionSubscriber.Name.PERFORMANCE) {
-      throw IllegalArgumentException(
-        """
-          Incompatible versions of Firebase Perf and Firebase Sessions.
-          A safe combination would be:
-            firebase-sessions:1.1.0
-            firebase-crashlytics:18.5.0
-            firebase-perf:20.5.0
-          For more information contact Firebase Support.
-        """
-          .trimIndent()
-      )
-    }
     if (dependencies.containsKey(subscriberName)) {
       Log.d(TAG, "Dependency $subscriberName already added.")
       return

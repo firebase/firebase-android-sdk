@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package com.google.firebase.sessions.testing
 
-import com.google.firebase.sessions.SessionDetails
-import com.google.firebase.sessions.SessionFirelogPublisher
+import android.app.ActivityManager
 
-/**
- * Fake implementation of [SessionFirelogPublisher] that allows for inspecting the session details
- * that were sent to it.
- */
-internal class FakeFirelogPublisher : SessionFirelogPublisher {
-
-  /** All the sessions that were uploaded via this fake [SessionFirelogPublisher] */
-  val loggedSessions = ArrayList<SessionDetails>()
-
-  override fun logSession(sessionDetails: SessionDetails) {
-    loggedSessions.add(sessionDetails)
+/** Fake [ActivityManager.RunningAppProcessInfo] that is easy to construct. */
+internal class FakeRunningAppProcessInfo(
+  pid: Int = 0,
+  uid: Int = 313,
+  processName: String = "fake.process.name",
+  importance: Int = 100,
+) : ActivityManager.RunningAppProcessInfo() {
+  init {
+    this.pid = pid
+    this.uid = uid
+    this.processName = processName
+    this.importance = importance
   }
 }
