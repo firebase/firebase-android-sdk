@@ -72,8 +72,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.LooperMode;
-import org.robolectric.annotation.LooperMode.Mode;
 import org.robolectric.shadows.ShadowLooper;
 
 /**
@@ -84,7 +82,6 @@ import org.robolectric.shadows.ShadowLooper;
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(shadows = ShadowPreconditions.class)
-@LooperMode(Mode.PAUSED)
 public final class FirebaseMessagingRoboTest {
 
   private static final String INVALID_TOPIC = "@invalid";
