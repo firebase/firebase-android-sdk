@@ -13,6 +13,15 @@ on:
   pull_request:
     paths:
       - .github/workflows/dataconnect.yml
+      - gradlew
+      - build.gradle.kts
+      - gradle.properties
+      - gradlew.bat
+      - settings.gradle.kts
+      - subprojects.cfg
+      - 'gradle/**'
+      - 'plugins/**'
+      - '!plugins/**/*.md'
       - 'firebase-dataconnect/**'
       - '!firebase-dataconnect/demo/**'
       - '!firebase-dataconnect/scripts/**'
