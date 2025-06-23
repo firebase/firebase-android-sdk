@@ -245,15 +245,15 @@ package com.google.firebase.ai.type {
   }
 
   public final class CountTokensResponse {
-    ctor public CountTokensResponse(int totalTokens, Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
+    ctor public CountTokensResponse(int totalTokens, @Deprecated Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
     method public operator Integer? component2();
     method public operator java.util.List<com.google.firebase.ai.type.ModalityTokenCount>? component3();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
-    method public Integer? getTotalBillableCharacters();
+    method @Deprecated public Integer? getTotalBillableCharacters();
     method public int getTotalTokens();
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
-    property public final Integer? totalBillableCharacters;
+    property @Deprecated public final Integer? totalBillableCharacters;
     property public final int totalTokens;
   }
 
