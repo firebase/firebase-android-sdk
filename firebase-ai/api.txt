@@ -171,10 +171,12 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.CitationMetadata? getCitationMetadata();
     method public com.google.firebase.ai.type.Content getContent();
     method public com.google.firebase.ai.type.FinishReason? getFinishReason();
+    method public com.google.firebase.ai.type.GroundingMetadata? getGroundingMetadata();
     method public java.util.List<com.google.firebase.ai.type.SafetyRating> getSafetyRatings();
     property public final com.google.firebase.ai.type.CitationMetadata? citationMetadata;
     property public final com.google.firebase.ai.type.Content content;
     property public final com.google.firebase.ai.type.FinishReason? finishReason;
+    property public final com.google.firebase.ai.type.GroundingMetadata? groundingMetadata;
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
   }
 
@@ -245,15 +247,15 @@ package com.google.firebase.ai.type {
   }
 
   public final class CountTokensResponse {
-    ctor public CountTokensResponse(int totalTokens, Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
+    ctor public CountTokensResponse(int totalTokens, @Deprecated Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
     method public operator Integer? component2();
     method public operator java.util.List<com.google.firebase.ai.type.ModalityTokenCount>? component3();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
-    method public Integer? getTotalBillableCharacters();
+    method @Deprecated public Integer? getTotalBillableCharacters();
     method public int getTotalTokens();
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
-    property public final Integer? totalBillableCharacters;
+    property @Deprecated public final Integer? totalBillableCharacters;
     property public final int totalTokens;
   }
 
@@ -396,6 +398,48 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend googleAI();
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI();
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+  }
+
+  @kotlinx.serialization.Serializable public final class GoogleSearch {
+    ctor public GoogleSearch();
+  }
+
+  @Deprecated public final class GroundingAttribution {
+    ctor @Deprecated public GroundingAttribution(com.google.firebase.ai.type.Segment segment, Float? confidenceScore);
+    method @Deprecated public Float? getConfidenceScore();
+    method @Deprecated public com.google.firebase.ai.type.Segment getSegment();
+    property @Deprecated public final Float? confidenceScore;
+    property @Deprecated public final com.google.firebase.ai.type.Segment segment;
+  }
+
+  public final class GroundingChunk {
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web);
+    method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
+    property public final com.google.firebase.ai.type.WebGroundingChunk? web;
+  }
+
+  public final class GroundingMetadata {
+    ctor public GroundingMetadata(java.util.List<java.lang.String>? webSearchQueries, com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint, java.util.List<java.lang.String>? retrievalQueries, @Deprecated java.util.List<com.google.firebase.ai.type.GroundingAttribution>? groundingAttribution, java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks, java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports);
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.GroundingAttribution>? getGroundingAttribution();
+    method public java.util.List<com.google.firebase.ai.type.GroundingChunk> getGroundingChunks();
+    method public java.util.List<com.google.firebase.ai.type.GroundingSupport> getGroundingSupports();
+    method public java.util.List<java.lang.String>? getRetrievalQueries();
+    method public com.google.firebase.ai.type.SearchEntryPoint? getSearchEntryPoint();
+    method public java.util.List<java.lang.String>? getWebSearchQueries();
+    property @Deprecated public final java.util.List<com.google.firebase.ai.type.GroundingAttribution>? groundingAttribution;
+    property public final java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks;
+    property public final java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports;
+    property public final java.util.List<java.lang.String>? retrievalQueries;
+    property public final com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint;
+    property public final java.util.List<java.lang.String>? webSearchQueries;
+  }
+
+  public final class GroundingSupport {
+    ctor public GroundingSupport(com.google.firebase.ai.type.Segment? segment, java.util.List<java.lang.Integer> groundingChunkIndices);
+    method public java.util.List<java.lang.Integer> getGroundingChunkIndices();
+    method public com.google.firebase.ai.type.Segment? getSegment();
+    property public final java.util.List<java.lang.Integer> groundingChunkIndices;
+    property public final com.google.firebase.ai.type.Segment? segment;
   }
 
   public final class HarmBlockMethod {
@@ -897,6 +941,26 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
   }
 
+  public final class SearchEntryPoint {
+    ctor public SearchEntryPoint(String? renderedContent, String? sdkBlob);
+    method public String? getRenderedContent();
+    method public String? getSdkBlob();
+    property public final String? renderedContent;
+    property public final String? sdkBlob;
+  }
+
+  public final class Segment {
+    ctor public Segment(int startIndex, int endIndex, int partIndex, String text);
+    method public int getEndIndex();
+    method public int getPartIndex();
+    method public int getStartIndex();
+    method public String getText();
+    property public final int endIndex;
+    property public final int partIndex;
+    property public final int startIndex;
+    property public final String text;
+  }
+
   public final class SerializationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
@@ -935,11 +999,13 @@ package com.google.firebase.ai.type {
 
   public final class Tool {
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
   public static final class Tool.Companion {
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
   }
 
   public final class ToolConfig {
@@ -985,6 +1051,16 @@ package com.google.firebase.ai.type {
   }
 
   @Deprecated public static final class Voices.Companion {
+  }
+
+  public final class WebGroundingChunk {
+    ctor public WebGroundingChunk(String? uri, String? title, String? domain);
+    method public String? getDomain();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? domain;
+    property public final String? title;
+    property public final String? uri;
   }
 
 }
