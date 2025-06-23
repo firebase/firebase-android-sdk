@@ -29,6 +29,10 @@ package com.google.firebase.vertexai.type
 import kotlin.jvm.JvmField
 
 @PublicPreviewAPI
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
   public val numberOfImages: Int? = 1,
@@ -42,6 +46,10 @@ public class ImagenGenerationConfig(
    * This is mainly intended for Java interop. For Kotlin, use [imagenGenerationConfig] for a more
    * idiomatic experience.
    */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
     @JvmField public var negativePrompt: String? = null
     @JvmField public var numberOfImages: Int? = 1

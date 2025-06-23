@@ -56,9 +56,13 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Clone mock responses
+      - name: Clone vertexai mock responses
         if: matrix.module == ':firebase-vertexai'
         run: firebase-vertexai/update_responses.sh
+
+      - name: Clone ai mock responses
+        if: matrix.module == ':firebase-ai'
+        run: firebase-ai/update_responses.sh
 
       - name: Add google-services.json
         env:

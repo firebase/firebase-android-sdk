@@ -31,6 +31,10 @@ import kotlinx.serialization.Serializable
  * `"user"`.
  * @param parts An ordered list of [Part] that constitute this content.
  */
+@Deprecated(
+  """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+)
 public class Content
 @JvmOverloads
 constructor(public val role: String? = "user", public val parts: List<Part>) {
@@ -41,6 +45,10 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   }
 
   /** Builder class to facilitate constructing complex [Content] objects. */
+  @Deprecated(
+    """The Vertex AI in Firebase SDK (firebase-vertexai) has been replaced with the FirebaseAI SDK (firebase-ai) to accommodate the evolving set of supported features and services.
+For migration details, see the migration guide: https://firebase.google.com/docs/vertex-ai/migrate-to-latest-sdk"""
+  )
   public class Builder {
 
     /** The producer of the content. Must be either 'user' or 'model'. By default, it's "user". */

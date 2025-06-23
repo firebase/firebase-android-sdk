@@ -25,7 +25,7 @@ import com.google.firebase.inject.Provider
 import kotlin.coroutines.CoroutineContext
 
 /**
- * Multi-resource container for Firebase Vertex AI.
+ * Multi-resource container for Vertex AI in Firebase.
  *
  * @hide
  */

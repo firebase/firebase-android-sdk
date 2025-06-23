@@ -1,6 +1,24 @@
 # Unreleased
 
 
+# 19.4.4
+* [fixed] Fixed more strict mode violations
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.4.3
+* [fixed] Fixed UnbufferedIoViolation strict mode violation [#6822]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 19.4.2
 * [changed] Internal changes to read version control info more efficiently [#6754]
 * [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]

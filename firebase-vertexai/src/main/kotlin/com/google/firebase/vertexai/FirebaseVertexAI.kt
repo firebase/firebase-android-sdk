@@ -37,7 +37,7 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 import kotlin.coroutines.CoroutineContext
 
-/** Entry point for all _Vertex AI for Firebase_ functionality. */
+/** Entry point for all _Vertex AI in Firebase_ functionality. */
 public class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,

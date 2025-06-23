@@ -21,8 +21,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.vertexai.FirebaseVertexAI;
 import com.google.firebase.vertexai.GenerativeModel;
+import com.google.firebase.vertexai.LiveGenerativeModel;
 import com.google.firebase.vertexai.java.ChatFutures;
 import com.google.firebase.vertexai.java.GenerativeModelFutures;
+import com.google.firebase.vertexai.java.LiveModelFutures;
+import com.google.firebase.vertexai.java.LiveSessionFutures;
 import com.google.firebase.vertexai.type.BlockReason;
 import com.google.firebase.vertexai.type.Candidate;
 import com.google.firebase.vertexai.type.Citation;
@@ -33,24 +36,37 @@ import com.google.firebase.vertexai.type.CountTokensResponse;
 import com.google.firebase.vertexai.type.FileDataPart;
 import com.google.firebase.vertexai.type.FinishReason;
 import com.google.firebase.vertexai.type.FunctionCallPart;
+import com.google.firebase.vertexai.type.FunctionResponsePart;
 import com.google.firebase.vertexai.type.GenerateContentResponse;
+import com.google.firebase.vertexai.type.GenerationConfig;
 import com.google.firebase.vertexai.type.HarmCategory;
 import com.google.firebase.vertexai.type.HarmProbability;
 import com.google.firebase.vertexai.type.HarmSeverity;
 import com.google.firebase.vertexai.type.ImagePart;
 import com.google.firebase.vertexai.type.InlineDataPart;
+import com.google.firebase.vertexai.type.LiveGenerationConfig;
+import com.google.firebase.vertexai.type.LiveServerContent;
+import com.google.firebase.vertexai.type.LiveServerMessage;
+import com.google.firebase.vertexai.type.LiveServerSetupComplete;
+import com.google.firebase.vertexai.type.LiveServerToolCall;
+import com.google.firebase.vertexai.type.LiveServerToolCallCancellation;
+import com.google.firebase.vertexai.type.MediaData;
 import com.google.firebase.vertexai.type.ModalityTokenCount;
 import com.google.firebase.vertexai.type.Part;
 import com.google.firebase.vertexai.type.PromptFeedback;
+import com.google.firebase.vertexai.type.ResponseModality;
 import com.google.firebase.vertexai.type.SafetyRating;
+import com.google.firebase.vertexai.type.SpeechConfig;
 import com.google.firebase.vertexai.type.TextPart;
 import com.google.firebase.vertexai.type.UsageMetadata;
+import com.google.firebase.vertexai.type.Voices;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import kotlinx.serialization.json.JsonElement;
 import kotlinx.serialization.json.JsonNull;
+import kotlinx.serialization.json.JsonObject;
 import org.junit.Assert;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -63,9 +79,31 @@ public class JavaCompileTests {
 
   public void initializeJava() throws Exception {
     FirebaseVertexAI vertex = FirebaseVertexAI.getInstance();
-    GenerativeModel model = vertex.generativeModel("fake-model-name");
+    GenerativeModel model = vertex.generativeModel("fake-model-name", getConfig());
+    LiveGenerativeModel live = vertex.liveModel("fake-model-name", getLiveConfig());
     GenerativeModelFutures futures = GenerativeModelFutures.from(model);
+    LiveModelFutures liveFutures = LiveModelFutures.from(live);
     testFutures(futures);
+    testLiveFutures(liveFutures);
+  }
+
+  private GenerationConfig getConfig() {
+    return new GenerationConfig.Builder().build();
+    // TODO b/406558430 GenerationConfig.Builder.setParts returns void
+  }
+
+  private LiveGenerationConfig getLiveConfig() {
+    return new LiveGenerationConfig.Builder()
+        .setTopK(10)
+        .setTopP(11.0F)
+        .setTemperature(32.0F)
+        .setCandidateCount(1)
+        .setMaxOutputTokens(0xCAFEBABE)
+        .setFrequencyPenalty(1.0F)
+        .setPresencePenalty(2.0F)
+        .setResponseModality(ResponseModality.AUDIO)
+        .setSpeechConfig(new SpeechConfig(Voices.AOEDE))
+        .build();
   }
 
   private void testFutures(GenerativeModelFutures futures) throws Exception {
@@ -234,6 +272,69 @@ public class JavaCompileTests {
         ContentModality modality = count.getModality();
         int tokenCount = count.getTokenCount();
       }
+    }
+  }
+
+  private void testLiveFutures(LiveModelFutures futures) throws Exception {
+    LiveSessionFutures session = futures.connect().get();
+    session
+        .receive()
+        .subscribe(
+            new Subscriber<LiveServerMessage>() {
+              @Override
+              public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+              }
+
+              @Override
+              public void onNext(LiveServerMessage response) {
+                validateLiveContentResponse(response);
+              }
+
+              @Override
+              public void onError(Throwable t) {
+                // Ignore
+              }
+
+              @Override
+              public void onComplete() {
+                // Also ignore
+              }
+            });
+
+    session.send("Fake message");
+    session.send(new Content.Builder().addText("Fake message").build());
+
+    byte[] bytes = new byte[] {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
+    session.sendMediaStream(List.of(new MediaData(bytes, "image/jxl")));
+
+    FunctionResponsePart functionResponse =
+        new FunctionResponsePart("myFunction", new JsonObject(Map.of()));
+    session.sendFunctionResponse(List.of(functionResponse, functionResponse));
+
+    session.startAudioConversation(part -> functionResponse);
+    session.startAudioConversation();
+    session.stopAudioConversation();
+    session.stopReceiving();
+    session.close();
+  }
+
+  private void validateLiveContentResponse(LiveServerMessage message) {
+    if (message instanceof LiveServerContent) {
+      LiveServerContent content = (LiveServerContent) message;
+      validateContent(content.getContent());
+      boolean complete = content.getGenerationComplete();
+      boolean interrupted = content.getInterrupted();
+      boolean turnComplete = content.getTurnComplete();
+    } else if (message instanceof LiveServerSetupComplete) {
+      LiveServerSetupComplete setup = (LiveServerSetupComplete) message;
+      // No methods
+    } else if (message instanceof LiveServerToolCall) {
+      LiveServerToolCall call = (LiveServerToolCall) message;
+      validateFunctionCalls(call.getFunctionCalls());
+    } else if (message instanceof LiveServerToolCallCancellation) {
+      LiveServerToolCallCancellation cancel = (LiveServerToolCallCancellation) message;
+      List<String> functions = cancel.getFunctionIds();
     }
   }
 }

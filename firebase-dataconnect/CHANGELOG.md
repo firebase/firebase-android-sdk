@@ -1,5 +1,15 @@
 # Unreleased
+* [fixed] Fixed occasional `NullPointerException` when registering with
+  FirebaseAuth, leading to erroneous UNAUTHENTICATED exceptions.
+  ([#7001](https://github.com/firebase/firebase-android-sdk/pull/7001))
 
+# 16.0.2
+* [changed] Improved code robustness related to state management in
+  `FirebaseDataConnect` objects.
+  ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
+
+# 16.0.1
+* [changed] Internal improvements.
 
 # 16.0.0
 * [changed] DataConnectOperationException added, enabling support for partial

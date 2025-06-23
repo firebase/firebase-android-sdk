@@ -36,7 +36,10 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 internal class VertexAIStreamingSnapshotTests {
   private val testTimeout = 5.seconds
 
@@ -62,11 +65,22 @@ internal class VertexAIStreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.forEach {
-          it.candidates.first().finishReason shouldBe FinishReason.STOP
-          it.candidates.first().content.parts.isEmpty() shouldBe false
-          it.candidates.first().safetyRatings.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
         }
+      }
+    }
+
+  @Test
+  fun `invalid safety ratings during image generation`() =
+    goldenVertexStreamingFile("streaming-success-image-invalid-safety-ratings.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val responseList = responses.toList()
+
+        responseList.isEmpty() shouldBe false
       }
     }
 

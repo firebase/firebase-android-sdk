@@ -37,7 +37,6 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -673,18 +672,16 @@ class MutationRefImplUnitTest {
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
-        every { lazyGrpcClient } returns
-          SuspendingLazy {
-            mockk<DataConnectGrpcClient> {
-              coEvery {
-                executeMutation(
-                  capture(requestIdSlot),
-                  capture(operationNameSlot),
-                  capture(variablesSlot),
-                  capture(callerSdkTypeSlot),
-                )
-              } returns result.getOrThrow()
-            }
+        every { grpcClient } returns
+          mockk<DataConnectGrpcClient> {
+            coEvery {
+              executeMutation(
+                capture(requestIdSlot),
+                capture(operationNameSlot),
+                capture(variablesSlot),
+                capture(callerSdkTypeSlot),
+              )
+            } returns result.getOrThrow()
           }
       }
   }
