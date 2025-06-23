@@ -20,8 +20,17 @@ import com.google.firebase.ai.common.util.descriptorToJson
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GoogleSearch
+import com.google.firebase.ai.type.GroundingAttribution
+import com.google.firebase.ai.type.GroundingChunk
+import com.google.firebase.ai.type.GroundingMetadata
+import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ModalityTokenCount
 import com.google.firebase.ai.type.Schema
+import com.google.firebase.ai.type.SearchEntryPoint
+import com.google.firebase.ai.type.Segment
+import com.google.firebase.ai.type.Tool
+import com.google.firebase.ai.type.WebGroundingChunk
 import io.kotest.assertions.json.shouldEqualJson
 import org.junit.Test
 
@@ -160,6 +169,148 @@ internal class SerializationTests {
   }
 
   @Test
+  fun `test GroundingMetadata serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "GroundingMetadata",
+      "type": "object",
+      "properties": {
+        "webSearchQueries": { "type": "array", "items": { "type": "string" } },
+        "searchEntryPoint": { "${'$'}ref": "SearchEntryPoint" },
+        "retrievalQueries": { "type": "array", "items": { "type": "string" } },
+        "groundingAttribution": { "type": "array", "items": { "${'$'}ref": "GroundingAttribution" } },
+        "groundingChunks": { "type": "array", "items": { "${'$'}ref": "GroundingChunk" } },
+        "groundingSupports": { "type": "array", "items": { "${'$'}ref": "GroundingSupport" } }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(GroundingMetadata.Internal.serializer().descriptor)
+    println(actualJson)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test SearchEntryPoint serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "SearchEntryPoint",
+      "type": "object",
+      "properties": {
+        "renderedContent": { "type": "string" },
+        "sdkBlob": { "type": "string" }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(SearchEntryPoint.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test GroundingChunk serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "GroundingChunk",
+      "type": "object",
+      "properties": {
+        "web": { "${'$'}ref": "WebGroundingChunk" }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(GroundingChunk.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test WebGroundingChunk serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "WebGroundingChunk",
+      "type": "object",
+      "properties": {
+        "uri": { "type": "string" },
+        "title": { "type": "string" },
+        "domain": { "type": "string" }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(WebGroundingChunk.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test GroundingSupport serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "GroundingSupport",
+        "type": "object",
+        "properties": {
+          "segment": {
+            "${'$'}ref": "Segment"
+          },
+          "groundingChunkIndices": {
+            "type": "array",
+            "items": { "type": "integer" }
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(GroundingSupport.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test Segment serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "Segment",
+        "type": "object",
+        "properties": {
+          "startIndex": { "type": "integer" },
+          "endIndex": { "type": "integer" },
+          "partIndex": { "type": "integer" },
+          "text": { "type": "string" }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(Segment.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test GroundingAttribution serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "GroundingAttribution",
+        "type": "object",
+        "properties": {
+          "segment": {
+            "${'$'}ref": "Segment"
+          },
+          "confidenceScore": {
+            "type": "number"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(GroundingAttribution.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
   fun `test Schema serialization as Json`() {
     /**
      * Unlike the actual schema in the background, we don't represent "type" as an enum, but rather
@@ -210,6 +361,52 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(Schema.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test Tool serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "Tool",
+        "type": "object",
+        "properties": {
+          "functionDeclarations": {
+            "type": "array",
+            "items": {
+              "${'$'}ref": "FunctionDeclaration"
+            }
+          },
+          "googleSearch": {
+            "${'$'}ref": "GoogleSearch"
+          },
+          "codeExecution": {
+            "type": "object",
+            "additionalProperties": {
+              "${'$'}ref": "JsonElement"
+             }
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(Tool.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test GoogleSearch serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "GoogleSearch",
+        "type": "object",
+        "properties": {}
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(GoogleSearch.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }

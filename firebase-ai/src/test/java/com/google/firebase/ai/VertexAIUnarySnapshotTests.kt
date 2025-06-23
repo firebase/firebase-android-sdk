@@ -39,6 +39,7 @@ import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -587,6 +588,52 @@ internal class VertexAIUnarySnapshotTests {
     ) {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
+      }
+    }
+
+  @Test
+  fun `google search grounding metadata is parsed correctly`() =
+    goldenVertexUnaryFile("unary-success-google-search-grounding.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+        candidate.finishReason shouldBe FinishReason.STOP
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.webSearchQueries?.first() shouldBe "current weather in London"
+        groundingMetadata.searchEntryPoint.shouldNotBeNull()
+        groundingMetadata.searchEntryPoint?.renderedContent.shouldNotBeEmpty()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        val groundingChunk = groundingMetadata.groundingChunks.first()
+        groundingChunk.web.shouldNotBeNull()
+        groundingChunk.web?.uri.shouldNotBeEmpty()
+        groundingChunk.web?.title shouldBe "accuweather.com"
+        groundingChunk.web?.domain.shouldBeNull()
+
+        groundingMetadata.groundingSupports.shouldNotBeEmpty()
+        groundingMetadata.groundingSupports.size shouldBe 3
+        val groundingSupport = groundingMetadata.groundingSupports.first()
+        groundingSupport.segment.shouldNotBeNull()
+        groundingSupport.segment?.startIndex shouldBe 0
+        groundingSupport.segment?.partIndex shouldBe 0
+        groundingSupport.segment?.endIndex shouldBe 56
+        groundingSupport.segment?.text shouldBe
+          "The current weather in London, United Kingdom is cloudy."
+        groundingSupport.groundingChunkIndices.first() shouldBe 0
+
+        val secondGroundingSupport = groundingMetadata.groundingSupports[1]
+        secondGroundingSupport.segment.shouldNotBeNull()
+        secondGroundingSupport.segment?.startIndex shouldBe 57
+        secondGroundingSupport.segment?.partIndex shouldBe 0
+        secondGroundingSupport.segment?.endIndex shouldBe 123
+        secondGroundingSupport.segment?.text shouldBe
+          "The temperature is 67°F (19°C), but it feels like 75°F (24°C)."
+        secondGroundingSupport.groundingChunkIndices.first() shouldBe 1
       }
     }
 }
