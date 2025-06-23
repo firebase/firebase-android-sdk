@@ -22,6 +22,7 @@ import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import java.util.Calendar
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 
@@ -226,7 +227,7 @@ public class FinishReason private constructor(public val name: String, public va
   @Serializable(Internal.Serializer::class)
   internal enum class Internal {
     UNKNOWN,
-    UNSPECIFIED,
+    @SerialName("FINISH_REASON_UNSPECIFIED") UNSPECIFIED,
     STOP,
     MAX_TOKENS,
     SAFETY,
