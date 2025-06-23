@@ -206,7 +206,8 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     val (name, alias, extra) = mappings[fullArtifactName]!!
 
     val version = versionString(fullArtifactName)
-    if (version.lowercase().contains("alpha")) {
+    if (version.lowercase().contains("-alpha")) {
+      logger.info("Ignoring alpha version of $fullArtifactName")
       return "" // Alpha versions should not be included in the tutorial bundle
     }
 
