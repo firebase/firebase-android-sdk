@@ -31,6 +31,8 @@ plugins {
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
   id("com.diffplug.spotless") version "7.0.0.BETA4"
+
+  id("org.jetbrains.dokka") version "2.0.0"
 }
 
 dependencies {
@@ -53,6 +55,13 @@ dependencies {
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
   implementation("io.kotest:kotest-property:5.9.1")
   implementation("io.kotest.extensions:kotest-property-arbs:2.1.2")
+}
+
+dokka {
+  moduleName.set("Data Connect Demo")
+  dokkaSourceSets.main {
+    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+  }
 }
 
 // The remaining code in this file can be omitted from customer facing
