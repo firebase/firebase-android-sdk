@@ -31,7 +31,7 @@ firebaseCrashlyticsGradle = "3.0.4"
 glide = "4.16.0"
 googleApiClient = "1.30.9"
 googleServices = "4.3.15"
-gradleErrorpronePlugin = "3.1.0"
+gradleErrorpronePlugin = "4.2.0"
 grpc = "1.62.2"
 grpcKotlin = "1.4.1"
 hamcrest = "2.2"
@@ -93,6 +93,7 @@ androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "card
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 androidx-core = { module = "androidx.core:core", version = "1.13.1" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espressoCore" }
