@@ -18,7 +18,7 @@ on:
 
 env:
   FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.2.0' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.5.1' }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
@@ -109,7 +109,7 @@ jobs:
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           --profile \
-          -PdataConnect.minimalApp.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
+          -PdataConnect.demo.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
           assemble test
 
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1

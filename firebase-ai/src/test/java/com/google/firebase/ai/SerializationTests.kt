@@ -326,17 +326,14 @@ internal class SerializationTests {
         "type": {
           "type": "string"
         },
-        "format": {
+        "description": {
           "type": "string"
         },
-        "description": {
+        "format": {
           "type": "string"
         },
         "nullable": {
           "type": "boolean"
-        },
-        "items": {
-          "${'$'}ref": "Schema"
         },
         "enum": {
           "type": "array",
@@ -355,7 +352,31 @@ internal class SerializationTests {
           "items": {
             "type": "string"
           }
-        } 
+        },
+        "items": {
+          "${'$'}ref": "Schema"
+        },
+        "title": {
+          "type": "string"
+        },
+        "minItems": {
+          "type": "integer"
+        },
+        "maxItems": {
+          "type": "integer"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {
+            "${'$'}ref": "Schema"
+          }
+        }
       }
     }
       """
