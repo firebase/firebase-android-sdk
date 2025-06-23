@@ -205,9 +205,14 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
   private fun artifactVariableString(fullArtifactName: String): String {
     val (name, alias, extra) = mappings[fullArtifactName]!!
 
+    val version = versionString(fullArtifactName)
+    if (version.lowercase().contains("alpha")) {
+      return "" // Alpha versions should not be included in the tutorial bundle
+    }
+
     return multiLine(
       "<!-- $name -->",
-      "<!ENTITY $alias \"$fullArtifactName:${versionString(fullArtifactName)}\">",
+      "<!ENTITY $alias \"$fullArtifactName:${version}\">",
       extra,
     )
   }
