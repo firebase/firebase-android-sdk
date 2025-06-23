@@ -210,11 +210,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
       return "" // Alpha versions should not be included in the tutorial bundle
     }
 
-    return multiLine(
-      "<!-- $name -->",
-      "<!ENTITY $alias \"$fullArtifactName:${version}\">",
-      extra,
-    )
+    return multiLine("<!-- $name -->", "<!ENTITY $alias \"$fullArtifactName:${version}\">", extra)
   }
 
   companion object {
