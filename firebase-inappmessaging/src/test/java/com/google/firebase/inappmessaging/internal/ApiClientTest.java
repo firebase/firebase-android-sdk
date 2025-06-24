@@ -49,6 +49,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
@@ -210,7 +211,7 @@ public class ApiClientTest {
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
 
     // sdk version set in roboelectric annotation above
-    assertThat(clientSignals.getPlatformVersion()).isEqualTo(String.valueOf(Config.OLDEST_SDK));
+    assertThat(clientSignals.getPlatformVersion()).isEqualTo(String.valueOf(RuntimeEnvironment.getApiLevel()));
   }
 
   @Test
