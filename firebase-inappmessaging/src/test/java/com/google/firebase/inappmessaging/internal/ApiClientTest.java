@@ -211,7 +211,8 @@ public class ApiClientTest {
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
 
     // sdk version set in roboelectric annotation above
-    assertThat(clientSignals.getPlatformVersion()).isEqualTo(String.valueOf(RuntimeEnvironment.getApiLevel()));
+    assertThat(clientSignals.getPlatformVersion())
+        .isEqualTo(String.valueOf(RuntimeEnvironment.getApiLevel()));
   }
 
   @Test
