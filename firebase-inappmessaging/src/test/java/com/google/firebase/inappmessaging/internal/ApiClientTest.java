@@ -210,7 +210,7 @@ public class ApiClientTest {
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
 
     // sdk version set in roboelectric annotation above
-    assertThat(clientSignals.getPlatformVersion()).isEqualTo("22");
+    assertThat(clientSignals.getPlatformVersion()).isEqualTo(String.valueOf(Config.OLDEST_SDK));
   }
 
   @Test
