@@ -18,7 +18,9 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import androidx.datastore.core.DataStore
+import com.google.firebase.Firebase
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.app
 import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
@@ -35,6 +37,11 @@ internal interface SharedSessionRepository {
   fun appBackground()
 
   fun appForeground()
+
+  companion object {
+    val instance: SharedSessionRepository
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sharedSessionRepository
+  }
 }
 
 @Singleton

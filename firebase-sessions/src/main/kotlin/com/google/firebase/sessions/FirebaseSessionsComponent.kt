@@ -70,6 +70,7 @@ internal interface FirebaseSessionsComponent {
   val sessionFirelogPublisher: SessionFirelogPublisher
   val sessionGenerator: SessionGenerator
   val sessionsSettings: SessionsSettings
+  val sharedSessionRepository: SharedSessionRepository
 
   @Component.Builder
   interface Builder {

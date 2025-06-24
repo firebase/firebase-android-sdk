@@ -43,6 +43,7 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.sessions.api.CrashEventReceiver;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -215,6 +216,11 @@ class CrashlyticsController {
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
                 doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
+
+                // Notify the Firebase Sessions SDK that a fatal crash has occurred.
+                if (!isOnDemand) {
+                  CrashEventReceiver.notifyCrashOccurred();
+                }
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
