@@ -59,6 +59,7 @@ public class ConfigAutoFetch {
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
   private final Clock clock;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
   private boolean isInBackground;
 
   public ConfigAutoFetch(
@@ -67,7 +68,8 @@ public class ConfigAutoFetch {
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      ScheduledExecutorService scheduledExecutorService) {
+      ScheduledExecutorService scheduledExecutorService,
+      ConfigSharedPrefsClient sharedPrefsClient) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
@@ -76,12 +78,12 @@ public class ConfigAutoFetch {
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
     this.isInBackground = false;
+    this.sharedPrefsClient = sharedPrefsClient;
     clock = DefaultClock.getInstance();
   }
 
   // Increase the backoff duration with a new end time based on Retry Interval
-  private synchronized void updateBackoffMetadataWithRetryInterval(
-      int realtimeRetryInterval, ConfigSharedPrefsClient sharedPrefsClient) {
+  private synchronized void updateBackoffMetadataWithRetryInterval(int realtimeRetryInterval) {
     Date currentTime = new Date(clock.currentTimeMillis());
     long backoffDurationInMillis = realtimeRetryInterval * 1000L;
     Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
@@ -123,7 +125,7 @@ public class ConfigAutoFetch {
 
   // Check connection and establish InputStream
   @VisibleForTesting
-  public void listenForNotifications(ConfigSharedPrefsClient sharedPrefsClient) {
+  public void listenForNotifications() {
     if (httpURLConnection == null) {
       return;
     }
@@ -133,7 +135,7 @@ public class ConfigAutoFetch {
     InputStream inputStream = null;
     try {
       inputStream = httpURLConnection.getInputStream();
-      handleNotifications(inputStream, sharedPrefsClient);
+      handleNotifications(inputStream);
     } catch (IOException ex) {
       // If the real-time connection is at an unexpected lifecycle state when the app is
       // backgrounded, it's expected closing the httpURLConnection will throw an exception.
@@ -155,8 +157,7 @@ public class ConfigAutoFetch {
   }
 
   // Auto-fetch new config and execute callbacks on each new message
-  private void handleNotifications(
-      InputStream inputStream, ConfigSharedPrefsClient sharedPrefsClient) throws IOException {
+  private void handleNotifications(InputStream inputStream) throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String partialConfigUpdateMessage;
     String currentConfigUpdateMessage = "";
@@ -209,9 +210,13 @@ public class ConfigAutoFetch {
             }
           }
 
+          // This field in the response indicates that the realtime request has exceeded the
+          // project's quota. It will retry after the specified interval to establish a long-lived
+          // connection. This interval extends the backoff duration without affecting the number of
+          // retries, so it will not enter an exponential backoff state.
           if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
             int realtimeRetryInterval = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
-            updateBackoffMetadataWithRetryInterval(realtimeRetryInterval, sharedPrefsClient);
+            updateBackoffMetadataWithRetryInterval(realtimeRetryInterval);
           }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this

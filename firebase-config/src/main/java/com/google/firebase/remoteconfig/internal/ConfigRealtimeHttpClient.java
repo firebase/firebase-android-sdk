@@ -469,7 +469,8 @@ public class ConfigRealtimeHttpClient {
         activatedCache,
         listeners,
         retryCallback,
-        scheduledExecutorService);
+        scheduledExecutorService,
+        sharedPrefsClient);
   }
 
   // HTTP status code that the Realtime client should retry on.
@@ -554,7 +555,7 @@ public class ConfigRealtimeHttpClient {
 
                   // Start listening for realtime notifications.
                   configAutoFetch = startAutoFetch(httpURLConnection);
-                  configAutoFetch.listenForNotifications(sharedPrefsClient);
+                  configAutoFetch.listenForNotifications();
                 }
               } catch (IOException e) {
                 if (isInBackground) {

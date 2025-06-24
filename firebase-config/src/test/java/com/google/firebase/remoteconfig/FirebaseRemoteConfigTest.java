@@ -351,7 +351,8 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-            scheduledExecutorService);
+            scheduledExecutorService,
+            sharedPrefsClient);
     configAutoFetch.setIsInBackground(false);
     realtimeSharedPrefsClient =
         new ConfigSharedPrefsClient(
@@ -1286,7 +1287,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(inputStreamSpy, times(2)).close();
   }
@@ -1299,7 +1300,7 @@ public final class FirebaseRemoteConfigTest {
                 "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verifyNoInteractions(mockOnUpdateListener);
   }
@@ -1339,7 +1340,7 @@ public final class FirebaseRemoteConfigTest {
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     flushScheduledTasks();
 
-    verify(mockConfigAutoFetch).listenForNotifications(any());
+    verify(mockConfigAutoFetch).listenForNotifications();
     verify(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
   }
 
@@ -1490,7 +1491,7 @@ public final class FirebaseRemoteConfigTest {
             new ByteArrayInputStream(
                 "{ \"featureDisabled\": true }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onError(any(FirebaseRemoteConfigServerException.class));
     verify(mockFetchHandler, never()).fetch(0);
@@ -1508,7 +1509,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(mockUnavailableEventListener, never())
         .onError(any(FirebaseRemoteConfigServerException.class));
@@ -1546,7 +1547,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
   }
@@ -1564,7 +1565,7 @@ public final class FirebaseRemoteConfigTest {
                         expectedRetryInterval)
                     .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(sharedPrefsClient, times(1)).setRealtimeBackoffEndTime(any());
   }
@@ -1579,7 +1580,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(inputStream).close();
   }
@@ -1589,7 +1590,7 @@ public final class FirebaseRemoteConfigTest {
     InputStream inputStream = mock(InputStream.class);
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
-    configAutoFetch.listenForNotifications(sharedPrefsClient);
+    configAutoFetch.listenForNotifications();
 
     verify(mockHttpURLConnection, times(1)).getInputStream();
     verify(inputStream, never()).close();
