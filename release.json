@@ -1,0 +1,10 @@
+{
+    "name": "mm",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-dataconnect",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx"
+    ]
+}

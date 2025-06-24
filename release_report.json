@@ -1,0 +1,154 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "832949335ba3b96ffd406fa393ddf7d543605648",
+                "prId": "7066",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Fix `anyOf` refdoc (#7066)\n\nThe sample code was not correctly enclosed in backticks (`), causing the\ncode to be incorrectly rendered.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/832949335ba3b96ffd406fa393ddf7d543605648",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7066"
+            },
+            {
+                "commitId": "68535a4cf88cb6f63a0415d924d87c18c1c1a0d0",
+                "prId": "7071",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Update api.txt (#7071)\n\nThis is a follow up to #7042",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68535a4cf88cb6f63a0415d924d87c18c1c1a0d0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7071"
+            },
+            {
+                "commitId": "78b278e5deda1fe68210b0c1e37ff445252595f5",
+                "prId": "7056",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Use correct release notes name (#7056)\n\nThe release notes were being generated with the outdated {{firebase_ai}}\ninstead of the correct {{firebase_ai_logic}}.\n\nReference cl/773420536",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/78b278e5deda1fe68210b0c1e37ff445252595f5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7056"
+            },
+            {
+                "commitId": "25e4bd9f284da9ee4935de76a6653a1668f4390e",
+                "prId": "7048",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Move changelog entry to the correct section (#7048)\n\nThe changes in #7013 mistakenly put the changelog entry for the change\nin the \"16.1.0\" section, when it should be part of the \"Unreleased\"\nsection",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/25e4bd9f284da9ee4935de76a6653a1668f4390e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7048"
+            },
+            {
+                "commitId": "ece0efdb0217f7964e60f89e0e6f21b9e03cb3f1",
+                "prId": "7038",
+                "author": "emilypgoogle",
+                "message": "Add AI integration tests (#7038)\n\nCurrently lacking mechanism to get API key from GitHub workflow and the\nworkflow to regularly run the tests.\nThis functionality will be added in a follow up PR.\n\nIncludes a modification to an internal serializable type to better\ninteract with failure cases and prevent crashes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ece0efdb0217f7964e60f89e0e6f21b9e03cb3f1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7038"
+            },
+            {
+                "commitId": "c6afacd0ecab0c4172300b114ced0a68ff261089",
+                "prId": "7042",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Deprecate totalBillableCharacters (#7042)\n\nI've marked the `totalBillableCharacters` field in\n`CountTokensResponse.kt` as deprecated. This includes adding the\n`@Deprecated` annotation and a corresponding KDoc `@deprecated` tag.\n\nThe field is planned to be removed in a future version of the SDK.\n\n---------\n\nCo-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c6afacd0ecab0c4172300b114ced0a68ff261089",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7042"
+            },
+            {
+                "commitId": "6d166e0fc4455af4e1bd40aac3ce18536f81ca25",
+                "prId": "7013",
+                "author": "David Motsonashvili",
+                "message": "Davidmotson.extra schema (#7013)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6d166e0fc4455af4e1bd40aac3ce18536f81ca25",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7013"
+            },
+            {
+                "commitId": "d4a3068ed33dcc61d1b17510d58357f1d51293b5",
+                "prId": "7011",
+                "author": "David Motsonashvili",
+                "message": "Davidmotson.google count token modelname (#7011)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d4a3068ed33dcc61d1b17510d58357f1d51293b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7011"
+            },
+            {
+                "commitId": "af24598d141ca73712fede4cbdf94a3b64f0f51f",
+                "prId": "6996",
+                "author": "Vinay Guthal",
+                "message": "update voice (#6996)\n\nThis pr updates the Voice class to take in a string as an attribute\ninstead of just an enum. This is a breaking change since it breaks\nbinary compatibility however I don't think there is any changes that\nneed to be done by the developer",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af24598d141ca73712fede4cbdf94a3b64f0f51f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6996"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "796687301af56663b61c0b0cea890c5db1878784",
+                "prId": "7033",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: demo: Setup dokka (#7033)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/796687301af56663b61c0b0cea890c5db1878784",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7033"
+            },
+            {
+                "commitId": "9b510c4eeaa3c891e8937d5e1b0e01064cee9fa0",
+                "prId": "7032",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: demo: build.gradle.kts: add ability to specify the Data Connect emulator executable to use (#7032)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9b510c4eeaa3c891e8937d5e1b0e01064cee9fa0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7032"
+            },
+            {
+                "commitId": "f48eda6f557bbcd76530ae4eea0a7ee55e68e801",
+                "prId": "7031",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: demo: build.gradle.kts: update dependencies (#7031)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f48eda6f557bbcd76530ae4eea0a7ee55e68e801",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7031"
+            },
+            {
+                "commitId": "bfd3c76a057c7ad905f64e50d4eb927f658235bf",
+                "prId": "7003",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with versions 2.3.0, 2.3.1, 2.4.0, 2.4.1, 2.5.0, 2.6.0, 2.6.1, and 2.6.2 (#7003)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bfd3c76a057c7ad905f64e50d4eb927f658235bf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7003"
+            },
+            {
+                "commitId": "b2fe88156d1f5851ca265ff5e5d89c87f02ce71d",
+                "prId": "7001",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Fixed occasional `NullPointerException` leading to erroneous UNAUTHENTICATED exceptions (#7001)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b2fe88156d1f5851ca265ff5e5d89c87f02ce71d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7001"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "366095f3d19b86f93b29444f7fc5326c4cb909c9",
+                "prId": "6980",
+                "author": "Greg Sakakihara",
+                "message": "Add a NamedThreadFactory to WithinAppServiceConnection's Executor. (#6980)\n\n- Added back the NamedThreadFactory used by scheduledExecutorService\nthat was removed by\nhttps://github.com/firebase/firebase-android-sdk/commit/6383f6d71218b24318372573aaf962711776f4d1",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/366095f3d19b86f93b29444f7fc5326c4cb909c9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6980"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "cbb470a514072361b5a834fa53dd2af462cfb426",
+                "prId": "7050",
+                "author": "Rodrigo Lazo",
+                "message": "[FCM-DB] Update changelog to align with FCM (#7050)\n\nThere are no planned changes for FCM-DirectBoot to go with the planned\nchanges for FCM. Add changelog note about it.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cbb470a514072361b5a834fa53dd2af462cfb426",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7050"
+            }
+        ],
+        "firebase-messaging/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx"
+    ]
+}
