@@ -22,6 +22,7 @@ import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
@@ -75,30 +76,97 @@ internal constructor(
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
       controller
-        .generateImage(constructRequest(prompt, null, generationConfig))
+        .generateImage(constructGenerationRequest(prompt, null, generationConfig))
         .validate()
         .toPublicInline()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
 
-  private fun constructRequest(
+  public suspend fun editImage(
     prompt: String,
-    gcsUri: String?,
-    config: ImagenGenerationConfig?,
+    config: ImagenEditingConfig
+  ): ImagenGenerationResponse<ImagenInlineImage> =
+    try {
+      controller
+        .generateImage(constructEditRequest(prompt, null, config))
+        .validate()
+        .toPublicInline()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  private fun constructGenerationRequest(
+    prompt: String,
+    gcsUri: String? = null,
+    generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
     return GenerateImageRequest(
       listOf(GenerateImageRequest.ImagenPrompt(prompt)),
       GenerateImageRequest.ImagenParameters(
-        sampleCount = config?.numberOfImages ?: 1,
+        sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
-        addWatermark = generationConfig?.addWatermark,
+        addWatermark = this.generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
-        negativePrompt = config?.negativePrompt,
+        negativePrompt = generationConfig?.negativePrompt,
         safetySetting = safetySettings?.safetyFilterLevel?.internalVal,
         storageUri = gcsUri,
-        aspectRatio = config?.aspectRatio?.internalVal,
-        imageOutputOptions = generationConfig?.imageFormat?.toInternal(),
+        aspectRatio = generationConfig?.aspectRatio?.internalVal,
+        imageOutputOptions = this.generationConfig?.imageFormat?.toInternal(),
+        editMode = null,
+        editConfig = null
+      ),
+    )
+  }
+
+  private fun constructEditRequest(
+    prompt: String,
+    gcsUri: String? = null,
+    editConfig: ImagenEditingConfig,
+  ): GenerateImageRequest {
+    return GenerateImageRequest(
+      listOf(
+        GenerateImageRequest.ImagenPrompt(
+          prompt = prompt,
+          referenceImages =
+            buildList {
+              add(
+                GenerateImageRequest.ReferenceImage(
+                  referenceType = GenerateImageRequest.ReferenceType.RAW,
+                  referenceId = 1,
+                  referenceImage = editConfig.image.toInternal(),
+                  maskImageConfig = null
+                )
+              )
+              if (editConfig.mask != null) {
+                add(
+                  GenerateImageRequest.ReferenceImage(
+                    referenceType = GenerateImageRequest.ReferenceType.MASK,
+                    referenceId = 2,
+                    referenceImage = editConfig.mask.toInternal(),
+                    maskImageConfig =
+                      GenerateImageRequest.MaskImageConfig(
+                        maskMode = GenerateImageRequest.MaskMode.USER_PROVIDED,
+                        dilation = editConfig.maskDilation
+                      )
+                  )
+                )
+              }
+            }
+        )
+      ),
+      GenerateImageRequest.ImagenParameters(
+        sampleCount = generationConfig?.numberOfImages ?: 1,
+        includeRaiReason = true,
+        addWatermark = this.generationConfig?.addWatermark,
+        personGeneration = safetySettings?.personFilterLevel?.internalVal,
+        negativePrompt = generationConfig?.negativePrompt,
+        safetySetting = safetySettings?.safetyFilterLevel?.internalVal,
+        storageUri = gcsUri,
+        aspectRatio = generationConfig?.aspectRatio?.internalVal,
+        imageOutputOptions = this.generationConfig?.imageFormat?.toInternal(),
+        editMode = editConfig.editMode.value,
+        editConfig = editConfig.toInternal()
       ),
     )
   }

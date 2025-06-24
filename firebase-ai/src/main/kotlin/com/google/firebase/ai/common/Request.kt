@@ -21,7 +21,9 @@ import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.common.util.trimmedModelName
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
+import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenImageFormat
+import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
@@ -75,17 +77,23 @@ internal data class CountTokensRequest(
 }
 
 @Serializable
+@PublicPreviewAPI
 internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
 ) : Request {
-  @Serializable internal data class ImagenPrompt(val prompt: String)
+  @Serializable
+  internal data class ImagenPrompt(
+    val prompt: String? = null,
+    val image: ImagenInlineImage.Internal? = null,
+    val referenceImages: List<ReferenceImage>? = null
+  )
 
   @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
-    val includeRaiReason: Boolean,
+    val includeRaiReason: Boolean?,
     val storageUri: String?,
     val negativePrompt: String?,
     val aspectRatio: String?,
@@ -93,5 +101,38 @@ internal data class GenerateImageRequest(
     val personGeneration: String?,
     val addWatermark: Boolean?,
     val imageOutputOptions: ImagenImageFormat.Internal?,
+    val editMode: String?,
+    val editConfig: ImagenEditingConfig.Internal?,
+  )
+
+  @Serializable
+  internal enum class ReferenceType {
+    @SerialName("REFERENCE_TYPE_UNSPECIFIED") UNSPECIFIED,
+    @SerialName("REFERENCE_TYPE_RAW") RAW,
+    @SerialName("REFERENCE_TYPE_MASK") MASK,
+    @SerialName("REFERENCE_TYPE_CONTROL") CONTROL,
+    @SerialName("REFERENCE_TYPE_STYLE") STYLE,
+    @SerialName("REFERENCE_TYPE_SUBJECT") SUBJECT,
+    @SerialName("REFERENCE_TYPE_MASKED_SUBJECT") MASKED_SUBJECT,
+    @SerialName("REFERENCE_TYPE_PRODUCT") PRODUCT
+  }
+
+  @Serializable
+  internal enum class MaskMode {
+    @SerialName("MASK_MODE_DEFAULT") DEFAULT,
+    @SerialName("MASK_MODE_USER_PROVIDED") USER_PROVIDED,
+    @SerialName("MASK_MODE_BACKGROUND") BACKGROUND,
+    @SerialName("MASK_MODE_FOREGROUND") FOREGROUND,
+    @SerialName("MASK_MODE_SEMANTIC") SEMANTIC
+  }
+
+  @Serializable internal data class MaskImageConfig(val maskMode: MaskMode, val dilation: Double?)
+
+  @Serializable
+  internal data class ReferenceImage(
+    val referenceType: ReferenceType,
+    val referenceId: Int,
+    val referenceImage: ImagenInlineImage.Internal,
+    val maskImageConfig: MaskImageConfig?
   )
 }

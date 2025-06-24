@@ -18,6 +18,9 @@ package com.google.firebase.ai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
+import java.io.ByteArrayOutputStream
+import kotlinx.serialization.Serializable
 
 /**
  * Represents an Imagen-generated image that is returned as inline data.
@@ -36,4 +39,19 @@ internal constructor(public val data: ByteArray, public val mimeType: String) {
   public fun asBitmap(): Bitmap {
     return BitmapFactory.decodeByteArray(data, 0, data.size)
   }
+
+  @Serializable internal data class Internal(val bytesBase64Encoded: String)
+
+  internal fun toInternal(): Internal {
+    val base64 = Base64.encodeToString(data, Base64.NO_WRAP)
+    return Internal(base64)
+  }
+}
+
+@PublicPreviewAPI
+public fun Bitmap.toImagenImage(): ImagenInlineImage {
+  val byteArrayOutputStream = ByteArrayOutputStream()
+  this.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+  val byteArray = byteArrayOutputStream.toByteArray()
+  return ImagenInlineImage(data = byteArray, mimeType = "image/png")
 }
