@@ -70,7 +70,7 @@ rxandroid = "2.0.2"
 rxjava = "2.1.14"
 serialization = "1.5.1"
 slf4jNop = "2.0.9"
-spotless = "7.0.0.BETA3"
+spotless = "7.0.4"
 testServices = "1.2.0"
 truth = "1.4.4"
 truthProtoExtension = "1.0"
@@ -216,7 +216,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.2.0" }
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
-testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
+testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.9" }
 wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", version.ref = "wiremockStandalone" }
 
 [bundles]
