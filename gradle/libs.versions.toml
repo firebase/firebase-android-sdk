@@ -6,7 +6,7 @@ android-lint = "31.3.2"
 androidGradlePlugin = "8.3.2"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
-androidx-test-truth = "1.5.0"
+androidx-test-truth = "1.6.0"
 appcompat = "1.7.0"
 autoValueParcel = "0.2.6"
 autovalue = "1.10.1"
@@ -216,7 +216,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.2.0" }
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
-testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
+testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.9" }
 wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", version.ref = "wiremockStandalone" }
 
 [bundles]
