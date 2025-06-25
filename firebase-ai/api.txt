@@ -65,6 +65,7 @@ package com.google.firebase.ai {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenModel {
+    method public suspend Object? editImage(String prompt, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
     method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
@@ -104,6 +105,7 @@ package com.google.firebase.ai.java {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenModelFutures {
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(String prompt, com.google.firebase.ai.type.ImagenEditingConfig config);
     method public static final com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
     method public abstract com.google.firebase.ai.ImagenModel getImageModel();
@@ -484,6 +486,47 @@ package com.google.firebase.ai.type {
   public static final class ImagenAspectRatio.Companion {
   }
 
+  public final class ImagenEditMode {
+    field public static final com.google.firebase.ai.type.ImagenEditMode.Companion Companion;
+  }
+
+  public static final class ImagenEditMode.Companion {
+    method public com.google.firebase.ai.type.ImagenEditMode getINPAINT_INSERTION();
+    method public com.google.firebase.ai.type.ImagenEditMode getINPAINT_REMOVAL();
+    method public com.google.firebase.ai.type.ImagenEditMode getOUTPAINT();
+    property public final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
+    property public final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
+    property public final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenEditingConfig {
+    ctor public ImagenEditingConfig(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.ImagenEditMode editMode, com.google.firebase.ai.type.ImagenInlineImage? mask = null, Double? maskDilation = null, Integer? editSteps = null);
+    field public static final com.google.firebase.ai.type.ImagenEditingConfig.Companion Companion;
+  }
+
+  public static final class ImagenEditingConfig.Builder {
+    ctor public ImagenEditingConfig.Builder();
+    method public com.google.firebase.ai.type.ImagenEditingConfig build();
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder setEditMode(com.google.firebase.ai.type.ImagenEditMode editMode);
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder setEditSteps(int editSteps);
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder setImage(com.google.firebase.ai.type.ImagenInlineImage image);
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder setMask(com.google.firebase.ai.type.ImagenInlineImage mask);
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder setMaskDilation(double maskDilation);
+    field public com.google.firebase.ai.type.ImagenEditMode? editMode;
+    field public Integer? editSteps;
+    field public com.google.firebase.ai.type.ImagenInlineImage? image;
+    field public com.google.firebase.ai.type.ImagenInlineImage? mask;
+    field public Double? maskDilation;
+  }
+
+  public static final class ImagenEditingConfig.Companion {
+    method public com.google.firebase.ai.type.ImagenEditingConfig.Builder builder();
+  }
+
+  public final class ImagenEditingConfigKt {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenEditingConfig imagenEditingConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenEditingConfig.Builder,kotlin.Unit> init);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenGenerationConfig {
     ctor public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.ai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
     method public Boolean? getAddWatermark();
@@ -550,6 +593,10 @@ package com.google.firebase.ai.type {
     method public String getMimeType();
     property public final byte[] data;
     property public final String mimeType;
+  }
+
+  public final class ImagenInlineImageKt {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenInlineImage toImagenInlineImage(android.graphics.Bitmap);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {

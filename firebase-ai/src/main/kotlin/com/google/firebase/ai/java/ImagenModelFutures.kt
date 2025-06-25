@@ -60,7 +60,6 @@ public abstract class ImagenModelFutures internal constructor() {
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
       SuspendToFutureAdapter.launchFuture { model.editImage(prompt, config) }
 
-
     override fun getImageModel(): ImagenModel = model
   }
 
