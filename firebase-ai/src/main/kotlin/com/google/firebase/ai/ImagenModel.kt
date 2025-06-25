@@ -76,7 +76,7 @@ internal constructor(
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
       controller
-        .generateImage(constructGenerationRequest(prompt, generationConfig))
+        .generateImage(constructGenerateImageRequest(prompt, generationConfig))
         .validate()
         .toPublicInline()
     } catch (e: Throwable) {
@@ -93,7 +93,7 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
-  private fun constructGenerationRequest(
+  private fun constructGenerateImageRequest(
     prompt: String,
     generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
