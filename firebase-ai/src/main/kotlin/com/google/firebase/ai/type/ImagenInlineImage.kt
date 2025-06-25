@@ -49,7 +49,7 @@ internal constructor(public val data: ByteArray, public val mimeType: String) {
 }
 
 @PublicPreviewAPI
-public fun Bitmap.toImagenImage(): ImagenInlineImage {
+public fun Bitmap.toImagenInlineImage(): ImagenInlineImage {
   val byteArrayOutputStream = ByteArrayOutputStream()
   this.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
   val byteArray = byteArrayOutputStream.toByteArray()

@@ -28,11 +28,11 @@ import kotlinx.serialization.Serializable
  */
 @PublicPreviewAPI
 public class ImagenEditingConfig(
-  public val image: ImagenInlineImage,
-  public val editMode: ImagenEditMode,
-  public val mask: ImagenInlineImage? = null,
-  public val maskDilation: Double? = null,
-  public val editSteps: Int? = null,
+  internal val image: ImagenInlineImage,
+  internal val editMode: ImagenEditMode,
+  internal val mask: ImagenInlineImage? = null,
+  internal val maskDilation: Double? = null,
+  internal val editSteps: Int? = null,
 ) {
   public companion object {
     public fun builder(): Builder = Builder()
