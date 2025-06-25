@@ -309,14 +309,12 @@ internal constructor(
      *
      * Example: A field that can hold either a simple userID or a more detailed user object.
      *
-     * Schema.anyOf( listOf( Schema.integer(description = "User ID"), Schema.obj(mapOf(
-     *
      * ```
+     * Schema.anyOf( listOf( Schema.integer(description = "User ID"), Schema.obj( mapOf(
      *     "userID" to Schema.integer(description = "User ID"),
      *     "username" to Schema.string(description = "Username")
+     * )))
      * ```
-     *
-     * )) )
      *
      * @param schemas The list of valid schemas which could be here
      */
