@@ -83,6 +83,13 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
+  /**
+   * Generates an image, based on both a prompt, and input image, returning the result directly to
+   * the caller.
+   *
+   * @param prompt The input(s) given to the model as a prompt.
+   * @param config The editing config given to the model.
+   */
   public suspend fun editImage(
     prompt: String,
     config: ImagenEditingConfig
