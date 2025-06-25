@@ -300,15 +300,15 @@ public class FinishReason private constructor(public val name: String, public va
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
  * Search".
  *
- * @property webSearchQueries A list of web search queries that the model performed to gather the
+ * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
  * @property searchEntryPoint Google search entry point for web searches. This contains an HTML/CSS
  * snippet that **must** be embedded in an app to display a Google Search Entry point for follow-up
  * web searches related to the model's "Grounded Response". To ensure proper rendering, it's
  * recommended to display this content within a `WebView`.
- * @property groundingChunks A list of [GroundingChunk] objects. Each chunk represents a piece of
+ * @property groundingChunks The list of [GroundingChunk] objects. Each chunk represents a piece of
  * retrieved content (e.g. from a web page) that the model used to ground its response.
- * @property groundingSupports A list of [GroundingSupport] objects. Each object details how
+ * @property groundingSupports The list of [GroundingSupport] objects. Each object details how
  * specific segments of the model's response are supported by the `groundingChunks`.
  */
 public class GroundingMetadata(
@@ -343,7 +343,7 @@ public class GroundingMetadata(
 }
 
 /**
- * A class representing the Google Search entry point.
+ * Represents a Google Search entry point.
  *
  * When using this feature, you are required to comply with the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google

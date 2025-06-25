@@ -99,7 +99,7 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
     }
 
-  // This test case can be removed once https://b.corp.google.com/issues/422779395 (internal) is
+  // This test case can be removed once b/422779395 is
   // fixed.
   @Test
   fun `google search grounding empty grounding chunks`() =

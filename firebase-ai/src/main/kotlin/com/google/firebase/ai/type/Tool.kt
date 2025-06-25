@@ -33,12 +33,12 @@ internal constructor(
   internal fun toInternal() =
     Internal(
       functionDeclarations?.map { it.toInternal() } ?: emptyList(),
-      googleSearch = this.googleSearch
+      googleSearch = this.googleSearch?.toInternal()
     )
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
-    val googleSearch: GoogleSearch? = null,
+    val googleSearch: GoogleSearch.Internal? = null,
     // This is a json object because it is not possible to make a data class with no parameters.
     val codeExecution: JsonObject? = null,
   )

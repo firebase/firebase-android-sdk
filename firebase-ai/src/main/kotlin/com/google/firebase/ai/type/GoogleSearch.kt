@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,4 +26,8 @@ import kotlinx.serialization.Serializable
  * the Grounding with Google Search terms outlined in the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms).
  */
-@Serializable public class GoogleSearch {}
+public class GoogleSearch {
+  @Serializable internal class Internal()
+
+  internal fun toInternal() = Internal()
+}

@@ -427,7 +427,7 @@ internal class SerializationTests {
       }
       """
         .trimIndent()
-    val actualJson = descriptorToJson(GoogleSearch.serializer().descriptor)
+    val actualJson = descriptorToJson(GoogleSearch.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }

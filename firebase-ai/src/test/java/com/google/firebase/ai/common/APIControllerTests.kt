@@ -274,7 +274,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -290,7 +290,7 @@ internal class RequestFormatTests {
           GenerateContentRequest(
             model = "unused",
             contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
-            tools = listOf(Tool.Internal(googleSearch = GoogleSearch())),
+            tools = listOf(Tool.Internal(googleSearch = GoogleSearch.Internal())),
           )
         )
         .collect { channel.close() }
