@@ -61,6 +61,7 @@ dokka {
   moduleName.set("Data Connect Demo")
   dokkaSourceSets.main {
     sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+    includes.from(layout.buildDirectory.file("dataConnect/generatedSources/com/google/firebase/dataconnect/minimaldemo/connector/README.md").get())
   }
 }
 
