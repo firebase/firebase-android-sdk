@@ -29,7 +29,7 @@ class MyServiceA : Service() {
     Log.i(TAG, "Service A action: ${intent?.action} on process: $myProcessName")
 
     // Send actions from adb shell this way, so it can start the process if needed:
-    // am startservice -n com.google.firebase.testing.sessions/.MyServiceA -a PING
+    // am startservice --user 0 -n com.google.firebase.testing.sessions/.MyServiceA -a PING
     when (intent?.action) {
       "PING" -> ping()
       "CRASH" -> crash()

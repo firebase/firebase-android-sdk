@@ -18,7 +18,9 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import androidx.datastore.core.DataStore
+import com.google.firebase.Firebase
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.app
 import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
@@ -32,9 +34,16 @@ import kotlinx.coroutines.launch
 
 /** Repository to persist session data to be shared between all app processes. */
 internal interface SharedSessionRepository {
+  val isInForeground: Boolean
+
   fun appBackground()
 
   fun appForeground()
+
+  companion object {
+    val instance: SharedSessionRepository
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sharedSessionRepository
+  }
 }
 
 @Singleton
@@ -51,6 +60,9 @@ constructor(
 ) : SharedSessionRepository {
   /** Local copy of the session data. Can get out of sync, must be double-checked in datastore. */
   internal lateinit var localSessionData: SessionData
+
+  override var isInForeground = false
+    private set
 
   /**
    * Either notify the subscribers with general multi-process supported session or fallback local
@@ -88,6 +100,7 @@ constructor(
   }
 
   override fun appBackground() {
+    isInForeground = false
     if (!::localSessionData.isInitialized) {
       Log.d(TAG, "App backgrounded, but local SessionData not initialized")
       return
@@ -108,6 +121,7 @@ constructor(
   }
 
   override fun appForeground() {
+    isInForeground = true
     if (!::localSessionData.isInitialized) {
       Log.d(TAG, "App foregrounded, but local SessionData not initialized")
       return
