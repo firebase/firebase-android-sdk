@@ -1,5 +1,6 @@
 # Unreleased
-* [feature] Add support for Grounding with Google Search (#7042).
+* [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
+    * **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`, `retrievalQueries` in `GroundingMetadata` to be non-optional.
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
 * [feature] Added support for extra schema properties like `title`, `minItems`, `maxItems`, `minimum`
  and `maximum`. As well as support for the `anyOf` schema. (#7013)

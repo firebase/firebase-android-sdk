@@ -604,7 +604,7 @@ internal class VertexAIUnarySnapshotTests {
         val groundingMetadata = candidate.groundingMetadata
         groundingMetadata.shouldNotBeNull()
 
-        groundingMetadata.webSearchQueries?.first() shouldBe "current weather in London"
+        groundingMetadata.webSearchQueries.first() shouldBe "current weather in London"
         groundingMetadata.searchEntryPoint.shouldNotBeNull()
         groundingMetadata.searchEntryPoint?.renderedContent.shouldNotBeEmpty()
 

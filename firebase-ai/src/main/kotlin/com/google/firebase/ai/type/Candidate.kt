@@ -312,11 +312,11 @@ public class FinishReason private constructor(public val name: String, public va
  * specific segments of the model's response are supported by the `groundingChunks`.
  */
 public class GroundingMetadata(
-  public val webSearchQueries: List<String>?,
+  public val webSearchQueries: List<String>,
   public val searchEntryPoint: SearchEntryPoint?,
-  public val retrievalQueries: List<String>?,
+  public val retrievalQueries: List<String>,
   @Deprecated("Use groundingChunks instead")
-  public val groundingAttribution: List<GroundingAttribution>?,
+  public val groundingAttribution: List<GroundingAttribution>,
   public val groundingChunks: List<GroundingChunk>,
   public val groundingSupports: List<GroundingSupport>,
 ) {
@@ -332,10 +332,10 @@ public class GroundingMetadata(
   ) {
     internal fun toPublic() =
       GroundingMetadata(
-        webSearchQueries = webSearchQueries,
+        webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
-        retrievalQueries = retrievalQueries,
-        groundingAttribution = groundingAttribution?.map { it.toPublic() },
+        retrievalQueries = retrievalQueries.orEmpty(),
+        groundingAttribution = groundingAttribution?.map { it.toPublic() }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
         groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty()
       )
