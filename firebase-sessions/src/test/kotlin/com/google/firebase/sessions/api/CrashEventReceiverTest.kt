@@ -92,9 +92,10 @@ class CrashEventReceiverTest {
     assertThat(sharedSessionRepository.isInForeground).isFalse()
 
     // This will not update background time since the process is already in the background
+    val originalBackgroundTime = fakeTimeProvider.currentTime()
     CrashEventReceiver.notifyCrashOccurred()
     assertThat(sharedSessionRepository.localSessionData.backgroundTime)
-      .isEqualTo(fakeTimeProvider.currentTime())
+      .isEqualTo(originalBackgroundTime)
 
     // Wait a bit, then bring the process to foreground
     fakeTimeProvider.addInterval(31.minutes)
@@ -107,13 +108,13 @@ class CrashEventReceiverTest {
 
     // Wait a bit, then notify of a crash
     fakeTimeProvider.addInterval(3.seconds)
+    val newBackgroundTime = fakeTimeProvider.currentTime()
     CrashEventReceiver.notifyCrashOccurred()
 
     runCurrent()
 
     // Verify the background time got updated
-    assertThat(sharedSessionRepository.localSessionData.backgroundTime)
-      .isEqualTo(fakeTimeProvider.currentTime())
+    assertThat(sharedSessionRepository.localSessionData.backgroundTime).isEqualTo(newBackgroundTime)
 
     // Clean up
     fakeDataStore.close()
