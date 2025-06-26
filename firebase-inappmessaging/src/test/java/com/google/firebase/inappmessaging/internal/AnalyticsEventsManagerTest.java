@@ -43,7 +43,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 22, qualifiers = "es")
+@Config(manifest = Config.NONE, sdk = Config.OLDEST_SDK, qualifiers = "es")
 public class AnalyticsEventsManagerTest {
 
   @Rule public final ExpectedLogMessagesRule logged = new ExpectedLogMessagesRule();
