@@ -38,8 +38,11 @@ object CrashEventReceiver {
   @JvmStatic
   fun notifyCrashOccurred() {
     try {
-      // Treat the crash as if the app went to the background, and update session state.
-      SharedSessionRepository.instance.appBackground()
+      // Treat a foreground crash as if the app went to the background, and update session state.
+      val sharedSessionRepository = SharedSessionRepository.instance
+      if (sharedSessionRepository.isInForeground) {
+        sharedSessionRepository.appBackground()
+      }
     } catch (_: Exception) {
       // Catch and suppress any exception to avoid crashing during crash handling.
       // This can occur if Firebase or the SDK are in an unexpected state (e.g. FirebaseApp deleted)
