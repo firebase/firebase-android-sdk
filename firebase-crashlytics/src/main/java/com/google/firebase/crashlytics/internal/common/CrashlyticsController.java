@@ -190,6 +190,11 @@ class CrashlyticsController {
     Logger.getLogger()
         .d("Handling uncaught " + "exception \"" + ex + "\" from thread " + thread.getName());
 
+    // Notify the Firebase Sessions SDK that a fatal crash has occurred.
+    if (!isOnDemand) {
+      CrashEventReceiver.notifyCrashOccurred();
+    }
+
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
     final long timestampMillis = System.currentTimeMillis();
@@ -216,11 +221,6 @@ class CrashlyticsController {
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
                 doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
-
-                // Notify the Firebase Sessions SDK that a fatal crash has occurred.
-                if (!isOnDemand) {
-                  CrashEventReceiver.notifyCrashOccurred();
-                }
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
