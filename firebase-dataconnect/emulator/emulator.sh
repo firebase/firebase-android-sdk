@@ -17,6 +17,7 @@
 set -euo pipefail
 
 export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
+export DATA_CONNECT_PREVIEW=user_enum
 echo "[$0] export FIREBASE_DATACONNECT_POSTGRESQL_STRING='$FIREBASE_DATACONNECT_POSTGRESQL_STRING'"
 
 readonly FIREBASE_ARGS=(

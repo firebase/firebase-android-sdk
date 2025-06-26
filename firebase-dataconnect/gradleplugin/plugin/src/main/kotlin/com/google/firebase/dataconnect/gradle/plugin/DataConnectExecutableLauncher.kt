@@ -70,6 +70,8 @@ fun Task.runDataConnectExecutable(
 
         args("-config_dir=$configDirectory")
 
+        environment("DATA_CONNECT_PREVIEW", "user_enum")
+
         config.outputDirectory?.let { args("-output_dir=${it.path}") }
         config.connectors.let {
           if (it.isNotEmpty()) {

@@ -355,3 +355,15 @@ type OrderDirectionTest @table @index(fields: ["tag"]) {
   value: Int
   tag: String
 }
+
+enum N5ekmae3jn {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
+}
+
+type EnumNonNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn
+  tag: String
+}
+

@@ -1581,3 +1581,74 @@ query ExprValues_GetByKey($key: ExprValues_Key!) @auth(level: PUBLIC) {
     requestTimeAsDate
   }
 }
+
+###############################################################################
+# Operations for table: type EnumNonNullable
+###############################################################################
+
+mutation EnumNonNullable_Insert($value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key: enumNonNullable_insert(data: { value: $value })
+}
+
+mutation EnumNonNullable_Insert3($tag: String!, $value1: N5ekmae3jn!, $value2: N5ekmae3jn!, $value3: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key1: enumNonNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNonNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNonNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNonNullable_GetByKey($key: EnumNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullable(key: $key) { value }
+}
+
+query EnumNonNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn! = XGWGVMYTHJ) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNonNullable_update(key: $key, data: { value: $value })
+}
+
+mutation EnumNonNullable_UpdateByTagAndValue($tag: String!, $value: N5ekmae3jn, $newValue: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNonNullable_updateMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+    data: { value: $newValue }
+  )
+}
+
+mutation EnumNonNullable_DeleteByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNonNullable_deleteMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } }
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
