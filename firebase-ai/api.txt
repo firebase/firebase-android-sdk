@@ -400,7 +400,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
-  @kotlinx.serialization.Serializable public final class GoogleSearch {
+  public final class GoogleSearch {
     ctor public GoogleSearch();
   }
 
@@ -419,19 +419,19 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingMetadata {
-    ctor public GroundingMetadata(java.util.List<java.lang.String>? webSearchQueries, com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint, java.util.List<java.lang.String>? retrievalQueries, @Deprecated java.util.List<com.google.firebase.ai.type.GroundingAttribution>? groundingAttribution, java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks, java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports);
-    method @Deprecated public java.util.List<com.google.firebase.ai.type.GroundingAttribution>? getGroundingAttribution();
+    ctor public GroundingMetadata(java.util.List<java.lang.String> webSearchQueries, com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint, java.util.List<java.lang.String> retrievalQueries, @Deprecated java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution, java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks, java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports);
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.GroundingAttribution> getGroundingAttribution();
     method public java.util.List<com.google.firebase.ai.type.GroundingChunk> getGroundingChunks();
     method public java.util.List<com.google.firebase.ai.type.GroundingSupport> getGroundingSupports();
-    method public java.util.List<java.lang.String>? getRetrievalQueries();
+    method public java.util.List<java.lang.String> getRetrievalQueries();
     method public com.google.firebase.ai.type.SearchEntryPoint? getSearchEntryPoint();
-    method public java.util.List<java.lang.String>? getWebSearchQueries();
-    property @Deprecated public final java.util.List<com.google.firebase.ai.type.GroundingAttribution>? groundingAttribution;
+    method public java.util.List<java.lang.String> getWebSearchQueries();
+    property @Deprecated public final java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution;
     property public final java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks;
     property public final java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports;
-    property public final java.util.List<java.lang.String>? retrievalQueries;
+    property public final java.util.List<java.lang.String> retrievalQueries;
     property public final com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint;
-    property public final java.util.List<java.lang.String>? webSearchQueries;
+    property public final java.util.List<java.lang.String> webSearchQueries;
   }
 
   public final class GroundingSupport {
