@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions.api
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.sessions.SharedSessionRepository
 
 /**
@@ -25,6 +26,7 @@ import com.google.firebase.sessions.SharedSessionRepository
  * crash has occurred.
  */
 object CrashEventReceiver {
+  @VisibleForTesting internal lateinit var sharedSessionRepository: SharedSessionRepository
 
   /**
    * Notifies the Firebase Sessions SDK that a fatal crash has occurred.
@@ -38,8 +40,10 @@ object CrashEventReceiver {
   @JvmStatic
   fun notifyCrashOccurred() {
     try {
+      if (!::sharedSessionRepository.isInitialized) {
+        sharedSessionRepository = SharedSessionRepository.instance
+      }
       // Treat a foreground crash as if the app went to the background, and update session state.
-      val sharedSessionRepository = SharedSessionRepository.instance
       if (sharedSessionRepository.isInForeground) {
         sharedSessionRepository.appBackground()
       }
