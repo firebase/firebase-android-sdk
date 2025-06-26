@@ -619,19 +619,19 @@ internal class VertexAIUnarySnapshotTests {
         groundingMetadata.groundingSupports.size shouldBe 3
         val groundingSupport = groundingMetadata.groundingSupports.first()
         groundingSupport.segment.shouldNotBeNull()
-        groundingSupport.segment?.startIndex shouldBe 0
-        groundingSupport.segment?.partIndex shouldBe 0
-        groundingSupport.segment?.endIndex shouldBe 56
-        groundingSupport.segment?.text shouldBe
+        groundingSupport.segment.startIndex shouldBe 0
+        groundingSupport.segment.partIndex shouldBe 0
+        groundingSupport.segment.endIndex shouldBe 56
+        groundingSupport.segment.text shouldBe
           "The current weather in London, United Kingdom is cloudy."
         groundingSupport.groundingChunkIndices.first() shouldBe 0
 
         val secondGroundingSupport = groundingMetadata.groundingSupports[1]
         secondGroundingSupport.segment.shouldNotBeNull()
-        secondGroundingSupport.segment?.startIndex shouldBe 57
-        secondGroundingSupport.segment?.partIndex shouldBe 0
-        secondGroundingSupport.segment?.endIndex shouldBe 123
-        secondGroundingSupport.segment?.text shouldBe
+        secondGroundingSupport.segment.startIndex shouldBe 57
+        secondGroundingSupport.segment.partIndex shouldBe 0
+        secondGroundingSupport.segment.endIndex shouldBe 123
+        secondGroundingSupport.segment.text shouldBe
           "The temperature is 67°F (19°C), but it feels like 75°F (24°C)."
         secondGroundingSupport.groundingChunkIndices.first() shouldBe 1
       }

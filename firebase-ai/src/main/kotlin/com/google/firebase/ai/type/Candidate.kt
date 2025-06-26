@@ -337,7 +337,7 @@ public class GroundingMetadata(
         retrievalQueries = retrievalQueries.orEmpty(),
         groundingAttribution = groundingAttribution?.map { it.toPublic() }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
-        groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty()
+        groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty().filterNotNull()
       )
   }
 }
@@ -345,7 +345,7 @@ public class GroundingMetadata(
 /**
  * Represents a Google Search entry point.
  *
- * When using this feature, you are required to comply with the
+ * When using this API, you are required to comply with the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
  * Search".
  *
@@ -355,7 +355,7 @@ public class GroundingMetadata(
  * @property sdkBlob A blob of data for the client SDK to render the search entry point.
  */
 public class SearchEntryPoint(
-  public val renderedContent: String?,
+  public val renderedContent: String,
   public val sdkBlob: String?,
 ) {
   @Serializable
@@ -363,7 +363,14 @@ public class SearchEntryPoint(
     val renderedContent: String?,
     val sdkBlob: String?,
   ) {
-    internal fun toPublic() = SearchEntryPoint(renderedContent = renderedContent, sdkBlob = sdkBlob)
+    internal fun toPublic(): SearchEntryPoint {
+      // If rendered content is null, the user must not display the grounded result. If they do,
+      // they violate the service terms. To prevent this from happening, throw an exception.
+      if (renderedContent == null) {
+        throw SerializationException("renderedContent is null, should be a string")
+      }
+      return SearchEntryPoint(renderedContent = renderedContent, sdkBlob = sdkBlob)
+    }
   }
 }
 
@@ -371,7 +378,7 @@ public class SearchEntryPoint(
  * Represents a chunk of retrieved data that supports a claim in the model's response. This is part
  * of the grounding information provided when grounding is enabled.
  *
- * When using this feature, you are required to comply with the
+ * When using this API, you are required to comply with the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
  * Search".
  *
@@ -391,7 +398,7 @@ public class GroundingChunk(
 /**
  * A grounding chunk from the web.
  *
- * When using this feature, you are required to comply with the
+ * When using this API, you are required to comply with the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
  * Search".
  *
@@ -415,7 +422,7 @@ public class WebGroundingChunk(
  * Provides information about how a specific segment of the model's response is supported by the
  * retrieved grounding chunks.
  *
- * When using this feature, you are required to comply with the
+ * When using this API, you are required to comply with the
  * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
  * Search".
  *
@@ -426,7 +433,7 @@ public class WebGroundingChunk(
  * that support the claim made in the associated `segment` of the response.
  */
 public class GroundingSupport(
-  public val segment: Segment?,
+  public val segment: Segment,
   public val groundingChunkIndices: List<Int>,
 ) {
   @Serializable
@@ -434,11 +441,15 @@ public class GroundingSupport(
     val segment: Segment.Internal?,
     val groundingChunkIndices: List<Int>?,
   ) {
-    internal fun toPublic() =
-      GroundingSupport(
-        segment = segment?.toPublic(),
+    internal fun toPublic(): GroundingSupport? {
+      if (segment == null) {
+        return null
+      }
+      return GroundingSupport(
+        segment = segment.toPublic(),
         groundingChunkIndices = groundingChunkIndices.orEmpty(),
       )
+    }
   }
 }
 

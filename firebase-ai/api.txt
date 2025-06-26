@@ -435,11 +435,11 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingSupport {
-    ctor public GroundingSupport(com.google.firebase.ai.type.Segment? segment, java.util.List<java.lang.Integer> groundingChunkIndices);
+    ctor public GroundingSupport(com.google.firebase.ai.type.Segment segment, java.util.List<java.lang.Integer> groundingChunkIndices);
     method public java.util.List<java.lang.Integer> getGroundingChunkIndices();
-    method public com.google.firebase.ai.type.Segment? getSegment();
+    method public com.google.firebase.ai.type.Segment getSegment();
     property public final java.util.List<java.lang.Integer> groundingChunkIndices;
-    property public final com.google.firebase.ai.type.Segment? segment;
+    property public final com.google.firebase.ai.type.Segment segment;
   }
 
   public final class HarmBlockMethod {
@@ -942,10 +942,10 @@ package com.google.firebase.ai.type {
   }
 
   public final class SearchEntryPoint {
-    ctor public SearchEntryPoint(String? renderedContent, String? sdkBlob);
-    method public String? getRenderedContent();
+    ctor public SearchEntryPoint(String renderedContent, String? sdkBlob);
+    method public String getRenderedContent();
     method public String? getSdkBlob();
-    property public final String? renderedContent;
+    property public final String renderedContent;
     property public final String? sdkBlob;
   }
 
