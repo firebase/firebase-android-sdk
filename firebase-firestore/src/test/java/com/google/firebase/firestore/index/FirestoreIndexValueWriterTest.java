@@ -341,6 +341,114 @@ public class FirestoreIndexValueWriterTest {
   }
 
   @Test
+  public void writeIndexValueSupportsDecimal128() throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value value = dataReader.parseQueryValue(new Decimal128Value("1.2e3"));
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] actualBytes = encoder.getEncodedBytes();
+
+    IndexByteEncoder expectedEncoder = new IndexByteEncoder();
+    DirectionalIndexByteEncoder expectedDirectionalEncoder =
+        expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
+    expectedDirectionalEncoder.writeLong(
+        FirestoreIndexValueWriter.INDEX_TYPE_NUMBER); // Number type
+    expectedDirectionalEncoder.writeDouble(Double.parseDouble("1.2e3")); // Number value
+    expectedDirectionalEncoder.writeInfinity();
+    byte[] expectedBytes = expectedEncoder.getEncodedBytes();
+
+    Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
+  public void writeIndexValueSupportsNegativeDecimal128()
+      throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value value = dataReader.parseQueryValue(new Decimal128Value("-1.2e3"));
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] actualBytes = encoder.getEncodedBytes();
+
+    IndexByteEncoder expectedEncoder = new IndexByteEncoder();
+    DirectionalIndexByteEncoder expectedDirectionalEncoder =
+        expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
+    expectedDirectionalEncoder.writeLong(
+        FirestoreIndexValueWriter.INDEX_TYPE_NUMBER); // Number type
+    expectedDirectionalEncoder.writeDouble(Double.parseDouble("-1.2e3")); // Number value
+    expectedDirectionalEncoder.writeInfinity();
+    byte[] expectedBytes = expectedEncoder.getEncodedBytes();
+
+    Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
+  public void writeIndexValueSupportsSpecialDecimal128()
+      throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value value = dataReader.parseQueryValue(new Decimal128Value("NaN"));
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] actualBytes = encoder.getEncodedBytes();
+
+    IndexByteEncoder expectedEncoder = new IndexByteEncoder();
+    DirectionalIndexByteEncoder expectedDirectionalEncoder =
+        expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
+    expectedDirectionalEncoder.writeLong(
+        FirestoreIndexValueWriter.INDEX_TYPE_NAN); // Number type, special case NaN
+    expectedDirectionalEncoder.writeInfinity();
+    byte[] expectedBytes = expectedEncoder.getEncodedBytes();
+
+    Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
+  public void writeIndexValueSupportsLargestDecimal128()
+      throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value value = dataReader.parseQueryValue(new Decimal128Value("Infinity"));
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] actualBytes = encoder.getEncodedBytes();
+
+    IndexByteEncoder expectedEncoder = new IndexByteEncoder();
+    DirectionalIndexByteEncoder expectedDirectionalEncoder =
+        expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
+    expectedDirectionalEncoder.writeLong(
+        FirestoreIndexValueWriter.INDEX_TYPE_NUMBER); // Number type
+    expectedDirectionalEncoder.writeDouble(Double.parseDouble("Infinity")); // Number value
+    expectedDirectionalEncoder.writeInfinity();
+    byte[] expectedBytes = expectedEncoder.getEncodedBytes();
+
+    Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
+  public void writeIndexValueSupportsSmallestDecimal128()
+      throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value value = dataReader.parseQueryValue(new Decimal128Value("-Infinity"));
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] actualBytes = encoder.getEncodedBytes();
+
+    IndexByteEncoder expectedEncoder = new IndexByteEncoder();
+    DirectionalIndexByteEncoder expectedDirectionalEncoder =
+        expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
+    expectedDirectionalEncoder.writeLong(
+        FirestoreIndexValueWriter.INDEX_TYPE_NUMBER); // Number type
+    expectedDirectionalEncoder.writeDouble(Double.parseDouble("-Infinity")); // Number value
+    expectedDirectionalEncoder.writeInfinity();
+    byte[] expectedBytes = expectedEncoder.getEncodedBytes();
+
+    Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
   public void writeIndexValueSupportsMinKey() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
     Value value = dataReader.parseQueryValue(MinKey.instance());

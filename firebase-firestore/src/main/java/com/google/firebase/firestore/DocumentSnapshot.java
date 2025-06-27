@@ -546,6 +546,18 @@ public class DocumentSnapshot {
   }
 
   /**
+   * Returns the value of the field as a 128-bit decimal.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a Decimal128Value.
+   * @return The value of the field.
+   */
+  @Nullable
+  public Decimal128Value getDecimal128Value(@NonNull String field) {
+    return (Decimal128Value) get(field);
+  }
+
+  /**
    * Returns the value of the field as a BsonObjectId.
    *
    * @param field The path to the field.

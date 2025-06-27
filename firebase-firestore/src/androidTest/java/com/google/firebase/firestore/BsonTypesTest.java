@@ -19,6 +19,8 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocsOnNightly;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static java.lang.Double.NaN;
+import static java.lang.Double.POSITIVE_INFINITY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -54,6 +56,7 @@ public class BsonTypesTest {
                         "bsonTimestamp", new BsonTimestamp(1, 2),
                         "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
                         "int32", new Int32Value(1),
+                        "decimal128", new Decimal128Value("1.2e3"),
                         "minKey", MinKey.instance(),
                         "maxKey", MaxKey.instance())));
 
@@ -75,6 +78,7 @@ public class BsonTypesTest {
     expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
     expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
     expected.put("int32", new Int32Value(2));
+    expected.put("decimal128", new Decimal128Value("1.2e3"));
     expected.put("minKey", MinKey.instance());
     expected.put("maxKey", MaxKey.instance());
 
@@ -85,6 +89,7 @@ public class BsonTypesTest {
     assertTrue(actual.get("bsonTimestamp") instanceof BsonTimestamp);
     assertTrue(actual.get("bsonBinary") instanceof BsonBinaryData);
     assertTrue(actual.get("int32") instanceof Int32Value);
+    assertTrue(actual.get("decimal128") instanceof Decimal128Value);
     assertTrue(actual.get("minKey") instanceof MinKey);
     assertTrue(actual.get("maxKey") instanceof MaxKey);
     assertEquals(expected, actual.getData());
@@ -101,13 +106,22 @@ public class BsonTypesTest {
     Map<String, Object> expected = new HashMap<>();
     docRef.set(
         map(
-            "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
-            "regex", new RegexValue("^foo", "i"),
-            "bsonTimestamp", new BsonTimestamp(1, 2),
-            "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
-            "int32", new Int32Value(1),
-            "minKey", MinKey.instance(),
-            "maxKey", MaxKey.instance()));
+            "bsonObjectId",
+            new BsonObjectId("507f191e810c19729de860ea"),
+            "regex",
+            new RegexValue("^foo", "i"),
+            "bsonTimestamp",
+            new BsonTimestamp(1, 2),
+            "bsonBinary",
+            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            "int32",
+            new Int32Value(1),
+            "decimal128",
+            new Decimal128Value("1.2e3"),
+            "minKey",
+            MinKey.instance(),
+            "maxKey",
+            MaxKey.instance()));
 
     docRef.update(
         map(
@@ -123,6 +137,7 @@ public class BsonTypesTest {
     expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
     expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
     expected.put("int32", new Int32Value(1));
+    expected.put("decimal128", new Decimal128Value("1.2e3"));
     expected.put("minKey", MinKey.instance());
     expected.put("maxKey", MaxKey.instance());
 
@@ -133,6 +148,7 @@ public class BsonTypesTest {
     assertTrue(actual.get("bsonTimestamp") instanceof BsonTimestamp);
     assertTrue(actual.get("bsonBinary") instanceof BsonBinaryData);
     assertTrue(actual.get("int32") instanceof Int32Value);
+    assertTrue(actual.get("decimal128") instanceof Decimal128Value);
     assertTrue(actual.get("minKey") instanceof MinKey);
     assertTrue(actual.get("maxKey") instanceof MaxKey);
     assertEquals(expected, actual.getData());
@@ -174,6 +190,8 @@ public class BsonTypesTest {
                                   BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
                                   "int32",
                                   new Int32Value(1),
+                                  "decimal128",
+                                  new Decimal128Value("1.2e3"),
                                   "minKey",
                                   MinKey.instance(),
                                   "maxKey",
@@ -192,6 +210,9 @@ public class BsonTypesTest {
                           assertEquals(
                               docSnap.getBsonTimestamp("bsonTimestamp"), new BsonTimestamp(1, 2));
                           assertEquals(docSnap.getInt32Value("int32"), new Int32Value(1));
+                          assertEquals(
+                              docSnap.getDecimal128Value("decimal128"),
+                              new Decimal128Value("1.2e3"));
                           assertEquals(docSnap.getMinKey("minKey"), MinKey.instance());
                           assertEquals(docSnap.getMaxKey("maxKey"), MaxKey.instance());
 
@@ -266,7 +287,6 @@ public class BsonTypesTest {
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereGreaterThan("key", new BsonObjectId("507f191e810c19729de860ea"));
-
     assertSDKQueryResultsConsistentWithBackend(
         randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
 
@@ -274,7 +294,6 @@ public class BsonTypesTest {
         randomColl
             .orderBy("key", Direction.DESCENDING)
             .whereNotEqualTo("key", new BsonObjectId("507f191e810c19729de860eb"));
-
     assertSDKQueryResultsConsistentWithBackend(
         randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
   }
@@ -386,6 +405,77 @@ public class BsonTypesTest {
   }
 
   @Test
+  public void filterAndOrderDecimal128() throws Exception {
+    Map<String, Map<String, Object>> docs =
+        map(
+            "a",
+            map("key", new Decimal128Value("-1.2e3")),
+            "b",
+            map("key", new Decimal128Value("0")),
+            "c",
+            map("key", new Decimal128Value("1.2e3")),
+            "d",
+            map("key", new Decimal128Value("NaN")),
+            "e",
+            map("key", new Decimal128Value("-Infinity")),
+            "f",
+            map("key", new Decimal128Value("Infinity")));
+    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+
+    Query orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereGreaterThan("key", new Decimal128Value("-1.2e3"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("f", "c", "b"));
+
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereGreaterThan("key", new Decimal128Value("-1.2e-3"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("f", "c", "b"));
+
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereNotEqualTo("key", new Decimal128Value("0.0"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("f", "c", "a", "e", "d"));
+
+    orderedQuery = randomColl.whereNotEqualTo("key", new Decimal128Value("NaN"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("e", "a", "b", "c", "f"));
+
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereEqualTo("key", new Decimal128Value("1.2e3"));
+    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c"));
+
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereNotEqualTo("key", new Decimal128Value("1.2e3"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("f", "b", "a", "e", "d"));
+
+    // Note: server is sending NaN incorrectly, but the SDK NotInFilter.matches gracefully handles
+    // it and removes the incorrect doc "d".
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereNotIn(
+                "key",
+                Arrays.asList(
+                    new Decimal128Value("1.2e3"),
+                    new Decimal128Value("Infinity"),
+                    new Decimal128Value("NaN")));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("b", "a", "e"));
+  }
+
+  @Test
   public void filterAndOrderMinKey() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
@@ -479,6 +569,102 @@ public class BsonTypesTest {
   }
 
   @Test
+  public void filterAndOrderNumericalValues() throws Exception {
+    Map<String, Map<String, Object>> docs =
+        map(
+            "a",
+            map("key", new Decimal128Value("-1.2e3")), // -1200
+            "b",
+            map("key", new Int32Value(0)),
+            "c",
+            map("key", new Decimal128Value("1")),
+            "d",
+            map("key", new Int32Value(1)),
+            "e",
+            map("key", 1L),
+            "f",
+            map("key", 1.0),
+            "g",
+            map("key", new Decimal128Value("1.2e-3")), // 0.0012
+            "h",
+            map("key", new Int32Value(2)),
+            "i",
+            map("key", new Decimal128Value("NaN")),
+            "j",
+            map("key", new Decimal128Value("-Infinity")),
+            "k",
+            map("key", NaN),
+            "l",
+            map("key", POSITIVE_INFINITY));
+    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+
+    Query orderedQuery = randomColl.orderBy("key", Direction.DESCENDING);
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl,
+        orderedQuery,
+        docs,
+        Arrays.asList(
+            "l", // Infinity
+            "h", // 2
+            "f", // 1.0
+            "e", // 1
+            "d", // 1
+            "c", // 1
+            "g", // 0.0012
+            "b", // 0
+            "a", // -1200
+            "j", // -Infinity
+            "k", // NaN
+            "i" // NaN
+            ));
+
+    orderedQuery =
+        randomColl
+            .orderBy("key", Direction.DESCENDING)
+            .whereNotEqualTo("key", new Decimal128Value("1.0"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("l", "h", "g", "b", "a", "j", "k", "i"));
+
+    orderedQuery = randomColl.orderBy("key", Direction.DESCENDING).whereEqualTo("key", 1);
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("f", "e", "d", "c"));
+  }
+
+  @Test
+  public void decimal128ValuesWithNo2sComplementRepresentation() throws Exception {
+    // For decimal128 values with no 2's complement representation, it is considered not equal to
+    // a double with the same value, e.g, 1.1.
+    Map<String, Map<String, Object>> docs =
+        map(
+            "a",
+            map("key", new Decimal128Value("-1.1e-3")), // -0.0011
+            "b",
+            map("key", new Decimal128Value("1.1")),
+            "c",
+            map("key", 1.1),
+            "d",
+            map("key", 1.0),
+            "e",
+            map("key", new Decimal128Value("1.1e-3")) // 0.0011
+            );
+    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+
+    Query orderedQuery = randomColl.whereEqualTo("key", new Decimal128Value("1.1"));
+    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("b"));
+
+    orderedQuery = randomColl.whereNotEqualTo("key", new Decimal128Value("1.1"));
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("a", "e", "d", "c"));
+
+    orderedQuery = randomColl.whereEqualTo("key", 1.1);
+    assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("c"));
+
+    orderedQuery = randomColl.whereNotEqualTo("key", 1.1);
+    assertSDKQueryResultsConsistentWithBackend(
+        randomColl, orderedQuery, docs, Arrays.asList("a", "e", "d", "b"));
+  }
+
+  @Test
   public void orderBsonTypesTogether() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
@@ -512,6 +698,12 @@ public class BsonTypesTest {
             map("key", new Int32Value(1)),
             "int32Value3",
             map("key", new Int32Value(0)),
+            "decimal128Value1",
+            map("key", new Decimal128Value("-1.2e3")),
+            "decimal128Value2",
+            map("key", new Decimal128Value("-0.0")),
+            "decimal128Value3",
+            map("key", new Decimal128Value("1.2e3")),
             "minKey1",
             map("key", MinKey.instance()),
             "minKey2",
@@ -539,9 +731,15 @@ public class BsonTypesTest {
             "bsonTimestamp1",
             "bsonTimestamp2",
             "bsonTimestamp3",
+            // Int32Value and Decimal128Value are sorted together
+            "decimal128Value3",
             "int32Value2",
+            // Int32Value of 0 equals to Decimal128Value of 0, and falls to document key as second
+            // order
             "int32Value3",
+            "decimal128Value2",
             "int32Value1",
+            "decimal128Value1",
             "minKey2",
             "minKey1");
 

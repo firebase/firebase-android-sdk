@@ -23,6 +23,7 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
@@ -187,6 +188,7 @@ public class CustomClassMapper {
         || o instanceof MaxKey
         || o instanceof RegexValue
         || o instanceof Int32Value
+        || o instanceof Decimal128Value
         || o instanceof BsonTimestamp
         || o instanceof BsonObjectId
         || o instanceof BsonBinaryData) {
@@ -261,6 +263,8 @@ public class CustomClassMapper {
       return (T) convertVectorValue(o, context);
     } else if (Int32Value.class.isAssignableFrom(clazz)) {
       return (T) convertInt32Value(o, context);
+    } else if (Decimal128Value.class.isAssignableFrom(clazz)) {
+      return (T) convertDecimal128Value(o, context);
     } else if (BsonTimestamp.class.isAssignableFrom(clazz)) {
       return (T) convertBsonTimestamp(o, context);
     } else if (BsonObjectId.class.isAssignableFrom(clazz)) {
@@ -577,6 +581,16 @@ public class CustomClassMapper {
       throw deserializeError(
           context.errorPath,
           "Failed to convert value of type " + o.getClass().getName() + " to Int32Value");
+    }
+  }
+
+  private static Decimal128Value convertDecimal128Value(Object o, DeserializeContext context) {
+    if (o instanceof Decimal128Value) {
+      return (Decimal128Value) o;
+    } else {
+      throw deserializeError(
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to Decimal128Value");
     }
   }
 

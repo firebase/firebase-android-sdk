@@ -75,6 +75,11 @@ package com.google.firebase.firestore {
     method public String getPath();
   }
 
+  public final class Decimal128Value {
+    ctor public Decimal128Value(String);
+    field public final String! stringValue;
+  }
+
   public class DocumentChange {
     method public com.google.firebase.firestore.QueryDocumentSnapshot getDocument();
     method public int getNewIndex();
@@ -135,6 +140,7 @@ package com.google.firebase.firestore {
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public java.util.Date? getDate(String);
     method public java.util.Date? getDate(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public com.google.firebase.firestore.Decimal128Value? getDecimal128Value(String);
     method public com.google.firebase.firestore.DocumentReference? getDocumentReference(String);
     method public Double? getDouble(String);
     method public com.google.firebase.firestore.GeoPoint? getGeoPoint(String);

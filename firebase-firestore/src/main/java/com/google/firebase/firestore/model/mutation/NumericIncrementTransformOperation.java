@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.model.Values.isDouble;
-import static com.google.firebase.firestore.model.Values.isInteger;
+import static com.google.firebase.firestore.model.Values.isInt64Value;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -44,10 +44,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     Value baseValue = computeBaseValue(previousValue);
 
     // Return an integer value only if the previous value and the operand is an integer.
-    if (isInteger(baseValue) && isInteger(operand)) {
+    if (isInt64Value(baseValue) && isInt64Value(operand)) {
       long sum = safeIncrement(baseValue.getIntegerValue(), operandAsLong());
       return Value.newBuilder().setIntegerValue(sum).build();
-    } else if (isInteger(baseValue)) {
+    } else if (isInt64Value(baseValue)) {
       double sum = baseValue.getIntegerValue() + operandAsDouble();
       return Value.newBuilder().setDoubleValue(sum).build();
     } else {
@@ -102,7 +102,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   private double operandAsDouble() {
     if (isDouble(operand)) {
       return operand.getDoubleValue();
-    } else if (isInteger(operand)) {
+    } else if (isInt64Value(operand)) {
       return operand.getIntegerValue();
     } else {
       throw fail(
@@ -114,7 +114,7 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   private long operandAsLong() {
     if (isDouble(operand)) {
       return (long) operand.getDoubleValue();
-    } else if (isInteger(operand)) {
+    } else if (isInt64Value(operand)) {
       return operand.getIntegerValue();
     } else {
       throw fail(

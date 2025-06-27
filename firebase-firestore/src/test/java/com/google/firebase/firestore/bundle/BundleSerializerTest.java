@@ -296,6 +296,18 @@ public class BundleSerializerTest {
   }
 
   @Test
+  public void testDecodesDecimal128Values() throws JSONException {
+    String json = "{ mapValue: { fields: { __decimal128__: { stringValue: '1.2e3' } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_DECIMAL128_KEY,
+                Value.newBuilder().setStringValue("1.2e3").build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
   public void testDecodesMinKey() throws JSONException {
     String json = "{ mapValue: { fields: { __min__: { nullValue: null } } } }";
     Value.Builder proto = Value.newBuilder();

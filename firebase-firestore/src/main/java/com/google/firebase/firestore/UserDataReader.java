@@ -459,7 +459,8 @@ public final class UserDataReader {
       return parseRegexValue((RegexValue) input);
     } else if (input instanceof Int32Value) {
       return parseInteger32Value((Int32Value) input);
-
+    } else if (input instanceof Decimal128Value) {
+      return parseDecimal128Value((Decimal128Value) input);
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
     } else {
@@ -547,6 +548,14 @@ public final class UserDataReader {
     MapValue.Builder mapBuilder = MapValue.newBuilder();
     mapBuilder.putFields(
         Values.RESERVED_INT32_KEY, Value.newBuilder().setIntegerValue(int32.value).build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseDecimal128Value(Decimal128Value decimal128) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_DECIMAL128_KEY,
+        Value.newBuilder().setStringValue(decimal128.stringValue).build());
     return Value.newBuilder().setMapValue(mapBuilder).build();
   }
 

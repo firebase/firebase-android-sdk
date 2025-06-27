@@ -436,6 +436,21 @@ public final class RemoteSerializerTest {
   }
 
   @Test
+  public void testEncodesDecimal128Values() {
+    Value model = wrap(new com.google.firebase.firestore.Decimal128Value("1e3"));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__decimal128__", Value.newBuilder().setStringValue("1e3").build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
   public void testEncodesMinKey() {
     Value model = wrap(MinKey.instance());
 

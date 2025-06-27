@@ -277,6 +277,26 @@ public class UserDataWriterTest {
   }
 
   @Test
+  public void testConvertsDecimal128Value() {
+    List<Decimal128Value> testCases =
+        asList(
+            new Decimal128Value("-1.2e3"),
+            new Decimal128Value("1.2e3"),
+            new Decimal128Value("1.3e3"),
+            new Decimal128Value("NaN"),
+            new Decimal128Value("-Infinity"),
+            new Decimal128Value("Infinity"),
+            new Decimal128Value("4.2e+3"),
+            new Decimal128Value("-4.2e-3"),
+            new Decimal128Value("-0"));
+    for (Decimal128Value p : testCases) {
+      Value value = wrap(p);
+      Object convertedValue = convertValue(value);
+      assertEquals(p, convertedValue);
+    }
+  }
+
+  @Test
   public void testConvertsMinKey() {
     List<MinKey> testCases = asList(MinKey.instance(), MinKey.instance());
     for (MinKey p : testCases) {

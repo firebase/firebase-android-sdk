@@ -54,6 +54,7 @@ public class POJOTest {
     BsonTimestamp bsonTimestamp;
     RegexValue regexValue;
     Int32Value int32Value;
+    Decimal128Value decimal128Value;
     MinKey minKey;
     MaxKey maxKey;
 
@@ -74,6 +75,7 @@ public class POJOTest {
       this.bsonTimestamp = new BsonTimestamp(1, 2);
       this.regexValue = new RegexValue("^foo", "i");
       this.int32Value = new Int32Value(1);
+      this.decimal128Value = new Decimal128Value("1.2e3");
       this.minKey = MinKey.instance();
       this.maxKey = MaxKey.instance();
     }
@@ -174,6 +176,14 @@ public class POJOTest {
       this.int32Value = int32Value;
     }
 
+    public Decimal128Value getDecimal128Value() {
+      return decimal128Value;
+    }
+
+    public void setDecimal128Value(Decimal128Value decimal128Value) {
+      this.decimal128Value = decimal128Value;
+    }
+
     public MinKey getMinKey() {
       return minKey;
     }
@@ -234,6 +244,9 @@ public class POJOTest {
       if (!int32Value.equals(pojo.int32Value)) {
         return false;
       }
+      if (!decimal128Value.equals(pojo.decimal128Value)) {
+        return false;
+      }
       if (!minKey.equals(pojo.minKey)) {
         return false;
       }
@@ -262,6 +275,7 @@ public class POJOTest {
       result = 31 * result + bsonTimestamp.hashCode();
       result = 31 * result + regexValue.hashCode();
       result = 31 * result + int32Value.hashCode();
+      result = 31 * result + decimal128Value.hashCode();
       result = 31 * result + minKey.hashCode();
       result = 31 * result + maxKey.hashCode();
       return result;
@@ -358,7 +372,6 @@ public class POJOTest {
     assertEquals(reference.getId(), readFromStore.getDocReferenceId());
   }
 
-  // TODO(Mila/BSON): this test is flaky due to a bug in the backend.
   @Test
   public void testSetMerge() {
     CollectionReference collection = testCollectionOnNightly();

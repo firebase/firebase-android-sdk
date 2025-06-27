@@ -87,7 +87,11 @@ public class UserDataWriter {
         return value.getBooleanValue();
       case TYPE_ORDER_NUMBER:
         if (value.getValueTypeCase() == MAP_VALUE) {
-          return convertInt32(value.getMapValue().getFieldsMap());
+          if (Values.isInt32Value(value)) {
+            return convertInt32(value.getMapValue().getFieldsMap());
+          } else if (Values.isDecimal128Value(value)) {
+            return convertDecimal128(value.getMapValue().getFieldsMap());
+          }
         }
         return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
             ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
@@ -174,6 +178,10 @@ public class UserDataWriter {
 
   Int32Value convertInt32(Map<String, Value> mapValue) {
     return new Int32Value((int) mapValue.get(Values.RESERVED_INT32_KEY).getIntegerValue());
+  }
+
+  Decimal128Value convertDecimal128(Map<String, Value> mapValue) {
+    return new Decimal128Value(mapValue.get(Values.RESERVED_DECIMAL128_KEY).getStringValue());
   }
 
   private Object convertServerTimestamp(Value serverTimestampValue) {

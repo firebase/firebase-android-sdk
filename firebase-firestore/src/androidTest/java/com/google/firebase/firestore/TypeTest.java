@@ -130,6 +130,26 @@ public class TypeTest {
   }
 
   @Test
+  public void testCanReadAndWriteDecimal128Value() {
+    Map<String, Object> decimal128Values =
+        map(
+            "decimalSciPositive", new Decimal128Value("1.2e3"),
+            "decimalSciNegative", new Decimal128Value("-1.2e3"),
+            "decimalSciNegativeExponent", new Decimal128Value("1.2e-3"),
+            "decimalSciNegativeValueAndExponent", new Decimal128Value("-1.2e-3"),
+            "decimalSciExplicitPositiveExponent", new Decimal128Value("1.2e+3"),
+            "decimalFloatPositive", new Decimal128Value("1.1"),
+            "decimalIntNegative", new Decimal128Value("-1"),
+            "decimalZeroNegative", new Decimal128Value("-0"),
+            "decimalZeroInt", new Decimal128Value("0"),
+            "decimalZeroFloat", new Decimal128Value("0.0"),
+            "decimalNaN", new Decimal128Value("NaN"),
+            "decimalInfinityPositive", new Decimal128Value("Infinity"),
+            "decimalInfinityNegative", new Decimal128Value("-Infinity"));
+    verifySuccessfulWriteReadCycle(decimal128Values, testDocumentOnNightly());
+  }
+
+  @Test
   public void testCanReadAndWriteBsonTimestampValue() {
     verifySuccessfulWriteReadCycle(
         map("bsonTimestamp", new BsonTimestamp(1, 2)), testDocumentOnNightly());
@@ -165,6 +185,7 @@ public class TypeTest {
             new BsonTimestamp(1, 2),
             BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
             new Int32Value(1),
+            new Decimal128Value("1.2e3"),
             MinKey.instance(),
             MaxKey.instance());
 
@@ -175,13 +196,22 @@ public class TypeTest {
   public void testCanReadAndWriteBsonTypesInMaps() {
     Map<String, Object> data =
         map(
-            "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
-            "regex", new RegexValue("^foo", "i"),
-            "bsonTimestamp", new BsonTimestamp(1, 2),
-            "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
-            "int32", new Int32Value(1),
-            "minKey", MinKey.instance(),
-            "maxKey", MaxKey.instance());
+            "bsonObjectId",
+            new BsonObjectId("507f191e810c19729de860ea"),
+            "regex",
+            new RegexValue("^foo", "i"),
+            "bsonTimestamp",
+            new BsonTimestamp(1, 2),
+            "bsonBinary",
+            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            "int32",
+            new Int32Value(1),
+            "decimal128",
+            new Decimal128Value("1.2e3"),
+            "minKey",
+            MinKey.instance(),
+            "maxKey",
+            MaxKey.instance());
 
     verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocumentOnNightly());
   }
@@ -200,6 +230,42 @@ public class TypeTest {
             .getMessage()
             .contains(
                 "Invalid regex option 'a'. Supported options are 'i', 'm', 's', 'u', and 'x'"));
+  }
+
+  @Test
+  public void invalidDecimal128ValueGetsRejected() throws Exception {
+    Exception error = null;
+    try {
+      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value(""))));
+    } catch (Exception e) {
+      error = e;
+    }
+    assertNotNull(error);
+    assertTrue(error.getMessage().contains("Invalid number"));
+
+    try {
+      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("abc"))));
+    } catch (Exception e) {
+      error = e;
+    }
+    assertNotNull(error);
+    assertTrue(error.getMessage().contains("Invalid number"));
+
+    try {
+      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("1 23.45"))));
+    } catch (Exception e) {
+      error = e;
+    }
+    assertNotNull(error);
+    assertTrue(error.getMessage().contains("Invalid number"));
+
+    try {
+      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("1e1234567890"))));
+    } catch (Exception e) {
+      error = e;
+    }
+    assertNotNull(error);
+    assertTrue(error.getMessage().contains("Exponent too large"));
   }
 
   @Test
@@ -320,6 +386,8 @@ public class TypeTest {
             new RegexValue("^foo", "i"),
             "int32",
             new Int32Value(1),
+            "decimal128",
+            new Decimal128Value("1.2e3"),
             "bsonTimestamp",
             new BsonTimestamp(1, 2),
             "bsonObjectId",
@@ -355,6 +423,7 @@ public class TypeTest {
     assertEquals(data.get("vector"), snapshot.getVectorValue("vector"));
     assertEquals(data.get("regex"), snapshot.getRegexValue("regex"));
     assertEquals(data.get("int32"), snapshot.getInt32Value("int32"));
+    assertEquals(data.get("decimal128"), snapshot.getDecimal128Value("decimal128"));
     assertEquals(data.get("bsonTimestamp"), snapshot.getBsonTimestamp("bsonTimestamp"));
     assertEquals(data.get("bsonObjectId"), snapshot.getBsonObjectId("bsonObjectId"));
     assertEquals(data.get("bsonBinary"), snapshot.getBsonBinaryData("bsonBinary"));
@@ -384,6 +453,7 @@ public class TypeTest {
     assertNull(snapshot.getVectorValue("missing"));
     assertNull(snapshot.getRegexValue("missing"));
     assertNull(snapshot.getInt32Value("missing"));
+    assertNull(snapshot.getDecimal128Value("missing"));
     assertNull(snapshot.getBsonTimestamp("missing"));
     assertNull(snapshot.getBsonObjectId("missing"));
     assertNull(snapshot.getBsonBinaryData("missing"));
@@ -410,6 +480,8 @@ public class TypeTest {
             map("value", Double.NaN),
             "int32",
             map("value", new Int32Value(1)),
+            "decimal128",
+            map("value", new Decimal128Value("1.2e3")),
             "double",
             map("value", 1.0),
             "int",
@@ -453,6 +525,7 @@ public class TypeTest {
             "double",
             "int",
             "int32",
+            "decimal128",
             "timestamp",
             "bsonTimestamp",
             "string",

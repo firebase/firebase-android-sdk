@@ -37,6 +37,7 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Int32Value;
 import com.google.firebase.firestore.MaxKey;
@@ -863,6 +864,10 @@ public class QueryTest {
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", new Int32Value(1))),
         "collection|f:a<={__int__:1}|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", new Decimal128Value("1.2e3"))),
+        "collection|f:a<={__decimal128__:1.2e3}|ob:aasc__name__asc");
+
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", MinKey.instance())),
         "collection|f:a<={__min__:null}|ob:aasc__name__asc");

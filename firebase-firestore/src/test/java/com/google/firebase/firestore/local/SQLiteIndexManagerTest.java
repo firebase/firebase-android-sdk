@@ -42,6 +42,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Int32Value;
 import com.google.firebase.firestore.MaxKey;
@@ -1442,6 +1444,92 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testIndexesDecimal128Value() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc("coll/doc1", map("key", new Decimal128Value("-1.2e3")));
+    addDoc("coll/doc2", map("key", new Decimal128Value("0.0")));
+    addDoc("coll/doc3", map("key", new Decimal128Value("1.2e3")));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("-1200")));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new Decimal128Value("0")));
+    verifyResults(query, "coll/doc1", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new Decimal128Value("-0")));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", new Decimal128Value("-0.0")));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", new Decimal128Value("1.2e-3")));
+    verifyResults(query, "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<", new Decimal128Value("-1.2e-3")));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", new Decimal128Value("1.2e3")));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", new Decimal128Value("-1.2e3")));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testIndexesDecimal128ValueWithPrecisionLoss() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+
+    addDoc(
+        "coll/doc1",
+        map(
+            "key",
+            new Decimal128Value(
+                "-0.1234567890123456789"))); // will be rounded to -0.12345678901234568
+    addDoc("coll/doc2", map("key", new Decimal128Value("0")));
+    addDoc(
+        "coll/doc3",
+        map(
+            "key",
+            new Decimal128Value(
+                "0.1234567890123456789"))); // will be rounded to 0.12345678901234568
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("0.1234567890123456789")));
+    verifyResults(query, "coll/doc3");
+
+    // Mismatch behaviour caused by rounding error. Firestore fetches the doc3 from SQLite DB as
+    // doc3 rounds to the same number, even though the actual number in doc3 is different
+    // Unlike SQLiteLocalStoreTest, this returns the doc3 as result
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("0.12345678901234568")));
+    verifyResults(query, "coll/doc3");
+
+    // Operations that doesn't go up to 17 decimal digits of precision wouldn't be affected by
+    // this rounding errors.
+    query = query("coll").filter(filter("key", "!=", new Decimal128Value("0.0")));
+    verifyResults(query, "coll/doc1", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new Decimal128Value("1.23e-1")));
+    verifyResults(query, "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", new Decimal128Value("-1.23e-1")));
+    verifyResults(query, "coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", new Decimal128Value("1.2e3")));
+    verifyResults(query);
+
+    query = query("coll").filter(filter("key", "<", new Decimal128Value("-1.2e3")));
+    verifyResults(query);
+  }
+
+  @Test
   public void testIndexesMinKey() {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
@@ -1511,31 +1599,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     addDoc("coll/doc1", map("key", MinKey.instance()));
     addDoc("coll/doc2", map("key", new Int32Value(2)));
-    addDoc("coll/doc3", map("key", new Int32Value(1)));
-    addDoc("coll/doc4", map("key", new BsonTimestamp(1, 2)));
-    addDoc("coll/doc5", map("key", new BsonTimestamp(1, 1)));
-    addDoc("coll/doc6", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
-    addDoc("coll/doc7", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
-    addDoc("coll/doc8", map("key", new BsonObjectId("507f191e810c19729de860eb")));
-    addDoc("coll/doc9", map("key", new BsonObjectId("507f191e810c19729de860ea")));
-    addDoc("coll/doc10", map("key", new RegexValue("a", "m")));
-    addDoc("coll/doc11", map("key", new RegexValue("a", "i")));
-    addDoc("coll/doc12", map("key", MaxKey.instance()));
+    addDoc("coll/doc3", map("key", new Int32Value(-1)));
+    addDoc("coll/doc4", map("key", new Decimal128Value("1.2e3")));
+    addDoc("coll/doc5", map("key", new Decimal128Value("-0.0")));
+    addDoc("coll/doc6", map("key", new BsonTimestamp(1, 2)));
+    addDoc("coll/doc7", map("key", new BsonTimestamp(1, 1)));
+    addDoc("coll/doc8", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc9", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc10", map("key", new BsonObjectId("507f191e810c19729de860eb")));
+    addDoc("coll/doc11", map("key", new BsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/doc12", map("key", new RegexValue("a", "m")));
+    addDoc("coll/doc13", map("key", new RegexValue("a", "i")));
+    addDoc("coll/doc14", map("key", MaxKey.instance()));
 
     Query query = query("coll").orderBy(orderBy("key", "desc"));
     verifyResults(
         query,
-        "coll/doc12", // maxKey
-        "coll/doc10", // regex m
-        "coll/doc11", // regex i
-        "coll/doc8", // objectId eb
-        "coll/doc9", // objectId ea
-        "coll/doc6", // binary [1,2,4]
-        "coll/doc7", // binary [1,2,3]
-        "coll/doc4", // timestamp 1,2
-        "coll/doc5", // timestamp 1,1
+        "coll/doc14", // maxKey
+        "coll/doc12", // regex m
+        "coll/doc13", // regex i
+        "coll/doc10", // objectId eb
+        "coll/doc11", // objectId ea
+        "coll/doc8", // binary [1,2,4]
+        "coll/doc9", // binary [1,2,3]
+        "coll/doc6", // timestamp 1,2
+        "coll/doc7", // timestamp 1,1
+        "coll/doc4", // decimal128 1200
         "coll/doc2", // int32 2
-        "coll/doc3", // int32 1
+        "coll/doc5", // decimal128 -0.0
+        "coll/doc3", // int32 -1
         "coll/doc1" // minKey
         );
   }
@@ -1551,39 +1643,42 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll/e", map("key", new Int32Value(1)));
     addDoc("coll/f", map("key", 2.0));
     addDoc("coll/g", map("key", 3L));
-    addDoc("coll/h", map("key", new Timestamp(100, 123456000)));
-    addDoc("coll/i", map("key", new BsonTimestamp(1, 2)));
-    addDoc("coll/j", map("key", "string"));
-    addDoc("coll/k", map("key", blob(1, 2, 3)));
-    addDoc("coll/l", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
-    addDoc("coll/m", map("key", ref("foo/bar")));
-    addDoc("coll/n", map("key", new BsonObjectId("507f191e810c19729de860ea")));
-    addDoc("coll/o", map("key", new GeoPoint(0, 1)));
-    addDoc("coll/p", map("key", new RegexValue("^foo", "i")));
-    addDoc("coll/q", map("key", Arrays.asList(1, 2)));
-    // Note: Vector type not available in Java SDK, skipping 'r'
-    addDoc("coll/s", map("key", map("a", 1)));
-    addDoc("coll/t", map("key", MaxKey.instance()));
+    addDoc("coll/h", map("key", new Decimal128Value("1.2e3")));
+    addDoc("coll/i", map("key", new Timestamp(100, 123456000)));
+    addDoc("coll/j", map("key", new BsonTimestamp(1, 2)));
+    addDoc("coll/k", map("key", "string"));
+    addDoc("coll/l", map("key", blob(1, 2, 3)));
+    addDoc("coll/m", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/n", map("key", ref("foo/bar")));
+    addDoc("coll/o", map("key", new BsonObjectId("507f191e810c19729de860ea")));
+    addDoc("coll/p", map("key", new GeoPoint(0, 1)));
+    addDoc("coll/q", map("key", new RegexValue("^foo", "i")));
+    addDoc("coll/r", map("key", Arrays.asList(1, 2)));
+    addDoc("coll/s", map("key", FieldValue.vector(new double[] {1, 2, 3})));
+    addDoc("coll/t", map("key", map("a", 1)));
+    addDoc("coll/u", map("key", MaxKey.instance()));
 
     Query query = query("coll").orderBy(orderBy("key", "desc"));
     verifyResults(
         query,
-        "coll/t", // maxKey
-        "coll/s", // map
-        "coll/q", // array
-        "coll/p", // regex
-        "coll/o", // geopoint
-        "coll/n", // objectId
-        "coll/m", // reference
-        "coll/l", // bsonBinary
-        "coll/k", // bytes
-        "coll/j", // string
-        "coll/i", // bsonTimestamp
-        "coll/h", // timestamp
-        "coll/g", // long
-        "coll/f", // double
-        "coll/e", // int32
-        "coll/d", // NaN
+        "coll/u", // maxKey
+        "coll/t", // map
+        "coll/s", // vector
+        "coll/r", // array
+        "coll/q", // regex
+        "coll/p", // geopoint
+        "coll/o", // objectId
+        "coll/n", // reference
+        "coll/m", // bsonBinary
+        "coll/l", // bytes
+        "coll/k", // string
+        "coll/j", // bsonTimestamp
+        "coll/i", // timestamp
+        "coll/h", // Number decimal128
+        "coll/g", // Number long
+        "coll/f", // Number double
+        "coll/e", // Number int32
+        "coll/d", // Number NaN
         "coll/c", // boolean
         "coll/b", // minKey
         "coll/a" // null

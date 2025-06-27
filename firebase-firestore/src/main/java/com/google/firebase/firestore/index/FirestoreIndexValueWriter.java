@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.index;
 
+import static com.google.firebase.firestore.model.Values.NULL_VALUE;
+
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
@@ -80,17 +82,7 @@ public class FirestoreIndexValueWriter {
         encoder.writeLong(indexValue.getBooleanValue() ? 1 : 0);
         break;
       case DOUBLE_VALUE:
-        double number = indexValue.getDoubleValue();
-        if (Double.isNaN(number)) {
-          writeValueTypeLabel(encoder, INDEX_TYPE_NAN);
-          break;
-        }
-        writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
-        if (number == -0.0) {
-          encoder.writeDouble(0.0); // -0.0, 0 and 0.0 are all considered the same
-        } else {
-          encoder.writeDouble(number);
-        }
+        writeIndexDouble(indexValue.getDoubleValue(), encoder);
         break;
       case INTEGER_VALUE:
         writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
@@ -98,10 +90,7 @@ public class FirestoreIndexValueWriter {
         encoder.writeDouble(indexValue.getIntegerValue());
         break;
       case TIMESTAMP_VALUE:
-        Timestamp timestamp = indexValue.getTimestampValue();
-        writeValueTypeLabel(encoder, INDEX_TYPE_TIMESTAMP);
-        encoder.writeLong(timestamp.getSeconds());
-        encoder.writeLong(timestamp.getNanos());
+        writeIndexTimestamp(indexValue.getTimestampValue(), encoder);
         break;
       case STRING_VALUE:
         writeIndexString(indexValue.getStringValue(), encoder);
@@ -116,51 +105,54 @@ public class FirestoreIndexValueWriter {
         writeIndexEntityRef(indexValue.getReferenceValue(), encoder);
         break;
       case GEO_POINT_VALUE:
-        LatLng geoPoint = indexValue.getGeoPointValue();
-        writeValueTypeLabel(encoder, INDEX_TYPE_GEOPOINT);
-        encoder.writeDouble(geoPoint.getLatitude());
-        encoder.writeDouble(geoPoint.getLongitude());
+        writeIndexGeoPoint(indexValue.getGeoPointValue(), encoder);
         break;
       case MAP_VALUE:
         Values.MapRepresentation mapType = Values.detectMapRepresentation(indexValue);
-        if (mapType.equals(Values.MapRepresentation.INTERNAL_MAX)) {
-          writeValueTypeLabel(encoder, Integer.MAX_VALUE);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.VECTOR)) {
-          writeIndexVector(indexValue.getMapValue(), encoder);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.REGEX)) {
-          writeIndexRegex(indexValue.getMapValue(), encoder);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.BSON_TIMESTAMP)) {
-          writeIndexBsonTimestamp(indexValue.getMapValue(), encoder);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.BSON_OBJECT_ID)) {
-          writeIndexBsonObjectId(indexValue.getMapValue(), encoder);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.BSON_BINARY)) {
-          writeIndexBsonBinaryData(indexValue.getMapValue(), encoder);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.INT32)) {
-          writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
-          // Double and Int32 sort the same
-          encoder.writeDouble(
-              indexValue
-                  .getMapValue()
-                  .getFieldsMap()
-                  .get(Values.RESERVED_INT32_KEY)
-                  .getIntegerValue());
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.MIN_KEY)) {
-          writeValueTypeLabel(encoder, INDEX_TYPE_MIN_KEY);
-          break;
-        } else if (mapType.equals(Values.MapRepresentation.MAX_KEY)) {
-          writeValueTypeLabel(encoder, INDEX_TYPE_MAX_KEY);
-          break;
+        switch (mapType) {
+          case INTERNAL_MAX:
+            writeValueTypeLabel(encoder, Integer.MAX_VALUE);
+            break;
+          case VECTOR:
+            writeIndexVector(indexValue.getMapValue(), encoder);
+            break;
+          case REGEX:
+            writeIndexRegex(indexValue.getMapValue(), encoder);
+            break;
+          case BSON_TIMESTAMP:
+            writeIndexBsonTimestamp(indexValue.getMapValue(), encoder);
+            break;
+          case BSON_OBJECT_ID:
+            writeIndexBsonObjectId(indexValue.getMapValue(), encoder);
+            break;
+          case BSON_BINARY:
+            writeIndexBsonBinaryData(indexValue.getMapValue(), encoder);
+            break;
+          case INT32:
+            writeIndexInt32(indexValue.getMapValue(), encoder);
+            break;
+          case DECIMAL128:
+            // Double and Decimal128 sort the same
+            // Decimal128 is written as double with precision lost
+            double number =
+                Double.parseDouble(
+                    indexValue
+                        .getMapValue()
+                        .getFieldsMap()
+                        .get(Values.RESERVED_DECIMAL128_KEY)
+                        .getStringValue());
+            writeIndexDouble(number, encoder);
+            break;
+          case MIN_KEY:
+            writeValueTypeLabel(encoder, INDEX_TYPE_MIN_KEY);
+            break;
+          case MAX_KEY:
+            writeValueTypeLabel(encoder, INDEX_TYPE_MAX_KEY);
+            break;
+          default:
+            writeIndexMap(indexValue.getMapValue(), encoder);
+            writeTruncationMarker(encoder);
         }
-
-        writeIndexMap(indexValue.getMapValue(), encoder);
-        writeTruncationMarker(encoder);
         break;
       case ARRAY_VALUE:
         writeIndexArray(indexValue.getArrayValue(), encoder);
@@ -180,6 +172,37 @@ public class FirestoreIndexValueWriter {
   private void writeUnlabeledIndexString(
       String stringIndexValue, DirectionalIndexByteEncoder encoder) {
     encoder.writeString(stringIndexValue);
+  }
+
+  private void writeIndexDouble(double number, DirectionalIndexByteEncoder encoder) {
+    if (Double.isNaN(number)) {
+      writeValueTypeLabel(encoder, INDEX_TYPE_NAN);
+      return;
+    }
+    writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
+    if (number == -0.0) {
+      encoder.writeDouble(0.0); // -0.0, 0 and 0.0 are all considered the same
+    } else {
+      encoder.writeDouble(number);
+    }
+  }
+
+  private void writeIndexInt32(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
+    // Double and Int32 sort the same
+    encoder.writeDouble(mapValue.getFieldsMap().get(Values.RESERVED_INT32_KEY).getIntegerValue());
+  }
+
+  private void writeIndexTimestamp(Timestamp timestamp, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_TIMESTAMP);
+    encoder.writeLong(timestamp.getSeconds());
+    encoder.writeLong(timestamp.getNanos());
+  }
+
+  private void writeIndexGeoPoint(LatLng geoPoint, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_GEOPOINT);
+    encoder.writeDouble(geoPoint.getLatitude());
+    encoder.writeDouble(geoPoint.getLongitude());
   }
 
   private void writeIndexVector(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {

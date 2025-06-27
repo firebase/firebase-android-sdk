@@ -31,6 +31,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Int32Value;
@@ -89,6 +90,10 @@ public class ValuesTest {
 
     Int32Value int32Value1 = new Int32Value(1);
     Int32Value int32Value2 = new Int32Value(2);
+
+    Decimal128Value decimal128Value1 = new Decimal128Value("-1.2e3");
+    Decimal128Value decimal128Value2 = new Decimal128Value("0.0");
+    Decimal128Value decimal128Value3 = new Decimal128Value("1.2e-3");
 
     RegexValue regexValue1 = new RegexValue("^foo", "i");
     RegexValue regexValue2 = new RegexValue("^foo", "m");
@@ -152,6 +157,9 @@ public class ValuesTest {
         .addEqualityGroup(wrap(new BsonTimestamp(2, 2)), wrap(bsonTimestamp3))
         .addEqualityGroup(wrap(new Int32Value(1)), wrap(int32Value1))
         .addEqualityGroup(wrap(new Int32Value(2)), wrap(int32Value2))
+        .addEqualityGroup(wrap(new Decimal128Value("-1.2e3")), wrap(decimal128Value1))
+        .addEqualityGroup(wrap(new Decimal128Value("0.0")), wrap(decimal128Value2))
+        .addEqualityGroup(wrap(new Decimal128Value("1.2e-3")), wrap(decimal128Value3))
         .addEqualityGroup(wrap(new RegexValue("^foo", "i")), wrap(regexValue1))
         .addEqualityGroup(wrap(new RegexValue("^foo", "m")), wrap(regexValue2))
         .addEqualityGroup(wrap(new RegexValue("^bar", "i")), wrap(regexValue3))
@@ -177,27 +185,50 @@ public class ValuesTest {
         .addEqualityGroup(wrap(true))
 
         // 64-bit and 32-bit numbers order together numerically.
-        .addEqualityGroup(wrap(Double.NaN))
-        .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
+        .addEqualityGroup(wrap(Double.NaN), wrap(new Decimal128Value("NaN")))
+        .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY), wrap(new Decimal128Value("-Infinity")))
         .addEqualityGroup(wrap(-Double.MAX_VALUE))
-        .addEqualityGroup(wrap(Long.MIN_VALUE))
-        .addEqualityGroup(wrap(new Int32Value(-2147483648)), wrap(Integer.MIN_VALUE))
-        .addEqualityGroup(wrap(-1.1))
-        .addEqualityGroup(wrap(-1.0))
+        .addEqualityGroup(wrap(Long.MIN_VALUE), wrap(new Decimal128Value("-9223372036854775808")))
+        .addEqualityGroup(
+            wrap(new Int32Value(-2147483648)),
+            wrap(Integer.MIN_VALUE),
+            wrap(new Decimal128Value("-2147483648")))
+        // Note: decimal 128 would have equality issue with other number types if the value doesn't
+        // have a 2's complement representation, e.g, 1.1. This is expected.
+        .addEqualityGroup(wrap(-1.5), wrap(new Decimal128Value("-1.5")))
+        .addEqualityGroup(wrap(-1.0), wrap(new Decimal128Value("-1.0")))
         .addEqualityGroup(wrap(-Double.MIN_NORMAL))
         .addEqualityGroup(wrap(-Double.MIN_VALUE))
         // Zeros all compare the same.
-        .addEqualityGroup(wrap(-0.0), wrap(0.0), wrap(0L), wrap(new Int32Value(0)))
+        .addEqualityGroup(
+            wrap(-0.0),
+            wrap(0.0),
+            wrap(0L),
+            wrap(new Int32Value(0)),
+            wrap(new Decimal128Value("0")),
+            wrap(new Decimal128Value("0.0")),
+            wrap(new Decimal128Value("-0")),
+            wrap(new Decimal128Value("-0.0")),
+            wrap(new Decimal128Value("+0")),
+            wrap(new Decimal128Value("+0.0")))
         .addEqualityGroup(wrap(Double.MIN_VALUE))
         .addEqualityGroup(wrap(Double.MIN_NORMAL))
-        .addEqualityGroup(wrap(0.1))
+        .addEqualityGroup(wrap(0.5), wrap(new Decimal128Value("0.5")))
         // Doubles, Longs, Int32Values compareTo() the same.
-        .addEqualityGroup(wrap(1.0), wrap(1L), wrap(new Int32Value(1)))
+        .addEqualityGroup(
+            wrap(1.0),
+            wrap(1L),
+            wrap(new Int32Value(1)),
+            wrap(new Decimal128Value("1")),
+            wrap(new Decimal128Value("1.0")))
         .addEqualityGroup(wrap(1.1))
-        .addEqualityGroup(wrap(new Int32Value(2147483647)), wrap(Integer.MAX_VALUE))
+        .addEqualityGroup(
+            wrap(new Int32Value(2147483647)),
+            wrap(Integer.MAX_VALUE),
+            wrap(new Decimal128Value("2.147483647e9")))
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.MAX_VALUE))
-        .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
+        .addEqualityGroup(wrap(Double.POSITIVE_INFINITY), wrap(new Decimal128Value("Infinity")))
 
         // dates
         .addEqualityGroup(wrap(date1))
@@ -320,10 +351,12 @@ public class ValuesTest {
         .addEqualityGroup(wrap(true))
 
         // numbers
+        // Note: 32-bit,64-bit integers and 128-bit decimals shares the same lower bound
         .addEqualityGroup(
             wrap(getLowerBound(TestUtil.wrap(1.0))),
             wrap(Double.NaN),
-            wrap(getLowerBound(TestUtil.wrap(new Int32Value(1)))))
+            wrap(getLowerBound(TestUtil.wrap(new Int32Value(1)))),
+            wrap(getLowerBound(TestUtil.wrap(new Decimal128Value("1")))))
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
 
@@ -413,13 +446,16 @@ public class ValuesTest {
 
         // booleans
         .addEqualityGroup(wrap(true))
-        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(false))))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(false))), wrap(Double.NaN))
 
         // numbers
         .addEqualityGroup(wrap(new Int32Value(2147483647))) // largest int32 value
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
-        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(1.0))))
+        .addEqualityGroup(
+            wrap(getUpperBound(TestUtil.wrap(0))),
+            wrap(getUpperBound(TestUtil.wrap(new Int32Value(0)))),
+            wrap(getUpperBound(TestUtil.wrap(new Decimal128Value("-0.0")))))
 
         // dates
         .addEqualityGroup(wrap(date1))
@@ -505,6 +541,7 @@ public class ValuesTest {
     assertCanonicalId(
         TestUtil.wrap(new BsonTimestamp(1, 2)), "{__request_timestamp__:{increment:2,seconds:1}}");
     assertCanonicalId((TestUtil.wrap(new Int32Value(1))), "{__int__:1}");
+    assertCanonicalId(TestUtil.wrap(new Decimal128Value("1.2e3")), "{__decimal128__:1.2e3}");
     assertCanonicalId(
         TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
     assertCanonicalId(
@@ -529,78 +566,97 @@ public class ValuesTest {
     Value minKeyValue = TestUtil.wrap(MinKey.instance());
     Value maxKeyValue = TestUtil.wrap(MaxKey.instance());
     Value int32Value = TestUtil.wrap(new Int32Value(1));
+    Value decimal128 = TestUtil.wrap(new Decimal128Value("1.2e3"));
     Value regexValue = TestUtil.wrap(new RegexValue("^foo", "i"));
     Value bsonTimestampValue = TestUtil.wrap(new BsonTimestamp(1, 2));
     Value bsonObjectIdValue = TestUtil.wrap(new BsonObjectId("foo"));
     Value bsonBinaryDataValue1 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {}));
     Value bsonBinaryDataValue2 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
 
-    assertTrue(Values.isMinKey(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMinKey(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertTrue(Values.isMinKey(minKeyValue));
+    assertFalse(Values.isMinKey(maxKeyValue));
+    assertFalse(Values.isMinKey(int32Value));
+    assertFalse(Values.isMinKey(decimal128));
+    assertFalse(Values.isMinKey(regexValue));
+    assertFalse(Values.isMinKey(bsonTimestampValue));
+    assertFalse(Values.isMinKey(bsonObjectIdValue));
+    assertFalse(Values.isMinKey(bsonBinaryDataValue1));
+    assertFalse(Values.isMinKey(bsonBinaryDataValue2));
 
-    assertFalse(Values.isMaxKey(minKeyValue.getMapValue().getFieldsMap()));
-    assertTrue(Values.isMaxKey(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isMaxKey(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isMaxKey(minKeyValue));
+    assertTrue(Values.isMaxKey(maxKeyValue));
+    assertFalse(Values.isMaxKey(int32Value));
+    assertFalse(Values.isMaxKey(decimal128));
+    assertFalse(Values.isMaxKey(regexValue));
+    assertFalse(Values.isMaxKey(bsonTimestampValue));
+    assertFalse(Values.isMaxKey(bsonObjectIdValue));
+    assertFalse(Values.isMaxKey(bsonBinaryDataValue1));
+    assertFalse(Values.isMaxKey(bsonBinaryDataValue2));
 
-    assertFalse(Values.isInt32Value(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(maxKeyValue.getMapValue().getFieldsMap()));
-    assertTrue(Values.isInt32Value(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isInt32Value(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isInt32Value(minKeyValue));
+    assertFalse(Values.isInt32Value(maxKeyValue));
+    assertTrue(Values.isInt32Value(int32Value));
+    assertFalse(Values.isInt32Value(decimal128));
+    assertFalse(Values.isInt32Value(regexValue));
+    assertFalse(Values.isInt32Value(bsonTimestampValue));
+    assertFalse(Values.isInt32Value(bsonObjectIdValue));
+    assertFalse(Values.isInt32Value(bsonBinaryDataValue1));
+    assertFalse(Values.isInt32Value(bsonBinaryDataValue2));
 
-    assertFalse(Values.isRegexValue(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(int32Value.getMapValue().getFieldsMap()));
-    assertTrue(Values.isRegexValue(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isRegexValue(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isDecimal128Value(minKeyValue));
+    assertFalse(Values.isDecimal128Value(maxKeyValue));
+    assertFalse(Values.isDecimal128Value(int32Value));
+    assertTrue(Values.isDecimal128Value(decimal128));
+    assertFalse(Values.isDecimal128Value(regexValue));
+    assertFalse(Values.isDecimal128Value(bsonTimestampValue));
+    assertFalse(Values.isDecimal128Value(bsonObjectIdValue));
+    assertFalse(Values.isDecimal128Value(bsonBinaryDataValue1));
+    assertFalse(Values.isDecimal128Value(bsonBinaryDataValue2));
 
-    assertFalse(Values.isBsonTimestamp(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(regexValue.getMapValue().getFieldsMap()));
-    assertTrue(Values.isBsonTimestamp(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonTimestamp(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isRegexValue(minKeyValue));
+    assertFalse(Values.isRegexValue(maxKeyValue));
+    assertFalse(Values.isRegexValue(int32Value));
+    assertFalse(Values.isRegexValue(decimal128));
+    assertTrue(Values.isRegexValue(regexValue));
+    assertFalse(Values.isRegexValue(bsonTimestampValue));
+    assertFalse(Values.isRegexValue(bsonObjectIdValue));
+    assertFalse(Values.isRegexValue(bsonBinaryDataValue1));
+    assertFalse(Values.isRegexValue(bsonBinaryDataValue2));
 
-    assertFalse(Values.isBsonObjectId(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertTrue(Values.isBsonObjectId(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonObjectId(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isBsonTimestamp(minKeyValue));
+    assertFalse(Values.isBsonTimestamp(maxKeyValue));
+    assertFalse(Values.isBsonTimestamp(int32Value));
+    assertFalse(Values.isBsonTimestamp(decimal128));
+    assertFalse(Values.isBsonTimestamp(regexValue));
+    assertTrue(Values.isBsonTimestamp(bsonTimestampValue));
+    assertFalse(Values.isBsonTimestamp(bsonObjectIdValue));
+    assertFalse(Values.isBsonTimestamp(bsonBinaryDataValue1));
+    assertFalse(Values.isBsonTimestamp(bsonBinaryDataValue2));
 
-    assertFalse(Values.isBsonBinaryData(minKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonBinaryData(maxKeyValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonBinaryData(int32Value.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonBinaryData(regexValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonBinaryData(bsonTimestampValue.getMapValue().getFieldsMap()));
-    assertFalse(Values.isBsonBinaryData(bsonObjectIdValue.getMapValue().getFieldsMap()));
-    assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue1.getMapValue().getFieldsMap()));
-    assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue2.getMapValue().getFieldsMap()));
+    assertFalse(Values.isBsonObjectId(minKeyValue));
+    assertFalse(Values.isBsonObjectId(maxKeyValue));
+    assertFalse(Values.isBsonObjectId(int32Value));
+    assertFalse(Values.isBsonObjectId(decimal128));
+    assertFalse(Values.isBsonObjectId(regexValue));
+    assertFalse(Values.isBsonObjectId(bsonTimestampValue));
+    assertTrue(Values.isBsonObjectId(bsonObjectIdValue));
+    assertFalse(Values.isBsonObjectId(bsonBinaryDataValue1));
+    assertFalse(Values.isBsonObjectId(bsonBinaryDataValue2));
+
+    assertFalse(Values.isBsonBinaryData(minKeyValue));
+    assertFalse(Values.isBsonBinaryData(maxKeyValue));
+    assertFalse(Values.isBsonBinaryData(int32Value));
+    assertFalse(Values.isBsonBinaryData(decimal128));
+    assertFalse(Values.isBsonBinaryData(regexValue));
+    assertFalse(Values.isBsonBinaryData(bsonTimestampValue));
+    assertFalse(Values.isBsonBinaryData(bsonObjectIdValue));
+    assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue1));
+    assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue2));
 
     assertEquals(Values.detectMapRepresentation(minKeyValue), MapRepresentation.MIN_KEY);
     assertEquals(Values.detectMapRepresentation(maxKeyValue), MapRepresentation.MAX_KEY);
     assertEquals(Values.detectMapRepresentation(int32Value), MapRepresentation.INT32);
+    assertEquals(Values.detectMapRepresentation(decimal128), MapRepresentation.DECIMAL128);
     assertEquals(Values.detectMapRepresentation(regexValue), MapRepresentation.REGEX);
     assertEquals(
         Values.detectMapRepresentation(bsonTimestampValue), MapRepresentation.BSON_TIMESTAMP);
