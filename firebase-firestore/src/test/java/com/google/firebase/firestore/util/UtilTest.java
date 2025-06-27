@@ -35,6 +35,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class UtilTest {
 
+
   @Test
   public void testToDebugString() {
     assertEquals("", Util.toDebugString(ByteString.EMPTY));

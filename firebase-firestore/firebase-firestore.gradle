@@ -162,6 +162,10 @@ dependencies {
     testImplementation libs.hamcrest.junit
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
+    testImplementation libs.kotest.assertions
+    testImplementation libs.kotest.property
+    testImplementation libs.kotest.property.arbs
+    testImplementation libs.kotlin.coroutines.test
 
     testCompileOnly libs.protobuf.java
 
@@ -176,6 +180,10 @@ dependencies {
     androidTestImplementation libs.junit
     androidTestImplementation libs.mockito.android
     androidTestImplementation libs.mockito.core
+    androidTestImplementation libs.kotest.assertions
+    androidTestImplementation libs.kotest.property
+    androidTestImplementation libs.kotest.property.arbs
+    androidTestImplementation libs.kotlin.coroutines.test
 }
 
 gradle.projectsEvaluated {
