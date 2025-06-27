@@ -942,7 +942,6 @@ package com.google.firebase.ai.type {
     ctor public ThinkingConfig.Builder();
     method public com.google.firebase.ai.type.ThinkingConfig build();
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
-    field public Integer? thinkingBudget;
   }
 
   public final class ThinkingConfigKt {
