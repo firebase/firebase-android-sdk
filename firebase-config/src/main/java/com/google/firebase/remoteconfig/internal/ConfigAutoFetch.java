@@ -79,13 +79,14 @@ public class ConfigAutoFetch {
     this.random = new Random();
     this.isInBackground = false;
     this.sharedPrefsClient = sharedPrefsClient;
-    clock = DefaultClock.getInstance();
+    this.clock = DefaultClock.getInstance();
   }
 
   // Increase the backoff duration with a new end time based on Retry Interval
-  private synchronized void updateBackoffMetadataWithRetryInterval(int realtimeRetryInterval) {
+  private synchronized void updateBackoffMetadataWithRetryInterval(
+      int realtimeRetryIntervalInSeconds) {
     Date currentTime = new Date(clock.currentTimeMillis());
-    long backoffDurationInMillis = realtimeRetryInterval * 1000L;
+    long backoffDurationInMillis = realtimeRetryIntervalInSeconds * 1000L;
     Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
 
     // Persist the new values to disk-backed metadata.
@@ -215,8 +216,8 @@ public class ConfigAutoFetch {
           // backoff duration without affecting the number of retries, so it will not enter an
           // exponential backoff state.
           if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
-            int realtimeRetryInterval = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
-            updateBackoffMetadataWithRetryInterval(realtimeRetryInterval);
+            int realtimeRetryIntervalInSeconds = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
+            updateBackoffMetadataWithRetryInterval(realtimeRetryIntervalInSeconds);
           }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this
