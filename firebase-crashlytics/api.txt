@@ -44,7 +44,6 @@ package com.google.firebase.crashlytics {
   }
 
   public final class KeyValueBuilder {
-    ctor @Deprecated public KeyValueBuilder(com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
     method public void key(String key, boolean value);
     method public void key(String key, double value);
     method public void key(String key, float value);
