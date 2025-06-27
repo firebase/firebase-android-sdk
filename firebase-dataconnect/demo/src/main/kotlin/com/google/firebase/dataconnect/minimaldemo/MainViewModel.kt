@@ -15,210 +15,71 @@
  */
 package com.google.firebase.dataconnect.minimaldemo
 
-import android.util.Log
-import androidx.annotation.MainThread
+import androidx.annotation.AnyThread
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.google.firebase.dataconnect.minimaldemo.connector.GetItemByKeyQuery
-import com.google.firebase.dataconnect.minimaldemo.connector.InsertItemMutation
-import com.google.firebase.dataconnect.minimaldemo.connector.Zwda6x9zyyKey
-import com.google.firebase.dataconnect.minimaldemo.connector.execute
-import io.kotest.property.Arb
-import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.next
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
-class MainViewModel(private val app: MyApplication) : ViewModel() {
+class MainViewModel : ViewModel() {
 
-  private val rs = RandomSource.default()
+  sealed interface State {
+    data object NotStarted : State
+    data class Running(val job: Job) : State
+    data class Finished(val error: Throwable?) : State
+  }
 
-  // Threading Note: _state and the variables below it may ONLY be accessed (read from and/or
-  // written to) by the main thread; otherwise a race condition and undefined behavior will result.
-  private val _stateSequenceNumber = MutableStateFlow(111999L)
-  val stateSequenceNumber: StateFlow<Long> = _stateSequenceNumber.asStateFlow()
+  private val _state = MutableStateFlow<State>(State.NotStarted)
 
-  var insertState: OperationState<InsertItemMutation.Variables, Zwda6x9zyyKey>? = null
-    private set
+  val state: StateFlow<State> = _state.asStateFlow()
 
-  var getState: OperationState<Zwda6x9zyyKey, GetItemByKeyQuery.Data.Item?>? = null
-    private set
+  init {
+    startTest()
+  }
 
-  var deleteState: OperationState<Zwda6x9zyyKey, Unit>? = null
-    private set
-
-  var lastInsertedKey: Zwda6x9zyyKey? = null
-    private set
-
-  @OptIn(ExperimentalCoroutinesApi::class)
-  @MainThread
-  fun insertItem() {
-    val arb = Arb.insertItemVariables()
-    val variables = if (rs.random.nextFloat() < 0.333f) arb.edgecase(rs)!! else arb.next(rs)
-
-    // If there is already an "insert" in progress, then just return and let the in-progress
-    // operation finish.
-    if (insertState is OperationState.InProgress) {
-      return
+  @AnyThread
+  fun startTest() {
+    val newState = _state.updateAndGet { currentState ->
+      when (currentState) {
+        is State.Running -> currentState
+        else -> {
+          State.Running(createLazyJob())
+        }
+      }
     }
 
-    // Start a new coroutine to perform the "insert" operation.
-    Log.i(TAG, "Inserting item: $variables")
-    val job: Deferred<Zwda6x9zyyKey> =
-      viewModelScope.async { app.getConnector().insertItem.ref(variables).execute().data.key }
-    val inProgressOperationState =
-      OperationState.InProgress(_stateSequenceNumber.value, variables, job)
-    insertState = inProgressOperationState
-    _stateSequenceNumber.value++
+    if (newState is State.Running) {
+      newState.job.start()
+    }
+  }
 
-    // Update the internal state once the "insert" operation has completed.
-    job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as documented by invokeOnCompletion().
-      if (exception is CancellationException) {
-        return@invokeOnCompletion
+  private fun createLazyJob(): Job {
+    val job = viewModelScope.launch(Dispatchers.IO, CoroutineStart.LAZY) {
+      repeat(5) {
+        println("zzyzx $it")
+        delay(1.seconds)
       }
-
-      val result =
-        if (exception !== null) {
-          Log.w(TAG, "WARNING: Inserting item FAILED: $exception (variables=$variables)", exception)
-          Result.failure(exception)
+    }
+    job.invokeOnCompletion { throwable ->
+      _state.update { currentState ->
+        if (currentState is State.Running && currentState.job === job) {
+          State.Finished(throwable)
         } else {
-          val key = job.getCompleted()
-          Log.i(TAG, "Inserted item with key: $key (variables=${variables})")
-          Result.success(key)
-        }
-
-      viewModelScope.launch {
-        if (insertState === inProgressOperationState) {
-          insertState = OperationState.Completed(_stateSequenceNumber.value, variables, result)
-          result.onSuccess { lastInsertedKey = it }
-          _stateSequenceNumber.value++
+          currentState
         }
       }
     }
+    return job
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
-  fun getItem() {
-    // If there is no previous successful "insert" operation, then we don't know any ID's to get,
-    // so just do nothing.
-    val key: Zwda6x9zyyKey = lastInsertedKey ?: return
-
-    // If there is already a "get" in progress, then just return and let the in-progress operation
-    // finish.
-    if (getState is OperationState.InProgress) {
-      return
-    }
-
-    // Start a new coroutine to perform the "get" operation.
-    Log.i(TAG, "Retrieving item with key: $key")
-    val job: Deferred<GetItemByKeyQuery.Data.Item?> =
-      viewModelScope.async { app.getConnector().getItemByKey.execute(key).data.item }
-    val inProgressOperationState = OperationState.InProgress(_stateSequenceNumber.value, key, job)
-    getState = inProgressOperationState
-    _stateSequenceNumber.value++
-
-    // Update the internal state once the "get" operation has completed.
-    job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as documented by invokeOnCompletion().
-      if (exception is CancellationException) {
-        return@invokeOnCompletion
-      }
-
-      val result =
-        if (exception !== null) {
-          Log.w(TAG, "WARNING: Retrieving item with key=$key FAILED: $exception", exception)
-          Result.failure(exception)
-        } else {
-          val item = job.getCompleted()
-          Log.i(TAG, "Retrieved item with key: $key (item=${item})")
-          Result.success(item)
-        }
-
-      viewModelScope.launch {
-        if (getState === inProgressOperationState) {
-          getState = OperationState.Completed(_stateSequenceNumber.value, key, result)
-          _stateSequenceNumber.value++
-        }
-      }
-    }
-  }
-
-  fun deleteItem() {
-    // If there is no previous successful "insert" operation, then we don't know any ID's to delete,
-    // so just do nothing.
-    val key: Zwda6x9zyyKey = lastInsertedKey ?: return
-
-    // If there is already a "delete" in progress, then just return and let the in-progress
-    // operation finish.
-    if (deleteState is OperationState.InProgress) {
-      return
-    }
-
-    // Start a new coroutine to perform the "delete" operation.
-    Log.i(TAG, "Deleting item with key: $key")
-    val job: Deferred<Unit> =
-      viewModelScope.async { app.getConnector().deleteItemByKey.execute(key) }
-    val inProgressOperationState = OperationState.InProgress(_stateSequenceNumber.value, key, job)
-    deleteState = inProgressOperationState
-    _stateSequenceNumber.value++
-
-    // Update the internal state once the "delete" operation has completed.
-    job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as documented by invokeOnCompletion().
-      if (exception is CancellationException) {
-        return@invokeOnCompletion
-      }
-
-      val result =
-        if (exception !== null) {
-          Log.w(TAG, "WARNING: Deleting item with key=$key FAILED: $exception", exception)
-          Result.failure(exception)
-        } else {
-          Log.i(TAG, "Deleted item with key: $key")
-          Result.success(Unit)
-        }
-
-      viewModelScope.launch {
-        if (deleteState === inProgressOperationState) {
-          deleteState = OperationState.Completed(_stateSequenceNumber.value, key, result)
-          _stateSequenceNumber.value++
-        }
-      }
-    }
-  }
-
-  sealed interface OperationState<out Variables, out Data> {
-    val sequenceNumber: Long
-
-    data class InProgress<out Variables, out Data>(
-      override val sequenceNumber: Long,
-      val variables: Variables,
-      val job: Deferred<Data>,
-    ) : OperationState<Variables, Data>
-
-    data class Completed<out Variables, out Data>(
-      override val sequenceNumber: Long,
-      val variables: Variables,
-      val result: Result<Data>,
-    ) : OperationState<Variables, Data>
-  }
-
-  companion object {
-    private const val TAG = "MainViewModel"
-
-    val Factory: ViewModelProvider.Factory = viewModelFactory {
-      initializer { MainViewModel(this[APPLICATION_KEY] as MyApplication) }
-    }
-  }
 }

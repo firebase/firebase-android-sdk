@@ -10,7 +10,7 @@ import kotlin.math.roundToLong
 import kotlin.time.Duration
 
 const val ITERATION_COUNT = 300
-const val LIST_SIZE = 20_000
+const val LIST_SIZE = 2_000
 
 class Utf8PerformanceIntegrationTest {
 

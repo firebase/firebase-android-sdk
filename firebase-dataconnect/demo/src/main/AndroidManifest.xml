@@ -19,7 +19,6 @@ limitations under the License.
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:name=".MyApplication"
         android:label="Data Connect Minimal Demo"
         android:theme="@style/Theme.AppCompat"
         >
@@ -30,11 +29,6 @@ limitations under the License.
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ListItemsActivity"
-            android:label="List Items"
-            />
 
     </application>
 
