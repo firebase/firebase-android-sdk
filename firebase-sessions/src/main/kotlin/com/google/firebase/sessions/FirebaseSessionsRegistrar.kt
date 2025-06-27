@@ -19,7 +19,7 @@ package com.google.firebase.sessions
 import android.content.Context
 import android.util.Log
 import androidx.annotation.Keep
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.core.MultiProcessDataStoreFactory
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
@@ -31,6 +31,7 @@ import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -71,7 +72,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     )
 
   private companion object {
-    const val TAG = "FirebaseSessions"
     const val LIBRARY_NAME = "fire-sessions"
 
     val appContext = unqualified(Context::class.java)
@@ -84,7 +84,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
 
     init {
       try {
-        ::preferencesDataStore.javaClass
+        MultiProcessDataStoreFactory.javaClass
       } catch (ex: NoClassDefFoundError) {
         Log.w(
           TAG,
