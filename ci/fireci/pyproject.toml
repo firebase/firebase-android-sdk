@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fireci"
 version = "0.1"
 dependencies = [
-  "protobuf==3.20.3",
+  "protobuf==4.25.8",
   "click==8.1.7",
   "google-cloud-storage==2.18.2",
   "mypy==1.6.0",
@@ -14,7 +14,7 @@ dependencies = [
   "pandas==1.5.3",
   "PyGithub==1.58.2",
   "pystache==0.6.0",
-  "requests==2.32.2",
+  "requests==2.32.4",
   "seaborn==0.12.2",
   "PyYAML==6.0.1",
   "termcolor==2.4.0",

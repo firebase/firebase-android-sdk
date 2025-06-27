@@ -469,7 +469,8 @@ public class ConfigRealtimeHttpClient {
         activatedCache,
         listeners,
         retryCallback,
-        scheduledExecutorService);
+        scheduledExecutorService,
+        sharedPrefsClient);
   }
 
   // HTTP status code that the Realtime client should retry on.

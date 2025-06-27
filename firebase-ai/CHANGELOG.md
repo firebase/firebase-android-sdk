@@ -1,8 +1,18 @@
 # Unreleased
-
 * [feat] Added support for setting thinking budget for the Gemini models that support it. (#6990)
+
+# 16.2.0
+* [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
+* [feature] Added support for extra schema properties like `title`, `minItems`, `maxItems`, `minimum`
+ and `maximum`. As well as support for the `anyOf` schema. (#7013)
+
+# 16.1.0
 * [fixed] Fixed `FirebaseAI.getInstance` StackOverflowException (#6971)
-* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API. 
+* [fixed] Fixed an issue that was causing the SDK to send empty `FunctionDeclaration` descriptions to the API.
+* [changed] Introduced the `Voice` class, which accepts a voice name, and deprecated the `Voices` class.
+* [changed] **Breaking Change**: Updated `SpeechConfig` to take in `Voice` class instead of `Voices` class.
+    * **Action Required:** Update all references of `SpeechConfig` initialization to use `Voice` class.
+* [fixed] Fix incorrect model name in count token requests to the developer API backend
 
 # 16.0.0
 * [feature] Initial release of the Firebase AI SDK (`firebase-ai`). This SDK *replaces* the previous

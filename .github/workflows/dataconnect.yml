@@ -13,6 +13,15 @@ on:
   pull_request:
     paths:
       - .github/workflows/dataconnect.yml
+      - gradlew
+      - build.gradle.kts
+      - gradle.properties
+      - gradlew.bat
+      - settings.gradle.kts
+      - subprojects.cfg
+      - 'gradle/**'
+      - 'plugins/**'
+      - '!plugins/**/*.md'
       - 'firebase-dataconnect/**'
       - '!firebase-dataconnect/demo/**'
       - '!firebase-dataconnect/scripts/**'
@@ -25,7 +34,7 @@ env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.2.0' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.5.1' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}

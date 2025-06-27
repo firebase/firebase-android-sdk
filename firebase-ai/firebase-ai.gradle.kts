@@ -28,7 +28,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_ai}}")
+    name.set("{{firebase_ai_logic}}")
     versionName.set("ai")
     hasKTX.set(false)
   }
@@ -67,7 +67,10 @@ android {
     targetSdk = targetSdkVersion
     baseline = file("lint-baseline.xml")
   }
-  sourceSets { getByName("test").java.srcDirs("src/testUtil") }
+  sourceSets {
+    // getByName("test").java.srcDirs("src/testUtil")
+    getByName("androidTest") { kotlin.srcDirs("src/testUtil") }
+  }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
