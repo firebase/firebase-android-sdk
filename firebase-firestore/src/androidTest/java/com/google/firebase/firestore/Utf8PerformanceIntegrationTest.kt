@@ -19,7 +19,8 @@ class Utf8PerformanceIntegrationTest {
     val originalTimes = mutableListOf<Long>()
     val slowTimes = mutableListOf<Long>()
     val newTimes = mutableListOf<Long>()
-    val timesArb = Arb.of(originalTimes, slowTimes, newTimes)
+    val denverTimes = mutableListOf<Long>()
+    val timesArb = Arb.of(originalTimes, slowTimes, newTimes, denverTimes)
 
     checkAll(ITERATION_COUNT, timesArb) { list ->
       val startTimeNs = System.nanoTime()
@@ -30,6 +31,8 @@ class Utf8PerformanceIntegrationTest {
         doTest { s1, s2 -> Util.compareUtf8StringsSlow(s1, s2) }
       } else if (list === newTimes) {
         doTest { s1, s2 -> Util.compareUtf8Strings(s1, s2) }
+      } else if (list === denverTimes) {
+        doTest { s1, s2 -> Util.compareUtf8StringsDenver(s1, s2) }
       } else {
         throw Exception("unknown list: $list [hgxsq8tnwd]")
       }
@@ -42,6 +45,7 @@ class Utf8PerformanceIntegrationTest {
     logTimes("original", originalTimes)
     logTimes("new-slow", slowTimes)
     logTimes("new-fast", newTimes)
+    logTimes("new-denver", denverTimes)
   }
 
   private inline fun doTest(crossinline compareFunc: (s1: String, s2: String) -> Int) {
