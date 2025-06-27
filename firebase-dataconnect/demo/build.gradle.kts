@@ -84,6 +84,11 @@ android {
   }
   buildFeatures.viewBinding = true
   kotlinOptions.jvmTarget = "1.8"
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 }
 
 spotless {
