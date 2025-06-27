@@ -1625,20 +1625,6 @@ mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae
   enumNonNullable_update(key: $key, data: { value: $value })
 }
 
-mutation EnumNonNullable_UpdateByTagAndValue($tag: String!, $value: N5ekmae3jn, $newValue: N5ekmae3jn) @auth(level: PUBLIC) {
-  enumNonNullable_updateMany(
-    where: { value: { eq: $value }, tag: { eq: $tag } },
-    data: { value: $newValue }
-  )
-}
-
-mutation EnumNonNullable_DeleteByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
-  enumNonNullable_deleteMany(
-    where: { value: { eq: $value }, tag: { eq: $tag } }
-  )
-}
-
-
 
 
 
