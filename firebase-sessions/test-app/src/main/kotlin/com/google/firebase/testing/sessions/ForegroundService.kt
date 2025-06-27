@@ -29,6 +29,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.testing.sessions.TestApplication.Companion.TAG
 
 class ForegroundService : Service() {
   private val CHANNEL_ID = "CrashForegroundService"
@@ -104,10 +105,8 @@ class ForegroundService : Service() {
   }
 
   companion object {
-    val TAG = "WidgetForegroundService"
-
     fun startService(context: Context, message: String) {
-      Log.i(TAG, "Starting foreground serice")
+      Log.i(TAG, "Starting foreground service")
       ContextCompat.startForegroundService(
         context,
         Intent(context, ForegroundService::class.java).putExtra("inputExtra", message),
@@ -115,7 +114,7 @@ class ForegroundService : Service() {
     }
 
     fun stopService(context: Context) {
-      Log.i(TAG, "Stopping serice")
+      Log.i(TAG, "Stopping service")
       context.stopService(Intent(context, ForegroundService::class.java))
     }
   }

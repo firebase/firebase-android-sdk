@@ -45,8 +45,8 @@
 
     <!-- Override value to 1.0 to always have a fireperf verbose session -->
     <meta-data
-        android:name="sessions_sampling_percentage"
-        android:value="0.01" />
+      android:name="sessions_sampling_percentage"
+      android:value="0.01" />
 
     <meta-data
       android:name="firebase_performance_logcat_enabled"
@@ -73,6 +73,18 @@
         android:name="android.appwidget.provider"
         android:resource="@xml/homescreen_widget" />
     </receiver>
+
+    <service
+      android:exported="true"
+      android:name=".MyServiceA"
+      android:process=":a"
+      tools:ignore="ExportedService" />
+
+    <service
+      android:exported="true"
+      android:name=".MyServiceB"
+      android:process=":b"
+      tools:ignore="ExportedService" />
 
     <service
       android:enabled="true"
