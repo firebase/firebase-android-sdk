@@ -20,13 +20,21 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Configuration parameters for thinking features. */
-public class ThinkingConfig(public val thinkingBudget: Int?) {
+public class ThinkingConfig
+private constructor(
+  internal val thinkingBudget: Int? = null,
+) {
 
   public class Builder() {
-    @JvmField public var thinkingBudget: Int? = null
+    @JvmField
+    @set:JvmSynthetic // hide void setter from Java
+    public var thinkingBudget: Int? = null
 
-    /** The number of thoughts tokens that the model should generate. */
-    public fun setThinkingBudget(thinkingBudget: Int?): Builder = apply {
+    /**
+     * Indicates the thinking budget in tokens. 0 is DISABLED. -1 is AUTOMATIC. The default values
+     * and allowed ranges are model dependent.
+     */
+    public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
       this.thinkingBudget = thinkingBudget
     }
 

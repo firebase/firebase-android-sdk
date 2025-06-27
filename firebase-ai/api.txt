@@ -936,15 +936,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class ThinkingConfig {
-    ctor public ThinkingConfig(Integer? thinkingBudget);
-    method public Integer? getThinkingBudget();
-    property public final Integer? thinkingBudget;
   }
 
   public static final class ThinkingConfig.Builder {
     ctor public ThinkingConfig.Builder();
     method public com.google.firebase.ai.type.ThinkingConfig build();
-    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(Integer? thinkingBudget);
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
     field public Integer? thinkingBudget;
   }
 
