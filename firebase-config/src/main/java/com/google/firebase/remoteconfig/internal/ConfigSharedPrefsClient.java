@@ -394,6 +394,16 @@ public class ConfigSharedPrefsClient {
     }
   }
 
+  @VisibleForTesting
+  public void setRealtimeBackoffEndTime(Date backoffEndTime) {
+    synchronized (realtimeBackoffMetadataLock) {
+      frcSharedPrefs
+          .edit()
+          .putLong(REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
+          .apply();
+    }
+  }
+
   void resetRealtimeBackoff() {
     setRealtimeBackoffMetadata(NO_FAILED_REALTIME_STREAMS, NO_BACKOFF_TIME);
   }
