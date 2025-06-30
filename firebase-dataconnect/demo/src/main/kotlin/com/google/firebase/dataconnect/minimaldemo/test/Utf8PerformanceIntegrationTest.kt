@@ -45,7 +45,7 @@ suspend fun utf8PerformanceIntegrationTest(): TestResult {
 }
 
 private inline fun doTest(crossinline compareFunc: (s1: String, s2: String) -> Int) {
-  strings.sortedWith({ s1, s2 -> compareFunc(s1, s2) })
+  strings.sortedWith { s1, s2 -> compareFunc(s1, s2) }
 }
 
 private val strings = List(LIST_SIZE) { "/projects/asdfhasdkfjk/database/asdfsadf/items/item$it" }

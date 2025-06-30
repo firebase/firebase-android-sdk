@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.google.firebase.dataconnect.minimaldemo
 
+import android.util.Log
 import androidx.annotation.AnyThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlin.time.Duration.Companion.seconds
+import com.google.firebase.dataconnect.minimaldemo.test.TestResult
+import com.google.firebase.dataconnect.minimaldemo.test.utf8PerformanceIntegrationTest
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
@@ -37,7 +42,11 @@ class MainViewModel : ViewModel() {
 
     data class Running(val job: Job) : State
 
-    data class Finished(val error: Throwable?) : State
+    sealed interface Finished : State {
+      data class Success(val error: TestResult) : State
+
+      data class Error(val error: Throwable) : State
+    }
   }
 
   private val _state = MutableStateFlow<State>(State.NotStarted)
@@ -65,23 +74,35 @@ class MainViewModel : ViewModel() {
     }
   }
 
-  private fun createLazyJob(): Job {
+  private fun createLazyJob(): Deferred<TestResult> {
     val job =
-      viewModelScope.launch(Dispatchers.IO, CoroutineStart.LAZY) {
-        repeat(5) {
-          println("zzyzx $it")
-          delay(1.seconds)
+      viewModelScope.async(Dispatchers.IO, CoroutineStart.LAZY) { utf8PerformanceIntegrationTest() }
+    job.invokeOnCompletion { throwable ->
+      if (throwable !== null) {
+        Log.e("Utf8PerfTestResult", "utf8PerformanceIntegrationTest failed", throwable)
+      } else
+        job.getCompleted().apply {
+          Log.i("Utf8PerfTestResult", "utf8PerformanceIntegrationTest completed successfully:")
+          Log.i("Utf8PerfTestResult", "  original: " + original.logString)
+          Log.i("Utf8PerfTestResult", "  slow: " + slow.logString)
+          Log.i("Utf8PerfTestResult", "  new: " + new.logString)
+          Log.i("Utf8PerfTestResult", "  denver: " + denver.logString)
         }
-      }
+    }
     job.invokeOnCompletion { throwable ->
       _state.update { currentState ->
-        if (currentState is State.Running && currentState.job === job) {
-          State.Finished(throwable)
-        } else {
+        if (currentState !is State.Running || currentState.job !== job) {
           currentState
+        } else if (throwable !== null) {
+          State.Finished.Error(throwable)
+        } else {
+          State.Finished.Success(job.getCompleted())
         }
       }
     }
     return job
   }
 }
+
+private val TestResult.Result.logString: String
+  get() = "${averageMs}ms (n=$n)"
