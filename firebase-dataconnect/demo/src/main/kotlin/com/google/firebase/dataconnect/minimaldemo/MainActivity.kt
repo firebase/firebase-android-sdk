@@ -36,20 +36,18 @@ class MainActivity : AppCompatActivity() {
     setContentView(viewBinding.root)
 
     lifecycleScope.launch {
-      viewModel.state.flowWithLifecycle(lifecycle).collectLatest {
-        onViewModelStateChange(it)
-      }
+      viewModel.state.flowWithLifecycle(lifecycle).collectLatest { onViewModelStateChange(it) }
     }
   }
 
   private fun onViewModelStateChange(newState: MainViewModel.State) {
-    val newText: String = when (newState) {
-      is MainViewModel.State.NotStarted -> "not started"
-      is MainViewModel.State.Running -> "running"
-      is MainViewModel.State.Finished -> "finished (error=${newState.error})"
-    }
+    val newText: String =
+      when (newState) {
+        is MainViewModel.State.NotStarted -> "not started"
+        is MainViewModel.State.Running -> "running"
+        is MainViewModel.State.Finished -> "finished (error=${newState.error})"
+      }
     viewBinding.progressText.text = newText
     println("zzyzx $newText")
   }
-
 }

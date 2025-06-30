@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.minimaldemo
 import androidx.annotation.AnyThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,17 +26,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 class MainViewModel : ViewModel() {
 
   sealed interface State {
     data object NotStarted : State
+
     data class Running(val job: Job) : State
+
     data class Finished(val error: Throwable?) : State
   }
 
@@ -49,14 +50,15 @@ class MainViewModel : ViewModel() {
 
   @AnyThread
   fun startTest() {
-    val newState = _state.updateAndGet { currentState ->
-      when (currentState) {
-        is State.Running -> currentState
-        else -> {
-          State.Running(createLazyJob())
+    val newState =
+      _state.updateAndGet { currentState ->
+        when (currentState) {
+          is State.Running -> currentState
+          else -> {
+            State.Running(createLazyJob())
+          }
         }
       }
-    }
 
     if (newState is State.Running) {
       newState.job.start()
@@ -64,12 +66,13 @@ class MainViewModel : ViewModel() {
   }
 
   private fun createLazyJob(): Job {
-    val job = viewModelScope.launch(Dispatchers.IO, CoroutineStart.LAZY) {
-      repeat(5) {
-        println("zzyzx $it")
-        delay(1.seconds)
+    val job =
+      viewModelScope.launch(Dispatchers.IO, CoroutineStart.LAZY) {
+        repeat(5) {
+          println("zzyzx $it")
+          delay(1.seconds)
+        }
       }
-    }
     job.invokeOnCompletion { throwable ->
       _state.update { currentState ->
         if (currentState is State.Running && currentState.job === job) {
@@ -81,5 +84,4 @@ class MainViewModel : ViewModel() {
     }
     return job
   }
-
 }

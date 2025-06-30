@@ -49,6 +49,7 @@ dependencies {
   implementation("androidx.activity:activity-ktx:1.10.1")
   implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.1")
   implementation("com.google.android.material:material:1.12.0")
+  implementation("com.google.protobuf:protobuf-javalite:3.25.5")
 
   // The following code in this "dependencies" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
@@ -84,11 +85,7 @@ android {
   }
   buildFeatures.viewBinding = true
   kotlinOptions.jvmTarget = "1.8"
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
+  buildTypes { getByName("release") { signingConfig = signingConfigs.getByName("debug") } }
 }
 
 spotless {
