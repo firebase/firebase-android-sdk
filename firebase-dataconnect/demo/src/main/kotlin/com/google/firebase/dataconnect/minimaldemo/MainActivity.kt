@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     setContentView(viewBinding.root)
 
     viewBinding.configText.text = "build type: ${if (BuildConfig.DEBUG) "debug" else "release"}"
+    viewBinding.startTestButton.setOnClickListener { viewModel.startTest() }
 
     lifecycleScope.launch {
       viewModel.state.flowWithLifecycle(lifecycle).collectLatest { onViewModelStateChange(it) }
@@ -45,7 +46,14 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun onViewModelStateChange(newState: MainViewModel.State) {
-    val newText: String =
+    viewBinding.startTestButton.isEnabled =
+      when (newState) {
+        is MainViewModel.State.NotStarted -> true
+        is MainViewModel.State.Running -> false
+        is MainViewModel.State.Finished -> true
+      }
+
+    viewBinding.progressText.text =
       when (newState) {
         is MainViewModel.State.NotStarted -> "not started"
         is MainViewModel.State.Running -> "running"
@@ -65,6 +73,5 @@ class MainActivity : AppCompatActivity() {
             }
           }
       }
-    viewBinding.progressText.text = newText
   }
 }

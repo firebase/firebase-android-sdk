@@ -1,5 +1,6 @@
 package com.google.firebase.dataconnect.minimaldemo.test
 
+import android.os.Trace
 import com.google.firebase.firestore.util.Util
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
@@ -25,15 +26,45 @@ suspend fun utf8PerformanceIntegrationTest(): TestResult {
     list,
     insertIndex,
     insertString ->
+    val tester = PerformanceTester(insertIndex = insertIndex, insertString = insertString)
+
     val testDuration =
       if (list === originalTimes) {
-        doTest(insertIndex, insertString) { s1, s2 -> Util.compareUtf8StringsOriginal(s1, s2) }
+        tester.runTest { s1, s2 ->
+          Trace.beginSection("compareUtf8StringsOriginal")
+          try {
+            Util.compareUtf8StringsOriginal(s1, s2)
+          } finally {
+            Trace.endSection()
+          }
+        }
       } else if (list === slowTimes) {
-        doTest(insertIndex, insertString) { s1, s2 -> Util.compareUtf8StringsSlow(s1, s2) }
+        tester.runTest { s1, s2 ->
+          Trace.beginSection("compareUtf8StringsSlow")
+          try {
+            Util.compareUtf8StringsSlow(s1, s2)
+          } finally {
+            Trace.endSection()
+          }
+        }
       } else if (list === newTimes) {
-        doTest(insertIndex, insertString) { s1, s2 -> Util.compareUtf8Strings(s1, s2) }
+        tester.runTest { s1, s2 ->
+          Trace.beginSection("compareUtf8Strings")
+          try {
+            Util.compareUtf8Strings(s1, s2)
+          } finally {
+            Trace.endSection()
+          }
+        }
       } else if (list === denverTimes) {
-        doTest(insertIndex, insertString) { s1, s2 -> Util.compareUtf8StringsDenver(s1, s2) }
+        tester.runTest { s1, s2 ->
+          Trace.beginSection("compareUtf8StringsDenver")
+          try {
+            Util.compareUtf8StringsDenver(s1, s2)
+          } finally {
+            Trace.endSection()
+          }
+        }
       } else {
         throw Exception("unknown list: $list [hgxsq8tnwd]")
       }
@@ -49,20 +80,19 @@ suspend fun utf8PerformanceIntegrationTest(): TestResult {
   )
 }
 
-private inline fun doTest(
-  insertIndex: Int,
-  insertString: String,
-  crossinline compareFunc: (s1: String, s2: String) -> Int,
-): Duration {
-  val unsortedList = strings.toMutableList()
-  unsortedList.add(insertIndex, insertString)
-  val startTimeNs = System.nanoTime()
+private class PerformanceTester(val insertIndex: Int, val insertString: String) {
 
-  unsortedList.sortWith { s1, s2 -> compareFunc(s1, s2) }
+  inline fun runTest(crossinline compareFunc: (s1: String, s2: String) -> Int): Duration {
+    val unsortedList = strings.toMutableList()
+    unsortedList.add(insertIndex, insertString)
+    val startTimeNs = System.nanoTime()
 
-  val endTimeNs = System.nanoTime()
-  val elapsedTimeNs = endTimeNs - startTimeNs
-  return elapsedTimeNs.nanoseconds
+    unsortedList.sortWith { s1, s2 -> compareFunc(s1, s2) }
+
+    val endTimeNs = System.nanoTime()
+    val elapsedTimeNs = endTimeNs - startTimeNs
+    return elapsedTimeNs.nanoseconds
+  }
 }
 
 private val strings = List(LIST_SIZE) { "/projects/asdfhasdkfjk/database/asdfsadf/items/item$it" }
