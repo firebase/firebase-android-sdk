@@ -214,10 +214,5 @@
                 <version>21.0.1</version>
             </dependency>
             <dependency>
-                <groupId>com.google.firebase</groupId>
-                <artifactId>firebase-database</artifactId>
-                <version>21.0.0</version>
-            </dependency>
-        </dependencies>
     </dependencyManagement>
 </project>
