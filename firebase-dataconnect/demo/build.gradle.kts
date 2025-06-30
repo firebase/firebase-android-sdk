@@ -63,9 +63,19 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  buildFeatures.viewBinding = true
+  buildFeatures {
+    viewBinding = true
+    buildConfig = true
+  }
   kotlinOptions.jvmTarget = "1.8"
-  buildTypes { getByName("release") { signingConfig = signingConfigs.getByName("debug") } }
+  buildTypes {
+    getByName("release") {
+      isMinifyEnabled = true
+      isShrinkResources = true
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      signingConfig = signingConfigs.getByName("debug")
+    }
+  }
 }
 
 spotless {

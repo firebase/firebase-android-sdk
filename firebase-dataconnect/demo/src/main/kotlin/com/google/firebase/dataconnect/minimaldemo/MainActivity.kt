@@ -15,6 +15,7 @@
  */
 package com.google.firebase.dataconnect.minimaldemo
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +25,7 @@ import com.google.firebase.dataconnect.minimaldemo.databinding.ActivityMainBindi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
   private lateinit var viewBinding: ActivityMainBinding
@@ -34,6 +36,8 @@ class MainActivity : AppCompatActivity() {
 
     viewBinding = ActivityMainBinding.inflate(layoutInflater)
     setContentView(viewBinding.root)
+
+    viewBinding.configText.text = "build type: ${if (BuildConfig.DEBUG) "debug" else "release"}"
 
     lifecycleScope.launch {
       viewModel.state.flowWithLifecycle(lifecycle).collectLatest { onViewModelStateChange(it) }
