@@ -7,7 +7,7 @@ import io.kotest.property.checkAll
 import kotlin.math.roundToLong
 
 private const val ITERATION_COUNT = 300
-private const val LIST_SIZE = 2_000
+private const val LIST_SIZE = 5_000
 
 suspend fun utf8PerformanceIntegrationTest(): TestResult {
   val originalTimes = mutableListOf<Long>()

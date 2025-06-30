@@ -45,9 +45,18 @@ class MainActivity : AppCompatActivity() {
       when (newState) {
         is MainViewModel.State.NotStarted -> "not started"
         is MainViewModel.State.Running -> "running"
-        is MainViewModel.State.Finished -> "finished (error=${newState.error})"
+        is MainViewModel.State.Finished.Error -> "finished (error=${newState.error})"
+        is MainViewModel.State.Finished.Success ->
+          buildString {
+            append("Test Completed:\n")
+            newState.result.apply {
+              append("original: ${original.logString}\n")
+              append("slow: ${slow.logString}\n")
+              append("new: ${new.logString}\n")
+              append("denver: ${denver.logString}\n")
+            }
+          }
       }
     viewBinding.progressText.text = newText
-    println("zzyzx $newText")
   }
 }

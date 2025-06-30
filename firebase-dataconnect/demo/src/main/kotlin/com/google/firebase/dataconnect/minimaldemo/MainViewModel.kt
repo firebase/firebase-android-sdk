@@ -43,7 +43,7 @@ class MainViewModel : ViewModel() {
     data class Running(val job: Job) : State
 
     sealed interface Finished : State {
-      data class Success(val error: TestResult) : State
+      data class Success(val result: TestResult) : State
 
       data class Error(val error: Throwable) : State
     }
@@ -104,5 +104,5 @@ class MainViewModel : ViewModel() {
   }
 }
 
-private val TestResult.Result.logString: String
+val TestResult.Result.logString: String
   get() = "${averageMs}ms (n=$n)"
