@@ -45,15 +45,19 @@ class MainActivity : AppCompatActivity() {
       when (newState) {
         is MainViewModel.State.NotStarted -> "not started"
         is MainViewModel.State.Running -> "running"
-        is MainViewModel.State.Finished.Error -> "finished (error=${newState.error})"
-        is MainViewModel.State.Finished.Success ->
+        is MainViewModel.State.Finished ->
           buildString {
-            append("Test Completed:\n")
-            newState.result.apply {
-              append("original: ${original.logString}\n")
-              append("slow: ${slow.logString}\n")
-              append("new: ${new.logString}\n")
-              append("denver: ${denver.logString}\n")
+            append("Test completed in ${newState.elapsedTimeNs / 1_000_000}ms\n")
+            when (newState) {
+              is MainViewModel.State.Finished.Error -> append(newState.error)
+              is MainViewModel.State.Finished.Success -> {
+                newState.result.apply {
+                  append("original: ${original.logString}\n")
+                  append("slow: ${slow.logString}\n")
+                  append("new: ${new.logString}\n")
+                  append("denver: ${denver.logString}")
+                }
+              }
             }
           }
       }

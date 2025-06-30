@@ -40,12 +40,15 @@ class MainViewModel : ViewModel() {
   sealed interface State {
     data object NotStarted : State
 
-    data class Running(val job: Job) : State
+    data class Running(val job: Job, val startTimeNs: Long) : State
 
     sealed interface Finished : State {
-      data class Success(val result: TestResult) : State
 
-      data class Error(val error: Throwable) : State
+      val elapsedTimeNs: Long
+
+      data class Success(val result: TestResult, override val elapsedTimeNs: Long) : Finished
+
+      data class Error(val error: Throwable, override val elapsedTimeNs: Long) : Finished
     }
   }
 
@@ -64,7 +67,7 @@ class MainViewModel : ViewModel() {
         when (currentState) {
           is State.Running -> currentState
           else -> {
-            State.Running(createLazyJob())
+            State.Running(createLazyJob(), System.nanoTime())
           }
         }
       }
@@ -93,10 +96,13 @@ class MainViewModel : ViewModel() {
       _state.update { currentState ->
         if (currentState !is State.Running || currentState.job !== job) {
           currentState
-        } else if (throwable !== null) {
-          State.Finished.Error(throwable)
         } else {
-          State.Finished.Success(job.getCompleted())
+          val elapsedTimeNs = System.nanoTime() - currentState.startTimeNs
+          if (throwable !== null) {
+            State.Finished.Error(throwable, elapsedTimeNs)
+          } else {
+            State.Finished.Success(job.getCompleted(), elapsedTimeNs)
+          }
         }
       }
     }
