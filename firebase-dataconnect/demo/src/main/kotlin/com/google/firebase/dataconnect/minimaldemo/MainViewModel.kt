@@ -23,6 +23,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.dataconnect.minimaldemo.test.TestResult
 import com.google.firebase.dataconnect.minimaldemo.test.utf8PerformanceIntegrationTest
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -44,11 +46,11 @@ class MainViewModel : ViewModel() {
 
     sealed interface Finished : State {
 
-      val elapsedTimeNs: Long
+      val elapsedTime: Duration
 
-      data class Success(val result: TestResult, override val elapsedTimeNs: Long) : Finished
+      data class Success(val result: TestResult, override val elapsedTime: Duration) : Finished
 
-      data class Error(val error: Throwable, override val elapsedTimeNs: Long) : Finished
+      data class Error(val error: Throwable, override val elapsedTime: Duration) : Finished
     }
   }
 
@@ -98,10 +100,11 @@ class MainViewModel : ViewModel() {
           currentState
         } else {
           val elapsedTimeNs = System.nanoTime() - currentState.startTimeNs
+          val elapsedTime = elapsedTimeNs.nanoseconds
           if (throwable !== null) {
-            State.Finished.Error(throwable, elapsedTimeNs)
+            State.Finished.Error(throwable, elapsedTime)
           } else {
-            State.Finished.Success(job.getCompleted(), elapsedTimeNs)
+            State.Finished.Success(job.getCompleted(), elapsedTime)
           }
         }
       }
@@ -111,4 +114,4 @@ class MainViewModel : ViewModel() {
 }
 
 val TestResult.Result.logString: String
-  get() = "${averageMs}ms (n=$n)"
+  get() = "${average.inWholeMilliseconds}ms (n=$n)"

@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         is MainViewModel.State.Running -> "running"
         is MainViewModel.State.Finished ->
           buildString {
-            append("Test completed in ${newState.elapsedTimeNs / 1_000_000}ms\n")
+            append("Test completed in ${newState.elapsedTime.inWholeSeconds} seconds:\n")
             when (newState) {
               is MainViewModel.State.Finished.Error -> append(newState.error)
               is MainViewModel.State.Finished.Success -> {
