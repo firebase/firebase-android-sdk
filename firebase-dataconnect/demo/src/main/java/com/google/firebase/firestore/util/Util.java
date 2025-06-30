@@ -45,7 +45,19 @@ public class Util {
       return 1;
     }
 
-    return left.charAt(i) < right.charAt(i) ? -1 : 1;
+    final char leftChar = left.charAt(i);
+    final int leftInt = leftChar;
+    final char rightChar = right.charAt(i);
+    final int rightInt = rightChar;
+
+    if (! Character.isSurrogate(leftChar) && ! Character.isSurrogate(rightChar)) {
+      if (leftInt < 0x80 && rightInt < 0x80) {
+        return (leftInt < rightInt) ? -1 : 1;
+      }
+      throw new UnsupportedOperationException("left=" + leftInt + " right=" + rightInt + " [ddwgvgggsn]");
+    } else {
+      throw new UnsupportedOperationException("left=" + leftInt + " right=" + rightInt + " [vf68aqd2kb]");
+    }
   }
 
   /** Compare strings in UTF-8 encoded byte order */

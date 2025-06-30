@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import java.text.NumberFormat
 
 class MainViewModel : ViewModel() {
 
@@ -113,5 +114,10 @@ class MainViewModel : ViewModel() {
   }
 }
 
+private val elapsedTimeFormatter = NumberFormat.getNumberInstance()
+
 val TestResult.Result.logString: String
-  get() = "${average.inWholeMilliseconds}ms (n=$n)"
+  get() {
+    val formattedElapsedTime = elapsedTimeFormatter.format(average.inWholeMicroseconds)
+    return "${formattedElapsedTime}μs (n=$n)"
+  }

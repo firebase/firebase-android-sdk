@@ -3,8 +3,10 @@ package com.google.firebase.dataconnect.minimaldemo.test
 import android.os.Trace
 import com.google.firebase.firestore.util.Util
 import io.kotest.property.Arb
+import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.of
+import io.kotest.property.arbitrary.printableAscii
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlin.math.roundToLong
@@ -12,8 +14,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
-private const val ITERATION_COUNT = 500
-private const val LIST_SIZE = 20_000
+private const val ITERATION_COUNT = 5000
+private const val LIST_SIZE = 2_000
 
 suspend fun utf8PerformanceIntegrationTest(): TestResult {
   val originalTimes = mutableListOf<Duration>()
@@ -21,12 +23,15 @@ suspend fun utf8PerformanceIntegrationTest(): TestResult {
   val newTimes = mutableListOf<Duration>()
   val denverTimes = mutableListOf<Duration>()
   val timesArb = Arb.of(originalTimes, slowTimes, newTimes, denverTimes)
+  val nameArb = Arb.string(5..5, Codepoint.printableAscii())
 
-  checkAll(ITERATION_COUNT, timesArb, Arb.int(0..strings.size), Arb.string()) {
+  checkAll(ITERATION_COUNT, timesArb, Arb.int(0..LIST_SIZE), nameArb, nameArb) {
     list,
     insertIndex,
-    insertString ->
-    val tester = PerformanceTester(insertIndex = insertIndex, insertString = insertString)
+    insertString,
+    prefix
+    ->
+    val tester = PerformanceTester(insertIndex = insertIndex, insertString = insertString, prefix=prefix)
 
     val testDuration =
       if (list === originalTimes) {
@@ -80,10 +85,10 @@ suspend fun utf8PerformanceIntegrationTest(): TestResult {
   )
 }
 
-private class PerformanceTester(val insertIndex: Int, val insertString: String) {
+private class PerformanceTester(val insertIndex: Int, val insertString: String, val prefix: String) {
 
   inline fun runTest(crossinline compareFunc: (s1: String, s2: String) -> Int): Duration {
-    val unsortedList = strings.toMutableList()
+    val unsortedList = makeStringList(prefix)
     unsortedList.add(insertIndex, insertString)
     val startTimeNs = System.nanoTime()
 
@@ -95,7 +100,9 @@ private class PerformanceTester(val insertIndex: Int, val insertString: String) 
   }
 }
 
-private val strings = List(LIST_SIZE) { "/projects/asdfhasdkfjk/database/asdfsadf/items/item$it" }
+private fun makeStringList(prefix: String): MutableList<String> {
+  return MutableList(LIST_SIZE) { "/projects/asdfhasdkfjk/database/asdfsadf/items/$prefix$it" }
+}
 
 data class TestResult(val original: Result, val slow: Result, val new: Result, val denver: Result) {
   data class Result(val n: Int, val average: Duration) {

@@ -54,20 +54,20 @@ android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
   compileSdk = 36
   defaultConfig {
-    minSdk = 21
+    minSdk = 36
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
   }
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
   buildFeatures {
     viewBinding = true
     buildConfig = true
   }
-  kotlinOptions.jvmTarget = "1.8"
+  kotlinOptions.jvmTarget = "17"
   buildTypes {
     getByName("release") {
       isMinifyEnabled = true
