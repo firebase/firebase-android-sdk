@@ -17,8 +17,6 @@ package com.google.firebase.firestore.util;
 import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
 import com.google.cloud.datastore.core.number.NumberComparisonHelper;
@@ -42,7 +40,7 @@ import java.util.Random;
 import java.util.SortedSet;
 
 /** A utility class for Firestore */
-public class Util2 {
+public class Util {
   private static final int AUTO_ID_LENGTH = 20;
 
   private static final String AUTO_ID_ALPHABET =
@@ -85,14 +83,6 @@ public class Util2 {
     } else {
       return 0;
     }
-  }
-
-  /** Compare strings in UTF-8 encoded byte order */
-  public static int compareUtf8Strings(String left, String right) {
-    Log.i("zzyzx", "compareUtf8Strings(left=" + left + ", right=" + right + ")");
-    ByteString leftBytes = ByteString.copyFromUtf8(left);
-    ByteString rightBytes = ByteString.copyFromUtf8(right);
-    return compareByteStrings(leftBytes, rightBytes);
   }
 
   /**
@@ -142,7 +132,7 @@ public class Util2 {
   /** Turns a Throwable into an exception, converting it from a StatusException if necessary. */
   public static Exception convertThrowableToException(Throwable t) {
     if (t instanceof Exception) {
-      return Util2.convertStatusException((Exception) t);
+      return Util.convertStatusException((Exception) t);
     } else {
       return new Exception(t);
     }
@@ -153,7 +143,7 @@ public class Util2 {
         if (task.isSuccessful()) {
           return task.getResult();
         }
-        Exception e = Util2.convertStatusException(task.getException());
+        Exception e = Util.convertStatusException(task.getException());
         if (e instanceof FirebaseFirestoreException) {
           throw e;
         } else {
@@ -240,7 +230,7 @@ public class Util2 {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util2.compareIntegers(left.length, right.length);
+    return Util.compareIntegers(left.length, right.length);
   }
 
   public static int compareByteStrings(ByteString left, ByteString right) {
@@ -256,7 +246,7 @@ public class Util2 {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util2.compareIntegers(left.size(), right.size());
+    return Util.compareIntegers(left.size(), right.size());
   }
 
   public static StringBuilder repeatSequence(

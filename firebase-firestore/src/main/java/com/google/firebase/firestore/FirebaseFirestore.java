@@ -62,6 +62,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,6 +76,8 @@ import org.json.JSONObject;
  * code that does so.
  */
 public class FirebaseFirestore {
+
+  public static AtomicInteger compareUtf8Version = new AtomicInteger(3);
 
   private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
 

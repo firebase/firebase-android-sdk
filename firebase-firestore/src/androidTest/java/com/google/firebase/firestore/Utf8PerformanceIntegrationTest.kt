@@ -1,6 +1,7 @@
 package com.google.firebase.firestore
 
-import com.google.firebase.firestore.util.Util
+import com.google.firebase.firestore.util.Util2
+import com.google.firebase.firestore.util.Util3
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
@@ -19,20 +20,17 @@ class Utf8PerformanceIntegrationTest {
     val originalTimes = mutableListOf<Long>()
     val slowTimes = mutableListOf<Long>()
     val newTimes = mutableListOf<Long>()
-    val denverTimes = mutableListOf<Long>()
-    val timesArb = Arb.of(originalTimes, slowTimes, newTimes, denverTimes)
+    val timesArb = Arb.of(originalTimes, slowTimes, newTimes)
 
     checkAll(ITERATION_COUNT, timesArb) { list ->
       val startTimeNs = System.nanoTime()
 
       if (list === originalTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsOriginal(s1, s2) }
+        doTest { s1, s2 -> s1.compareTo(s2) }
       } else if (list === slowTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsSlow(s1, s2) }
+        doTest { s1, s2 -> Util2.compareUtf8Strings(s1, s2) }
       } else if (list === newTimes) {
-        doTest { s1, s2 -> Util.compareUtf8Strings(s1, s2) }
-      } else if (list === denverTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsDenver(s1, s2) }
+        doTest { s1, s2 -> Util3.compareUtf8Strings(s1, s2) }
       } else {
         throw Exception("unknown list: $list [hgxsq8tnwd]")
       }
@@ -45,7 +43,7 @@ class Utf8PerformanceIntegrationTest {
     logTimes("original", originalTimes)
     logTimes("new-slow", slowTimes)
     logTimes("new-fast", newTimes)
-    logTimes("new-denver", denverTimes)
+    logTimes("new-denver", emptyList())
   }
 
   private inline fun doTest(crossinline compareFunc: (s1: String, s2: String) -> Int) {

@@ -40,7 +40,7 @@ import java.util.Random;
 import java.util.SortedSet;
 
 /** A utility class for Firestore */
-public class Util {
+public class Util1 {
   private static final int AUTO_ID_LENGTH = 20;
 
   private static final String AUTO_ID_ALPHABET =
@@ -132,7 +132,7 @@ public class Util {
   /** Turns a Throwable into an exception, converting it from a StatusException if necessary. */
   public static Exception convertThrowableToException(Throwable t) {
     if (t instanceof Exception) {
-      return Util.convertStatusException((Exception) t);
+      return Util1.convertStatusException((Exception) t);
     } else {
       return new Exception(t);
     }
@@ -143,7 +143,7 @@ public class Util {
         if (task.isSuccessful()) {
           return task.getResult();
         }
-        Exception e = Util.convertStatusException(task.getException());
+        Exception e = Util1.convertStatusException(task.getException());
         if (e instanceof FirebaseFirestoreException) {
           throw e;
         } else {
@@ -230,7 +230,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.length, right.length);
+    return Util1.compareIntegers(left.length, right.length);
   }
 
   public static int compareByteStrings(ByteString left, ByteString right) {
@@ -246,7 +246,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.size(), right.size());
+    return Util1.compareIntegers(left.size(), right.size());
   }
 
   public static StringBuilder repeatSequence(
