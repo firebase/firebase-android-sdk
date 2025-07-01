@@ -85,36 +85,6 @@ public class Util {
     }
   }
 
-  public static int compareUtf8StringsOriginal(String left, String right) {
-    return left.compareTo(right);
-  }
-
-  public static int compareUtf8StringsSlow(String left, String right) {
-    ByteString leftBytes = ByteString.copyFromUtf8(left);
-    ByteString rightBytes = ByteString.copyFromUtf8(right);
-    return compareByteStrings(leftBytes, rightBytes);
-  }
-
-  public static int compareUtf8StringsDenver(String left, String right) {
-    int i = 0;
-    while (i < left.length() && i < right.length()) {
-      if (left.charAt(i) != right.charAt(i)) {
-        break;
-      }
-      i++;
-    }
-
-    if (i == left.length() && i == right.length()) {
-      return 0;
-    } else if (i == left.length()) {
-      return -1;
-    } else if (i == right.length()) {
-      return 1;
-    }
-
-    return left.charAt(i) < right.charAt(i) ? -1 : 1;
-  }
-
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
     int i = 0;
