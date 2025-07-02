@@ -2,6 +2,8 @@ name: Metalava SemVer Check
 
 on:
   pull_request:
+    branches:
+      - main
 
 jobs:
   semver-check:

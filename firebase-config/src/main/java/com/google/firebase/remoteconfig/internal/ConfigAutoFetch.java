@@ -19,6 +19,8 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdate;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +46,7 @@ public class ConfigAutoFetch {
   private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
+  private static final String REALTIME_RETRY_INTERVAL = "retryIntervalSeconds";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -54,6 +58,8 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private final Clock clock;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
   private boolean isInBackground;
 
   public ConfigAutoFetch(
@@ -62,7 +68,8 @@ public class ConfigAutoFetch {
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      ScheduledExecutorService scheduledExecutorService) {
+      ScheduledExecutorService scheduledExecutorService,
+      ConfigSharedPrefsClient sharedPrefsClient) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
@@ -71,6 +78,19 @@ public class ConfigAutoFetch {
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
     this.isInBackground = false;
+    this.sharedPrefsClient = sharedPrefsClient;
+    this.clock = DefaultClock.getInstance();
+  }
+
+  // Increase the backoff duration with a new end time based on Retry Interval
+  private synchronized void updateBackoffMetadataWithRetryInterval(
+      int realtimeRetryIntervalInSeconds) {
+    Date currentTime = new Date(clock.currentTimeMillis());
+    long backoffDurationInMillis = realtimeRetryIntervalInSeconds * 1000L;
+    Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
+
+    // Persist the new values to disk-backed metadata.
+    sharedPrefsClient.setRealtimeBackoffEndTime(backoffEndTime);
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -189,6 +209,15 @@ public class ConfigAutoFetch {
             if (targetTemplateVersion > oldTemplateVersion) {
               autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
             }
+          }
+
+          // This field in the response indicates that the realtime request should retry after the
+          // specified interval to establish a long-lived connection. This interval extends the
+          // backoff duration without affecting the number of retries, so it will not enter an
+          // exponential backoff state.
+          if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
+            int realtimeRetryIntervalInSeconds = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
+            updateBackoffMetadataWithRetryInterval(realtimeRetryIntervalInSeconds);
           }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this

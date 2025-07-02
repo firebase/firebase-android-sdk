@@ -22,7 +22,7 @@ plugins {
   // The versions shown here were the latest versions as of June 10, 2025.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
   // in general, match the version of kotlin("android").
-  id("com.android.application") version "8.10.1"
+  id("com.android.application") version "8.11.0"
   id("com.google.gms.google-services") version "4.4.2"
   val kotlinVersion = "2.1.10"
   kotlin("android") version kotlinVersion
@@ -31,6 +31,8 @@ plugins {
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
   id("com.diffplug.spotless") version "7.0.0.BETA4"
+
+  id("org.jetbrains.dokka") version "2.0.0"
 }
 
 dependencies {
@@ -53,6 +55,13 @@ dependencies {
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
   implementation("io.kotest:kotest-property:5.9.1")
   implementation("io.kotest.extensions:kotest-property-arbs:2.1.2")
+}
+
+dokka {
+  moduleName.set("Data Connect Demo")
+  dokkaSourceSets.main {
+    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+  }
 }
 
 // The remaining code in this file can be omitted from customer facing
