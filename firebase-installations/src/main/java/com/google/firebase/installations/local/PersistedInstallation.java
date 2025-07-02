@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations.local;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import java.io.ByteArrayOutputStream;
@@ -33,6 +34,7 @@ import org.json.JSONObject;
 public class PersistedInstallation {
   private File dataFile;
   @NonNull private final FirebaseApp firebaseApp;
+  private static final String TAG = "PersistedInstallation";
 
   // Registration Status of each persisted fid entry
   // NOTE: never change the ordinal of the enum values because the enum values are written to
@@ -81,7 +83,6 @@ public class PersistedInstallation {
   }
 
   private File getDataFile() {
-
     if (dataFile == null) {
       synchronized (this) {
         if (dataFile == null) {
@@ -89,9 +90,34 @@ public class PersistedInstallation {
           // context and same dir path
           dataFile =
               new File(
-                  firebaseApp.getApplicationContext().getFilesDir(),
+                  firebaseApp.getApplicationContext().getNoBackupFilesDir(),
                   SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
         }
+      }
+    } else {
+      try {
+        String noBackUpFilePath =
+            firebaseApp.getApplicationContext().getNoBackupFilesDir().getCanonicalPath();
+        if (dataFile.getCanonicalPath().startsWith(noBackUpFilePath)) {
+          return dataFile;
+        } else {
+          // Move the file to the no back up directory.
+          File dataFileNonBackup =
+              new File(
+                  firebaseApp.getApplicationContext().getNoBackupFilesDir(),
+                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+
+          if (!dataFile.renameTo(dataFileNonBackup)) {
+            Log.e(
+                TAG,
+                "Unable to move the file from back up to non back up directory",
+                new IOException("Unable to move the file from back up to non back up directory"));
+          } else {
+            dataFile = dataFileNonBackup;
+          }
+        }
+      } catch (IOException e) {
+        Log.e(TAG, "Error copying data file to non back up directory", e);
       }
     }
 
