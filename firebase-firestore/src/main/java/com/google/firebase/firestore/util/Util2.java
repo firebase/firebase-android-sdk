@@ -89,7 +89,6 @@ public class Util2 {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    Log.i("zzyzx", "compareUtf8Strings(left=" + left + ", right=" + right + ")");
     ByteString leftBytes = ByteString.copyFromUtf8(left);
     ByteString rightBytes = ByteString.copyFromUtf8(right);
     return compareByteStrings(leftBytes, rightBytes);
