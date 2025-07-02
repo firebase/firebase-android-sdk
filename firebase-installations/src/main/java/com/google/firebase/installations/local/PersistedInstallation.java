@@ -92,33 +92,21 @@ public class PersistedInstallation {
               new File(
                   firebaseApp.getApplicationContext().getNoBackupFilesDir(),
                   SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
-        }
-      }
-    } else {
-      synchronized (this) {
-        try {
-          String noBackUpFilePath =
-              firebaseApp.getApplicationContext().getNoBackupFilesDir().getCanonicalPath();
-          if (dataFile.getCanonicalPath().startsWith(noBackUpFilePath)) {
+          if (dataFile.exists()) {
             return dataFile;
-          } else {
-            // Move the file to the no back up directory.
-            File dataFileNonBackup =
-                new File(
-                    firebaseApp.getApplicationContext().getNoBackupFilesDir(),
-                    SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
-
-            if (!dataFile.renameTo(dataFileNonBackup)) {
+          }
+          File dataFileBackup =
+              new File(
+                  firebaseApp.getApplicationContext().getFilesDir(),
+                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+          if (dataFileBackup.exists()) {
+            if (!dataFileBackup.renameTo(dataFile)) {
               Log.e(
                   TAG,
                   "Unable to move the file from back up to non back up directory",
                   new IOException("Unable to move the file from back up to non back up directory"));
-            } else {
-              dataFile = dataFileNonBackup;
             }
           }
-        } catch (IOException e) {
-          Log.e(TAG, "Error copying data file to non back up directory", e);
         }
       }
     }
