@@ -54,7 +54,7 @@ class GenerateTutorialBundleTests : FunSpec() {
             "com.google.firebase:firebase-analytics:1.2.4",
             "com.google.firebase:firebase-crashlytics:12.0.0",
             "com.google.firebase:firebase-perf:10.2.3",
-            "com.google.firebase:firebase-vertexai:9.2.3",
+            "com.google.firebase:firebase-ai:9.2.3",
           ),
         gradlePlugins =
           listOf(
@@ -82,8 +82,8 @@ class GenerateTutorialBundleTests : FunSpec() {
           <!ENTITY crashlytics-dependency "com.google.firebase:firebase-crashlytics:12.0.0">
           <!-- Performance Monitoring -->
           <!ENTITY perf-dependency "com.google.firebase:firebase-perf:10.2.3">
-          <!-- Vertex AI in Firebase -->
-          <!ENTITY vertex-dependency "com.google.firebase:firebase-vertexai:9.2.3">
+          <!-- Firebase AI Logic -->
+          <!ENTITY firebase-ai-dependency "com.google.firebase:firebase-ai:9.2.3">
 
           <!-- Firebase Gradle plugins -->
           <!-- App Distribution -->
