@@ -40,19 +40,7 @@ public final class Util4 {
     } else if (rightChar < 0x80) {
       return -1;
     } if (leftChar < 0x7FF && rightChar < 0x7FF) {
-      {
-        int leftByte1 = utf8Encoded2ByteEncodingByte1(leftChar);
-        int rightByte1 = utf8Encoded2ByteEncodingByte1(rightChar);
-        int byte1Compare = Integer.compare(leftByte1, rightByte1);
-        if (byte1Compare != 0) {
-          return byte1Compare;
-        }
-      }
-      {
-        int leftByte2 = utf8Encoded2ByteEncodingByte2(leftChar);
-        int rightByte2 = utf8Encoded2ByteEncodingByte2(rightChar);
-        return Integer.compare(leftByte2, rightByte2);
-      }
+      return compare2ByteUtf8Encoding(leftChar, rightChar);
     } else if (leftChar < 0x7FF) {
       return 1;
     } else if (rightChar < 0x7FF) {
@@ -64,48 +52,116 @@ public final class Util4 {
     } else if (Character.isSurrogate(rightChar)) {
       return -1;
     } else {
-      {
-        int leftByte1 = utf8Encoded3ByteEncodingByte1(leftChar);
-        int rightByte1 = utf8Encoded3ByteEncodingByte1(rightChar);
-        int byte1Compare = Integer.compare(leftByte1, rightByte1);
-        if (byte1Compare != 0) {
-          return byte1Compare;
-        }
-      }
-      {
-        int leftByte2 = utf8Encoded3ByteEncodingByte2(leftChar);
-        int rightByte2 = utf8Encoded3ByteEncodingByte2(rightChar);
-        int byte2Compare = Integer.compare(leftByte2, rightByte2);
-        if (byte2Compare != 0) {
-          return byte2Compare;
-        }
-      }
-      {
-        int leftByte3 = utf8Encoded3ByteEncodingByte3(leftChar);
-        int rightByte3 = utf8Encoded3ByteEncodingByte3(rightChar);
-        return Integer.compare(leftByte3, rightByte3);
-      }
+      return compare3ByteUtf8Encoding(leftChar, rightChar);
     }
   }
 
-  private static int utf8Encoded2ByteEncodingByte1(int c) {
-    return 0xC0 | (c >> 6);
+  private static int compare2ByteUtf8Encoding(int leftChar, int rightChar) {
+    {
+      int leftByte1 = utf8Encoded2ByteEncodingByte1(leftChar);
+      int rightByte1 = utf8Encoded2ByteEncodingByte1(rightChar);
+      int byte1Compare = Integer.compare(leftByte1, rightByte1);
+      if (byte1Compare != 0) {
+        return byte1Compare;
+      }
+    }
+    {
+      int leftByte2 = utf8Encoded2ByteEncodingByte2(leftChar);
+      int rightByte2 = utf8Encoded2ByteEncodingByte2(rightChar);
+      return Integer.compare(leftByte2, rightByte2);
+    }
   }
 
-  private static int utf8Encoded2ByteEncodingByte2(int c) {
-    return 0x80 | (c & 0x3F);
+  private static int utf8Encoded2ByteEncodingByte1(int codepoint) {
+    return 0xC0 | (codepoint >> 6);
   }
 
-  private static int utf8Encoded3ByteEncodingByte1(int c) {
-    return 0xE0 | (c >> 12);
+  private static int utf8Encoded2ByteEncodingByte2(int codepoint) {
+    return 0x80 | (codepoint & 0x3F);
   }
 
-  private static int utf8Encoded3ByteEncodingByte2(int c) {
-    return 0x80 | ((c >> 6) & 0x3F);
+  private static int compare3ByteUtf8Encoding(int leftChar, int rightChar) {
+    {
+      int leftByte1 = utf8Encoded3ByteEncodingByte1(leftChar);
+      int rightByte1 = utf8Encoded3ByteEncodingByte1(rightChar);
+      int byte1Compare = Integer.compare(leftByte1, rightByte1);
+      if (byte1Compare != 0) {
+        return byte1Compare;
+      }
+    }
+    {
+      int leftByte2 = utf8Encoded3ByteEncodingByte2(leftChar);
+      int rightByte2 = utf8Encoded3ByteEncodingByte2(rightChar);
+      int byte2Compare = Integer.compare(leftByte2, rightByte2);
+      if (byte2Compare != 0) {
+        return byte2Compare;
+      }
+    }
+    {
+      int leftByte3 = utf8Encoded3ByteEncodingByte3(leftChar);
+      int rightByte3 = utf8Encoded3ByteEncodingByte3(rightChar);
+      return Integer.compare(leftByte3, rightByte3);
+    }
   }
 
-  private static int utf8Encoded3ByteEncodingByte3(int c) {
-    return 0x80 | (c & 0x3F);
+  private static int utf8Encoded3ByteEncodingByte1(int codepoint) {
+    return 0xE0 | (codepoint >> 12);
+  }
+
+  private static int utf8Encoded3ByteEncodingByte2(int codepoint) {
+    return 0x80 | ((codepoint >> 6) & 0x3F);
+  }
+
+  private static int utf8Encoded3ByteEncodingByte3(int codepoint) {
+    return utf8Encoded2ByteEncodingByte2(codepoint);
+  }
+
+  private static int compare4ByteUtf8Encoding(int leftChar, int rightChar) {
+    {
+      int leftByte1 = utf8Encoded4ByteEncodingByte1(leftChar);
+      int rightByte1 = utf8Encoded4ByteEncodingByte1(rightChar);
+      int byte1Compare = Integer.compare(leftByte1, rightByte1);
+      if (byte1Compare != 0) {
+        return byte1Compare;
+      }
+    }
+    {
+      int leftByte2 = utf8Encoded4ByteEncodingByte2(leftChar);
+      int rightByte2 = utf8Encoded4ByteEncodingByte2(rightChar);
+      int byte2Compare = Integer.compare(leftByte2, rightByte2);
+      if (byte2Compare != 0) {
+        return byte2Compare;
+      }
+    }
+    {
+      int leftByte3 = utf8Encoded4ByteEncodingByte3(leftChar);
+      int rightByte3 = utf8Encoded4ByteEncodingByte3(rightChar);
+      int byte3Compare = Integer.compare(leftByte3, rightByte3);
+      if (byte3Compare != 0) {
+        return byte3Compare;
+      }
+    }
+    {
+      int leftByte4 = utf8Encoded4ByteEncodingByte4(leftChar);
+      int rightByte4 = utf8Encoded4ByteEncodingByte4(rightChar);
+      return Integer.compare(leftByte4, rightByte4);
+    }
+  }
+
+  private static int utf8Encoded4ByteEncodingByte1(int codepoint) {
+    return 0xF0 | (codepoint >> 18);
+  }
+
+  private static int utf8Encoded4ByteEncodingByte2(int codepoint) {
+    return 0x80 | ((codepoint >> 12) & 0x3F);
+  }
+
+  private static int utf8Encoded4ByteEncodingByte3(int codepoint) {
+    return utf8Encoded3ByteEncodingByte2(codepoint);
+  }
+
+  private static int utf8Encoded4ByteEncodingByte4(int codepoint) {
+    return utf8Encoded2ByteEncodingByte2(codepoint);
   }
 
   private static int compareUtf8Surrogates(String left, String right, int index) {
@@ -114,11 +170,45 @@ public final class Util4 {
 
     if (BuildConfig.DEBUG) {
       if (!(Character.isSurrogate(leftChar) && Character.isSurrogate(rightChar))) {
-        throw new IllegalArgumentException("left.charAt(" + index + ")==" + ((int) leftChar));
+        throw new IllegalArgumentException("both characters should have been surrogates, but left.charAt(" + index + ")==" + ((int) leftChar) + " isSurrogate=" + Character.isSurrogate(leftChar) + " and right.charAt(" + index + ")==" + ((int) rightChar) + " isSurrogate=" + Character.isSurrogate(rightChar));
       }
     }
 
-    throw new UnsupportedOperationException("not implemented [fcbdszqpr9]");
+    final SurrogateType leftSurrogateType = SurrogateType.atIndex(left, index);
+    final SurrogateType rightSurrogateType = SurrogateType.atIndex(left, index);
+
+    // Valid case: A high surrogate is followed by a low surrogate.
+    if (leftSurrogateType != SurrogateType.INVALID && leftSurrogateType == rightSurrogateType) {
+      int codePointIndex = leftSurrogateType == SurrogateType.START ? index : index - 1;
+      int leftCodePoint = Character.codePointAt(left, codePointIndex);
+      int rightCodePoint = Character.codePointAt(right, codePointIndex);
+      return compare4ByteUtf8Encoding(leftCodePoint, rightCodePoint);
+
+    // Invalid cases: A high surrogate is NOT followed by a low surrogate.
+    // This is technically invalid; however, to avoid throwing an exception that would likely crash
+    // the Firestore SDK, just produce a consistent relative ordering.
+    } else if (leftHighSurrogateIndex >= 0) {
+
+    } else if (rightHighSurrogateIndex >= 0) {
+
+    } else {
+
+    }
+  }
+
+  private enum SurrogateType {
+    START,
+    END,
+    INVALID;
+
+    static SurrogateType atIndex(String s, int index) {
+      if (index + 1 < s.length() && Character.isHighSurrogate(s.charAt(index)) && Character.isLowSurrogate(s.charAt(index +1))) {
+        return START;
+      } else if (index - 1 > 0 && Character.isHighSurrogate(s.charAt(index -1)) && Character.isLowSurrogate(s.charAt(index))) {
+        return END;
+      }
+      return INVALID;
+    }
   }
 
   private static int indexOfFirstDifferingChar(String left, String right) {
