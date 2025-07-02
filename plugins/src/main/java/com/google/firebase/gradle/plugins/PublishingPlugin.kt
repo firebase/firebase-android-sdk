@@ -812,7 +812,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-perf-ktx",
         "com.google.firebase:firebase-storage",
         "com.google.firebase:firebase-storage-ktx",
-         "com.google.firebase:firebase-vertexai",
+        "com.google.firebase:firebase-vertexai",
         "com.google.firebase:firebase-ai",
       )
 
