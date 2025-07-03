@@ -249,15 +249,16 @@ public class ConfigAutoFetch {
 
     // Randomize fetch to occur between 0 - 4 seconds.
     int timeTillFetch = random.nextInt(4);
-    ScheduledFuture<?> unused = scheduledExecutorService.schedule(
-        new Runnable() {
-          @Override
-          public void run() {
-            Task<Void> unused = fetchLatestConfig(remainingAttempts, targetVersion);
-          }
-        },
-        timeTillFetch,
-        TimeUnit.SECONDS);
+    ScheduledFuture<?> unused =
+        scheduledExecutorService.schedule(
+            new Runnable() {
+              @Override
+              public void run() {
+                Task<Void> unused = fetchLatestConfig(remainingAttempts, targetVersion);
+              }
+            },
+            timeTillFetch,
+            TimeUnit.SECONDS);
   }
 
   @VisibleForTesting

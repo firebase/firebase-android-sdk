@@ -382,15 +382,16 @@ public class ConfigRealtimeHttpClient {
 
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
-      ScheduledFuture<?> unused = scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              beginRealtimeHttpStream();
-            }
-          },
-          retryMilliseconds,
-          TimeUnit.MILLISECONDS);
+      ScheduledFuture<?> unused =
+          scheduledExecutorService.schedule(
+              new Runnable() {
+                @Override
+                public void run() {
+                  beginRealtimeHttpStream();
+                }
+              },
+              retryMilliseconds,
+              TimeUnit.MILLISECONDS);
     } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
