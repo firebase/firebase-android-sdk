@@ -26,7 +26,6 @@ in your app:
 
   * [`firebase-common`](ktx/common.md)
   * [`firebase-crashlytics`](ktx/crashlytics.md)
-  * [`firebase-dynamic-links`](ktx/dynamic-links.md)
   * [`firebase-firestore`](ktx/firestore.md)
   * [`firebase-functions`](ktx/functions.md)
   * [`firebase-inappmessaging`](ktx/inappmessaging.md)
