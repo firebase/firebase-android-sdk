@@ -94,21 +94,25 @@ public class Util {
       return 0;
     }
 
-    // Find the first differing characters in the strings and, if found, use them to determine the
-    // overall comparison result. This simple and efficient formula serendipitously works because
-    // of the properties of UTF-8 and UTF-16 encodings; that is, if both UTF-16 characters are
-    // surrogates or both are non-surrogates then the relative ordering of those individual
-    // characters is the same as the relative ordering of the lexicographical ordering of the UTF-8
-    // encoding of those characters (or character pairs, in the case of surrogate pairs). Also, if
-    // one is a surrogate and the other is not then it is assumed to be the high surrogate of a
-    // surrogate pair (otherwise it would not constitute a valid surrogate pair) and, therefore,
-    // would necessarily be ordered _after_ the non-surrogate because all surrogate pairs represent
-    // characters with code points above 0xFFFF and such characters produce a 4-byte UTF-8 encoding
-    // whose first byte is 11110xxx, and since the other character is a non-surrogate it represents
-    // a character with a code point less than or equal to 0xFFFF and produces a 1-byte, 2-byte, or
-    // 3-byte UTF-8 encoding whose first (or only) byte is 0xxxxxxx, 110xxxxx, or 1110xxxx,
-    // respectively, which is always less than 11110xxx when interpreted as a 2's-complement
-    // unsigned integer.
+    // Find the first differing character (a.k.a. "UTF-16 code unit") in the two strings and,
+    // if found, use that character to determine the relative ordering of the two strings as a
+    // whole. Comparing UTF-16 strings in UTF-8 byte order can be done simply and efficiently by
+    // comparing the UTF-16 code units (chars). This serendipitously works because of the way UTF-8
+    // and UTF-16 happen to represent Unicode code points.
+    //
+    // After finding the first pair of differing characters, there are two cases:
+    //
+    // Case 1: Both characters are non-surrogates (code points less than or equal to 0xFFFF) or
+    // both are surrogates from a surrogate pair (that collectively represent code points greater
+    // than 0xFFFF). In this case their numeric order as UTF-16 code units is the same as the
+    // lexicographical order of their corresponding UTF-8 byte sequences. A direct comparison is
+    // sufficient.
+    //
+    // Case 2: One character is a surrogate and the other is not. In this case the surrogate-
+    // containing string is always ordered after the non-surrogate. This is because surrogates are
+    // used to represent code points greater than 0xFFFF which have 4-byte UTF-8 representations
+    // and are lexicographically greater than the 1, 2, or 3-byte representations of code points
+    // less than or equal to 0xFFFF.
     final int length = Math.min(left.length(), right.length());
     for (int i = 0; i < length; i++) {
       final char leftChar = left.charAt(i);
