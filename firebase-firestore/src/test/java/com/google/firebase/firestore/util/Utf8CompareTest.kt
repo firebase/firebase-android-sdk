@@ -22,7 +22,7 @@ class Utf8CompareTest {
   @Test
   fun test() = runTest {
     val testCaseArb = Arb.utf8CompareTestCase()
-    checkAll(100, testCaseArb) { testCase ->
+    checkAll(100000, testCaseArb) { testCase ->
       val prefix = testCase.prefix.stringValue()
       val mid1 = testCase.mid1.stringValue()
       val mid2 = testCase.mid2.stringValue()
@@ -39,10 +39,13 @@ class Utf8CompareTest {
 
       assertSoftly {
         withClue("string1 to itself") {
-          Utf8Compare.compareUtf8Strings(string1, string1.copy()) shouldBe 0
+          Utf8Compare.compareUtf8Strings(string1, string1) shouldBe 0
         }
-        withClue("string2 to itself") {
-          Utf8Compare.compareUtf8Strings(string2, string2.copy()) shouldBe 0
+        withClue("string1 with suffix") {
+          Utf8Compare.compareUtf8Strings(string1 + "a", string1 + "b") shouldBe -1
+        }
+        withClue("string2 with suffix") {
+          Utf8Compare.compareUtf8Strings(string2 + "b", string2 + "a") shouldBe 1
         }
         withClue("string1 to string2") {
           Utf8Compare.compareUtf8Strings(string1, string2) shouldBe expected
@@ -112,12 +115,5 @@ class Utf8CompareTest {
     val Arb.Companion.highSurrogateCodePoint: Arb<Int> get() = Arb.int(HIGH_SURROGATE_CODE_POINTS)
     val Arb.Companion.lowSurrogateCodePoint: Arb<Int> get() = Arb.int(LOW_SURROGATE_CODE_POINTS)
 
-
-    fun String.copy(): String {
-      val clone = toCharArray().clone().joinToString("")
-      clone shouldBe this
-      clone shouldNotBeSameInstanceAs this
-      return clone
-    }
   }
 }
