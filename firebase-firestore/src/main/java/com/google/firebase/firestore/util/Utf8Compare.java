@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// package com.google.firebase.firestore.util;
 
 package com.google.firebase.firestore.util;
 
@@ -87,11 +86,11 @@ public final class Utf8Compare {
     } else if (rightChar < 0x80) {
       return 1;
     }
-    if (leftChar < 0x7FF && rightChar < 0x7FF) {
+    if (leftChar < 0x800 && rightChar < 0x800) {
       return compare2ByteUtf8Encoding(leftChar, rightChar);
-    } else if (leftChar < 0x7FF) {
+    } else if (leftChar < 0x800) {
       return -1;
-    } else if (rightChar < 0x7FF) {
+    } else if (rightChar < 0x800) {
       return 1;
     }
     if (isSurrogate(leftChar) && isSurrogate((rightChar))) {
