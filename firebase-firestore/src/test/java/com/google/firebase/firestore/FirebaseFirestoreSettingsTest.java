@@ -62,7 +62,7 @@ public class FirebaseFirestoreSettingsTest {
     assertEquals(settings2.getHost(), "a.b.c");
     assertEquals(settings2.isSslEnabled(), false);
     assertEquals(settings2.isPersistenceEnabled(), false);
-    assertEquals(settings2.getCacheSizeBytes(), FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED);
+    assertEquals(settings2.getCacheSizeBytes(), FirebaseFirestoreSettings.DEFAULT_CACHE_SIZE_BYTES);
   }
 
   @Test
