@@ -22,6 +22,7 @@ plugins {
   alias(libs.plugins.protobuf) apply false
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
+  alias(libs.plugins.kapt) apply false
   id("PublishingPlugin")
   id("firebase-ci")
   id("smoke-tests")
