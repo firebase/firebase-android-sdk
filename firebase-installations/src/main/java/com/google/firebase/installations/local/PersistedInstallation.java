@@ -95,6 +95,8 @@ public class PersistedInstallation {
           if (dataFile.exists()) {
             return dataFile;
           }
+          // Data associated with FID shouldn't be stored in backup directory. Hence if the FID data
+          // is present in the backup directory you move it to the non backup directory.
           File dataFileBackup =
               new File(
                   firebaseApp.getApplicationContext().getFilesDir(),
@@ -105,6 +107,7 @@ public class PersistedInstallation {
                   TAG,
                   "Unable to move the file from back up to non back up directory",
                   new IOException("Unable to move the file from back up to non back up directory"));
+              return dataFileBackup;
             }
           }
         }
