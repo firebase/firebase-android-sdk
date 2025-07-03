@@ -103,7 +103,7 @@ public class UtilTest {
       final String s1 = stringPair.s1;
       final String s2 = stringPair.s2;
 
-      int actual = Util.compareUtf8Strings(s1, s2);
+      int actual = Utf8Compare.compareUtf8Strings(s1, s2);
 
       ByteString b1 = ByteString.copyFromUtf8(s1);
       ByteString b2 = ByteString.copyFromUtf8(s2);

@@ -25,13 +25,13 @@ class Utf8PerformanceUnitTest {
       val startTimeNs = System.nanoTime()
 
       if (list === originalTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsOriginal(s1, s2) }
+        doTest { s1, s2 -> s1.compareTo(s2) }
       } else if (list === slowTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsSlow(s1, s2) }
+        doTest { s1, s2 -> Util2.compareUtf8Strings(s1, s2) }
       } else if (list === newTimes) {
-        doTest { s1, s2 -> Util.compareUtf8Strings(s1, s2) }
+        doTest { s1, s2 -> Util3.compareUtf8Strings(s1, s2) }
       } else if (list === denverTimes) {
-        doTest { s1, s2 -> Util.compareUtf8StringsDenver(s1, s2) }
+        doTest { s1, s2 -> Utf8Compare.compareUtf8Strings(s1, s2) }
       } else {
         throw Exception("unknown list: $list [hgxsq8tnwd]")
       }
