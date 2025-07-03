@@ -94,18 +94,29 @@ public class Util {
       return 0;
     }
 
-    // Find the first differing characters in the strings and, if found, use it to determine the
-    // overall comparison result.
+    // Find the first differing characters in the strings and, if found, use them to determine the
+    // overall comparison result. This simple and efficient formula serendipitously works because
+    // of the properties of UTF-8 and UTF-16 encodings; that is, if both UTF-16 characters are
+    // surrogates or both are non-surrogates then the relative ordering of those individual
+    // characters is the same as the relative ordering of the lexicographical ordering of the UTF-8
+    // encoding of those characters (or character pairs, in the case of surrogate pairs). Also, if
+    // one is a surrogate and the other is not then it is assumed to be the high surrogate of a
+    // surrogate pair (otherwise it would not constitute a valid surrogate pair) and, therefore,
+    // would necessarily be ordered _after_ the non-surrogate because all surrogate pairs represent
+    // characters with code points above 0xFFFF and such characters produce a 4-byte UTF-8 encoding
+    // whose first byte is 11110xxx, and since the other character is a non-surrogate it represents
+    // a character with a code point less than or equal to 0xFFFF and produces a 1-byte, 2-byte, or
+    // 3-byte UTF-8 encoding whose first (or only) byte is 0xxxxxxx, 110xxxxx, or 1110xxxx,
+    // respectively, which is always less than 11110xxx when interpreted as a 2's-complement
+    // unsigned integer.
     final int length = Math.min(left.length(), right.length());
     for (int i = 0; i < length; i++) {
       final char leftChar = left.charAt(i);
       final char rightChar = right.charAt(i);
       if (leftChar != rightChar) {
-        boolean leftIsSurrogate = isSurrogate(leftChar);
-        boolean rightIsSurrogate = isSurrogate(rightChar);
-        return (leftIsSurrogate == rightIsSurrogate)
+        return (isSurrogate(leftChar) == isSurrogate(rightChar))
             ? Util.compareIntegers(leftChar, rightChar)
-            : leftIsSurrogate ? 1 : -1;
+            : isSurrogate(leftChar) ? 1 : -1;
       }
     }
 
