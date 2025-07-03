@@ -33,6 +33,7 @@ import kotlinx.serialization.json.JsonNames
  * @property safetyRatings A list of [SafetyRating]s describing the generated content.
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exist.
+ * @property groundingMetadata Metadata returned to the client when grounding is enabled.
  */
 public class Candidate
 internal constructor(
@@ -297,17 +298,18 @@ public class FinishReason private constructor(public val name: String, public va
  * Metadata returned to the client when grounding is enabled.
  *
  * If using Grounding with Google Search, you are required to comply with the
- * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
- * Search".
+ * "Grounding with Google Search" usage requirements for your chosen API provider: [Gemini Developer
+ * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or Vertex AI Gemini API
+ * (see [Service Terms](https://cloud.google.com/terms/service-terms) section within the Service
+ * Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
  * @property searchEntryPoint Google search entry point for web searches. This contains an HTML/CSS
  * snippet that **must** be embedded in an app to display a Google Search Entry point for follow-up
- * web searches related to the model's "Grounded Response". To ensure proper rendering, it's
- * recommended to display this content within a `WebView`.
- * @property groundingChunks The list of [GroundingChunk] objects. Each chunk represents a piece of
- * retrieved content (e.g. from a web page) that the model used to ground its response.
+ * web searches related to the model's "Grounded Response".
+ * @property groundingChunks The list of [GroundingChunk] classes. Each chunk represents a piece of
+ * retrieved content that the model used to ground its response.
  * @property groundingSupports The list of [GroundingSupport] objects. Each object details how
  * specific segments of the model's response are supported by the `groundingChunks`.
  */
@@ -345,13 +347,8 @@ public class GroundingMetadata(
 /**
  * Represents a Google Search entry point.
  *
- * When using this API, you are required to comply with the
- * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
- * Search".
- *
- * @property renderedContent An HTML/CSS snippet that can be embedded in your app. The snippet is
- * designed to avoid undesired interaction with the rest of the page's CSS. To ensure proper
- * rendering, it's recommended to display this content within a `WebView`.
+ * @property renderedContent An HTML/CSS snippet that can be embedded in your app.
+ * To ensure proper rendering, it's recommended to display this content within a `WebView`.
  * @property sdkBlob A blob of data for the client SDK to render the search entry point.
  */
 public class SearchEntryPoint(
@@ -378,10 +375,6 @@ public class SearchEntryPoint(
  * Represents a chunk of retrieved data that supports a claim in the model's response. This is part
  * of the grounding information provided when grounding is enabled.
  *
- * When using this API, you are required to comply with the
- * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
- * Search".
- *
  * @property web Contains details if the grounding chunk is from a web source.
  */
 public class GroundingChunk(
@@ -398,14 +391,10 @@ public class GroundingChunk(
 /**
  * A grounding chunk from the web.
  *
- * When using this API, you are required to comply with the
- * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
- * Search".
- *
  * @property uri The URI of the retrieved web page.
  * @property title The title of the retrieved web page.
- * @property domain The domain of the original URI from which the content was retrieved (e.g.,
- * `example.com`). This is only populated when using the Vertex AI Gemini API.
+ * @property domain The domain of the original URI from which the content was retrieved.
+ * This is only populated when using the Vertex AI Gemini API.
  */
 public class WebGroundingChunk(
   public val uri: String?,
@@ -422,15 +411,13 @@ public class WebGroundingChunk(
  * Provides information about how a specific segment of the model's response is supported by the
  * retrieved grounding chunks.
  *
- * When using this API, you are required to comply with the
- * [Service Specific Terms](https://cloud.google.com/terms/service-terms) for "Grounding with Google
- * Search".
- *
  * @property segment Specifies the segment of the model's response content that this grounding
  * support pertains to.
- * @property groundingChunkIndices A list of indices that refer to specific [GroundingChunk] objects
+ * @property groundingChunkIndices A list of indices that refer to specific [GroundingChunk] classes
  * within the [GroundingMetadata.groundingChunks] array. These referenced chunks are the sources
- * that support the claim made in the associated `segment` of the response.
+ * that support the claim made in the associated `segment` of the response. For example, an array
+ * `[1, 3, 4]` means that `groundingChunks[1]`, `groundingChunks[3]`, `groundingChunks[4]` are the
+ * retrieved content supporting this part of the response.
  */
 public class GroundingSupport(
   public val segment: Segment,
@@ -473,13 +460,15 @@ public class GroundingAttribution(
  * Represents a specific segment within a [Content] object, often used to pinpoint the exact
  * location of text or data that grounding information refers to.
  *
- * @property startIndex The zero-based start index of the segment within the specified [Part],
- * measured in UTF-8 bytes. This offset is inclusive.
- * @property endIndex The zero-based end index of the segment within the specified [Part], measured
- * in UTF-8 bytes. This offset is exclusive.
  * @property partIndex The zero-based index of the [Part] object within the `parts` array of its
  * parent [Content] object. This identifies which part of the content the segment belongs to.
- * @property text The text content of the segment.
+ * @property startIndex The zero-based start index of the segment within the specified [Part],
+ * measured in UTF-8 bytes. This offset is inclusive, starting from 0 at the beginning of the part's
+ * content.
+ * @property endIndex The zero-based end index of the segment within the specified [Part], measured
+ * in UTF-8 bytes. This offset is exclusive, meaning the character at this index is not included in
+ * the segment.
+ * @property text The text corresponding to the segment from the response.
  */
 public class Segment(
   public val startIndex: Int,
