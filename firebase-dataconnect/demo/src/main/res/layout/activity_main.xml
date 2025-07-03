@@ -44,32 +44,63 @@ limitations under the License.
         android:paddingBottom="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         >
-            <TextView
-                android:id="@+id/configText"
+            <Button
+                android:id="@+id/insertItemButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:text="Insert Item"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 />
-            <TextView
-                android:id="@+id/progressText"
+
+            <Button
+                android:id="@+id/getItemButton"
                 android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_margin="8dp"
-                app:layout_constraintTop_toBottomOf="@id/configText"
-                app:layout_constraintBottom_toTopOf="@+id/startTestButton"
+                android:layout_height="wrap_content"
+                android:text="Get Item"
+                app:layout_constraintTop_toBottomOf="@id/insertItemButton"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 />
+
             <Button
-                android:id="@+id/startTestButton"
+                android:id="@+id/deleteItemButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Delete Item"
+                app:layout_constraintTop_toBottomOf="@id/getItemButton"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                />
+
+            <TextView
+                android:id="@+id/progressText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Start Test"
+                app:layout_constraintTop_toBottomOf="@id/deleteItemButton"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                />
+
+            <CheckBox
+                android:id="@+id/debugLoggingCheckBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Data Connect Debug Logging"
                 app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                />
+
+            <CheckBox
+                android:id="@+id/useEmulatorCheckBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Use Data Connect Emulator"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@id/debugLoggingCheckBox"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 />

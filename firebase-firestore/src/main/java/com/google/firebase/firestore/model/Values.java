@@ -20,11 +20,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.util.Utf8Compare;
 import com.google.firebase.firestore.util.Util;
-import com.google.firebase.firestore.util.Util2;
-import com.google.firebase.firestore.util.Util3;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
 import com.google.firestore.v1.MapValue;
@@ -234,22 +230,7 @@ public class Values {
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
       case TYPE_ORDER_STRING:
-        {
-          final int compareUtf8Version = FirebaseFirestore.compareUtf8Version.get();
-          switch (compareUtf8Version) {
-            case 1:
-              return left.getStringValue().compareTo(right.getStringValue());
-            case 2:
-              return Util2.compareUtf8Strings(left.getStringValue(), right.getStringValue());
-            case 3:
-              return Util3.compareUtf8Strings(left.getStringValue(), right.getStringValue());
-            case 4:
-              return Utf8Compare.compareUtf8Strings(left.getStringValue(), right.getStringValue());
-            default:
-              throw new UnsupportedOperationException(
-                  "invalid compareUtf8Version: " + compareUtf8Version + " [xqdynyatxv]");
-          }
-        }
+        return Util.compareUtf8Strings(left.getStringValue(), right.getStringValue());
       case TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case TYPE_ORDER_REFERENCE:
@@ -368,27 +349,7 @@ public class Values {
     while (iterator1.hasNext() && iterator2.hasNext()) {
       Map.Entry<String, Value> entry1 = iterator1.next();
       Map.Entry<String, Value> entry2 = iterator2.next();
-
-      final int compareUtf8Version = FirebaseFirestore.compareUtf8Version.get();
-      final int keyCompare;
-      switch (compareUtf8Version) {
-        case 1:
-          keyCompare = entry1.getKey().compareTo(entry2.getKey());
-          break;
-        case 2:
-          keyCompare = Util2.compareUtf8Strings(entry1.getKey(), entry2.getKey());
-          break;
-        case 3:
-          keyCompare = Util3.compareUtf8Strings(entry1.getKey(), entry2.getKey());
-          break;
-        case 4:
-          keyCompare = Utf8Compare.compareUtf8Strings(entry1.getKey(), entry2.getKey());
-          break;
-        default:
-          throw new UnsupportedOperationException(
-              "invalid compareUtf8Version: " + compareUtf8Version + " [sv7eptgvyp]");
-      }
-
+      int keyCompare = Util.compareUtf8Strings(entry1.getKey(), entry2.getKey());
       if (keyCompare != 0) {
         return keyCompare;
       }

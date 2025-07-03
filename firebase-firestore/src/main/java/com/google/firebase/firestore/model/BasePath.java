@@ -17,11 +17,7 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.util.Utf8Compare;
 import com.google.firebase.firestore.util.Util;
-import com.google.firebase.firestore.util.Util2;
-import com.google.firebase.firestore.util.Util3;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +26,6 @@ import java.util.List;
  * sequence of string segments.
  */
 public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
-
   final List<String> segments;
 
   BasePath(List<String> segments) {
@@ -119,20 +114,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     } else if (isLhsNumeric && isRhsNumeric) { // both numeric
       return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
     } else { // both string
-      final int compareUtf8Version = FirebaseFirestore.compareUtf8Version.get();
-      switch (compareUtf8Version) {
-        case 1:
-          return lhs.compareTo(rhs);
-        case 2:
-          return Util2.compareUtf8Strings(lhs, rhs);
-        case 3:
-          return Util3.compareUtf8Strings(lhs, rhs);
-        case 4:
-          return Utf8Compare.compareUtf8Strings(lhs, rhs);
-        default:
-          throw new UnsupportedOperationException(
-              "invalid compareUtf8Version: " + compareUtf8Version + " [v5876vbhdn]");
-      }
+      return Util.compareUtf8Strings(lhs, rhs);
     }
   }
 
