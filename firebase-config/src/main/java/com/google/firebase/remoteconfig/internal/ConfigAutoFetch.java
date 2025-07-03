@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -248,11 +249,11 @@ public class ConfigAutoFetch {
 
     // Randomize fetch to occur between 0 - 4 seconds.
     int timeTillFetch = random.nextInt(4);
-    scheduledExecutorService.schedule(
+    ScheduledFuture<?> unused = scheduledExecutorService.schedule(
         new Runnable() {
           @Override
           public void run() {
-            fetchLatestConfig(remainingAttempts, targetVersion);
+            Task<Void> unused = fetchLatestConfig(remainingAttempts, targetVersion);
           }
         },
         timeTillFetch,

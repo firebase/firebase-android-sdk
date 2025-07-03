@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -381,7 +382,7 @@ public class ConfigRealtimeHttpClient {
 
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
-      scheduledExecutorService.schedule(
+      ScheduledFuture<?> unused = scheduledExecutorService.schedule(
           new Runnable() {
             @Override
             public void run() {
