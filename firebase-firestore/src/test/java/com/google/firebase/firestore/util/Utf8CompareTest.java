@@ -17,11 +17,9 @@ package com.google.firebase.firestore.util;
 import static org.junit.Assert.fail;
 
 import com.google.protobuf.ByteString;
-
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Random;
+import org.junit.Test;
 
 public final class Utf8CompareTest {
 
