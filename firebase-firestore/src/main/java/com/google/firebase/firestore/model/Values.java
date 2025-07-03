@@ -25,7 +25,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.util.Util;
 import com.google.firebase.firestore.util.Util2;
 import com.google.firebase.firestore.util.Util3;
-import com.google.firebase.firestore.util.Util4;
+import com.google.firebase.firestore.util.Utf8Compare;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
 import com.google.firestore.v1.MapValue;
@@ -240,7 +240,7 @@ public class Values {
           case 1: return left.getStringValue().compareTo(right.getStringValue());
           case 2: return Util2.compareUtf8Strings(left.getStringValue(), right.getStringValue());
           case 3: return Util3.compareUtf8Strings(left.getStringValue(), right.getStringValue());
-          case 4: return Util4.compareUtf8Strings(left.getStringValue(), right.getStringValue());
+          case 4: return Utf8Compare.compareUtf8Strings(left.getStringValue(), right.getStringValue());
           default: throw new UnsupportedOperationException("invalid compareUtf8Version: " + compareUtf8Version + " [xqdynyatxv]");
         }
       }
@@ -369,7 +369,7 @@ public class Values {
         case 1: keyCompare = entry1.getKey().compareTo(entry2.getKey()); break;
         case 2: keyCompare = Util2.compareUtf8Strings(entry1.getKey(), entry2.getKey()); break;
         case 3: keyCompare = Util3.compareUtf8Strings(entry1.getKey(), entry2.getKey()); break;
-        case 4: keyCompare = Util4.compareUtf8Strings(entry1.getKey(), entry2.getKey()); break;
+        case 4: keyCompare = Utf8Compare.compareUtf8Strings(entry1.getKey(), entry2.getKey()); break;
         default: throw new UnsupportedOperationException("invalid compareUtf8Version: " + compareUtf8Version + " [sv7eptgvyp]");
       }
 

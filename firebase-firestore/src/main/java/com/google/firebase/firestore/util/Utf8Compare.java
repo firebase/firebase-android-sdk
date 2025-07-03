@@ -1,17 +1,59 @@
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// package com.google.firebase.firestore.util;
+
 package com.google.firebase.firestore.util;
 
-import androidx.annotation.Nullable;
+import static java.lang.Character.codePointAt;
+import static java.lang.Character.isHighSurrogate;
+import static java.lang.Character.isSurrogate;
+import static java.lang.Integer.toHexString;
 
 import com.google.firebase.firestore.BuildConfig;
+import com.google.protobuf.ByteString;
 
-import java.util.Arrays;
+public final class Utf8Compare {
 
-public final class Util4 {
-
-  private Util4() {
+  private Utf8Compare() {
   }
 
+  /**
+   * Efficiently compares two Java Strings (which are UTF-16) by the lexicographical ordering of
+   * their respective UTF-8 encoding.
+   * <p>
+   * A naive implementation of such a comparison would be to first perform UTF-8 encoding of both
+   * strings, such as by {@link String#getBytes()}, then compare the resulting byte arrays with a
+   * method like {@link Util#compareByteArrays}. In fact, this naive implementation was initially
+   * used in <a href="https://github.com/firebase/firebase-android-sdk/pull/6615">#6615</a>.
+   * This naive algorithm, however, is both computationally expensive and requires heap allocation
+   * and, therefore, garbage collection, resulting in slow String comparisons. Customers quickly
+   * noticed performance degradations and the algorithm was improved in
+   * <a href="https://github.com/firebase/firebase-android-sdk/pull/6706">#6706</a>. This
+   * improvement, however, was still a noticeable degradation from the old, incorrect algorithm and
+   * so it was optimized further in the code you see here.
+   * <p>
+   * The implementation of the comparison method defined in this class exploits properties of UTF-16
+   * and UTF-8 to provide a comparison that is far more efficient than that aforementioned naive
+   * implementation, avoiding heap allocations altogether. In a "release" build with R8 optimizations,
+   * the performance is comparable to {@link String#compareTo}, the original, buggy implementation.
+   */
   public static int compareUtf8Strings(String left, String right) {
+    //noinspection StringEquality
+    if (left == right) {
+      return 0;
+    }
+
     final int firstDifferingCharIndex = indexOfFirstDifferingChar(left, right);
     if (firstDifferingCharIndex < 0) {
       return Integer.compare(left.length(), right.length());
@@ -19,8 +61,11 @@ public final class Util4 {
 
     final char leftChar = left.charAt(firstDifferingCharIndex);
     final char rightChar = right.charAt(firstDifferingCharIndex);
-    if (leftChar == rightChar) {
-      throw new IllegalStateException("internal error: leftChar==rightChar: " + leftChar + " (" + ((int) leftChar) + ")");
+    if (BuildConfig.DEBUG) {
+      if (leftChar == rightChar) {
+        throw new IllegalStateException("internal error: leftChar==rightChar " +
+                "but they should NOT be equal (leftChar=0x" + toHexString(leftChar) + ")");
+      }
     }
 
     // Notes about UTF-8 Encoding of Unicode characters:
@@ -45,11 +90,11 @@ public final class Util4 {
       return 1;
     } else if (rightChar < 0x7FF) {
       return -1;
-    } if (Character.isSurrogate(leftChar) && Character.isSurrogate((rightChar))) {
+    } if (isSurrogate(leftChar) && isSurrogate((rightChar))) {
       return compareUtf8Surrogates(left, right, firstDifferingCharIndex);
-    } else if (Character.isSurrogate(leftChar)) {
+    } else if (isSurrogate(leftChar)) {
       return 1;
-    } else if (Character.isSurrogate(rightChar)) {
+    } else if (isSurrogate(rightChar)) {
       return -1;
     } else {
       return compare3ByteUtf8Encoding(leftChar, rightChar);
@@ -169,43 +214,71 @@ public final class Util4 {
     final char rightChar = right.charAt(index);
 
     if (BuildConfig.DEBUG) {
-      if (!(Character.isSurrogate(leftChar) && Character.isSurrogate(rightChar))) {
-        throw new IllegalArgumentException("both characters should have been surrogates, but left.charAt(" + index + ")==" + ((int) leftChar) + " isSurrogate=" + Character.isSurrogate(leftChar) + " and right.charAt(" + index + ")==" + ((int) rightChar) + " isSurrogate=" + Character.isSurrogate(rightChar));
+      if (!(isSurrogate(leftChar) && isSurrogate(rightChar))) {
+        throw new IllegalArgumentException("both characters should have been surrogates: index=" + index + ", leftChar=0x" + toHexString(leftChar) + " isSurrogate(leftChar)=" + isSurrogate(leftChar) + ", rightChar=0x" + toHexString(rightChar) + " isSurrogate(rightChar)=" + isSurrogate(rightChar));
       }
     }
 
     final SurrogateType leftSurrogateType = SurrogateType.atIndex(left, index);
-    final SurrogateType rightSurrogateType = SurrogateType.atIndex(left, index);
+    final SurrogateType rightSurrogateType = SurrogateType.atIndex(right, index);
 
-    // Valid case: A high surrogate is followed by a low surrogate.
-    if (leftSurrogateType != SurrogateType.INVALID && leftSurrogateType == rightSurrogateType) {
-      int codePointIndex = leftSurrogateType == SurrogateType.START ? index : index - 1;
-      int leftCodePoint = Character.codePointAt(left, codePointIndex);
-      int rightCodePoint = Character.codePointAt(right, codePointIndex);
-      return compare4ByteUtf8Encoding(leftCodePoint, rightCodePoint);
-
-    // Invalid cases: A high surrogate is NOT followed by a low surrogate.
-    // This is technically invalid; however, to avoid throwing an exception that would likely crash
-    // the Firestore SDK, just produce a consistent relative ordering.
-    } else if (leftHighSurrogateIndex >= 0) {
-
-    } else if (rightHighSurrogateIndex >= 0) {
-
+    if (leftSurrogateType == rightSurrogateType && leftSurrogateType != SurrogateType.INVALID) {
+      int startIndex = leftSurrogateType == SurrogateType.HIGH ? index : index - 1;
+      return compareValidUtf8Surrogates(left, right, startIndex);
     } else {
-
+      return compareInvalidUtf8Surrogates(left, right, index);
     }
   }
 
+  private static int compareValidUtf8Surrogates(String left, String right, int index) {
+    if (BuildConfig.DEBUG) {
+      if (index + 1 >= left.length() || index + 1 >= right.length()) {
+        throw new IllegalArgumentException("invalid index: " + index + " (left.length=" + left.length() + ", right.length=" + right.length() + ")");
+      }
+      if (!(isHighSurrogate(left.charAt(index)) && isHighSurrogate(right.charAt(index)))) {
+        throw new IllegalArgumentException("unexpected character(s) at index: " + index +
+                " (leftChar=0x" + toHexString(left.charAt(index)) +
+                ", isHighSurrogate(leftChar)=" + isHighSurrogate(left.charAt(index)) +
+                ", rightChar=0x" + toHexString(right.charAt(index)) +
+                ", isHighSurrogate(rightChar)=" + isHighSurrogate(right.charAt(index)) +
+                ")"
+                );
+      }
+    }
+
+    int leftCodePoint = codePointAt(left, index);
+    int rightCodePoint = codePointAt(right, index);
+    
+    if (BuildConfig.DEBUG) {
+      if (leftCodePoint == left.charAt(index) || rightCodePoint == right.charAt(index)) {
+        throw new IllegalStateException("internal error: decoding surrogate pair failed: " +
+                "index=" + index + ", leftCodePoint=" + leftCodePoint + ", rightCodePoint=" + rightCodePoint);
+      }
+    }
+    
+    return compare4ByteUtf8Encoding(leftCodePoint, rightCodePoint);
+  }
+  
+  private static int compareInvalidUtf8Surrogates(String left, String right, int index) {
+    // This is quite inefficient; however, since we're dealing with invalid UTF-16 character
+    // sequences, which "should never happen", it seems wasteful to spend time optimizing this code.
+    // If this is ever optimized, we need to make sure to preserve whatever semantics
+    // ByteString.copyFromUtf8() implements for invalid occurrences of surrogate code points.
+    ByteString leftBytes = ByteString.copyFromUtf8(left);
+    ByteString rightBytes = ByteString.copyFromUtf8(right);
+    return Util.compareByteStrings(leftBytes, rightBytes);
+  }
+
   private enum SurrogateType {
-    START,
-    END,
+    HIGH,
+    LOW,
     INVALID;
 
     static SurrogateType atIndex(String s, int index) {
-      if (index + 1 < s.length() && Character.isHighSurrogate(s.charAt(index)) && Character.isLowSurrogate(s.charAt(index +1))) {
-        return START;
-      } else if (index - 1 > 0 && Character.isHighSurrogate(s.charAt(index -1)) && Character.isLowSurrogate(s.charAt(index))) {
-        return END;
+      if (index + 1 < s.length() && isHighSurrogate(s.charAt(index)) && Character.isLowSurrogate(s.charAt(index +1))) {
+        return HIGH;
+      } else if (index - 1 > 0 && isHighSurrogate(s.charAt(index -1)) && Character.isLowSurrogate(s.charAt(index))) {
+        return LOW;
       }
       return INVALID;
     }

@@ -22,7 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.util.Util;
 import com.google.firebase.firestore.util.Util2;
 import com.google.firebase.firestore.util.Util3;
-import com.google.firebase.firestore.util.Util4;
+import com.google.firebase.firestore.util.Utf8Compare;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,7 +125,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
         case 1: return lhs.compareTo(rhs);
         case 2: return Util2.compareUtf8Strings(lhs, rhs);
         case 3: return Util3.compareUtf8Strings(lhs, rhs);
-        case 4: return Util4.compareUtf8Strings(lhs, rhs);
+        case 4: return Utf8Compare.compareUtf8Strings(lhs, rhs);
         default: throw new UnsupportedOperationException("invalid compareUtf8Version: " + compareUtf8Version + " [v5876vbhdn]");
       }
     }
