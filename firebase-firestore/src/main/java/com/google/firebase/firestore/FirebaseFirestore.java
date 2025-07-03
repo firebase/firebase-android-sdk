@@ -63,7 +63,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

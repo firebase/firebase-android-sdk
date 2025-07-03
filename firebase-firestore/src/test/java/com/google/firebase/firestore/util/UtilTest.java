@@ -35,7 +35,6 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class UtilTest {
 
-
   @Test
   public void testToDebugString() {
     assertEquals("", Util.toDebugString(ByteString.EMPTY));
@@ -96,7 +95,7 @@ public class UtilTest {
     ArrayList<String> errors = new ArrayList<>();
     int seed = new Random().nextInt(Integer.MAX_VALUE);
     int passCount = 0;
-    StringGenerator stringGenerator = new StringGenerator(29750468);
+    StringGenerator stringGenerator = new StringGenerator(seed);
     StringPairGenerator stringPairGenerator = new StringPairGenerator(stringGenerator);
     for (int i = 0; i < 1_000_000 && errors.size() < 10; i++) {
       StringPairGenerator.StringPair stringPair = stringPairGenerator.next();

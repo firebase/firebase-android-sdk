@@ -18,8 +18,7 @@ import com.google.protobuf.ByteString;
 
 public final class Util2 {
 
-  private Util2() {
-  }
+  private Util2() {}
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
@@ -27,5 +26,4 @@ public final class Util2 {
     ByteString rightBytes = ByteString.copyFromUtf8(right);
     return Util.compareByteStrings(leftBytes, rightBytes);
   }
-
 }

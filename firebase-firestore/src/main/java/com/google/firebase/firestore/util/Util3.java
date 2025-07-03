@@ -18,8 +18,7 @@ import com.google.protobuf.ByteString;
 
 public final class Util3 {
 
-  private Util3() {
-  }
+  private Util3() {}
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
@@ -62,5 +61,4 @@ public final class Util3 {
     int firstCodePoint = str.codePointAt(index);
     return str.substring(index, index + Character.charCount(firstCodePoint));
   }
-
 }

@@ -25,8 +25,7 @@ import com.google.protobuf.ByteString;
 
 public final class Utf8Compare {
 
-  private Utf8Compare() {
-  }
+  private Utf8Compare() {}
 
   /**
    * Efficiently compares two Java Strings (which are UTF-16) by the lexicographical ordering of
@@ -63,8 +62,11 @@ public final class Utf8Compare {
     final char rightChar = right.charAt(firstDifferingCharIndex);
     if (BuildConfig.DEBUG) {
       if (leftChar == rightChar) {
-        throw new IllegalStateException("internal error: leftChar==rightChar " +
-                "but they should NOT be equal (leftChar=0x" + toHexString(leftChar) + ")");
+        throw new IllegalStateException(
+            "internal error: leftChar==rightChar "
+                + "but they should NOT be equal (leftChar=0x"
+                + toHexString(leftChar)
+                + ")");
       }
     }
 
@@ -81,16 +83,18 @@ public final class Utf8Compare {
     if (leftChar < 0x80 && rightChar < 0x80) {
       return Integer.compare(leftChar, rightChar);
     } else if (leftChar < 0x80) {
-      return 1;
-    } else if (rightChar < 0x80) {
       return -1;
-    } if (leftChar < 0x7FF && rightChar < 0x7FF) {
+    } else if (rightChar < 0x80) {
+      return 1;
+    }
+    if (leftChar < 0x7FF && rightChar < 0x7FF) {
       return compare2ByteUtf8Encoding(leftChar, rightChar);
     } else if (leftChar < 0x7FF) {
-      return 1;
-    } else if (rightChar < 0x7FF) {
       return -1;
-    } if (isSurrogate(leftChar) && isSurrogate((rightChar))) {
+    } else if (rightChar < 0x7FF) {
+      return 1;
+    }
+    if (isSurrogate(leftChar) && isSurrogate((rightChar))) {
       return compareUtf8Surrogates(left, right, firstDifferingCharIndex);
     } else if (isSurrogate(leftChar)) {
       return 1;
@@ -215,7 +219,17 @@ public final class Utf8Compare {
 
     if (BuildConfig.DEBUG) {
       if (!(isSurrogate(leftChar) && isSurrogate(rightChar))) {
-        throw new IllegalArgumentException("both characters should have been surrogates: index=" + index + ", leftChar=0x" + toHexString(leftChar) + " isSurrogate(leftChar)=" + isSurrogate(leftChar) + ", rightChar=0x" + toHexString(rightChar) + " isSurrogate(rightChar)=" + isSurrogate(rightChar));
+        throw new IllegalArgumentException(
+            "both characters should have been surrogates: index="
+                + index
+                + ", leftChar=0x"
+                + toHexString(leftChar)
+                + " isSurrogate(leftChar)="
+                + isSurrogate(leftChar)
+                + ", rightChar=0x"
+                + toHexString(rightChar)
+                + " isSurrogate(rightChar)="
+                + isSurrogate(rightChar));
       }
     }
 
@@ -233,32 +247,50 @@ public final class Utf8Compare {
   private static int compareValidUtf8Surrogates(String left, String right, int index) {
     if (BuildConfig.DEBUG) {
       if (index + 1 >= left.length() || index + 1 >= right.length()) {
-        throw new IllegalArgumentException("invalid index: " + index + " (left.length=" + left.length() + ", right.length=" + right.length() + ")");
+        throw new IllegalArgumentException(
+            "invalid index: "
+                + index
+                + " (left.length="
+                + left.length()
+                + ", right.length="
+                + right.length()
+                + ")");
       }
       if (!(isHighSurrogate(left.charAt(index)) && isHighSurrogate(right.charAt(index)))) {
-        throw new IllegalArgumentException("unexpected character(s) at index: " + index +
-                " (leftChar=0x" + toHexString(left.charAt(index)) +
-                ", isHighSurrogate(leftChar)=" + isHighSurrogate(left.charAt(index)) +
-                ", rightChar=0x" + toHexString(right.charAt(index)) +
-                ", isHighSurrogate(rightChar)=" + isHighSurrogate(right.charAt(index)) +
-                ")"
-                );
+        throw new IllegalArgumentException(
+            "unexpected character(s) at index: "
+                + index
+                + " (leftChar=0x"
+                + toHexString(left.charAt(index))
+                + ", isHighSurrogate(leftChar)="
+                + isHighSurrogate(left.charAt(index))
+                + ", rightChar=0x"
+                + toHexString(right.charAt(index))
+                + ", isHighSurrogate(rightChar)="
+                + isHighSurrogate(right.charAt(index))
+                + ")");
       }
     }
 
     int leftCodePoint = codePointAt(left, index);
     int rightCodePoint = codePointAt(right, index);
-    
+
     if (BuildConfig.DEBUG) {
       if (leftCodePoint == left.charAt(index) || rightCodePoint == right.charAt(index)) {
-        throw new IllegalStateException("internal error: decoding surrogate pair failed: " +
-                "index=" + index + ", leftCodePoint=" + leftCodePoint + ", rightCodePoint=" + rightCodePoint);
+        throw new IllegalStateException(
+            "internal error: decoding surrogate pair failed: "
+                + "index="
+                + index
+                + ", leftCodePoint="
+                + leftCodePoint
+                + ", rightCodePoint="
+                + rightCodePoint);
       }
     }
-    
+
     return compare4ByteUtf8Encoding(leftCodePoint, rightCodePoint);
   }
-  
+
   private static int compareInvalidUtf8Surrogates(String left, String right, int index) {
     // This is quite inefficient; however, since we're dealing with invalid UTF-16 character
     // sequences, which "should never happen", it seems wasteful to spend time optimizing this code.
@@ -275,9 +307,13 @@ public final class Utf8Compare {
     INVALID;
 
     static SurrogateType atIndex(String s, int index) {
-      if (index + 1 < s.length() && isHighSurrogate(s.charAt(index)) && Character.isLowSurrogate(s.charAt(index +1))) {
+      if (index + 1 < s.length()
+          && isHighSurrogate(s.charAt(index))
+          && Character.isLowSurrogate(s.charAt(index + 1))) {
         return HIGH;
-      } else if (index - 1 > 0 && isHighSurrogate(s.charAt(index -1)) && Character.isLowSurrogate(s.charAt(index))) {
+      } else if (index - 1 > 0
+          && isHighSurrogate(s.charAt(index - 1))
+          && Character.isLowSurrogate(s.charAt(index))) {
         return LOW;
       }
       return INVALID;
@@ -285,12 +321,11 @@ public final class Utf8Compare {
   }
 
   private static int indexOfFirstDifferingChar(String left, String right) {
-    for (int i=0; i < left.length() && i < right.length(); i++) {
+    for (int i = 0; i < left.length() && i < right.length(); i++) {
       if (left.charAt(i) != right.charAt(i)) {
         return i;
       }
     }
     return -1;
   }
-
 }
