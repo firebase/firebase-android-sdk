@@ -39,6 +39,9 @@ abstract class SemVerTask : DefaultTask() {
     val previous = ModuleVersion.fromStringOrNull(previousVersionString.get()) ?: return
     val current = ModuleVersion.fromStringOrNull(currentVersionString.get()) ?: return
 
+    println("Previous: ${previousVersionString.get()}")
+    println("Current: ${currentVersionString.get()}")
+
     val bump =
       when {
         previous.major != current.major -> VersionDelta.MAJOR
