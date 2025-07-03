@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static java.lang.Character.isSurrogate;
+
 import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
@@ -87,7 +89,29 @@ public class Util {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    return Utf8Compare.compareUtf8Strings(left, right);
+    // noinspection StringEquality
+    if (left == right) {
+      return 0;
+    }
+
+    // Find the first differing characters in the strings and, if found, use it to determine the
+    // overall comparison result.
+    final int length = Math.min(left.length(), right.length());
+    for (int i = 0; i < length; i++) {
+      final char leftChar = left.charAt(i);
+      final char rightChar = right.charAt(i);
+      if (leftChar != rightChar) {
+        boolean leftIsSurrogate = isSurrogate(leftChar);
+        boolean rightIsSurrogate = isSurrogate(rightChar);
+        return (leftIsSurrogate == rightIsSurrogate)
+            ? Util.compareIntegers(leftChar, rightChar)
+            : leftIsSurrogate ? 1 : -1;
+      }
+    }
+
+    // Use the lengths of the strings to determine the overall comparison result since either the
+    // strings were equal or one is a prefix of the other.
+    return Integer.compare(left.length(), right.length());
   }
 
   /**
