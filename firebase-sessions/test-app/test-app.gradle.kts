@@ -38,7 +38,7 @@ android {
 
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    applicationIdSuffix = "" // e.g. app3
+    applicationIdSuffix = "app3" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     versionCode = 1
@@ -52,6 +52,13 @@ android {
       "boolean",
       "SHOULD_CRASH_APP",
       project.hasProperty("triggerCrashes").toString(),
+    )
+
+    // Enforces legacy sessions on Fireperf
+    buildConfigField(
+      "boolean",
+      "ENFORCE_LEGACY_SESSIONS",
+      "Boolean.valueOf(true)",
     )
   }
 
