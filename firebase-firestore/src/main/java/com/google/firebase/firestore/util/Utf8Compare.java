@@ -22,7 +22,10 @@ import static java.lang.Integer.toHexString;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.protobuf.ByteString;
 
-public final class Utf8Compare {
+/**
+ * This class provides the implementation of {@link Util#compareUtf8Strings}.
+ */
+final class Utf8Compare {
 
   private Utf8Compare() {}
 

@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.util.Utf8Compare;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
@@ -231,7 +230,7 @@ public class Values {
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
       case TYPE_ORDER_STRING:
-        return Utf8Compare.compareUtf8Strings(left.getStringValue(), right.getStringValue());
+        return Util.compareUtf8Strings(left.getStringValue(), right.getStringValue());
       case TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case TYPE_ORDER_REFERENCE:
@@ -350,7 +349,7 @@ public class Values {
     while (iterator1.hasNext() && iterator2.hasNext()) {
       Map.Entry<String, Value> entry1 = iterator1.next();
       Map.Entry<String, Value> entry2 = iterator2.next();
-      int keyCompare = Utf8Compare.compareUtf8Strings(entry1.getKey(), entry2.getKey());
+      int keyCompare = Util.compareUtf8Strings(entry1.getKey(), entry2.getKey());
       if (keyCompare != 0) {
         return keyCompare;
       }

@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.firestore.util.Utf8Compare;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +114,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     } else if (isLhsNumeric && isRhsNumeric) { // both numeric
       return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
     } else { // both string
-      return Utf8Compare.compareUtf8Strings(lhs, rhs);
+      return Util.compareUtf8Strings(lhs, rhs);
     }
   }
 
