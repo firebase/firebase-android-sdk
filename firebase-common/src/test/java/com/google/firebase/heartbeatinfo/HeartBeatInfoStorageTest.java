@@ -17,12 +17,15 @@ package com.google.firebase.heartbeatinfo;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.content.Context;
-import android.content.SharedPreferences;
+import androidx.datastore.preferences.core.Preferences;
+import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.firebase.datastorage.JavaDataStorage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,23 +34,30 @@ import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatInfoStorageTest {
-  private final String testSdk = "testSdk";
-  private final String GLOBAL = "fire-global";
+  private final Preferences.Key<Long> testSdk = PreferencesKeys.longKey("testSdk");
+  private final Preferences.Key<Long> GLOBAL = PreferencesKeys.longKey("fire-global");
   private static final int HEART_BEAT_COUNT_LIMIT = 30;
   private static Context applicationContext = ApplicationProvider.getApplicationContext();
-  private static SharedPreferences heartBeatSharedPreferences =
-      applicationContext.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
-  private HeartBeatInfoStorage heartBeatInfoStorage =
-      new HeartBeatInfoStorage(heartBeatSharedPreferences);
+  private static JavaDataStorage heartBeatDataStore =
+      new JavaDataStorage(applicationContext, "testHeartBeat");
+  private HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
 
   @Before
   public void setUp() {
-    heartBeatSharedPreferences.edit().clear().apply();
+    heartBeatDataStore.editSync(
+        (pref) -> {
+          pref.clear();
+          return null;
+        });
   }
 
   @After
   public void tearDown() {
-    heartBeatSharedPreferences.edit().clear().apply();
+    heartBeatDataStore.editSync(
+        (pref) -> {
+          pref.clear();
+          return null;
+        });
   }
 
   @Config(sdk = 29)
@@ -169,31 +179,32 @@ public class HeartBeatInfoStorageTest {
   public void shouldSendSdkHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
     assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isTrue();
-    assertThat(heartBeatSharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
+    assertThat(heartBeatDataStore.getSync(testSdk, -1L)).isEqualTo(1);
     assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime)).isTrue();
-    assertThat(heartBeatSharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
+    assertThat(heartBeatDataStore.getSync(testSdk, -1L)).isEqualTo(currentTime);
   }
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsNo() {
-    heartBeatSharedPreferences.edit().putLong(GLOBAL, 1).apply();
+    heartBeatDataStore.putSync(GLOBAL, 1L);
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isFalse();
   }
 
   @Test
   public void currentDayHeartbeatNotSent_updatesCorrectly() {
     long millis = System.currentTimeMillis();
+    Preferences.Key<Set<String>> testAgent = PreferencesKeys.stringSetKey("test-agent");
+    Preferences.Key<Set<String>> testAgent1 = PreferencesKeys.stringSetKey("test-agent-1");
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
     heartBeatInfoStorage.storeHeartBeat(millis, "test-agent");
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
     assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
     heartBeatInfoStorage.deleteAllHeartBeats();
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
-    assertThat(heartBeatSharedPreferences.getStringSet("test-agent", new HashSet<>())).isNotEmpty();
+    assertThat(heartBeatDataStore.getSync(testAgent, new HashSet<>())).isNotEmpty();
     heartBeatInfoStorage.storeHeartBeat(millis, "test-agent-1");
-    assertThat(heartBeatSharedPreferences.getStringSet("test-agent", new HashSet<>())).isEmpty();
-    assertThat(heartBeatSharedPreferences.getStringSet("test-agent-1", new HashSet<>()))
-        .isNotEmpty();
+    assertThat(heartBeatDataStore.getSync(testAgent, new HashSet<>())).isEmpty();
+    assertThat(heartBeatDataStore.getSync(testAgent1, new HashSet<>())).isNotEmpty();
   }
 
   @Test
@@ -222,8 +233,8 @@ public class HeartBeatInfoStorageTest {
   public void shouldSendGlobalHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isTrue();
-    assertThat(heartBeatSharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
+    assertThat(heartBeatDataStore.getSync(GLOBAL, -1L)).isEqualTo(1);
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
-    assertThat(heartBeatSharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
+    assertThat(heartBeatDataStore.getSync(GLOBAL, -1L)).isEqualTo(currentTime);
   }
 }
