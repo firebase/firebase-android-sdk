@@ -77,7 +77,7 @@ public class ConfigFetchHandler {
    *
    * <p>Defined here since {@link HttpURLConnection} does not provide this code.
    */
-  @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
+  static final int HTTP_TOO_MANY_REQUESTS = 429;
 
   /**
    * First-open time key name in GA user-properties. First-open time is a predefined user-dimension
