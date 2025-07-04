@@ -30,6 +30,7 @@ jobs:
           ./gradlew plugins:check
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
+        if: always()
         with:
           files: "**/build/test-results/**/*.xml"
           check_name: "plugins test results"
