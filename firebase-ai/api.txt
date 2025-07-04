@@ -53,13 +53,13 @@ package com.google.firebase.ai {
 
   public final class GenerativeModel {
     method public suspend Object? countTokens(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
-    method public suspend Object? countTokens(com.google.firebase.ai.type.Content[] prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
+    method public suspend Object? countTokens(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? countTokens(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? generateContent(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
-    method public suspend Object? generateContent(com.google.firebase.ai.type.Content[] prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? generateContent(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public suspend Object? generateContent(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(android.graphics.Bitmap prompt);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content... prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String prompt);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
@@ -89,10 +89,10 @@ package com.google.firebase.ai.java {
   }
 
   public abstract class GenerativeModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.CountTokensResponse> countTokens(com.google.firebase.ai.type.Content... prompt);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.CountTokensResponse> countTokens(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public static final com.google.firebase.ai.java.GenerativeModelFutures from(com.google.firebase.ai.GenerativeModel model);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(com.google.firebase.ai.type.Content... prompt);
-    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content... prompt);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public abstract com.google.firebase.ai.GenerativeModel getGenerativeModel();
     method public abstract com.google.firebase.ai.java.ChatFutures startChat();
     method public abstract com.google.firebase.ai.java.ChatFutures startChat(java.util.List<com.google.firebase.ai.type.Content> history);

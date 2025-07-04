@@ -100,9 +100,12 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
+  public suspend fun generateContent(
+    prompt: Content,
+    vararg prompts: Content
+  ): GenerateContentResponse =
     try {
-      controller.generateContent(constructRequest(*prompt)).toPublic().validate()
+      controller.generateContent(constructRequest(prompt, *prompts)).toPublic().validate()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
@@ -115,9 +118,12 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
+  public fun generateContentStream(
+    prompt: Content,
+    vararg prompts: Content
+  ): Flow<GenerateContentResponse> =
     controller
-      .generateContentStream(constructRequest(*prompt))
+      .generateContentStream(constructRequest(prompt, *prompts))
       .catch { throw FirebaseAIException.from(it) }
       .map { it.toPublic().validate() }
 
@@ -177,9 +183,9 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
+  public suspend fun countTokens(prompt: Content, vararg prompts: Content): CountTokensResponse {
     try {
-      return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
+      return controller.countTokens(constructCountTokensRequest(prompt, *prompts)).toPublic()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }

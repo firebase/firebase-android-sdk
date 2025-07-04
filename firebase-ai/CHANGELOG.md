@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
+  `countTokens()`.
 
 # 16.2.0
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
