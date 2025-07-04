@@ -27,13 +27,11 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionEventEncoderTest {
 

@@ -16,7 +16,12 @@
 
 package com.google.firebase.sessions.testing
 
-import com.google.android.datatransport.*
+import com.google.android.datatransport.Encoding
+import com.google.android.datatransport.Event
+import com.google.android.datatransport.Transformer
+import com.google.android.datatransport.Transport
+import com.google.android.datatransport.TransportFactory
+import com.google.android.datatransport.TransportScheduleCallback
 import com.google.firebase.sessions.SessionEvent
 
 /** Fake [Transport] that implements [send]. */
@@ -34,7 +39,7 @@ internal class FakeTransport<T>() : Transport<T> {
 }
 
 /** Fake [TransportFactory] that implements [getTransport]. */
-internal class FakeTransportFactory() : TransportFactory {
+internal class FakeTransportFactory : TransportFactory {
 
   var name: String? = null
   var payloadEncoding: Encoding? = null
@@ -42,9 +47,9 @@ internal class FakeTransportFactory() : TransportFactory {
 
   override fun <T> getTransport(
     name: String?,
-    payloadType: java.lang.Class<T>?,
+    payloadType: Class<T>?,
     payloadEncoding: Encoding?,
-    payloadTransformer: Transformer<T, ByteArray?>?
+    payloadTransformer: Transformer<T, ByteArray?>?,
   ): Transport<T>? {
     this.name = name
     this.payloadEncoding = payloadEncoding
@@ -54,11 +59,14 @@ internal class FakeTransportFactory() : TransportFactory {
     return fakeTransport
   }
 
-  @Deprecated("This is deprecated in the API. Don't use or expect on this function.")
+  @Deprecated(
+    "This is deprecated in the API. Don't use or expect on this function.",
+    ReplaceWith("null"),
+  )
   override fun <T> getTransport(
     name: String?,
-    payloadType: java.lang.Class<T>?,
-    payloadTransformer: Transformer<T, ByteArray?>?
+    payloadType: Class<T>?,
+    payloadTransformer: Transformer<T, ByteArray?>?,
   ): Transport<T>? {
     return null
   }
