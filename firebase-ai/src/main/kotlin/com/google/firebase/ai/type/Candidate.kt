@@ -297,11 +297,12 @@ public class FinishReason private constructor(public val name: String, public va
 /**
  * Metadata returned to the client when grounding is enabled.
  *
- * If using Grounding with Google Search, you are required to comply with the
- * "Grounding with Google Search" usage requirements for your chosen API provider: [Gemini Developer
- * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or Vertex AI Gemini API
- * (see [Service Terms](https://cloud.google.com/terms/service-terms) section within the Service
- * Specific Terms).
+ * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
+ * Search" usage requirements for your chosen API provider:
+ * [Gemini Developer
+ * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
+ * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
+ * within the Service Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
@@ -347,8 +348,8 @@ public class GroundingMetadata(
 /**
  * Represents a Google Search entry point.
  *
- * @property renderedContent An HTML/CSS snippet that can be embedded in your app.
- * To ensure proper rendering, it's recommended to display this content within a `WebView`.
+ * @property renderedContent An HTML/CSS snippet that can be embedded in your app. To ensure proper
+ * rendering, it's recommended to display this content within a `WebView`.
  * @property sdkBlob A blob of data for the client SDK to render the search entry point.
  */
 public class SearchEntryPoint(
@@ -393,8 +394,8 @@ public class GroundingChunk(
  *
  * @property uri The URI of the retrieved web page.
  * @property title The title of the retrieved web page.
- * @property domain The domain of the original URI from which the content was retrieved.
- * This is only populated when using the Vertex AI Gemini API.
+ * @property domain The domain of the original URI from which the content was retrieved. This is
+ * only populated when using the Vertex AI Gemini API.
  */
 public class WebGroundingChunk(
   public val uri: String?,

@@ -60,11 +60,12 @@ internal constructor(
      * Grounding with Google Search can be used to allow the model to connect to Google Search to
      * access and incorporate up-to-date information from the web into it's responses.
      *
-     * When using this feature, you are required to comply with the "Grounding with
-     * Google Search" usage requirements for your chosen API provider: [Gemini Developer
-     * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or Vertex AI Gemini
-     * API (see [Service Terms](https://cloud.google.com/terms/service-terms) section within the
-     * Service Specific Terms).
+     * When using this feature, you are required to comply with the "Grounding with Google Search"
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer
+     * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
+     * or Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
      *
      * @param googleSearch An empty [GoogleSearch] object. The presence of this object in the list
      * of tools enables the model to use Google Search.
