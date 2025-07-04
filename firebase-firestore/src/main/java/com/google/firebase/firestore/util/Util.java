@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static java.lang.Character.isSurrogate;
+
 import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
@@ -87,44 +89,44 @@ public class Util {
 
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    int i = 0;
-    while (i < left.length() && i < right.length()) {
-      int leftCodePoint = left.codePointAt(i);
-      int rightCodePoint = right.codePointAt(i);
-
-      if (leftCodePoint != rightCodePoint) {
-        if (leftCodePoint < 128 && rightCodePoint < 128) {
-          // ASCII comparison
-          return Integer.compare(leftCodePoint, rightCodePoint);
-        } else {
-          // substring and do UTF-8 encoded byte comparison
-          ByteString leftBytes = ByteString.copyFromUtf8(getUtf8SafeBytes(left, i));
-          ByteString rightBytes = ByteString.copyFromUtf8(getUtf8SafeBytes(right, i));
-          int comp = compareByteStrings(leftBytes, rightBytes);
-          if (comp != 0) {
-            return comp;
-          } else {
-            // EXTREMELY RARE CASE: Code points differ, but their UTF-8 byte representations are
-            // identical. This can happen with malformed input (invalid surrogate pairs), where
-            // Java's encoding leads to unexpected byte sequences. Meanwhile, any invalid surrogate
-            // inputs get converted to "?" by protocol buffer while round tripping, so we almost
-            // never receive invalid strings from backend.
-            // Fallback to code point comparison for graceful handling.
-            return Integer.compare(leftCodePoint, rightCodePoint);
-          }
-        }
-      }
-      // Increment by 2 for surrogate pairs, 1 otherwise.
-      i += Character.charCount(leftCodePoint);
+    // noinspection StringEquality
+    if (left == right) {
+      return 0;
     }
 
-    // Compare lengths if all characters are equal
-    return Integer.compare(left.length(), right.length());
-  }
+    // Find the first differing character (a.k.a. "UTF-16 code unit") in the two strings and,
+    // if found, use that character to determine the relative ordering of the two strings as a
+    // whole. Comparing UTF-16 strings in UTF-8 byte order can be done simply and efficiently by
+    // comparing the UTF-16 code units (chars). This serendipitously works because of the way UTF-8
+    // and UTF-16 happen to represent Unicode code points.
+    //
+    // After finding the first pair of differing characters, there are two cases:
+    //
+    // Case 1: Both characters are non-surrogates (code points less than or equal to 0xFFFF) or
+    // both are surrogates from a surrogate pair (that collectively represent code points greater
+    // than 0xFFFF). In this case their numeric order as UTF-16 code units is the same as the
+    // lexicographical order of their corresponding UTF-8 byte sequences. A direct comparison is
+    // sufficient.
+    //
+    // Case 2: One character is a surrogate and the other is not. In this case the surrogate-
+    // containing string is always ordered after the non-surrogate. This is because surrogates are
+    // used to represent code points greater than 0xFFFF which have 4-byte UTF-8 representations
+    // and are lexicographically greater than the 1, 2, or 3-byte representations of code points
+    // less than or equal to 0xFFFF.
+    final int length = Math.min(left.length(), right.length());
+    for (int i = 0; i < length; i++) {
+      final char leftChar = left.charAt(i);
+      final char rightChar = right.charAt(i);
+      if (leftChar != rightChar) {
+        return (isSurrogate(leftChar) == isSurrogate(rightChar))
+            ? Util.compareIntegers(leftChar, rightChar)
+            : isSurrogate(leftChar) ? 1 : -1;
+      }
+    }
 
-  private static String getUtf8SafeBytes(String str, int index) {
-    int firstCodePoint = str.codePointAt(index);
-    return str.substring(index, index + Character.charCount(firstCodePoint));
+    // Use the lengths of the strings to determine the overall comparison result since either the
+    // strings were equal or one is a prefix of the other.
+    return Integer.compare(left.length(), right.length());
   }
 
   /**

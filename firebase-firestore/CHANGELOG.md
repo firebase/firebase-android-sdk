@@ -1,4 +1,7 @@
 # Unreleased
+* [fixed] Further improved performance of UTF-8 string ordering logic,
+  which had degraded in v25.1.2 and received some improvements in v25.1.3.
+  [#7053](//github.com/firebase/firebase-android-sdk/issues/7053)
 
 
 # 25.1.4
