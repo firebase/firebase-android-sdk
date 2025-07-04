@@ -66,7 +66,7 @@ public class Chat(
     prompt.assertComesFromUser()
     attemptLock()
     try {
-      val response = model.generateContent(*history.toTypedArray(), prompt)
+      val response = model.generateContent(prompt, *history.toTypedArray())
       history.add(prompt)
       history.add(response.candidates.first().content)
       return response
@@ -127,7 +127,7 @@ public class Chat(
     prompt.assertComesFromUser()
     attemptLock()
 
-    val flow = model.generateContentStream(*history.toTypedArray(), prompt)
+    val flow = model.generateContentStream(prompt, *history.toTypedArray())
     val bitmaps = LinkedList<Bitmap>()
     val inlineDataParts = LinkedList<InlineDataPart>()
     val text = StringBuilder()
