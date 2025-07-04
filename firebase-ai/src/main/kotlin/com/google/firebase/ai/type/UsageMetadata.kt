@@ -28,6 +28,7 @@ import kotlinx.serialization.Serializable
  * prompt.
  * @param candidatesTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * candidates.
+ * @param thoughtsTokenCount The number of tokens used by the model's internal "thinking" process.
  */
 public class UsageMetadata(
   public val promptTokenCount: Int,
@@ -35,6 +36,7 @@ public class UsageMetadata(
   public val totalTokenCount: Int,
   public val promptTokensDetails: List<ModalityTokenCount>,
   public val candidatesTokensDetails: List<ModalityTokenCount>,
+  public val thoughtsTokenCount: Int,
 ) {
 
   @Serializable
@@ -44,6 +46,7 @@ public class UsageMetadata(
     val totalTokenCount: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
     val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
+    val thoughtsTokenCount: Int? = null,
   ) {
 
     internal fun toPublic(): UsageMetadata =
@@ -52,7 +55,8 @@ public class UsageMetadata(
         candidatesTokenCount ?: 0,
         totalTokenCount ?: 0,
         promptTokensDetails = promptTokensDetails?.map { it.toPublic() } ?: emptyList(),
-        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList()
+        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList(),
+        thoughtsTokenCount ?: 0
       )
   }
 }

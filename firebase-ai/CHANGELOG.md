@@ -1,5 +1,6 @@
 # Unreleased
-
+* [feature] Added support for configuring the "thinking" budget when using Gemini
+  2.5 series models. (#6990)
 
 # 16.2.0
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
