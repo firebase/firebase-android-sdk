@@ -39,7 +39,8 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
-import org.jetbrains.kotlin.gradle.utils.provider
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /**
  * Creates a file at the buildDir for the given [Project].
@@ -307,3 +308,15 @@ val Provider<Directory>.nestedFile: Provider<File>
  */
 val Directory.nestedFile: File
   get() = asFileTree.single { it.isFile }
+
+
+/**
+ * Creates a delegated provider.
+ *
+ * Useful to expose a provide via delegated properties. See [tempFile] for a reference usage.
+ */
+internal fun <T: Any> provider(provider: () -> T) =  object: ReadOnlyProperty<Any?, T> {
+  override operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+    return provider()
+  }
+}
