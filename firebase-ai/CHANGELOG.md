@@ -1,4 +1,6 @@
 # Unreleased
+* [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
+    * **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`, `retrievalQueries` in `GroundingMetadata` to be non-optional.
 
 
 # 16.2.0
