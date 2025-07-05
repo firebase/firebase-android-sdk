@@ -39,9 +39,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.core.ArrayContainsAnyFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.InFilter;
@@ -325,6 +331,153 @@ public final class RemoteSerializerTest {
             .putFields("value", Value.newBuilder().setArrayValue(array).build());
 
     Value proto = Value.newBuilder().setMapValue(obj).build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesBsonObjectIds() {
+    Value model = wrap(new BsonObjectId("foo"));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__oid__", Value.newBuilder().setStringValue("foo").build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesBsonTimestamps() {
+    Value model = wrap(new BsonTimestamp(12345, 67));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__request_timestamp__",
+                        Value.newBuilder()
+                            .setMapValue(
+                                MapValue.newBuilder()
+                                    .putFields(
+                                        "seconds",
+                                        Value.newBuilder().setIntegerValue(12345).build())
+                                    .putFields(
+                                        "increment", Value.newBuilder().setIntegerValue(67).build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesBsonBinaryData() {
+    Value model = wrap(BsonBinaryData.fromBytes(127, new byte[] {1, 2, 3}));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__binary__",
+                        Value.newBuilder()
+                            .setBytesValue(ByteString.copyFrom(new byte[] {127, 1, 2, 3}))
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesRegexValues() {
+    Value model = wrap(new RegexValue("^foo", "i"));
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__regex__",
+                        Value.newBuilder()
+                            .setMapValue(
+                                MapValue.newBuilder()
+                                    .putFields(
+                                        "pattern",
+                                        Value.newBuilder().setStringValue("^foo").build())
+                                    .putFields(
+                                        "options", Value.newBuilder().setStringValue("i").build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesInt32Values() {
+    Value model = wrap(new com.google.firebase.firestore.Int32Value(12345));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__int__", Value.newBuilder().setIntegerValue(12345).build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesDecimal128Values() {
+    Value model = wrap(new com.google.firebase.firestore.Decimal128Value("1e3"));
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields("__decimal128__", Value.newBuilder().setStringValue("1e3").build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesMinKey() {
+    Value model = wrap(MinKey.instance());
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__min__", Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+                    .build())
+            .build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesMaxKey() {
+    Value model = wrap(MaxKey.instance());
+
+    Value proto =
+        Value.newBuilder()
+            .setMapValue(
+                MapValue.newBuilder()
+                    .putFields(
+                        "__max__", Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+                    .build())
+            .build();
 
     assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
   }

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -27,6 +28,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -34,7 +36,16 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.BsonObjectId;
+import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.Int32Value;
+import com.google.firebase.firestore.MaxKey;
+import com.google.firebase.firestore.MinKey;
+import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -368,6 +379,1032 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
+  public void testIndexesBsonObjectId() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(
+        setMutation("coll/doc1", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
+    writeMutation(
+        setMutation("coll/doc2", map("key", new BsonObjectId("507f191e810c19729de860eb"))));
+    writeMutation(
+        setMutation("coll/doc3", map("key", new BsonObjectId("507f191e810c19729de860ec"))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new BsonObjectId("507f191e810c19729de860ea")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new BsonObjectId("507f191e810c19729de860ea")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new BsonObjectId("507f191e810c19729de860eb")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", new BsonObjectId("507f191e810c19729de860eb")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", new BsonObjectId("507f191e810c19729de860ec")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new BsonObjectId("507f191e810c19729de860ea")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(
+                filter(
+                    "key",
+                    "in",
+                    Arrays.asList(
+                        new BsonObjectId("507f191e810c19729de860ea"),
+                        new BsonObjectId("507f191e810c19729de860eb"))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testIndexesBsonTimestamp() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", new BsonTimestamp(1000, 1000))));
+    writeMutation(setMutation("coll/doc2", map("key", new BsonTimestamp(1001, 1000))));
+    writeMutation(setMutation("coll/doc3", map("key", new BsonTimestamp(1000, 1001))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3", "coll/doc2");
+
+    query = query("coll").filter(filter("key", "==", new BsonTimestamp(1000, 1000)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new BsonTimestamp(1000, 1000)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">=", new BsonTimestamp(1000, 1001)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3", "coll/doc2");
+
+    query = query("coll").filter(filter("key", "<=", new BsonTimestamp(1000, 1001)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">", new BsonTimestamp(1001, 1000)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new BsonTimestamp(1000, 1000)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(
+                filter(
+                    "key",
+                    "in",
+                    Arrays.asList(new BsonTimestamp(1000, 1000), new BsonTimestamp(1000, 1001))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3");
+  }
+
+  @Test
+  public void testIndexesBsonBinary() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(
+        setMutation("coll/doc1", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+    writeMutation(
+        setMutation("coll/doc2", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
+    writeMutation(
+        setMutation("coll/doc3", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
+    writeMutation(
+        setMutation("coll/doc4", map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2}))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 4, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc1", "coll/doc3", "coll/doc4");
+
+    query =
+        query("coll")
+            .filter(filter("key", "==", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query =
+        query("coll")
+            .filter(filter("key", "!=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3", "coll/doc4");
+
+    query =
+        query("coll")
+            .filter(filter("key", ">=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3", "coll/doc4");
+
+    query =
+        query("coll")
+            .filter(filter("key", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc1");
+
+    query =
+        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(2, new byte[] {1, 2})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(
+                filter(
+                    "key",
+                    "in",
+                    Arrays.asList(
+                        BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                        BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testIndexesRegex() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", new RegexValue("^bar", "i"))));
+    writeMutation(setMutation("coll/doc2", map("key", new RegexValue("^bar", "m"))));
+    writeMutation(setMutation("coll/doc3", map("key", new RegexValue("^foo", "i"))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new RegexValue("^bar", "i")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new RegexValue("^bar", "i")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">", new RegexValue("^foo", "i")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new RegexValue("^bar", "i")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(
+                filter(
+                    "key",
+                    "in",
+                    Arrays.asList(new RegexValue("^bar", "i"), new RegexValue("^foo", "i"))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3");
+  }
+
+  @Test
+  public void testIndexesInt32() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+    writeMutation(setMutation("coll/doc1", map("key", new Int32Value(-1))));
+    writeMutation(setMutation("coll/doc2", map("key", new Int32Value(0))));
+    writeMutation(setMutation("coll/doc3", map("key", new Int32Value(1))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new Int32Value(-1)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new Int32Value(-1)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new Int32Value(0)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", new Int32Value(0)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", new Int32Value(1)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new Int32Value(-1)));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(filter("key", "in", Arrays.asList(new Int32Value(-1), new Int32Value(0))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testIndexesDecimal128Value() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+    writeMutation(setMutation("coll/doc1", map("key", new Decimal128Value("-1.2e3"))));
+    writeMutation(setMutation("coll/doc2", map("key", new Decimal128Value("0"))));
+    writeMutation(setMutation("coll/doc3", map("key", new Decimal128Value("1.2e3"))));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("-1200")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", "!=", new Decimal128Value("0.0")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new Decimal128Value("-0")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    // This will fail if the negative 0s are not converted to positive 0 in `writeIndexValue`
+    // function
+    query = query("coll").filter(filter("key", "<=", new Decimal128Value("-0.0")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+
+    query = query("coll").filter(filter("key", ">", new Decimal128Value("1.2e3")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new Decimal128Value("-1.2e3")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(
+                filter(
+                    "key",
+                    "in",
+                    Arrays.asList(new Decimal128Value("-1.2e3"), new Decimal128Value("0"))));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testIndexesDecimal128ValueWithPrecisionLoss() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+    writeMutation(
+        setMutation(
+            "coll/doc1",
+            map(
+                "key",
+                new Decimal128Value(
+                    "-0.1234567890123456789")))); // will be rounded to -0.12345678901234568
+    writeMutation(setMutation("coll/doc2", map("key", new Decimal128Value("0"))));
+    writeMutation(
+        setMutation(
+            "coll/doc3",
+            map(
+                "key",
+                new Decimal128Value(
+                    "0.1234567890123456789")))); // will be rounded to 0.12345678901234568
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("0.1234567890123456789")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc3", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3");
+
+    // Mismatch behaviour caused by rounding error. Firestore fetches the doc3 from SQLite DB as
+    // doc3 rounds to the same number, but, it is not presented on the final query result.
+    query = query("coll").filter(filter("key", "==", new Decimal128Value("0.12345678901234568")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc3", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned();
+
+    // Operations that doesn't go up to 17 decimal digits of precision wouldn't be affected by
+    // this rounding errors.
+    query = query("coll").filter(filter("key", "!=", new Decimal128Value("0.0")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", new Decimal128Value("1.23e-1")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc3", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", new Decimal128Value("-1.23e-1")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1");
+
+    query = query("coll").filter(filter("key", ">", new Decimal128Value("1.2e3")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", new Decimal128Value("-1.2e3")));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+  }
+
+  @Test
+  public void testIndexesMinKey() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", null)));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc3", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc4", map("key", 1)));
+    writeMutation(setMutation("coll/doc5", map("key", MaxKey.instance())));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 5, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", "==", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "!=", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", ">=", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", "<=", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", MinKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query =
+        query("coll")
+            .filter(filter("key", "in", Arrays.asList(MinKey.instance(), MaxKey.instance())));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3", "coll/doc5");
+  }
+
+  @Test
+  public void testIndexesMaxKey() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", null)));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc3", map("key", 1)));
+    writeMutation(setMutation("coll/doc4", map("key", MaxKey.instance())));
+    writeMutation(setMutation("coll/doc5", map("key", MaxKey.instance())));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 5, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc1", "coll/doc2", "coll/doc3", "coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", "==", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", "!=", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc2", "coll/doc3");
+
+    query = query("coll").filter(filter("key", ">=", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", "<=", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc5");
+
+    query = query("coll").filter(filter("key", ">", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("key", "<", MaxKey.instance()));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+  }
+
+  @Test
+  public void testIndexesAllBsonTypesTogether() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.DESCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc2", map("key", new Int32Value(2))));
+    writeMutation(setMutation("coll/doc3", map("key", new Int32Value(-1))));
+    writeMutation(setMutation("coll/doc4", map("key", new Decimal128Value("1.2e3"))));
+    writeMutation(setMutation("coll/doc5", map("key", new Decimal128Value("-0.0"))));
+    writeMutation(setMutation("coll/doc6", map("key", new BsonTimestamp(1000, 1001))));
+    writeMutation(setMutation("coll/doc7", map("key", new BsonTimestamp(1000, 1000))));
+    writeMutation(
+        setMutation("coll/doc8", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
+    writeMutation(
+        setMutation("coll/doc9", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+    writeMutation(
+        setMutation("coll/doc10", map("key", new BsonObjectId("507f191e810c19729de860eb"))));
+    writeMutation(
+        setMutation("coll/doc11", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
+    writeMutation(setMutation("coll/doc12", map("key", new RegexValue("^bar", "m"))));
+    writeMutation(setMutation("coll/doc13", map("key", new RegexValue("^bar", "i"))));
+    writeMutation(setMutation("coll/doc14", map("key", MaxKey.instance())));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "desc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 14, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc6",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc7",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc8",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc9",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc10",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc11",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc12",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc13",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc14",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned(
+        "coll/doc14", // maxKey
+        "coll/doc12", // regex m
+        "coll/doc13", // regex i
+        "coll/doc10", // objectId eb
+        "coll/doc11", // objectId ea
+        "coll/doc8", // binary [1,2,4]
+        "coll/doc9", // binary [1,2,3]
+        "coll/doc6", // timestamp 1,2
+        "coll/doc7", // timestamp 1,1
+        "coll/doc4", // decimal128 1200
+        "coll/doc2", // int32 2
+        "coll/doc5", // decimal128 -0.0
+        "coll/doc3", // int32 -1
+        "coll/doc1" // minKey
+        );
+  }
+
+  @Test
+  public void testIndexesAllTypesTogether() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/doc1", map("key", null)));
+    writeMutation(setMutation("coll/doc2", map("key", MinKey.instance())));
+    writeMutation(setMutation("coll/doc3", map("key", true)));
+    writeMutation(setMutation("coll/doc4", map("key", Double.NaN)));
+    writeMutation(setMutation("coll/doc5", map("key", new Int32Value(1))));
+    writeMutation(setMutation("coll/doc6", map("key", 2.0)));
+    writeMutation(setMutation("coll/doc7", map("key", 3)));
+    writeMutation(setMutation("coll/doc8", map("key", new Decimal128Value("1.2e3"))));
+    writeMutation(setMutation("coll/doc9", map("key", new Timestamp(100, 123456000))));
+    writeMutation(setMutation("coll/doc10", map("key", new BsonTimestamp(1, 2))));
+    writeMutation(setMutation("coll/doc11", map("key", "string")));
+    writeMutation(setMutation("coll/doc12", map("key", blob(1, 2, 3))));
+    writeMutation(
+        setMutation("coll/doc13", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+    writeMutation(setMutation("coll/doc14", map("key", ref("foo/bar"))));
+    writeMutation(
+        setMutation("coll/doc15", map("key", new BsonObjectId("507f191e810c19729de860ea"))));
+    writeMutation(setMutation("coll/doc16", map("key", new GeoPoint(1, 2))));
+    writeMutation(setMutation("coll/doc17", map("key", new RegexValue("^bar", "m"))));
+    writeMutation(setMutation("coll/doc18", map("key", Arrays.asList(2, "foo"))));
+    writeMutation(setMutation("coll/doc19", map("key", FieldValue.vector(new double[] {1, 2, 3}))));
+    writeMutation(setMutation("coll/doc20", map("key", map("bar", 1, "foo", 2))));
+    writeMutation(setMutation("coll/doc21", map("key", MaxKey.instance())));
+
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 21, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc5",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc6",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc7",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc8",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc9",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc10",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc11",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc12",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc13",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc14",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc15",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc16",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc17",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc18",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc19",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc20",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc21",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned(
+        "coll/doc1",
+        "coll/doc2",
+        "coll/doc3",
+        "coll/doc4",
+        "coll/doc5",
+        "coll/doc6",
+        "coll/doc7",
+        "coll/doc8",
+        "coll/doc9",
+        "coll/doc10",
+        "coll/doc11",
+        "coll/doc12",
+        "coll/doc13",
+        "coll/doc14",
+        "coll/doc15",
+        "coll/doc16",
+        "coll/doc17",
+        "coll/doc18",
+        "coll/doc19",
+        "coll/doc20",
+        "coll/doc21");
+  }
+
+  @Test
   public void testIndexesServerTimestamps() {
     FieldIndex index =
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "time", FieldIndex.Segment.Kind.ASCENDING);
@@ -493,7 +1530,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     // Full matched index should be created.
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    assertQueryReturned("coll/e", "coll/a");
+    assertQueryReturned("coll/a", "coll/e");
 
     backfillIndexes();
 
@@ -501,7 +1538,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
-    assertQueryReturned("coll/f", "coll/e", "coll/a");
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
   }
 
   @Test
@@ -521,7 +1558,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     // SDK will not create indexes since collection size is too small.
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    assertQueryReturned("coll/a", "coll/e");
+    assertQueryReturned("coll/e", "coll/a");
 
     backfillIndexes();
 
@@ -529,7 +1566,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
-    assertQueryReturned("coll/a", "coll/e", "coll/f");
+    assertQueryReturned("coll/e", "coll/f", "coll/a");
   }
 
   @Test
@@ -598,7 +1635,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 2);
-    assertQueryReturned("coll/a", "coll/e", "coll/f");
+    assertQueryReturned("coll/a", "coll/f", "coll/e");
   }
 
   @Test
@@ -621,7 +1658,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     // Full matched index should be created.
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    assertQueryReturned("coll/a", "coll/e");
+    assertQueryReturned("coll/e", "coll/a");
 
     setIndexAutoCreationEnabled(false);
 
@@ -631,7 +1668,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
-    assertQueryReturned("coll/a", "coll/e", "coll/f");
+    assertQueryReturned("coll/e", "coll/a", "coll/f");
   }
 
   @Test

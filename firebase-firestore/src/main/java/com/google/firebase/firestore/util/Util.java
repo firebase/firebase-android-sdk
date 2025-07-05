@@ -23,6 +23,7 @@ import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.Quadruple;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -143,6 +144,11 @@ public class Util {
   /** Compares a double and a long (using Firestore semantics for NaN). */
   public static int compareMixed(double doubleValue, long longValue) {
     return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
+  }
+
+  /** Utility function to compare Quadruples (using Firestore semantics for NaN).*/
+  public static int compareQuadruples(Quadruple left, Quadruple right) {
+    return NumberComparisonHelper.firestoreCompareQuadruples(left, right);
   }
 
   public static <T extends Comparable<T>> Comparator<T> comparator() {

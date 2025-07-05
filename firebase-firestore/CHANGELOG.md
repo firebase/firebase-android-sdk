@@ -1,5 +1,5 @@
 # Unreleased
-
+* [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and BsonBinaryData. [#6928](//github.com/firebase/firebase-android-sdk/pull/6928)
 
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.

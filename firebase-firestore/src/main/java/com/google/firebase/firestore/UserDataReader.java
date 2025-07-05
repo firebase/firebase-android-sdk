@@ -43,6 +43,7 @@ import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
 import java.util.ArrayList;
@@ -443,6 +444,23 @@ public final class UserDataReader {
           .build();
     } else if (input instanceof VectorValue) {
       return parseVectorValue(((VectorValue) input), context);
+
+    } else if (input instanceof MinKey) {
+      return parseMinKey();
+    } else if (input instanceof MaxKey) {
+      return parseMaxKey();
+    } else if (input instanceof BsonObjectId) {
+      return parseBsonObjectId((BsonObjectId) input);
+    } else if (input instanceof BsonTimestamp) {
+      return parseBsonTimestamp((BsonTimestamp) input);
+    } else if (input instanceof BsonBinaryData) {
+      return parseBsonBinary((BsonBinaryData) input);
+    } else if (input instanceof RegexValue) {
+      return parseRegexValue((RegexValue) input);
+    } else if (input instanceof Int32Value) {
+      return parseInteger32Value((Int32Value) input);
+    } else if (input instanceof Decimal128Value) {
+      return parseDecimal128Value((Decimal128Value) input);
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
     } else {
@@ -456,6 +474,88 @@ public final class UserDataReader {
     mapBuilder.putFields(Values.TYPE_KEY, Values.VECTOR_VALUE_TYPE);
     mapBuilder.putFields(Values.VECTOR_MAP_VECTORS_KEY, parseData(vector.toList(), context));
 
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseMinKey() {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_MIN_KEY, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseMaxKey() {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_MAX_KEY, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseBsonObjectId(BsonObjectId objectId) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_OBJECT_ID_KEY,
+        Value.newBuilder().setStringValue((String) objectId.value).build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseBsonTimestamp(BsonTimestamp timestamp) {
+    MapValue.Builder innerMapBuilder = MapValue.newBuilder();
+    innerMapBuilder.putFields(
+        Values.RESERVED_BSON_TIMESTAMP_SECONDS_KEY,
+        Value.newBuilder().setIntegerValue(timestamp.seconds).build());
+    innerMapBuilder.putFields(
+        Values.RESERVED_BSON_TIMESTAMP_INCREMENT_KEY,
+        Value.newBuilder().setIntegerValue(timestamp.increment).build());
+
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_BSON_TIMESTAMP_KEY,
+        Value.newBuilder().setMapValue(innerMapBuilder).build());
+
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseBsonBinary(BsonBinaryData binary) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_BSON_BINARY_KEY,
+        Value.newBuilder()
+            .setBytesValue(
+                ByteString.copyFrom(new byte[] {(byte) binary.subtype()})
+                    .concat(binary.dataAsByteString()))
+            .build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseRegexValue(RegexValue regex) {
+    MapValue.Builder innerMapBuilder = MapValue.newBuilder();
+    innerMapBuilder.putFields(
+        Values.RESERVED_REGEX_PATTERN_KEY,
+        Value.newBuilder().setStringValue(regex.pattern).build());
+    innerMapBuilder.putFields(
+        Values.RESERVED_REGEX_OPTIONS_KEY,
+        Value.newBuilder().setStringValue(regex.options).build());
+
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_REGEX_KEY, Value.newBuilder().setMapValue(innerMapBuilder).build());
+
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseInteger32Value(Int32Value int32) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_INT32_KEY, Value.newBuilder().setIntegerValue(int32.value).build());
+    return Value.newBuilder().setMapValue(mapBuilder).build();
+  }
+
+  private Value parseDecimal128Value(Decimal128Value decimal128) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+    mapBuilder.putFields(
+        Values.RESERVED_DECIMAL128_KEY,
+        Value.newBuilder().setStringValue(decimal128.stringValue).build());
     return Value.newBuilder().setMapValue(mapBuilder).build();
   }
 

@@ -14,6 +14,8 @@
 
 package com.google.cloud.datastore.core.number;
 
+import com.google.firebase.firestore.Quadruple;
+
 /** A utility class for comparing numbers. */
 public final class NumberComparisonHelper {
 
@@ -93,6 +95,29 @@ public final class NumberComparisonHelper {
         return 0;
       }
     }
+  }
+
+  /**
+   * Compares Quadruples with Firestore query semantics: NaN precedes all other numbers and equals
+   * itself, all zeroes are equal.
+   *
+   * @return a negative integer, zero, or a positive integer as the first argument is less than,
+   *     equal to, or greater than the second.
+   */
+  public static int firestoreCompareQuadruples(Quadruple left, Quadruple right) {
+    // For the purposes of comparison, Firestore considers  -0 and +0 to be equal.
+    if ((left.isZero() && right.isZero())) {
+      return 0;
+    }
+
+    // NaN sorts equal to itself and before any other number.
+    if (left.isNaN()) {
+      return right.isNaN() ? 0 : -1;
+    } else if (right.isNaN()) {
+      return 1;
+    }
+
+    return left.compareTo(right);
   }
 
   private NumberComparisonHelper() {}

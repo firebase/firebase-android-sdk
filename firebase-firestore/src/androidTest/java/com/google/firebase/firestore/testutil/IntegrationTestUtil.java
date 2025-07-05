@@ -18,7 +18,9 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.os.StrictMode;
@@ -205,6 +207,36 @@ public class IntegrationTestUtil {
     return testFirestore(newTestSettings());
   }
 
+  public static FirebaseFirestore testFirestoreOnNightly() {
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder()
+            .setHost("test-firestore.sandbox.googleapis.com")
+            .setSslEnabled(true)
+            .build();
+
+    DatabaseId databaseId = DatabaseId.forDatabase("firestore-sdk-nightly", "(default)");
+
+    String persistenceKey = "db" + firestoreStatus.size();
+
+    return testFirestore(databaseId, Level.DEBUG, settings, persistenceKey);
+  }
+
+  public static CollectionReference testCollectionOnNightly() {
+    return testFirestoreOnNightly().collection(autoId());
+  }
+
+  public static DocumentReference testDocumentOnNightly() {
+    return testCollectionOnNightly().document();
+  }
+
+  public static CollectionReference testCollectionWithDocsOnNightly(
+      Map<String, Map<String, Object>> docs) {
+    CollectionReference collection = testCollectionOnNightly();
+    CollectionReference writer = testFirestoreOnNightly().collection(collection.getId());
+    writeAllDocs(writer, docs);
+    return collection;
+  }
+
   /**
    * Initializes a new Firestore instance that uses the default project, customized with the
    * provided settings.
@@ -364,6 +396,12 @@ public class IntegrationTestUtil {
     CollectionReference writer = testFirestore().collection(collection.getId());
     writeAllDocs(writer, docs);
     return collection;
+  }
+
+  public static void writeTestDocsOnCollection(
+      CollectionReference collection, Map<String, Map<String, Object>> docs) {
+    CollectionReference writer = testFirestoreOnNightly().collection(collection.getId());
+    writeAllDocs(writer, docs);
   }
 
   public static void writeAllDocs(
@@ -559,6 +597,71 @@ public class IntegrationTestUtil {
     List<String> expectedDocIds = asList(expectedDocs);
     if (!expectedDocIds.isEmpty()) {
       assertEquals(expectedDocIds, querySnapshotToIds(docsFromServer));
+    }
+  }
+
+  // Asserts that the given query produces the expected result for all of the
+  // following scenarios:
+  // 1. Performing the given query using source=server, compare with expected result and populate
+  // cache.
+  // 2. Performing the given query using source=cache, compare with server result and expected
+  // result.
+  // 3. Using a snapshot listener to raise snapshots from cache and server, compare them with
+  // expected result.
+  public static void assertSDKQueryResultsConsistentWithBackend(
+      Query collection,
+      Query query,
+      Map<String, Map<String, Object>> allData,
+      List<String> expectedDocIds)
+      throws Exception {
+    // Check the cache round trip first to make sure cache is properly populated, otherwise the
+    // snapshot listener below will return partial results from previous
+    // "assertSDKQueryResultsConsistentWithBackend" calls if it is called multiple times in one test
+    checkOnlineAndOfflineResultsMatch(collection, query, expectedDocIds.toArray(new String[0]));
+
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<>();
+    ListenerRegistration registration =
+        query.addSnapshotListener(MetadataChanges.INCLUDE, eventAccumulator.listener());
+    List<QuerySnapshot> watchSnapshots;
+    try {
+      watchSnapshots = eventAccumulator.await(2);
+    } finally {
+      registration.remove();
+    }
+    assertTrue(watchSnapshots.get(0).getMetadata().isFromCache());
+    verifySnapshot(watchSnapshots.get(0), allData, expectedDocIds);
+    assertFalse(watchSnapshots.get(1).getMetadata().isFromCache());
+    verifySnapshot(watchSnapshots.get(1), allData, expectedDocIds);
+  }
+
+  public static void verifySnapshot(
+      QuerySnapshot snapshot,
+      Map<String, Map<String, Object>> allData,
+      List<String> expectedDocIds) {
+    List<String> snapshotDocIds = querySnapshotToIds(snapshot);
+    assertEquals(
+        String.format(
+            "Did not get the same document size. Expected doc size: %d, Actual doc size: %d ",
+            expectedDocIds.size(), snapshotDocIds.size()),
+        expectedDocIds.size(),
+        snapshotDocIds.size());
+    assertTrue(
+        String.format(
+            "Did not get the expected document IDs. Expected doc IDs: %s, Actual doc IDs: %s ",
+            expectedDocIds, snapshotDocIds),
+        expectedDocIds.equals(snapshotDocIds));
+
+    Map<String, Object> actualDocs = toDataMap(snapshot);
+
+    for (String docId : expectedDocIds) {
+      Map<String, Object> expectedDoc = allData.get(docId);
+      Map<String, Object> actualDoc = (Map<String, Object>) actualDocs.get(docId);
+
+      assertTrue(
+          String.format(
+              "Did not get the expected document content. Expected doc: %s, Actual doc: %s ",
+              expectedDoc, actualDoc),
+          expectedDoc.equals(actualDoc));
     }
   }
 }

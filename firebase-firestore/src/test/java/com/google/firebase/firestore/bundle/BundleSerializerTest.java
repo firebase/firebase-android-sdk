@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.ArrayValue;
@@ -212,6 +213,121 @@ public class BundleSerializerTest {
     Value.Builder proto = Value.newBuilder();
     proto.setReferenceValue(TEST_DOCUMENT);
 
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesBsonObjectIdValues() throws JSONException {
+    String json = "{ mapValue: { fields: { __oid__: { stringValue: 'foo' } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_OBJECT_ID_KEY, Value.newBuilder().setStringValue("foo").build()));
+
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesBsonTimestampValues() throws JSONException {
+    String json =
+        "{ mapValue: { fields: { __request_timestamp__: { mapValue: { fields: { seconds: { integerValue: 12345 }, increment: { integerValue: 67 } } } } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_BSON_TIMESTAMP_KEY,
+                Value.newBuilder()
+                    .setMapValue(
+                        MapValue.newBuilder()
+                            .putFields(
+                                Values.RESERVED_BSON_TIMESTAMP_SECONDS_KEY,
+                                Value.newBuilder().setIntegerValue(12345).build())
+                            .putFields(
+                                Values.RESERVED_BSON_TIMESTAMP_INCREMENT_KEY,
+                                Value.newBuilder().setIntegerValue(67).build()))
+                    .build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesBsonBinaryDataValues() throws JSONException {
+    String json = "{ mapValue: { fields: { __binary__: { bytesValue: 'AAECAw==' } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_BSON_BINARY_KEY,
+                Value.newBuilder().setBytesValue(TestUtil.byteString(0, 1, 2, 3)).build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesRegexValues() throws JSONException {
+    String json =
+        "{ mapValue: { fields: { __regex__: { mapValue: { fields: { pattern: { stringValue: '^foo' }, options: { stringValue: 'i' } } } } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_REGEX_KEY,
+                Value.newBuilder()
+                    .setMapValue(
+                        MapValue.newBuilder()
+                            .putFields(
+                                Values.RESERVED_REGEX_PATTERN_KEY,
+                                Value.newBuilder().setStringValue("^foo").build())
+                            .putFields(
+                                Values.RESERVED_REGEX_OPTIONS_KEY,
+                                Value.newBuilder().setStringValue("i").build()))
+                    .build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesInt32Values() throws JSONException {
+    String json = "{ mapValue: { fields: { __int__: { integerValue: 12345 } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_INT32_KEY, Value.newBuilder().setIntegerValue(12345).build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesDecimal128Values() throws JSONException {
+    String json = "{ mapValue: { fields: { __decimal128__: { stringValue: '1.2e3' } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_DECIMAL128_KEY,
+                Value.newBuilder().setStringValue("1.2e3").build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesMinKey() throws JSONException {
+    String json = "{ mapValue: { fields: { __min__: { nullValue: null } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_MIN_KEY,
+                Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()));
+    assertDecodesValue(json, proto.build());
+  }
+
+  @Test
+  public void testDecodesMaxKey() throws JSONException {
+    String json = "{ mapValue: { fields: { __max__: { nullValue: null } } } }";
+    Value.Builder proto = Value.newBuilder();
+    proto.setMapValue(
+        MapValue.newBuilder()
+            .putFields(
+                Values.RESERVED_MAX_KEY,
+                Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()));
     assertDecodesValue(json, proto.build());
   }
 

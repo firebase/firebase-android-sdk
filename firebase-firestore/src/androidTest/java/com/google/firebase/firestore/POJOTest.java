@@ -15,7 +15,9 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionOnNightly;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocumentOnNightly;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -47,6 +49,14 @@ public class POJOTest {
     Blob blob;
     GeoPoint geoPoint;
     DocumentReference documentReference;
+    BsonObjectId bsonObjectId;
+    BsonBinaryData bsonBinaryData;
+    BsonTimestamp bsonTimestamp;
+    RegexValue regexValue;
+    Int32Value int32Value;
+    Decimal128Value decimal128Value;
+    MinKey minKey;
+    MaxKey maxKey;
 
     public POJO() {}
 
@@ -60,6 +70,14 @@ public class POJOTest {
       this.timestamp = new Timestamp(123, 123456000);
       this.blob = Blob.fromBytes(new byte[] {3, 1, 4, 1, 5});
       this.geoPoint = new GeoPoint(3.1415, 9.2653);
+      this.bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
+      this.bsonBinaryData = BsonBinaryData.fromBytes(1, new byte[] {3, 1, 4, 1, 5});
+      this.bsonTimestamp = new BsonTimestamp(1, 2);
+      this.regexValue = new RegexValue("^foo", "i");
+      this.int32Value = new Int32Value(1);
+      this.decimal128Value = new Decimal128Value("1.2e3");
+      this.minKey = MinKey.instance();
+      this.maxKey = MaxKey.instance();
     }
 
     public double getNumber() {
@@ -118,6 +136,70 @@ public class POJOTest {
       this.documentReference = documentReference;
     }
 
+    public BsonObjectId getBsonObjectId() {
+      return bsonObjectId;
+    }
+
+    public void setBsonObjectId(BsonObjectId bsonObjectId) {
+      this.bsonObjectId = bsonObjectId;
+    }
+
+    public BsonBinaryData getBsonBinaryData() {
+      return bsonBinaryData;
+    }
+
+    public void setBsonBinaryData(BsonBinaryData bsonBinaryData) {
+      this.bsonBinaryData = bsonBinaryData;
+    }
+
+    public BsonTimestamp getBsonTimestamp() {
+      return bsonTimestamp;
+    }
+
+    public void setBsonTimestamp(BsonTimestamp bsonTimestamp) {
+      this.bsonTimestamp = bsonTimestamp;
+    }
+
+    public RegexValue getRegexValue() {
+      return regexValue;
+    }
+
+    public void setRegexValue(RegexValue regexValue) {
+      this.regexValue = regexValue;
+    }
+
+    public Int32Value getInt32Value() {
+      return int32Value;
+    }
+
+    public void setInt32Value(Int32Value int32Value) {
+      this.int32Value = int32Value;
+    }
+
+    public Decimal128Value getDecimal128Value() {
+      return decimal128Value;
+    }
+
+    public void setDecimal128Value(Decimal128Value decimal128Value) {
+      this.decimal128Value = decimal128Value;
+    }
+
+    public MinKey getMinKey() {
+      return minKey;
+    }
+
+    public void setMinKey(MinKey minKey) {
+      this.minKey = minKey;
+    }
+
+    public MaxKey getMaxKey() {
+      return maxKey;
+    }
+
+    public void setMaxKey(MaxKey maxKey) {
+      this.maxKey = maxKey;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -147,6 +229,30 @@ public class POJOTest {
       if (!geoPoint.equals(pojo.geoPoint)) {
         return false;
       }
+      if (!bsonBinaryData.equals(pojo.bsonBinaryData)) {
+        return false;
+      }
+      if (!bsonTimestamp.equals(pojo.bsonTimestamp)) {
+        return false;
+      }
+      if (!bsonObjectId.equals(pojo.bsonObjectId)) {
+        return false;
+      }
+      if (!regexValue.equals(pojo.regexValue)) {
+        return false;
+      }
+      if (!int32Value.equals(pojo.int32Value)) {
+        return false;
+      }
+      if (!decimal128Value.equals(pojo.decimal128Value)) {
+        return false;
+      }
+      if (!minKey.equals(pojo.minKey)) {
+        return false;
+      }
+      if (!maxKey.equals(pojo.maxKey)) {
+        return false;
+      }
 
       // TODO: Implement proper equality on DocumentReference.
       return documentReference.getPath().equals(pojo.documentReference.getPath());
@@ -164,6 +270,14 @@ public class POJOTest {
       result = 31 * result + blob.hashCode();
       result = 31 * result + geoPoint.hashCode();
       result = 31 * result + documentReference.getPath().hashCode();
+      result = 31 * result + bsonObjectId.hashCode();
+      result = 31 * result + bsonBinaryData.hashCode();
+      result = 31 * result + bsonTimestamp.hashCode();
+      result = 31 * result + regexValue.hashCode();
+      result = 31 * result + int32Value.hashCode();
+      result = 31 * result + decimal128Value.hashCode();
+      result = 31 * result + minKey.hashCode();
+      result = 31 * result + maxKey.hashCode();
       return result;
     }
   }
@@ -236,7 +350,7 @@ public class POJOTest {
 
   @Test
   public void testWriteAndRead() {
-    CollectionReference collection = testCollection();
+    CollectionReference collection = testCollectionOnNightly();
     POJO data = new POJO(1.0, "a", collection.document());
     DocumentReference reference = waitFor(collection.add(data));
     DocumentSnapshot doc = waitFor(reference.get());
@@ -260,7 +374,7 @@ public class POJOTest {
 
   @Test
   public void testSetMerge() {
-    CollectionReference collection = testCollection();
+    CollectionReference collection = testCollectionOnNightly();
     POJO data = new POJO(1.0, "a", collection.document());
     DocumentReference reference = waitFor(collection.add(data));
     DocumentSnapshot doc = waitFor(reference.get());
@@ -277,7 +391,7 @@ public class POJOTest {
   // General smoke test that makes sure APIs accept POJOs.
   @Test
   public void testAPIsAcceptPOJOsForFields() {
-    DocumentReference ref = testDocument();
+    DocumentReference ref = testDocumentOnNightly();
     ArrayList<Task<?>> tasks = new ArrayList<>();
 
     // as Map<> entries in a set() call.
@@ -296,7 +410,7 @@ public class POJOTest {
 
     // as Query parameters.
     data.setBlob(null); // blobs are broken, see b/117680212
-    tasks.add(testCollection().whereEqualTo("field", data).get());
+    tasks.add(testCollectionOnNightly().whereEqualTo("field", data).get());
 
     waitFor(Tasks.whenAll(tasks));
   }

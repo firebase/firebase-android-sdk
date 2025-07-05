@@ -19,17 +19,24 @@ import static com.google.firebase.firestore.model.ServerTimestamps.getPreviousVa
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_ARRAY;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BLOB;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BOOLEAN;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_BINARY;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_OBJECT_ID;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_GEOPOINT;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MAP;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MAX_KEY;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MIN_KEY;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NULL;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REFERENCE;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REGEX;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_SERVER_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_STRING;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_VECTOR;
 import static com.google.firebase.firestore.model.Values.typeOrder;
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firestore.v1.Value.ValueTypeCase.MAP_VALUE;
 
 import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
@@ -39,6 +46,7 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +86,13 @@ public class UserDataWriter {
       case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
       case TYPE_ORDER_NUMBER:
+        if (value.getValueTypeCase() == MAP_VALUE) {
+          if (Values.isInt32Value(value)) {
+            return convertInt32(value.getMapValue().getFieldsMap());
+          } else if (Values.isDecimal128Value(value)) {
+            return convertDecimal128(value.getMapValue().getFieldsMap());
+          }
+        }
         return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
             ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
             : (Object) value.getDoubleValue();
@@ -90,6 +105,19 @@ public class UserDataWriter {
             value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
       case TYPE_ORDER_VECTOR:
         return convertVectorValue(value.getMapValue().getFieldsMap());
+      case TYPE_ORDER_BSON_OBJECT_ID:
+        return convertBsonObjectId(value.getMapValue().getFieldsMap());
+      case TYPE_ORDER_BSON_TIMESTAMP:
+        return convertBsonTimestamp(value.getMapValue().getFieldsMap());
+      case TYPE_ORDER_BSON_BINARY:
+        return convertBsonBinary(value.getMapValue().getFieldsMap());
+      case TYPE_ORDER_REGEX:
+        return convertRegex(value.getMapValue().getFieldsMap());
+      case TYPE_ORDER_MAX_KEY:
+        return MaxKey.instance();
+      case TYPE_ORDER_MIN_KEY:
+        return MinKey.instance();
+
       default:
         throw fail("Unknown value type: " + value.getValueTypeCase());
     }
@@ -113,6 +141,47 @@ public class UserDataWriter {
     }
 
     return new VectorValue(doubles);
+  }
+
+  BsonObjectId convertBsonObjectId(Map<String, Value> mapValue) {
+    return new BsonObjectId(mapValue.get(Values.RESERVED_OBJECT_ID_KEY).getStringValue());
+  }
+
+  BsonTimestamp convertBsonTimestamp(Map<String, Value> mapValue) {
+    Map<String, Value> fields =
+        mapValue.get(Values.RESERVED_BSON_TIMESTAMP_KEY).getMapValue().getFieldsMap();
+    return new BsonTimestamp(
+        fields.get(Values.RESERVED_BSON_TIMESTAMP_SECONDS_KEY).getIntegerValue(),
+        fields.get(Values.RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).getIntegerValue());
+  }
+
+  BsonBinaryData convertBsonBinary(Map<String, Value> mapValue) {
+    ByteString bytes = mapValue.get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+    // Note: A byte is interpreted as a signed 8-bit value. Since values larger than 127 have a
+    // leading '1' bit, simply casting them to integer results in sign-extension and lead to a
+    // negative integer value. For example, the byte `0x80` casted to `int` results in `-128`,
+    // rather than `128`, and the byte `0xFF` casted to `int` will be `-1` rather than `255`.
+    // Since we want the `subtype` to be an unsigned byte, we need to perform 0-extension (rather
+    // than sign-extension) to convert it to an int.
+    int subtype = bytes.byteAt(0) & 0xFF;
+    return BsonBinaryData.fromByteString(subtype, bytes.substring(1));
+  }
+
+  RegexValue convertRegex(Map<String, Value> mapValue) {
+    Map<String, Value> fields =
+        mapValue.get(Values.RESERVED_REGEX_KEY).getMapValue().getFieldsMap();
+
+    return new RegexValue(
+        fields.get(Values.RESERVED_REGEX_PATTERN_KEY).getStringValue(),
+        fields.get(Values.RESERVED_REGEX_OPTIONS_KEY).getStringValue());
+  }
+
+  Int32Value convertInt32(Map<String, Value> mapValue) {
+    return new Int32Value((int) mapValue.get(Values.RESERVED_INT32_KEY).getIntegerValue());
+  }
+
+  Decimal128Value convertDecimal128(Map<String, Value> mapValue) {
+    return new Decimal128Value(mapValue.get(Values.RESERVED_DECIMAL128_KEY).getStringValue());
   }
 
   private Object convertServerTimestamp(Value serverTimestampValue) {
