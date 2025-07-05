@@ -120,7 +120,7 @@ class FirebaseAppGetDetectorTests : LintDetectorTest() {
                 val instance = FirebaseApp.getInstance().get(Foo::class.java)
 
                 @JvmStatic
-                fun getInstance(app: FirebaseApp) = app.get(Foo::class.java)
+                fun getInstance(app: FirebaseApp): Foo = app.get(Foo::class.java)
               }
             }
         """
@@ -145,7 +145,7 @@ class FirebaseAppGetDetectorTests : LintDetectorTest() {
                 val instance = FirebaseApp.getInstance().get(FooImpl::class.java)
 
                 @JvmStatic
-                fun getInstance(app: FirebaseApp) = app.get(FooImpl::class.java)
+                fun getInstance(app: FirebaseApp): Foo = app.get(FooImpl::class.java)
               }
             }
             class FooImpl : Foo()
