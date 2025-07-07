@@ -1,5 +1,6 @@
-# Unreleased
-
+# 23.0.0
+* [removed] **Breaking change**: FirebaseDynamicLinks has been removed. See
+  https://firebase.google.com/support/dynamic-links-faq for more info.
 
 # 22.1.0
 * [deprecated] `firebase-dynamic-links` is deprecated. For information about timelines and alternatives,
@@ -163,4 +164,3 @@ using Google Play Services 13.2.80 and FDL SDK 16.1.0. The issue only occurred
 when creating shortening links from parameters, links created using
 preconstructed long links from `setLongLink()` were unaffected. This fix also
 addresses issues in newer versions of Google Play Services.
-

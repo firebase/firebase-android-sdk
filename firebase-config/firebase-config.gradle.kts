@@ -85,6 +85,7 @@ dependencies {
   annotationProcessor(libs.autovalue)
   javadocClasspath(libs.autovalue.annotations)
   compileOnly(libs.autovalue.annotations)
+  compileOnly(libs.errorprone.annotations)
   compileOnly(libs.findbugs.jsr305)
 
   // Testing
