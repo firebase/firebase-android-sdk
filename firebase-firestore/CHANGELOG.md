@@ -4,7 +4,7 @@
   [#7053](//github.com/firebase/firebase-android-sdk/issues/7053)
 * [changed] Use `Integer.compare()` (which was added in Android API 19) to compare integers instead
   of Firestore's bespoke implementation, since minSdkVersion has been greater than 19 for some time.
-  [#NNNN](//github.com/firebase/firebase-android-sdk/pull/NNNN)
+  [#7109](//github.com/firebase/firebase-android-sdk/pull/7109)
 
 
 # 25.1.4
