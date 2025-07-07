@@ -91,7 +91,6 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:1.5.3"
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
     implementation 'com.google.android.material:material:1.6.1'
-    implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
     // Shake detection
     implementation 'com.squareup:seismic:1.0.3'
     // Other dependencies
