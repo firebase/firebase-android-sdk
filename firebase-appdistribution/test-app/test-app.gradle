@@ -82,7 +82,6 @@ dependencies {
     // In this test project we also need to explicitly declare these dependencies
     implementation project(':firebase-appdistribution-api')
     // All variants use the API
-    implementation project(':firebase-appdistribution-api:ktx')
     implementation "androidx.activity:activity-ktx:1.6.0"
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
