@@ -291,7 +291,7 @@ public class Values {
     } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
       long leftLong = left.getIntegerValue();
       if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(leftLong, right.getIntegerValue());
+        return Long.compare(leftLong, right.getIntegerValue());
       } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
         return -1 * Util.compareMixed(right.getDoubleValue(), leftLong);
       }
@@ -301,7 +301,7 @@ public class Values {
   }
 
   private static int compareTimestamps(Timestamp left, Timestamp right) {
-    int cmp = Util.compareLongs(left.getSeconds(), right.getSeconds());
+    int cmp = Long.compare(left.getSeconds(), right.getSeconds());
     if (cmp != 0) {
       return cmp;
     }

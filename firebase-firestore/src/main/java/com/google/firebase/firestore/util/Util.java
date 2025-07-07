@@ -115,14 +115,6 @@ public class Util {
     return Integer.compare(left.length(), right.length());
   }
 
-  /**
-   * Utility function to compare longs. Note that we can't use Long.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareLongs(long i1, long i2) {
-    return NumberComparisonHelper.compareLongs(i1, i2);
-  }
-
   /** Utility function to compare doubles (using Firestore semantics for NaN). */
   public static int compareDoubles(double i1, double i2) {
     return NumberComparisonHelper.firestoreCompareDoubles(i1, i2);
