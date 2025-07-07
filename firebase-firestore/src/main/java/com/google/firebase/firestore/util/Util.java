@@ -105,7 +105,7 @@ public class Util {
       final char rightChar = right.charAt(i);
       if (leftChar != rightChar) {
         return (isSurrogate(leftChar) == isSurrogate(rightChar))
-            ? Integer.compare(leftChar, rightChar)
+            ? Character.compare(leftChar, rightChar)
             : isSurrogate(leftChar) ? 1 : -1;
       }
     }
