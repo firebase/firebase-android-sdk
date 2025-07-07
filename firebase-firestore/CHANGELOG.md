@@ -2,6 +2,9 @@
 * [fixed] Further improved performance of UTF-8 string ordering logic,
   which had degraded in v25.1.2 and received some improvements in v25.1.3.
   [#7053](//github.com/firebase/firebase-android-sdk/issues/7053)
+* [changed] Use `Integer.compare()` (which was added in Android API 19) to compare integers instead
+  of Firestore's bespoke implementation, since minSdkVersion has been greater than 19 for some time.
+  [#NNNN](//github.com/firebase/firebase-android-sdk/pull/NNNN)
 
 
 # 25.1.4

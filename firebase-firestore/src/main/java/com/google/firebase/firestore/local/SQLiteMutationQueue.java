@@ -324,7 +324,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       Collections.sort(
           result,
           (MutationBatch lhs, MutationBatch rhs) ->
-              Util.compareIntegers(lhs.getBatchId(), rhs.getBatchId()));
+              Integer.compare(lhs.getBatchId(), rhs.getBatchId()));
     }
     return result;
   }

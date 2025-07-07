@@ -214,7 +214,7 @@ public class Values {
     int rightType = typeOrder(right);
 
     if (leftType != rightType) {
-      return Util.compareIntegers(leftType, rightType);
+      return Integer.compare(leftType, rightType);
     }
 
     switch (leftType) {
@@ -305,7 +305,7 @@ public class Values {
     if (cmp != 0) {
       return cmp;
     }
-    return Util.compareIntegers(left.getNanos(), right.getNanos());
+    return Integer.compare(left.getNanos(), right.getNanos());
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
@@ -319,7 +319,7 @@ public class Values {
         return cmp;
       }
     }
-    return Util.compareIntegers(leftSegments.length, rightSegments.length);
+    return Integer.compare(leftSegments.length, rightSegments.length);
   }
 
   private static int compareGeoPoints(LatLng left, LatLng right) {
@@ -338,7 +338,7 @@ public class Values {
         return cmp;
       }
     }
-    return Util.compareIntegers(left.getValuesCount(), right.getValuesCount());
+    return Integer.compare(left.getValuesCount(), right.getValuesCount());
   }
 
   private static int compareMaps(MapValue left, MapValue right) {
@@ -372,7 +372,7 @@ public class Values {
     ArrayValue rightArrayValue = rightMap.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue();
 
     int lengthCompare =
-        Util.compareIntegers(leftArrayValue.getValuesCount(), rightArrayValue.getValuesCount());
+        Integer.compare(leftArrayValue.getValuesCount(), rightArrayValue.getValuesCount());
     if (lengthCompare != 0) {
       return lengthCompare;
     }
