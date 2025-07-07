@@ -109,7 +109,7 @@ constructor(
 
     CoroutineScope(backgroundDispatcher).launch {
       try {
-        sessionDataStore.updateData {sessionData ->
+        sessionDataStore.updateData { sessionData ->
           sessionData.copy(backgroundTime = timeProvider.currentTime())
         }
       } catch (ex: Exception) {
