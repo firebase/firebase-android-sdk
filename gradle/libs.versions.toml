@@ -53,7 +53,7 @@ material = "1.12.0"
 mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.9"
 mockito = "5.16.0"
-mockitoAndroid = "5.16.0"
+mockitoAndroid = "3.4.0"
 mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
 playServicesCloudMessaging = "17.2.0"
 playServicesStats = "17.0.2"
@@ -195,7 +195,6 @@ kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-te
 mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
-mockito-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
