@@ -57,7 +57,6 @@ dependencies {
   implementation(project(":firebase-config")) {
     exclude(group = "com.google.firebase", module = "firebase-config-interop")
   }
-  implementation(project(":firebase-config:ktx"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its
   // "implementation" dependencies. The alternative would be to make common an "api" dep of
