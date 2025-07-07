@@ -106,7 +106,7 @@ constructor(
       return
     }
     val sessionData = localSessionData
-    Log.d(TAG, "App backgrounded on ${processDataManager.myProcessName} - $sessionData")
+    Log.d(TAG, "App backgrounded on ${processDataManager.myProcessName}")
 
     CoroutineScope(backgroundDispatcher).launch {
       try {
@@ -127,7 +127,7 @@ constructor(
       return
     }
     val sessionData = localSessionData
-    Log.d(TAG, "App foregrounded on ${processDataManager.myProcessName} - $sessionData")
+    Log.d(TAG, "App foregrounded on ${processDataManager.myProcessName}")
 
     // Check if maybe the session data needs to be updated
     if (isSessionExpired(sessionData) || isMyProcessStale(sessionData)) {

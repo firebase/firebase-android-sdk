@@ -38,6 +38,8 @@ constructor(private val sharedSessionRepository: SharedSessionRepository) :
   }
 
   override fun onActivityResumed(activity: Activity) {
+    // There is a known issue in API level 34 where in some cases with a split screen, the call to
+    // onActivityResumed can happen before the call to onActivityPaused. This is fixed in API 35+
     if (enabled) {
       sharedSessionRepository.appForeground()
     }

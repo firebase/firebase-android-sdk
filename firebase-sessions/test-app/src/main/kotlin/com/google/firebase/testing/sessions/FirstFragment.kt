@@ -117,7 +117,6 @@ class FirstFragment : Fragment() {
       val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
-      activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
       val intent = Intent(requireContext(), MainActivity::class.java)
