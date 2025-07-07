@@ -98,6 +98,7 @@ dependencies {
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
     testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
     androidTestImplementation(project(":integ-testing")){
