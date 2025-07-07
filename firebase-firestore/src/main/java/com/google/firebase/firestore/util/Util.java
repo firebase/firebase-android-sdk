@@ -73,20 +73,6 @@ public class Util {
     }
   }
 
-  /**
-   * Utility function to compare integers. Note that we can't use Integer.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareIntegers(int i1, int i2) {
-    if (i1 < i2) {
-      return -1;
-    } else if (i1 > i2) {
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
     // noinspection StringEquality
@@ -119,7 +105,7 @@ public class Util {
       final char rightChar = right.charAt(i);
       if (leftChar != rightChar) {
         return (isSurrogate(leftChar) == isSurrogate(rightChar))
-            ? Util.compareIntegers(leftChar, rightChar)
+            ? Character.compare(leftChar, rightChar)
             : isSurrogate(leftChar) ? 1 : -1;
       }
     }
@@ -127,14 +113,6 @@ public class Util {
     // Use the lengths of the strings to determine the overall comparison result since either the
     // strings were equal or one is a prefix of the other.
     return Integer.compare(left.length(), right.length());
-  }
-
-  /**
-   * Utility function to compare longs. Note that we can't use Long.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareLongs(long i1, long i2) {
-    return NumberComparisonHelper.compareLongs(i1, i2);
   }
 
   /** Utility function to compare doubles (using Firestore semantics for NaN). */
@@ -274,7 +252,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.length, right.length);
+    return Integer.compare(left.length, right.length);
   }
 
   public static int compareByteStrings(ByteString left, ByteString right) {
@@ -290,7 +268,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.size(), right.size());
+    return Integer.compare(left.size(), right.size());
   }
 
   public static StringBuilder repeatSequence(
