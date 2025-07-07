@@ -30,7 +30,6 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.util.Consumer;
-import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
