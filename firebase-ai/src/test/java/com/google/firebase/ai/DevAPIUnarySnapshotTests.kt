@@ -22,6 +22,9 @@ import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -94,5 +97,23 @@ internal class DevAPIUnarySnapshotTests {
   fun `unknown model`() =
     goldenDevAPIUnaryFile("unary-failure-unknown-model.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
+    }
+
+  // This test case can be removed once b/422779395 is
+  // fixed.
+  @Test
+  fun `google search grounding empty grounding chunks`() =
+    goldenDevAPIUnaryFile("unary-success-google-search-grounding-empty-grounding-chunks.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
+      }
     }
 }

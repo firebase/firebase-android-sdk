@@ -29,7 +29,6 @@ test-apps:
       - com.google.firebase:firebase-appdistribution
       - com.google.firebase:firebase-crashlytics
       - com.google.firebase:firebase-database
-      - com.google.firebase:firebase-dynamic-links
       - com.google.firebase:firebase-firestore
       - com.google.firebase:firebase-functions
       - com.google.firebase:firebase-inappmessaging

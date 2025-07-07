@@ -50,6 +50,8 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -104,6 +106,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -200,6 +203,7 @@ public final class FirebaseRemoteConfigTest {
 
   private final ScheduledExecutorService scheduledExecutorService =
       Executors.newSingleThreadScheduledExecutor();
+  private final Clock clock = DefaultClock.getInstance();
 
   @Before
   public void setUp() throws Exception {
@@ -351,7 +355,8 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-            scheduledExecutorService);
+            scheduledExecutorService,
+            sharedPrefsClient);
     configAutoFetch.setIsInBackground(false);
     realtimeSharedPrefsClient =
         new ConfigSharedPrefsClient(
@@ -1549,6 +1554,34 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.listenForNotifications();
 
     verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
+  }
+
+  @Test
+  public void realtime_updatesBackoffMetadataWithProvidedRetryInterval() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    int expectedRetryIntervalInSeconds = 240;
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                String.format(
+                        "{ \"latestTemplateVersionNumber\": 1, \"retryIntervalSeconds\": %d }",
+                        expectedRetryIntervalInSeconds)
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    configAutoFetch.listenForNotifications();
+
+    ArgumentMatcher<Date> backoffEndTimeWithinTolerance =
+        argument -> {
+          Date currentTime = new Date(clock.currentTimeMillis());
+          long backoffDurationInMillis = expectedRetryIntervalInSeconds * 1000L;
+          Date expectedBackoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
+          return Math.abs(argument.getTime() - expectedBackoffEndTime.getTime())
+              <= TimeUnit.SECONDS.toSeconds(1);
+        };
+
+    verify(sharedPrefsClient, times(1))
+        .setRealtimeBackoffEndTime(argThat(backoffEndTimeWithinTolerance));
   }
 
   @Test

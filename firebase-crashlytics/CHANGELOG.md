@@ -1,5 +1,5 @@
 # Unreleased
-
+[changed] **Breaking Change**: Removed deprecated public constructor `KeyValueBuilder(crashlytics: FirebaseCrashlytics)`
 
 # 19.4.4
 * [fixed] Fixed more strict mode violations

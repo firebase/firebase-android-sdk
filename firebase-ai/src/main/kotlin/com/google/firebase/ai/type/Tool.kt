@@ -26,11 +26,19 @@ import kotlinx.serialization.json.JsonObject
  * @param functionDeclarations The set of functions that this tool allows the model access to
  */
 public class Tool
-internal constructor(internal val functionDeclarations: List<FunctionDeclaration>?) {
-  internal fun toInternal() = Internal(functionDeclarations?.map { it.toInternal() } ?: emptyList())
+internal constructor(
+  internal val functionDeclarations: List<FunctionDeclaration>?,
+  internal val googleSearch: GoogleSearch?
+) {
+  internal fun toInternal() =
+    Internal(
+      functionDeclarations?.map { it.toInternal() } ?: emptyList(),
+      googleSearch = this.googleSearch?.toInternal()
+    )
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
+    val googleSearch: GoogleSearch.Internal? = null,
     // This is a json object because it is not possible to make a data class with no parameters.
     val codeExecution: JsonObject? = null,
   )
@@ -43,7 +51,29 @@ internal constructor(internal val functionDeclarations: List<FunctionDeclaration
      */
     @JvmStatic
     public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
-      return Tool(functionDeclarations)
+      return Tool(functionDeclarations, null)
+    }
+
+    /**
+     * Creates a [Tool] instance that allows the model to use Grounding with Google Search.
+     *
+     * Grounding with Google Search can be used to allow the model to connect to Google Search to
+     * access and incorporate up-to-date information from the web into it's responses.
+     *
+     * When using this feature, you are required to comply with the "Grounding with Google Search"
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer
+     * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
+     * or Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
+     *
+     * @param googleSearch An empty [GoogleSearch] object. The presence of this object in the list
+     * of tools enables the model to use Google Search.
+     * @return A [Tool] configured for Google Search.
+     */
+    @JvmStatic
+    public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
+      return Tool(null, googleSearch)
     }
   }
 }
