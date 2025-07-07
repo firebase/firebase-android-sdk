@@ -33,9 +33,9 @@ class FeedbackSender {
   static final String CONTENT_TYPE_PNG = "image/png";
 
   private static final String TAG = "FeedbackSender";
-  private static final String FILE_EXTENSION_JPG = ".jpg";
-  private static final String FILE_EXTENSION_JPEG = ".jpeg";
-  private static final String FILE_EXTENSION_PNG = ".png";
+  private static final String FILE_EXTENSION_JPG = "jpg";
+  private static final String FILE_EXTENSION_JPEG = "jpeg";
+  private static final String FILE_EXTENSION_PNG = "png";
   private static final String DEFAULT_FILENAME = "screenshot.png";
 
   private final ContentResolver contentResolver;
