@@ -255,7 +255,7 @@ public class NetworkClient {
     return (HttpURLConnection) url.openConnection();
   }
 
-  private static final boolean isResponseSuccess(int responseCode) {
+  private static boolean isResponseSuccess(int responseCode) {
     return responseCode >= 200 && responseCode < 300;
   }
 }
