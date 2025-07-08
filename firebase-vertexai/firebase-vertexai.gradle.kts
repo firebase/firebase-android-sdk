@@ -40,7 +40,7 @@ android {
   namespace = "com.google.firebase.vertexai"
   compileSdk = 34
   defaultConfig {
-    minSdk = 23
+    minSdk = rootProject.extra["minSdkVersion"] as Int
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
