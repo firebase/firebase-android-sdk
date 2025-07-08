@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Added internal api for Crashlytics to notify Sessions of crash events
 
 # 2.1.1
 * [unchanged] Updated to keep SDK versions aligned.
