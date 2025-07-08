@@ -70,7 +70,6 @@ dependencies {
     testImplementation libs.junit
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation libs.robolectric
 
     androidTestImplementation project(':appcheck:firebase-appcheck')
@@ -85,5 +84,4 @@ dependencies {
     androidTestImplementation libs.truth
     androidTestImplementation libs.junit
     androidTestImplementation libs.mockito.core
-    androidTestImplementation libs.mockito.mockito.inline
 }

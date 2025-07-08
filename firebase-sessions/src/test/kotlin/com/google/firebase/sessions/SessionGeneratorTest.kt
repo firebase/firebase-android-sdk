@@ -16,12 +16,15 @@
 
 package com.google.firebase.sessions
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeUuidGenerator
-import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class SessionGeneratorTest {
   private fun isValidSessionId(sessionId: String): Boolean {
     if (sessionId.length != 32) {
@@ -36,47 +39,21 @@ class SessionGeneratorTest {
     return true
   }
 
-  // This test case isn't important behavior. Nothing should access
-  // currentSession before generateNewSession has been called.
-  @Test(expected = UninitializedPropertyAccessException::class)
-  fun currentSession_beforeGenerate_throwsUninitialized() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    sessionGenerator.currentSession
-  }
-
-  @Test
-  fun hasGenerateSession_beforeGenerate_returnsFalse() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    assertThat(sessionGenerator.hasGenerateSession).isFalse()
-  }
-
-  @Test
-  fun hasGenerateSession_afterGenerate_returnsTrue() {
-    val sessionGenerator =
-      SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
-
-    sessionGenerator.generateNewSession()
-
-    assertThat(sessionGenerator.hasGenerateSession).isTrue()
-  }
-
   @Test
   fun generateNewSession_generatesValidSessionIds() {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = UuidGeneratorImpl)
 
-    sessionGenerator.generateNewSession()
+    val sessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
-    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
-    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.firstSessionId)).isTrue()
 
     // Validate several random session ids.
+    var currentSession = sessionDetails
     repeat(16) {
-      assertThat(isValidSessionId(sessionGenerator.generateNewSession().sessionId)).isTrue()
+      currentSession = sessionGenerator.generateNewSession(currentSession)
+      assertThat(isValidSessionId(currentSession.sessionId)).isTrue()
     }
   }
 
@@ -85,18 +62,18 @@ class SessionGeneratorTest {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
-    sessionGenerator.generateNewSession()
+    val sessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
-    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
-    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionDetails.firstSessionId)).isTrue()
 
-    assertThat(sessionGenerator.currentSession)
+    assertThat(sessionDetails)
       .isEqualTo(
         SessionDetails(
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
         )
       )
   }
@@ -108,7 +85,7 @@ class SessionGeneratorTest {
     val sessionGenerator =
       SessionGenerator(timeProvider = FakeTimeProvider(), uuidGenerator = FakeUuidGenerator())
 
-    val firstSessionDetails = sessionGenerator.generateNewSession()
+    val firstSessionDetails = sessionGenerator.generateNewSession(currentSession = null)
 
     assertThat(isValidSessionId(firstSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(firstSessionDetails.firstSessionId)).isTrue()
@@ -119,11 +96,12 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
         )
       )
 
-    val secondSessionDetails = sessionGenerator.generateNewSession()
+    val secondSessionDetails =
+      sessionGenerator.generateNewSession(currentSession = firstSessionDetails)
 
     assertThat(isValidSessionId(secondSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(secondSessionDetails.firstSessionId)).isTrue()
@@ -135,12 +113,13 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_2,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 1,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
         )
       )
 
     // Do a third round just in case
-    val thirdSessionDetails = sessionGenerator.generateNewSession()
+    val thirdSessionDetails =
+      sessionGenerator.generateNewSession(currentSession = secondSessionDetails)
 
     assertThat(isValidSessionId(thirdSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(thirdSessionDetails.firstSessionId)).isTrue()
@@ -151,7 +130,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_3,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 2,
-          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
         )
       )
   }

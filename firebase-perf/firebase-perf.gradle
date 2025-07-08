@@ -136,6 +136,5 @@ dependencies {
     testImplementation libs.androidx.test.rules
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
 }

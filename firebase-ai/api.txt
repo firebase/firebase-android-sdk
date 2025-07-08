@@ -364,6 +364,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
@@ -375,6 +376,7 @@ package com.google.firebase.ai.type {
     field public com.google.firebase.ai.type.Schema? responseSchema;
     field public java.util.List<java.lang.String>? stopSequences;
     field public Float? temperature;
+    field public com.google.firebase.ai.type.ThinkingConfig? thinkingConfig;
     field public Integer? topK;
     field public Float? topP;
   }
@@ -997,6 +999,19 @@ package com.google.firebase.ai.type {
     property public final String text;
   }
 
+  public final class ThinkingConfig {
+  }
+
+  public static final class ThinkingConfig.Builder {
+    ctor public ThinkingConfig.Builder();
+    method public com.google.firebase.ai.type.ThinkingConfig build();
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
+  }
+
+  public final class ThinkingConfigKt {
+    method public static com.google.firebase.ai.type.ThinkingConfig thinkingConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ThinkingConfig.Builder,kotlin.Unit> init);
+  }
+
   public final class Tool {
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
@@ -1019,16 +1034,18 @@ package com.google.firebase.ai.type {
   }
 
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails);
+    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
+    method public int getThoughtsTokenCount();
     method public int getTotalTokenCount();
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
+    property public final int thoughtsTokenCount;
     property public final int totalTokenCount;
   }
 
