@@ -106,19 +106,11 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
     val versionClassifier = version.replace(".", "-")
 
-    val baseReleaseNotes =
+    val releaseNotes =
       """
         |### ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
         |
         |${unreleased.content.toReleaseNotes()}
-      """
-        .trimMargin()
-        .trim()
-
-    val releaseNotes =
-      """
-        |$baseReleaseNotes
-        |
       """
         .trimMargin()
         .trim()
