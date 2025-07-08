@@ -68,7 +68,6 @@ dependencies {
     testImplementation libs.truth
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core

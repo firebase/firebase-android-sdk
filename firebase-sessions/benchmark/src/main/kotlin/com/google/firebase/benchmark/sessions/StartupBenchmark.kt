@@ -20,6 +20,8 @@ import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import java.io.FileInputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +33,7 @@ class StartupBenchmark {
   @Test
   fun startup() =
     benchmarkRule.measureRepeated(
-      packageName = "com.google.firebase.testing.sessions",
+      packageName = PACKAGE_NAME,
       metrics = listOf(StartupTimingMetric()),
       iterations = 5,
       startupMode = StartupMode.COLD,
@@ -39,4 +41,35 @@ class StartupBenchmark {
       pressHome()
       startActivityAndWait()
     }
+
+  @Test
+  fun startup_clearAppData() =
+    benchmarkRule.measureRepeated(
+      packageName = PACKAGE_NAME,
+      metrics = listOf(StartupTimingMetric()),
+      iterations = 5,
+      startupMode = StartupMode.COLD,
+      setupBlock = { clearAppData(packageName) },
+    ) {
+      pressHome()
+      startActivityAndWait()
+    }
+
+  private fun clearAppData(packageName: String) {
+    val fileDescriptor =
+      InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand("pm clear $packageName")
+    val fileInputStream = FileInputStream(fileDescriptor.fileDescriptor)
+    // Read the output to ensure the app data was cleared successfully
+    val result = fileInputStream.bufferedReader().use { it.readText().trim() }
+    fileDescriptor.close()
+    if (result != "Success") {
+      throw IllegalStateException("Unable to clear app data for $packageName - $result")
+    }
+  }
+
+  private companion object {
+    const val PACKAGE_NAME = "com.google.firebase.testing.sessions"
+  }
 }
