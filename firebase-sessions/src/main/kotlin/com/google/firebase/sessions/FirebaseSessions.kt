@@ -42,7 +42,7 @@ constructor(
 ) {
 
   init {
-    Log.d(TAG, "Initializing Firebase Sessions SDK.")
+    Log.d(TAG, "Initializing Firebase Sessions ${BuildConfig.VERSION_NAME}.")
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionsActivityLifecycleCallbacks)
