@@ -1,0 +1,54 @@
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    libraryGroup = "appcheck"
+    releaseNotes {
+        name.set("{{app_check}} Recaptcha Enterprise")
+        versionName.set("appcheck-recaptchaenterprise")
+        hasKTX.set(false)
+    }
+}
+
+android {
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    namespace "com.google.firebase.appcheck.recaptchaenterprise"
+    compileSdkVersion project.compileSdkVersion
+    defaultConfig {
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    testOptions.unitTests.includeAndroidResources = false
+}
+
+dependencies {
+    javadocClasspath libs.autovalue.annotations
+
+    api project(':appcheck:firebase-appcheck')
+    api 'com.google.firebase:firebase-annotations:16.2.0'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-common-ktx:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
+    api 'com.google.android.recaptcha:recaptcha:18.8.0-beta01'
+
+    testImplementation(project(":integ-testing")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core.v5120
+    testImplementation libs.robolectric
+}
