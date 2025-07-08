@@ -1,4 +1,8 @@
 # Unreleased
+* [feature] Added support for configuring the "thinking" budget when using Gemini
+  2.5 series models. (#6990)
+* [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
+    * **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`, `retrievalQueries` in `GroundingMetadata` to be non-optional.
 * [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
   `countTokens()`.
 * [feature] Added new overloads for `generateContent()`, `generateContentStream()` and
