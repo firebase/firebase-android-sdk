@@ -73,7 +73,6 @@ dependencies {
     testImplementation libs.truth
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation libs.robolectric
 
     androidTestImplementation(project(":integ-testing")){
@@ -86,5 +85,4 @@ dependencies {
     androidTestImplementation libs.truth
     androidTestImplementation libs.junit
     androidTestImplementation libs.mockito.core
-    androidTestImplementation libs.mockito.mockito.inline
 }

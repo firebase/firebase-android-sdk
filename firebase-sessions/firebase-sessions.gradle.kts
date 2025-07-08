@@ -57,7 +57,10 @@ android {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    baseline = file("lint-baseline.xml")
+    targetSdk = targetSdkVersion
+  }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {

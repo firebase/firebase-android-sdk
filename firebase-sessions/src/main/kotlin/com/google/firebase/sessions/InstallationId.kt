@@ -36,7 +36,7 @@ internal class InstallationId private constructor(val fid: String, val authToken
         }
       val fid: String =
         try {
-          firebaseInstallations.id.await()
+          firebaseInstallations.id.await() ?: ""
         } catch (ex: Exception) {
           Log.w(TAG, "Error getting Firebase installation id .", ex)
           ""
