@@ -95,6 +95,7 @@ public class FiamWindowManagerTest {
     expectedLayoutParams.dimAmount = 0.3f;
     expectedLayoutParams.gravity = WINDOW_GRAVITY;
     expectedLayoutParams.windowAnimations = 0;
+    expectedLayoutParams.flags = 16777217; // Ignore flags (unblocks robolectric >4.12 update)
 
     fiamWindowManager.show(bindingWrapper, activity);
     fiamWindowManager.show(bindingWrapper, activity);
