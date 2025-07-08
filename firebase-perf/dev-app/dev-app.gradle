@@ -88,7 +88,6 @@ dependencies {
         println("Building with HEAD version ':firebase-perf' of SDK")
         implementation project(":firebase-perf")
         implementation "com.google.firebase:firebase-common:21.0.0"
-        implementation "com.google.firebase:firebase-common-ktx:21.0.0"
         implementation project(":firebase-config")
 
     } else {

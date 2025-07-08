@@ -72,7 +72,6 @@ dependencies {
     api(libs.playservices.tasks)
     api("com.google.firebase:firebase-annotations:16.2.0")
     api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-config-interop:16.0.1")
     api("com.google.firebase:firebase-encoders:17.0.0")

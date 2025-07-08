@@ -57,7 +57,6 @@ dependencies {
   implementation(project(":firebase-config")) {
     exclude(group = "com.google.firebase", module = "firebase-config-interop")
   }
-  implementation(project(":firebase-config:ktx"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its
   // "implementation" dependencies. The alternative would be to make common an "api" dep of
@@ -65,7 +64,6 @@ dependencies {
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
   implementation("com.google.firebase:firebase-common:21.0.0")
-  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
@@ -80,7 +78,6 @@ dependencies {
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:21.0.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

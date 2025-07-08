@@ -76,14 +76,6 @@ package com.google.firebase.inappmessaging {
 
 }
 
-package com.google.firebase.inappmessaging.ktx {
-
-  public final class InAppMessagingKt {
-    method @Deprecated public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInAppMessaging(com.google.firebase.ktx.Firebase);
-  }
-
-}
-
 package com.google.firebase.inappmessaging.model {
 
   public class Action {

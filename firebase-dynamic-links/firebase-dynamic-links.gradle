@@ -12,76 +12,88 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 plugins {
     id 'firebase-library'
     id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup = "installations"
+    libraryGroup = "dynamic-links"
+    testLab.enabled = false
     releaseNotes {
-        name.set("{{firebase_installations}}")
-        versionName.set("installations")
+        name.set("{{ddls}}")
+        versionName.set("dynamic-links")
     }
 }
 
 android {
-    namespace "com.google.firebase.installations"
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    buildFeatures {
+        aidl true
+    }
+
+    namespace "com.google.firebase.dynamiclinks"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
-        multiDexEnabled true
+        minSdkVersion project.minSdkVersion
         versionName version
+        multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions { jvmTarget = "1.8" }
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
     }
+
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
+    javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
+    javadocClasspath libs.checker.qual
 
     api libs.playservices.tasks
-    api 'com.google.firebase:firebase-annotations:16.2.0'
+    api('com.google.firebase:firebase-auth-interop:20.0.0') {
+         exclude group: "com.google.firebase", module: "firebase-common"
+     }
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")
-    api 'com.google.firebase:firebase-installations-interop:17.1.0'
-    api("com.google.firebase:firebase-installations-interop:17.1.1")
+    api('com.google.firebase:firebase-measurement-connector:19.0.0') {
+         exclude group: 'com.google.firebase', module: 'firebase-common'
+     }
 
+    implementation libs.androidx.annotation
+    implementation libs.playservices.base
+    implementation libs.playservices.basement
     implementation libs.kotlin.stdlib
 
-    compileOnly libs.autovalue.annotations
+    testAnnotationProcessor libs.autovalue
 
-    annotationProcessor libs.autovalue
-
-    testImplementation(project(":integ-testing")){
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
     testImplementation libs.androidx.test.core
+    testImplementation libs.runner
+    testImplementation libs.jackson.databind
+    testImplementation('com.google.android.gms:play-services-appinvite:18.0.0') {
+         exclude group: 'com.google.firebase', module: 'firebase-common'
+         exclude group: 'com.google.firebase', module: 'firebase-dynamic-links'
+     }
+    testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation libs.truth
     testImplementation libs.junit
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
-    androidTestImplementation(project(":integ-testing")){
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
-    androidTestImplementation libs.androidx.annotation
-    androidTestImplementation libs.androidx.test.runner
-    androidTestImplementation libs.androidx.test.junit
-    androidTestImplementation libs.truth
-    androidTestImplementation libs.junit
-    androidTestImplementation libs.mockito.core
+    testCompileOnly libs.autovalue.annotations
 }

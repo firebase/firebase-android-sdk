@@ -107,12 +107,3 @@ package com.google.firebase.messaging {
 
 }
 
-package com.google.firebase.messaging.ktx {
-
-  public final class MessagingKt {
-    method @Deprecated public static com.google.firebase.messaging.FirebaseMessaging getMessaging(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(String to, kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
-  }
-
-}
-
