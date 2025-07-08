@@ -38,6 +38,7 @@ android {
 
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
+    applicationIdSuffix = "" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     versionCode = 1
@@ -55,6 +56,7 @@ android {
   }
 
   buildTypes {
+    release { signingConfig = signingConfigs["debug"] }
     create("benchmark") {
       initWith(buildTypes["release"])
       signingConfig = signingConfigs["debug"]

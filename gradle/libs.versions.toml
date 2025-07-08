@@ -3,11 +3,11 @@
 # it needs to match the protobuf version which grpc has transitive dependency on, which
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
-androidGradlePlugin = "8.3.2"
+androidGradlePlugin = "8.6.1"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
 androidx-test-truth = "1.6.0"
-appcompat = "1.7.0"
+appcompat = "1.7.1"
 autoValueParcel = "0.2.6"
 autovalue = "1.10.1"
 awaitility = "3.1.0"
@@ -17,8 +17,8 @@ cardview = "1.0.0"
 checkerQual = "2.5.2"
 constraintlayout = "2.1.4"
 coreKtx = "1.12.0"
-coroutines = "1.7.3"
-dagger = "2.43.2"
+coroutines = "1.9.0"
+dagger = "2.51"                 # Don't bump above 2.51 as it causes a bug in AppDistro FeedbackSender JPEG code
 datastore = "1.1.3"
 dexmaker = "2.28.1"
 dexmakerVersion = "1.2"
@@ -45,16 +45,16 @@ javalite = "3.25.5"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
-kotlin = "1.8.22"
-ktorVersion = "2.3.2"
+kotlin = "2.0.21"
+ktorVersion = "3.0.3"
 legacySupportV4 = "1.0.0"
 lifecycleProcess = "2.3.1"
 material = "1.12.0"
 mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.9"
-mockito = "5.2.0"
+mockito = "5.16.0"
 mockitoAndroid = "3.4.0"
-mockk = "1.13.11"
+mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
 playServicesCloudMessaging = "17.2.0"
 playServicesStats = "17.0.2"
 playServicesVision = "20.1.3"
@@ -68,7 +68,7 @@ robolectric = "4.12"
 runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.1.14"
-serialization = "1.5.1"
+serialization = "1.7.3"
 slf4jNop = "2.0.9"
 spotless = "7.0.4"
 testServices = "1.2.0"
@@ -195,7 +195,6 @@ kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-te
 mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
-mockito-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
@@ -210,7 +209,7 @@ spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradl
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
 truth-proto-extension = { module = "com.google.truth.extensions:truth-proto-extension", version.ref = "truthProtoExtension" }
-turbine = { module = "app.cash.turbine:turbine", version = "1.2.0" }
+turbine = { module = "app.cash.turbine:turbine", version = "1.2.1" }
 
 # Remove three-ten-abp once minSdkVersion is changed to 26 or later, and, instead use the
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.

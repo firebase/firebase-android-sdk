@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_FIRST;
 import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.Util.compareIntegers;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -301,7 +300,7 @@ public class View {
     Collections.sort(
         viewChanges,
         (DocumentViewChange o1, DocumentViewChange o2) -> {
-          int typeComp = compareIntegers(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
+          int typeComp = Integer.compare(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
           if (typeComp != 0) {
             return typeComp;
           }

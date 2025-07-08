@@ -363,7 +363,7 @@ public class RemoteConfigManager {
   @VisibleForTesting
   protected void syncConfigValues(Map<String, FirebaseRemoteConfigValue> newlyFetchedMap) {
     allRcConfigMap.putAll(newlyFetchedMap);
-    for (String existingKey : allRcConfigMap.keySet()) {
+    for (String existingKey : ((Map<String, FirebaseRemoteConfigValue>) allRcConfigMap).keySet()) {
       if (!newlyFetchedMap.containsKey(existingKey)) {
         allRcConfigMap.remove(existingKey);
       }
