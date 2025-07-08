@@ -15,6 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id("kotlin-android")
 }
 
 firebaseLibrary{
