@@ -55,12 +55,15 @@ package com.google.firebase.ai {
     method public suspend Object? countTokens(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? countTokens(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? countTokens(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
+    method public suspend Object? countTokens(java.util.List<com.google.firebase.ai.type.Content> prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? generateContent(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public suspend Object? generateContent(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public suspend Object? generateContent(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? generateContent(java.util.List<com.google.firebase.ai.type.Content> prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(android.graphics.Bitmap prompt);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
