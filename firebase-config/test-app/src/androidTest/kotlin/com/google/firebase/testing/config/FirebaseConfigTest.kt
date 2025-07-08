@@ -18,8 +18,8 @@ package com.google.firebase.testing.config
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.firebase.FirebaseApp
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.initialize
 import org.junit.After
 import org.junit.Before
