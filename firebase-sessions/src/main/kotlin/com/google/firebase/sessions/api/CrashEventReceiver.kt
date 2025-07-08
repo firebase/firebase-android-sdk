@@ -16,6 +16,9 @@
 
 package com.google.firebase.sessions.api
 
+import androidx.annotation.VisibleForTesting
+import com.google.firebase.sessions.SharedSessionRepository
+
 /**
  * Internal API used by Firebase Crashlytics to notify the Firebase Sessions SDK of fatal crashes.
  *
@@ -23,6 +26,8 @@ package com.google.firebase.sessions.api
  * crash has occurred.
  */
 object CrashEventReceiver {
+  @VisibleForTesting internal lateinit var sharedSessionRepository: SharedSessionRepository
+
   /**
    * Notifies the Firebase Sessions SDK that a fatal crash has occurred.
    *
@@ -34,6 +39,18 @@ object CrashEventReceiver {
    */
   @JvmStatic
   fun notifyCrashOccurred() {
-    // TODO(mrober): Implement in #7039
+    try {
+      if (!::sharedSessionRepository.isInitialized) {
+        sharedSessionRepository = SharedSessionRepository.instance
+      }
+      // Treat a foreground crash as if the app went to the background, and update session state.
+      if (sharedSessionRepository.isInForeground) {
+        sharedSessionRepository.appBackground()
+      }
+    } catch (_: Exception) {
+      // Catch and suppress any exception to avoid crashing during crash handling.
+      // This can occur if Firebase or the SDK are in an unexpected state (e.g. FirebaseApp deleted)
+      // No action needed, avoid interfering with the crash reporting process.
+    }
   }
 }
