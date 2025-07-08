@@ -45,14 +45,6 @@ Note: We did some super cool stuff here!
 
 * [removed] some stuff that we didn't really like got removed
 
-## Kotlin
-* [feature] Added
-  [`Query.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects)
-  and
-  [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
-  Kotlin Flows to listen for realtime updates and convert its values to a
-  specific type.
-
 # 24.5.0
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps.
   (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
