@@ -20,7 +20,7 @@ plugins {
 firebaseLibrary{
     libraryGroup = "transport"
     publishJavadoc = false
-    releaseNotes { 
+    releaseNotes {
         enabled.set(false)
     }
 }
@@ -41,7 +41,7 @@ protobuf {
 }
 
 android {
-    namespace "com.google.android.datatransport.backend.cct"    
+    namespace "com.google.android.datatransport.backend.cct"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -62,7 +62,7 @@ dependencies {
     api 'com.google.firebase:firebase-encoders:17.0.0'
     api 'com.google.firebase:firebase-encoders-json:18.0.0'
 
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
 

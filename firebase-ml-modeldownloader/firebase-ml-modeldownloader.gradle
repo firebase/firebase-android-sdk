@@ -100,7 +100,7 @@ dependencies {
     api("com.google.firebase:firebase-installations:17.2.0")
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
 
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
     implementation 'com.google.auto.service:auto-service-annotations:1.0.1'

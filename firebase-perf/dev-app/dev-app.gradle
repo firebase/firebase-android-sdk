@@ -97,7 +97,7 @@ dependencies {
     }
 
     // Google Deps
-    implementation 'androidx.annotation:annotation:1.4.0'
+    implementation libs.androidx.annotation
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.2'
     implementation 'androidx.appcompat:appcompat:1.4.2'

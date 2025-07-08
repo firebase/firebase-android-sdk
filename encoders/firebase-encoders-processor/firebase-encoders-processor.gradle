@@ -44,7 +44,7 @@ configurations.testImplementation.resolutionStrategy {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
 }
 
 test {
