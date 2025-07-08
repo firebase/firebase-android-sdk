@@ -13,13 +13,16 @@
 // limitations under the License.
 package com.google.firebase.messaging.shadows;
 
+import static org.robolectric.util.reflector.Reflector.reflector;
+
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.RealObject;
-import org.robolectric.shadow.api.Shadow;
+import org.robolectric.util.reflector.Direct;
+import org.robolectric.util.reflector.ForType;
 
 @Implements(Messenger.class)
 public class ShadowMessenger {
@@ -28,12 +31,18 @@ public class ShadowMessenger {
 
   private static RemoteException sendException = null;
 
+  @ForType(Messenger.class)
+  interface MessengerReflector {
+    @Direct
+    void send(Messenger messenger, Message message) throws RemoteException;
+  }
+
   @Implementation
   protected void send(Message message) throws RemoteException {
     if (sendException != null) {
       throw sendException;
     } else {
-      Shadow.directlyOn(realMessenger, Messenger.class).send(message);
+      reflector(Messenger.class, realMessenger).send(message);
     }
   }
 

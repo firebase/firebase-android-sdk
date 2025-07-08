@@ -36,7 +36,7 @@ public final class Coverage {
     File reportsDir = new File(project.getBuildDir(), "/reports/jacoco");
     JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 
-    jacoco.setToolVersion("0.8.8");
+    jacoco.setToolVersion("0.8.13");
     jacoco.getReportsDirectory().set(reportsDir);
     project
         .getTasks()

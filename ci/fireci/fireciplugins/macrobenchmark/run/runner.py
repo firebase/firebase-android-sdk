@@ -119,7 +119,6 @@ def _process_changed_modules(path: Path) -> List[str]:
     ":firebase-components": ["Firebase", "ComponentDiscovery", "Runtime"],
     ":firebase-database": ["fire-rtdb"],
     ":firebase-datatransport": ["fire-transport"],
-    ":firebase-dynamic-links": ["fire-dl"],
     ":firebase-crashlytics": ["fire-cls"],
     ":firebase-crashlytics-ndk": ["fire-cls"],
     ":firebase-firestore": ["fire-fst"],
