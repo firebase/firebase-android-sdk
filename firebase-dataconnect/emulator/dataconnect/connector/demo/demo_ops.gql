@@ -1624,3 +1624,46 @@ query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3
 mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
   enumNonNullable_update(key: $key, data: { value: $value })
 }
+
+###############################################################################
+# Operations for table: type EnumNullable
+###############################################################################
+
+mutation EnumNullable_Insert($value: N5ekmae3jn) @auth(level: PUBLIC) {
+  key: enumNullable_insert(data: { value: $value })
+}
+
+mutation EnumNullable_Insert3($tag: String!, $value1: N5ekmae3jn, $value2: N5ekmae3jn, $value3: N5ekmae3jn) @auth(level: PUBLIC) {
+  key1: enumNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNullable_GetByKey($key: EnumNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullable(key: $key) { value }
+}
+
+query EnumNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn = XGWGVMYTHJ) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNullable_UpdateByKey($key: EnumNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNullable_update(key: $key, data: { value: $value })
+}

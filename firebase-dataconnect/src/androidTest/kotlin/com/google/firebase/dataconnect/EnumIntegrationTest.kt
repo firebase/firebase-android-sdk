@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
@@ -36,6 +37,10 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     val connectorConfig = testConnectorConfig.copy(connector = "demo")
     dataConnectFactory.newInstance(connectorConfig)
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNonNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
   fun insertNonNullableEnumValue() = runTest {
@@ -109,7 +114,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryNonNullableByDefaultEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>()
-    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
+      value1,
+      value2,
+      value3,
+      tag ->
       val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
       val queryVariables = GetNonNullableByTagAndDefaultValueVariables(tag)
@@ -118,6 +127,34 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder matchingKeys }
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNullableNonNullEnumValue() = runTest {
+    N5ekmae3jn.entries.forEach { enumValue ->
+      val insertVariables = InsertNullableVariables(enumValue)
+      val key = dataConnect.mutation(insertVariables).execute().data.key
+      val queryVariables = GetNullableByKeyVariables(key)
+      val queryResult = dataConnect.query(queryVariables).execute().data
+      withClue(queryResult) { queryResult?.item?.value shouldBe enumValue }
+    }
+  }
+
+  @Test
+  fun insertNullableNullEnumValue() = runTest {
+    val insertVariables = InsertNullableVariables(null)
+    val key = dataConnect.mutation(insertVariables).execute().data.key
+    val queryVariables = GetNullableByKeyVariables(key)
+    val queryResult = dataConnect.query(queryVariables).execute().data
+    withClue(queryResult) { queryResult?.item?.value.shouldBeNull() }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper classes and functions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Serializable private data class RowKey(val id: String)
 
@@ -149,6 +186,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Serializable private data class InsertNonNullableVariables(val value: N5ekmae3jn)
 
+  @Serializable private data class InsertNullableVariables(val value: N5ekmae3jn?)
+
   @Serializable
   private data class Insert3NonNullableVariables(
     val tag: String,
@@ -157,10 +196,23 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     val value3: N5ekmae3jn
   )
 
+  @Serializable
+  private data class Insert3NullableVariables(
+    val tag: String,
+    val value1: N5ekmae3jn?,
+    val value2: N5ekmae3jn?,
+    val value3: N5ekmae3jn?
+  )
+
   @Serializable private data class GetNonNullableByKeyVariables(val key: RowKey)
+
+  @Serializable private data class GetNullableByKeyVariables(val key: RowKey)
 
   @Serializable
   private data class GetNonNullableByTagAndValueVariables(val tag: String, val value: N5ekmae3jn)
+
+  @Serializable
+  private data class GetNullableByTagAndValueVariables(val tag: String, val value: N5ekmae3jn?)
 
   @Serializable
   private data class GetNonNullableByTagAndMaybeValueVariables(
@@ -168,14 +220,29 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     val value: OptionalVariable<N5ekmae3jn?>
   )
 
+  @Serializable
+  private data class GetNullableByTagAndMaybeValueVariables(
+    val tag: String,
+    val value: OptionalVariable<N5ekmae3jn?>
+  )
+
   @Serializable private data class GetNonNullableByTagAndDefaultValueVariables(val tag: String)
+
+  @Serializable private data class GetNullableByTagAndDefaultValueVariables(val tag: String)
 
   @Serializable
   private data class UpdateNonNullableVariables(val key: RowKey, val value: N5ekmae3jn)
 
+  @Serializable private data class UpdateNullableVariables(val key: RowKey, val value: N5ekmae3jn?)
+
   @Serializable
   private data class GetNonNullableByKeyData(val item: Item?) {
     @Serializable data class Item(val value: N5ekmae3jn)
+  }
+
+  @Serializable
+  private data class GetNullableByKeyData(val item: Item?) {
+    @Serializable data class Item(val value: N5ekmae3jn?)
   }
 
   private enum class N5ekmae3jn {
@@ -226,5 +293,40 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       variables: GetNonNullableByTagAndDefaultValueVariables
     ): QueryRef<QueryAllData, GetNonNullableByTagAndDefaultValueVariables> =
       query("EnumNonNullable_GetAllByTagAndDefaultValue", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.mutation(
+      variables: InsertNullableVariables
+    ): MutationRef<InsertData, InsertNullableVariables> =
+      mutation("EnumNullable_Insert", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.mutation(
+      variables: Insert3NullableVariables
+    ): MutationRef<Insert3Data, Insert3NullableVariables> =
+      mutation("EnumNullable_Insert3", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.mutation(
+      variables: UpdateNullableVariables
+    ): MutationRef<Unit, UpdateNullableVariables> =
+      mutation("EnumNullable_UpdateByKey", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetNullableByKeyVariables
+    ): QueryRef<GetNullableByKeyData?, GetNullableByKeyVariables> =
+      query("EnumNullable_GetByKey", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetNullableByTagAndValueVariables
+    ): QueryRef<QueryAllData, GetNullableByTagAndValueVariables> =
+      query("EnumNullable_GetAllByTagAndValue", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetNullableByTagAndMaybeValueVariables
+    ): QueryRef<QueryAllData, GetNullableByTagAndMaybeValueVariables> =
+      query("EnumNullable_GetAllByTagAndMaybeValue", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetNullableByTagAndDefaultValueVariables
+    ): QueryRef<QueryAllData, GetNullableByTagAndDefaultValueVariables> =
+      query("EnumNullable_GetAllByTagAndDefaultValue", variables, serializer(), serializer())
   }
 }

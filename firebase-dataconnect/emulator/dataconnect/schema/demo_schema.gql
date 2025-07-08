@@ -370,3 +370,8 @@ type EnumNonNullable @table @index(fields: ["tag"]) {
   tag: String
 }
 
+type EnumNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn
+  tag: String
+}
+
