@@ -3,6 +3,10 @@
   2.5 series models. (#6990)
 * [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
     * **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`, `retrievalQueries` in `GroundingMetadata` to be non-optional.
+* [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
+  `countTokens()`.
+* [feature] Added new overloads for `generateContent()`, `generateContentStream()` and
+ `countTokens()` that take a `List<Content>` parameter. 
 
 # 16.2.0
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
@@ -34,3 +38,4 @@
 
  Note: This feature is in Public Preview, which means that it is not subject to any SLA or
  deprecation policy and could change in backwards-incompatible ways.
+
