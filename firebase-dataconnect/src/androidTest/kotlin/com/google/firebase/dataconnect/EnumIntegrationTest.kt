@@ -39,7 +39,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun insertNonNullableEnumValue() = runTest {
-    N5ekmae3jn.values().forEach { enumValue ->
+    N5ekmae3jn.entries.forEach { enumValue ->
       val insertVariables = InsertNonNullableVariables(enumValue)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableByKeyVariables(key)
@@ -73,9 +73,9 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       tag ->
       val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
-      val matchingKeys = insertResult.keysForMatchingValues(value4, insertVariables)
       val queryVariables = GetNonNullableByTagAndValueVariables(tag, value4)
       val queryResult = dataConnect.query(queryVariables).execute().data
+      val matchingKeys = insertResult.keysForMatchingValues(value4, insertVariables)
       withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder matchingKeys }
     }
   }
@@ -109,12 +109,12 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryNonNullableByDefaultEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>()
-    checkAll(5, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
       val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
-      val matchingKeys = insertResult.keysForMatchingValues(N5ekmae3jn.XGWGVMYTHJ, insertVariables)
       val queryVariables = GetNonNullableByTagAndDefaultValueVariables(tag)
       val queryResult = dataConnect.query(queryVariables).execute().data
+      val matchingKeys = insertResult.keysForMatchingValues(N5ekmae3jn.XGWGVMYTHJ, insertVariables)
       withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder matchingKeys }
     }
   }

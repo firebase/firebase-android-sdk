@@ -1624,17 +1624,3 @@ query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3
 mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
   enumNonNullable_update(key: $key, data: { value: $value })
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

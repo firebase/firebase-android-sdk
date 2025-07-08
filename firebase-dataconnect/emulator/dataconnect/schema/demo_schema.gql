@@ -366,7 +366,7 @@ enum N5ekmae3jn {
 }
 
 type EnumNonNullable @table @index(fields: ["tag"]) {
-  value: N5ekmae3jn
+  value: N5ekmae3jn!
   tag: String
 }
 
