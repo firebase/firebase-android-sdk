@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Added internal api for Crashlytics to notify Sessions of crash events
 * [changed] Use multi-process DataStore instead of Preferences DataStore
 * [changed] Update the heuristic to detect cold app starts
 
