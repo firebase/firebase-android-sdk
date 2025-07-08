@@ -18,8 +18,8 @@ package com.googletest.firebase.remoteconfig.bandwagoner
 
 import android.util.Log
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.remoteconfig.ktx.configUpdates
-import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.configUpdates
+import com.google.firebase.remoteconfig.remoteConfig
 import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.catch
