@@ -21,7 +21,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Debug")
         versionName.set("appcheck-debug")
-        hasKTX.set(false)
     }
 }
 

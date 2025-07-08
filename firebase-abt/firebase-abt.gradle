@@ -22,7 +22,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{ab_testing}}")
         versionName.set("ab_testing")
-        hasKTX.set(false)
     }
 }
 

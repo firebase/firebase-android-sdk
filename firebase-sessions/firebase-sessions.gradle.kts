@@ -32,7 +32,6 @@ firebaseLibrary {
 
   releaseNotes {
     enabled = false
-    hasKTX = false
   }
 }
 

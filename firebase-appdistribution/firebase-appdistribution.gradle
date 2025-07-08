@@ -24,7 +24,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{appdistro}}")
         versionName.set("app-distro")
-        hasKTX.set(false)
     }
 }
 

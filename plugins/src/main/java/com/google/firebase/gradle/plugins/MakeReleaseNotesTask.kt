@@ -115,21 +115,10 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         .trimMargin()
         .trim()
 
-    val ktxReleaseNotes =
-      """
-          |#### ${config.name.get()} Kotlin extensions version $version {: #${config.versionName.get()}-ktx_v$versionClassifier}
-          |
-          |${unreleased.ktx?.toReleaseNotes() ?: KTXTransitiveReleaseText(project.name)}
-        """
-        .trimMargin()
-        .trim()
-        .takeIf { config.hasKTX.get() }
-
     val releaseNotes =
       """
         |$baseReleaseNotes
         |
-        |${ktxReleaseNotes.orEmpty()}
       """
         .trimMargin()
         .trim()

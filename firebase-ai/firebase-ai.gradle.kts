@@ -30,7 +30,6 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{firebase_ai_logic}}")
     versionName.set("ai")
-    hasKTX.set(false)
   }
 }
 
