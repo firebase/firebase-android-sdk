@@ -32,7 +32,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.appdistribution.ktx.appDistribution
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
 import java.io.IOException
 import com.google.firebase.appdistribution.testapp.R
 

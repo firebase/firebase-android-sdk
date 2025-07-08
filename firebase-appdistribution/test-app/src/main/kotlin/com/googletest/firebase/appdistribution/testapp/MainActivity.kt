@@ -44,7 +44,7 @@ import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.appdistribution.testapp.BuildConfig
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import com.google.firebase.appdistribution.testapp.R
