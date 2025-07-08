@@ -42,7 +42,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.UpdateProgress
-import com.google.firebase.appdistribution.ktx.appDistribution
+import com.google.firebase.appdistribution.appDistribution
 import com.google.firebase.appdistribution.testapp.BuildConfig
 import com.google.firebase.Firebase
 import java.util.concurrent.ExecutorService

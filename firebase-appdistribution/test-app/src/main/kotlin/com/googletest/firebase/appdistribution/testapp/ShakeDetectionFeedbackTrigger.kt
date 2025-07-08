@@ -21,7 +21,7 @@ import android.app.Application
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
-import com.google.firebase.appdistribution.ktx.appDistribution
+import com.google.firebase.appdistribution.appDistribution
 import com.google.firebase.Firebase
 import com.squareup.seismic.ShakeDetector
 import com.google.firebase.appdistribution.testapp.R
