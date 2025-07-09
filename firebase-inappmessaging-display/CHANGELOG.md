@@ -1,4 +1,7 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
 
 
 # 21.0.2
@@ -358,4 +361,3 @@ additional updates.
 
 # 17.0.0
 * [feature] The initial public beta release of the Firebase In-App Messaging Display SDK for Android is now available. To learn more, see the [Firebase In-App Messaging documentation](/docs/in-app-messaging).
-
