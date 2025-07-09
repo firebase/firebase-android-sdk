@@ -22,6 +22,7 @@ import com.google.firebase.ai.ImagenModel
 import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 
 /**
@@ -41,8 +42,9 @@ public abstract class ImagenModelFutures internal constructor() {
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
   public abstract fun editImage(
+    referenceImages: List<ImagenReferenceImage>,
     prompt: String,
-    config: ImagenEditingConfig
+    config: ImagenEditingConfig? = null
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
   /** Returns the [ImagenModel] object wrapped by this object. */
@@ -55,10 +57,11 @@ public abstract class ImagenModelFutures internal constructor() {
       SuspendToFutureAdapter.launchFuture { model.generateImages(prompt) }
 
     override fun editImage(
+      referenceImages: List<ImagenReferenceImage>,
       prompt: String,
-      config: ImagenEditingConfig
+      config: ImagenEditingConfig?
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
-      SuspendToFutureAdapter.launchFuture { model.editImage(prompt, config) }
+      SuspendToFutureAdapter.launchFuture { model.editImage(referenceImages, prompt, config) }
 
     override fun getImageModel(): ImagenModel = model
   }

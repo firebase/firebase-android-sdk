@@ -21,11 +21,17 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
+import com.google.firebase.ai.type.Dimensions
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.ImagenEditMode
 import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
+import com.google.firebase.ai.type.ImagenImagePlacement
 import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.ImagenMaskReference
+import com.google.firebase.ai.type.ImagenRawImage
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.ImagenSafetySettings
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -84,14 +90,41 @@ internal constructor(
     }
 
   public suspend fun editImage(
+    referenceImages: List<ImagenReferenceImage>,
     prompt: String,
-    config: ImagenEditingConfig
+    config: ImagenEditingConfig? = null,
   ): ImagenGenerationResponse<ImagenInlineImage> =
     try {
-      controller.generateImage(constructEditRequest(prompt, config)).validate().toPublicInline()
+      controller
+        .generateImage(constructEditRequest(referenceImages, prompt, config))
+        .validate()
+        .toPublicInline()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
+
+  public suspend fun inpaintImage(
+    image: ImagenInlineImage,
+    prompt: String,
+    mask: ImagenMaskReference,
+    config: ImagenEditingConfig,
+  ): ImagenGenerationResponse<ImagenInlineImage> {
+    return editImage(listOf(ImagenRawImage(image), mask), prompt, config)
+  }
+
+  public suspend fun outpaintImage(
+    image: ImagenInlineImage,
+    newDimensions: Dimensions,
+    newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+    prompt: String = "",
+    config: ImagenEditingConfig? = null,
+  ): ImagenGenerationResponse<ImagenInlineImage> {
+    return editImage(
+      ImagenMaskReference.generateMaskAndPadForOutpainting(image, newDimensions, newPosition),
+      prompt,
+      ImagenEditingConfig(ImagenEditMode.OUTPAINT, config?.editSteps)
+    )
+  }
 
   private fun constructGenerateImageRequest(
     prompt: String,
@@ -110,44 +143,22 @@ internal constructor(
         aspectRatio = generationConfig?.aspectRatio?.internalVal,
         imageOutputOptions = generationConfig?.imageFormat?.toInternal(),
         editMode = null,
-        editConfig = null
+        editConfig = null,
       ),
     )
   }
 
   private fun constructEditRequest(
+    referenceImages: List<ImagenReferenceImage>,
     prompt: String,
-    editConfig: ImagenEditingConfig,
+    editConfig: ImagenEditingConfig?,
   ): GenerateImageRequest {
+    var maxRefId = referenceImages.mapNotNull { it.referenceId }.maxOrNull() ?: 1
     return GenerateImageRequest(
       listOf(
         GenerateImageRequest.ImagenPrompt(
           prompt = prompt,
-          referenceImages =
-            buildList {
-              add(
-                GenerateImageRequest.ReferenceImage(
-                  referenceType = GenerateImageRequest.ReferenceType.RAW,
-                  referenceId = 1,
-                  referenceImage = editConfig.image.toInternal(),
-                  maskImageConfig = null
-                )
-              )
-              if (editConfig.mask != null) {
-                add(
-                  GenerateImageRequest.ReferenceImage(
-                    referenceType = GenerateImageRequest.ReferenceType.MASK,
-                    referenceId = 2,
-                    referenceImage = editConfig.mask.toInternal(),
-                    maskImageConfig =
-                      GenerateImageRequest.MaskImageConfig(
-                        maskMode = GenerateImageRequest.MaskMode.USER_PROVIDED,
-                        dilation = editConfig.maskDilation
-                      )
-                  )
-                )
-              }
-            }
+          referenceImages = referenceImages.map { it.toInternal(++maxRefId) },
         )
       ),
       GenerateImageRequest.ImagenParameters(
@@ -160,8 +171,8 @@ internal constructor(
         storageUri = null,
         aspectRatio = generationConfig?.aspectRatio?.internalVal,
         imageOutputOptions = generationConfig?.imageFormat?.toInternal(),
-        editMode = editConfig.editMode.value,
-        editConfig = editConfig.toInternal()
+        editMode = editConfig?.editMode?.value,
+        editConfig = editConfig?.toInternal(),
       ),
     )
   }

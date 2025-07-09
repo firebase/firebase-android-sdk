@@ -23,7 +23,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenImageFormat
-import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
@@ -85,8 +85,7 @@ internal data class GenerateImageRequest(
   @Serializable
   internal data class ImagenPrompt(
     val prompt: String? = null,
-    val image: ImagenInlineImage.Internal? = null,
-    val referenceImages: List<ReferenceImage>? = null
+    val referenceImages: List<ImagenReferenceImage.Internal>? = null
   )
 
   @OptIn(PublicPreviewAPI::class)
@@ -116,23 +115,4 @@ internal data class GenerateImageRequest(
     @SerialName("REFERENCE_TYPE_MASKED_SUBJECT") MASKED_SUBJECT,
     @SerialName("REFERENCE_TYPE_PRODUCT") PRODUCT
   }
-
-  @Serializable
-  internal enum class MaskMode {
-    @SerialName("MASK_MODE_DEFAULT") DEFAULT,
-    @SerialName("MASK_MODE_USER_PROVIDED") USER_PROVIDED,
-    @SerialName("MASK_MODE_BACKGROUND") BACKGROUND,
-    @SerialName("MASK_MODE_FOREGROUND") FOREGROUND,
-    @SerialName("MASK_MODE_SEMANTIC") SEMANTIC
-  }
-
-  @Serializable internal data class MaskImageConfig(val maskMode: MaskMode, val dilation: Double?)
-
-  @Serializable
-  internal data class ReferenceImage(
-    val referenceType: ReferenceType,
-    val referenceId: Int,
-    val referenceImage: ImagenInlineImage.Internal,
-    val maskImageConfig: MaskImageConfig?
-  )
 }
