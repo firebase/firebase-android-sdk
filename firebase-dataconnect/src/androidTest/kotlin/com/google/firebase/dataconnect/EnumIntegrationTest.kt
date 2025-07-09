@@ -135,6 +135,38 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  @Serializable private data class InsertNonNullableVariables(val value: N5ekmae3jn)
+
+  @Serializable private data class InsertNonNullableNullVariables(val value: N5ekmae3jn?)
+
+  @Serializable
+  private data class Insert3NonNullableVariables(
+    val tag: String,
+    val value1: N5ekmae3jn,
+    val value2: N5ekmae3jn,
+    val value3: N5ekmae3jn
+  )
+
+  @Serializable private data class GetNonNullableByKeyVariables(val key: RowKey)
+
+  @Serializable
+  private data class GetNonNullableByTagAndValueVariables(
+    val tag: String,
+    val value: OptionalVariable<N5ekmae3jn?>
+  ) {
+    constructor(tag: String, value: N5ekmae3jn) : this(tag, OptionalVariable.Value(value))
+  }
+
+  @Serializable private data class GetNonNullableByTagAndDefaultValueVariables(val tag: String)
+
+  @Serializable
+  private data class UpdateNonNullableVariables(val key: RowKey, val value: N5ekmae3jn)
+
+  @Serializable
+  private data class GetNonNullableByKeyData(val item: Item?) {
+    @Serializable data class Item(val value: N5ekmae3jn)
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for EnumNullable table.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,6 +252,35 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  @Serializable private data class InsertNullableVariables(val value: N5ekmae3jn?)
+
+  @Serializable
+  private data class Insert3NullableVariables(
+    val tag: String,
+    val value1: N5ekmae3jn?,
+    val value2: N5ekmae3jn?,
+    val value3: N5ekmae3jn?
+  )
+
+  @Serializable private data class GetNullableByKeyVariables(val key: RowKey)
+
+  @Serializable
+  private data class GetNullableByTagAndValueVariables(
+    val tag: String,
+    val value: OptionalVariable<N5ekmae3jn?>
+  ) {
+    constructor(tag: String, value: N5ekmae3jn?) : this(tag, OptionalVariable.Value(value))
+  }
+
+  @Serializable private data class GetNullableByTagAndDefaultValueVariables(val tag: String)
+
+  @Serializable private data class UpdateNullableVariables(val key: RowKey, val value: N5ekmae3jn?)
+
+  @Serializable
+  private data class GetNullableByKeyData(val item: Item?) {
+    @Serializable data class Item(val value: N5ekmae3jn?)
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -264,67 +325,6 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
         add(key3)
       }
     }
-  }
-
-  @Serializable private data class InsertNonNullableVariables(val value: N5ekmae3jn)
-
-  @Serializable private data class InsertNonNullableNullVariables(val value: N5ekmae3jn?)
-
-  @Serializable private data class InsertNullableVariables(val value: N5ekmae3jn?)
-
-  @Serializable
-  private data class Insert3NonNullableVariables(
-    val tag: String,
-    val value1: N5ekmae3jn,
-    val value2: N5ekmae3jn,
-    val value3: N5ekmae3jn
-  )
-
-  @Serializable
-  private data class Insert3NullableVariables(
-    val tag: String,
-    val value1: N5ekmae3jn?,
-    val value2: N5ekmae3jn?,
-    val value3: N5ekmae3jn?
-  )
-
-  @Serializable private data class GetNonNullableByKeyVariables(val key: RowKey)
-
-  @Serializable private data class GetNullableByKeyVariables(val key: RowKey)
-
-  @Serializable
-  private data class GetNonNullableByTagAndValueVariables(
-    val tag: String,
-    val value: OptionalVariable<N5ekmae3jn?>
-  ) {
-    constructor(tag: String, value: N5ekmae3jn) : this(tag, OptionalVariable.Value(value))
-  }
-
-  @Serializable
-  private data class GetNullableByTagAndValueVariables(
-    val tag: String,
-    val value: OptionalVariable<N5ekmae3jn?>
-  ) {
-    constructor(tag: String, value: N5ekmae3jn?) : this(tag, OptionalVariable.Value(value))
-  }
-
-  @Serializable private data class GetNonNullableByTagAndDefaultValueVariables(val tag: String)
-
-  @Serializable private data class GetNullableByTagAndDefaultValueVariables(val tag: String)
-
-  @Serializable
-  private data class UpdateNonNullableVariables(val key: RowKey, val value: N5ekmae3jn)
-
-  @Serializable private data class UpdateNullableVariables(val key: RowKey, val value: N5ekmae3jn?)
-
-  @Serializable
-  private data class GetNonNullableByKeyData(val item: Item?) {
-    @Serializable data class Item(val value: N5ekmae3jn)
-  }
-
-  @Serializable
-  private data class GetNullableByKeyData(val item: Item?) {
-    @Serializable data class Item(val value: N5ekmae3jn?)
   }
 
   private enum class N5ekmae3jn {
