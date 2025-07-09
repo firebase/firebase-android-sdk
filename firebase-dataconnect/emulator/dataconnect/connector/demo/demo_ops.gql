@@ -1600,7 +1600,7 @@ query EnumNonNullable_GetByKey($key: EnumNonNullable_Key!) @auth(level: PUBLIC) 
   item: enumNonNullable(key: $key) { value }
 }
 
-query EnumNonNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+query EnumNonNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn!) @auth(level: PUBLIC) {
   items: enumNonNullables(
     limit: 5,
     where: { value: { eq: $value }, tag: { eq: $tag } },
