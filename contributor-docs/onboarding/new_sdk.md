@@ -69,7 +69,7 @@ Let's say you want to create an SDK named `firebase-foo`
 plugins {
   id("firebase-library")
   // Uncomment for Kotlin
-  // id("kotlin-android")
+  // alias(libs.plugins.kotlin.android)
 }
 
 firebaseLibrary {

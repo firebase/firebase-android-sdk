@@ -45,7 +45,7 @@ javalite = "3.25.5"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
-kotlin = "1.8.22"
+kotlin = "1.9.10"
 ktorVersion = "2.3.2"
 legacySupportV4 = "1.0.0"
 lifecycleProcess = "2.3.1"
@@ -233,6 +233,7 @@ maven-resolver = [
 ]
 
 [plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

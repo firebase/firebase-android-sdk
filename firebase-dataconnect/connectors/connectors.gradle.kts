@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("com.android.library")
-  id("kotlin-android")
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin")
 }

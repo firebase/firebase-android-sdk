@@ -16,7 +16,7 @@
 
 plugins {
   id("firebase-library")
-  id("kotlin-android")
+  alias(libs.plugins.kotlin.android)
 }
 
 firebaseLibrary {

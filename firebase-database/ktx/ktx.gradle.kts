@@ -14,8 +14,7 @@
 
 plugins {
   id("firebase-library")
-  id("kotlin-android")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
 }
 
 group = "com.google.firebase"

@@ -26,7 +26,11 @@ plugins {
   id("firebase-ci")
   id("smoke-tests")
   alias(libs.plugins.google.services)
+  alias(libs.plugins.kotlin.android) apply false
   alias(libs.plugins.kotlinx.serialization) apply false
+  alias(libs.plugins.kotlin.jvm) apply false
+
+
 }
 
 extra["targetSdkVersion"] = 34

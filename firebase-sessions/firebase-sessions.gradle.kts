@@ -19,7 +19,7 @@
 plugins {
   id("firebase-library")
   id("firebase-vendor")
-  id("kotlin-android")
+  alias(libs.plugins.kotlin.android)
   id("kotlin-kapt")
 }
 

@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("firebase-library")
-  id("kotlin-android")
+  alias(libs.plugins.kotlin.android)
   id("firebase-vendor")
   id("copy-google-services")
   kotlin("kapt")
