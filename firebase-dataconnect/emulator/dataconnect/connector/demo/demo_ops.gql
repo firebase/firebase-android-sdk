@@ -1691,3 +1691,27 @@ mutation EnumNullableTableDefault_Insert @auth(level: PUBLIC) {
 query EnumNullableTableDefault_GetByKey($key: EnumNullableTableDefault_Key!) @auth(level: PUBLIC) {
   item: enumNullableTableDefault(key: $key) { value }
 }
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNonNullable_GetByKey($key: EnumNonNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNonNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNullable_GetByKey($key: EnumNonNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNullable(key: $key) { value }
+}
