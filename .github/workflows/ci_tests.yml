@@ -172,3 +172,5 @@ jobs:
         if: always()
         with:
           files: "artifacts/**/*.xml"
+          comment_mode: off
+          compare_to_earlier_commit: false
