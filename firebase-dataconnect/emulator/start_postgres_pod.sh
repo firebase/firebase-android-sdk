@@ -19,7 +19,11 @@
 # server is already running (it will just be a no-op).
 
 set -euo pipefail
-set -xv
+
+function run_command {
+  echo "$*"
+  "$@"
+}
 
 # Determine the absolute path of the directory containing this file.
 readonly SCRIPT_DIR="$(readlink -f $(dirname "$0"))"
@@ -28,11 +32,11 @@ readonly SCRIPT_DIR="$(readlink -f $(dirname "$0"))"
 # Bind the PostgreSQL server to port 5432 on the host, so that the host can connect to it.
 # Bind the pgadmin server to port 8888 on the host, so that the host can connect to it.
 if ! podman pod exists dataconnect_postgres ; then
-  podman pod create -p 5432:5432 -p 8888:80 dataconnect_postgres
+  run_command podman pod create -p 5432:5432 -p 8888:80 dataconnect_postgres
 fi
 
 # Start the PostgreSQL server.
-podman \
+run_command podman \
   run \
   -dt \
   --rm \
@@ -44,7 +48,7 @@ podman \
 # Start the pgadmin4 server.
 readonly PGADMIN_EMAIL="admin@google.com"
 readonly PGADMIN_PASSWORD="password"
-podman \
+run_command podman \
   run \
   -dt \
   --rm \
@@ -55,13 +59,9 @@ podman \
   --mount "type=volume,src=dataconnect_pgadmin_data,dst=/var/lib/pgadmin" \
   docker.io/dpage/pgadmin4
 
-# Turn off verbose logging so that the epilogue below is not littered with bash statements.
-set +xv
 echo
 
 cat <<EOF
-SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 PostegreSQL server running on port 5432
 The pgAdmin web UI can be viewed at http://localhost:8888
 The pgAdmin login credentails are: username "${PGADMIN_EMAIL}" and password "${PGADMIN_PASSWORD}"
@@ -76,7 +76,6 @@ To delete the postgresql database, run
 To delete the containers, run
   podman pod rm --force dataconnect_postgres
 
-When running the Firebase Data Connect emulator, use this postgresql connection string
-in .firebaserc:
+When running the Firebase Data Connect emulator, use this postgresql connection string:
   postgresql://postgres:postgres@localhost:5432?sslmode=disable
 EOF
