@@ -31,7 +31,7 @@ plugins {
 
 extra["targetSdkVersion"] = 35
 
-extra["compileSdkVersion"] = 35
+extra["compileSdkVersion"] = 34
 
 extra["minSdkVersion"] = 23
 
