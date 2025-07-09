@@ -1657,7 +1657,7 @@ query EnumNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @
   ) { id }
 }
 
-query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn = XGWGVMYTHJ) @auth(level: PUBLIC) {
+query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn = QJX7C7RD5T) @auth(level: PUBLIC) {
   items: enumNullables(
     limit: 5,
     where: { value: { eq: $value }, tag: { eq: $tag } },
