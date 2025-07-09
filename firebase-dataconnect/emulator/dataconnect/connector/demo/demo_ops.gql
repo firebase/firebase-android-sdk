@@ -1715,3 +1715,15 @@ mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]) @auth(level
 query EnumNonNullableListOfNullable_GetByKey($key: EnumNonNullableListOfNullable_Key!) @auth(level: PUBLIC) {
   item: enumNonNullableListOfNullable(key: $key) { value }
 }
+
+###############################################################################
+# Operations for table: type EnumNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNullableListOfNonNullable_GetByKey($key: EnumNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullableListOfNonNullable(key: $key) { value }
+}

@@ -416,6 +416,57 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNullableListOfNonNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNullableListOfNonNullable_ListContainingNonNullValues() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { value ->
+      val insertVariables = InsertNullableListOfNonNullableVariables(value)
+      val key = dataConnect.mutation(insertVariables).execute().data.key
+      val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
+      val queryResult = dataConnect.query(queryVariables).execute().data
+      withClue(queryResult) { queryResult?.item?.value shouldBe value }
+    }
+  }
+
+  @Test
+  fun insertNullableListOfNonNullable_NullList() = runTest {
+    val insertVariables = InsertNullableListOfNonNullableVariables(null)
+    val key = dataConnect.mutation(insertVariables).execute().data.key
+    val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
+    val queryResult = dataConnect.query(queryVariables).execute().data
+    withClue(queryResult) { queryResult?.item?.value.shouldBeNull() }
+  }
+
+  @Test
+  fun insertNullableListOfNonNullable_ListContainingNull() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
+    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+      val insertVariables = InsertNullableListOfNonNullableVariables(value)
+      val key = dataConnect.mutation(insertVariables).execute().data.key
+      val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
+      val queryResult = dataConnect.query(queryVariables).execute().data
+      withClue(queryResult) { queryResult?.item?.value shouldBe value }
+    }
+  }
+
+  @Serializable
+  private data class InsertNullableListOfNonNullableVariables(
+    val value: OptionalVariable<List<N5ekmae3jn?>?>
+  ) {
+    constructor(value: List<N5ekmae3jn?>?) : this(OptionalVariable.Value(value))
+  }
+
+  @Serializable private data class GetNullableListOfNonNullableByKeyVariables(val key: RowKey)
+
+  @Serializable
+  private data class GetNullableListOfNonNullableByKeyData(val item: Item?) {
+    @Serializable data class Item(val value: List<N5ekmae3jn?>?)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -506,6 +557,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       mutation("EnumNonNullableListOfNullable_Insert", variables, serializer(), serializer())
 
     fun FirebaseDataConnect.mutation(
+      variables: InsertNullableListOfNonNullableVariables
+    ): MutationRef<InsertData, InsertNullableListOfNonNullableVariables> =
+      mutation("EnumNullableListOfNonNullable_Insert", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.mutation(
       variables: Insert3NonNullableVariables
     ): MutationRef<Insert3Data, Insert3NonNullableVariables> =
       mutation("EnumNonNullable_Insert3", variables, serializer(), serializer())
@@ -531,6 +587,12 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     ): QueryRef<
       GetNonNullableListOfNullableByKeyData?, GetNonNullableListOfNullableByKeyVariables
     > = query("EnumNonNullableListOfNullable_GetByKey", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetNullableListOfNonNullableByKeyVariables
+    ): QueryRef<
+      GetNullableListOfNonNullableByKeyData?, GetNullableListOfNonNullableByKeyVariables
+    > = query("EnumNullableListOfNonNullable_GetByKey", variables, serializer(), serializer())
 
     fun FirebaseDataConnect.query(
       variables: GetNonNullableByTagAndValueVariables
