@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -66,17 +67,65 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       tag ->
       val insertResult = connector.enumNonNullableInsert3.execute(tag, value1, value2, value3).data
       val queryResult = connector.enumNonNullableGetAllByTagAndValue.execute(tag, value4).data
-      val matchingKeys = insertResult.idsForMatchingValues(value4, value1, value2, value3)
+      val matchingIds = insertResult.idsForMatchingValues(value4, value1, value2, value3)
       withClue(queryResult) {
-        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder matchingKeys
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
     }
   }
+
+  @Test
+  fun queryNonNullableByUndefinedEnumValue() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(1, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+      val insertResult = connector.enumNonNullableInsert3.execute(tag, value1, value2, value3).data
+      val queryResult = connector.enumNonNullableGetAllByTagAndMaybeValue.execute(tag).data
+      withClue(queryResult) {
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder insertResult.ids
+      }
+    }
+  }
+
+  @Test
+  fun queryNonNullableByNullEnumValue() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(1, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+      connector.enumNonNullableInsert3.execute(tag, value1, value2, value3)
+      val queryResult =
+        connector.enumNonNullableGetAllByTagAndMaybeValue.execute(tag) { value = null }.data
+      withClue(queryResult) { queryResult.items.shouldBeEmpty() }
+    }
+  }
+
+  @Test
+  fun queryNonNullableByDefaultEnumValue() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
+      value1,
+      value2,
+      value3,
+      tag ->
+      val insertResult = connector.enumNonNullableInsert3.execute(tag, value1, value2, value3).data
+      val queryResult = connector.enumNonNullableGetAllByTagAndDefaultValue.execute(tag).data
+      val matchingIds =
+        insertResult.idsForMatchingValues(N5ekmae3jn.XGWGVMYTHJ, value1, value2, value3)
+      withClue(queryResult) {
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper classes and functions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   private companion object {
 
     /** The default number of iterations to use in property-based tests. */
     const val NUM_ITERATIONS = 10
+
+    val EnumNonNullableInsert3Mutation.Data.ids: List<UUID>
+      get() = listOf(key1, key2, key3).map { it.id }
 
     fun EnumNonNullableInsert3Mutation.Data.idsForMatchingValues(
       value: N5ekmae3jn,
