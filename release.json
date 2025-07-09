@@ -1,0 +1,33 @@
+{
+    "name": "m167",
+    "libraries": [
+        ":firebase-abt",
+        ":firebase-ai",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-common",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-database",
+        ":firebase-dataconnect",
+        ":firebase-datatransport",
+        ":firebase-firestore",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":firebase-components:firebase-dynamic-module-support"
+    ]
+}
