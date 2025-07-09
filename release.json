@@ -1,0 +1,9 @@
+{
+    "name": "m167_p",
+    "libraries": [
+        ":firebase-annotations",
+        ":firebase-common",
+        ":firebase-components",
+        ":firebase-components:firebase-dynamic-module-support"
+    ]
+}
