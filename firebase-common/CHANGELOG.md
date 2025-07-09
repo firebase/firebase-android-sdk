@@ -1,4 +1,9 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
+
+# 21.0.0
 * [fixed] Correctly declare dependency on firebase-components, issue #5732
 * [changed] Added extension method `Random.nextAlphanumericString()` (PR #5818)
 * [changed] Migrated internal `SharedPreferences` usages to `DataStore`. ([GitHub PR #6801](https://github.com/firebase/firebase-android-sdk/pull/6801){ .external})

@@ -75,10 +75,6 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation(project(":firebase-config:ktx")) {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
     implementation(project(":firebase-installations")) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
@@ -96,7 +92,6 @@ dependencies {
     // Released artifacts don't need these dependencies since they don't use `project` to refer
     // to Remote Config.
     implementation("com.google.firebase:firebase-common:21.0.0")
-    implementation("com.google.firebase:firebase-common-ktx:21.0.0")
     implementation("com.google.firebase:firebase-components:18.0.0")
     implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
         exclude group: 'com.google.firebase', module: 'firebase-common'

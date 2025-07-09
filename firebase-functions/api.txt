@@ -112,16 +112,3 @@ package com.google.firebase.functions {
 
 }
 
-package com.google.firebase.functions.ktx {
-
-  public final class FunctionsKt {
-    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
-    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app, String regionOrCustomDomain);
-    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions functions(com.google.firebase.ktx.Firebase, String regionOrCustomDomain);
-    method @Deprecated public static com.google.firebase.functions.FirebaseFunctions getFunctions(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(com.google.firebase.functions.FirebaseFunctions, String name, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-    method @Deprecated public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(com.google.firebase.functions.FirebaseFunctions, java.net.URL url, kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-  }
-
-}
-

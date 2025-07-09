@@ -1,4 +1,7 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
 
 
 # 25.0.1
@@ -30,7 +33,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.2.2
-* [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be 
+* [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be
   specified when registerReceiver is being used. [#5597](https://github.com/firebase/firebase-android-sdk/pull/5597)
 
 
@@ -196,4 +199,3 @@ runtime.
   capabilities.
 * [feature] Added ability to get the model download ID, which allows progress
   tracking of file downloads.
-

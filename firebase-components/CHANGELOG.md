@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 
 # 18.0.1
@@ -14,4 +15,3 @@ updates.
 * [changed] Internal changes to ensure only one interface is provided for
   kotlinx.coroutines.CoroutineDispatcher interfaces when both firebase-common and
   firebase-common-ktx provide them.
-

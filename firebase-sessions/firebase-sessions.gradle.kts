@@ -30,10 +30,7 @@ firebaseLibrary {
   testLab.enabled = true
   publishJavadoc = false
 
-  releaseNotes {
-    enabled = false
-    hasKTX = false
-  }
+  releaseNotes { enabled = false }
 }
 
 android {
@@ -69,7 +66,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).
 
 dependencies {
   api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-common-ktx:21.0.0")
 
   api("com.google.firebase:firebase-components:18.0.0")
   api("com.google.firebase:firebase-installations-interop:17.2.0") {

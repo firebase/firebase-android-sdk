@@ -75,7 +75,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
       releaseNotes {
         enabled.convention(true)
-        hasKTX.convention(true)
         artifactId.convention(project.name)
         artifactName.convention(project.name)
       }

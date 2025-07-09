@@ -19,11 +19,3 @@ package com.google.firebase.inappmessaging.display {
 
 }
 
-package com.google.firebase.inappmessaging.display.ktx {
-
-  public final class InAppMessagingDisplayKt {
-    method @Deprecated public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(com.google.firebase.ktx.Firebase);
-  }
-
-}
-

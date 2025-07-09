@@ -1,4 +1,7 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
 * [fixed] Further improved performance of UTF-8 string ordering logic,
   which had degraded in v25.1.2 and received some improvements in v25.1.3.
   [#7053](//github.com/firebase/firebase-android-sdk/issues/7053)
@@ -974,4 +977,3 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
-

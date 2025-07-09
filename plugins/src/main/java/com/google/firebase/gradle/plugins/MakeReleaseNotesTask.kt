@@ -106,30 +106,11 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
     val versionClassifier = version.replace(".", "-")
 
-    val baseReleaseNotes =
+    val releaseNotes =
       """
         |### ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
         |
         |${unreleased.content.toReleaseNotes()}
-      """
-        .trimMargin()
-        .trim()
-
-    val ktxReleaseNotes =
-      """
-          |#### ${config.name.get()} Kotlin extensions version $version {: #${config.versionName.get()}-ktx_v$versionClassifier}
-          |
-          |${unreleased.ktx?.toReleaseNotes() ?: KTXTransitiveReleaseText(project.name)}
-        """
-        .trimMargin()
-        .trim()
-        .takeIf { config.hasKTX.get() }
-
-    val releaseNotes =
-      """
-        |$baseReleaseNotes
-        |
-        |${ktxReleaseNotes.orEmpty()}
       """
         .trimMargin()
         .trim()

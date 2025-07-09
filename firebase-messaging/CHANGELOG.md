@@ -1,8 +1,11 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
 
 
 # 24.1.2
-* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service 
+* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service
   connection Executor.
 
 
@@ -519,4 +522,3 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   now return a
   [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can
   be used to see when the request has completed.
-

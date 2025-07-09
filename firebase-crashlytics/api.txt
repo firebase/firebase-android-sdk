@@ -54,22 +54,3 @@ package com.google.firebase.crashlytics {
 
 }
 
-package com.google.firebase.crashlytics.ktx {
-
-  public final class FirebaseCrashlyticsKt {
-    method @Deprecated public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static void setCustomKeys(com.google.firebase.crashlytics.FirebaseCrashlytics, kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.ktx.KeyValueBuilder,kotlin.Unit> init);
-  }
-
-  @Deprecated public final class KeyValueBuilder {
-    ctor @Deprecated public KeyValueBuilder(com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
-    method @Deprecated public void key(String key, boolean value);
-    method @Deprecated public void key(String key, double value);
-    method @Deprecated public void key(String key, float value);
-    method @Deprecated public void key(String key, int value);
-    method @Deprecated public void key(String key, String value);
-    method @Deprecated public void key(String key, long value);
-  }
-
-}
-

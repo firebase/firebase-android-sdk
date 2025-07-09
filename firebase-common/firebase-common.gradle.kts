@@ -83,7 +83,6 @@ dependencies {
 
   androidTestImplementation(project(":integ-testing")) {
     exclude("com.google.firebase", "firebase-common")
-    exclude("com.google.firebase", "firebase-common-ktx")
   }
 
   // TODO(Remove when FirbaseAppTest has been modernized to use LiveData)

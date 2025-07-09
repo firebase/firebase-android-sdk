@@ -38,7 +38,6 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
   implementation("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation(libs.androidx.test.runner)
