@@ -1,11 +1,14 @@
 # Unreleased
-* [changed] This update introduces improvements to how the SDK handles real-time requests when a 
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
+ separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
+* [changed] This update introduces improvements to how the SDK handles real-time requests when a
   Firebase project has exceeded its available quota for real-time services. Released in anticipation
-  of future quota enforcement, this change is designed to fetch the latest template even when the 
+  of future quota enforcement, this change is designed to fetch the latest template even when the
   quota is exhausted.
 
 # 22.1.2
-* [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting 
+* [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting
   `HttpURLConnection` only on API levels 26 and higher. GitHub Issue [#6934]
 
 
@@ -476,4 +479,3 @@ updates.
 
 # 16.1.0
 * [fixed] Bug fixes and internal improvements to support Firebase Performance Monitoring features.
-
