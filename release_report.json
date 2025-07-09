@@ -1,0 +1,330 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prId": "7122",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Remove ktx-related code from build scripts  (#7122)\n\nAll ktx related functionality has been merged to the main libraries,\nand the KTX-only code removed.\n\nSee https://github.com/firebase/firebase-android-sdk/pull/7106",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7122"
+            },
+            {
+                "commitId": "84650c2a5345b5bc124fb950eca7b8cddae333cb",
+                "prId": "7104",
+                "author": "Rosário P. Fernandes",
+                "message": "refactor(ai): required argument for vararg functions (#7104)\n\nThis is a breaking change.\n\nSee context in\nhttps://github.com/google-gemini/deprecated-generative-ai-android/pull/116\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/84650c2a5345b5bc124fb950eca7b8cddae333cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7104"
+            },
+            {
+                "commitId": "939ffca11306401c84e8e55aca44f81755efd927",
+                "prId": "6999",
+                "author": "Rosário P. Fernandes",
+                "message": "feat(ai): add support for setting a thinking budget (#6999)\n\nThis should resolve #6990\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/939ffca11306401c84e8e55aca44f81755efd927",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6999"
+            },
+            {
+                "commitId": "b7e1397ed0b349bc7515640be435b84087feb339",
+                "prId": "7118",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Fix integration test constructor usage (#7118)\n\nThe test is using the `internal` constructor instead of relying on the\npublic factory method which caused it fail with the new grounding\nfunctionality.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b7e1397ed0b349bc7515640be435b84087feb339",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7118"
+            },
+            {
+                "commitId": "50cd4f39791c3c000cae756e19ff029b1b575f65",
+                "prId": "7069",
+                "author": "Daniel La Rocque",
+                "message": "[FirebaseAI] Add support for Grounding with Google Search (#7069)\n\nAPI Proposal: [go/fal-grounding-api](https://goto.google.com/fal-grounding-api)\n(internal)\n\n- Added `GoogleSearch` tool and `Tool.googleSearch()` static initializer\n- Added fields to `GroundingMetadata` to support responses with grounded\nresults: `GroundingChunk`, `WebGroundingChunk`, `GroundingSupport`,\n`SearchEntrypoint`\n- Labelled `GroundingAttributions` as deprecated, recommending users to\nuse `GroundingSupport` instead",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/50cd4f39791c3c000cae756e19ff029b1b575f65",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7069"
+            },
+            {
+                "commitId": "832949335ba3b96ffd406fa393ddf7d543605648",
+                "prId": "7066",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Fix `anyOf` refdoc (#7066)\n\nThe sample code was not correctly enclosed in backticks (`), causing the\ncode to be incorrectly rendered.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/832949335ba3b96ffd406fa393ddf7d543605648",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7066"
+            },
+            {
+                "commitId": "68535a4cf88cb6f63a0415d924d87c18c1c1a0d0",
+                "prId": "7071",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Update api.txt (#7071)\n\nThis is a follow up to #7042",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68535a4cf88cb6f63a0415d924d87c18c1c1a0d0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7071"
+            },
+            {
+                "commitId": "78b278e5deda1fe68210b0c1e37ff445252595f5",
+                "prId": "7056",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Use correct release notes name (#7056)\n\nThe release notes were being generated with the outdated {{firebase_ai}}\ninstead of the correct {{firebase_ai_logic}}.\n\nReference cl/773420536",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/78b278e5deda1fe68210b0c1e37ff445252595f5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7056"
+            }
+        ],
+        "firebase-common": [
+            {
+                "commitId": "272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "[Infra] Bump sdk versions\n\nMajor bump all versions to reflect the infra + ktx changes\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "2bfc0a5de4c3d384238b25f9b71ef36104a72fa0",
+                "prId": "6801",
+                "author": "Daymon",
+                "message": "Migrate common from SharedPreferences to DataStore (#6801)\n\nPer [b/423592727](https://b.corp.google.com/issues/423592727),\n\nThis adds a `DataStore` class that wraps around\n`androidx.datastore.core.DataStore`, and provides more Java friendly\nmethods for creation and interop. This should make migrations from\n`SharedPreferences` in existing Java code much easier.\n\nNote that usages of `SharedPreferences` in Kotlin should just use\n`androidx.datastore.core.DataStore` directly instead, as they have no\nneed for the interop features. Furthermore, it would make it easier in\nthe future to remove our `DataStore` wrapper once more SDKs have been\nmigrated to Kotlin.\n\nThis wrapper class comes with full documentation detailing how it should\nbe used, and quirks to keep in mind.\n\nSince `firebase-common` has been migrated to use this wrapper, and\ncommon has tests with their `SharedPreferences` usages, our wrapper\nalready has implicit testing.\n\nThis PR also fixes the following:\n- [b/423592231](https://b.corp.google.com/issues/423592231) -> Migrate\ncommon from SharedPreferences to DataStore",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2bfc0a5de4c3d384238b25f9b71ef36104a72fa0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6801"
+            },
+            {
+                "commitId": "19273cae48a895bb22439647c8d4d2febab94aab",
+                "prId": "7060",
+                "author": "Rodrigo Lazo",
+                "message": "[Common] Replace hardcoded SDK version with Config.OLDEST_SDK (2) (#7060)\n\nTests will use the Config.OLDEST_SDK instead of a hardcoded SDK if the\ncorresponding hardcoded SDK would be below our intended minSdk.\n\nI'll also need to re-evaluate whether these tests are necessary to keep\naround, or if they are irrelevant when bumping the minSdk.\n\nRelated to cl/769912845\n\nCo-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/19273cae48a895bb22439647c8d4d2febab94aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7060"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "[Infra] Bump sdk versions\n\nMajor bump all versions to reflect the infra + ktx changes\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "aad3da87a9469a5b080a26b08cdb9b92f9997a20",
+                "prId": "7103",
+                "author": "Tushar Khandelwal",
+                "message": "Remove VisibleForTesting from SDK production code (#7103)\n\nSome methods are currently marked with `@VisibleForTestingOnly` but are\nbeing used directly within the SDK code. This annotation is intended to\nrestrict usage to tests, and its presence causes errors when integrating\nthe SDK into internal systems via copybara.\n\nInternal Tracking: b/429425834",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/aad3da87a9469a5b080a26b08cdb9b92f9997a20",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7103"
+            },
+            {
+                "commitId": "696f02155390d9dd1fb9733093519ffd102ae1af",
+                "prId": "7101",
+                "author": "Rodrigo Lazo",
+                "message": "[Config] Add unused vars for some call sites (#7101)\n\nThe `unused` vars were added to address a warning raised by errorprone about ignoring returned types.\n\n(internal) See b/424298831",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/696f02155390d9dd1fb9733093519ffd102ae1af",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7101"
+            },
+            {
+                "commitId": "f14fc0e23608a47e08b27729a3aee64ae0afd875",
+                "prId": "7100",
+                "author": "Rodrigo Lazo",
+                "message": "[Config] Annotate Builder with @CanIgnoreReturnValue (#7100)\n\nThe return value from Builders can safely be ignored dependending as\nthey only enable chaining. This change fixes a warning thrown by\nerrorprone.\n\n(internal) See b/424298831",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f14fc0e23608a47e08b27729a3aee64ae0afd875",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7100"
+            },
+            {
+                "commitId": "2886218d0386fb486bc8102cec01b26fface5d00",
+                "prId": "7044",
+                "author": "Tushar Khandelwal",
+                "message": "Improve Real-time response Handling for Remote Config (#7044)\n\nThis change prepares the Firebase SDK for future real-time quota\nenforcement, addressing potential user starvation. It ensures the SDK\ncan fetch the latest template even when the real-time quota is exceeded.\n\nWe now include a retryInterval in the response when a connection hits a\nquota limit. This allows clients to get the latest template immediately\nand retry the connection after the specified interval. This approach\nguarantees users always have access to the latest data and can\nefficiently resume real-time services once their quota is restored.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2886218d0386fb486bc8102cec01b26fface5d00",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7044"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "c09e9ccdc8e15b3496fc52fe06e04f293ad3d5ab",
+                "prId": "7114",
+                "author": "Matthew Robertson",
+                "message": "Add internal api for Crashlytics to notify Sessions of crash events (#7114)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c09e9ccdc8e15b3496fc52fe06e04f293ad3d5ab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7114"
+            },
+            {
+                "commitId": "39edc7cf96e36c407db0def018d2bb82baa6c265",
+                "prId": "6924",
+                "author": "themiswang",
+                "message": "Removed deprecated public constructor KeyValueBuilder (#6924)\n\nprepare for next major bump\n\nOriginal\nchange:https://github.com/firebase/firebase-android-sdk/pull/6536",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/39edc7cf96e36c407db0def018d2bb82baa6c265",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6924"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prId": "7122",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Remove ktx-related code from build scripts  (#7122)\n\nAll ktx related functionality has been merged to the main libraries,\nand the KTX-only code removed.\n\nSee https://github.com/firebase/firebase-android-sdk/pull/7106",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7122"
+            },
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "b9aa68cd5bcc578925ca1b8c330a796574136a8f",
+                "prId": "7121",
+                "author": "Matthew Robertson",
+                "message": "Bump ndk and aqs major versions (#7121)\n\nBump the Sessions SDK major version\nAlso bump the Crashlytics NDK major version to keep aligned with the SDK",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b9aa68cd5bcc578925ca1b8c330a796574136a8f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7121"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prId": "7122",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Remove ktx-related code from build scripts  (#7122)\n\nAll ktx related functionality has been merged to the main libraries,\nand the KTX-only code removed.\n\nSee https://github.com/firebase/firebase-android-sdk/pull/7106",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9fa4e16b7e7b4668c41b0b60984675f5d4bd1cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7122"
+            },
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "b9aa68cd5bcc578925ca1b8c330a796574136a8f",
+                "prId": "7121",
+                "author": "Matthew Robertson",
+                "message": "Bump ndk and aqs major versions (#7121)\n\nBump the Sessions SDK major version\nAlso bump the Crashlytics NDK major version to keep aligned with the SDK",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b9aa68cd5bcc578925ca1b8c330a796574136a8f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7121"
+            },
+            {
+                "commitId": "1925119f83068567dcf55181cfc320a86fd28a1e",
+                "prId": "7117",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Bump kotlin to 2.0.21 (#7117)\n\nJump to the kotlin 2.x badgawon. Beyond updating the stdlib, related\ndependencies are bumped to the latest version they released that also\ndepends on 2.0.x",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1925119f83068567dcf55181cfc320a86fd28a1e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7117"
+            },
+            {
+                "commitId": "c9a4a3d749440833a75d4de686d60f825ffd79c8",
+                "prId": "7039",
+                "author": "Matthew Robertson",
+                "message": "Merged sessions-sharedrepo into main (#7039)\n\nMerged `sessions-sharedrepo` into `main`\n\nThis merge brings in the new sessions shared repo implementation, which\nfacilitates the Perf+AQS integration. This also includes improvements\nthat will benefit Crashlytics e.g. providing sessions for early crashes\n\nAll individual commits on the `sessions-sharedrepo` branch were reviewed\nand approved in their respective pull requests\n\n---------\n\nCo-authored-by: themiswang <themisw@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9a4a3d749440833a75d4de686d60f825ffd79c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7039"
+            },
+            {
+                "commitId": "c09e9ccdc8e15b3496fc52fe06e04f293ad3d5ab",
+                "prId": "7114",
+                "author": "Matthew Robertson",
+                "message": "Add internal api for Crashlytics to notify Sessions of crash events (#7114)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c09e9ccdc8e15b3496fc52fe06e04f293ad3d5ab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7114"
+            },
+            {
+                "commitId": "7c56ee19a67f5ae79c38ee8d1679ce100cbb463e",
+                "prId": "7115",
+                "author": "Matthew Robertson",
+                "message": "Fix split screen in Sessions test app (#7115)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c56ee19a67f5ae79c38ee8d1679ce100cbb463e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7115"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "[Infra] Bump sdk versions\n\nMajor bump all versions to reflect the infra + ktx changes\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/272d914d5fa24511820a60b5e6476138a8ca50ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prId": "7106",
+                "author": "Vinay Guthal",
+                "message": "remove ktx libraries (#7106)\n\nThis PR removes all the KTX libraries and the docs associated with them.\nKTX libraries were deprecated a long time ago and now we are removing\nthese as a part of our breaking change release.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e184a98f6f90d5a42f05dec03373f883f29ce917",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7106"
+            },
+            {
+                "commitId": "8e1aeb6ba4a13b3bb892c0a01bf7e14f70b5884f",
+                "prId": "7113",
+                "author": "Denver Coneybeare",
+                "message": "firestore: add an example to the comment in compareUtf8Strings() (#7113)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8e1aeb6ba4a13b3bb892c0a01bf7e14f70b5884f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7113"
+            },
+            {
+                "commitId": "1b0a574e2ef578f2559eac4cc8eefc32befd170d",
+                "prId": "7109",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: use Integer.compare() and Long.compare() instead Firestore bespoke implementations (#7109)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1b0a574e2ef578f2559eac4cc8eefc32befd170d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7109"
+            },
+            {
+                "commitId": "84c4d81cf46e0041d2944d3a41cd194c60a0c6d1",
+                "prId": "7098",
+                "author": "Denver Coneybeare",
+                "message": "fix(firestore): Further improved performance of UTF-8 string comparison logic (#7098)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/84c4d81cf46e0041d2944d3a41cd194c60a0c6d1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7098"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-abt",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-components",
+        ":firebase-database",
+        ":firebase-dataconnect",
+        ":firebase-datatransport",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":firebase-vertexai",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":firebase-components:firebase-dynamic-module-support"
+    ]
+}

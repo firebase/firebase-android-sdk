@@ -1,0 +1,12 @@
+{
+    "name": "m167",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-common",
+        ":firebase-config",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-firestore"
+    ]
+}
