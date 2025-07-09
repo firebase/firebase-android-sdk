@@ -75,9 +75,9 @@ dependencies {
   javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
   javadocClasspath(libs.autovalue.annotations)
   javadocClasspath(libs.findbugs.jsr305)
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-common:20.3.1")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation("com.google.firebase:firebase-annotations:17.0.0")
+  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation("com.google.firebase:firebase-components:19.0.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.kotlin.stdlib)
   implementation(libs.playservices.base)
@@ -94,9 +94,9 @@ dependencies {
   implementation(libs.okhttp)
 
   api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-components:18.0.0")
-  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-common:22.0.0")
+  api("com.google.firebase:firebase-components:19.0.0")
+  api("com.google.firebase:firebase-annotations:17.0.0")
   api("com.google.firebase:firebase-auth-interop:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
   }
