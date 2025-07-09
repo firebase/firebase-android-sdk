@@ -563,6 +563,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  @Suppress("SpellCheckingInspection")
   private enum class N5ekmae3jn {
     DPSKD6HR3A,
     XGWGVMYTHJ,
