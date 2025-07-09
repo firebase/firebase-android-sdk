@@ -30,10 +30,7 @@ firebaseLibrary {
   testLab.enabled = true
   publishJavadoc = false
 
-  releaseNotes {
-    enabled = false
-    hasKTX = false
-  }
+  releaseNotes { enabled = false }
 }
 
 android {

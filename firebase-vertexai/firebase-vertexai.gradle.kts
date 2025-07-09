@@ -30,7 +30,6 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{vertex_ai_in_firebase}}")
     versionName.set("vertex-ai")
-    hasKTX.set(false)
   }
 }
 

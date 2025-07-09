@@ -1,4 +1,9 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 
 # 21.0.2
@@ -219,4 +224,3 @@ updates.
   `UploadTask.TaskSnapshot.getDownloadUrl()` methods. To get a current download
   URL, use
   [`StorageReference.getDownloadUr()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#getDownloadUrl()).
-

@@ -1,4 +1,9 @@
 # Unreleased
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 
 # 21.0.0
@@ -298,4 +303,3 @@ client from being initialized outside of Android's main thread.
 
 # 16.0.1
 * [changed] Added `Nullability` annotations to all public API classes/methods.
-

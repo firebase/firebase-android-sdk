@@ -21,7 +21,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Play integrity")
         versionName.set("appcheck-playintegrity")
-        hasKTX.set(false)
     }
 }
 

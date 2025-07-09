@@ -23,7 +23,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Debug Testing")
         versionName.set("appcheck-debug-testing")
-        hasKTX.set(false)
     }
 }
 
