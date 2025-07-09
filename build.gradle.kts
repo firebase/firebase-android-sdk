@@ -29,7 +29,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization) apply false
 }
 
-extra["targetSdkVersion"] = 35
+extra["targetSdkVersion"] = 34
 
 extra["compileSdkVersion"] = 34
 
