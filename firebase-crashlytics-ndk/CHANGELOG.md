@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 19.4.4
 * [changed] Updated `firebase-crashlytics` dependency to v19.4.4
@@ -256,4 +256,3 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
-

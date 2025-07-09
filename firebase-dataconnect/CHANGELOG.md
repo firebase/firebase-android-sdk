@@ -1,5 +1,6 @@
 # Unreleased
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [changed] Removed superfluous and noisy debug logging of operation variables.
 
 
 # 16.0.3

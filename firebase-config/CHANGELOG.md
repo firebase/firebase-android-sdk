@@ -1,11 +1,13 @@
 # Unreleased
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
-* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
- separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
 * [changed] This update introduces improvements to how the SDK handles real-time requests when a
   Firebase project has exceeded its available quota for real-time services. Released in anticipation
   of future quota enforcement, this change is designed to fetch the latest template even when the
   quota is exhausted.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 22.1.2
 * [fixed] Fixed `NetworkOnMainThreadException` on Android versions below 8 by disconnecting

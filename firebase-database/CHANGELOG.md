@@ -1,7 +1,9 @@
 # Unreleased
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
-* [changed] **Breaking Change**: The deprecated Kotlin extensions (KTX) module will no longer being released
- separately, and it is no longer part of the Firebase Android BoM. Use the KTX APIs from the main modules.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 
 # 21.0.0

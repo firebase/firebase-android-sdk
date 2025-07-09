@@ -1,5 +1,8 @@
-pglite-debug.log
-dataconnect-debug.log
-firebase-debug.log
-
-/dataconnect/.dataconnect/
+.dataconnect/
+/cli
+/*.tools.json
+/firebase-debug.log
+/.firebase/
+/ui-debug.log
+/dataconnect-debug.log
+/pglite-debug.log

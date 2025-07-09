@@ -2,6 +2,7 @@
 * [changed] Added internal api for Crashlytics to notify Sessions of crash events
 * [changed] Use multi-process DataStore instead of Preferences DataStore
 * [changed] Update the heuristic to detect cold app starts
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 2.1.1
 * [unchanged] Updated to keep SDK versions aligned.
@@ -51,4 +52,3 @@
 
 # 1.0.0
 * [feature] Initial Firebase sessions library.
-
