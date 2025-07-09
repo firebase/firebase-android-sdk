@@ -39,7 +39,7 @@ android {
   namespace = "com.google.firebase.ai"
   compileSdk = 34
   defaultConfig {
-    minSdk = 21
+    minSdk = rootProject.extra["minSdkVersion"] as Int
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
