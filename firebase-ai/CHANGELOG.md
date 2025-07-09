@@ -6,7 +6,8 @@
 * [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
   `countTokens()`.
 * [feature] Added new overloads for `generateContent()`, `generateContentStream()` and
- `countTokens()` that take a `List<Content>` parameter. 
+ `countTokens()` that take a `List<Content>` parameter.
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 16.2.0
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
@@ -38,4 +39,3 @@
 
  Note: This feature is in Public Preview, which means that it is not subject to any SLA or
  deprecation policy and could change in backwards-incompatible ways.
-
