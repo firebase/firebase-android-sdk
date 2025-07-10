@@ -21,7 +21,7 @@ android {
 
   defaultConfig {
     applicationId "com.example.storage"
-    minSdkVersion 16
+    minSdkVersion project.minSdkVersion
     targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
