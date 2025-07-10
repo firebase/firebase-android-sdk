@@ -44,7 +44,7 @@ android {
 dependencies {
     implementation project(':firebase-ml-modeldownloader')
     implementation libs.androidx.core
-    implementation 'com.google.firebase:firebase-common:21.0.0'
+    implementation 'com.google.firebase:firebase-common:22.0.0'
 
     testImplementation libs.androidx.test.runner
     testImplementation libs.androidx.test.junit

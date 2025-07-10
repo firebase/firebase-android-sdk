@@ -61,8 +61,8 @@ dependencies {
   // remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:21.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation("com.google.firebase:firebase-components:19.0.0")
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   runtimeOnly("com.google.firebase:firebase-installations:17.1.4")

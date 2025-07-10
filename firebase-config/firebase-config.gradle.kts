@@ -61,7 +61,7 @@ android {
 dependencies {
   // Firebase
   api("com.google.firebase:firebase-config-interop:16.0.1")
-  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-annotations:17.0.0")
   api("com.google.firebase:firebase-installations-interop:17.1.0")
   api("com.google.firebase:firebase-abt:21.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
@@ -71,8 +71,8 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-components:18.0.0")
+  api("com.google.firebase:firebase-common:22.0.0")
+  api("com.google.firebase:firebase-components:19.0.0")
   api("com.google.firebase:firebase-installations:17.2.0")
 
   // Kotlin & Android
