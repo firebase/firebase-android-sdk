@@ -96,15 +96,10 @@ dependencies {
 
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-<<<<<<< Updated upstream
-  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
-=======
   implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
     exclude(group="com.google.firebase", module="firebase-common-ktx")
   }
   implementation("com.google.firebase:firebase-components:19.0.0")
->>>>>>> Stashed changes
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
