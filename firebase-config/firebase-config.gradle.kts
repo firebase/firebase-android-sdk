@@ -71,9 +71,15 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
+<<<<<<< Updated upstream
   api("com.google.firebase:firebase-common:21.0.0")
   api("com.google.firebase:firebase-components:18.0.0")
   api("com.google.firebase:firebase-installations:17.2.0")
+=======
+  api("com.google.firebase:firebase-common:22.0.0")
+  api("com.google.firebase:firebase-components:19.0.0")
+  api(project(":firebase-installations"))
+>>>>>>> Stashed changes
 
   // Kotlin & Android
   implementation(libs.kotlin.stdlib)

@@ -86,8 +86,13 @@ dependencies {
     javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
 
+<<<<<<< Updated upstream
     api("com.google.firebase:firebase-annotations:16.2.0")
     api("com.google.firebase:firebase-appcheck:17.1.0") {
+=======
+    api("com.google.firebase:firebase-annotations:17.0.0")
+    api(project(":appcheck:firebase-appcheck")) {
+>>>>>>> Stashed changes
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-annotations"

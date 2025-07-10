@@ -96,7 +96,7 @@ dependencies {
      }
     api 'com.google.firebase:firebase-encoders:17.0.0'
     api 'com.google.firebase:firebase-encoders-json:18.0.0'
-    api("com.google.firebase:firebase-installations:17.2.0")
+    api(project(":firebase-installations"))
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
 
     implementation 'androidx.annotation:annotation:1.1.0'

@@ -99,7 +99,7 @@ dependencies {
         api 'com.google.firebase:firebase-encoders-json:18.0.0'
         api "com.google.firebase:firebase-encoders-proto:16.0.0"
         api "com.google.firebase:firebase-iid-interop:17.1.0"
-        api("com.google.firebase:firebase-installations:17.2.0")
+        api(project(":firebase-installations"))
         api('com.google.firebase:firebase-installations-interop:17.1.0')
         api('com.google.firebase:firebase-measurement-connector:19.0.0')
 

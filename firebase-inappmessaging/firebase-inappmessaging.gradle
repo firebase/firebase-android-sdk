@@ -123,7 +123,7 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    api("com.google.firebase:firebase-installations:17.2.0")
+    api(project(":firebase-installations"))
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
     api('com.google.firebase:firebase-measurement-connector:18.0.2') {
          exclude group: 'com.google.firebase', module: 'firebase-common'

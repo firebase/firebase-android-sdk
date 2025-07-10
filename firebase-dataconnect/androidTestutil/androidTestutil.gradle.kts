@@ -53,7 +53,7 @@ dependencies {
   implementation(project(":firebase-dataconnect:testutil"))
 
   implementation("com.google.firebase:firebase-auth:22.3.1")
-  implementation("com.google.firebase:firebase-appcheck:18.0.0")
+  implementation(project(":appcheck:firebase-appcheck"))
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)

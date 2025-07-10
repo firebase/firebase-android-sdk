@@ -87,7 +87,7 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
-  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
+  runtimeOnly(project(":firebase-installations")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
