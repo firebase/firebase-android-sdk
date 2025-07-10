@@ -102,9 +102,9 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun queryNonNullableByDefaultEnumValue() = runTest {
-    val arb =
-      Arb.insert3TestData(Arb.enum<N5ekmae3jn>(), queryValue = Arb.constant(N5ekmae3jn.XGWGVMYTHJ))
-    checkAll(NUM_ITERATIONS, arb) { testData ->
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    val queryValueArb = Arb.constant(N5ekmae3jn.XGWGVMYTHJ)
+    checkAll(NUM_ITERATIONS, Arb.insert3TestData(enumArb, queryValue = queryValueArb)) { testData ->
       val (tag, insertValue1, insertValue2, insertValue3) = testData
       val insertResult =
         connector.enumNonNullableInsert3.execute(tag, insertValue1, insertValue2, insertValue3).data
@@ -148,55 +148,69 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     }
   }
 
-  /*
   @Test
   fun queryNullableByEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.33)
-    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
-      value1,
-      value2,
-      value3,
-      value4,
-      tag ->
-      val insertVariables = Insert3NullableVariables(tag, value1, value2, value3)
-      val insertResult = connector.enumNullableInsert3.execute(tag) { value1 = value1 }.data.key
-      val queryVariables = GetNullableByTagAndValueVariables(tag, value4)
-      val queryResult = dataConnect.query(queryVariables).execute().data
-      val matchingKeys = insertResult.keysForMatchingValues(value4, insertVariables)
-      withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder matchingKeys }
+    checkAll(NUM_ITERATIONS, Arb.insert3TestData(enumArb)) { testData ->
+      val (tag, insertValue1, insertValue2, insertValue3, queryValue) = testData
+      val insertResult =
+        connector.enumNullableInsert3
+          .execute(tag) {
+            value1 = insertValue1
+            value2 = insertValue2
+            value3 = insertValue3
+          }
+          .data
+      val queryResult =
+        connector.enumNullableGetAllByTagAndValue.execute(tag) { value = queryValue }.data
+      val matchingIds = insertResult.idsForMatchingValues(testData)
+      withClue(queryResult) {
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
     }
   }
 
   @Test
   fun queryNullableByUndefinedEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
-      val insertVariables = Insert3NullableVariables(tag, value1, value2, value3)
-      val insertResult = dataConnect.mutation(insertVariables).execute().data
-      val queryVariables = GetNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
-      val queryResult = dataConnect.query(queryVariables).execute().data
-      withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder insertResult.keys }
+    checkAll(NUM_ITERATIONS, Arb.insert3TestData(enumArb)) { testData ->
+      val (tag, insertValue1, insertValue2, insertValue3) = testData
+      val insertResult =
+        connector.enumNullableInsert3
+          .execute(tag) {
+            value1 = insertValue1
+            value2 = insertValue2
+            value3 = insertValue3
+          }
+          .data
+      val queryResult = connector.enumNullableGetAllByTagAndValue.execute(tag).data
+      withClue(queryResult) {
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder insertResult.ids
+      }
     }
   }
 
   @Test
   fun queryNullableByDefaultEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.33)
-    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
-      value1,
-      value2,
-      value3,
-      tag ->
-      val insertVariables = Insert3NullableVariables(tag, value1, value2, value3)
-      val insertResult = dataConnect.mutation(insertVariables).execute().data
-      val queryVariables = GetNullableByTagAndDefaultValueVariables(tag)
-      val queryResult = dataConnect.query(queryVariables).execute().data
-      val matchingKeys = insertResult.keysForMatchingValues(N5ekmae3jn.QJX7C7RD5T, insertVariables)
-      withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder matchingKeys }
+    val queryValueArb = Arb.constant(N5ekmae3jn.QJX7C7RD5T)
+    checkAll(NUM_ITERATIONS, Arb.insert3TestData(enumArb, queryValue = queryValueArb)) { testData ->
+      val (tag, insertValue1, insertValue2, insertValue3) = testData
+      val insertResult =
+        connector.enumNullableInsert3
+          .execute(tag) {
+            value1 = insertValue1
+            value2 = insertValue2
+            value3 = insertValue3
+          }
+          .data
+      val queryResult = connector.enumNullableGetAllByTagAndDefaultValue.execute(tag).data
+      val matchingIds = insertResult.idsForMatchingValues(testData)
+      withClue(queryResult) {
+        queryResult.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
+      }
     }
   }
-
-   */
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
@@ -216,8 +230,8 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     const val NUM_ITERATIONS = 10
 
     @Suppress("NAME_SHADOWING")
-    inline fun <reified T : Enum<T>> Arb.Companion.insert3TestData(
-      insertValues: Arb<T> = Arb.enum<T>(),
+    fun <T> Arb.Companion.insert3TestData(
+      insertValues: Arb<T>,
       queryValue: Arb<T> = insertValues,
       tag: Arb<String> = Arb.dataConnect.tag(),
     ): Arb<Insert3TestData<T>> =
@@ -234,36 +248,30 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     val EnumNonNullableInsert3Mutation.Data.ids: List<UUID>
       get() = listOf(key1, key2, key3).map { it.id }
 
-    fun <T> EnumNonNullableInsert3Mutation.Data.idsForMatchingValues(
-      testData: Insert3TestData<T>
-    ): List<UUID> =
-      keysForMatchingValues(
-          value = testData.queryValue,
-          value1 = testData.value1,
-          key1 = key1,
-          value2 = testData.value2,
-          key2 = key2,
-          value3 = testData.value3,
-          key3 = key3,
-        )
-        .map { it.id }
+    val EnumNullableInsert3Mutation.Data.ids: List<UUID>
+      get() = listOf(key1, key2, key3).map { it.id }
+
+    fun EnumNonNullableInsert3Mutation.Data.idsForMatchingValues(
+      testData: Insert3TestData<N5ekmae3jn>
+    ): List<UUID> = keysForMatchingValues(testData, key1, key2, key3).map { it.id }
+
+    fun EnumNullableInsert3Mutation.Data.idsForMatchingValues(
+      testData: Insert3TestData<N5ekmae3jn?>
+    ): List<UUID> = keysForMatchingValues(testData, key1, key2, key3).map { it.id }
 
     private fun <T, K> keysForMatchingValues(
-      value: T,
-      value1: T,
+      testData: Insert3TestData<T>,
       key1: K,
-      value2: T,
       key2: K,
-      value3: T,
       key3: K,
     ): List<K> = buildList {
-      if (value1 == value) {
+      if (testData.value1 == testData.queryValue) {
         add(key1)
       }
-      if (value2 == value) {
+      if (testData.value2 == testData.queryValue) {
         add(key2)
       }
-      if (value3 == value) {
+      if (testData.value3 == testData.queryValue) {
         add(key3)
       }
     }
