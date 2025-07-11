@@ -5,8 +5,6 @@
         ":firebase-ai",
         ":firebase-appdistribution",
         ":firebase-appdistribution-api",
-        ":firebase-common",
-        ":firebase-components",
         ":firebase-config",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
