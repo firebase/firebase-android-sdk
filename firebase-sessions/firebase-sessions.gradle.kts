@@ -89,6 +89,7 @@ dependencies {
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {

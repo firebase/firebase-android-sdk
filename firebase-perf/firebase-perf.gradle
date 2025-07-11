@@ -115,8 +115,12 @@ dependencies {
     implementation libs.okhttp
     api("com.google.firebase:firebase-common:22.0.0")
     api("com.google.firebase:firebase-components:19.0.0")
-    api("com.google.firebase:firebase-config:21.5.0")
-    api("com.google.firebase:firebase-installations:17.2.0")
+    api("com.google.firebase:firebase-config:21.5.0") {
+        exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
+    api("com.google.firebase:firebase-installations:18.0.0") {
+        exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
     api("com.google.firebase:firebase-sessions:2.0.7") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'

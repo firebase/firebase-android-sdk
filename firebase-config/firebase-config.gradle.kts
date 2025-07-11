@@ -73,7 +73,9 @@ dependencies {
   }
   api("com.google.firebase:firebase-common:22.0.0")
   api("com.google.firebase:firebase-components:19.0.0")
-  api("com.google.firebase:firebase-installations:17.2.0")
+  api("com.google.firebase:firebase-installations:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
+  }
 
   // Kotlin & Android
   implementation(libs.kotlin.stdlib)
