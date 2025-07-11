@@ -398,3 +398,19 @@ type EnumNullableListOfNonNullable @table {
 type EnumNullableListOfNullable @table {
   value: [N5ekmae3jn]
 }
+
+type FooNonNullableListOfNonNullable @table {
+  value: [Int!]!
+}
+
+type FooNonNullableListOfNullable @table {
+  value: [Int]!
+}
+
+type FooNullableListOfNonNullable @table {
+  value: [Int!]
+}
+
+type FooNullableListOfNullable @table {
+  value: [Int]
+}

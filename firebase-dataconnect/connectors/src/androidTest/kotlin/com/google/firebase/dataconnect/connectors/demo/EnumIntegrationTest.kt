@@ -29,6 +29,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import java.util.UUID
@@ -232,6 +233,76 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     val key = connector.enumNullableTableDefaultInsert.execute().data.key
     val queryResult = connector.enumNullableTableDefaultGetByKey.execute(key).data
     withClue(queryResult) { queryResult.item?.value shouldBe N5ekmae3jn.ZE6Z5778RV }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNonNullableListOfNonNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNonNullableListOfNonNullable() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { value ->
+      val key = connector.enumNonNullableListOfNonNullableInsert.execute(value).data.key
+      val queryResult = connector.enumNonNullableListOfNonNullableGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.value shouldBe value }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNonNullableListOfNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNonNullableListOfNullable() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { value ->
+      val key = connector.enumNonNullableListOfNullableInsert.execute(value).data.key
+      val queryResult = connector.enumNonNullableListOfNullableGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.value shouldBe value }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNullableListOfNonNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNullableListOfNonNullable_NonNullList() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
+      val key = connector.enumNullableListOfNonNullableInsert.execute { value = values }.data.key
+      val queryResult = connector.enumNullableListOfNonNullableGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.value shouldBe values }
+    }
+  }
+
+  @Test
+  fun insertNullableListOfNonNullable_NullList() = runTest {
+    val key = connector.enumNullableListOfNonNullableInsert.execute { value = null }.data.key
+    val queryResult = connector.enumNullableListOfNonNullableGetByKey.execute(key).data
+    withClue(queryResult) { queryResult.item?.value.shouldBeNull() }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumNullableListOfNullable table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun insertNullableListOfNullable_NonNullList() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
+      val key = connector.enumNullableListOfNullableInsert.execute { value = values }.data.key
+      val queryResult = connector.enumNullableListOfNullableGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.value shouldBe values }
+    }
+  }
+
+  @Test
+  fun insertNullableListOfNullable_NullList() = runTest {
+    val key = connector.enumNullableListOfNullableInsert.execute { value = null }.data.key
+    val queryResult = connector.enumNullableListOfNullableGetByKey.execute(key).data
+    withClue(queryResult) { queryResult.item?.value.shouldBeNull() }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

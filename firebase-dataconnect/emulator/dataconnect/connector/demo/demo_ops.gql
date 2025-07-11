@@ -1696,7 +1696,7 @@ query EnumNullableTableDefault_GetByKey($key: EnumNullableTableDefault_Key!) @au
 # Operations for table: type EnumNonNullableListOfNonNullable
 ###############################################################################
 
-mutation EnumNonNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+mutation EnumNonNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
   key: enumNonNullableListOfNonNullable_insert(data: { value: $value })
 }
 
@@ -1708,7 +1708,7 @@ query EnumNonNullableListOfNonNullable_GetByKey($key: EnumNonNullableListOfNonNu
 # Operations for table: type EnumNonNullableListOfNullable
 ###############################################################################
 
-mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
   key: enumNonNullableListOfNullable_insert(data: { value: $value })
 }
 
@@ -1740,3 +1740,22 @@ query EnumNullableListOfNullable_GetByKey($key: EnumNullableListOfNullable_Key!)
   item: enumNullableListOfNullable(key: $key) { value }
 }
 
+
+
+
+
+mutation FooNonNullableListOfNonNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
+  key: fooNonNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+mutation FooNonNullableListOfNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
+  key: fooNonNullableListOfNullable_insert(data: { value: $value })
+}
+
+mutation FooNullableListOfNonNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
+  key: fooNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+mutation FooNullableListOfNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
+  key: fooNullableListOfNullable_insert(data: { value: $value })
+}
