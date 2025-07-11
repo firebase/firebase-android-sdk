@@ -25,7 +25,7 @@ import java.util.concurrent.Executor;
  */
 @KeepForSdk
 public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRegistrar {
-  private static final String LIBRARY_NAME = "fire-app-check-recaptcha-enterprise";
+  private static final String LIBRARY_NAME = "firebase-app-check-recaptcha-enterprise";
 
   @Override
   public List<Component<?>> getComponents() {
