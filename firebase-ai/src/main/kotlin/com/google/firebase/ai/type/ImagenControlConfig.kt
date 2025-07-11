@@ -15,8 +15,6 @@
  */
 package com.google.firebase.ai.type
 
-import com.google.firebase.ai.type.ImagenControlType
-
 internal class ImagenControlConfig(
   internal val controlType: ImagenControlType,
   internal val enableComputation: Boolean? = null,

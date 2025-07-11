@@ -89,6 +89,14 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
+  /**
+   * Generates an image from a single or set of base images, returning the result directly to the
+   * caller.
+   *
+   * @param prompt the text input given to the model as a prompt
+   * @param referenceImages the image inputs given to the model as a prompt
+   * @param config the editing configuration settings
+   */
   public suspend fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -103,6 +111,14 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
+  /**
+   * Generates an image by inpainting a masked off part of a base image.
+   *
+   * @param image the base image
+   * @param prompt the text input given to the model as a prompt
+   * @param mask the mask which defines where in the image can be painted by imagen.
+   * @param config the editing configuration settings, its important to include an [ImagenEditMode]
+   */
   public suspend fun inpaintImage(
     image: ImagenInlineImage,
     prompt: String,
@@ -112,6 +128,19 @@ internal constructor(
     return editImage(listOf(ImagenRawImage(image), mask), prompt, config)
   }
 
+  /**
+   * Generates an image by outpainting the image, extending its borders
+   *
+   * @param image the base image
+   * @param newDimensions the new dimensions for the image, *must* be larger than the original
+   * image.
+   * @param newPosition the placement of the base image within the new image. This can either be
+   * coordinates (0,0 is the top left corner) or an alignment (ex: [ImagenImagePlacement.BOTTOM])
+   * @param prompt optional, but can be used to specify the background generated if context is
+   * insufficient
+   * @param config the editing configuration settings
+   * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
+   */
   public suspend fun outpaintImage(
     image: ImagenInlineImage,
     newDimensions: Dimensions,

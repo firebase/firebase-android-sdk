@@ -19,9 +19,13 @@ package com.google.firebase.ai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.ImagenModel
+import com.google.firebase.ai.type.Dimensions
+import com.google.firebase.ai.type.ImagenEditMode
 import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
+import com.google.firebase.ai.type.ImagenImagePlacement
 import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.ImagenMaskReference
 import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 
@@ -41,10 +45,54 @@ public abstract class ImagenModelFutures internal constructor() {
     prompt: String,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
+  /**
+   * Generates an image from a single or set of base images, returning the result directly to the
+   * caller.
+   *
+   * @param prompt the text input given to the model as a prompt
+   * @param referenceImages the image inputs given to the model as a prompt
+   * @param config the editing configuration settings
+   */
   public abstract fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
     config: ImagenEditingConfig? = null
+  ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
+
+  /**
+   * Generates an image by inpainting a masked off part of a base image.
+   *
+   * @param image the base image
+   * @param prompt the text input given to the model as a prompt
+   * @param mask the mask which defines where in the image can be painted by imagen.
+   * @param config the editing configuration settings, its important to include an [ImagenEditMode]
+   */
+  public abstract fun inpaintImage(
+    image: ImagenInlineImage,
+    prompt: String,
+    mask: ImagenMaskReference,
+    config: ImagenEditingConfig,
+  ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
+
+  /**
+   * Generates an image by outpainting the image, extending its borders
+   *
+   * @param image the base image
+   * @param newDimensions the new dimensions for the image, *must* be larger than the original
+   * image.
+   * @param newPosition the placement of the base image within the new image. This can either be
+   * coordinates (0,0 is the top left corner) or an alignment (ex: [ImagenImagePlacement.BOTTOM])
+   * @param prompt optional, but can be used to specify the background generated if context is
+   * insufficient
+   * @param config the editing configuration settings
+   * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
+   */
+  public abstract fun outpaintImage(
+    image: ImagenInlineImage,
+    newDimensions: Dimensions,
+    newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+    prompt: String = "",
+    config: ImagenEditingConfig? = null,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
   /** Returns the [ImagenModel] object wrapped by this object. */
@@ -62,6 +110,25 @@ public abstract class ImagenModelFutures internal constructor() {
       config: ImagenEditingConfig?
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
       SuspendToFutureAdapter.launchFuture { model.editImage(referenceImages, prompt, config) }
+
+    override fun inpaintImage(
+      image: ImagenInlineImage,
+      prompt: String,
+      mask: ImagenMaskReference,
+      config: ImagenEditingConfig
+    ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
+      SuspendToFutureAdapter.launchFuture { model.inpaintImage(image, prompt, mask, config) }
+
+    override fun outpaintImage(
+      image: ImagenInlineImage,
+      newDimensions: Dimensions,
+      newPosition: ImagenImagePlacement,
+      prompt: String,
+      config: ImagenEditingConfig?
+    ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
+      SuspendToFutureAdapter.launchFuture {
+        model.outpaintImage(image, newDimensions, newPosition, prompt, config)
+      }
 
     override fun getImageModel(): ImagenModel = model
   }

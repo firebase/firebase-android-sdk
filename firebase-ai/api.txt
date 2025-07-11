@@ -111,6 +111,8 @@ package com.google.firebase.ai.java {
     method public static final com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
     method public abstract com.google.firebase.ai.ImagenModel getImageModel();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
     field public static final com.google.firebase.ai.java.ImagenModelFutures.Companion Companion;
   }
 
