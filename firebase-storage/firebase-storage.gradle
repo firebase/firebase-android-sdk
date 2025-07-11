@@ -87,8 +87,9 @@ dependencies {
     javadocClasspath libs.findbugs.jsr305
 
     api("com.google.firebase:firebase-annotations:17.0.0")
-    api("com.google.firebase:firebase-appcheck:17.1.0") {
+    api("com.google.firebase:firebase-appcheck:18.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-common-ktx"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-annotations"
     }
