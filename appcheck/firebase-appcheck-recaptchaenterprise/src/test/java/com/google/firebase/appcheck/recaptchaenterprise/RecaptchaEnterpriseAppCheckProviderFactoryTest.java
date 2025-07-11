@@ -11,15 +11,26 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class RecaptchaEnterpriseAppCheckProviderFactoryTest {
-  static final String SITE_KEY = "siteKey";
+  static final String SITE_KEY_1 = "siteKey1";
+  static final String SITE_KEY_2 = "siteKey2";
 
   @Test
-  public void testGetInstance_callTwice_sameInstance() {
+  public void testGetInstance_callTwiceSameSiteKey_sameInstance() {
     RecaptchaEnterpriseAppCheckProviderFactory firstInstance =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY);
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
     RecaptchaEnterpriseAppCheckProviderFactory secondInstance =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY);
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
 
     assertThat(firstInstance).isEqualTo(secondInstance);
+  }
+
+  @Test
+  public void testGetInstance_callTwiceDifferentSiteKey_differentInstance() {
+    RecaptchaEnterpriseAppCheckProviderFactory firstInstance =
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+    RecaptchaEnterpriseAppCheckProviderFactory secondInstance =
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_2);
+
+    assertThat(firstInstance).isNotEqualTo(secondInstance);
   }
 }

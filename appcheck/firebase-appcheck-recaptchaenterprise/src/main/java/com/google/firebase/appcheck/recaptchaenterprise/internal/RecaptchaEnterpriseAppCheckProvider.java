@@ -1,6 +1,7 @@
 package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -31,18 +32,19 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final NetworkClient networkClient;
+  private static final String TAG = "rCEAppCheckProvider";
 
   public RecaptchaEnterpriseAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Application application,
-      @NonNull SiteKey siteKey,
+      @NonNull String siteKey,
       @Lightweight Executor liteExecutor,
       @Blocking Executor blockingExecutor) {
     this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = new RetryManager();
     this.networkClient = new NetworkClient(firebaseApp);
-    recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey.value());
+    recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey);
   }
 
   @VisibleForTesting
@@ -93,6 +95,7 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
             RecaptchaTasksClient client = task.getResult();
             return client.executeTask(recaptchaAction);
           } else {
+            Log.w(TAG, "Recaptcha task failed", task.getException());
             throw Objects.requireNonNull(task.getException());
           }
         });

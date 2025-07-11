@@ -1,11 +1,17 @@
 package com.google.firebase.appcheck.recaptchaenterprise;
 
+import android.app.Application;
+
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation of an {@link AppCheckProviderFactory} that builds <br>
@@ -13,32 +19,54 @@ import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterp
  */
 public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProviderFactory {
 
-  private static volatile RecaptchaEnterpriseAppCheckProviderFactory instance;
-  private static String siteKey;
+  private static FirebaseExecutors firebaseExecutors;
+  private static final Map<String, RecaptchaEnterpriseAppCheckProviderFactory> factoryInstances =
+      new ConcurrentHashMap<>();
+  private final String siteKey;
+  private volatile RecaptchaEnterpriseAppCheckProvider provider;
+
+  private RecaptchaEnterpriseAppCheckProviderFactory(@NonNull String siteKey) {
+    this.siteKey = siteKey;
+  }
 
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
   @NonNull
   public static RecaptchaEnterpriseAppCheckProviderFactory getInstance(@NonNull String siteKey) {
-    if (instance == null) {
-      synchronized (RecaptchaEnterpriseAppCheckProviderFactory.class) {
-        if (instance == null) {
-          instance = new RecaptchaEnterpriseAppCheckProviderFactory();
-          RecaptchaEnterpriseAppCheckProviderFactory.siteKey = siteKey;
+    RecaptchaEnterpriseAppCheckProviderFactory factory = factoryInstances.get(siteKey);
+    if (factory == null) {
+      synchronized (factoryInstances) {
+        factory = factoryInstances.get(siteKey);
+        if (factory == null) {
+          factory = new RecaptchaEnterpriseAppCheckProviderFactory(siteKey);
+          factoryInstances.put(siteKey, factory);
         }
       }
     }
-    return instance;
-  }
-
-  @NonNull
-  public static String getSiteKey() {
-    return siteKey;
+    return factory;
   }
 
   @NonNull
   @Override
   @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return firebaseApp.get(RecaptchaEnterpriseAppCheckProvider.class);
+    if (provider == null) {
+      synchronized (this) {
+        if (provider == null) {
+          if (RecaptchaEnterpriseAppCheckProviderFactory.firebaseExecutors == null) {
+            firebaseExecutors = firebaseApp.get(FirebaseExecutors.class);
+          }
+          Application application = firebaseApp.get(Application.class);
+
+          provider =
+              new RecaptchaEnterpriseAppCheckProvider(
+                  firebaseApp,
+                  application,
+                  siteKey,
+                  firebaseExecutors.getLiteExecutor(),
+                  firebaseExecutors.getBlockingExecutor());
+        }
+      }
+    }
+    return provider;
   }
 }

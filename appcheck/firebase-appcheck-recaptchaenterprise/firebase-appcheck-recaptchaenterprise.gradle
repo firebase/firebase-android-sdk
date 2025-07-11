@@ -36,11 +36,11 @@ dependencies {
     javadocClasspath libs.autovalue.annotations
 
     api project(':appcheck:firebase-appcheck')
-    api 'com.google.firebase:firebase-annotations:16.2.0'
-    api 'com.google.firebase:firebase-common:21.0.0'
-    api 'com.google.firebase:firebase-common-ktx:21.0.0'
-    api 'com.google.firebase:firebase-components:18.0.0'
-    api 'com.google.android.recaptcha:recaptcha:18.8.0-beta01'
+    api libs.firebase.annotations
+    api libs.firebase.common.v2200
+    api libs.firebase.common.ktx
+    api libs.firebase.components.v1800
+    api libs.recaptcha.v1871
 
     testImplementation(project(":integ-testing")) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
