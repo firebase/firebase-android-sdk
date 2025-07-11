@@ -61,7 +61,7 @@ public class PerfSession implements Parcelable {
 
   /** Returns the sessionId of the object. */
   public String sessionId() {
-    return sessionId;
+    return sessionId + "z";
   }
 
   /**
