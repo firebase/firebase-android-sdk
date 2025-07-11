@@ -20,7 +20,6 @@ import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -103,8 +102,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
       val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
-      val queryResult = dataConnect.query(queryVariables).execute().data
-      withClue(queryResult) { queryResult.items shouldContainExactlyInAnyOrder insertResult.keys }
+      val queryRef = dataConnect.query(queryVariables)
+      shouldThrow<DataConnectOperationException> { queryRef.execute() }
     }
   }
 
@@ -115,8 +114,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
       dataConnect.mutation(insertVariables).execute()
       val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Value(null))
-      val queryResult = dataConnect.query(queryVariables).execute().data
-      withClue(queryResult) { queryResult.items.shouldBeEmpty() }
+      val queryRef = dataConnect.query(queryVariables)
+      shouldThrow<DataConnectOperationException> { queryRef.execute() }
     }
   }
 
