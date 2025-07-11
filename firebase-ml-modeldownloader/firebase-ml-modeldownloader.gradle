@@ -97,8 +97,8 @@ dependencies {
     api 'com.google.firebase:firebase-encoders:17.0.0'
     api 'com.google.firebase:firebase-encoders-json:18.0.0'
     api("com.google.firebase:firebase-installations:18.0.0") {
-    exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
-}
+         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
 
     implementation 'androidx.annotation:annotation:1.1.0'
