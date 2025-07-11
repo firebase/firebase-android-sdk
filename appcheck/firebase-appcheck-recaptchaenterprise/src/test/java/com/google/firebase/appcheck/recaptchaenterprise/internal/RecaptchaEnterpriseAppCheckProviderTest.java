@@ -47,7 +47,7 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
   private static final String RECAPTCHA_ENTERPRISE_TOKEN = "recaptchaEnterpriseToken";
   private final Executor liteExecutor = MoreExecutors.directExecutor();
   private final Executor blockingExecutor = MoreExecutors.directExecutor();
-  private final SiteKey siteKey = new SiteKey("siteKey");
+  private final String siteKey = "siteKey";
 
   @Mock private NetworkClient mockNetworkClient;
   @Mock private Application mockApplication;

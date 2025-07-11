@@ -4,11 +4,9 @@ import android.app.Application;
 import android.content.Context;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
-import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
-import com.google.firebase.appcheck.recaptchaenterprise.internal.SiteKey;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -44,26 +42,14 @@ public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRe
                   return (Application) context.getApplicationContext();
                 })
             .build(),
-        Component.builder(SiteKey.class)
+        Component.builder(FirebaseExecutors.class)
             .name(LIBRARY_NAME)
-            .factory(
-                container -> new SiteKey(RecaptchaEnterpriseAppCheckProviderFactory.getSiteKey()))
-            .build(),
-        Component.builder(RecaptchaEnterpriseAppCheckProvider.class)
-            .name(LIBRARY_NAME)
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(Application.class))
-            .add(Dependency.required(SiteKey.class))
             .add(Dependency.required(liteExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
-                (container ->
-                    new RecaptchaEnterpriseAppCheckProvider(
-                        container.get(FirebaseApp.class),
-                        container.get(Application.class),
-                        container.get(SiteKey.class),
-                        container.get(liteExecutor),
-                        container.get(blockingExecutor))))
+                container ->
+                    new FirebaseExecutors(
+                        container.get(liteExecutor), container.get(blockingExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
