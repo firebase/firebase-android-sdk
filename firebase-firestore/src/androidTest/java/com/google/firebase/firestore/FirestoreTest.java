@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getLargestDocContent;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
@@ -1987,5 +1988,122 @@ public class FirestoreTest {
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
     checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
+  }
+
+  @Test
+  public void testCanCRUDAndQueryLargeDocuments() {
+    CollectionReference collRef = testCollection();
+    DocumentReference docRef = collRef.document();
+    Map<String, Object> data = getLargestDocContent();
+
+    // Set
+    waitFor(docRef.set(data));
+
+    // Get
+    DocumentSnapshot snapshot = waitFor(docRef.get());
+    assertEquals(data, snapshot.getData());
+
+    // Update
+    Map<String, Object> newData = getLargestDocContent();
+    waitFor(docRef.update(newData));
+    snapshot = waitFor(docRef.get());
+    assertEquals(newData, snapshot.getData());
+
+    // Query
+    QuerySnapshot querySnapshot = waitFor(collRef.get());
+    assertEquals(querySnapshot.size(), 1);
+    assertEquals(newData, querySnapshot.getDocuments().get(0).getData());
+
+    // Delete
+    waitFor(docRef.delete());
+    snapshot = waitFor(docRef.get());
+    assertFalse(snapshot.exists());
+  }
+
+  @Test
+  public void testCanCRUDLargeDocumentsInsideTransaction() {
+    CollectionReference collRef = testCollection();
+
+    DocumentReference docRef1 = collRef.document();
+    DocumentReference docRef2 = collRef.document();
+    DocumentReference docRef3 = collRef.document();
+    Map<String, Object> data = getLargestDocContent();
+    Map<String, Object> newData = getLargestDocContent();
+    waitFor(docRef1.set(data));
+    waitFor(docRef3.set(data));
+
+    waitFor(
+        collRef
+            .getFirestore()
+            .runTransaction(
+                transaction -> {
+                  // Get and update
+                  DocumentSnapshot snapshot = transaction.get(docRef1);
+                  assertEquals(data, snapshot.getData());
+                  transaction.update(docRef1, newData);
+
+                  // Set
+                  transaction.set(docRef2, data);
+
+                  // Delete
+                  transaction.delete(docRef3);
+                  return null;
+                }));
+
+    DocumentSnapshot snapshot = waitFor(docRef1.get());
+    assertEquals(newData, snapshot.getData());
+
+    snapshot = waitFor(docRef2.get());
+    assertEquals(data, snapshot.getData());
+
+    snapshot = waitFor(docRef3.get());
+    assertFalse(snapshot.exists());
+  }
+
+  @Test
+  public void listenToLargeQuerySnapshot() throws Exception {
+    CollectionReference collRef = testCollection();
+    DocumentReference docRef = collRef.document();
+    Map<String, Object> data = getLargestDocContent();
+    waitFor(docRef.set(data));
+
+    CountDownLatch latch = new CountDownLatch(1);
+    List<QuerySnapshot> querySnapshots = new ArrayList<>();
+    ListenerRegistration registration =
+        collRef.addSnapshotListener(
+            (value, error) -> {
+              querySnapshots.add(value);
+              latch.countDown();
+            });
+
+    latch.await();
+    registration.remove();
+
+    assertEquals(querySnapshots.size(), 1);
+    assertEquals(querySnapshots.get(0).getDocuments().size(), 1);
+    assertEquals(data, querySnapshots.get(0).getDocuments().get(0).getData());
+  }
+
+  @Test
+  public void listenToLargeDocumentSnapshot() throws Exception {
+    DocumentReference docRef = testDocument();
+    Map<String, Object> data = getLargestDocContent();
+    waitFor(docRef.set(data));
+
+    CountDownLatch latch = new CountDownLatch(1);
+    List<DocumentSnapshot> documentSnapshots = new ArrayList<>();
+
+    ListenerRegistration registration =
+        docRef.addSnapshotListener(
+            (value, error) -> {
+              documentSnapshots.add(value);
+              latch.countDown();
+            });
+
+    latch.await();
+    registration.remove();
+
+    assertEquals(documentSnapshots.size(), 1);
+    assertEquals(data, documentSnapshots.get(0).getData());
   }
 }
