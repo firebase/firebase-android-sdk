@@ -46,7 +46,14 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      */
     override fun equals(other: Any?): Boolean = other is Unknown && stringValue == other.stringValue
 
-    /** Returns the hash code of [stringValue]. */
+    /**
+     * Calculates and returns the hash code for this object.
+     *
+     * The hash code is _not_ guaranteed to be stable across application restarts.
+     *
+     * @return the hash code for this object, that incorporates the values of this object's public
+     * properties.
+     */
     override fun hashCode(): Int = stringValue.hashCode()
 
     /**
@@ -57,10 +64,11 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      * logging. Namely, parsing the returned string or storing the returned string in non-volatile
      * storage should generally be avoided in order to be robust in case that the string
      * representation changes.
-     *
-     * @return [stringValue]
      */
-    override fun toString(): String = stringValue
+    override fun toString(): String = "\"$stringValue\""
+
+    /** Creates and returns a new [Unknown] instance with the given property values. */
+    public fun copy(stringValue: String = this.stringValue): Unknown = Unknown(stringValue)
   }
 
   /**
@@ -82,7 +90,14 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      */
     override fun equals(other: Any?): Boolean = other is Known<*> && value == other.value
 
-    /** Returns the hash code of [value]. */
+    /**
+     * Calculates and returns the hash code for this object.
+     *
+     * The hash code is _not_ guaranteed to be stable across application restarts.
+     *
+     * @return the hash code for this object, that incorporates the values of this object's public
+     * properties.
+     */
     override fun hashCode(): Int = stringValue.hashCode()
 
     /**
@@ -93,9 +108,10 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      * logging. Namely, parsing the returned string or storing the returned string in non-volatile
      * storage should generally be avoided in order to be robust in case that the string
      * representation changes.
-     *
-     * @return the [Enum.name] of [value].
      */
     override fun toString(): String = value.name
+
+    /** Creates and returns a new [Known] instance with the given property values. */
+    public fun copy(value: T = this.value): Known<T> = Known(value)
   }
 }
