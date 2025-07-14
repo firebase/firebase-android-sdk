@@ -7,7 +7,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Recaptcha Enterprise")
         versionName.set("appcheck-recaptchaenterprise")
-        hasKTX.set(false)
     }
 }
 
