@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalFirebaseDataConnect::class)
+
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.connectors.demo.EnumValue.Known
+import com.google.firebase.dataconnect.connectors.demo.EnumValue.Unknown
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.threeValues
@@ -44,7 +48,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  fun insertNonNullableNonNullEnumValue() = runTest {
+  fun insertNonNullableNonNullKnownEnumValue() = runTest {
     N5ekmae3jn.entries.forEach { enumValue ->
       val key = connector.enumNonNullableInsert.execute(enumValue).data.key
       val queryResult = connector.enumNonNullableGetByKey.execute(key).data
@@ -61,6 +65,20 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       withClue(updateResult) { updateResult.data.key shouldBe key }
       val queryResult = connector.enumNonNullableGetByKey.execute(key).data
       withClue(queryResult) { queryResult.item?.value shouldBe Known(value2) }
+    }
+  }
+
+  @Test
+  fun queryNonNullableNonNullUnknownEnumValue() = runTest {
+    N5ekmae3jn.entries.forEach { enumValue ->
+      val key = connector.enumNonNullableInsert.execute(enumValue).data.key
+      val queryRef =
+        connector.enumNonNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetGetByKeyQuery.dataDeserializer)
+      val queryResult = queryRef.execute().data
+      val expectedEnumValue: EnumValue<N5ekmae3jnSubset> = enumValue.toN5ekmae3jnSubsetEnumValue()
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValue }
     }
   }
 
@@ -153,6 +171,20 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
           queryResult.item?.value shouldBe Known(value2)
         }
       }
+    }
+  }
+
+  @Test
+  fun queryNullableNonNullUnknownEnumValue() = runTest {
+    N5ekmae3jn.entries.forEach { enumValue ->
+      val key = connector.enumNullableInsert.execute { value = enumValue }.data.key
+      val queryRef =
+        connector.enumNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetGetByKeyQuery.dataDeserializer)
+      val queryResult = queryRef.execute().data
+      val expectedEnumValue: EnumValue<N5ekmae3jnSubset> = enumValue.toN5ekmae3jnSubsetEnumValue()
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValue }
     }
   }
 
@@ -256,6 +288,22 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     }
   }
 
+  @Test
+  fun queryNonNullableListOfNonNullableUnknownEnumValues() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 10..20)) { values ->
+      val key = connector.enumNonNullableListOfNonNullableInsert.execute(values).data.key
+      val queryRef =
+        connector.enumNonNullableListOfNonNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetListGetByKeyQuery.dataDeserializer)
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>> =
+        values.map { it.toN5ekmae3jnSubsetEnumValue() }
+      val queryResult = queryRef.execute().data
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValues }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for EnumNonNullableListOfNullable table.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,6 +315,22 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       val key = connector.enumNonNullableListOfNullableInsert.execute(values).data.key
       val queryResult = connector.enumNonNullableListOfNullableGetByKey.execute(key).data
       withClue(queryResult) { queryResult.item?.value shouldBe values.map(::Known) }
+    }
+  }
+
+  @Test
+  fun queryNonNullableListOfNullableUnknownEnumValues() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 10..20)) { values ->
+      val key = connector.enumNonNullableListOfNullableInsert.execute(values).data.key
+      val queryRef =
+        connector.enumNonNullableListOfNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetListGetByKeyQuery.dataDeserializer)
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>> =
+        values.map { it.toN5ekmae3jnSubsetEnumValue() }
+      val queryResult = queryRef.execute().data
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValues }
     }
   }
 
@@ -291,6 +355,22 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     withClue(queryResult) { queryResult.item?.value.shouldBeNull() }
   }
 
+  @Test
+  fun queryNullableListOfNonNullableUnknownEnumValues() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 10..20)) { values ->
+      val key = connector.enumNullableListOfNonNullableInsert.execute { value = values }.data.key
+      val queryRef =
+        connector.enumNullableListOfNonNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetListGetByKeyQuery.dataDeserializer)
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>> =
+        values.map { it.toN5ekmae3jnSubsetEnumValue() }
+      val queryResult = queryRef.execute().data
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValues }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for EnumNullableListOfNullable table.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,6 +392,35 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     withClue(queryResult) { queryResult.item?.value.shouldBeNull() }
   }
 
+  @Test
+  fun queryNullableListOfNullableUnknownEnumValues() = runTest {
+    val enumArb = Arb.enum<N5ekmae3jn>()
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 10..20)) { values ->
+      val key = connector.enumNullableListOfNullableInsert.execute { value = values }.data.key
+      val queryRef =
+        connector.enumNullableListOfNullableGetByKey
+          .ref(key)
+          .withDataDeserializer(EnumSubsetListGetByKeyQuery.dataDeserializer)
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>> =
+        values.map { it.toN5ekmae3jnSubsetEnumValue() }
+      val queryResult = queryRef.execute().data
+      withClue(queryResult) { queryResult.item?.value shouldBe expectedEnumValues }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumKotlinKeywords table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun enumKotlinKeywords() = runTest {
+    Break.entries.forEach { enumValue ->
+      val key = connector.enumKotlinKeywordsInsert.execute(enumValue).data.key
+      val queryResult = connector.enumKotlinKeywordsGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.value shouldBe Known(enumValue) }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,6 +437,18 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     /** The default number of iterations to use in property-based tests. */
     const val NUM_ITERATIONS = 10
+
+    fun N5ekmae3jn.toN5ekmae3jnSubsetOrNull(): N5ekmae3jnSubset? =
+      when (this) {
+        N5ekmae3jn.DPSKD6HR3A -> N5ekmae3jnSubset.DPSKD6HR3A
+        N5ekmae3jn.XGWGVMYTHJ -> N5ekmae3jnSubset.XGWGVMYTHJ
+        N5ekmae3jn.QJX7C7RD5T -> N5ekmae3jnSubset.QJX7C7RD5T
+        else -> null
+      }
+
+    fun N5ekmae3jn.toN5ekmae3jnSubsetEnumValue(): EnumValue<N5ekmae3jnSubset> {
+      return Known(toN5ekmae3jnSubsetOrNull() ?: return Unknown(name))
+    }
 
     @Suppress("NAME_SHADOWING")
     fun <T> Arb.Companion.insert3TestData(

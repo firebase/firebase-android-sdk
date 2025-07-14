@@ -399,18 +399,29 @@ type EnumNullableListOfNullable @table {
   value: [N5ekmae3jn]
 }
 
-type FooNonNullableListOfNonNullable @table {
-  value: [Int!]!
+# An enum that uses Kotlin keywords to ensure they are correctly escaped.
+enum break {
+  when,
+  super,
+  try,
 }
 
-type FooNonNullableListOfNullable @table {
-  value: [Int]!
+type EnumKotlinKeywords @table {
+  value: break!
 }
 
-type FooNullableListOfNonNullable @table {
-  value: [Int!]
+# An enum that has a subset of the values in the N5ekmae3jn enum.
+# This is used for testing unknown enum values.
+enum N5ekmae3jnSubset {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
 }
 
-type FooNullableListOfNullable @table {
-  value: [Int]
+type EnumSubset @table {
+  value: N5ekmae3jnSubset!
+}
+
+type EnumSubsetList @table {
+  value: [N5ekmae3jnSubset]!
 }

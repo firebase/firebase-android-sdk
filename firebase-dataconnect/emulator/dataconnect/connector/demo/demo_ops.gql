@@ -1740,22 +1740,32 @@ query EnumNullableListOfNullable_GetByKey($key: EnumNullableListOfNullable_Key!)
   item: enumNullableListOfNullable(key: $key) { value }
 }
 
+###############################################################################
+# Operations for table: type EnumKotlinKeywords
+###############################################################################
 
-
-
-
-mutation FooNonNullableListOfNonNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
-  key: fooNonNullableListOfNonNullable_insert(data: { value: $value })
+mutation EnumKotlinKeywords_Insert($value: break!) @auth(level: PUBLIC) {
+  key: enumKotlinKeywords_insert(data: { value: $value })
 }
 
-mutation FooNonNullableListOfNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
-  key: fooNonNullableListOfNullable_insert(data: { value: $value })
+query EnumKotlinKeywords_GetByKey($key: EnumKotlinKeywords_Key!) @auth(level: PUBLIC) {
+  item: enumKotlinKeywords(key: $key) { value }
 }
 
-mutation FooNullableListOfNonNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
-  key: fooNullableListOfNonNullable_insert(data: { value: $value })
+###############################################################################
+# Operations for table: type EnumSubset
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubset_GetByKey($key: EnumSubset_Key!) @auth(level: PUBLIC) {
+  item: enumSubset(key: $key) { value }
 }
 
-mutation FooNullableListOfNullable_Insert($value: [Int!]) @auth(level: PUBLIC) {
-  key: fooNullableListOfNullable_insert(data: { value: $value })
+###############################################################################
+# Operations for table: type EnumSubsetList
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubsetList_GetByKey($key: EnumSubsetList_Key!) @auth(level: PUBLIC) {
+  item: enumSubsetList(key: $key) { value }
 }

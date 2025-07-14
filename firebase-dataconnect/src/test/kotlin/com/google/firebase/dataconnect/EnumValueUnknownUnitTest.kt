@@ -123,7 +123,7 @@ class EnumValueUnknownUnitTest {
   fun `toString() should return a string conforming to what is expected`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.string()) { stringValue ->
       val enumValue = EnumValue.Unknown(stringValue)
-      enumValue.toString() shouldBe "\"$stringValue\""
+      enumValue.toString() shouldBe "Unknown($stringValue)"
     }
   }
 

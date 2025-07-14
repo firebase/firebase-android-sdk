@@ -121,7 +121,7 @@ class EnumValueKnownUnitTest {
   fun `toString() should return a string conforming to what is expected`() = runTest {
     checkAll(propTestConfig, Arb.enum<Food>()) { enum ->
       val enumValue = EnumValue.Known(enum)
-      enumValue.toString() shouldBe enum.name
+      enumValue.toString() shouldBe "Known(${enum.name})"
     }
   }
 

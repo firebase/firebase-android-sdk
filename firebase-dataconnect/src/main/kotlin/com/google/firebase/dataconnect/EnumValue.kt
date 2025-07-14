@@ -65,7 +65,7 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      * storage should generally be avoided in order to be robust in case that the string
      * representation changes.
      */
-    override fun toString(): String = "\"$stringValue\""
+    override fun toString(): String = "Unknown($stringValue)"
 
     /** Creates and returns a new [Unknown] instance with the given property values. */
     public fun copy(stringValue: String = this.stringValue): Unknown = Unknown(stringValue)
@@ -109,7 +109,7 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      * storage should generally be avoided in order to be robust in case that the string
      * representation changes.
      */
-    override fun toString(): String = value.name
+    override fun toString(): String = "Known(${value.name})"
 
     /** Creates and returns a new [Known] instance with the given property values. */
     public fun copy(value: T = this.value): Known<T> = Known(value)
