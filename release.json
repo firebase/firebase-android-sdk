@@ -25,7 +25,6 @@
         ":appcheck:firebase-appcheck",
         ":appcheck:firebase-appcheck-debug",
         ":appcheck:firebase-appcheck-debug-testing",
-        ":appcheck:firebase-appcheck-playintegrity",
-        ":firebase-components:firebase-dynamic-module-support"
+        ":appcheck:firebase-appcheck-playintegrity"
     ]
 }
