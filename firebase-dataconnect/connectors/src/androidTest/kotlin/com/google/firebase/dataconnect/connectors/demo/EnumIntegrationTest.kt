@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.connectors.demo.EnumValue.Known
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.threeValues
@@ -47,7 +48,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     N5ekmae3jn.entries.forEach { enumValue ->
       val key = connector.enumNonNullableInsert.execute(enumValue).data.key
       val queryResult = connector.enumNonNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe enumValue }
+      withClue(queryResult) { queryResult.item?.value shouldBe Known(enumValue) }
     }
   }
 
@@ -59,7 +60,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       val updateResult = connector.enumNonNullableUpdateByKey.execute(key) { value = value2 }
       withClue(updateResult) { updateResult.data.key shouldBe key }
       val queryResult = connector.enumNonNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe value2 }
+      withClue(queryResult) { queryResult.item?.value shouldBe Known(value2) }
     }
   }
 
@@ -126,7 +127,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     N5ekmae3jn.entries.forEach { enumValue ->
       val key = connector.enumNullableInsert.execute { value = enumValue }.data.key
       val queryResult = connector.enumNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe enumValue }
+      withClue(queryResult) { queryResult.item?.value shouldBe Known(enumValue) }
     }
   }
 
@@ -145,7 +146,13 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       val key = connector.enumNullableInsert.execute { value = value1 }.data.key
       connector.enumNullableUpdateByKey.execute(key) { value = value2 }
       val queryResult = connector.enumNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe value2 }
+      withClue(queryResult) {
+        if (value2 === null) {
+          queryResult.item?.value.shouldBeNull()
+        } else {
+          queryResult.item?.value shouldBe Known(value2)
+        }
+      }
     }
   }
 
@@ -221,7 +228,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertEnumNonNullableTableDefault() = runTest {
     val key = connector.enumNonNullableTableDefaultInsert.execute().data.key
     val queryResult = connector.enumNonNullableTableDefaultGetByKey.execute(key).data
-    withClue(queryResult) { queryResult.item?.value shouldBe N5ekmae3jn.RGTB44C2M8 }
+    withClue(queryResult) { queryResult.item?.value shouldBe Known(N5ekmae3jn.RGTB44C2M8) }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,7 +239,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertEnumNullableTableDefault() = runTest {
     val key = connector.enumNullableTableDefaultInsert.execute().data.key
     val queryResult = connector.enumNullableTableDefaultGetByKey.execute(key).data
-    withClue(queryResult) { queryResult.item?.value shouldBe N5ekmae3jn.ZE6Z5778RV }
+    withClue(queryResult) { queryResult.item?.value shouldBe Known(N5ekmae3jn.ZE6Z5778RV) }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -242,10 +249,10 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNonNullable() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>()
-    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { value ->
-      val key = connector.enumNonNullableListOfNonNullableInsert.execute(value).data.key
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
+      val key = connector.enumNonNullableListOfNonNullableInsert.execute(values).data.key
       val queryResult = connector.enumNonNullableListOfNonNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe value }
+      withClue(queryResult) { queryResult.item?.value shouldBe values.map(::Known) }
     }
   }
 
@@ -256,10 +263,10 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNullable() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>()
-    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { value ->
-      val key = connector.enumNonNullableListOfNullableInsert.execute(value).data.key
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
+      val key = connector.enumNonNullableListOfNullableInsert.execute(values).data.key
       val queryResult = connector.enumNonNullableListOfNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe value }
+      withClue(queryResult) { queryResult.item?.value shouldBe values.map(::Known) }
     }
   }
 
@@ -273,7 +280,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
       val key = connector.enumNullableListOfNonNullableInsert.execute { value = values }.data.key
       val queryResult = connector.enumNullableListOfNonNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe values }
+      withClue(queryResult) { queryResult.item?.value shouldBe values.map(::Known) }
     }
   }
 
@@ -294,7 +301,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..5)) { values ->
       val key = connector.enumNullableListOfNullableInsert.execute { value = values }.data.key
       val queryResult = connector.enumNullableListOfNullableGetByKey.execute(key).data
-      withClue(queryResult) { queryResult.item?.value shouldBe values }
+      withClue(queryResult) { queryResult.item?.value shouldBe values.map(::Known) }
     }
   }
 
