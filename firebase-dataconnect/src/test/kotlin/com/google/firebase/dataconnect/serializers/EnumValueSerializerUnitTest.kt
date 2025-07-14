@@ -27,11 +27,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.KSerializer
 import org.junit.Test
 
 class EnumValueSerializerUnitTest {
@@ -71,6 +71,19 @@ class EnumValueSerializerUnitTest {
       }
     }
 
+  @Suppress("unused")
+  enum class Dog {
+    Boxer,
+    Bulldog,
+    Dachshund,
+    Labrador,
+    Poodle;
+
+    companion object {
+      val serializer: KSerializer<EnumValue<Dog>> = EnumValueSerializer(Dog.entries)
+    }
+  }
+
   private companion object {
     val propTestConfig =
       PropTestConfig(
@@ -80,19 +93,6 @@ class EnumValueSerializerUnitTest {
 
     fun EnumValue<*>.toValueProto(): Value = Value.newBuilder().setStringValue(stringValue).build()
 
-    @Suppress("unused")
-    enum class Dog {
-      Boxer,
-      Bulldog,
-      Dachshund,
-      Labrador,
-      Poodle;
-
-      companion object {
-        val serializer = EnumValueSerializer(Dog.entries)
-      }
-    }
-
     fun Arb.Companion.unknownEnumValue(
       stringValue: Arb<String> = Arb.dataConnect.string()
     ): Arb<EnumValue.Unknown> = stringValue.map { EnumValue.Unknown(it) }
@@ -100,8 +100,5 @@ class EnumValueSerializerUnitTest {
     fun Arb.Companion.knownEnumValue(
       enumValue: Arb<Dog> = Arb.enum<Dog>()
     ): Arb<EnumValue.Known<Dog>> = enumValue.map { EnumValue.Known(it) }
-
-    fun Arb.Companion.enumValue(): Arb<EnumValue<Dog>> =
-      Arb.choice(knownEnumValue(), unknownEnumValue())
   }
 }
