@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.recaptcha.RecaptchaAction;
@@ -22,7 +21,8 @@ import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
 import com.google.firebase.concurrent.TestOnlyExecutors;
-
+import java.io.IOException;
+import java.util.concurrent.Executor;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -34,9 +34,6 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
-
-import java.io.IOException;
-import java.util.concurrent.Executor;
 
 /** Tests for {@link RecaptchaEnterpriseAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)

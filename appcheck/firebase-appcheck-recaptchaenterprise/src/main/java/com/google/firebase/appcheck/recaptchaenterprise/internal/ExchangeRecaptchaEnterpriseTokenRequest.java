@@ -2,7 +2,6 @@ package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 

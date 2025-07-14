@@ -1,7 +1,6 @@
 package com.google.firebase.appcheck.recaptchaenterprise;
 
 import android.app.Application;
-
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
@@ -9,7 +8,6 @@ import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -179,7 +179,8 @@ public class NetworkClient {
               ? urlConnection.getInputStream()
               : urlConnection.getErrorStream();
       StringBuilder response = new StringBuilder();
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+      try (BufferedReader reader =
+          new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
         String line;
         while ((line = reader.readLine()) != null) {
           response.append(line);

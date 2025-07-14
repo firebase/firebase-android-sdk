@@ -2,7 +2,6 @@ package com.google.firebase.appcheck.recaptchaenterprise;
 
 import android.app.Application;
 import android.content.Context;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
@@ -12,7 +11,6 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -25,7 +23,7 @@ import java.util.concurrent.Executor;
  */
 @KeepForSdk
 public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRegistrar {
-  private static final String LIBRARY_NAME = "firebase-app-check-recaptcha-enterprise";
+  private static final String LIBRARY_NAME = "fire-app-check-recaptcha-enterprise";
 
   @Override
   public List<Component<?>> getComponents() {

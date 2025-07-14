@@ -1,15 +1,14 @@
 package com.google.firebase.appcheck.recaptchaenterprise;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import android.content.Context;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-
-import java.util.List;
 
 /** Tests for {@link FirebaseAppCheckRecaptchaEnterpriseRegistrar}. */
 @RunWith(RobolectricTestRunner.class)
