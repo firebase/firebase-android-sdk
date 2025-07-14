@@ -94,7 +94,7 @@ import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, qualifiers = "port")
+@Config(sdk = 23, qualifiers = "port")
 @LooperMode(LooperMode.Mode.LEGACY)
 public class FirebaseInAppMessagingDisplayTest {
 

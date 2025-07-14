@@ -72,7 +72,7 @@ android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
   compileSdk = 35
   defaultConfig {
-    minSdk = 21
+    minSdk = 23
     targetSdk = 35
     versionCode = 1
     versionName = "1.0"

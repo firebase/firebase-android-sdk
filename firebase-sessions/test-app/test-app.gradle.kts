@@ -104,7 +104,7 @@ dependencies {
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
+  androidTestImplementation("com.google.firebase:firebase-common:22.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

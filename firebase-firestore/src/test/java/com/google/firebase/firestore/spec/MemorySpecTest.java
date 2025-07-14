@@ -28,7 +28,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(sdk = 23, manifest = Config.NONE)
 public class MemorySpecTest extends SpecTestCase {
 
   private static final String DURABLE_PERSISTENCE = "durable-persistence";

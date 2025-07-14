@@ -62,7 +62,7 @@ import org.robolectric.shadows.ShadowNetworkInfo;
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.M)
 public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";

@@ -43,7 +43,7 @@ internal class FakeFirebaseApp(
     val packageInfo = PackageInfoBuilder.newBuilder().setPackageName(context.packageName).build()
     packageInfo.versionName = MOCK_APP_VERSION
 
-    metadata?.let { packageInfo.applicationInfo.metaData = it }
+    metadata?.let { packageInfo.applicationInfo!!.metaData = it }
     shadowPackageManager.installPackage(packageInfo)
 
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
