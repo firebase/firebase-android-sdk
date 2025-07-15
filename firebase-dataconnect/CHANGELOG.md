@@ -1,6 +1,7 @@
 # Unreleased
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 * [changed] Removed superfluous and noisy debug logging of operation variables.
+* [changed] Internal code changes in preparation for user-defined enum support.
 
 
 # 16.0.3

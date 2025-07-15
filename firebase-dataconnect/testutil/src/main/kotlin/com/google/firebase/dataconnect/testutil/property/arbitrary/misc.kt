@@ -18,7 +18,16 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.map
 import kotlin.random.nextInt
+
+/** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
+fun <T> Arb<T>.distinctPair(): Arb<Pair<T, T>> = flatMap { value1 ->
+  this@distinctPair.filter { it != value1 }.map { Pair(value1, it) }
+}
 
 fun Arb<String>.withPrefix(prefix: String): Arb<String> = arbitrary { "$prefix${bind()}" }
 
