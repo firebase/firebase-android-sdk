@@ -30,7 +30,7 @@ import kotlinx.serialization.encoding.Encoder
  * A [KSerializer] implementation for [EnumValue].
  *
  * @param values The values of the enum to deserialize; for example, for an enum named `Foo` this
- * value should be `Foo.values()`.
+ * value should be `Foo.entries` or `Foo.values()`.
  */
 public open class EnumValueSerializer<T : Enum<T>>(values: Iterable<T>) :
   KSerializer<EnumValue<T>> {

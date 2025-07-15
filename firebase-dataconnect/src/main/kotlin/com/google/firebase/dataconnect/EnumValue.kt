@@ -24,7 +24,7 @@ public sealed interface EnumValue<out T : Enum<out T>> {
 
   /**
    * The string value of the enum, either the [Enum.name] in the case of [Known] or the string whose
-   * corresponding enum values was _not_ known, as in the case of [Unknown].
+   * corresponding enum value was _not_ known, as in the case of [Unknown].
    */
   public val stringValue: String
 
@@ -98,7 +98,7 @@ public sealed interface EnumValue<out T : Enum<out T>> {
      * @return the hash code for this object, that incorporates the values of this object's public
      * properties.
      */
-    override fun hashCode(): Int = stringValue.hashCode()
+    override fun hashCode(): Int = value.hashCode()
 
     /**
      * Returns a string representation of this object, useful for debugging.
