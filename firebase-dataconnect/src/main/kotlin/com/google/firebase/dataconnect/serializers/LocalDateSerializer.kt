@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.serializers
 
 import com.google.firebase.dataconnect.LocalDate
+import com.google.firebase.dataconnect.util.IntUtil.toZeroPaddedString
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlinx.serialization.KSerializer
@@ -95,27 +96,5 @@ public object LocalDateSerializer : KSerializer<LocalDate> {
     val monthStr = localDate.month.toZeroPaddedString(length = 2)
     val dayStr = localDate.day.toZeroPaddedString(length = 2)
     return "$yearStr-$monthStr-$dayStr"
-  }
-
-  private fun Int.toZeroPaddedString(length: Int): String = buildString {
-    append(this@toZeroPaddedString)
-
-    val firstChar =
-      firstOrNull()?.let {
-        if (it == '-') {
-          deleteCharAt(0)
-          it
-        } else {
-          null
-        }
-      }
-
-    while (this.length < length) {
-      insert(0, '0')
-    }
-
-    if (firstChar != null) {
-      insert(0, firstChar)
-    }
   }
 }
