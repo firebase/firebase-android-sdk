@@ -29,11 +29,8 @@ import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.EdgeConfig
-import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary

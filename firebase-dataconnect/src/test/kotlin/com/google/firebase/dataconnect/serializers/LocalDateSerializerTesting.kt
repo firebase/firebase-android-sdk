@@ -24,9 +24,5 @@ object LocalDateSerializerTesting {
 
   @OptIn(ExperimentalKotest::class)
   val propTestConfig =
-    PropTestConfig(
-      iterations = 500,
-      edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
-    )
-
+    PropTestConfig(iterations = 500, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 }
