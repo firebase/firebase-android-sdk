@@ -16,6 +16,9 @@
 
 set -euo pipefail
 
+# Uncomment the line below to use a custom Data Connect Emulator binary
+#export DATACONNECT_EMULATOR_BINARY_PATH='...'
+
 export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 echo "[$0] export FIREBASE_DATACONNECT_POSTGRESQL_STRING='$FIREBASE_DATACONNECT_POSTGRESQL_STRING'"
 
