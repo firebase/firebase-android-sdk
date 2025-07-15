@@ -25,7 +25,7 @@ readonly FIREBASE_ARGS=(
   firebase
   --debug
   emulators:start
-  --only dataconnect
+  --only auth,dataconnect
 )
 
 echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
