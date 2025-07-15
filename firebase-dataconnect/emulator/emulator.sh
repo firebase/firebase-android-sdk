@@ -16,6 +16,9 @@
 
 set -euo pipefail
 
+# Uncomment the line below to use a custom Data Connect Emulator binary
+#export DATACONNECT_EMULATOR_BINARY_PATH='...'
+
 export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 export DATACONNECT_EMULATOR_BINARY_PATH='/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli'
 export DATA_CONNECT_PREVIEW=user_enum
