@@ -20,7 +20,7 @@ package com.google.firebase.dataconnect
  * Stores the value of an `enum` or a string if the string does not correspond to one of the enum's
  * values.
  */
-// TODO: Change the visilibity of `EnumValue` to `public` once it gets approval
+// TODO: Change the visibility of `EnumValue` to `public` once it gets approval
 //  by Firebase API Council.
 internal sealed interface EnumValue<out T : Enum<out T>> {
 
