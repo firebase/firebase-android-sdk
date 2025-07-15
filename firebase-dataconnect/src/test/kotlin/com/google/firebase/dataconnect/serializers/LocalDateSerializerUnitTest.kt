@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class)
 
 ////////////////////////////////////////////////////////////////////////////////
 // THIS FILE WAS COPIED TO JavaTimeLocalDateSerializerUnitTest.kt and
@@ -23,6 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.serializers
 
+import com.google.firebase.dataconnect.serializers.LocalDateSerializerTesting.propTestConfig
 import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
@@ -108,11 +108,6 @@ class LocalDateSerializerUnitTest {
     }
 
   private companion object {
-    val propTestConfig =
-      PropTestConfig(
-        iterations = 500,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
-      )
 
     fun LocalDate.toYYYYMMDDWithZeroPadding(
       yearPadding: Int = 4,
