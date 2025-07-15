@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import io.kotest.matchers.shouldBe
 import org.junit.Test
 
-class UtilUnitTest {
+class AlphanumericStringUtilUnitTest {
 
   @Test
   fun `ByteArray toAlphaNumericString() interprets the alphabet`() {
