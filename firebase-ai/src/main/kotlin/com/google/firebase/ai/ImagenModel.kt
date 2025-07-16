@@ -161,7 +161,7 @@ internal constructor(
     generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
     return GenerateImageRequest(
-      listOf(GenerateImageRequest.ImagenPrompt(prompt)),
+      listOf(GenerateImageRequest.ImagenPrompt(prompt, null)),
       GenerateImageRequest.ImagenParameters(
         sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,

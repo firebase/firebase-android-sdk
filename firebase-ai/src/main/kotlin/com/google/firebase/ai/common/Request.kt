@@ -84,8 +84,8 @@ internal data class GenerateImageRequest(
 ) : Request {
   @Serializable
   internal data class ImagenPrompt(
-    val prompt: String? = null,
-    val referenceImages: List<ImagenReferenceImage.Internal>? = null
+    val prompt: String?,
+    val referenceImages: List<ImagenReferenceImage.Internal>?
   )
 
   @OptIn(PublicPreviewAPI::class)
