@@ -17,6 +17,11 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Contains the editing settings which are not specific to a reference image
+ * @param editMode holds the editing mode if the request is for inpainting or outpainting
+ * @param editSteps the number of intermediate steps to include in the editing process
+ */
 @PublicPreviewAPI
 public class ImagenEditingConfig(
   internal val editMode: ImagenEditMode? = null,

@@ -15,4 +15,9 @@
  */
 package com.google.firebase.ai.type
 
+/**
+ * Represents the dimensions of an image in pixels
+ * @param width the width of the image in pixels
+ * @param height the height of the image in pixels
+ */
 public class Dimensions(public val width: Int, public val height: Int) {}

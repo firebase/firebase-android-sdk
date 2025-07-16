@@ -81,7 +81,8 @@ public abstract class ImagenModelFutures internal constructor() {
    * @param newDimensions the new dimensions for the image, *must* be larger than the original
    * image.
    * @param newPosition the placement of the base image within the new image. This can either be
-   * coordinates (0,0 is the top left corner) or an alignment (ex: [ImagenImagePlacement.BOTTOM])
+   * coordinates (0,0 is the top left corner) or an alignment (ex:
+   * [ImagenImagePlacement.BOTTOM_CENTER])
    * @param prompt optional, but can be used to specify the background generated if context is
    * insufficient
    * @param config the editing configuration settings

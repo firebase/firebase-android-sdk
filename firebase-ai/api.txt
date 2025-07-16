@@ -503,7 +503,7 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenControlReference extends com.google.firebase.ai.type.ImagenReferenceImage {
-    ctor public ImagenControlReference(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.ImagenControlType type, Integer? referenceId = null, Boolean? enableComputation = null, Integer? superpixelRegionSize = null, Integer? superpixelRuler = null);
+    ctor public ImagenControlReference(com.google.firebase.ai.type.ImagenControlType type, com.google.firebase.ai.type.ImagenInlineImage? image = null, Integer? referenceId = null, Boolean? enableComputation = null, Integer? superpixelRegionSize = null, Integer? superpixelRuler = null);
   }
 
   public final class ImagenControlType {
@@ -612,22 +612,22 @@ package com.google.firebase.ai.type {
 
   public static final class ImagenImagePlacement.Companion {
     method public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
-    method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM();
+    method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_CENTER();
     method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_LEFT();
     method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_RIGHT();
     method public com.google.firebase.ai.type.ImagenImagePlacement getCENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getLEFT();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getRIGHT();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getTOP();
+    method public com.google.firebase.ai.type.ImagenImagePlacement getLEFT_CENTER();
+    method public com.google.firebase.ai.type.ImagenImagePlacement getRIGHT_CENTER();
+    method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_CENTER();
     method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_LEFT();
     method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_RIGHT();
-    property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM;
+    property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
     property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
     property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
     property public final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement LEFT;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement RIGHT;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement TOP;
+    property public final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
+    property public final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
+    property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
     property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
     property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
   }

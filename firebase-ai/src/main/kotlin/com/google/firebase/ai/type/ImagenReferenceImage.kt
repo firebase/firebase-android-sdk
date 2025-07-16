@@ -15,9 +15,15 @@
  */
 package com.google.firebase.ai.type
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import com.google.firebase.ai.common.GenerateImageRequest
 import kotlinx.serialization.Serializable
 
+/** Represents an reference image for an Imagen editing request */
 @PublicPreviewAPI
 public abstract class ImagenReferenceImage
 internal constructor(
@@ -50,6 +56,7 @@ internal constructor(
       subjectImageConfig = subjectConfig?.toInternal(),
       maskImageConfig = maskConfig?.toInternal(),
       styleImageConfig = styleConfig?.toInternal(),
+      controlConfig = controlConfig?.toInternal(),
     )
   }
 
@@ -61,5 +68,203 @@ internal constructor(
     val subjectImageConfig: ImagenSubjectConfig.Internal?,
     val maskImageConfig: ImagenMaskConfig.Internal?,
     val styleImageConfig: ImagenStyleConfig.Internal?,
+    val controlConfig: ImagenControlConfig.Internal?
   )
 }
+
+/**
+ * Represents a refrence image (provided or generated) to bound the created image via ControlNet
+ * @param image the image provided, required if enableComputation is false
+ * @param type the type of ControlNet reference image
+ * @param referenceId the reference ID for this image, to be referenced in the prompt
+ * @param enableComputation requests that the reference image be generated serverside instead of
+ * provided
+ * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and enableComputation is true, this will
+ * control the size of each superpixel region in pixels for the generated referenced image
+ * @param superpixelRuler if type is COLOR_SUPERPIXEL and enableComputation is true, this will
+ * control the superpixel smoothness factor for the generated referenced image
+ */
+@PublicPreviewAPI
+public class ImagenControlReference(
+  type: ImagenControlType,
+  image: ImagenInlineImage? = null,
+  referenceId: Int? = null,
+  enableComputation: Boolean? = null,
+  superpixelRegionSize: Int? = null,
+  superpixelRuler: Int? = null,
+) :
+  ImagenReferenceImage(
+    controlConfig =
+      ImagenControlConfig(type, enableComputation, superpixelRegionSize, superpixelRuler),
+    image = image,
+    referenceId = referenceId,
+  ) {}
+
+/**
+ * Represents a reference image for Imagen editing which will mask of a region to be edited. This
+ * image (generated or provided) should contain only black and white pixels, with black representing
+ * parts of the image which should not change.
+ */
+@PublicPreviewAPI
+public abstract class ImagenMaskReference
+internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = null) :
+  ImagenReferenceImage(maskConfig = maskConfig, image = image) {
+
+  public companion object {
+    /**
+     * Generates two reference images:
+     * * One [ImagenRawImage] containing the original image, padded out to the new dimensions with
+     * black pixels, with the original image placed at the given placement
+     * * One [ImagenRawMask] of the same dimensions containing white everywhere except at the
+     * placement original image.
+     *
+     * This is the format expected by Imagen for outpainting requests.
+     *
+     * @param image the original image
+     * @param newDimensions the new dimensions for outpainting. This *must* be more than the
+     * original image.
+     * @param newPosition the placement of the original image within the new outpainted image.
+     */
+    public fun generateMaskAndPadForOutpainting(
+      image: ImagenInlineImage,
+      newDimensions: Dimensions,
+      newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+    ): List<ImagenReferenceImage> {
+      val originalBitmap = image.asBitmap()
+      val normalizedPosition =
+        newPosition.normalizeToDimensions(
+          Dimensions(originalBitmap.width, originalBitmap.height),
+          newDimensions,
+        )
+
+      if (normalizedPosition.x == null || normalizedPosition.y == null) {
+        throw IllegalStateException("Error normalizing position for mask and padding.")
+      }
+
+      val normalizedImageRectangle =
+        Rect(
+          normalizedPosition.x,
+          normalizedPosition.y,
+          normalizedPosition.x + originalBitmap.width,
+          normalizedPosition.y + originalBitmap.height,
+        )
+
+      val maskBitmap =
+        Bitmap.createBitmap(newDimensions.width, newDimensions.height, Bitmap.Config.RGB_565)
+      val newImageBitmap =
+        Bitmap.createBitmap(newDimensions.width, newDimensions.height, Bitmap.Config.RGB_565)
+
+      val maskCanvas = Canvas(maskBitmap)
+      val newImageCanvas = Canvas(newImageBitmap)
+
+      val blackPaint = Paint().apply { color = Color.BLACK }
+      val whitePaint = Paint().apply { color = Color.WHITE }
+
+      // Fill the mask with white, then draw a black rectangle where the image is.
+      maskCanvas.drawPaint(whitePaint)
+      maskCanvas.drawRect(normalizedImageRectangle, blackPaint)
+
+      // fill the image with black, and then draw the bitmap into the corresponding spot
+      newImageCanvas.drawPaint(blackPaint)
+      newImageCanvas.drawBitmap(originalBitmap, null, normalizedImageRectangle, null)
+      return listOf(
+        ImagenRawImage(newImageBitmap.toImagenInlineImage()),
+        ImagenRawMask(maskBitmap.toImagenInlineImage()),
+      )
+    }
+  }
+}
+
+/**
+ * A generated mask image which will auto-detect and mask out the background. The background will be
+ * white, and the foreground black
+ * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
+ * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ */
+@PublicPreviewAPI
+public class ImagenBackgroundMask(dilation: Double? = null) :
+  ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.BACKGROUND, dilation)) {}
+
+/**
+ * A generated mask image which will auto-detect and mask out the foreground. The background will be
+ * black, and the foreground white
+ * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
+ * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ */
+@PublicPreviewAPI
+public class ImagenForegroundMask(dilation: Double? = null) :
+  ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.FOREGROUND, dilation)) {}
+
+/**
+ * Represents a reference image for Imagen editing which will mask of a region to be edited. This
+ * image should contain only black and white pixels, with black representing parts of the image
+ * which should not change.
+ *
+ * @param mask the mask image
+ * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
+ * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ */
+@PublicPreviewAPI
+public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
+  ImagenMaskReference(
+    maskConfig = ImagenMaskConfig(ImagenMaskMode.USER_PROVIDED, dilation),
+    image = mask,
+  ) {}
+
+/**
+ * Represents a generated mask for Imagen editing which masks out certain objects using object
+ * detection.
+ * @param classes the list of segmentation IDs for objects to detect and mask out. See
+ * [here](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/imagen-api-edit#segment-ids)
+ * for a list of segmentation IDs
+ * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
+ * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ */
+@PublicPreviewAPI
+public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
+  ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.SEMANTIC, dilation, classes)) {}
+
+/**
+ * Represents a base image for Imagen editing
+ * @param image the image
+ */
+@PublicPreviewAPI
+public class ImagenRawImage(image: ImagenInlineImage) : ImagenReferenceImage(image = image) {}
+
+/**
+ * A reference image for style transfer
+ * @param image the image representing the style you want to transfer to your original images
+ * @param referenceId the reference ID you can use to reference this style in your prompt
+ * @param description the description you can use to reference this style in your prompt
+ */
+@PublicPreviewAPI
+public class ImagenStyleReference(
+  image: ImagenInlineImage,
+  referenceId: Int? = null,
+  description: String? = null,
+) :
+  ImagenReferenceImage(
+    image = image,
+    referenceId = referenceId,
+    styleConfig = ImagenStyleConfig(description)
+  ) {}
+
+/**
+ * A reference image for generating an image with a specific subject
+ * @param image the image of the subject
+ * @param referenceId the reference ID you can use to reference this subject in your prompt
+ * @param description the description you can use to reference this subject in your prompt
+ * @param subjectType the type of the subject
+ */
+@PublicPreviewAPI
+public class ImagenSubjectReference(
+  image: ImagenInlineImage,
+  referenceId: Int? = null,
+  description: String? = null,
+  subjectType: ImagenSubjectReferenceType? = null,
+) :
+  ImagenReferenceImage(
+    image = image,
+    referenceId = referenceId,
+    subjectConfig = ImagenSubjectConfig(description, subjectType),
+  ) {}

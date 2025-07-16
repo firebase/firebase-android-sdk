@@ -15,9 +15,29 @@
  */
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.Serializable
+
 internal class ImagenControlConfig(
   internal val controlType: ImagenControlType,
   internal val enableComputation: Boolean? = null,
   internal val superpixelRegionSize: Int? = null,
   internal val superpixelRuler: Int? = null
-) {}
+) {
+
+  fun toInternal(): Internal {
+    return Internal(
+      controlType = controlType.value,
+      enableControlImageComputation = enableComputation,
+      superpixelRegionSize = superpixelRegionSize,
+      superpixelRuler = superpixelRuler
+    )
+  }
+
+  @Serializable
+  internal class Internal(
+    val controlType: String?,
+    val enableControlImageComputation: Boolean?,
+    val superpixelRegionSize: Int?,
+    val superpixelRuler: Int?
+  )
+}

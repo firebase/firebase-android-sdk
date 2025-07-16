@@ -15,13 +15,17 @@
  */
 package com.google.firebase.ai.type
 
+/** Represents a type for a subject reference, specifying how it should be interpreted. */
 public class ImagenSubjectReferenceType private constructor(internal val value: String) {
 
   public companion object {
+    /** Marks the reference type as being of a person */
     public val PERSON: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_PERSON")
+    /** Marks the reference type as being of a animal */
     public val ANIMAL: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_ANIMAL")
+    /** Marks the reference type as being of a product */
     public val PRODUCT: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_PRODUCT")
   }
