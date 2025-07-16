@@ -66,6 +66,13 @@ public final class ResourcePath extends BasePath<ResourcePath> {
     // NOTE: The client is ignorant of any path segments containing escape
     // sequences (for example, __id123__) and just passes them through raw (they exist
     // for legacy reasons and should not be used frequently).
-    return String.join("/", segments);
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < segments.size(); i++) {
+      if (i > 0) {
+        builder.append("/");
+      }
+      builder.append(segments.get(i));
+    }
+    return builder.toString();
   }
 }

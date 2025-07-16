@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.io.Files.map;
 import static com.google.firebase.firestore.Filter.and;
 import static com.google.firebase.firestore.Filter.arrayContains;
 import static com.google.firebase.firestore.Filter.arrayContainsAny;

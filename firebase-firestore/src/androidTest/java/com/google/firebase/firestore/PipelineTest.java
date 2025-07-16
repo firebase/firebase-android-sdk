@@ -566,7 +566,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(field("author").toLower().alias("uppercaseAuthor"))
+            .select(field("author").toUpper().alias("uppercaseAuthor"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())

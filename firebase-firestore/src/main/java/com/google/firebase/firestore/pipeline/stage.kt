@@ -37,10 +37,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 
-sealed class Stage<T : Stage<T>>(
-  protected val name: String,
-  internal val options: InternalOptions
-) {
+sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
