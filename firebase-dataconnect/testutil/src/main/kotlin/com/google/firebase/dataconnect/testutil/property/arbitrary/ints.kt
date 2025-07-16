@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("UnusedReceiverParameter")
-
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.common.primitives.Ints.min
+import com.google.firebase.dataconnect.testutil.calculateNumBase10Digits
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
@@ -37,31 +34,31 @@ import io.kotest.property.arbitrary.int
 @JvmName("intWithUniformNumDigitsDistributionNonNullRange")
 fun Arb.Companion.intWithUniformNumDigitsDistribution(range: IntRange): Arb<Int> {
   require(!range.isEmpty()) { "range must not be empty: $range (error code tmvy8ysdjy)" }
-  val intRangesByNumDigits = mutableMapOf<Int, MutableList<IntRange>>()
 
-  var first = range.first
-  while (first <= range.last) {
-    val numDigits = "$first".trimStart('-').length
-    val numDigitsKey = if (first >= 0) numDigits else (-numDigits)
-    val numDigitsRange = rangeByNumDigits[numDigitsKey]
-    checkNotNull(numDigitsRange) {
-      "internal error: rangeByNumDigits[numDigitsKey] returned null " +
-        "(first=$first, numDigitsKey=$numDigitsKey, rangeByNumDigits=$rangeByNumDigits, " +
-        "error code 3z37g9zfy8)"
-    }
+  val startNumDigits = range.first.calculateNumBase10Digits()
+  val endNumDigits = range.last.calculateNumBase10Digits()
 
-    val last = min(range.last, numDigitsRange.last)
-    val curIntRangesByNumDigits = intRangesByNumDigits.getOrPut(numDigits) { mutableListOf() }
-    curIntRangesByNumDigits.add(first..last)
-    if (last == Int.MAX_VALUE) {
-      break
-    }
-    first = last + 1
+  if (startNumDigits == endNumDigits) {
+    return Arb.int(range)
   }
 
-  val arbLists: List<List<Arb<Int>>> =
-    intRangesByNumDigits.values.map { intRanges -> intRanges.map { intRange -> Arb.int(intRange) } }
-  val arbs: List<Arb<Int>> = arbLists.map { if (it.size == 1) it.single() else Arb.choice(it) }
+  check(startNumDigits < endNumDigits) {
+    "startNumDigits should be less than endNumDigits, but it is not: " +
+      "startNumDigits=$startNumDigits endNumDigits=$endNumDigits"
+  }
+
+  val arbs = mutableListOf<Arb<Int>>()
+  arbs.add(intRangeForNumBase10Digits(startNumDigits).let { Arb.int(range.first, it.last) })
+  arbs.add(intRangeForNumBase10Digits(endNumDigits).let { Arb.int(it.first, range.last) })
+
+  if (endNumDigits - startNumDigits > 2) {
+    for (numDigits in startNumDigits + 1 until endNumDigits) {
+      if (numDigits != 0) {
+        arbs.add(Arb.int(intRangeForNumBase10Digits(numDigits)))
+      }
+    }
+  }
+
   return Arb.choice(arbs)
 }
 
@@ -103,6 +100,14 @@ private val rangeByNumDigits: Map<Int, IntRange> = buildMap {
   put(-10, Int.MIN_VALUE..-1_000_000_000)
 }
 
+private fun intRangeForNumBase10Digits(numDigits: Int): IntRange =
+  rangeByNumDigits.getOrElse(numDigits) {
+    throw IllegalArgumentException(
+      "invalid numDigits: $numDigits " +
+        "(valid values are: ${rangeByNumDigits.keys.sorted().joinToString()})"
+    )
+  }
+
 /**
  * Returns an [Arb] that generates [Int] values whose base-10 representation has the given number of
  * digits.
@@ -116,13 +121,5 @@ private val rangeByNumDigits: Map<Int, IntRange> = buildMap {
  * of the given number of digits. A positive value indicates that only positive values will be
  * generated.
  */
-fun Arb.Companion.intWithNumBase10Digits(numDigits: Int): Arb<Int> {
-  val range =
-    rangeByNumDigits.getOrElse(numDigits) {
-      throw IllegalArgumentException(
-        "invalid numDigits: $numDigits " +
-          "(valid values are: ${rangeByNumDigits.keys.sorted().joinToString()})"
-      )
-    }
-  return Arb.int(range)
-}
+fun Arb.Companion.intWithNumBase10Digits(numDigits: Int): Arb<Int> =
+  Arb.int(intRangeForNumBase10Digits(numDigits))
