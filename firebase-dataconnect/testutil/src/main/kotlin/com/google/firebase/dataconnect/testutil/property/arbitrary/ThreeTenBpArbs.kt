@@ -34,7 +34,7 @@ val Arb.Companion.threeTenBp: ThreeTenBpArbs
 object ThreeTenBpArbs {
   fun year(intArb: Arb<Int> = yearInt()): Arb<Year> = intArb.map(Year::of)
 
-  fun yearInt(): Arb<Int> = Arb.intWithEvenNumDigitsDistribution(Year.MIN_VALUE..Year.MAX_VALUE)
+  fun yearInt(): Arb<Int> = Arb.intWithUniformNumDigitsDistribution(Year.MIN_VALUE..Year.MAX_VALUE)
 
   fun month(): Arb<Month> = Arb.enum<Month>()
 
@@ -43,7 +43,7 @@ object ThreeTenBpArbs {
   fun localDate(yearArb: Arb<Year> = year(), monthArb: Arb<Month> = month()): Arb<LocalDate> =
     yearArb.flatMap { year ->
       monthArb.flatMap { month ->
-        Arb.intWithEvenNumDigitsDistribution(month.dayRangeInYear(year)).map { day ->
+        Arb.intWithUniformNumDigitsDistribution(month.dayRangeInYear(year)).map { day ->
           LocalDate.of(year.value, month, day)
         }
       }

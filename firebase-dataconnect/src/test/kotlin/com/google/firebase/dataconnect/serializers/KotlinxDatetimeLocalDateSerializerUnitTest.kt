@@ -24,7 +24,7 @@ package com.google.firebase.dataconnect.serializers
 
 import com.google.firebase.dataconnect.serializers.LocalDateSerializerTesting.propTestConfig
 import com.google.firebase.dataconnect.testutil.dayRangeInYear
-import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithEvenNumDigitsDistribution
+import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithUniformNumDigitsDistribution
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
@@ -144,9 +144,9 @@ class KotlinxDatetimeLocalDateSerializerUnitTest {
 
     fun Arb.Companion.localDate(
       year: Arb<Int> =
-        intWithEvenNumDigitsDistribution(java.time.Year.MIN_VALUE..java.time.Year.MAX_VALUE),
-      month: Arb<Int> = intWithEvenNumDigitsDistribution(1..12),
-      day: Arb<Int> = intWithEvenNumDigitsDistribution(1..31),
+        intWithUniformNumDigitsDistribution(java.time.Year.MIN_VALUE..java.time.Year.MAX_VALUE),
+      month: Arb<Int> = intWithUniformNumDigitsDistribution(1..12),
+      day: Arb<Int> = intWithUniformNumDigitsDistribution(1..31),
     ): Arb<kotlinx.datetime.LocalDate> {
       fun Int.coerceDayOfMonthIntoValidRangeFor(month: Int, year: Int): Int {
         val monthObject = org.threeten.bp.Month.of(month)
@@ -191,7 +191,7 @@ class KotlinxDatetimeLocalDateSerializerUnitTest {
 
     fun Arb.Companion.unparseableNumber(): Arb<String> {
       val reasonArb = enum<UnparseableNumberReason>()
-      val validIntArb = intWithEvenNumDigitsDistribution(0..Int.MAX_VALUE)
+      val validIntArb = intWithUniformNumDigitsDistribution(0..Int.MAX_VALUE)
       val validChars = listOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-').map { it.code }
       val invalidString =
         string(1..5, codepoints.filterNot { validChars.contains(it.value) }).withEdgecases("-")
@@ -234,7 +234,7 @@ class KotlinxDatetimeLocalDateSerializerUnitTest {
     }
 
     fun Arb.Companion.unparseableDate(): Arb<String> {
-      val validNumber = intWithEvenNumDigitsDistribution(0..Int.MAX_VALUE)
+      val validNumber = intWithUniformNumDigitsDistribution(0..Int.MAX_VALUE)
       val unparseableNumber = unparseableNumber()
       val unparseableDash = unparseableDash()
       val booleanArray = booleanArray(Arb.constant(5), Arb.boolean())

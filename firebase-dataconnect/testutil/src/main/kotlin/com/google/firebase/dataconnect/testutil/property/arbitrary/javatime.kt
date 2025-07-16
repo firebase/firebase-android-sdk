@@ -384,7 +384,7 @@ object JavaTimeArbs {
 
   fun timeOffsetHhMm(
     sign: Arb<TimeOffset.HhMm.Sign> = Arb.enum(),
-    hour: Arb<Int> = Arb.positiveIntWithUniformNumDigitsProbability(0..18),
+    hour: Arb<Int> = Arb.intWithUniformNumDigitsDistribution(0..18),
     minute: Arb<Int> = minute(),
     min: TimeOffset.HhMm?,
     max: TimeOffset.HhMm?,

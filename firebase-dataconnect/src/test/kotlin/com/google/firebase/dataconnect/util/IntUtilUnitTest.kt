@@ -18,8 +18,8 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithNumBase10Digits
+import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithUniformNumDigitsDistribution
 import com.google.firebase.dataconnect.util.IntUtil.toZeroPaddedString
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
@@ -40,8 +40,9 @@ class IntUtilUnitTest {
 
   @Test
   fun `toZeroPaddedString should throw when invalid length specified`() = runTest {
-    val valuesArb = Arb.intWithEvenNumDigitsDistribution()
+    val valuesArb = Arb.intWithUniformNumDigitsDistribution()
     val paddingArb = Arb.choice(Arb.int(Int.MIN_VALUE..-1))
+
     checkAll(propTestConfig, valuesArb, paddingArb) { value, padding ->
       shouldThrow<IllegalArgumentException> { value.toZeroPaddedString(padding) }
     }

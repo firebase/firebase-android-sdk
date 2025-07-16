@@ -159,5 +159,3 @@ object DataConnectArb {
 
 val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb
-
-inline fun <reified T : Any> Arb.Companion.mock(): Arb<T> = arbitrary { mockk<T>(relaxed = true) }

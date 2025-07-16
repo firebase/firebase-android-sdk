@@ -52,8 +52,9 @@ fun DataConnectArb.threePossiblyNullDatesTestData(
 /** An [Arb] that produces [DateTestData] objects that are accepted by Firebase Data Connect. */
 private class DateTestDataArb : Arb<DateTestData>() {
 
-  private val yearArb: Arb<Year> = Arb.intWithEvenNumDigitsDistribution(yearRange).map(Year::of)
-  private val monthArb: Arb<Month> = Arb.intWithEvenNumDigitsDistribution(monthRange).map(Month::of)
+  private val yearArb: Arb<Year> = Arb.intWithUniformNumDigitsDistribution(yearRange).map(Year::of)
+  private val monthArb: Arb<Month> =
+    Arb.intWithUniformNumDigitsDistribution(monthRange).map(Month::of)
 
   override fun sample(rs: RandomSource): Sample<DateTestData> {
     val year = yearArb.next(rs)

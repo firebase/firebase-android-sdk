@@ -32,10 +32,10 @@ import io.kotest.property.arbitrary.int
  * @param range The range of values to produce; if `null` (the default) then use the entire range of
  * integers (i.e. `Int.MIN_VALUE..Int.MAX_VALUE`).
  *
- * @see intWithEvenNumDigitsDistribution
+ * @see intWithUniformNumDigitsDistribution
  */
-@JvmName("intWithEvenNumDigitsDistributionNonNullRange")
-fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange): Arb<Int> {
+@JvmName("intWithUniformNumDigitsDistributionNonNullRange")
+fun Arb.Companion.intWithUniformNumDigitsDistribution(range: IntRange): Arb<Int> {
   require(!range.isEmpty()) { "range must not be empty: $range (error code tmvy8ysdjy)" }
   val intRangesByNumDigits = mutableMapOf<Int, MutableList<IntRange>>()
 
@@ -74,11 +74,11 @@ fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange): Arb<Int> {
  * @param range The range of values to produce; if `null` (the default) then use the entire range of
  * integers (i.e. `Int.MIN_VALUE..Int.MAX_VALUE`).
  *
- * @see intWithEvenNumDigitsDistribution
+ * @see intWithUniformNumDigitsDistribution
  */
-@JvmName("intWithEvenNumDigitsDistributionNullableRange")
-fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange? = null): Arb<Int> =
-  intWithEvenNumDigitsDistribution(range ?: Int.MIN_VALUE..Int.MAX_VALUE)
+@JvmName("intWithUniformNumDigitsDistributionNullableRange")
+fun Arb.Companion.intWithUniformNumDigitsDistribution(range: IntRange? = null): Arb<Int> =
+  intWithUniformNumDigitsDistribution(range ?: Int.MIN_VALUE..Int.MAX_VALUE)
 
 private val rangeByNumDigits: Map<Int, IntRange> = buildMap {
   put(1, 0..9)
