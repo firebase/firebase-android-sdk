@@ -38,7 +38,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 
 sealed class Stage<T : Stage<T>>(
-  protected val name: String,
+  internal val name: String,
   internal val options: InternalOptions
 ) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {

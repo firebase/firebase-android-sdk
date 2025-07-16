@@ -676,9 +676,10 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * pipeline.
    * @return A new [Pipeline] object with [documents].
    */
-  fun documents(vararg documents: String): Pipeline =
+  fun documents(vararg documents: String): Pipeline {
     // Validate document path by converting to DocumentReference
-    documents(*documents.map(firestore::document).toTypedArray())
+    return documents(*documents.map(firestore::document).toTypedArray())
+  }
 
   /**
    * Set the pipeline's source to the documents specified by the given DocumentReferences.
@@ -770,10 +771,6 @@ internal constructor(
     RealtimePipeline(firestore, userDataReader, stages)
 
   private fun append(stage: Stage<*>): RealtimePipeline = with(stages.plus(stage))
-
-  fun execute(): Task<PipelineSnapshot> = execute(null)
-
-  fun execute(options: RealtimePipelineOptions): Task<PipelineSnapshot> = execute(options.options)
 
   fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
 

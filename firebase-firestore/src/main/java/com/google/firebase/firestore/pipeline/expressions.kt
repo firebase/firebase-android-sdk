@@ -51,7 +51,7 @@ import java.util.Date
  */
 abstract class Expr internal constructor() {
 
-  private class Constant(val value: Value) : Expr() {
+  internal class Constant(val value: Value) : Expr() {
     override fun toProto(userDataReader: UserDataReader): Value = value
     override fun evaluateContext(context: EvaluationContext) = { _: MutableDocument ->
       EvaluateResultValue(value)
@@ -4144,7 +4144,7 @@ class ExprWithAlias internal constructor(override val alias: String, override va
  *
  * You can create a [Field] instance using the static [Expr.field] method:
  */
-class Field internal constructor(private val fieldPath: ModelFieldPath) : Selectable() {
+class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
 
     /**
@@ -4192,9 +4192,9 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
  */
 open class FunctionExpr
 internal constructor(
-  private val name: String,
+  internal val name: String,
   private val function: EvaluateFunction,
-  private val params: Array<out Expr>,
+  internal val params: Array<out Expr>,
   private val options: InternalOptions = InternalOptions.EMPTY
 ) : Expr() {
   internal constructor(

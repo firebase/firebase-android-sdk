@@ -230,7 +230,7 @@ internal val evaluateFloor = arithmeticPrimitive({ it }, Math::floor)
 internal val evaluateMod = arithmeticPrimitive(Long::rem, Double::rem)
 
 internal val evaluateMultiply: EvaluateFunction =
-  arithmeticPrimitive(Math::multiplyExact, Double::times)
+  arithmeticPrimitive(LongMath::checkedMultiply, Double::times)
 
 internal val evaluatePow: EvaluateFunction = arithmeticPrimitive(Math::pow)
 
@@ -303,7 +303,7 @@ internal val evaluateSqrt = arithmetic { value: Double ->
   if (value < 0) EvaluateResultError else EvaluateResult.double(sqrt(value))
 }
 
-internal val evaluateSubtract = arithmeticPrimitive(Math::subtractExact, Double::minus)
+internal val evaluateSubtract = arithmeticPrimitive(LongMath::checkedSubtract, Double::minus)
 
 // === Array Functions ===
 
