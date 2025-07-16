@@ -134,6 +134,10 @@ internal class UnknownException(message: String, cause: Throwable? = null) :
 internal class ContentBlockedException(message: String, cause: Throwable? = null) :
   FirebaseCommonAIException(message, cause)
 
+/** The request is missing a permission that is required to perform the requested operation. */
+internal class PermissionMissingException(message: String, cause: Throwable? = null) :
+  FirebaseCommonAIException(message, cause)
+
 internal fun makeMissingCaseException(
   source: String,
   ordinal: Int
