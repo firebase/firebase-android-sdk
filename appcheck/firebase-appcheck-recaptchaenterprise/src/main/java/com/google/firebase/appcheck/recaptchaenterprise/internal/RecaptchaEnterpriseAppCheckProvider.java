@@ -1,3 +1,17 @@
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
 import android.app.Application;
@@ -21,6 +35,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
+/**
+ * An implementation of {@link AppCheckProvider} that uses reCAPTCHA Enterprise for device
+ * attestation.
+ *
+ * <p>This class orchestrates the flow:
+ *
+ * <ol>
+ *   <li>Obtain a reCAPTCHA token via {@code RecaptchaTasksClient}.
+ *   <li>Exchange the reCAPTCHA token with the Firebase App Check backend using {@link
+ *       NetworkClient} to receive a Firebase App Check token.
+ * </ol>
+ */
 public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
 
   private final RecaptchaAction recaptchaAction = RecaptchaAction.custom("fire_app_check");
@@ -93,7 +119,7 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
             return client.executeTask(recaptchaAction);
           } else {
             Log.w(TAG, "Recaptcha task failed", task.getException());
-            throw Objects.requireNonNull(task.getException());
+            return Tasks.forException((Objects.requireNonNull(task.getException())));
           }
         });
   }

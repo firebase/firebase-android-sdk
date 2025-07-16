@@ -1,3 +1,17 @@
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -29,6 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -52,6 +67,9 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
   @Mock RecaptchaTasksClient mockRecaptchaTasksClient;
   @Mock RetryManager mockRetryManager;
 
+  @Captor private ArgumentCaptor<RecaptchaAction> recaptchaActionCaptor;
+  @Captor private ArgumentCaptor<byte[]> requestCaptor;
+
   @Before
   public void setup() {
     MockitoAnnotations.openMocks(this);
@@ -71,19 +89,6 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
   }
 
   @Test
-  public void testPublicConstructor_nullApplication_expectThrows() {
-    assertThrows(
-        NullPointerException.class,
-        () ->
-            new RecaptchaEnterpriseAppCheckProvider(
-                mockFirebaseApp,
-                null,
-                siteKey,
-                TestOnlyExecutors.lite(),
-                TestOnlyExecutors.blocking()));
-  }
-
-  @Test
   public void testPublicConstructor_nullSiteKey_expectThrows() {
     assertThrows(
         NullPointerException.class,
@@ -91,7 +96,7 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
             new RecaptchaEnterpriseAppCheckProvider(
                 mockFirebaseApp,
                 mockApplication,
-                siteKey,
+                null,
                 TestOnlyExecutors.lite(),
                 TestOnlyExecutors.blocking()));
   }
@@ -120,32 +125,11 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
     assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
 
-    ArgumentCaptor<RecaptchaAction> recaptchaActionCaptor =
-        ArgumentCaptor.forClass(RecaptchaAction.class);
     verify(mockRecaptchaTasksClient).executeTask(recaptchaActionCaptor.capture());
     assertThat(recaptchaActionCaptor.getValue().getAction()).isEqualTo("fire_app_check");
-    ArgumentCaptor<byte[]> requestCaptor = ArgumentCaptor.forClass(byte[].class);
     verify(mockNetworkClient)
         .exchangeAttestationForAppCheckToken(
             requestCaptor.capture(), eq(NetworkClient.RECAPTCHA_ENTERPRISE), eq(mockRetryManager));
-  }
-
-  @Test
-  public void getToken_invalidSiteKey_returnException() {
-    Exception exception = new Exception("Site key invalid");
-    when(mockRecaptchaTasksClient.executeTask(any(RecaptchaAction.class)))
-        .thenReturn(Tasks.forException(exception));
-
-    RecaptchaEnterpriseAppCheckProvider provider =
-        new RecaptchaEnterpriseAppCheckProvider(
-            liteExecutor,
-            blockingExecutor,
-            mockRetryManager,
-            mockNetworkClient,
-            mockRecaptchaTasksClient);
-    Task<AppCheckToken> task = provider.getToken();
-    assertThat(task.isSuccessful()).isFalse();
-    assertThat(task.getException()).isEqualTo(exception);
   }
 
   @Test

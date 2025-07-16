@@ -1,8 +1,22 @@
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appcheck.recaptchaenterprise;
 
 import android.app.Application;
-import android.content.Context;
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
@@ -33,11 +47,11 @@ public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRe
     return Arrays.asList(
         Component.builder(Application.class)
             .name(LIBRARY_NAME)
-            .add(Dependency.required(Context.class))
+            .add(Dependency.required(FirebaseApp.class))
             .factory(
                 container -> {
-                  Context context = container.get(Context.class);
-                  return (Application) context.getApplicationContext();
+                  FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+                  return (Application) firebaseApp.getApplicationContext();
                 })
             .build(),
         Component.builder(FirebaseExecutors.class)
