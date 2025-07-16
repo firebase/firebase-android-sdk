@@ -11,8 +11,10 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Checkout PR
+      - name: Checkout main
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.base_ref }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
@@ -24,10 +26,10 @@ jobs:
       - name: Copy new api.txt files
         run: ./gradlew copyApiTxtFile
 
-      - name: Checkout main
+      - name: Checkout PR
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           clean: false
 
       - name: Run Metalava SemVer check
