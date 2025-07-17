@@ -52,9 +52,12 @@ import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.util.Executors
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
+import java.util.concurrent.Executor
+import kotlinx.coroutines.flow.Flow
 
 open class AbstractPipeline
 internal constructor(
@@ -775,6 +778,38 @@ internal constructor(
 
   fun execute(options: RealtimePipelineOptions): Task<PipelineSnapshot> = execute(options.options)
 
+  fun snapshots(): Flow<RealtimePipelineSnapshot> = snapshots(RealtimePipelineOptions.DEFAULT)
+
+  fun snapshots(options: RealtimePipelineOptions): Flow<RealtimePipelineSnapshot> {
+    throw NotImplementedError()
+  }
+
+  fun addSnapshotListener(listener: EventListener<RealtimePipelineSnapshot>): ListenerRegistration =
+    addSnapshotListener(
+      Executors.DEFAULT_CALLBACK_EXECUTOR,
+      RealtimePipelineOptions.DEFAULT,
+      listener
+    )
+
+  fun addSnapshotListener(
+    options: RealtimePipelineOptions,
+    listener: EventListener<RealtimePipelineSnapshot>
+  ): ListenerRegistration =
+    addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, options, listener)
+
+  fun addSnapshotListener(
+    executor: Executor,
+    listener: EventListener<RealtimePipelineSnapshot>
+  ): ListenerRegistration = addSnapshotListener(executor, RealtimePipelineOptions.DEFAULT, listener)
+
+  fun addSnapshotListener(
+    executor: Executor,
+    options: RealtimePipelineOptions,
+    listener: EventListener<RealtimePipelineSnapshot>
+  ): ListenerRegistration {
+    throw NotImplementedError()
+  }
+
   fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
 
   fun offset(offset: Int): RealtimePipeline = append(OffsetStage(offset))
@@ -818,14 +853,31 @@ internal constructor(
   }
 }
 
-/**
- */
 class PipelineSnapshot
 internal constructor(executionTime: Timestamp, results: List<PipelineResult>) :
   Iterable<PipelineResult> {
 
   /** The time at which the pipeline producing this result is executed. */
   val executionTime: Timestamp = executionTime
+
+  /** List of all the results */
+  val results: List<PipelineResult> = results
+
+  override fun iterator() = results.iterator()
+}
+
+class RealtimePipelineSnapshot
+internal constructor(
+  executionTime: Timestamp?,
+  metadata: SnapshotMetadata,
+  results: List<PipelineResult>
+) : Iterable<PipelineResult> {
+
+  /** The time at which the pipeline producing this result is executed. */
+  val executionTime: Timestamp? = executionTime
+
+  /** Metadata about this snapshot, concerning its source and if it has local modifications. */
+  val metadata: SnapshotMetadata = metadata
 
   /** List of all the results */
   val results: List<PipelineResult> = results

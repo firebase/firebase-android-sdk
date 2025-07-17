@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.collect.ImmutableMap
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.model.Values
 import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
@@ -156,8 +158,31 @@ class PipelineOptions private constructor(options: InternalOptions) :
   fun withIndexMode(indexMode: IndexMode): PipelineOptions = with("index_mode", indexMode.value)
 }
 
-class RealtimePipelineOptions private constructor(options: InternalOptions) :
-  AbstractOptions<RealtimePipelineOptions>(options) {
+class RealtimePipelineOptions
+private constructor(
+  internal val offlineServerTimestamps: DocumentSnapshot.ServerTimestampBehavior,
+  internal val metadataChanges: MetadataChanges,
+  options: InternalOptions
+) : AbstractOptions<RealtimePipelineOptions>(options) {
 
-  override fun self(options: InternalOptions) = RealtimePipelineOptions(options)
+  override fun self(options: InternalOptions) =
+    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
+
+  companion object {
+    @JvmField
+    val DEFAULT: RealtimePipelineOptions =
+      RealtimePipelineOptions(
+        DocumentSnapshot.ServerTimestampBehavior.NONE,
+        MetadataChanges.EXCLUDE,
+        InternalOptions.EMPTY
+      )
+  }
+
+  fun withOfflineServerTimestamps(
+    offlineServerTimestamps: DocumentSnapshot.ServerTimestampBehavior
+  ): RealtimePipelineOptions =
+    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
+
+  fun withMetadataChanges(metadataChanges: MetadataChanges): RealtimePipelineOptions =
+    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
 }
