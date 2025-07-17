@@ -219,6 +219,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  // TODO(b/394127311): Investigate flaky test.
   public void
       logMultipleEvents_transportNotInitialized_validEventsGetLoggedInOrderAfterInitialization() {
     initializeTransport(false);

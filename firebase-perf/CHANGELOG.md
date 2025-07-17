@@ -1,4 +1,9 @@
 # Unreleased
+* [changed] Updated `firebase-sessions` dependency to v3.0.0
+* [fixed] Fixed the issues around unifying the sessions in `firebase-sessions` 
+  and`firebase-performance`.
+
+# 22.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 * [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
   (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs

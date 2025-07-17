@@ -402,6 +402,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  // TODO(b/394127311): Investigate flaky test.
   public void testDuplicateGaugeLoggingIsAvoided() {
     int priorGaugeCounter = GaugeCounter.count();
     PerfSession fakeSession = createTestSession(1);
