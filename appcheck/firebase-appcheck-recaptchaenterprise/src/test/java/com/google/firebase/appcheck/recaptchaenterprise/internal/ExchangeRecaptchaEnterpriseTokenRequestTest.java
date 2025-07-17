@@ -18,11 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.json.JSONObject;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
 /** Tests for {@link ExchangeRecaptchaEnterpriseTokenRequest}. */
-@RunWith(RobolectricTestRunner.class)
 public class ExchangeRecaptchaEnterpriseTokenRequestTest {
   private static final String RECAPTCHA_ENTERPRISE_TOKEN = "recaptchaEnterpriseToken";
 

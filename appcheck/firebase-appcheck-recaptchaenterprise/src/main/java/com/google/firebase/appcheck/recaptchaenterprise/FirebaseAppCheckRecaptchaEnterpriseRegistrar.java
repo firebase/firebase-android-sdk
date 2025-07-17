@@ -14,9 +14,7 @@
 
 package com.google.firebase.appcheck.recaptchaenterprise;
 
-import android.app.Application;
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
@@ -45,15 +43,6 @@ public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRe
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
     return Arrays.asList(
-        Component.builder(Application.class)
-            .name(LIBRARY_NAME)
-            .add(Dependency.required(FirebaseApp.class))
-            .factory(
-                container -> {
-                  FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-                  return (Application) firebaseApp.getApplicationContext();
-                })
-            .build(),
         Component.builder(FirebaseExecutors.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(liteExecutor))

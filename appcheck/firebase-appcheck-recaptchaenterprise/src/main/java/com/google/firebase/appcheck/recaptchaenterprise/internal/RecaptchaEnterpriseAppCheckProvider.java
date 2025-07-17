@@ -43,18 +43,20 @@ import java.util.concurrent.Executor;
  *
  * <ol>
  *   <li>Obtain a reCAPTCHA token via {@code RecaptchaTasksClient}.
- *   <li>Exchange the reCAPTCHA token with the Firebase App Check backend using {@link
- *       NetworkClient} to receive a Firebase App Check token.
+ *   <li>Exchange the reCAPTCHA token with the Firebase App Check backend to receive a Firebase App
+ *       Check token.
  * </ol>
  */
 public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
 
   private final RecaptchaAction recaptchaAction = RecaptchaAction.custom("fire_app_check");
-  private final Task<RecaptchaTasksClient> recaptchaTasksClientTask;
+  private volatile Task<RecaptchaTasksClient> recaptchaTasksClientTask;
   private final Executor liteExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final NetworkClient networkClient;
+  private String siteKey;
+  private Application application;
   private static final String TAG = "rCEAppCheckProvider";
 
   public RecaptchaEnterpriseAppCheckProvider(
@@ -63,11 +65,12 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
       @NonNull String siteKey,
       @Lightweight Executor liteExecutor,
       @Blocking Executor blockingExecutor) {
+    this.application = application;
+    this.siteKey = siteKey;
     this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = new RetryManager();
     this.networkClient = new NetworkClient(firebaseApp);
-    recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey);
   }
 
   @VisibleForTesting
@@ -111,6 +114,13 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
 
   @NonNull
   private Task<String> getRecaptchaEnterpriseAttestation() {
+    if (recaptchaTasksClientTask == null) {
+      synchronized (this) {
+        if (recaptchaTasksClientTask == null) {
+          recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey);
+        }
+      }
+    }
     return recaptchaTasksClientTask.continueWithTask(
         blockingExecutor,
         task -> {
