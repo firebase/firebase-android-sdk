@@ -1,0 +1,6 @@
+{
+  "name": "M134",
+  "libraries": [
+    ":firebase-storage"
+  ]
+}
