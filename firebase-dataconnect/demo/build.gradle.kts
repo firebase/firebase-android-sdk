@@ -197,9 +197,9 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
             args("--debug", "dataconnect:sdk:generate")
             workingDir(inputDirectory)
             isIgnoreExitValue = false
-            if (logStream !== null) {
-              standardOutput = logStream
-              errorOutput = logStream
+            logStream?.let {
+              standardOutput = it
+              errorOutput = it
             }
           }
         }
@@ -225,31 +225,16 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
     ) {
       execSpec.setCommandLine(firebaseCommand)
 
-      val newPath: String? =
-        if (nodeExecutableDirectory === null) {
-          null
-        } else {
-          if (path === null) {
-            nodeExecutableDirectory
-          } else {
-            nodeExecutableDirectory + File.pathSeparator + path
-          }
-        }
-
-      if (newPath !== null) {
+      nodeExecutableDirectory?.let {
+        val newPath = if (path === null) it else (it + File.pathSeparator + path)
         execSpec.environment("PATH", newPath)
       }
 
-      if (dataConnectEmulatorExecutable !== null) {
-        execSpec.environment(
-          "DATACONNECT_EMULATOR_BINARY_PATH",
-          dataConnectEmulatorExecutable.absolutePath,
-        )
+      dataConnectEmulatorExecutable?.let {
+        execSpec.environment("DATACONNECT_EMULATOR_BINARY_PATH", it.absolutePath)
       }
 
-      if (dataConnectPreviewFlags !== null) {
-        execSpec.environment("DATA_CONNECT_PREVIEW", dataConnectPreviewFlags)
-      }
+      dataConnectPreviewFlags?.let { execSpec.environment("DATA_CONNECT_PREVIEW", it) }
     }
   }
 }
