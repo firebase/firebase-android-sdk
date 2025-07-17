@@ -19,14 +19,11 @@ package com.google.firebase.ai.type
 public class ImagenEditMode private constructor(internal val value: String) {
 
   public companion object {
-    /** Inpainting insertion is used when inserting a new element into an image */
+    /** Inserts a new element into an image */
     public val INPAINT_INSERTION: ImagenEditMode = ImagenEditMode("EDIT_MODE_INPAINT_INSERTION")
-    /**
-     * Inpainting removal is used when removing an element from an image, and replacing it with
-     * background
-     */
+    /** Removes an element from an image */
     public val INPAINT_REMOVAL: ImagenEditMode = ImagenEditMode("EDIT_MODE_INPAINT_REMOVAL")
-    /** Outpainting is used to extend the borders of an image outwards */
+    /** Extend the borders of an image outwards */
     public val OUTPAINT: ImagenEditMode = ImagenEditMode("EDIT_MODE_OUTPAINT")
   }
 }

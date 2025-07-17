@@ -73,7 +73,7 @@ internal constructor(
 }
 
 /**
- * Represents a refrence image (provided or generated) to bound the created image via ControlNet
+ * Represents a reference image (provided or generated) to bound the created image via ControlNet
  * @param image the image provided, required if enableComputation is false
  * @param type the type of ControlNet reference image
  * @param referenceId the reference ID for this image, to be referenced in the prompt
@@ -112,7 +112,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
 
   public companion object {
     /**
-     * Generates two reference images:
+     * Generates these two reference images in order:
      * * One [ImagenRawImage] containing the original image, padded out to the new dimensions with
      * black pixels, with the original image placed at the given placement
      * * One [ImagenRawMask] of the same dimensions containing white everywhere except at the
@@ -131,6 +131,15 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
     ): List<ImagenReferenceImage> {
       val originalBitmap = image.asBitmap()
+      if (
+        originalBitmap.width > newDimensions.width || originalBitmap.height > newDimensions.height
+      ) {
+        throw IllegalArgumentException(
+          "New Dimensions must be strictly larger than original image dimensions. Original image " +
+            "is:${originalBitmap.width}x${originalBitmap.height}, new dimensions are " +
+            "${newDimensions.width}x${newDimensions.height}"
+        )
+      }
       val normalizedPosition =
         newPosition.normalizeToDimensions(
           Dimensions(originalBitmap.width, originalBitmap.height),

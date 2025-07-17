@@ -16,8 +16,8 @@
 package com.google.firebase.ai.type
 
 /**
- * Represents where the placement of an image within a new, larger image, usually in the context of
- * an outpainting request.
+ * Represents where the placement of an image is within a new, larger image, usually in the context
+ * of an outpainting request.
  */
 public class ImagenImagePlacement
 private constructor(public val x: Int? = null, public val y: Int? = null) {
@@ -67,7 +67,7 @@ private constructor(public val x: Int? = null, public val y: Int? = null) {
 
   public companion object {
     /**
-     * Creates an [ImagenImagePlacement] that represents a placement in the described by two
+     * Creates an [ImagenImagePlacement] that represents a placement in an image described by two
      * coordinates. The coordinate system has 0,0 in the top left corner, and the x and y
      * coordinates represent the location of the top left corner of the original image.
      * @param x the x coordinate of the top left corner of the original image
@@ -77,37 +77,23 @@ private constructor(public val x: Int? = null, public val y: Int? = null) {
       return ImagenImagePlacement(x, y)
     }
 
-    /**
-     * This [ImagenImagePlacement] is centered horizontally and vertically within the larger image
-     */
+    /** Center the image horizontally and vertically within the larger image */
     public val CENTER: ImagenImagePlacement = ImagenImagePlacement()
-    /**
-     * This [ImagenImagePlacement] is centered horizontally and aligned with the top edge of the
-     * larger image
-     */
+    /** Center the image horizontally and aligned with the top edge of the larger image */
     public val TOP_CENTER: ImagenImagePlacement = ImagenImagePlacement()
-    /**
-     * This [ImagenImagePlacement] is centered horizontally and aligned with the bottom edge of the
-     * larger image
-     */
+    /** Center the image horizontally and aligned with the bottom edge of the larger image */
     public val BOTTOM_CENTER: ImagenImagePlacement = ImagenImagePlacement()
-    /**
-     * This [ImagenImagePlacement] is centered vertically and aligned with the left edge of the
-     * larger image
-     */
+    /** Center the image vertically and aligned with the left edge of the larger image */
     public val LEFT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
-    /**
-     * This [ImagenImagePlacement] is centered vertically and aligned with the right edge of the
-     * larger image
-     */
+    /** Center the image vertically and aligned with the right edge of the larger image */
     public val RIGHT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
-    /** This [ImagenImagePlacement] is aligned with the top left corner of the larger image */
+    /** Align the image with the top left corner of the larger image */
     public val TOP_LEFT: ImagenImagePlacement = ImagenImagePlacement(0, 0)
-    /** This [ImagenImagePlacement] is aligned with the top right corner of the larger image */
+    /** Align the image with the top right corner of the larger image */
     public val TOP_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
-    /** This [ImagenImagePlacement] is aligned with the bottom left corner of the larger image */
+    /** Align the image with the bottom left corner of the larger image */
     public val BOTTOM_LEFT: ImagenImagePlacement = ImagenImagePlacement()
-    /** This [ImagenImagePlacement] is caligned with the bottom right corner of the larger image */
+    /** Align the image with the bottom right corner of the larger image */
     public val BOTTOM_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
   }
 }

@@ -65,7 +65,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * @param image the base image
    * @param prompt the text input given to the model as a prompt
    * @param mask the mask which defines where in the image can be painted by imagen.
-   * @param config the editing configuration settings, its important to include an [ImagenEditMode]
+   * @param config the editing configuration settings, it should include an [ImagenEditMode]
    */
   public abstract fun inpaintImage(
     image: ImagenInlineImage,
