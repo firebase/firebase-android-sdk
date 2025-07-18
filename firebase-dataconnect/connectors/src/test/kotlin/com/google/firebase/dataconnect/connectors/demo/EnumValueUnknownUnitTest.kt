@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -42,6 +43,14 @@ class EnumValueUnknownUnitTest {
     checkAll(propTestConfig, Arb.dataConnect.string()) { stringValue ->
       val enumValue = EnumValue.Unknown(stringValue)
       enumValue.stringValue shouldBeSameInstanceAs stringValue
+    }
+  }
+
+  @Test
+  fun `value property should unconditionally be null`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { stringValue ->
+      val enumValue = EnumValue.Unknown(stringValue)
+      enumValue.value.shouldBeNull()
     }
   }
 
