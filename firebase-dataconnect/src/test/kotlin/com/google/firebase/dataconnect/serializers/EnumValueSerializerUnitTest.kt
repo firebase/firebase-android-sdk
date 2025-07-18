@@ -72,7 +72,7 @@ class EnumValueSerializerUnitTest {
     }
 
   @Suppress("unused")
-  enum class Dog {
+  private enum class Dog {
     Boxer,
     Bulldog,
     Dachshund,
