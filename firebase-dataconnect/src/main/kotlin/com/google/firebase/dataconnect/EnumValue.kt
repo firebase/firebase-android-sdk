@@ -22,9 +22,12 @@ package com.google.firebase.dataconnect
  */
 public sealed interface EnumValue<out T : Enum<out T>> {
 
+  /** [Known.value] in the case of [Known], or `null` in the case of [Unknown]. */
+  public val value: T?
+
   /**
-   * The string value of the enum, either the [Enum.name] in the case of [Known] or the string whose
-   * corresponding enum value was _not_ known, as in the case of [Unknown].
+   * The string value of the enum, either the [Enum.name] of [Known.value] in the case of [Known] or
+   * the `stringValue` given to the constructor in the case of [Unknown].
    */
   public val stringValue: String
 
@@ -35,7 +38,13 @@ public sealed interface EnumValue<out T : Enum<out T>> {
    * the older version that lacked the new enum value. Instead of failing, the unknown enum value
    * will be gracefully mapped to [Unknown].
    */
-  public class Unknown(public override val stringValue: String) : EnumValue<Nothing> {
+  public class Unknown(
+    /** The unknown string value. */
+    public override val stringValue: String
+  ) : EnumValue<Nothing> {
+
+    /** Always `null`. */
+    override val value: Nothing? = null
 
     /**
      * Compares this object with another object for equality.
@@ -76,8 +85,12 @@ public sealed interface EnumValue<out T : Enum<out T>> {
    *
    * @param value The enum value.
    */
-  public class Known<T : Enum<T>>(public val value: T) : EnumValue<T> {
+  public class Known<T : Enum<T>>(
+    /** The enum value wrapped by this object. */
+    override val value: T
+  ) : EnumValue<T> {
 
+    /** [Enum.name] of [value]. */
     override val stringValue: String
       get() = value.name
 
