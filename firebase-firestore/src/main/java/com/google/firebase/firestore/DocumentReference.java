@@ -71,7 +71,7 @@ public final class DocumentReference {
   }
 
   /** @hide */
-  static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
+  public static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
     if (path.length() % 2 != 0) {
       throw new IllegalArgumentException(
           "Invalid document reference. Document references must have an even number "

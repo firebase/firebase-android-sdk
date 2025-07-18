@@ -14,6 +14,10 @@
 
 package com.google.firebase.firestore;
 
+import android.app.Activity;
+import androidx.annotation.NonNull;
+import com.google.firebase.firestore.core.ActivityScope;
+
 /** Represents a listener that can be removed by calling {@link #remove()}. */
 public interface ListenerRegistration {
 
@@ -22,4 +26,13 @@ public interface ListenerRegistration {
    * call, subsequent calls have no effect.
    */
   void remove();
+
+  /**
+   * The listener will be automatically removed during {@link Activity#onStop}.
+   *
+   * @param activity The activity to scope the listener to.
+   */
+  default void scope(@NonNull Activity activity) {
+    ActivityScope.bind(activity, this);
+  }
 }

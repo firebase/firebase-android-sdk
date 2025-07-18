@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore
 
-/** A tracker to keep a record of important details during database local query execution. */
-public class QueryContext {
-  /** Counts the number of documents passed through during local query execution. */
-  private int documentReadCount = 0;
+import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.pipeline.EvaluationContext
+import kotlinx.coroutines.flow.Flow
 
-  public int getDocumentReadCount() {
-    return documentReadCount;
-  }
-
-  public void incrementDocumentReadCount(int cnt) {
-    documentReadCount += cnt;
+internal fun runPipeline(
+  pipeline: RealtimePipeline,
+  input: Flow<MutableDocument>
+): Flow<MutableDocument> {
+  val rewrittenPipeline = pipeline.rewriteStages()
+  val context = EvaluationContext(rewrittenPipeline)
+  return rewrittenPipeline.stages.fold(input) { documentFlow, stage ->
+    stage.evaluate(context, documentFlow)
   }
 }
