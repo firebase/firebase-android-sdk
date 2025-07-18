@@ -15,13 +15,12 @@
 package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
 import androidx.annotation.NonNull;
-
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
 
 /** Multi-resource container for RecaptchaEnterpriseAppCheckProvider */
 @Singleton

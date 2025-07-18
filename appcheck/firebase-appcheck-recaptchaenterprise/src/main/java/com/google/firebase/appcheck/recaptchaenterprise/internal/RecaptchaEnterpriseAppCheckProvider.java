@@ -31,11 +31,11 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedInject;
 
 /**
  * An implementation of {@link AppCheckProvider} that uses reCAPTCHA Enterprise for device

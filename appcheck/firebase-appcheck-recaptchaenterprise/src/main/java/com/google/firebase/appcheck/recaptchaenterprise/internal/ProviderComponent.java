@@ -17,11 +17,11 @@ package com.google.firebase.appcheck.recaptchaenterprise.internal;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
-import java.util.concurrent.Executor;
-import javax.inject.Singleton;
 import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Module;
+import java.util.concurrent.Executor;
+import javax.inject.Singleton;
 
 @Singleton
 @Component(modules = ProviderComponent.MainModule.class)

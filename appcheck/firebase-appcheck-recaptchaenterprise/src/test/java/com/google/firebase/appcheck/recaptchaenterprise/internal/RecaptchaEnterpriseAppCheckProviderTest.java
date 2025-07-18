@@ -79,10 +79,7 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
         NullPointerException.class,
         () ->
             new RecaptchaEnterpriseAppCheckProvider(
-                null,
-                siteKey,
-                TestOnlyExecutors.lite(),
-                TestOnlyExecutors.blocking()));
+                null, siteKey, TestOnlyExecutors.lite(), TestOnlyExecutors.blocking()));
   }
 
   @Test
@@ -91,10 +88,7 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
         NullPointerException.class,
         () ->
             new RecaptchaEnterpriseAppCheckProvider(
-                mockFirebaseApp,
-                null,
-                TestOnlyExecutors.lite(),
-                TestOnlyExecutors.blocking()));
+                mockFirebaseApp, null, TestOnlyExecutors.lite(), TestOnlyExecutors.blocking()));
   }
 
   @Test
