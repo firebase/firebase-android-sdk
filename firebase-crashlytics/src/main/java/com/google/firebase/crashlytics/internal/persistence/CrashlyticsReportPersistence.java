@@ -413,6 +413,9 @@ public class CrashlyticsReportPersistence {
   private static void writeTextFile(File file, String text) throws IOException {
     try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), UTF_8)) {
       writer.write(text);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("Write text file out of memory.", e);
+      throw new IOException("out of memory");
     }
   }
 
@@ -421,6 +424,9 @@ public class CrashlyticsReportPersistence {
     try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), UTF_8)) {
       writer.write(text);
       file.setLastModified(convertTimestampFromSecondsToMs(lastModifiedTimestampSeconds));
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("Write text file out of memory.", e);
+      throw new IOException("out of memory");
     }
   }
 
@@ -434,6 +440,9 @@ public class CrashlyticsReportPersistence {
         bos.write(readBuffer, 0, read);
       }
       return new String(bos.toByteArray(), UTF_8);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("Read text file out of memory.", e);
+      throw new IOException("out of memory");
     }
   }
 
