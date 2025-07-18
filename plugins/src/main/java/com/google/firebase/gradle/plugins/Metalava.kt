@@ -20,7 +20,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import javax.inject.Inject
-import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -36,7 +35,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
-import org.gradle.process.JavaExecSpec
 
 val Project.metalavaConfig: Configuration
   get() =
@@ -103,7 +101,7 @@ abstract class GenerateStubsTask @Inject constructor(private val execOperations:
         "--include-annotations",
         "--doc-stubs",
         outputDir.absolutePath,
-      )
+      ),
     )
   }
 }

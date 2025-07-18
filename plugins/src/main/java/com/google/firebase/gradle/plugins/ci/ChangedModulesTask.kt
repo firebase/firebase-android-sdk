@@ -51,7 +51,9 @@ abstract class ChangedModulesTask : DefaultTask() {
     val projects =
       AffectedProjectFinder(project, changedGitPaths.toSet(), listOf())
         .find()
-        .filter { !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null }
+        .filter {
+          !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null
+        }
         .map { it.path }
         .toSet()
 

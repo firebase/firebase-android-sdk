@@ -255,7 +255,11 @@ enum class DeltaType {
       (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
-        if (beforeMethod != null && afterMethod != null && !beforeMethod.exceptions.containsAll(afterMethod.exceptions)) {
+        if (
+          beforeMethod != null &&
+            afterMethod != null &&
+            !beforeMethod.exceptions.containsAll(afterMethod.exceptions)
+        ) {
           apiDeltas.add(
             Delta(
               after!!.name,
@@ -282,7 +286,11 @@ enum class DeltaType {
       (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
-        if (afterMethod != null && beforeMethod != null && !afterMethod.exceptions.containsAll(beforeMethod.exceptions)) {
+        if (
+          afterMethod != null &&
+            beforeMethod != null &&
+            !afterMethod.exceptions.containsAll(beforeMethod.exceptions)
+        ) {
           apiDeltas.add(
             Delta(
               after!!.name,
