@@ -34,6 +34,8 @@ import com.google.firebase.appcheck.internal.RetryManager;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 
 /**
  * An implementation of {@link AppCheckProvider} that uses reCAPTCHA Enterprise for device
@@ -59,13 +61,13 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
   private Application application;
   private static final String TAG = "rCEAppCheckProvider";
 
+  @AssistedInject
   public RecaptchaEnterpriseAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Application application,
-      @NonNull String siteKey,
+      @Assisted @NonNull String siteKey,
       @Lightweight Executor liteExecutor,
       @Blocking Executor blockingExecutor) {
-    this.application = application;
+    this.application = (Application) firebaseApp.getApplicationContext();
     this.siteKey = siteKey;
     this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;

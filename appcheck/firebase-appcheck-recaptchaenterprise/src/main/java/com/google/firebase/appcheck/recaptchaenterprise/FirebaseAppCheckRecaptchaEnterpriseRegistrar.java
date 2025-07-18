@@ -15,13 +15,15 @@
 package com.google.firebase.appcheck.recaptchaenterprise;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
-import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.DaggerProviderComponent;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -43,14 +45,19 @@ public class FirebaseAppCheckRecaptchaEnterpriseRegistrar implements ComponentRe
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
     return Arrays.asList(
-        Component.builder(FirebaseExecutors.class)
+        Component.builder(ProviderMultiResourceComponent.class)
             .name(LIBRARY_NAME)
+            .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(liteExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
                 container ->
-                    new FirebaseExecutors(
-                        container.get(liteExecutor), container.get(blockingExecutor)))
+                    DaggerProviderComponent.builder()
+                        .setFirebaseApp(container.get(FirebaseApp.class))
+                        .setLiteExecutor(container.get(liteExecutor))
+                        .setBlockingExecutor(container.get(blockingExecutor))
+                        .build()
+                        .getMultiResourceComponent())
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

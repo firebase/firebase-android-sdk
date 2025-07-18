@@ -14,13 +14,12 @@
 
 package com.google.firebase.appcheck.recaptchaenterprise;
 
-import android.app.Application;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
-import com.google.firebase.appcheck.recaptchaenterprise.internal.FirebaseExecutors;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProviderFactory {
 
-  private static FirebaseExecutors firebaseExecutors;
   private static final Map<String, RecaptchaEnterpriseAppCheckProviderFactory> factoryInstances =
       new ConcurrentHashMap<>();
   private final String siteKey;
@@ -55,18 +53,9 @@ public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProvi
     if (provider == null) {
       synchronized (this) {
         if (provider == null) {
-          if (RecaptchaEnterpriseAppCheckProviderFactory.firebaseExecutors == null) {
-            firebaseExecutors = firebaseApp.get(FirebaseExecutors.class);
-          }
-          Application application = (Application) firebaseApp.getApplicationContext();
-
-          provider =
-              new RecaptchaEnterpriseAppCheckProvider(
-                  firebaseApp,
-                  application,
-                  siteKey,
-                  firebaseExecutors.getLiteExecutor(),
-                  firebaseExecutors.getBlockingExecutor());
+          ProviderMultiResourceComponent component =
+              firebaseApp.get(ProviderMultiResourceComponent.class);
+          provider = component.get(siteKey);
         }
       }
     }

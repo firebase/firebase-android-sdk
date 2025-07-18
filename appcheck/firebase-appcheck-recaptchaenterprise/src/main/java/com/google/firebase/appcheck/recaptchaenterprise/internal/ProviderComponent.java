@@ -14,30 +14,34 @@
 
 package com.google.firebase.appcheck.recaptchaenterprise.internal;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import java.util.concurrent.Executor;
+import javax.inject.Singleton;
+import dagger.BindsInstance;
+import dagger.Component;
+import dagger.Module;
 
-/**
- * This class encapsulates a {@link com.google.firebase.annotations.concurrent.Lightweight} executor
- * and a {@link com.google.firebase.annotations.concurrent.Blocking} executor, making them available
- * for various asynchronous operations related to reCAPTCHA Enterprise App Check.
- */
-public class FirebaseExecutors {
-  private final Executor liteExecutor;
-  private final Executor blockingExecutor;
+@Singleton
+@Component(modules = ProviderComponent.MainModule.class)
+public interface ProviderComponent {
+  ProviderMultiResourceComponent getMultiResourceComponent();
 
-  public FirebaseExecutors(
-      @Lightweight Executor liteExecutor, @Blocking Executor blockingExecutor) {
-    this.liteExecutor = liteExecutor;
-    this.blockingExecutor = blockingExecutor;
+  @Component.Builder
+  interface Builder {
+    @BindsInstance
+    Builder setFirebaseApp(FirebaseApp firebaseApp);
+
+    @BindsInstance
+    Builder setLiteExecutor(@Lightweight Executor liteExecutor);
+
+    @BindsInstance
+    Builder setBlockingExecutor(@Blocking Executor blockingExecutor);
+
+    ProviderComponent build();
   }
 
-  public Executor getLiteExecutor() {
-    return liteExecutor;
-  }
-
-  public Executor getBlockingExecutor() {
-    return blockingExecutor;
-  }
+  @Module
+  abstract class MainModule {}
 }

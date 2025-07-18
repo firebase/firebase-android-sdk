@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.app.Application;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.recaptcha.RecaptchaAction;
@@ -62,7 +61,6 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
   private final String siteKey = "siteKey";
 
   @Mock private NetworkClient mockNetworkClient;
-  @Mock private Application mockApplication;
   @Mock FirebaseApp mockFirebaseApp;
   @Mock RecaptchaTasksClient mockRecaptchaTasksClient;
   @Mock RetryManager mockRetryManager;
@@ -82,7 +80,6 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
         () ->
             new RecaptchaEnterpriseAppCheckProvider(
                 null,
-                mockApplication,
                 siteKey,
                 TestOnlyExecutors.lite(),
                 TestOnlyExecutors.blocking()));
@@ -95,7 +92,6 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
         () ->
             new RecaptchaEnterpriseAppCheckProvider(
                 mockFirebaseApp,
-                mockApplication,
                 null,
                 TestOnlyExecutors.lite(),
                 TestOnlyExecutors.blocking()));
