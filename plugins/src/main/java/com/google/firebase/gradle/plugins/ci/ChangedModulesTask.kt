@@ -51,10 +51,7 @@ abstract class ChangedModulesTask : DefaultTask() {
     val projects =
       AffectedProjectFinder(project, changedGitPaths.toSet(), listOf())
         .find()
-        .filter {
-          val ext = it.extensions.findByType(FirebaseLibraryExtension::class.java)
-          !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null
-        }
+        .filter { !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null }
         .map { it.path }
         .toSet()
 
@@ -62,12 +59,13 @@ abstract class ChangedModulesTask : DefaultTask() {
     project.rootProject.subprojects.forEach { p ->
       p.configurations.forEach { c ->
         c.dependencies.filterIsInstance<ProjectDependency>().forEach {
+          val dependencyProject = project.project(it.dependencyProject.path)
           if (
             !onlyFirebaseSDKs ||
-              it.dependencyProject.extensions.findByType<FirebaseLibraryExtension>() != null
+              dependencyProject.extensions.findByType<FirebaseLibraryExtension>() != null
           ) {
             if (!onlyFirebaseSDKs || p.extensions.findByType<FirebaseLibraryExtension>() != null) {
-              result[it.dependencyProject.path]?.add(p.path)
+              result[dependencyProject.path]?.add(p.path)
             }
           }
         }

@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.semver.VersionDelta
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
@@ -25,8 +26,10 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
-abstract class SemVerTask : DefaultTask() {
+abstract class SemVerTask @Inject constructor(private val execOperations: ExecOperations) :
+  DefaultTask() {
   @get:InputFile abstract val apiTxtFile: RegularFileProperty
   @get:InputFile abstract val otherApiFile: RegularFileProperty
   @get:Input abstract val currentVersionString: Property<String>
@@ -47,6 +50,7 @@ abstract class SemVerTask : DefaultTask() {
       }
     val stream = ByteArrayOutputStream()
     project.runMetalavaWithArgs(
+      execOperations,
       listOf(
         "--source-files",
         apiTxtFile.get().asFile.absolutePath,
@@ -66,7 +70,6 @@ abstract class SemVerTask : DefaultTask() {
     val minorChanges = mutableListOf<String>()
     val majorChanges = mutableListOf<String>()
     for (match in reg.findAll(string)) {
-      val loc = match.groups[1]!!.value
       val message = match.groups[2]!!.value
       val type = match.groups[3]!!.value
       if (IGNORED.contains(type)) {
