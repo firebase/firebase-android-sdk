@@ -812,8 +812,6 @@ internal constructor(
 
   fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
 
-  fun offset(offset: Int): RealtimePipeline = append(OffsetStage(offset))
-
   fun select(selection: Selectable, vararg additionalSelections: Any): RealtimePipeline =
     append(SelectStage.of(selection, *additionalSelections))
 

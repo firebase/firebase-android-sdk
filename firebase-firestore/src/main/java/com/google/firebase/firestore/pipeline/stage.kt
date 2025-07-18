@@ -559,23 +559,6 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
   override fun self(options: InternalOptions) = OffsetStage(offset, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
-  override fun evaluate(
-    context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> =
-    when {
-      offset > 0 -> inputs.drop(offset)
-      offset < 0 ->
-        flow {
-          val offsetLast = -offset
-          val buffer = ArrayDeque<MutableDocument>(offsetLast)
-          inputs.collect { doc ->
-            if (buffer.size == offsetLast) emit(buffer.removeFirst())
-            buffer.add(doc)
-          }
-        }
-      else -> inputs
-    }
 }
 
 internal class SelectStage

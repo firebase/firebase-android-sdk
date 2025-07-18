@@ -16,6 +16,7 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.common.collect.ImmutableMap
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.ListenSource
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.model.Values
 import com.google.firestore.v1.ArrayValue
@@ -160,29 +161,35 @@ class PipelineOptions private constructor(options: InternalOptions) :
 
 class RealtimePipelineOptions
 private constructor(
-  internal val offlineServerTimestamps: DocumentSnapshot.ServerTimestampBehavior,
+  internal val source: ListenSource,
+  internal val serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
   internal val metadataChanges: MetadataChanges,
   options: InternalOptions
 ) : AbstractOptions<RealtimePipelineOptions>(options) {
 
   override fun self(options: InternalOptions) =
-    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 
   companion object {
     @JvmField
     val DEFAULT: RealtimePipelineOptions =
       RealtimePipelineOptions(
+        ListenSource.DEFAULT,
         DocumentSnapshot.ServerTimestampBehavior.NONE,
         MetadataChanges.EXCLUDE,
         InternalOptions.EMPTY
       )
   }
 
-  fun withOfflineServerTimestamps(
-    offlineServerTimestamps: DocumentSnapshot.ServerTimestampBehavior
+  fun withSource(source: ListenSource): RealtimePipelineOptions =
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
+
+
+  fun withServerTimestampBehavior(
+    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
   ): RealtimePipelineOptions =
-    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 
   fun withMetadataChanges(metadataChanges: MetadataChanges): RealtimePipelineOptions =
-    RealtimePipelineOptions(offlineServerTimestamps, metadataChanges, options)
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 }
