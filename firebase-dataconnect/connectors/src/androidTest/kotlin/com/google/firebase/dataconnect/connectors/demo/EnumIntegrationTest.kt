@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorInt
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.threeValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -35,6 +36,7 @@ import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import java.util.UUID
@@ -418,6 +420,23 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
       val key = connector.enumKotlinKeywordsInsert.execute(enumValue).data.key
       val queryResult = connector.enumKotlinKeywordsGetByKey.execute(key).data
       withClue(queryResult) { queryResult.item?.value shouldBe Known(enumValue) }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumKey table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun enumAsPrimaryKey() = runTest {
+    N5ekmae3jn.entries.forEach { enumValue ->
+      val tagValue = Arb.dataConnect.tag().next(rs)
+      val key = connector.enumKeyInsert.execute(enumValue) { tag=tagValue }.data.key
+      withClue(key) {
+        key.enumValue shouldBe enumValue
+      }
+      val queryResult = connector.enumKeyGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.tag shouldBe tagValue }
     }
   }
 

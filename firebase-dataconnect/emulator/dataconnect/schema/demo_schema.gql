@@ -425,3 +425,9 @@ type EnumSubset @table {
 type EnumSubsetList @table {
   value: [N5ekmae3jnSubset]!
 }
+
+type EnumKey @table(key: ["id", "enumValue"]) {
+  id: UUID! @default(expr: "uuidV4()")
+  enumValue: N5ekmae3jn!
+  tag: String!
+}

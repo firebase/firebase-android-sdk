@@ -1769,3 +1769,15 @@ query EnumSubset_GetByKey($key: EnumSubset_Key!) @auth(level: PUBLIC) {
 query EnumSubsetList_GetByKey($key: EnumSubsetList_Key!) @auth(level: PUBLIC) {
   item: enumSubsetList(key: $key) { value }
 }
+
+###############################################################################
+# Operations for table: type EnumKey
+###############################################################################
+
+mutation EnumKey_Insert($enumValue: N5ekmae3jn!, $tag: String) @auth(level: PUBLIC) {
+  key: enumKey_insert(data: { enumValue: $enumValue, tag: $tag })
+}
+
+query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
+  item: enumKey(key: $key) { tag }
+}
