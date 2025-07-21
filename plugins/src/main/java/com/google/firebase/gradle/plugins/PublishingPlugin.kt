@@ -91,7 +91,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val generateBom = registerGenerateBomTask(project)
       val generateBomReleaseNotes = registerGenerateBomReleaseNotesTask(project, generateBom)
       val generateTutorialBundle = registerGenerateTutorialBundleTask(project)
-      val validatePomForRelease = registerValidatePomForReleaseTask(project, releasingProjects)
+      registerValidatePomForReleaseTask(project, releasingProjects)
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =

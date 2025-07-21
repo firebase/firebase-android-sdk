@@ -111,7 +111,7 @@ abstract class ApiDiffer : DefaultTask() {
     val classes: MutableMap<String, ClassNode> = LinkedHashMap()
     val inputStream = Files.newInputStream(jar)
     val jis = JarInputStream(inputStream)
-    var je: JarEntry? = null
+    var je: JarEntry?
     while (true) {
       je = jis.nextJarEntry
       if (je == null) {
