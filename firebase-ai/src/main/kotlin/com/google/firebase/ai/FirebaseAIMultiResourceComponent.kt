@@ -41,14 +41,14 @@ internal class FirebaseAIMultiResourceComponent(
 
   fun get(backend: GenerativeBackend): FirebaseAI =
     synchronized(this) {
-        instances.getOrPut(backend.location) {
-            FirebaseAI(
-                app,
-                backend,
-                blockingDispatcher,
-                appCheckProvider,
-                internalAuthProvider,
-            )
-        }
+      instances.getOrPut(backend.location) {
+        FirebaseAI(
+          app,
+          backend,
+          blockingDispatcher,
+          appCheckProvider,
+          internalAuthProvider,
+        )
+      }
     }
 }
