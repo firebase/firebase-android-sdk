@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Copy new api.txt files
+      - name: Copy existing api.txt files
         run: ./gradlew copyApiTxtFile
 
       - name: Checkout PR

@@ -161,17 +161,7 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
       )
     }
 
-    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
-      apiTxtFile.set(project.file("api.txt"))
-      output.set(project.file("old_api.txt"))
-    }
-
-    project.tasks.register<SemVerTask>("metalavaSemver") {
-      apiTxtFile.set(project.file("api.txt"))
-      otherApiFile.set(project.file("old_api.txt"))
-      currentVersionString.value(firebaseLibrary.version)
-      previousVersionString.value(firebaseLibrary.previousVersion)
-    }
+    setupMetalavaSemver(project, firebaseLibrary)
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {

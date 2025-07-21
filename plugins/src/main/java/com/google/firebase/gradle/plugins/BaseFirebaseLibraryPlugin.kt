@@ -127,6 +127,20 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     Coverage.apply(library)
   }
 
+  protected fun setupMetalavaSemver(project: Project, library: FirebaseLibraryExtension) {
+    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
+      apiTxtFile.set(project.file("api.txt"))
+      output.set(project.file("existing_api.txt"))
+    }
+
+    project.tasks.register<SemVerTask>("metalavaSemver") {
+      apiTxtFile.set(project.file("api.txt"))
+      existingApiFile.set(project.file("existing_api.txt"))
+      currentVersionString.value(library.version)
+      previousVersionString.value(library.previousVersion)
+    }
+  }
+
   protected fun getApiInfo(
     project: Project,
     srcDirs: ConfigurableFileCollection,
