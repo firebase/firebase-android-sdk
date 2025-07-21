@@ -15,6 +15,9 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.collect.ImmutableMap
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.ListenSource
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.model.Values
 import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
@@ -120,21 +123,21 @@ internal constructor(internal val options: InternalOptions) {
   fun with(key: String, value: Field): T = with(key, value.toProto())
 
   /**
-   * Specify [GenericOptions] object
+   * Specify [RawOptions] object
    *
    * @param key The option key
-   * @param value The [GenericOptions] object
+   * @param value The [RawOptions] object
    * @return A new options object.
    */
-  fun with(key: String, value: GenericOptions): T = with(key, value.options)
+  fun with(key: String, value: RawOptions): T = with(key, value.options)
 }
 
-class GenericOptions private constructor(options: InternalOptions) :
-  AbstractOptions<GenericOptions>(options) {
-  override fun self(options: InternalOptions) = GenericOptions(options)
+class RawOptions private constructor(options: InternalOptions) :
+  AbstractOptions<RawOptions>(options) {
+  override fun self(options: InternalOptions) = RawOptions(options)
 
   companion object {
-    @JvmField val DEFAULT: GenericOptions = GenericOptions(InternalOptions.EMPTY)
+    @JvmField val DEFAULT: RawOptions = RawOptions(InternalOptions.EMPTY)
   }
 }
 
@@ -154,66 +157,39 @@ class PipelineOptions private constructor(options: InternalOptions) :
   }
 
   fun withIndexMode(indexMode: IndexMode): PipelineOptions = with("index_mode", indexMode.value)
-
-  fun withExplainOptions(options: ExplainOptions): PipelineOptions =
-    with("explain_options", options.options)
 }
 
-class ExplainOptions private constructor(options: InternalOptions) :
-  AbstractOptions<ExplainOptions>(options) {
-  override fun self(options: InternalOptions) = ExplainOptions(options)
+class RealtimePipelineOptions
+private constructor(
+  internal val source: ListenSource,
+  internal val serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
+  internal val metadataChanges: MetadataChanges,
+  options: InternalOptions
+) : AbstractOptions<RealtimePipelineOptions>(options) {
+
+  override fun self(options: InternalOptions) =
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 
   companion object {
-    @JvmField val DEFAULT = ExplainOptions(InternalOptions.EMPTY)
+    @JvmField
+    val DEFAULT: RealtimePipelineOptions =
+      RealtimePipelineOptions(
+        ListenSource.DEFAULT,
+        DocumentSnapshot.ServerTimestampBehavior.NONE,
+        MetadataChanges.EXCLUDE,
+        InternalOptions.EMPTY
+      )
   }
 
-  fun withMode(value: ExplainMode) = with("mode", value.value)
+  fun withSource(source: ListenSource): RealtimePipelineOptions =
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 
-  fun withOutputFormat(value: OutputFormat) = with("output_format", value.value)
 
-  fun withVerbosity(value: Verbosity) = with("verbosity", value.value)
+  fun withServerTimestampBehavior(
+    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
+  ): RealtimePipelineOptions =
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 
-  fun withIndexRecommendation(value: Boolean) = with("index_recommendation", value)
-
-  fun withProfiles(value: Profiles) = with("profiles", value.value)
-
-  fun withRedact(value: Boolean) = with("redact", value)
-
-  class ExplainMode private constructor(internal val value: String) {
-    companion object {
-      @JvmField val EXECUTE = ExplainMode("execute")
-
-      @JvmField val EXPLAIN = ExplainMode("explain")
-
-      @JvmField val ANALYZE = ExplainMode("analyze")
-    }
-  }
-
-  class OutputFormat private constructor(internal val value: String) {
-    companion object {
-      @JvmField val TEXT = OutputFormat("text")
-
-      @JvmField val JSON = OutputFormat("json")
-
-      @JvmField val STRUCT = OutputFormat("struct")
-    }
-  }
-
-  class Verbosity private constructor(internal val value: String) {
-    companion object {
-      @JvmField val SUMMARY_ONLY = Verbosity("summary_only")
-
-      @JvmField val EXECUTION_TREE = Verbosity("execution_tree")
-    }
-  }
-
-  class Profiles private constructor(internal val value: String) {
-    companion object {
-      @JvmField val LATENCY = Profiles("latency")
-
-      @JvmField val RECORDS_COUNT = Profiles("records_count")
-
-      @JvmField val BYTES_THROUGHPUT = Profiles("bytes_throughput")
-    }
-  }
+  fun withMetadataChanges(metadataChanges: MetadataChanges): RealtimePipelineOptions =
+    RealtimePipelineOptions(source, serverTimestampBehavior, metadataChanges, options)
 }

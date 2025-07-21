@@ -42,8 +42,7 @@ public final class ObjectValue implements Cloneable {
   private final Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
-    return new ObjectValue(
-        Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(value)).build());
+    return new ObjectValue(Values.encodeValue(value));
   }
 
   public ObjectValue(Value value) {
@@ -122,11 +121,13 @@ public final class ObjectValue implements Cloneable {
    * invocations are based on this memoized result.
    */
   private Value buildProto() {
-    synchronized (overlayMap) {
-      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult != null) {
-        partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-        overlayMap.clear();
+    if (!overlayMap.isEmpty()) {
+      synchronized (overlayMap) {
+        MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+        if (mergedResult != null) {
+          partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+          overlayMap.clear();
+        }
       }
     }
     return partialValue;
@@ -247,7 +248,7 @@ public final class ObjectValue implements Cloneable {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return Values.equals(buildProto(), ((ObjectValue) o).buildProto());
+      return buildProto().equals(((ObjectValue) o).buildProto());
     }
     return false;
   }

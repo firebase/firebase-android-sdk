@@ -18,6 +18,8 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -26,9 +28,18 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 
-abstract class Stage<T : Stage<T>>
-internal constructor(protected val name: String, internal val options: InternalOptions) {
+sealed class Stage<T : Stage<T>>(
+  protected val name: String,
+  internal val options: InternalOptions
+) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
@@ -40,7 +51,7 @@ internal constructor(protected val name: String, internal val options: InternalO
 
   internal abstract fun self(options: InternalOptions): T
 
-  protected fun with(key: String, value: Value): T = self(options.with(key, value))
+  protected fun withOption(key: String, value: Value): T = self(options.with(key, value))
 
   /**
    * Specify named [String] parameter
@@ -49,7 +60,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [String] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: String): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: String): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Boolean] parameter
@@ -58,7 +69,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Boolean] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Boolean): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Boolean): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Long] parameter
@@ -67,7 +78,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Long] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Long): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Long): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Double] parameter
@@ -76,7 +87,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Double] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Double): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Double): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Field] parameter
@@ -85,7 +96,14 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Field] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Field): T = with(key, value.toProto())
+  fun withOption(key: String, value: Field): T = withOption(key, value.toProto())
+
+  internal open fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    throw NotImplementedError("Stage does not support offline evaluation")
+  }
 }
 
 /**
@@ -211,7 +229,16 @@ internal constructor(
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionPath.canonicalString() == path
+    }
+  }
 }
 
 class CollectionGroupSource
@@ -220,6 +247,14 @@ private constructor(private val collectionId: String, options: InternalOptions) 
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && input.key.collectionGroup == collectionId
+    }
+  }
 
   companion object {
 
@@ -238,7 +273,7 @@ private constructor(private val collectionId: String, options: InternalOptions) 
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
 }
 
 internal class DocumentsSource
@@ -258,9 +293,17 @@ internal constructor(
   private val fields: Array<out Selectable>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AddFieldsStage>("add_fields", options) {
+  init {
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is reserved" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is reserved" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is reserved" })
+    }
+  }
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 /**
@@ -334,8 +377,8 @@ internal constructor(
   fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
       accumulators,
-      mapOf(group.getAlias() to group.getExpr())
-        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
+      mapOf(group.alias to group.expr)
+        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias))
     )
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -353,6 +396,14 @@ internal constructor(
   override fun self(options: InternalOptions) = WhereStage(condition, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(condition.toProto(userDataReader))
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val conditionFunction = condition.evaluateContext(context)
+    return inputs.filter { input -> conditionFunction(input).value?.booleanValue ?: false }
+  }
 }
 
 /**
@@ -454,7 +505,7 @@ internal constructor(
    * @param limit must be a positive integer.
    * @return [FindNearestStage] with specified [limit].
    */
-  fun withLimit(limit: Long): FindNearestStage = with("limit", limit)
+  fun withLimit(limit: Long): FindNearestStage = withOption("limit", limit)
 
   /**
    * Add a field containing the distance to the result.
@@ -463,7 +514,7 @@ internal constructor(
    * @return [FindNearestStage] with specified [distanceField].
    */
   fun withDistanceField(distanceField: Field): FindNearestStage =
-    with("distance_field", distanceField)
+    withOption("distance_field", distanceField)
 
   /**
    * Add a field containing the distance to the result.
@@ -479,6 +530,24 @@ internal class LimitStage
 internal constructor(private val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<LimitStage>("limit", options) {
   override fun self(options: InternalOptions) = LimitStage(limit, options)
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> =
+    when {
+      limit > 0 -> inputs.take(limit)
+      limit < 0 ->
+        flow {
+          val limitLast = -limit
+          val buffer = ArrayDeque<MutableDocument>(limitLast)
+          inputs.collect { doc ->
+            if (buffer.size == limitLast) buffer.removeFirst()
+            buffer.add(doc)
+          }
+          buffer.forEach { emit(it) }
+        }
+      else -> emptyFlow()
+    }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
 }
@@ -492,13 +561,23 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
 }
 
 internal class SelectStage
-internal constructor(
-  private val fields: Array<out Selectable>,
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SelectStage>("select", options) {
+private constructor(internal val fields: Array<out Selectable>, options: InternalOptions) :
+  Stage<SelectStage>("select", options) {
+  companion object {
+    @JvmStatic
+    fun of(selection: Selectable, vararg additionalSelections: Any): SelectStage =
+      SelectStage(
+        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray()),
+        InternalOptions.EMPTY
+      )
+
+    @JvmStatic
+    fun of(fieldName: String, vararg additionalSelections: Any): SelectStage =
+      of(field(fieldName), *additionalSelections)
+  }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class SortStage
@@ -506,9 +585,60 @@ internal constructor(
   private val orders: Array<out Ordering>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SortStage>("sort", options) {
+  companion object {
+    internal val BY_DOCUMENT_ID = SortStage(arrayOf(Field.DOCUMENT_ID.ascending()))
+  }
+
   override fun self(options: InternalOptions) = SortStage(orders, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: Flow<MutableDocument>
+  ): Flow<MutableDocument> {
+    val evaluates: Array<EvaluateDocument> =
+      orders.map { it.expr.evaluateContext(context) }.toTypedArray()
+    val directions: Array<Ordering.Direction> = orders.map { it.dir }.toTypedArray()
+    return flow {
+      inputs
+        // For each document, lazily evaluate order expression values.
+        .map { doc ->
+          val orderValues =
+            evaluates
+              .map { lazy(LazyThreadSafetyMode.PUBLICATION) { it(doc).value ?: Values.MIN_VALUE } }
+              .toTypedArray<Lazy<Value>>()
+          Pair(doc, orderValues)
+        }
+        .toList()
+        .sortedWith(
+          Comparator { px, py ->
+            val x = px.second
+            val y = py.second
+            directions.forEachIndexed<Ordering.Direction> { i, dir ->
+              val r =
+                when (dir) {
+                  Ordering.Direction.ASCENDING -> Values.compare(x[i].value, y[i].value)
+                  Ordering.Direction.DESCENDING -> Values.compare(y[i].value, x[i].value)
+                }
+              if (r != 0) return@Comparator r
+            }
+            0
+          }
+        )
+        .forEach { p -> emit(p.first) }
+    }
+  }
+
+  internal fun withStableOrdering(): SortStage {
+    val position = orders.indexOfFirst { (it.expr as? Field)?.alias == KEY_FIELD_NAME }
+    return if (position < 0) {
+      // Append the DocumentId to orders to make ordering stable.
+      SortStage(orders.asList().plus(Field.DOCUMENT_ID.ascending()).toTypedArray(), options)
+    } else {
+      this
+    }
+  }
 }
 
 internal class DistinctStage
@@ -518,7 +648,7 @@ internal constructor(
 ) : Stage<DistinctStage>("distinct", options) {
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(groups.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(groups.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class RemoveFieldsStage
@@ -526,6 +656,14 @@ internal constructor(
   private val fields: Array<out Field>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<RemoveFieldsStage>("remove_fields", options) {
+  init {
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is required" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is required" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is required" })
+    }
+  }
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     fields.asSequence().map(Field::toProto)
@@ -588,15 +726,15 @@ private constructor(
     /**
      * Creates [SampleStage] with size limited to number of documents.
      *
-     * The [documents] parameter represents the target number of documents to produce and must be a
+     * The [count] parameter represents the target number of documents to produce and must be a
      * non-negative integer value. If the previous stage produces less than size documents, the
      * entire previous results are returned. If the previous stage produces more than size, this
      * outputs a sample of exactly size entries where any sample is equally likely.
      *
-     * @param documents The number of documents to emit.
-     * @return [SampleStage] with specified [documents].
+     * @param count The number of documents to emit.
+     * @return [SampleStage] with specified [count].
      */
-    @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
+    @JvmStatic fun withCount(count: Int) = SampleStage(count, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)
@@ -652,11 +790,11 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Expr.field(arrayField).alias(alias))
+      UnnestStage(Expr.Companion.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto(userDataReader))
+    sequenceOf(encodeValue(selectable.alias), selectable.toProto(userDataReader))
 
   /**
    * Adds index field to emitted documents
@@ -667,5 +805,5 @@ internal constructor(
    * @param indexField The field name of index field.
    * @return [SampleStage] that includes specified index field.
    */
-  fun withIndexField(indexField: String): UnnestStage = with("index_field", indexField)
+  fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }

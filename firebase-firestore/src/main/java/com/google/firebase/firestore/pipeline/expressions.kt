@@ -24,6 +24,10 @@ import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
+import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
+import com.google.firebase.firestore.model.FieldPath.KEY_PATH
+import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
@@ -49,6 +53,9 @@ abstract class Expr internal constructor() {
 
   private class Constant(val value: Value) : Expr() {
     override fun toProto(userDataReader: UserDataReader): Value = value
+    override fun evaluateContext(context: EvaluationContext) = { _: MutableDocument ->
+      EvaluateResultValue(value)
+    }
     override fun toString(): String {
       return "Constant(value=$value)"
     }
@@ -154,7 +161,8 @@ abstract class Expr internal constructor() {
     @JvmStatic
     fun constant(value: Boolean): BooleanExpr {
       val encodedValue = encodeValue(value)
-      return object : BooleanExpr("N/A", emptyArray()) {
+      val evaluateResultValue = EvaluateResultValue(encodedValue)
+      return object : BooleanExpr("N/A", { _ -> { _ -> evaluateResultValue } }, emptyArray()) {
         override fun toProto(userDataReader: UserDataReader): Value {
           return encodedValue
         }
@@ -215,6 +223,13 @@ abstract class Expr internal constructor() {
           userDataReader.validateDocumentReference(ref, ::IllegalArgumentException)
           return encodeValue(ref)
         }
+
+        override fun evaluateContext(
+          context: EvaluationContext
+        ): (input: MutableDocument) -> EvaluateResult {
+          val result = EvaluateResultValue(toProto(context.pipeline.userDataReader))
+          return { _ -> result }
+        }
       }
     }
 
@@ -224,10 +239,7 @@ abstract class Expr internal constructor() {
      * @param value The [VectorValue] value.
      * @return A new [Expr] constant instance.
      */
-    @JvmStatic
-    fun constant(value: VectorValue): Expr {
-      return Constant(encodeValue(value))
-    }
+    @JvmStatic fun constant(value: VectorValue): Expr = Constant(encodeValue(value))
 
     /**
      * Create a [Blob] constant from a [ByteArray].
@@ -235,20 +247,14 @@ abstract class Expr internal constructor() {
      * @param bytes The [ByteArray] to convert to a Blob.
      * @return A new [Expr] constant instance representing the Blob.
      */
-    @JvmStatic
-    fun blob(bytes: ByteArray): Expr {
-      return constant(Blob.fromBytes(bytes))
-    }
+    @JvmStatic fun blob(bytes: ByteArray): Expr = constant(Blob.fromBytes(bytes))
 
     /**
      * Constant for a null value.
      *
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun nullValue(): Expr {
-      return NULL
-    }
+    @JvmStatic fun nullValue(): Expr = NULL
 
     /**
      * Create a vector constant for a [DoubleArray] value.
@@ -256,10 +262,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: DoubleArray): Expr {
-      return Constant(Values.encodeVectorValue(vector))
-    }
+    @JvmStatic fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
 
     /**
      * Create a vector constant for a [VectorValue] value.
@@ -267,10 +270,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: VectorValue): Expr {
-      return Constant(encodeValue(vector))
-    }
+    @JvmStatic fun vector(vector: VectorValue): Expr = Constant(encodeValue(vector))
 
     /**
      * Creates a [Field] instance representing the field at the given path.
@@ -283,10 +283,12 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun field(name: String): Field {
-      if (name == DocumentKey.KEY_FIELD_NAME) {
-        return Field(ModelFieldPath.KEY_PATH)
+      return when (name) {
+        DocumentKey.KEY_FIELD_NAME -> Field(KEY_PATH)
+        ModelFieldPath.CREATE_TIME_NAME -> Field(CREATE_TIME_PATH)
+        ModelFieldPath.UPDATE_TIME_NAME -> Field(UPDATE_TIME_PATH)
+        else -> Field(FieldPath.fromDotSeparatedPath(name).internalPath)
       }
-      return Field(FieldPath.fromDotSeparatedPath(name).internalPath)
     }
 
     /**
@@ -298,12 +300,10 @@ abstract class Expr internal constructor() {
      * @param fieldPath The [FieldPath] to the field.
      * @return A new [Field] instance representing the specified path.
      */
-    @JvmStatic
-    fun field(fieldPath: FieldPath): Field {
-      return Field(fieldPath.internalPath)
-    }
+    @JvmStatic fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
 
-    @JvmStatic fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, expr)
+    @JvmStatic
+    fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, notImplemented, expr)
 
     /**
      * Creates an expression that performs a logical 'AND' operation.
@@ -314,7 +314,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun and(condition: BooleanExpr, vararg conditions: BooleanExpr) =
-      BooleanExpr("and", condition, *conditions)
+      BooleanExpr("and", evaluateAnd, condition, *conditions)
 
     /**
      * Creates an expression that performs a logical 'OR' operation.
@@ -325,7 +325,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun or(condition: BooleanExpr, vararg conditions: BooleanExpr) =
-      BooleanExpr("or", condition, *conditions)
+      BooleanExpr("or", evaluateOr, condition, *conditions)
 
     /**
      * Creates an expression that performs a logical 'XOR' operation.
@@ -336,7 +336,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun xor(condition: BooleanExpr, vararg conditions: BooleanExpr) =
-      BooleanExpr("xor", condition, *conditions)
+      BooleanExpr("xor", evaluateXor, condition, *conditions)
 
     /**
      * Creates an expression that negates a boolean expression.
@@ -344,7 +344,8 @@ abstract class Expr internal constructor() {
      * @param condition The boolean expression to negate.
      * @return A new [BooleanExpr] representing the not operation.
      */
-    @JvmStatic fun not(condition: BooleanExpr): BooleanExpr = BooleanExpr("not", condition)
+    @JvmStatic
+    fun not(condition: BooleanExpr): BooleanExpr = BooleanExpr("not", evaluateNot, condition)
 
     /**
      * Creates an expression that applies a bitwise AND operation between two expressions.
@@ -354,7 +355,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise AND operation.
      */
     @JvmStatic
-    fun bitAnd(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_and", bits, bitsOther)
+    fun bitAnd(bits: Expr, bitsOther: Expr): Expr =
+      FunctionExpr("bit_and", notImplemented, bits, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise AND operation between an expression and a
@@ -366,7 +368,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitAnd(bits: Expr, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_and", bits, constant(bitsOther))
+      FunctionExpr("bit_and", notImplemented, bits, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise AND operation between an field and an
@@ -378,7 +380,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitAnd(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_and", bitsFieldName, bitsOther)
+      FunctionExpr("bit_and", notImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise AND operation between an field and constant.
@@ -389,7 +391,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitAnd(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_and", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_and", notImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise OR operation between two expressions.
@@ -399,7 +401,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise OR operation.
      */
     @JvmStatic
-    fun bitOr(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_or", bits, bitsOther)
+    fun bitOr(bits: Expr, bitsOther: Expr): Expr =
+      FunctionExpr("bit_or", notImplemented, bits, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise OR operation between an expression and a
@@ -411,7 +414,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitOr(bits: Expr, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_or", bits, constant(bitsOther))
+      FunctionExpr("bit_or", notImplemented, bits, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise OR operation between an field and an expression.
@@ -422,7 +425,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitOr(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_or", bitsFieldName, bitsOther)
+      FunctionExpr("bit_or", notImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise OR operation between an field and constant.
@@ -433,7 +436,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitOr(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_or", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_or", notImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise XOR operation between two expressions.
@@ -443,7 +446,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise XOR operation.
      */
     @JvmStatic
-    fun bitXor(bits: Expr, bitsOther: Expr): Expr = FunctionExpr("bit_xor", bits, bitsOther)
+    fun bitXor(bits: Expr, bitsOther: Expr): Expr =
+      FunctionExpr("bit_xor", notImplemented, bits, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise XOR operation between an expression and a
@@ -455,7 +459,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitXor(bits: Expr, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_xor", bits, constant(bitsOther))
+      FunctionExpr("bit_xor", notImplemented, bits, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise XOR operation between an field and an
@@ -467,7 +471,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitXor(bitsFieldName: String, bitsOther: Expr): Expr =
-      FunctionExpr("bit_xor", bitsFieldName, bitsOther)
+      FunctionExpr("bit_xor", notImplemented, bitsFieldName, bitsOther)
 
     /**
      * Creates an expression that applies a bitwise XOR operation between an field and constant.
@@ -478,7 +482,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitXor(bitsFieldName: String, bitsOther: ByteArray): Expr =
-      FunctionExpr("bit_xor", bitsFieldName, constant(bitsOther))
+      FunctionExpr("bit_xor", notImplemented, bitsFieldName, constant(bitsOther))
 
     /**
      * Creates an expression that applies a bitwise NOT operation to an expression.
@@ -486,7 +490,7 @@ abstract class Expr internal constructor() {
      * @param bits An expression that returns bits when evaluated.
      * @return A new [Expr] representing the bitwise NOT operation.
      */
-    @JvmStatic fun bitNot(bits: Expr): Expr = FunctionExpr("bit_not", bits)
+    @JvmStatic fun bitNot(bits: Expr): Expr = FunctionExpr("bit_not", notImplemented, bits)
 
     /**
      * Creates an expression that applies a bitwise NOT operation to a field.
@@ -494,7 +498,8 @@ abstract class Expr internal constructor() {
      * @param bitsFieldName Name of field that contains bits data.
      * @return A new [Expr] representing the bitwise NOT operation.
      */
-    @JvmStatic fun bitNot(bitsFieldName: String): Expr = FunctionExpr("bit_not", bitsFieldName)
+    @JvmStatic
+    fun bitNot(bitsFieldName: String): Expr = FunctionExpr("bit_not", notImplemented, bitsFieldName)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between two expressions.
@@ -505,7 +510,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitLeftShift(bits: Expr, numberExpr: Expr): Expr =
-      FunctionExpr("bit_left_shift", bits, numberExpr)
+      FunctionExpr("bit_left_shift", notImplemented, bits, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between an expression and a
@@ -516,7 +521,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise left shift operation.
      */
     @JvmStatic
-    fun bitLeftShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_left_shift", bits, number)
+    fun bitLeftShift(bits: Expr, number: Int): Expr =
+      FunctionExpr("bit_left_shift", notImplemented, bits, number)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between a field and an
@@ -528,7 +534,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitLeftShift(bitsFieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_left_shift", bitsFieldName, numberExpr)
+      FunctionExpr("bit_left_shift", notImplemented, bitsFieldName, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise left shift operation between a field and a
@@ -540,7 +546,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitLeftShift(bitsFieldName: String, number: Int): Expr =
-      FunctionExpr("bit_left_shift", bitsFieldName, number)
+      FunctionExpr("bit_left_shift", notImplemented, bitsFieldName, number)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between two expressions.
@@ -551,7 +557,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitRightShift(bits: Expr, numberExpr: Expr): Expr =
-      FunctionExpr("bit_right_shift", bits, numberExpr)
+      FunctionExpr("bit_right_shift", notImplemented, bits, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between an expression and
@@ -562,7 +568,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the bitwise right shift operation.
      */
     @JvmStatic
-    fun bitRightShift(bits: Expr, number: Int): Expr = FunctionExpr("bit_right_shift", bits, number)
+    fun bitRightShift(bits: Expr, number: Int): Expr =
+      FunctionExpr("bit_right_shift", notImplemented, bits, number)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between a field and an
@@ -574,7 +581,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitRightShift(bitsFieldName: String, numberExpr: Expr): Expr =
-      FunctionExpr("bit_right_shift", bitsFieldName, numberExpr)
+      FunctionExpr("bit_right_shift", notImplemented, bitsFieldName, numberExpr)
 
     /**
      * Creates an expression that applies a bitwise right shift operation between a field and a
@@ -586,7 +593,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun bitRightShift(bitsFieldName: String, number: Int): Expr =
-      FunctionExpr("bit_right_shift", bitsFieldName, number)
+      FunctionExpr("bit_right_shift", notImplemented, bitsFieldName, number)
 
     /**
      * Creates an expression that rounds [numericExpr] to nearest integer.
@@ -596,7 +603,8 @@ abstract class Expr internal constructor() {
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the round operation.
      */
-    @JvmStatic fun round(numericExpr: Expr): Expr = FunctionExpr("round", numericExpr)
+    @JvmStatic
+    fun round(numericExpr: Expr): Expr = FunctionExpr("round", evaluateRound, numericExpr)
 
     /**
      * Creates an expression that rounds [numericField] to nearest integer.
@@ -606,7 +614,8 @@ abstract class Expr internal constructor() {
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the round operation.
      */
-    @JvmStatic fun round(numericField: String): Expr = FunctionExpr("round", numericField)
+    @JvmStatic
+    fun round(numericField: String): Expr = FunctionExpr("round", evaluateRound, numericField)
 
     /**
      * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
@@ -619,7 +628,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericExpr: Expr, decimalPlace: Int): Expr =
-      FunctionExpr("round", numericExpr, constant(decimalPlace))
+      FunctionExpr("round", evaluateRoundToPrecision, numericExpr, constant(decimalPlace))
 
     /**
      * Creates an expression that rounds off [numericField] to [decimalPlace] decimal places if
@@ -632,7 +641,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Int): Expr =
-      FunctionExpr("round", numericField, constant(decimalPlace))
+      FunctionExpr("round", evaluateRoundToPrecision, numericField, constant(decimalPlace))
 
     /**
      * Creates an expression that rounds off [numericExpr] to [decimalPlace] decimal places if
@@ -645,7 +654,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericExpr: Expr, decimalPlace: Expr): Expr =
-      FunctionExpr("round", numericExpr, decimalPlace)
+      FunctionExpr("round", evaluateRoundToPrecision, numericExpr, decimalPlace)
 
     /**
      * Creates an expression that rounds off [numericField] to [decimalPlace] decimal places if
@@ -658,7 +667,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Expr): Expr =
-      FunctionExpr("round", numericField, decimalPlace)
+      FunctionExpr("round", evaluateRoundToPrecision, numericField, decimalPlace)
 
     /**
      * Creates an expression that returns the smalled integer that isn't less than [numericExpr].
@@ -666,7 +675,7 @@ abstract class Expr internal constructor() {
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
      */
-    @JvmStatic fun ceil(numericExpr: Expr): Expr = FunctionExpr("ceil", numericExpr)
+    @JvmStatic fun ceil(numericExpr: Expr): Expr = FunctionExpr("ceil", evaluateCeil, numericExpr)
 
     /**
      * Creates an expression that returns the smalled integer that isn't less than [numericField].
@@ -674,7 +683,8 @@ abstract class Expr internal constructor() {
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
      */
-    @JvmStatic fun ceil(numericField: String): Expr = FunctionExpr("ceil", numericField)
+    @JvmStatic
+    fun ceil(numericField: String): Expr = FunctionExpr("ceil", evaluateCeil, numericField)
 
     /**
      * Creates an expression that returns the largest integer that isn't less than [numericExpr].
@@ -682,7 +692,8 @@ abstract class Expr internal constructor() {
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
      */
-    @JvmStatic fun floor(numericExpr: Expr): Expr = FunctionExpr("floor", numericExpr)
+    @JvmStatic
+    fun floor(numericExpr: Expr): Expr = FunctionExpr("floor", evaluateFloor, numericExpr)
 
     /**
      * Creates an expression that returns the largest integer that isn't less than [numericField].
@@ -690,7 +701,8 @@ abstract class Expr internal constructor() {
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
      */
-    @JvmStatic fun floor(numericField: String): Expr = FunctionExpr("floor", numericField)
+    @JvmStatic
+    fun floor(numericField: String): Expr = FunctionExpr("floor", evaluateFloor, numericField)
 
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
@@ -703,7 +715,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun pow(numericExpr: Expr, exponent: Number): Expr =
-      FunctionExpr("pow", numericExpr, constant(exponent))
+      FunctionExpr("pow", evaluatePow, numericExpr, constant(exponent))
 
     /**
      * Creates an expression that returns the [numericField] raised to the power of the [exponent].
@@ -716,7 +728,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun pow(numericField: String, exponent: Number): Expr =
-      FunctionExpr("pow", numericField, constant(exponent))
+      FunctionExpr("pow", evaluatePow, numericField, constant(exponent))
 
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
@@ -728,7 +740,8 @@ abstract class Expr internal constructor() {
      * [exponent].
      */
     @JvmStatic
-    fun pow(numericExpr: Expr, exponent: Expr): Expr = FunctionExpr("pow", numericExpr, exponent)
+    fun pow(numericExpr: Expr, exponent: Expr): Expr =
+      FunctionExpr("pow", evaluatePow, numericExpr, exponent)
 
     /**
      * Creates an expression that returns the [numericField] raised to the power of the [exponent].
@@ -741,7 +754,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun pow(numericField: String, exponent: Expr): Expr =
-      FunctionExpr("pow", numericField, exponent)
+      FunctionExpr("pow", evaluatePow, numericField, exponent)
 
     /**
      * Creates an expression that returns the square root of [numericExpr].
@@ -749,7 +762,7 @@ abstract class Expr internal constructor() {
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the square root operation.
      */
-    @JvmStatic fun sqrt(numericExpr: Expr): Expr = FunctionExpr("sqrt", numericExpr)
+    @JvmStatic fun sqrt(numericExpr: Expr): Expr = FunctionExpr("sqrt", evaluateSqrt, numericExpr)
 
     /**
      * Creates an expression that returns the square root of [numericField].
@@ -757,7 +770,8 @@ abstract class Expr internal constructor() {
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the square root operation.
      */
-    @JvmStatic fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", numericField)
+    @JvmStatic
+    fun sqrt(numericField: String): Expr = FunctionExpr("sqrt", evaluateSqrt, numericField)
 
     /**
      * Creates an expression that adds numeric expressions.
@@ -766,7 +780,8 @@ abstract class Expr internal constructor() {
      * @param second Numeric expression to add.
      * @return A new [Expr] representing the addition operation.
      */
-    @JvmStatic fun add(first: Expr, second: Expr): Expr = FunctionExpr("add", first, second)
+    @JvmStatic
+    fun add(first: Expr, second: Expr): Expr = FunctionExpr("add", evaluateAdd, first, second)
 
     /**
      * Creates an expression that adds numeric expressions with a constant.
@@ -775,7 +790,8 @@ abstract class Expr internal constructor() {
      * @param second Constant to add.
      * @return A new [Expr] representing the addition operation.
      */
-    @JvmStatic fun add(first: Expr, second: Number): Expr = FunctionExpr("add", first, second)
+    @JvmStatic
+    fun add(first: Expr, second: Number): Expr = FunctionExpr("add", evaluateAdd, first, second)
 
     /**
      * Creates an expression that adds a numeric field with a numeric expression.
@@ -786,7 +802,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(numericFieldName: String, second: Expr): Expr =
-      FunctionExpr("add", numericFieldName, second)
+      FunctionExpr("add", evaluateAdd, numericFieldName, second)
 
     /**
      * Creates an expression that adds a numeric field with constant.
@@ -797,7 +813,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun add(numericFieldName: String, second: Number): Expr =
-      FunctionExpr("add", numericFieldName, second)
+      FunctionExpr("add", evaluateAdd, numericFieldName, second)
 
     /**
      * Creates an expression that subtracts two expressions.
@@ -808,7 +824,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(minuend: Expr, subtrahend: Expr): Expr =
-      FunctionExpr("subtract", minuend, subtrahend)
+      FunctionExpr("subtract", evaluateSubtract, minuend, subtrahend)
 
     /**
      * Creates an expression that subtracts a constant value from a numeric expression.
@@ -819,7 +835,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(minuend: Expr, subtrahend: Number): Expr =
-      FunctionExpr("subtract", minuend, subtrahend)
+      FunctionExpr("subtract", evaluateSubtract, minuend, subtrahend)
 
     /**
      * Creates an expression that subtracts a numeric expressions from numeric field.
@@ -830,7 +846,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(numericFieldName: String, subtrahend: Expr): Expr =
-      FunctionExpr("subtract", numericFieldName, subtrahend)
+      FunctionExpr("subtract", evaluateSubtract, numericFieldName, subtrahend)
 
     /**
      * Creates an expression that subtracts a constant from numeric field.
@@ -841,7 +857,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun subtract(numericFieldName: String, subtrahend: Number): Expr =
-      FunctionExpr("subtract", numericFieldName, subtrahend)
+      FunctionExpr("subtract", evaluateSubtract, numericFieldName, subtrahend)
 
     /**
      * Creates an expression that multiplies numeric expressions.
@@ -851,7 +867,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Expr): Expr = FunctionExpr("multiply", first, second)
+    fun multiply(first: Expr, second: Expr): Expr =
+      FunctionExpr("multiply", evaluateMultiply, first, second)
 
     /**
      * Creates an expression that multiplies numeric expressions with a constant.
@@ -861,7 +878,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the multiplication operation.
      */
     @JvmStatic
-    fun multiply(first: Expr, second: Number): Expr = FunctionExpr("multiply", first, second)
+    fun multiply(first: Expr, second: Number): Expr =
+      FunctionExpr("multiply", evaluateMultiply, first, second)
 
     /**
      * Creates an expression that multiplies a numeric field with a numeric expression.
@@ -872,7 +890,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(numericFieldName: String, second: Expr): Expr =
-      FunctionExpr("multiply", numericFieldName, second)
+      FunctionExpr("multiply", evaluateMultiply, numericFieldName, second)
 
     /**
      * Creates an expression that multiplies a numeric field with a constant.
@@ -883,7 +901,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun multiply(numericFieldName: String, second: Number): Expr =
-      FunctionExpr("multiply", numericFieldName, second)
+      FunctionExpr("multiply", evaluateMultiply, numericFieldName, second)
 
     /**
      * Creates an expression that divides two numeric expressions.
@@ -893,7 +911,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the division operation.
      */
     @JvmStatic
-    fun divide(dividend: Expr, divisor: Expr): Expr = FunctionExpr("divide", dividend, divisor)
+    fun divide(dividend: Expr, divisor: Expr): Expr =
+      FunctionExpr("divide", evaluateDivide, dividend, divisor)
 
     /**
      * Creates an expression that divides a numeric expression by a constant.
@@ -903,7 +922,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the division operation.
      */
     @JvmStatic
-    fun divide(dividend: Expr, divisor: Number): Expr = FunctionExpr("divide", dividend, divisor)
+    fun divide(dividend: Expr, divisor: Number): Expr =
+      FunctionExpr("divide", evaluateDivide, dividend, divisor)
 
     /**
      * Creates an expression that divides numeric field by a numeric expression.
@@ -914,7 +934,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun divide(dividendFieldName: String, divisor: Expr): Expr =
-      FunctionExpr("divide", dividendFieldName, divisor)
+      FunctionExpr("divide", evaluateDivide, dividendFieldName, divisor)
 
     /**
      * Creates an expression that divides a numeric field by a constant.
@@ -925,7 +945,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun divide(dividendFieldName: String, divisor: Number): Expr =
-      FunctionExpr("divide", dividendFieldName, divisor)
+      FunctionExpr("divide", evaluateDivide, dividendFieldName, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing two numeric
@@ -935,7 +955,9 @@ abstract class Expr internal constructor() {
      * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the modulo operation.
      */
-    @JvmStatic fun mod(dividend: Expr, divisor: Expr): Expr = FunctionExpr("mod", dividend, divisor)
+    @JvmStatic
+    fun mod(dividend: Expr, divisor: Expr): Expr =
+      FunctionExpr("mod", evaluateMod, dividend, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric expression
@@ -946,7 +968,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the modulo operation.
      */
     @JvmStatic
-    fun mod(dividend: Expr, divisor: Number): Expr = FunctionExpr("mod", dividend, divisor)
+    fun mod(dividend: Expr, divisor: Number): Expr =
+      FunctionExpr("mod", evaluateMod, dividend, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
@@ -958,7 +981,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mod(dividendFieldName: String, divisor: Expr): Expr =
-      FunctionExpr("mod", dividendFieldName, divisor)
+      FunctionExpr("mod", evaluateMod, dividendFieldName, divisor)
 
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
@@ -970,7 +993,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mod(dividendFieldName: String, divisor: Number): Expr =
-      FunctionExpr("mod", dividendFieldName, divisor)
+      FunctionExpr("mod", evaluateMod, dividendFieldName, divisor)
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
@@ -994,7 +1017,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun eqAny(expression: Expr, arrayExpression: Expr): BooleanExpr =
-      BooleanExpr("eq_any", expression, arrayExpression)
+      BooleanExpr("eq_any", evaluateEqAny, expression, arrayExpression)
 
     /**
      * Creates an expression that checks if a field's value is equal to any of the provided [values]
@@ -1018,7 +1041,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun eqAny(fieldName: String, arrayExpression: Expr): BooleanExpr =
-      BooleanExpr("eq_any", fieldName, arrayExpression)
+      BooleanExpr("eq_any", evaluateEqAny, fieldName, arrayExpression)
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
@@ -1043,7 +1066,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(expression: Expr, arrayExpression: Expr): BooleanExpr =
-      BooleanExpr("not_eq_any", expression, arrayExpression)
+      BooleanExpr("not_eq_any", evaluateNotEqAny, expression, arrayExpression)
 
     /**
      * Creates an expression that checks if a field's value is not equal to all of the provided
@@ -1068,7 +1091,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun notEqAny(fieldName: String, arrayExpression: Expr): BooleanExpr =
-      BooleanExpr("not_eq_any", fieldName, arrayExpression)
+      BooleanExpr("not_eq_any", evaluateNotEqAny, fieldName, arrayExpression)
 
     /**
      * Creates an expression that returns true if a value is absent. Otherwise, returns false even
@@ -1077,7 +1100,8 @@ abstract class Expr internal constructor() {
      * @param value The expression to check.
      * @return A new [BooleanExpr] representing the isAbsent operation.
      */
-    @JvmStatic fun isAbsent(value: Expr): BooleanExpr = BooleanExpr("is_absent", value)
+    @JvmStatic
+    fun isAbsent(value: Expr): BooleanExpr = BooleanExpr("is_absent", notImplemented, value)
 
     /**
      * Creates an expression that returns true if a field is absent. Otherwise, returns false even
@@ -1086,7 +1110,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isAbsent operation.
      */
-    @JvmStatic fun isAbsent(fieldName: String): BooleanExpr = BooleanExpr("is_absent", fieldName)
+    @JvmStatic
+    fun isAbsent(fieldName: String): BooleanExpr =
+      BooleanExpr("is_absent", notImplemented, fieldName)
 
     /**
      * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
@@ -1094,7 +1120,7 @@ abstract class Expr internal constructor() {
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNan operation.
      */
-    @JvmStatic fun isNan(expr: Expr): BooleanExpr = BooleanExpr("is_nan", expr)
+    @JvmStatic fun isNan(expr: Expr): BooleanExpr = BooleanExpr("is_nan", evaluateIsNaN, expr)
 
     /**
      * Creates an expression that checks if [expr] evaluates to 'NaN' (Not a Number).
@@ -1102,7 +1128,8 @@ abstract class Expr internal constructor() {
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNan operation.
      */
-    @JvmStatic fun isNan(fieldName: String): BooleanExpr = BooleanExpr("is_nan", fieldName)
+    @JvmStatic
+    fun isNan(fieldName: String): BooleanExpr = BooleanExpr("is_nan", evaluateIsNaN, fieldName)
 
     /**
      * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
@@ -1110,7 +1137,8 @@ abstract class Expr internal constructor() {
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
      */
-    @JvmStatic fun isNotNan(expr: Expr): BooleanExpr = BooleanExpr("is_not_nan", expr)
+    @JvmStatic
+    fun isNotNan(expr: Expr): BooleanExpr = BooleanExpr("is_not_nan", evaluateIsNotNaN, expr)
 
     /**
      * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
@@ -1119,7 +1147,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
      */
-    @JvmStatic fun isNotNan(fieldName: String): BooleanExpr = BooleanExpr("is_not_nan", fieldName)
+    @JvmStatic
+    fun isNotNan(fieldName: String): BooleanExpr =
+      BooleanExpr("is_not_nan", evaluateIsNotNaN, fieldName)
 
     /**
      * Creates an expression that checks if tbe result of [expr] is null.
@@ -1127,7 +1157,7 @@ abstract class Expr internal constructor() {
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNull operation.
      */
-    @JvmStatic fun isNull(expr: Expr): BooleanExpr = BooleanExpr("is_null", expr)
+    @JvmStatic fun isNull(expr: Expr): BooleanExpr = BooleanExpr("is_null", evaluateIsNull, expr)
 
     /**
      * Creates an expression that checks if tbe value of a field is null.
@@ -1135,7 +1165,8 @@ abstract class Expr internal constructor() {
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNull operation.
      */
-    @JvmStatic fun isNull(fieldName: String): BooleanExpr = BooleanExpr("is_null", fieldName)
+    @JvmStatic
+    fun isNull(fieldName: String): BooleanExpr = BooleanExpr("is_null", evaluateIsNull, fieldName)
 
     /**
      * Creates an expression that checks if tbe result of [expr] is not null.
@@ -1143,7 +1174,8 @@ abstract class Expr internal constructor() {
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
      */
-    @JvmStatic fun isNotNull(expr: Expr): BooleanExpr = BooleanExpr("is_not_null", expr)
+    @JvmStatic
+    fun isNotNull(expr: Expr): BooleanExpr = BooleanExpr("is_not_null", evaluateIsNotNull, expr)
 
     /**
      * Creates an expression that checks if tbe value of a field is not null.
@@ -1151,7 +1183,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
      */
-    @JvmStatic fun isNotNull(fieldName: String): BooleanExpr = BooleanExpr("is_not_null", fieldName)
+    @JvmStatic
+    fun isNotNull(fieldName: String): BooleanExpr =
+      BooleanExpr("is_not_null", evaluateIsNotNull, fieldName)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the
@@ -1165,7 +1199,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the
@@ -1178,7 +1212,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", stringExpression, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1193,7 +1227,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_first", fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
@@ -1206,7 +1240,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceFirst(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_first", fieldName, find, replace)
+      FunctionExpr("replace_first", evaluateReplaceFirst, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1219,7 +1253,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the
@@ -1232,7 +1266,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(stringExpression: Expr, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", stringExpression, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, stringExpression, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1247,7 +1281,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: Expr, replace: Expr): Expr =
-      FunctionExpr("replace_all", fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, fieldName, find, replace)
 
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
@@ -1260,7 +1294,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun replaceAll(fieldName: String, find: String, replace: String): Expr =
-      FunctionExpr("replace_all", fieldName, find, replace)
+      FunctionExpr("replace_all", evaluateReplaceAll, fieldName, find, replace)
 
     /**
      * Creates an expression that calculates the character length of a string expression in UTF8.
@@ -1268,7 +1302,8 @@ abstract class Expr internal constructor() {
      * @param expr The expression representing the string.
      * @return A new [Expr] representing the charLength operation.
      */
-    @JvmStatic fun charLength(expr: Expr): Expr = FunctionExpr("char_length", expr)
+    @JvmStatic
+    fun charLength(expr: Expr): Expr = FunctionExpr("char_length", evaluateCharLength, expr)
 
     /**
      * Creates an expression that calculates the character length of a string field in UTF8.
@@ -1276,7 +1311,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the string.
      * @return A new [Expr] representing the charLength operation.
      */
-    @JvmStatic fun charLength(fieldName: String): Expr = FunctionExpr("char_length", fieldName)
+    @JvmStatic
+    fun charLength(fieldName: String): Expr =
+      FunctionExpr("char_length", evaluateCharLength, fieldName)
 
     /**
      * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the
@@ -1285,7 +1322,8 @@ abstract class Expr internal constructor() {
      * @param value The expression representing the string.
      * @return A new [Expr] representing the length of the string in bytes.
      */
-    @JvmStatic fun byteLength(value: Expr): Expr = FunctionExpr("byte_length", value)
+    @JvmStatic
+    fun byteLength(value: Expr): Expr = FunctionExpr("byte_length", evaluateByteLength, value)
 
     /**
      * Creates an expression that calculates the length of a string represented by a field in UTF-8
@@ -1294,7 +1332,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the string.
      * @return A new [Expr] representing the length of the string in bytes.
      */
-    @JvmStatic fun byteLength(fieldName: String): Expr = FunctionExpr("byte_length", fieldName)
+    @JvmStatic
+    fun byteLength(fieldName: String): Expr =
+      FunctionExpr("byte_length", evaluateByteLength, fieldName)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
@@ -1305,7 +1345,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("like", stringExpression, pattern)
+      BooleanExpr("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
@@ -1316,7 +1356,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("like", stringExpression, pattern)
+      BooleanExpr("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -1328,7 +1368,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: Expr): BooleanExpr =
-      BooleanExpr("like", fieldName, pattern)
+      BooleanExpr("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -1340,7 +1380,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: String): BooleanExpr =
-      BooleanExpr("like", fieldName, pattern)
+      BooleanExpr("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that return a pseudo-random number of type double in the range of [0,
@@ -1348,7 +1388,7 @@ abstract class Expr internal constructor() {
      *
      * @return A new [Expr] representing the random number operation.
      */
-    @JvmStatic fun rand(): Expr = FunctionExpr("rand")
+    @JvmStatic fun rand(): Expr = FunctionExpr("rand", notImplemented)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -1360,7 +1400,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_contains", stringExpression, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -1372,7 +1412,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_contains", stringExpression, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -1384,7 +1424,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: Expr) =
-      BooleanExpr("regex_contains", fieldName, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -1396,7 +1436,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: String) =
-      BooleanExpr("regex_contains", fieldName, pattern)
+      BooleanExpr("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1407,7 +1447,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expr, pattern: Expr): BooleanExpr =
-      BooleanExpr("regex_match", stringExpression, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1418,7 +1458,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expr, pattern: String): BooleanExpr =
-      BooleanExpr("regex_match", stringExpression, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1429,7 +1469,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: Expr) =
-      BooleanExpr("regex_match", fieldName, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -1440,7 +1480,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: String) =
-      BooleanExpr("regex_match", fieldName, pattern)
+      BooleanExpr("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1452,7 +1492,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_max", expr, *others)
+      FunctionExpr("logical_max", evaluateLogicalMaximum, expr, *others)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1464,7 +1504,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMaximum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_max", fieldName, *others)
+      FunctionExpr("logical_max", evaluateLogicalMaximum, fieldName, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1476,7 +1516,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_min", expr, *others)
+      FunctionExpr("logical_min", evaluateLogicalMinimum, expr, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1488,7 +1528,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_min", fieldName, *others)
+      FunctionExpr("logical_min", evaluateLogicalMinimum, fieldName, *others)
 
     /**
      * Creates an expression that reverses a string.
@@ -1496,7 +1536,9 @@ abstract class Expr internal constructor() {
      * @param stringExpression An expression evaluating to a string value, which will be reversed.
      * @return A new [Expr] representing the reversed string.
      */
-    @JvmStatic fun reverse(stringExpression: Expr): Expr = FunctionExpr("reverse", stringExpression)
+    @JvmStatic
+    fun reverse(stringExpression: Expr): Expr =
+      FunctionExpr("reverse", evaluateReverse, stringExpression)
 
     /**
      * Creates an expression that reverses a string value from the specified field.
@@ -1504,7 +1546,8 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field that contains the string to reverse.
      * @return A new [Expr] representing the reversed string.
      */
-    @JvmStatic fun reverse(fieldName: String): Expr = FunctionExpr("reverse", fieldName)
+    @JvmStatic
+    fun reverse(fieldName: String): Expr = FunctionExpr("reverse", evaluateReverse, fieldName)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -1515,7 +1558,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(stringExpression: Expr, substring: Expr): BooleanExpr =
-      BooleanExpr("str_contains", stringExpression, substring)
+      BooleanExpr("str_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -1526,7 +1569,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(stringExpression: Expr, substring: String): BooleanExpr =
-      BooleanExpr("str_contains", stringExpression, substring)
+      BooleanExpr("str_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -1537,7 +1580,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: Expr): BooleanExpr =
-      BooleanExpr("str_contains", fieldName, substring)
+      BooleanExpr("str_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -1548,7 +1591,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strContains(fieldName: String, substring: String): BooleanExpr =
-      BooleanExpr("str_contains", fieldName, substring)
+      BooleanExpr("str_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -1559,7 +1602,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun startsWith(stringExpr: Expr, prefix: Expr): BooleanExpr =
-      BooleanExpr("starts_with", stringExpr, prefix)
+      BooleanExpr("starts_with", evaluateStartsWith, stringExpr, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -1570,7 +1613,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun startsWith(stringExpr: Expr, prefix: String): BooleanExpr =
-      BooleanExpr("starts_with", stringExpr, prefix)
+      BooleanExpr("starts_with", evaluateStartsWith, stringExpr, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -1581,7 +1624,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: Expr): BooleanExpr =
-      BooleanExpr("starts_with", fieldName, prefix)
+      BooleanExpr("starts_with", evaluateStartsWith, fieldName, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -1592,7 +1635,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: String): BooleanExpr =
-      BooleanExpr("starts_with", fieldName, prefix)
+      BooleanExpr("starts_with", evaluateStartsWith, fieldName, prefix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -1603,7 +1646,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun endsWith(stringExpr: Expr, suffix: Expr): BooleanExpr =
-      BooleanExpr("ends_with", stringExpr, suffix)
+      BooleanExpr("ends_with", evaluateEndsWith, stringExpr, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -1614,7 +1657,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun endsWith(stringExpr: Expr, suffix: String): BooleanExpr =
-      BooleanExpr("ends_with", stringExpr, suffix)
+      BooleanExpr("ends_with", evaluateEndsWith, stringExpr, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -1625,7 +1668,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: Expr): BooleanExpr =
-      BooleanExpr("ends_with", fieldName, suffix)
+      BooleanExpr("ends_with", evaluateEndsWith, fieldName, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -1636,7 +1679,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: String): BooleanExpr =
-      BooleanExpr("ends_with", fieldName, suffix)
+      BooleanExpr("ends_with", evaluateEndsWith, fieldName, suffix)
 
     /**
      * Creates an expression that converts a string expression to lowercase.
@@ -1645,7 +1688,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the lowercase string.
      */
     @JvmStatic
-    fun toLower(stringExpression: Expr): Expr = FunctionExpr("to_lower", stringExpression)
+    fun toLower(stringExpression: Expr): Expr =
+      FunctionExpr("to_lowercase", evaluateToLowercase, stringExpression)
 
     /**
      * Creates an expression that converts a string field to lowercase.
@@ -1653,7 +1697,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the string to convert to lowercase.
      * @return A new [Expr] representing the lowercase string.
      */
-    @JvmStatic fun toLower(fieldName: String): Expr = FunctionExpr("to_lower", fieldName)
+    @JvmStatic
+    fun toLower(fieldName: String): Expr =
+      FunctionExpr("to_lowercase", evaluateToLowercase, fieldName)
 
     /**
      * Creates an expression that converts a string expression to uppercase.
@@ -1662,7 +1708,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the lowercase string.
      */
     @JvmStatic
-    fun toUpper(stringExpression: Expr): Expr = FunctionExpr("to_upper", stringExpression)
+    fun toUpper(stringExpression: Expr): Expr =
+      FunctionExpr("to_uppercase", evaluateToUppercase, stringExpression)
 
     /**
      * Creates an expression that converts a string field to uppercase.
@@ -1670,7 +1717,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the string to convert to uppercase.
      * @return A new [Expr] representing the lowercase string.
      */
-    @JvmStatic fun toUpper(fieldName: String): Expr = FunctionExpr("to_upper", fieldName)
+    @JvmStatic
+    fun toUpper(fieldName: String): Expr =
+      FunctionExpr("to_uppercase", evaluateToUppercase, fieldName)
 
     /**
      * Creates an expression that removes leading and trailing whitespace from a string expression.
@@ -1678,7 +1727,8 @@ abstract class Expr internal constructor() {
      * @param stringExpression The expression representing the string to trim.
      * @return A new [Expr] representing the trimmed string.
      */
-    @JvmStatic fun trim(stringExpression: Expr): Expr = FunctionExpr("trim", stringExpression)
+    @JvmStatic
+    fun trim(stringExpression: Expr): Expr = FunctionExpr("trim", evaluateTrim, stringExpression)
 
     /**
      * Creates an expression that removes leading and trailing whitespace from a string field.
@@ -1686,7 +1736,7 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the string to trim.
      * @return A new [Expr] representing the trimmed string.
      */
-    @JvmStatic fun trim(fieldName: String): Expr = FunctionExpr("trim", fieldName)
+    @JvmStatic fun trim(fieldName: String): Expr = FunctionExpr("trim", evaluateTrim, fieldName)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1697,7 +1747,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(firstString: Expr, vararg otherStrings: Expr): Expr =
-      FunctionExpr("str_concat", firstString, *otherStrings)
+      FunctionExpr("str_concat", evaluateStrConcat, firstString, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1709,7 +1759,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(firstString: Expr, vararg otherStrings: Any): Expr =
-      FunctionExpr("str_concat", firstString, *otherStrings)
+      FunctionExpr("str_concat", evaluateStrConcat, firstString, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1720,7 +1770,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg otherStrings: Expr): Expr =
-      FunctionExpr("str_concat", fieldName, *otherStrings)
+      FunctionExpr("str_concat", evaluateStrConcat, fieldName, *otherStrings)
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -1732,9 +1782,9 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun strConcat(fieldName: String, vararg otherStrings: Any): Expr =
-      FunctionExpr("str_concat", fieldName, *otherStrings)
+      FunctionExpr("str_concat", evaluateStrConcat, fieldName, *otherStrings)
 
-    internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", elements)
+    internal fun map(elements: Array<out Expr>): Expr = FunctionExpr("map", evaluateMap, elements)
 
     /**
      * Creates an expression that creates a Firestore map value from an input object.
@@ -1754,7 +1804,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the value associated with the given key in the map.
      */
     @JvmStatic
-    fun mapGet(mapExpression: Expr, key: String): Expr = FunctionExpr("map_get", mapExpression, key)
+    fun mapGet(mapExpression: Expr, key: String): Expr =
+      FunctionExpr("map_get", evaluateMapGet, mapExpression, key)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -1764,7 +1815,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the value associated with the given key in the map.
      */
     @JvmStatic
-    fun mapGet(fieldName: String, key: String): Expr = FunctionExpr("map_get", fieldName, key)
+    fun mapGet(fieldName: String, key: String): Expr =
+      FunctionExpr("map_get", evaluateMapGet, fieldName, key)
 
     /**
      * Accesses a value from a map (object) field using the provided [keyExpression].
@@ -1775,7 +1827,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapGet(mapExpression: Expr, keyExpression: Expr): Expr =
-      FunctionExpr("map_get", mapExpression, keyExpression)
+      FunctionExpr("map_get", evaluateMapGet, mapExpression, keyExpression)
 
     /**
      * Accesses a value from a map (object) field using the provided [keyExpression].
@@ -1786,7 +1838,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapGet(fieldName: String, keyExpression: Expr): Expr =
-      FunctionExpr("map_get", fieldName, keyExpression)
+      FunctionExpr("map_get", evaluateMapGet, fieldName, keyExpression)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
@@ -1799,7 +1851,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapMerge(firstMap: Expr, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", firstMap, secondMap, *otherMaps)
+      FunctionExpr("map_merge", notImplemented, firstMap, secondMap, *otherMaps)
 
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
@@ -1812,7 +1864,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun mapMerge(firstMapFieldName: String, secondMap: Expr, vararg otherMaps: Expr): Expr =
-      FunctionExpr("map_merge", firstMapFieldName, secondMap, *otherMaps)
+      FunctionExpr("map_merge", notImplemented, firstMapFieldName, secondMap, *otherMaps)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1822,7 +1874,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapExpr: Expr, key: Expr): Expr = FunctionExpr("map_remove", mapExpr, key)
+    fun mapRemove(mapExpr: Expr, key: Expr): Expr =
+      FunctionExpr("map_remove", notImplemented, mapExpr, key)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1832,7 +1885,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapField: String, key: Expr): Expr = FunctionExpr("map_remove", mapField, key)
+    fun mapRemove(mapField: String, key: Expr): Expr =
+      FunctionExpr("map_remove", notImplemented, mapField, key)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1842,7 +1896,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapExpr: Expr, key: String): Expr = FunctionExpr("map_remove", mapExpr, key)
+    fun mapRemove(mapExpr: Expr, key: String): Expr =
+      FunctionExpr("map_remove", notImplemented, mapExpr, key)
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
@@ -1852,7 +1907,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] that evaluates to a modified map.
      */
     @JvmStatic
-    fun mapRemove(mapField: String, key: String): Expr = FunctionExpr("map_remove", mapField, key)
+    fun mapRemove(mapField: String, key: String): Expr =
+      FunctionExpr("map_remove", notImplemented, mapField, key)
 
     /**
      * Calculates the Cosine distance between two vector expressions.
@@ -1863,7 +1919,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: Expr): Expr =
-      FunctionExpr("cosine_distance", vector1, vector2)
+      FunctionExpr("cosine_distance", notImplemented, vector1, vector2)
 
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
@@ -1874,7 +1930,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: DoubleArray): Expr =
-      FunctionExpr("cosine_distance", vector1, vector(vector2))
+      FunctionExpr("cosine_distance", notImplemented, vector1, vector(vector2))
 
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
@@ -1885,7 +1941,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("cosine_distance", vector1, vector2)
+      FunctionExpr("cosine_distance", notImplemented, vector1, vector2)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector expression.
@@ -1896,7 +1952,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector)
+      FunctionExpr("cosine_distance", notImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -1907,7 +1963,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector(vector))
+      FunctionExpr("cosine_distance", notImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -1918,7 +1974,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("cosine_distance", vectorFieldName, vector)
+      FunctionExpr("cosine_distance", notImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between two vector expressions.
@@ -1929,7 +1985,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: Expr): Expr =
-      FunctionExpr("dot_product", vector1, vector2)
+      FunctionExpr("dot_product", notImplemented, vector1, vector2)
 
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
@@ -1940,7 +1996,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: DoubleArray): Expr =
-      FunctionExpr("dot_product", vector1, vector(vector2))
+      FunctionExpr("dot_product", notImplemented, vector1, vector(vector2))
 
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
@@ -1951,7 +2007,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("dot_product", vector1, vector2)
+      FunctionExpr("dot_product", notImplemented, vector1, vector2)
 
     /**
      * Calculates the dot product distance between a vector field and a vector expression.
@@ -1962,7 +2018,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector)
+      FunctionExpr("dot_product", notImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between vector field and a vector literal.
@@ -1973,7 +2029,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector(vector))
+      FunctionExpr("dot_product", notImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the dot product distance between a vector field and a vector literal.
@@ -1984,7 +2040,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("dot_product", vectorFieldName, vector)
+      FunctionExpr("dot_product", notImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between two vector expressions.
@@ -1995,7 +2051,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: Expr): Expr =
-      FunctionExpr("euclidean_distance", vector1, vector2)
+      FunctionExpr("euclidean_distance", notImplemented, vector1, vector2)
 
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
@@ -2006,7 +2062,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: DoubleArray): Expr =
-      FunctionExpr("euclidean_distance", vector1, vector(vector2))
+      FunctionExpr("euclidean_distance", notImplemented, vector1, vector(vector2))
 
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
@@ -2017,7 +2073,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expr, vector2: VectorValue): Expr =
-      FunctionExpr("euclidean_distance", vector1, vector2)
+      FunctionExpr("euclidean_distance", notImplemented, vector1, vector2)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector expression.
@@ -2028,7 +2084,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: Expr): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector)
+      FunctionExpr("euclidean_distance", notImplemented, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -2039,7 +2095,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: DoubleArray): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector(vector))
+      FunctionExpr("euclidean_distance", notImplemented, vectorFieldName, vector(vector))
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -2050,7 +2106,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: VectorValue): Expr =
-      FunctionExpr("euclidean_distance", vectorFieldName, vector)
+      FunctionExpr("euclidean_distance", notImplemented, vectorFieldName, vector)
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
@@ -2059,7 +2115,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the length (dimension) of the vector.
      */
     @JvmStatic
-    fun vectorLength(vectorExpression: Expr): Expr = FunctionExpr("vector_length", vectorExpression)
+    fun vectorLength(vectorExpression: Expr): Expr =
+      FunctionExpr("vector_length", notImplemented, vectorExpression)
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
@@ -2067,7 +2124,9 @@ abstract class Expr internal constructor() {
      * @param fieldName The name of the field containing the Firestore Vector.
      * @return A new [Expr] representing the length (dimension) of the vector.
      */
-    @JvmStatic fun vectorLength(fieldName: String): Expr = FunctionExpr("vector_length", fieldName)
+    @JvmStatic
+    fun vectorLength(fieldName: String): Expr =
+      FunctionExpr("vector_length", notImplemented, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of microseconds since the
@@ -2077,7 +2136,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the timestamp.
      */
     @JvmStatic
-    fun unixMicrosToTimestamp(expr: Expr): Expr = FunctionExpr("unix_micros_to_timestamp", expr)
+    fun unixMicrosToTimestamp(expr: Expr): Expr =
+      FunctionExpr("unix_micros_to_timestamp", evaluateUnixMicrosToTimestamp, expr)
 
     /**
      * Creates an expression that interprets a field's value as the number of microseconds since the
@@ -2088,7 +2148,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixMicrosToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_micros_to_timestamp", fieldName)
+      FunctionExpr("unix_micros_to_timestamp", evaluateUnixMicrosToTimestamp, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of microseconds
@@ -2098,7 +2158,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the number of microseconds since epoch.
      */
     @JvmStatic
-    fun timestampToUnixMicros(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_micros", expr)
+    fun timestampToUnixMicros(expr: Expr): Expr =
+      FunctionExpr("timestamp_to_unix_micros", evaluateTimestampToUnixMicros, expr)
 
     /**
      * Creates an expression that converts a timestamp field to the number of microseconds since the
@@ -2109,7 +2170,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixMicros(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_micros", fieldName)
+      FunctionExpr("timestamp_to_unix_micros", evaluateTimestampToUnixMicros, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of milliseconds since the
@@ -2119,7 +2180,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the timestamp.
      */
     @JvmStatic
-    fun unixMillisToTimestamp(expr: Expr): Expr = FunctionExpr("unix_millis_to_timestamp", expr)
+    fun unixMillisToTimestamp(expr: Expr): Expr =
+      FunctionExpr("unix_millis_to_timestamp", evaluateUnixMillisToTimestamp, expr)
 
     /**
      * Creates an expression that interprets a field's value as the number of milliseconds since the
@@ -2130,7 +2192,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixMillisToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_millis_to_timestamp", fieldName)
+      FunctionExpr("unix_millis_to_timestamp", evaluateUnixMillisToTimestamp, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of milliseconds
@@ -2140,7 +2202,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the number of milliseconds since epoch.
      */
     @JvmStatic
-    fun timestampToUnixMillis(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_millis", expr)
+    fun timestampToUnixMillis(expr: Expr): Expr =
+      FunctionExpr("timestamp_to_unix_millis", evaluateTimestampToUnixMillis, expr)
 
     /**
      * Creates an expression that converts a timestamp field to the number of milliseconds since the
@@ -2151,7 +2214,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixMillis(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_millis", fieldName)
+      FunctionExpr("timestamp_to_unix_millis", evaluateTimestampToUnixMillis, fieldName)
 
     /**
      * Creates an expression that interprets an expression as the number of seconds since the Unix
@@ -2161,7 +2224,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the timestamp.
      */
     @JvmStatic
-    fun unixSecondsToTimestamp(expr: Expr): Expr = FunctionExpr("unix_seconds_to_timestamp", expr)
+    fun unixSecondsToTimestamp(expr: Expr): Expr =
+      FunctionExpr("unix_seconds_to_timestamp", evaluateUnixSecondsToTimestamp, expr)
 
     /**
      * Creates an expression that interprets a field's value as the number of seconds since the Unix
@@ -2172,7 +2236,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun unixSecondsToTimestamp(fieldName: String): Expr =
-      FunctionExpr("unix_seconds_to_timestamp", fieldName)
+      FunctionExpr("unix_seconds_to_timestamp", evaluateUnixSecondsToTimestamp, fieldName)
 
     /**
      * Creates an expression that converts a timestamp expression to the number of seconds since the
@@ -2182,7 +2246,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the number of seconds since epoch.
      */
     @JvmStatic
-    fun timestampToUnixSeconds(expr: Expr): Expr = FunctionExpr("timestamp_to_unix_seconds", expr)
+    fun timestampToUnixSeconds(expr: Expr): Expr =
+      FunctionExpr("timestamp_to_unix_seconds", evaluateTimestampToUnixSeconds, expr)
 
     /**
      * Creates an expression that converts a timestamp field to the number of seconds since the Unix
@@ -2193,7 +2258,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampToUnixSeconds(fieldName: String): Expr =
-      FunctionExpr("timestamp_to_unix_seconds", fieldName)
+      FunctionExpr("timestamp_to_unix_seconds", evaluateTimestampToUnixSeconds, fieldName)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2206,7 +2271,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_add", timestamp, unit, amount)
+      FunctionExpr("timestamp_add", evaluateTimestampAdd, timestamp, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2219,7 +2284,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(timestamp: Expr, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_add", timestamp, unit, amount)
+      FunctionExpr("timestamp_add", evaluateTimestampAdd, timestamp, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2232,7 +2297,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_add", fieldName, unit, amount)
+      FunctionExpr("timestamp_add", evaluateTimestampAdd, fieldName, unit, amount)
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
@@ -2245,7 +2310,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampAdd(fieldName: String, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_add", fieldName, unit, amount)
+      FunctionExpr("timestamp_add", evaluateTimestampAdd, fieldName, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2258,7 +2323,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_sub", timestamp, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateTimestampSub, timestamp, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2271,7 +2336,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(timestamp: Expr, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_sub", timestamp, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateTimestampSub, timestamp, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2284,7 +2349,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: Expr, amount: Expr): Expr =
-      FunctionExpr("timestamp_sub", fieldName, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateTimestampSub, fieldName, unit, amount)
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
@@ -2297,7 +2362,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
-      FunctionExpr("timestamp_sub", fieldName, unit, amount)
+      FunctionExpr("timestamp_sub", evaluateTimestampSub, fieldName, unit, amount)
 
     /**
      * Creates an expression that checks if two expressions are equal.
@@ -2306,7 +2371,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the equality comparison.
      */
-    @JvmStatic fun eq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("eq", left, right)
+    @JvmStatic
+    fun eq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("eq", evaluateEq, left, right)
 
     /**
      * Creates an expression that checks if an expression is equal to a value.
@@ -2315,7 +2381,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the equality comparison.
      */
-    @JvmStatic fun eq(left: Expr, right: Any): BooleanExpr = BooleanExpr("eq", left, right)
+    @JvmStatic
+    fun eq(left: Expr, right: Any): BooleanExpr = BooleanExpr("eq", evaluateEq, left, right)
 
     /**
      * Creates an expression that checks if a field's value is equal to an expression.
@@ -2326,7 +2393,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun eq(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("eq", fieldName, expression)
+      BooleanExpr("eq", evaluateEq, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is equal to another value.
@@ -2336,7 +2403,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the equality comparison.
      */
     @JvmStatic
-    fun eq(fieldName: String, value: Any): BooleanExpr = BooleanExpr("eq", fieldName, value)
+    fun eq(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("eq", evaluateEq, fieldName, value)
 
     /**
      * Creates an expression that checks if two expressions are not equal.
@@ -2345,7 +2413,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the inequality comparison.
      */
-    @JvmStatic fun neq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("neq", left, right)
+    @JvmStatic
+    fun neq(left: Expr, right: Expr): BooleanExpr = BooleanExpr("neq", evaluateNeq, left, right)
 
     /**
      * Creates an expression that checks if an expression is not equal to a value.
@@ -2354,7 +2423,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the inequality comparison.
      */
-    @JvmStatic fun neq(left: Expr, right: Any): BooleanExpr = BooleanExpr("neq", left, right)
+    @JvmStatic
+    fun neq(left: Expr, right: Any): BooleanExpr = BooleanExpr("neq", evaluateNeq, left, right)
 
     /**
      * Creates an expression that checks if a field's value is not equal to an expression.
@@ -2365,7 +2435,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun neq(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("neq", fieldName, expression)
+      BooleanExpr("neq", evaluateNeq, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is not equal to another value.
@@ -2375,7 +2445,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the inequality comparison.
      */
     @JvmStatic
-    fun neq(fieldName: String, value: Any): BooleanExpr = BooleanExpr("neq", fieldName, value)
+    fun neq(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("neq", evaluateNeq, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is greater than the second
@@ -2385,7 +2456,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the greater than comparison.
      */
-    @JvmStatic fun gt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gt", left, right)
+    @JvmStatic
+    fun gt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gt", evaluateGt, left, right)
 
     /**
      * Creates an expression that checks if an expression is greater than a value.
@@ -2394,7 +2466,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the greater than comparison.
      */
-    @JvmStatic fun gt(left: Expr, right: Any): BooleanExpr = BooleanExpr("gt", left, right)
+    @JvmStatic
+    fun gt(left: Expr, right: Any): BooleanExpr = BooleanExpr("gt", evaluateGt, left, right)
 
     /**
      * Creates an expression that checks if a field's value is greater than an expression.
@@ -2405,7 +2478,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun gt(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("gt", fieldName, expression)
+      BooleanExpr("gt", evaluateGt, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is greater than another value.
@@ -2415,7 +2488,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the greater than comparison.
      */
     @JvmStatic
-    fun gt(fieldName: String, value: Any): BooleanExpr = BooleanExpr("gt", fieldName, value)
+    fun gt(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("gt", evaluateGt, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is greater than or equal to the
@@ -2425,7 +2499,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the greater than or equal to comparison.
      */
-    @JvmStatic fun gte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gte", left, right)
+    @JvmStatic
+    fun gte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("gte", evaluateGte, left, right)
 
     /**
      * Creates an expression that checks if an expression is greater than or equal to a value.
@@ -2434,7 +2509,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the greater than or equal to comparison.
      */
-    @JvmStatic fun gte(left: Expr, right: Any): BooleanExpr = BooleanExpr("gte", left, right)
+    @JvmStatic
+    fun gte(left: Expr, right: Any): BooleanExpr = BooleanExpr("gte", evaluateGte, left, right)
 
     /**
      * Creates an expression that checks if a field's value is greater than or equal to an
@@ -2446,7 +2522,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun gte(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("gte", fieldName, expression)
+      BooleanExpr("gte", evaluateGte, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is greater than or equal to another
@@ -2457,7 +2533,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the greater than or equal to comparison.
      */
     @JvmStatic
-    fun gte(fieldName: String, value: Any): BooleanExpr = BooleanExpr("gte", fieldName, value)
+    fun gte(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("gte", evaluateGte, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is less than the second expression.
@@ -2466,7 +2543,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the less than comparison.
      */
-    @JvmStatic fun lt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lt", left, right)
+    @JvmStatic
+    fun lt(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lt", evaluateLt, left, right)
 
     /**
      * Creates an expression that checks if an expression is less than a value.
@@ -2475,7 +2553,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the less than comparison.
      */
-    @JvmStatic fun lt(left: Expr, right: Any): BooleanExpr = BooleanExpr("lt", left, right)
+    @JvmStatic
+    fun lt(left: Expr, right: Any): BooleanExpr = BooleanExpr("lt", evaluateLt, left, right)
 
     /**
      * Creates an expression that checks if a field's value is less than an expression.
@@ -2486,7 +2565,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun lt(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("lt", fieldName, expression)
+      BooleanExpr("lt", evaluateLt, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is less than another value.
@@ -2496,7 +2575,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the less than comparison.
      */
     @JvmStatic
-    fun lt(fieldName: String, right: Any): BooleanExpr = BooleanExpr("lt", fieldName, right)
+    fun lt(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("lt", evaluateLt, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is less than or equal to the second
@@ -2506,7 +2586,8 @@ abstract class Expr internal constructor() {
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
      */
-    @JvmStatic fun lte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lte", left, right)
+    @JvmStatic
+    fun lte(left: Expr, right: Expr): BooleanExpr = BooleanExpr("lte", evaluateLte, left, right)
 
     /**
      * Creates an expression that checks if an expression is less than or equal to a value.
@@ -2515,7 +2596,8 @@ abstract class Expr internal constructor() {
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
      */
-    @JvmStatic fun lte(left: Expr, right: Any): BooleanExpr = BooleanExpr("lte", left, right)
+    @JvmStatic
+    fun lte(left: Expr, right: Any): BooleanExpr = BooleanExpr("lte", evaluateLte, left, right)
 
     /**
      * Creates an expression that checks if a field's value is less than or equal to an expression.
@@ -2526,7 +2608,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun lte(fieldName: String, expression: Expr): BooleanExpr =
-      BooleanExpr("lte", fieldName, expression)
+      BooleanExpr("lte", evaluateLte, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is less than or equal to another value.
@@ -2536,7 +2618,8 @@ abstract class Expr internal constructor() {
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
      */
     @JvmStatic
-    fun lte(fieldName: String, value: Any): BooleanExpr = BooleanExpr("lte", fieldName, value)
+    fun lte(fieldName: String, value: Any): BooleanExpr =
+      BooleanExpr("lte", evaluateLte, fieldName, value)
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
@@ -2546,7 +2629,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun array(vararg elements: Any?): Expr =
-      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray<Expr>())
+      FunctionExpr("array", evaluateArray, elements.map(::toExprOrConstant).toTypedArray<Expr>())
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
@@ -2556,7 +2639,8 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun array(elements: List<Any?>): Expr =
-      FunctionExpr("array", elements.map(::toExprOrConstant).toTypedArray())
+      FunctionExpr("array", evaluateArray, elements.map(::toExprOrConstant).toTypedArray())
+
     /**
      * Creates an expression that concatenates an array with other arrays.
      *
@@ -2567,7 +2651,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArray: Expr, secondArray: Expr, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArray, secondArray, *otherArrays)
+      FunctionExpr("array_concat", notImplemented, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates an array with other arrays.
@@ -2579,7 +2663,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArray: Expr, secondArray: Any, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArray, secondArray, *otherArrays)
+      FunctionExpr("array_concat", notImplemented, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -2591,7 +2675,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArrayField: String, secondArray: Expr, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
+      FunctionExpr("array_concat", notImplemented, firstArrayField, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -2603,7 +2687,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArrayField: String, secondArray: Any, vararg otherArrays: Any): Expr =
-      FunctionExpr("array_concat", firstArrayField, secondArray, *otherArrays)
+      FunctionExpr("array_concat", notImplemented, firstArrayField, secondArray, *otherArrays)
 
     /**
      * Reverses the order of elements in the [array].
@@ -2611,7 +2695,8 @@ abstract class Expr internal constructor() {
      * @param array The array expression to reverse.
      * @return A new [Expr] representing the arrayReverse operation.
      */
-    @JvmStatic fun arrayReverse(array: Expr): Expr = FunctionExpr("array_reverse", array)
+    @JvmStatic
+    fun arrayReverse(array: Expr): Expr = FunctionExpr("array_reverse", notImplemented, array)
 
     /**
      * Reverses the order of elements in the array field.
@@ -2620,7 +2705,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the arrayReverse operation.
      */
     @JvmStatic
-    fun arrayReverse(arrayFieldName: String): Expr = FunctionExpr("array_reverse", arrayFieldName)
+    fun arrayReverse(arrayFieldName: String): Expr =
+      FunctionExpr("array_reverse", notImplemented, arrayFieldName)
 
     /**
      * Creates an expression that checks if the array contains a specific [element].
@@ -2631,7 +2717,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContains(array: Expr, element: Expr): BooleanExpr =
-      BooleanExpr("array_contains", array, element)
+      BooleanExpr("array_contains", evaluateArrayContains, array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -2642,7 +2728,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContains(arrayFieldName: String, element: Expr) =
-      BooleanExpr("array_contains", arrayFieldName, element)
+      BooleanExpr("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
      * Creates an expression that checks if the [array] contains a specific [element].
@@ -2653,7 +2739,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContains(array: Expr, element: Any): BooleanExpr =
-      BooleanExpr("array_contains", array, element)
+      BooleanExpr("array_contains", evaluateArrayContains, array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -2664,7 +2750,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContains(arrayFieldName: String, element: Any) =
-      BooleanExpr("array_contains", arrayFieldName, element)
+      BooleanExpr("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
      * Creates an expression that checks if [array] contains all the specified [values].
@@ -2685,7 +2771,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(array: Expr, arrayExpression: Expr) =
-      BooleanExpr("array_contains_all", array, arrayExpression)
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, array, arrayExpression)
 
     /**
      * Creates an expression that checks if array field contains all the specified [values].
@@ -2696,7 +2782,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr("array_contains_all", arrayFieldName, array(values))
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains all elements of [arrayExpression].
@@ -2707,7 +2793,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, arrayExpression: Expr) =
-      BooleanExpr("array_contains_all", arrayFieldName, arrayExpression)
+      BooleanExpr("array_contains_all", evaluateArrayContainsAll, arrayFieldName, arrayExpression)
 
     /**
      * Creates an expression that checks if [array] contains any of the specified [values].
@@ -2718,7 +2804,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expr, values: List<Any>) =
-      BooleanExpr("array_contains_any", array, array(values))
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, array, array(values))
 
     /**
      * Creates an expression that checks if [array] contains any elements of [arrayExpression].
@@ -2729,7 +2815,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expr, arrayExpression: Expr) =
-      BooleanExpr("array_contains_any", array, arrayExpression)
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, array, arrayExpression)
 
     /**
      * Creates an expression that checks if array field contains any of the specified [values].
@@ -2740,7 +2826,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
-      BooleanExpr("array_contains_any", arrayFieldName, array(values))
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, arrayFieldName, array(values))
 
     /**
      * Creates an expression that checks if array field contains any elements of [arrayExpression].
@@ -2751,7 +2837,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, arrayExpression: Expr) =
-      BooleanExpr("array_contains_any", arrayFieldName, arrayExpression)
+      BooleanExpr("array_contains_any", evaluateArrayContainsAny, arrayFieldName, arrayExpression)
 
     /**
      * Creates an expression that calculates the length of an [array] expression.
@@ -2759,7 +2845,8 @@ abstract class Expr internal constructor() {
      * @param array The array expression to calculate the length of.
      * @return A new [Expr] representing the length of the array.
      */
-    @JvmStatic fun arrayLength(array: Expr): Expr = FunctionExpr("array_length", array)
+    @JvmStatic
+    fun arrayLength(array: Expr): Expr = FunctionExpr("array_length", evaluateArrayLength, array)
 
     /**
      * Creates an expression that calculates the length of an array field.
@@ -2768,7 +2855,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the length of the array.
      */
     @JvmStatic
-    fun arrayLength(arrayFieldName: String): Expr = FunctionExpr("array_length", arrayFieldName)
+    fun arrayLength(arrayFieldName: String): Expr =
+      FunctionExpr("array_length", evaluateArrayLength, arrayFieldName)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2780,7 +2868,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the arrayOffset operation.
      */
     @JvmStatic
-    fun arrayOffset(array: Expr, offset: Expr): Expr = FunctionExpr("array_offset", array, offset)
+    fun arrayOffset(array: Expr, offset: Expr): Expr =
+      FunctionExpr("array_offset", notImplemented, array, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2793,7 +2882,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayOffset(array: Expr, offset: Int): Expr =
-      FunctionExpr("array_offset", array, constant(offset))
+      FunctionExpr("array_offset", notImplemented, array, constant(offset))
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2806,7 +2895,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayOffset(arrayFieldName: String, offset: Expr): Expr =
-      FunctionExpr("array_offset", arrayFieldName, offset)
+      FunctionExpr("array_offset", notImplemented, arrayFieldName, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -2819,7 +2908,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun arrayOffset(arrayFieldName: String, offset: Int): Expr =
-      FunctionExpr("array_offset", arrayFieldName, constant(offset))
+      FunctionExpr("array_offset", notImplemented, arrayFieldName, constant(offset))
 
     /**
      * Creates a conditional expression that evaluates to a [thenExpr] expression if a condition is
@@ -2832,7 +2921,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenExpr: Expr, elseExpr: Expr): Expr =
-      FunctionExpr("cond", condition, thenExpr, elseExpr)
+      FunctionExpr("cond", evaluateCond, condition, thenExpr, elseExpr)
 
     /**
      * Creates a conditional expression that evaluates to a [thenValue] if a condition is true or an
@@ -2845,7 +2934,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun cond(condition: BooleanExpr, thenValue: Any, elseValue: Any): Expr =
-      FunctionExpr("cond", condition, thenValue, elseValue)
+      FunctionExpr("cond", evaluateCond, condition, thenValue, elseValue)
 
     /**
      * Creates an expression that checks if a field exists.
@@ -2853,7 +2942,7 @@ abstract class Expr internal constructor() {
      * @param value An expression evaluates to the name of the field to check.
      * @return A new [Expr] representing the exists check.
      */
-    @JvmStatic fun exists(value: Expr): BooleanExpr = BooleanExpr("exists", value)
+    @JvmStatic fun exists(value: Expr): BooleanExpr = BooleanExpr("exists", evaluateExists, value)
 
     /**
      * Creates an expression that checks if a field exists.
@@ -2861,7 +2950,8 @@ abstract class Expr internal constructor() {
      * @param fieldName The field name to check.
      * @return A new [Expr] representing the exists check.
      */
-    @JvmStatic fun exists(fieldName: String): BooleanExpr = BooleanExpr("exists", fieldName)
+    @JvmStatic
+    fun exists(fieldName: String): BooleanExpr = BooleanExpr("exists", evaluateExists, fieldName)
 
     /**
      * Creates an expression that returns the [catchExpr] argument if there is an error, else return
@@ -2873,7 +2963,8 @@ abstract class Expr internal constructor() {
      * @return A new [Expr] representing the ifError operation.
      */
     @JvmStatic
-    fun ifError(tryExpr: Expr, catchExpr: Expr): Expr = FunctionExpr("if_error", tryExpr, catchExpr)
+    fun ifError(tryExpr: Expr, catchExpr: Expr): Expr =
+      FunctionExpr("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
      * Creates an expression that returns the [catchExpr] argument if there is an error, else return
@@ -2888,7 +2979,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun ifError(tryExpr: BooleanExpr, catchExpr: BooleanExpr): BooleanExpr =
-      BooleanExpr("if_error", tryExpr, catchExpr)
+      BooleanExpr("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
      * Creates an expression that checks if a given expression produces an error.
@@ -2896,7 +2987,7 @@ abstract class Expr internal constructor() {
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the `isError` check.
      */
-    @JvmStatic fun isError(expr: Expr): BooleanExpr = BooleanExpr("is_error", expr)
+    @JvmStatic fun isError(expr: Expr): BooleanExpr = BooleanExpr("is_error", evaluateIsError, expr)
 
     /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
@@ -2908,7 +2999,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun ifError(tryExpr: Expr, catchValue: Any): Expr =
-      FunctionExpr("if_error", tryExpr, catchValue)
+      FunctionExpr("if_error", notImplemented, tryExpr, catchValue)
 
     /**
      * Creates an expression that returns the document ID from a path.
@@ -2916,7 +3007,9 @@ abstract class Expr internal constructor() {
      * @param documentPath An expression the evaluates to document path.
      * @return A new [Expr] representing the documentId operation.
      */
-    @JvmStatic fun documentId(documentPath: Expr): Expr = FunctionExpr("document_id", documentPath)
+    @JvmStatic
+    fun documentId(documentPath: Expr): Expr =
+      FunctionExpr("document_id", notImplemented, documentPath)
 
     /**
      * Creates an expression that returns the document ID from a path.
@@ -3515,6 +3608,14 @@ abstract class Expr internal constructor() {
   fun strConcat(vararg strings: Any): Expr = Companion.strConcat(this, *strings)
 
   /**
+   * Accesses a map (object) value using the provided [keyExpression].
+   *
+   * @param keyExpression The name of the key to remove from this map expression.
+   * @return A new [Expr] representing the value associated with the given key in the map.
+   */
+  fun mapGet(keyExpression: Expr) = Companion.mapGet(this, keyExpression)
+
+  /**
    * Accesses a map (object) value using the provided [key].
    *
    * @param key The key to access in the map.
@@ -3536,10 +3637,10 @@ abstract class Expr internal constructor() {
   /**
    * Creates an expression that removes a key from this map expression.
    *
-   * @param key The name of the key to remove from this map expression.
+   * @param keyExpression The name of the key to remove from this map expression.
    * @return A new [Expr] that evaluates to a modified map.
    */
-  fun mapRemove(key: Expr) = Companion.mapRemove(this, key)
+  fun mapRemove(keyExpression: Expr) = Companion.mapRemove(this, keyExpression)
 
   /**
    * Creates an expression that removes a key from this map expression.
@@ -4007,12 +4108,14 @@ abstract class Expr internal constructor() {
   fun isError(): BooleanExpr = Companion.isError(this)
 
   internal abstract fun toProto(userDataReader: UserDataReader): Value
+
+  internal abstract fun evaluateContext(context: EvaluationContext): EvaluateDocument
 }
 
 /** Expressions that have an alias are [Selectable] */
 abstract class Selectable : Expr() {
-  internal abstract fun getAlias(): String
-  internal abstract fun getExpr(): Expr
+  internal abstract val alias: String
+  internal abstract val expr: Expr
 
   internal companion object {
     fun toSelectable(o: Any): Selectable {
@@ -4027,11 +4130,10 @@ abstract class Selectable : Expr() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+class ExprWithAlias internal constructor(override val alias: String, override val expr: Expr) :
   Selectable() {
-  override fun getAlias() = alias
-  override fun getExpr() = expr
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
+  override fun evaluateContext(context: EvaluationContext) = expr.evaluateContext(context)
 }
 
 /**
@@ -4050,17 +4152,34 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
      *
      * @return An [Field] representing the document ID.
      */
-    @JvmField val DOCUMENT_ID: Field = field(FieldPath.documentId())
+    @JvmField val DOCUMENT_ID: Field = Field(KEY_PATH)
+
+    @JvmField internal val UPDATE_TIME: Field = Field(UPDATE_TIME_PATH)
+
+    @JvmField internal val CREATE_TIME: Field = Field(CREATE_TIME_PATH)
   }
 
-  override fun getAlias(): String = fieldPath.canonicalString()
+  override val alias: String = fieldPath.canonicalString()
 
-  override fun getExpr(): Expr = this
+  override val expr: Expr = this
 
   override fun toProto(userDataReader: UserDataReader) = toProto()
 
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
+
+  override fun evaluateContext(context: EvaluationContext) =
+    block@{ input: MutableDocument ->
+      EvaluateResultValue(
+        when (fieldPath) {
+          KEY_PATH ->
+            encodeValue(DocumentReference.forPath(input.key.path, context.pipeline.firestore))
+          CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
+          UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
+          else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
+        }
+      )
+    }
 }
 
 /**
@@ -4074,33 +4193,49 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
 open class FunctionExpr
 internal constructor(
   private val name: String,
+  private val function: EvaluateFunction,
   private val params: Array<out Expr>,
   private val options: InternalOptions = InternalOptions.EMPTY
 ) : Expr() {
-  internal constructor(name: String) : this(name, emptyArray())
-  internal constructor(name: String, param: Expr) : this(name, arrayOf(param))
   internal constructor(
     name: String,
+    function: EvaluateFunction
+  ) : this(name, function, emptyArray())
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    param: Expr
+  ) : this(name, function, arrayOf(param))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
     param: Expr,
     vararg params: Any
-  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Expr
-  ) : this(name, arrayOf(param1, param2))
+  ) : this(name, function, arrayOf(param1, param2))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Expr,
     vararg params: Any
-  ) : this(name, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
-  internal constructor(name: String, fieldName: String) : this(name, arrayOf(field(fieldName)))
+  ) : this(name, function, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
+    fieldName: String
+  ) : this(name, function, arrayOf(field(fieldName)))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
@@ -4111,39 +4246,57 @@ internal constructor(
     options.forEach(builder::putOptions)
     return Value.newBuilder().setFunctionValue(builder).build()
   }
+
+  final override fun evaluateContext(context: EvaluationContext): EvaluateDocument =
+    function(params.map { expr -> expr.evaluateContext(context) })
 }
 
 /** A class that represents a filter condition. */
-open class BooleanExpr internal constructor(name: String, params: Array<out Expr>) :
-  FunctionExpr(name, params, InternalOptions.EMPTY) {
-  internal constructor(name: String, param: Expr) : this(name, arrayOf(param))
+open class BooleanExpr
+internal constructor(name: String, function: EvaluateFunction, params: Array<out Expr>) :
+  FunctionExpr(name, function, params, InternalOptions.EMPTY) {
   internal constructor(
     name: String,
+    function: EvaluateFunction,
+    param: Expr
+  ) : this(name, function, arrayOf(param))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Any
-  ) : this(name, arrayOf(param1, toExprOrConstant(param2)))
+  ) : this(name, function, arrayOf(param1, toExprOrConstant(param2)))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param: Expr,
     vararg params: Any
-  ) : this(name, arrayOf(param, *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
     param1: Expr,
     param2: Expr
-  ) : this(name, arrayOf(param1, param2))
-  internal constructor(name: String, fieldName: String) : this(name, arrayOf(field(fieldName)))
+  ) : this(name, function, arrayOf(param1, param2))
   internal constructor(
     name: String,
+    function: EvaluateFunction,
+    fieldName: String
+  ) : this(name, function, arrayOf(field(fieldName)))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
 
   companion object {
 
     /**
      */
-    @JvmStatic fun generic(name: String, vararg expr: Expr): BooleanExpr = BooleanExpr(name, expr)
+    @JvmStatic
+    fun generic(name: String, vararg expr: Expr): BooleanExpr =
+      BooleanExpr(name, notImplemented, expr)
   }
 
   /**
@@ -4199,7 +4352,7 @@ open class BooleanExpr internal constructor(name: String, params: Array<out Expr
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-class Ordering private constructor(val expr: Expr, private val dir: Direction) {
+class Ordering private constructor(val expr: Expr, internal val dir: Direction) {
   companion object {
 
     /**
