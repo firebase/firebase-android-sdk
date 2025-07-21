@@ -31,7 +31,7 @@ import org.gradle.process.ExecOperations
 abstract class SemVerTask @Inject constructor(private val execOperations: ExecOperations) :
   DefaultTask() {
   @get:InputFile abstract val apiTxtFile: RegularFileProperty
-  @get:InputFile abstract val otherApiFile: RegularFileProperty
+  @get:InputFile abstract val existingApiFile: RegularFileProperty
   @get:Input abstract val currentVersionString: Property<String>
   @get:Input abstract val previousVersionString: Property<String>
 
@@ -55,7 +55,7 @@ abstract class SemVerTask @Inject constructor(private val execOperations: ExecOp
         "--source-files",
         apiTxtFile.get().asFile.absolutePath,
         "--check-compatibility:api:released",
-        otherApiFile.get().asFile.absolutePath,
+        existingApiFile.get().asFile.absolutePath,
       ) +
         MAJOR.flatMap { m -> listOf("--error", m) } +
         MINOR.flatMap { m -> listOf("--error", m) } +
