@@ -385,6 +385,28 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
           "com.android.tools.build:gradle",
+          "com.google.firebase:firebase-vertexai",
+          "com.google.firebase:firebase-analytics-ktx",
+          "com.google.firebase:firebase-appcheck-ktx",
+          "com.google.firebase:firebase-appdistribution-api-ktx",
+          "com.google.firebase:firebase-appdistribution-ktx",
+          "com.google.firebase:firebase-auth-ktx",
+          "com.google.firebase:firebase-common-ktx",
+          "com.google.firebase:firebase-config-ktx",
+          "com.google.firebase:firebase-crashlytics-ktx",
+          "com.google.firebase:firebase-database-ktx",
+          "com.google.firebase:firebase-dynamic-links",
+          "com.google.firebase:firebase-dynamic-links-ktx",
+          "com.google.firebase:firebase-dynamic-links-license",
+          "com.google.firebase:firebase-firestore-ktx",
+          "com.google.firebase:firebase-functions-ktx",
+          "com.google.firebase:firebase-inappmessaging-display-ktx",
+          "com.google.firebase:firebase-inappmessaging-ktx",
+          "com.google.firebase:firebase-installations-ktx",
+          "com.google.firebase:firebase-messaging-ktx",
+          "com.google.firebase:firebase-ml-modeldownloader-ktx",
+          "com.google.firebase:firebase-perf-ktx",
+          "com.google.firebase:firebase-storage-ktx",
         )
       )
 
@@ -794,7 +816,6 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-ml-modeldownloader",
         "com.google.firebase:firebase-perf",
         "com.google.firebase:firebase-storage",
-        "com.google.firebase:firebase-vertexai",
         "com.google.firebase:firebase-ai",
       )
 
