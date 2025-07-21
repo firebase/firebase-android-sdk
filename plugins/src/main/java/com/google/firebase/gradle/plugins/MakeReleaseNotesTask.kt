@@ -148,7 +148,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
       }
 
-    return "* {{${type.name.toLowerCase()}}} $fixedMessage"
+    return "* {{${type.name.lowercase()}}} $fixedMessage"
   }
 
   companion object {

@@ -47,10 +47,10 @@ import org.gradle.workers.WorkQueue
  *
  * Syntax sugar for:
  * ```
- * project.file("${project.buildDir}/$path)
+ * project.file("${project.layout.buildDirectory.get().asFile}/$path)
  * ```
  */
-fun Project.fileFromBuildDir(path: String) = file("$buildDir/$path")
+fun Project.fileFromBuildDir(path: String) = file("${layout.buildDirectory.get().asFile}/$path")
 
 /**
  * Maps a file provider to another file provider as a sub directory.
