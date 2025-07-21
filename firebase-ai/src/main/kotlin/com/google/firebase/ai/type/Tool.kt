@@ -20,10 +20,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Contains a set of function declarations that the model has access to. These can be used to gather
- * information, or complete tasks
- *
- * @param functionDeclarations The set of functions that this tool allows the model access to
+ * Contains a set of tools (like function declarations) that the model has access to. These tools
+ * can be used to gather information or complete tasks.
  */
 public class Tool
 internal constructor(
@@ -62,8 +60,7 @@ internal constructor(
      *
      * When using this feature, you are required to comply with the "Grounding with Google Search"
      * usage requirements for your chosen API provider:
-     * [Gemini Developer
-     * API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
+     * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
      * or Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
      * section within the Service Specific Terms).
      *
