@@ -504,15 +504,15 @@ private constructor(
   /**
    * Performs a pseudo-random sampling of the input documents.
    *
-   * The [documents] parameter represents the target number of documents to produce and must be a
+   * The [count] parameter represents the target number of documents to produce and must be a
    * non-negative integer value. If the previous stage produces less than size documents, the entire
    * previous results are returned. If the previous stage produces more than size, this outputs a
    * sample of exactly size entries where any sample is equally likely.
    *
-   * @param documents The number of documents to emit.
+   * @param count The number of documents to emit.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun sample(documents: Int): Pipeline = append(SampleStage.withCount(documents))
+  fun sample(count: Int): Pipeline = append(SampleStage.withCount(count))
 
   /**
    * Performs a pseudo-random sampling of the input documents.
