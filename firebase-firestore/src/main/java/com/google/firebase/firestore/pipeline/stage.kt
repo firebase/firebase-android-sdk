@@ -29,7 +29,6 @@ import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
@@ -727,15 +726,15 @@ private constructor(
     /**
      * Creates [SampleStage] with size limited to number of documents.
      *
-     * The [documents] parameter represents the target number of documents to produce and must be a
+     * The [count] parameter represents the target number of documents to produce and must be a
      * non-negative integer value. If the previous stage produces less than size documents, the
      * entire previous results are returned. If the previous stage produces more than size, this
      * outputs a sample of exactly size entries where any sample is equally likely.
      *
-     * @param documents The number of documents to emit.
-     * @return [SampleStage] with specified [documents].
+     * @param count The number of documents to emit.
+     * @return [SampleStage] with specified [count].
      */
-    @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
+    @JvmStatic fun withCount(count: Int) = SampleStage(count, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)

@@ -512,7 +512,7 @@ private constructor(
    * @param documents The number of documents to emit.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun sample(documents: Int): Pipeline = append(SampleStage.withDocLimit(documents))
+  fun sample(documents: Int): Pipeline = append(SampleStage.withCount(documents))
 
   /**
    * Performs a pseudo-random sampling of the input documents.
