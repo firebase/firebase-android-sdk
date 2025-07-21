@@ -205,7 +205,7 @@ enum class DeltaType {
               after.name,
               field!!.name,
               String.format(
-                "Field %s on class %s has increased its visiblity.",
+                "Field %s on class %s has reduced its visiblity.",
                 field.name,
                 after.name,
               ),
