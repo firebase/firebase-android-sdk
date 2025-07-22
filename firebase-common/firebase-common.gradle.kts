@@ -55,8 +55,9 @@ android {
 dependencies {
   api(libs.kotlin.coroutines.tasks)
 
-  api("com.google.firebase:firebase-components:18.0.0")
-  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-components:19.0.0")
+  api("com.google.firebase:firebase-annotations:17.0.0")
+  implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.annotation)
   implementation(libs.androidx.futures)
   implementation(libs.kotlin.stdlib)
@@ -82,7 +83,6 @@ dependencies {
 
   androidTestImplementation(project(":integ-testing")) {
     exclude("com.google.firebase", "firebase-common")
-    exclude("com.google.firebase", "firebase-common-ktx")
   }
 
   // TODO(Remove when FirbaseAppTest has been modernized to use LiveData)

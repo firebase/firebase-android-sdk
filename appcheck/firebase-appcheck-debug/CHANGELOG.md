@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 19.0.0
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 18.0.0
 * [changed] Bump internal dependencies
 

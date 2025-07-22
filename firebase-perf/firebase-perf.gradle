@@ -109,15 +109,18 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation libs.dagger.dagger
-    api 'com.google.firebase:firebase-annotations:16.2.0'
+    api 'com.google.firebase:firebase-annotations:17.0.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
     api project(":protolite-well-known-types")
     implementation libs.okhttp
-    api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
-    api("com.google.firebase:firebase-components:18.0.0")
-    api("com.google.firebase:firebase-config:21.5.0")
-    api("com.google.firebase:firebase-installations:17.2.0")
+    api("com.google.firebase:firebase-common:22.0.0")
+    api("com.google.firebase:firebase-components:19.0.0")
+    api("com.google.firebase:firebase-config:21.5.0") {
+        exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
+    api("com.google.firebase:firebase-installations:18.0.0") {
+        exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
     api("com.google.firebase:firebase-sessions:2.0.7") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
@@ -136,6 +139,5 @@ dependencies {
     testImplementation libs.androidx.test.rules
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
 }

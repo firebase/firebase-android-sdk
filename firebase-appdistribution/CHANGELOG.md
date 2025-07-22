@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 16.0.0-beta16
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+
 # 16.0.0-beta15
 * [fixed] Added custom tab support for more browsers [#6692]
 

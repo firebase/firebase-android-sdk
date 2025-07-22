@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 20.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+
 # 19.4.4
 * [changed] Updated `firebase-crashlytics` dependency to v19.4.4
 

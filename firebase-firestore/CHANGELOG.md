@@ -1,6 +1,19 @@
 # Unreleased
 
 
+# 26.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
+* [fixed] Further improved performance of UTF-8 string ordering logic,
+  which had degraded in v25.1.2 and received some improvements in v25.1.3.
+  [#7053](//github.com/firebase/firebase-android-sdk/issues/7053)
+* [changed] Use the `compare()` methods defined in standard `Integer`, `Long`, and `Character`
+  classes instead of Firestore's bespoke implementations.
+  [#7109](//github.com/firebase/firebase-android-sdk/pull/7109)
+
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.
 * [fixed] Catch exception when stream is already cancelled during close. [#6894](//github.com/firebase/firebase-android-sdk/pull/6894)

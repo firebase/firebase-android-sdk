@@ -19,30 +19,35 @@ import java.nio.charset.StandardCharsets
 
 plugins {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of May 09, 2025.
+  // The versions shown here were the latest versions as of July 17, 2025.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
   // in general, match the version of kotlin("android").
-  id("com.android.application") version "8.9.2"
-  id("com.google.gms.google-services") version "4.4.2"
+  id("com.android.application") version "8.11.1"
+  id("com.google.gms.google-services") version "4.4.3"
   val kotlinVersion = "2.1.10"
   kotlin("android") version kotlinVersion
   kotlin("plugin.serialization") version kotlinVersion
 
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
-  id("com.diffplug.spotless") version "7.0.0.BETA4"
+  id("com.diffplug.spotless") version "7.1.0"
+
+  id("org.jetbrains.dokka") version "2.0.0"
 }
 
 dependencies {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of May 09, 2025.
-  implementation("com.google.firebase:firebase-dataconnect:16.0.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0")
-  implementation("androidx.appcompat:appcompat:1.7.0")
+  // The versions shown here were the latest versions as of July 17, 2025.
+
+  // Data Connect
+  implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+  implementation("com.google.firebase:firebase-dataconnect")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+  implementation("androidx.appcompat:appcompat:1.7.1")
   implementation("androidx.activity:activity-ktx:1.10.1")
-  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
   implementation("com.google.android.material:material:1.12.0")
 
   // The following code in this "dependencies" block can be omitted from customer
@@ -52,16 +57,23 @@ dependencies {
   implementation("io.kotest.extensions:kotest-property-arbs:2.1.2")
 }
 
+dokka {
+  moduleName.set("Data Connect Demo")
+  dokkaSourceSets.main {
+    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+  }
+}
+
 // The remaining code in this file can be omitted from customer facing
 // documentation. It's here just to make things compile and/or configure
 // optional components of the build (e.g. spotless code formatting).
 
 android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
-  compileSdk = 35
+  compileSdk = 36
   defaultConfig {
-    minSdk = 21
-    targetSdk = 35
+    minSdk = 23
+    targetSdk = 36
     versionCode = 1
     versionName = "1.0"
   }
@@ -121,6 +133,13 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val nodeExecutableDirectory: Property<String>
 
+  @get:InputFile
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.ABSOLUTE)
+  abstract val dataConnectEmulatorExecutable: RegularFileProperty
+
+  @get:Input @get:Optional abstract val dataConnectPreviewFlags: Property<String>
+
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @get:Internal abstract val workDirectory: DirectoryProperty
@@ -137,6 +156,8 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
     val firebaseToolsVersion: String = firebaseToolsVersion.get()
     val firebaseCommand: String = firebaseCommand.get()
     val nodeExecutableDirectory: String? = nodeExecutableDirectory.orNull
+    val dataConnectEmulatorExecutable: File? = dataConnectEmulatorExecutable.orNull?.asFile
+    val dataConnectPreviewFlags: String? = dataConnectPreviewFlags.orNull
     val outputDirectory: File = outputDirectory.get().asFile
     val workDirectory: File = workDirectory.get().asFile
 
@@ -144,6 +165,8 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
     logger.info("firebaseToolsVersion: {}", firebaseToolsVersion)
     logger.info("firebaseCommand: {}", firebaseCommand)
     logger.info("nodeExecutableDirectory: {}", nodeExecutableDirectory)
+    logger.info("dataConnectEmulatorExecutable: {}", dataConnectEmulatorExecutable)
+    logger.info("dataConnectPreviewFlags: {}", dataConnectPreviewFlags)
     logger.info("outputDirectory: {}", outputDirectory.absolutePath)
     logger.info("workDirectory: {}", workDirectory.absolutePath)
 
@@ -167,14 +190,16 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
               this,
               firebaseCommand = firebaseCommand,
               nodeExecutableDirectory = nodeExecutableDirectory,
+              dataConnectEmulatorExecutable = dataConnectEmulatorExecutable,
+              dataConnectPreviewFlags = dataConnectPreviewFlags,
               path = providerFactory.environmentVariable("PATH").orNull,
             )
             args("--debug", "dataconnect:sdk:generate")
             workingDir(inputDirectory)
             isIgnoreExitValue = false
-            if (logStream !== null) {
-              standardOutput = logStream
-              errorOutput = logStream
+            logStream?.let {
+              standardOutput = it
+              errorOutput = it
             }
           }
         }
@@ -194,24 +219,22 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
       execSpec: ExecSpec,
       firebaseCommand: String,
       nodeExecutableDirectory: String?,
+      dataConnectEmulatorExecutable: File?,
+      dataConnectPreviewFlags: String?,
       path: String?,
     ) {
       execSpec.setCommandLine(firebaseCommand)
 
-      val newPath: String? =
-        if (nodeExecutableDirectory === null) {
-          null
-        } else {
-          if (path === null) {
-            nodeExecutableDirectory
-          } else {
-            nodeExecutableDirectory + File.pathSeparator + path
-          }
-        }
-
-      if (newPath !== null) {
+      nodeExecutableDirectory?.let {
+        val newPath = if (path === null) it else (it + File.pathSeparator + path)
         execSpec.environment("PATH", newPath)
       }
+
+      dataConnectEmulatorExecutable?.let {
+        execSpec.environment("DATACONNECT_EMULATOR_BINARY_PATH", it.absolutePath)
+      }
+
+      dataConnectPreviewFlags?.let { execSpec.environment("DATA_CONNECT_PREVIEW", it) }
     }
   }
 }
@@ -261,14 +284,20 @@ run {
       outputDirectory = layout.buildDirectory.dir("dataConnect/generatedSources")
 
       firebaseCommand =
-        project.providers
-          .gradleProperty("dataConnect.minimalApp.firebaseCommand")
-          .orElse("firebase")
+        project.providers.gradleProperty("dataConnect.demo.firebaseCommand").orElse("firebase")
 
       nodeExecutableDirectory =
-        project.providers.gradleProperty("dataConnect.minimalApp.nodeExecutableDirectory").map {
+        project.providers.gradleProperty("dataConnect.demo.nodeExecutableDirectory").map {
           projectDirectory.dir(it).asFile.absolutePath
         }
+
+      dataConnectEmulatorExecutable =
+        project.providers.gradleProperty("dataConnect.demo.dataConnectEmulatorExecutable").map {
+          projectDirectory.file(it)
+        }
+
+      dataConnectPreviewFlags =
+        project.providers.gradleProperty("dataConnect.demo.dataConnectPreviewFlags")
 
       val path = providers.environmentVariable("PATH")
       firebaseToolsVersion =
@@ -278,6 +307,8 @@ run {
               this,
               firebaseCommand = firebaseCommand.get(),
               nodeExecutableDirectory = nodeExecutableDirectory.orNull,
+              dataConnectEmulatorExecutable = dataConnectEmulatorExecutable.orNull?.asFile,
+              dataConnectPreviewFlags = dataConnectPreviewFlags.orNull,
               path = path.orNull,
             )
             args("--version")

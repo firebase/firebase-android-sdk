@@ -1,6 +1,13 @@
 # Unreleased
 
 
+# 26.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
+
 # 25.0.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
   [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
@@ -30,7 +37,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.2.2
-* [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be 
+* [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be
   specified when registerReceiver is being used. [#5597](https://github.com/firebase/firebase-android-sdk/pull/5597)
 
 

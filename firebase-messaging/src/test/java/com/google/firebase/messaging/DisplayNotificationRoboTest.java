@@ -475,7 +475,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that a valid notification with color is displayed. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testColor() {
     final String color = "#123456";
     Bundle data = new Bundle();
@@ -489,7 +489,7 @@ public class DisplayNotificationRoboTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testNoColor() {
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -503,7 +503,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that the user can choose the default color via AndroidManifest metadata. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
     metadata.putInt(

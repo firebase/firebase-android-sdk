@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import static org.junit.Assert.assertArrayEquals;
 
-import android.os.Build;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,7 +29,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link AdaptiveStreamBuffer}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Config.OLDEST_SDK)
 public class AdaptiveStreamBufferTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);

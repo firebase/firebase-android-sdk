@@ -18,7 +18,7 @@
           android:versionCode="1"
           android:versionName="1">
 
-    <!--<uses-sdk android:minSdkVersion="21"/>-->
+    <!--<uses-sdk android:minSdkVersion="23"/>-->
     <application>
         <service android:exported="false"
             android:name="com.google.firebase.components.ComponentDiscoveryService">

@@ -75,7 +75,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
       releaseNotes {
         enabled.convention(true)
-        hasKTX.convention(true)
         artifactId.convention(project.name)
         artifactName.convention(project.name)
       }
@@ -125,6 +124,20 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
     project.tasks.register("firebaseLint") { dependsOn("lint") }
     Coverage.apply(library)
+  }
+
+  protected fun setupMetalavaSemver(project: Project, library: FirebaseLibraryExtension) {
+    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
+      apiTxtFile.set(project.file("api.txt"))
+      output.set(project.file("existing_api.txt"))
+    }
+
+    project.tasks.register<SemVerTask>("metalavaSemver") {
+      apiTxtFile.set(project.file("api.txt"))
+      existingApiFile.set(project.file("existing_api.txt"))
+      currentVersionString.value(library.version)
+      previousVersionString.value(library.previousVersion)
+    }
   }
 
   protected fun getApiInfo(
@@ -291,7 +304,7 @@ fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
     .allDependencies
     .mapNotNull { it as? ProjectDependency }
     .map {
-      it.dependencyProject.extensions.findByType<FirebaseLibraryExtension>()
+      project.project(it.dependencyProject.path).extensions.findByType<FirebaseLibraryExtension>()
         ?: throw RuntimeException(
           "Project level dependencies must have the firebaseLibrary plugin. The following dependency does not: ${it.artifactName}"
         )
