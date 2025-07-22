@@ -20,10 +20,12 @@ public class ImagenEditMode private constructor(internal val value: String) {
 
   public companion object {
     /** Inserts a new element into an image */
+    @JvmField
     public val INPAINT_INSERTION: ImagenEditMode = ImagenEditMode("EDIT_MODE_INPAINT_INSERTION")
     /** Removes an element from an image */
+    @JvmField
     public val INPAINT_REMOVAL: ImagenEditMode = ImagenEditMode("EDIT_MODE_INPAINT_REMOVAL")
     /** Extend the borders of an image outwards */
-    public val OUTPAINT: ImagenEditMode = ImagenEditMode("EDIT_MODE_OUTPAINT")
+    @JvmField public val OUTPAINT: ImagenEditMode = ImagenEditMode("EDIT_MODE_OUTPAINT")
   }
 }

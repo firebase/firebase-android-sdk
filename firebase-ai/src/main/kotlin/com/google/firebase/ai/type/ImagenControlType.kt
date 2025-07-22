@@ -18,16 +18,21 @@ package com.google.firebase.ai.type
 /** Represents a control type for controlled Imagen generation/editing */
 public class ImagenControlType internal constructor(internal val value: String) {
   public companion object {
+
     /** Use edge detection to ensure the new image follow the same outlines */
-    public val CANNY: ImagenControlType = ImagenControlType("CONTROL_TYPE_CANNY")
+    @JvmField public val CANNY: ImagenControlType = ImagenControlType("CONTROL_TYPE_CANNY")
+
     /** Use enhanced edge detection to ensure the new image follow similar outlines */
-    public val SCRIBBLE: ImagenControlType = ImagenControlType("CONTROL_TYPE_SCRIBBLE")
+    @JvmField public val SCRIBBLE: ImagenControlType = ImagenControlType("CONTROL_TYPE_SCRIBBLE")
+
     /** Use face mesh control to ensure that the new image has the same facial expressions */
-    public val FACE_MESH: ImagenControlType = ImagenControlType("CONTROL_TYPE_FACE_MESH")
+    @JvmField public val FACE_MESH: ImagenControlType = ImagenControlType("CONTROL_TYPE_FACE_MESH")
+
     /**
      * Use color superpixels to ensure that the new image is similar in shape and color to the
      * original
      */
+    @JvmField
     public val COLOR_SUPERPIXEL: ImagenControlType =
       ImagenControlType("CONTROL_TYPE_COLOR_SUPERPIXEL")
   }

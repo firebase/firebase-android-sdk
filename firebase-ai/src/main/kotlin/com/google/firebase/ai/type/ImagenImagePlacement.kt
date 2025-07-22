@@ -73,27 +73,36 @@ private constructor(public val x: Int? = null, public val y: Int? = null) {
      * @param x the x coordinate of the top left corner of the original image
      * @param y the y coordinate of the top left corner of the original image
      */
+    @JvmStatic
     public fun fromCoordinate(x: Int, y: Int): ImagenImagePlacement {
       return ImagenImagePlacement(x, y)
     }
 
     /** Center the image horizontally and vertically within the larger image */
-    public val CENTER: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val CENTER: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Center the image horizontally and aligned with the top edge of the larger image */
-    public val TOP_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val TOP_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Center the image horizontally and aligned with the bottom edge of the larger image */
-    public val BOTTOM_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val BOTTOM_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Center the image vertically and aligned with the left edge of the larger image */
-    public val LEFT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val LEFT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Center the image vertically and aligned with the right edge of the larger image */
-    public val RIGHT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val RIGHT_CENTER: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Align the image with the top left corner of the larger image */
-    public val TOP_LEFT: ImagenImagePlacement = ImagenImagePlacement(0, 0)
+    @JvmField public val TOP_LEFT: ImagenImagePlacement = ImagenImagePlacement(0, 0)
+
     /** Align the image with the top right corner of the larger image */
-    public val TOP_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val TOP_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Align the image with the bottom left corner of the larger image */
-    public val BOTTOM_LEFT: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val BOTTOM_LEFT: ImagenImagePlacement = ImagenImagePlacement()
+
     /** Align the image with the bottom right corner of the larger image */
-    public val BOTTOM_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
+    @JvmField public val BOTTOM_RIGHT: ImagenImagePlacement = ImagenImagePlacement()
   }
 }

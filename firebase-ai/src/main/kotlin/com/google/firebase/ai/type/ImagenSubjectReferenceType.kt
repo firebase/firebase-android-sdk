@@ -19,13 +19,19 @@ package com.google.firebase.ai.type
 public class ImagenSubjectReferenceType private constructor(internal val value: String) {
 
   public companion object {
+
     /** Marks the reference type as being of a person */
+    @JvmField
     public val PERSON: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_PERSON")
+
     /** Marks the reference type as being of a animal */
+    @JvmField
     public val ANIMAL: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_ANIMAL")
+
     /** Marks the reference type as being of a product */
+    @JvmField
     public val PRODUCT: ImagenSubjectReferenceType =
       ImagenSubjectReferenceType("SUBJECT_TYPE_PRODUCT")
   }

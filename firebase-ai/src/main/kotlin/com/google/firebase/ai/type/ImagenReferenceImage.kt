@@ -74,7 +74,7 @@ internal constructor(
 
 /**
  * Represents a reference image (provided or generated) to bound the created image via ControlNet
- * @param image the image provided, required if enableComputation is false
+ * @param image the image provided, required if [enableComputation] is false
  * @param type the type of ControlNet reference image
  * @param referenceId the reference ID for this image, to be referenced in the prompt
  * @param enableComputation requests that the reference image be generated serverside instead of
@@ -125,6 +125,8 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * original image.
      * @param newPosition the placement of the original image within the new outpainted image.
      */
+    @JvmOverloads
+    @JvmStatic
     public fun generateMaskAndPadForOutpainting(
       image: ImagenInlineImage,
       newDimensions: Dimensions,
