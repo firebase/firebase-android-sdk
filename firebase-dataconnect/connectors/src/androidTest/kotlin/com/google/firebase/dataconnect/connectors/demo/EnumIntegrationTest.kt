@@ -449,6 +449,11 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
+  @Ignore(
+    "TODO(cl/785956954) Re-enable this test once testing against a data connect " +
+      "emulator that fixes serialization when more than one user-defined enum type " +
+      "in the data"
+  )
   fun multipleEnumColumns() = runTest {
     checkAll(NUM_ITERATIONS, Arb.enum<N5ekmae3jn>(), Arb.enum<S7yayynb25>()) { enum1, enum2 ->
       val key = connector.multipleEnumColumnsInsert.execute(enum1, enum2).data.key
