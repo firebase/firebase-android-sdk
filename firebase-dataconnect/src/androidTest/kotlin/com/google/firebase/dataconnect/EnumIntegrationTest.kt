@@ -255,7 +255,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryNullableByUndefinedEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
+      value1,
+      value2,
+      value3,
+      tag ->
       val insertVariables = Insert3NullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
       val queryVariables = GetNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
@@ -370,7 +374,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNonNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNonNullableListOfNonNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNonNullableByKeyVariables(key)
@@ -425,7 +429,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNonNullableListOfNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNullableByKeyVariables(key)
@@ -496,7 +500,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNullableListOfNonNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNullableListOfNonNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
@@ -560,7 +564,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNullableListOfNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNullableListOfNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNullableByKeyVariables(key)
