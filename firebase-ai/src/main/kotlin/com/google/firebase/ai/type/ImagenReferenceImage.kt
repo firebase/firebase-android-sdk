@@ -73,15 +73,16 @@ internal constructor(
 }
 
 /**
- * Represents a reference image (provided or generated) to bound the created image via ControlNet
+ * Represents a reference image (provided or generated) to bound the created image via controlled
+ * generation.
  * @param image the image provided, required if [enableComputation] is false
- * @param type the type of ControlNet reference image
+ * @param type the type of control reference image
  * @param referenceId the reference ID for this image, to be referenced in the prompt
- * @param enableComputation requests that the reference image be generated serverside instead of
+ * @param [enableComputation] requests that the reference image be generated serverside instead of
  * provided
- * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and enableComputation is true, this will
+ * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and [enableComputation] is true, this will
  * control the size of each superpixel region in pixels for the generated referenced image
- * @param superpixelRuler if type is COLOR_SUPERPIXEL and enableComputation is true, this will
+ * @param superpixelRuler if type is COLOR_SUPERPIXEL and [enableComputation] is true, this will
  * control the superpixel smoothness factor for the generated referenced image
  */
 @PublicPreviewAPI
