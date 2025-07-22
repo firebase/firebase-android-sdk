@@ -25,7 +25,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -41,7 +40,7 @@ internal class CollectionTests {
   fun `empty database returns no results`(): Unit = runBlocking {
     val pipeline = RealtimePipelineSource(db).collection("/users")
     val inputDocs = emptyList<MutableDocument>()
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -51,7 +50,7 @@ internal class CollectionTests {
     val doc1 = doc("users/alice/games/doc1", 1000, mapOf("title" to "minecraft"))
     val doc2 = doc("users/charlie/games/doc1", 1000, mapOf("title" to "halo"))
     val inputDocs = listOf(doc1, doc2)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -61,7 +60,7 @@ internal class CollectionTests {
     val doc1 = doc("users/bob/addresses/doc1", 1000, mapOf("city" to "New York"))
     val doc2 = doc("users/bob/inventories/doc1", 1000, mapOf("item_id" to 42L))
     val inputDocs = listOf(doc1, doc2)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -71,7 +70,7 @@ internal class CollectionTests {
     val doc1 = doc("games/42", 1000, mapOf("title" to "minecraft"))
     val doc2 = doc("users/bob", 1000, mapOf("score" to 90L, "rank" to 1L))
     val inputDocs = listOf(doc1, doc2)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -82,7 +81,7 @@ internal class CollectionTests {
     val doc2 = doc("users/bob/games/doc1", 1000, mapOf("title" to "minecraft"))
     val doc3 = doc("users/alice/games/doc1", 1000, mapOf("title" to "halo"))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -95,7 +94,7 @@ internal class CollectionTests {
     val doc4 = doc("games/doc1", 1000, mapOf("title" to "minecraft"))
     val inputDocs = listOf(doc1, doc2, doc3, doc4)
     // Firestore backend sorts by document key as a tie-breaker.
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3)
   }
 
@@ -109,7 +108,7 @@ internal class CollectionTests {
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L, "rank" to 2L))
     val doc4 = doc("games/doc1", 1000, mapOf("title" to "minecraft"))
     val inputDocs = listOf(doc1, doc2, doc3, doc4)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3)
   }
 
@@ -120,7 +119,7 @@ internal class CollectionTests {
     val doc2 = doc("users/bob/games/minecraft", 1000, mapOf("title" to "minecraft"))
     val doc3 = doc("users/bob/games/minecraft/players/player1", 1000, mapOf("location" to "sf"))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -134,7 +133,7 @@ internal class CollectionTests {
     val doc5 = doc("users/charlie", 1000, mapOf("score" to 97L, "rank" to 2L))
     val doc6 = doc("users-other/charlie", 1000, mapOf("score" to 97L, "rank" to 2L))
     val inputDocs = listOf(doc1, doc2, doc3, doc4, doc5, doc6)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc5)
   }
 
@@ -149,7 +148,7 @@ internal class CollectionTests {
     val doc6 = doc("users/alice/games/doc1", 1000, mapOf("score" to 30L))
     val inputDocs = listOf(doc1, doc2, doc3, doc4, doc5, doc6)
     // Expected order based on key for user bob's games
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc5).inOrder()
   }
 
@@ -167,7 +166,7 @@ internal class CollectionTests {
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val doc4 = doc("users/diane", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3, doc4)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc4)
   }
 
@@ -179,7 +178,7 @@ internal class CollectionTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3)
   }
 
@@ -191,7 +190,7 @@ internal class CollectionTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3)
   }
 
@@ -212,7 +211,7 @@ internal class CollectionTests {
         mapOf("score" to 97L, "rounds" to listOf("round2", "round3", "round4"))
       )
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3)
   }
 
@@ -226,7 +225,7 @@ internal class CollectionTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2).inOrder()
   }
 
@@ -241,7 +240,7 @@ internal class CollectionTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
   }
 
@@ -259,7 +258,7 @@ internal class CollectionTests {
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
     val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
     val inputDocs = listOf(doc1, doc2, doc3)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1).inOrder()
   }
 
@@ -278,7 +277,7 @@ internal class CollectionTests {
     val doc4 = doc("users/bob/inventories/a", 1000, mapOf("type" to "sword"))
     val doc5 = doc("users/alice/games/c", 1000, mapOf("title" to "skyrim"))
     val inputDocs = listOf(doc1, doc2, doc3, doc4, doc5)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3).inOrder()
   }
 
@@ -295,7 +294,7 @@ internal class CollectionTests {
     val doc4 = doc("users/bob/inventories/a", 1000, mapOf("type" to "sword"))
     val doc5 = doc("users/alice/games/c", 1000, mapOf("title" to "skyrim"))
     val inputDocs = listOf(doc1, doc2, doc3, doc4, doc5)
-    val result = runPipeline(pipeline, flowOf(*inputDocs.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc2, doc1).inOrder()
   }
 }

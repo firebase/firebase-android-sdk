@@ -26,7 +26,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.Expr.Companion.not
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -43,7 +42,7 @@ internal class SortTests {
     val documents = emptyList<MutableDocument>()
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -52,7 +51,7 @@ internal class SortTests {
     val documents = emptyList<MutableDocument>()
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -62,7 +61,7 @@ internal class SortTests {
     val documents = listOf(doc1)
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -76,7 +75,7 @@ internal class SortTests {
         .where(exists(field("age")))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -90,7 +89,7 @@ internal class SortTests {
         .where(not(exists(field("age"))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -104,7 +103,7 @@ internal class SortTests {
         .where(field("age").eq(10L))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -114,7 +113,7 @@ internal class SortTests {
     val documents = listOf(doc1)
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -128,7 +127,7 @@ internal class SortTests {
         .where(exists(field("age")))
         .sort(field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -142,7 +141,7 @@ internal class SortTests {
         .where(field("age").eq(10L))
         .sort(field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -162,7 +161,7 @@ internal class SortTests {
     // So expected order: doc3, doc1, doc2, doc4, doc5 (if 'd' < 'e') or doc3, doc1, doc2, doc5,
     // doc4 (if 'e' < 'd')
     // Since the C++ test uses UnorderedElementsAre, we'll use containsExactlyElementsIn.
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc1, doc2, doc4, doc5)).inOrder()
     // Actually, the local pipeline implementation might not guarantee tie-breaking by key unless
     // explicitly added.
@@ -191,7 +190,7 @@ internal class SortTests {
         .where(exists(field("age")))
         .sort(field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -209,7 +208,7 @@ internal class SortTests {
         .collection("users")
         .where(field("age").gt(0.0))
         .sort(field("age").descending())
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -227,7 +226,7 @@ internal class SortTests {
         .collection("users")
         .sort(field("age").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // age desc: 100(c), 75.5(a), 25(b), 10(d), 10(e)
     // name asc for 10: diane(d), eric(e)
     // Expected: c, a, b, d, e
@@ -250,7 +249,7 @@ internal class SortTests {
         .where(exists(field("name")))
         .sort(field("age").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -272,7 +271,7 @@ internal class SortTests {
     // Filtered: doc4, doc5
     // Sort by missing age (no op), then missing name (no op), then by key ascending.
     // d < e
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -292,7 +291,7 @@ internal class SortTests {
         .where(field("name").regexMatch(".*")) // Implicit exists name
         .sort(field("age").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -311,7 +310,7 @@ internal class SortTests {
         .where(exists(field("name")))
         .sort(field("age").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -330,7 +329,7 @@ internal class SortTests {
         .where(not(exists(field("name")))) // Only doc2 matches
         .sort(field("age").descending(), field("name").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -350,7 +349,7 @@ internal class SortTests {
         .where(not(exists(field("name")))) // Only doc2 matches
         .sort(field("name").descending(), field("age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -369,7 +368,7 @@ internal class SortTests {
         .where(field("name").regexMatch(".*"))
         .sort(field("age").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -388,7 +387,7 @@ internal class SortTests {
     // Sorting by a missing field results in undefined order relative to each other,
     // but documents are secondarily sorted by key.
     // Since it's descending for not_age (all are null essentially), key order will be ascending.
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3, doc4, doc5).inOrder()
   }
 
@@ -402,7 +401,7 @@ internal class SortTests {
         .where(exists(field("not_age")))
         .sort(field("not_age").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -420,7 +419,7 @@ internal class SortTests {
     // Missing fields sort first in ascending order, then by key. b < d
     // Then existing fields sorted by value: e (10.0) < a (75.5) < c (100.0)
     // Expected: doc2, doc4, doc5, doc1, doc3
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc4, doc5, doc1, doc3).inOrder()
   }
 
@@ -440,7 +439,7 @@ internal class SortTests {
         .sort(field("age").ascending())
 
     // Sort remaining: doc5 (10.0), doc1 (75.5), doc3 (100.0)
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5, doc1, doc3).inOrder()
   }
 
@@ -460,7 +459,7 @@ internal class SortTests {
         .sort(field("age").ascending()) // Sort by non-existent field, then key
 
     // Sort remaining by key: doc2, doc4
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc4).inOrder()
   }
 
@@ -480,7 +479,7 @@ internal class SortTests {
         .limit(2)
 
     // Expected: doc4, doc5
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -500,7 +499,7 @@ internal class SortTests {
         .sort(field("age").ascending()) // Sort: e (10), b (25), a (75.5), c (100)
         .limit(2) // Limit 2: e, b
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5, doc2).inOrder()
   }
 
@@ -520,7 +519,7 @@ internal class SortTests {
         .sort(field("age").ascending()) // Sort by missing field -> key order: d, e
         .limit(2) // Limit 2: d, e
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -531,7 +530,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").sort(field("age").ascending()).limit(0)
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -551,7 +550,7 @@ internal class SortTests {
         .limit(1) // Limits to doc1 (key "users/a" is first by default key order)
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -571,7 +570,7 @@ internal class SortTests {
         .limit(1) // Limits to doc1 (key "users/a")
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -591,7 +590,7 @@ internal class SortTests {
         .limit(1) // Limits to doc4 (key "users/d")
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -611,7 +610,7 @@ internal class SortTests {
         .where(not(exists(field("age")))) // Filter out a, b (both have age)
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -622,7 +621,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db).collectionGroup("users").limit(0).sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -647,7 +646,7 @@ internal class SortTests {
     // doc5: 20+10 = 30
     // doc1: 10+10 = 20
     // Expected: doc3, doc4, doc2, doc5, doc1
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4, doc2, doc5, doc1).inOrder()
   }
 
@@ -673,7 +672,7 @@ internal class SortTests {
     // doc5: 20+10 = 30
     // doc1: 10+10 = 20
     // Expected: doc3, doc2, doc5, doc1
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc2, doc5, doc1).inOrder()
   }
 
@@ -696,7 +695,7 @@ internal class SortTests {
     // Sort by (age+10) desc where age is missing. This means they are treated as null for the
     // expression.
     // Then tie-broken by key: d, e
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -722,7 +721,7 @@ internal class SortTests {
     // However, if these are separate stages, the last one would indeed re-sort the entire output of
     // the previous.
     // Let's assume the Kotlin pipeline behaves this way for separate .orderBy() calls.
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
   }
 
@@ -740,7 +739,7 @@ internal class SortTests {
         .sort(field("age").ascending()) // Sort by age: 2(30), 1(40), 3(50)
         .sort(field(PublicFieldPath.documentId()).ascending()) // Sort by key: 1, 2, 3
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3).inOrder()
   }
 
@@ -765,7 +764,7 @@ internal class SortTests {
         .sort(field(PublicFieldPath.documentId()).ascending())
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
   }
 
@@ -783,7 +782,7 @@ internal class SortTests {
         .sort(field("age").ascending())
         .sort(field(PublicFieldPath.documentId()).ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3).inOrder()
   }
 }

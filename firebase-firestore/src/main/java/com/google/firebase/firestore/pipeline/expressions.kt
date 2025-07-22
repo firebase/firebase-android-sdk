@@ -22,6 +22,7 @@ import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.core.Canonicalizable
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
 import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.model.FieldPath.KEY_PATH
 import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.model.Values.canonicalId
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.CustomClassMapper
@@ -49,15 +51,26 @@ import java.util.Date
  * The [Expr] class provides a fluent API for building expressions. You can chain together method
  * calls to create complex expressions.
  */
-abstract class Expr internal constructor() {
+abstract class Expr internal constructor() : Canonicalizable {
 
   internal class Constant(val value: Value) : Expr() {
     override fun toProto(userDataReader: UserDataReader): Value = value
-    override fun evaluateContext(context: EvaluationContext) = { _: MutableDocument ->
+    override fun evaluateFunction(context: EvaluationContext) = { _: MutableDocument ->
       EvaluateResultValue(value)
     }
     override fun toString(): String {
-      return "Constant(value=$value)"
+      return canonicalId()
+    }
+    override fun canonicalId() = "cst(${canonicalId(value)})"
+
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is Constant) return false
+      return value == other.value
+    }
+
+    override fun hashCode(): Int {
+      return value.hashCode()
     }
   }
 
@@ -218,19 +231,7 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun constant(ref: DocumentReference): Expr {
-      return object : Expr() {
-        override fun toProto(userDataReader: UserDataReader): Value {
-          userDataReader.validateDocumentReference(ref, ::IllegalArgumentException)
-          return encodeValue(ref)
-        }
-
-        override fun evaluateContext(
-          context: EvaluationContext
-        ): (input: MutableDocument) -> EvaluateResult {
-          val result = EvaluateResultValue(toProto(context.pipeline.userDataReader))
-          return { _ -> result }
-        }
-      }
+      return Constant(encodeValue(ref))
     }
 
     /**
@@ -4109,7 +4110,7 @@ abstract class Expr internal constructor() {
 
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
-  internal abstract fun evaluateContext(context: EvaluationContext): EvaluateDocument
+  internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
 }
 
 /** Expressions that have an alias are [Selectable] */
@@ -4133,7 +4134,22 @@ abstract class Selectable : Expr() {
 class ExprWithAlias internal constructor(override val alias: String, override val expr: Expr) :
   Selectable() {
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
-  override fun evaluateContext(context: EvaluationContext) = expr.evaluateContext(context)
+  override fun evaluateFunction(context: EvaluationContext) = expr.evaluateFunction(context)
+  override fun canonicalId() = expr.canonicalId()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is ExprWithAlias) return false
+    if (alias != other.alias) return false
+    if (expr != other.expr) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = alias.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
+  }
 }
 
 /**
@@ -4168,7 +4184,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 
-  override fun evaluateContext(context: EvaluationContext) =
+  override fun evaluateFunction(context: EvaluationContext) =
     block@{ input: MutableDocument ->
       EvaluateResultValue(
         when (fieldPath) {
@@ -4180,6 +4196,18 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
         }
       )
     }
+
+  override fun canonicalId(): String = "fld(${fieldPath.canonicalString()})"
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Field) return false
+    return fieldPath == other.fieldPath
+  }
+
+  override fun hashCode(): Int {
+    return fieldPath.hashCode()
+  }
 }
 
 /**
@@ -4247,8 +4275,29 @@ internal constructor(
     return Value.newBuilder().setFunctionValue(builder).build()
   }
 
-  final override fun evaluateContext(context: EvaluationContext): EvaluateDocument =
-    function(params.map { expr -> expr.evaluateContext(context) })
+  final override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    function(params.map { expr -> expr.evaluateFunction(context) })
+
+  override fun canonicalId(): String {
+    val paramStrings = params.map { paramPtr -> paramPtr.canonicalId() }
+    return "fn(${name}[${paramStrings.joinToString(",")}])"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is FunctionExpr) return false
+    if (name != other.name) return false
+    if (!params.contentEquals(other.params)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = name.hashCode()
+    result = 31 * result + params.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 /** A class that represents a filter condition. */
@@ -4352,7 +4401,26 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-class Ordering private constructor(val expr: Expr, internal val dir: Direction) {
+class Ordering private constructor(val expr: Expr, internal val dir: Direction) : Canonicalizable {
+  override fun canonicalId(): String {
+    val direction = if (dir == Direction.ASCENDING) "asc" else "desc"
+    return "${expr.canonicalId()}$direction"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Ordering) return false
+    if (expr != other.expr) return false
+    if (dir != other.dir) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = expr.hashCode()
+    result = 31 * result + dir.hashCode()
+    return result
+  }
+
   companion object {
 
     /**

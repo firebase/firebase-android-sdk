@@ -26,7 +26,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.not
 import com.google.firebase.firestore.pipeline.Expr.Companion.or
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -47,7 +46,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").gt(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -60,7 +59,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").gte(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -73,7 +72,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").lt(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -86,7 +85,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").lte(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
@@ -99,7 +98,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").neq(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -117,7 +116,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").neq(90L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4, doc5, doc6, doc7, doc8))
   }
 
@@ -135,7 +134,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(field("score").gt(42L))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -156,7 +155,7 @@ internal class InequalityTests {
 
     val pipeline = RealtimePipelineSource(db).collection("users").where(not(field("score").gt(90L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4, doc5, doc6, doc7, doc8))
   }
 
@@ -173,7 +172,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("rank").eq(2L), field("score").gt(80L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -189,7 +188,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").eq(90L), field("score").gt(80L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -206,7 +205,7 @@ internal class InequalityTests {
         .where(field("score").gte(90L))
         .sort(field("score").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3).inOrder()
   }
 
@@ -223,7 +222,7 @@ internal class InequalityTests {
         .where(field("score").gte(90L))
         .sort(field("rank").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1).inOrder()
   }
 
@@ -239,7 +238,7 @@ internal class InequalityTests {
         .collection("users")
         .where(or(field("score").gt(90L), field("score").lt(60L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -261,7 +260,7 @@ internal class InequalityTests {
         .collection("users")
         .where(or(field("score").gt(80L), field("rank").lt(2L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -282,7 +281,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(80L), field("score").eqAny(listOf(50L, 80L, 97L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -308,7 +307,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("rank").lt(3L), field("score").eqAny(listOf(50L, 80L, 97L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -327,7 +326,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(80L), field("score").notEqAny(listOf(90L, 95L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -350,7 +349,7 @@ internal class InequalityTests {
         .collection("users")
         .where(field("score").notEqAny(listOf("foo", 90L, false)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result)
       .containsExactlyElementsIn(listOf(doc3, doc4, doc5, doc6, doc7, doc8, doc9, doc10))
   }
@@ -373,7 +372,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("rank").lt(3L), field("score").notEqAny(listOf(90L, 95L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -393,7 +392,7 @@ internal class InequalityTests {
         .where(and(field("rank").eq(2L), field("score").gt(80L)))
         .sort(field("rank").ascending(), field("score").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc4).inOrder()
   }
 
@@ -422,7 +421,7 @@ internal class InequalityTests {
         .where(and(field("rank").eqAny(listOf(2L, 3L, 4L)), field("score").gt(80L)))
         .sort(field("rank").ascending(), field("score").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc1).inOrder()
   }
 
@@ -453,7 +452,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("scores").lte(array(90L, 90L, 90L)), field("rounds").gt(array(1L, 2L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -491,7 +490,7 @@ internal class InequalityTests {
     // In Kotlin, arrayContains is the equivalent of C++ ArrayContainsExpr for a single element.
     // For multiple elements, it would be arrayContainsAny.
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -510,7 +509,7 @@ internal class InequalityTests {
         .sort(field("rank").ascending())
         .limit(2)
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4).inOrder()
   }
 
@@ -526,7 +525,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(90L), field("score").lt(100L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -547,7 +546,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(90L), field("rank").lt(2L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -569,7 +568,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(80L), field("rank").lt(3L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -592,7 +591,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").gt(40L), field("rank").lt(4L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3))
   }
 
@@ -608,7 +607,7 @@ internal class InequalityTests {
         .collection("users")
         .where(and(field("score").lt(90L), field("rank").gt(3L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -637,7 +636,7 @@ internal class InequalityTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -654,7 +653,7 @@ internal class InequalityTests {
         .where(and(field("rank").lt(3L), field("score").gt(80L)))
         .sort(field("rank").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1).inOrder()
   }
 
@@ -671,7 +670,7 @@ internal class InequalityTests {
         .where(and(field("rank").lt(3L), field("score").gt(80L)))
         .sort(field("rank").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3).inOrder()
   }
 
@@ -688,7 +687,7 @@ internal class InequalityTests {
         .where(and(field("rank").lt(3L), field("score").gt(80L)))
         .sort(field("rank").ascending(), field("score").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1).inOrder()
   }
 
@@ -705,7 +704,7 @@ internal class InequalityTests {
         .where(and(field("rank").lt(3L), field("score").gt(80L)))
         .sort(field("rank").descending(), field("score").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3).inOrder()
   }
 
@@ -722,7 +721,7 @@ internal class InequalityTests {
         .where(and(field("rank").lt(3L), field("score").gt(80L)))
         .sort(field("score").descending(), field("rank").descending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1).inOrder()
   }
 }

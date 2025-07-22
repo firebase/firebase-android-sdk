@@ -22,7 +22,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.constant
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -43,7 +42,7 @@ internal class UnicodeTests {
     val documents = listOf(doc1, doc2, doc3)
     val pipeline = RealtimePipelineSource(db).collection("/🐵").sort(field("Ł").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3).inOrder()
   }
 
@@ -66,7 +65,7 @@ internal class UnicodeTests {
         )
         .sort(field("str").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1).inOrder()
   }
 
@@ -79,7 +78,7 @@ internal class UnicodeTests {
     val documents = listOf(doc1, doc2, doc3)
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("foo").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc2, doc1).inOrder()
   }
 
@@ -92,7 +91,7 @@ internal class UnicodeTests {
     val documents = listOf(doc1, doc2, doc3)
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("map").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc2).inOrder()
   }
 
@@ -105,7 +104,7 @@ internal class UnicodeTests {
     val documents = listOf(doc1, doc2, doc3)
     val pipeline = RealtimePipelineSource(db).collection("users").sort(field("map").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc2).inOrder()
   }
 }

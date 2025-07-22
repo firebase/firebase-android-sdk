@@ -26,7 +26,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.map
 import com.google.firebase.firestore.pipeline.Expr.Companion.not
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -126,7 +125,7 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(field("a.b.c.d.e.f.g.h.i.j.k").eq(constant(42L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -219,7 +218,7 @@ internal class NestedPropertiesTests {
         .where(field("a.b.c.d.e.f.g.h.i.j.k").gte(constant(0L)))
         .sort(field(PublicFieldPath.documentId()).ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3).inOrder()
   }
 
@@ -254,7 +253,7 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(field("address.street").eq(constant("76")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -290,7 +289,7 @@ internal class NestedPropertiesTests {
         .where(field("address.city").eq(constant("San Francisco")))
         .where(field("address.zip").gt(constant(90000L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -329,7 +328,7 @@ internal class NestedPropertiesTests {
         )
         .where(field("address.zip").gt(constant(90000L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -366,7 +365,7 @@ internal class NestedPropertiesTests {
         .where(field("address.city").eq(constant("San Francisco")))
         .where(field("address.zip").gt(constant(90000L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -400,25 +399,25 @@ internal class NestedPropertiesTests {
       RealtimePipelineSource(db)
         .collection("/users")
         .where(field("address.zip").gt(constant(90000L)))
-    assertThat(runPipeline(pipeline1, flowOf(*documents.toTypedArray())).toList())
+    assertThat(runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc1, doc3)
 
     val pipeline2 =
       RealtimePipelineSource(db)
         .collection("/users")
         .where(field("address.zip").lt(constant(90000L)))
-    assertThat(runPipeline(pipeline2, flowOf(*documents.toTypedArray())).toList())
+    assertThat(runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc2)
 
     val pipeline3 =
       RealtimePipelineSource(db).collection("/users").where(field("address.zip").lt(constant(0L)))
-    assertThat(runPipeline(pipeline3, flowOf(*documents.toTypedArray())).toList()).isEmpty()
+    assertThat(runPipeline(pipeline3, listOf(*documents.toTypedArray())).toList()).isEmpty()
 
     val pipeline4 =
       RealtimePipelineSource(db)
         .collection("/users")
         .where(field("address.zip").neq(constant(10011L)))
-    assertThat(runPipeline(pipeline4, flowOf(*documents.toTypedArray())).toList())
+    assertThat(runPipeline(pipeline4, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc1, doc3)
   }
 
@@ -451,7 +450,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db).collection("/users").where(exists(field("address.street")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -484,7 +483,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db).collection("/users").where(not(exists(field("address.street"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc4).inOrder()
   }
 
@@ -519,7 +518,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db).collection("/users").where(isNull(field("address.street")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -554,7 +553,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db).collection("/users").where(not(isNull(field("address.street"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -593,7 +592,7 @@ internal class NestedPropertiesTests {
         .where(exists(field("address.street")))
         .sort(field("address.street").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2).inOrder()
   }
 
@@ -629,7 +628,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db).collection("/users").sort(field("address.street").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // Missing fields sort first, then by key (c < d). Then existing fields by value ("41" < "76").
     assertThat(result).containsExactly(doc3, doc4, doc1, doc2).inOrder()
   }
@@ -646,7 +645,7 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(field("address.city").eq(constant("San Francisco")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -662,7 +661,7 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(field(PublicFieldPath.of("address.city")).eq(constant("San Francisco")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 }
