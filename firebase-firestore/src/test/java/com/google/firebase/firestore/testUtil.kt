@@ -15,16 +15,8 @@
 package com.google.firebase.firestore
 
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.EvaluationContext
-import kotlinx.coroutines.flow.Flow
 
 internal fun runPipeline(
   pipeline: RealtimePipeline,
-  input: Flow<MutableDocument>
-): Flow<MutableDocument> {
-  val rewrittenPipeline = pipeline.rewriteStages()
-  val context = EvaluationContext(rewrittenPipeline)
-  return rewrittenPipeline.stages.fold(input) { documentFlow, stage ->
-    stage.evaluate(context, documentFlow)
-  }
-}
+  input: List<MutableDocument>
+): List<MutableDocument> = pipeline.evaluate(input)
