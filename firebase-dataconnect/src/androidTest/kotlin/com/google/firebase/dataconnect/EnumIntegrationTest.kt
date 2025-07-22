@@ -32,6 +32,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -653,6 +654,39 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for EnumKey table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun enumAsPrimaryKey() = runTest {
+    N5ekmae3jn.entries.forEach { enumValue ->
+      val tag = Arb.dataConnect.tag().next(rs)
+      val insertVariables = InsertEnumKeyVariables(enumValue, tag)
+      val key = dataConnect.mutation(insertVariables).execute().data.key
+      withClue(key) { key.enumValue shouldBe enumValue }
+
+      val queryVariables = GetEnumKeyByKeyVariables(key)
+      val queryRef = dataConnect.query(queryVariables)
+      val queryResult = queryRef.execute().data
+      withClue(queryResult) { queryResult?.item?.tag shouldBe tag }
+    }
+  }
+
+  @Serializable
+  private data class InsertEnumKeyVariables(val enumValue: N5ekmae3jn, val tag: String)
+
+  @Serializable private data class InsertEnumKeyData(val key: EnumKeyKey)
+
+  @Serializable private data class EnumKeyKey(val id: String, val enumValue: N5ekmae3jn)
+
+  @Serializable private data class GetEnumKeyByKeyVariables(val key: EnumKeyKey)
+
+  @Serializable
+  private data class GetEnumKeyByKeyData(val item: Item?) {
+    @Serializable data class Item(val tag: String)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -790,6 +824,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     ): MutationRef<Unit, UpdateNonNullableVariables> =
       mutation("EnumNonNullable_UpdateByKey", variables, serializer(), serializer())
 
+    fun FirebaseDataConnect.mutation(
+      variables: InsertEnumKeyVariables
+    ): MutationRef<InsertEnumKeyData, InsertEnumKeyVariables> =
+      mutation("EnumKey_Insert", variables, serializer(), serializer())
+
     fun FirebaseDataConnect.query(
       variables: GetNonNullableByKeyVariables
     ): QueryRef<GetNonNullableByKeyData?, GetNonNullableByKeyVariables> =
@@ -817,6 +856,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       variables: GetNullableListOfNullableByKeyVariables
     ): QueryRef<GetNullableListOfNullableByKeyData?, GetNullableListOfNullableByKeyVariables> =
       query("EnumNullableListOfNullable_GetByKey", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetEnumKeyByKeyVariables
+    ): QueryRef<GetEnumKeyByKeyData?, GetEnumKeyByKeyVariables> =
+      query("EnumKey_GetByKey", variables, serializer(), serializer())
 
     fun FirebaseDataConnect.query(
       variables: GetNonNullableByTagAndValueVariables
