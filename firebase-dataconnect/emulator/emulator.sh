@@ -23,32 +23,25 @@ readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:543
 
 function main {
   parse_args "$@"
-
-  log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING:-<undefined>}"
-  log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH:-<undefined>}"
-
-  readonly FIREBASE_ARGS=(
-    firebase
-    --debug
-    emulators:start
-    --only auth,dataconnect
-  )
-
-  log "Running command: ${FIREBASE_ARGS[*]}"
-  exec "${FIREBASE_ARGS[@]}"
+  log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
+  log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
+  log "DATA_CONNECT_PREVIEW=${DATA_CONNECT_PREVIEW}"
+  run_command firebase --debug emulators:start --only auth,dataconnect
 }
 
 function parse_args {
   local emulator_binary=''
   local postgresql_string="${DEFAULT_POSTGRESQL_STRING}"
+  local preview_flags=''
   local wipe_and_restart_postgres_pod=0
 
   local OPTIND=1
   local OPTERR=0
-  while getopts ":c:p:hw" arg ; do
+  while getopts ":c:p:v:hw" arg ; do
     case "$arg" in
       c) emulator_binary="${OPTARG}" ;;
       p) postgresql_string="${OPTARG}" ;;
+      v) preview_flags="${OPTARG}" ;;
       w) wipe_and_restart_postgres_pod=1 ;;
       h)
         print_help
@@ -71,23 +64,19 @@ function parse_args {
     esac
   done
 
-  if [[ ! -z $emulator_binary ]] ; then
-    export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
-  fi
-
-  if [[ ! -z $postgresql_string ]] ; then
-    export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
-  fi
+  export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
+  export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
+  export DATA_CONNECT_PREVIEW="${preview_flags}"
 
   if [[ $wipe_and_restart_postgres_pod == "1" ]] ; then
-    local wipe_args="${SCRIPT_DIR}/wipe_postgres_db.sh"
-    log "Running command: ${wipe_args[*]}"
-    "${wipe_args[@]}"
-
-    local start_args="${SCRIPT_DIR}/start_postgres_pod.sh"
-    log "Running command: ${start_args[*]}"
-    "${start_args[@]}"
+    run_command "${SCRIPT_DIR}/wipe_postgres_db.sh"
+    run_command "${SCRIPT_DIR}/start_postgres_pod.sh"
   fi
+}
+
+function run_command {
+  log "Running command: $*"
+  "$@"
 }
 
 function print_help {
@@ -109,6 +98,11 @@ function print_help {
   echo "    the the default value of \"${DEFAULT_POSTGRESQL_STRING}\" is used."
   echo "    If specified as the empty string then an ephemeral PGLite server is used."
   echo
+  echo "  -v <data_connect_preview_flags>"
+  echo "    Uses the given Data Connect preview flags when launching the emulator."
+  echo "    If not specified then an empty string is used, meaning that no preview flags"
+  echo "    are in effect."
+  echo
   echo "  -w"
   echo "    If specified, then a local PostgreSQL container is wiped and restarted"
   echo "    before launching the emulators. This is accomplished by running the scripts"
@@ -116,17 +110,6 @@ function print_help {
   echo
   echo "  -h"
   echo "    Print this help screen and exit, as if successful."
-  echo
-  echo "Environment Variables:"
-  echo "  DATACONNECT_EMULATOR_BINARY_PATH"
-  echo "    This variable will be set to the value of the -c argument prior to launching"
-  echo "    the emulators. If the -c argument is not given then the value of this environment"
-  echo "    variable will be used as if it had been specified to the -c argument."
-  echo
-  echo "  FIREBASE_DATACONNECT_POSTGRESQL_STRING"
-  echo "    This variable will be set to the value of the -p argument prior to launching"
-  echo "    the emulators. If the -p argument is not given then the value of this environment"
-  echo "    variable will be set to \"${DEFAULT_POSTGRESQL_STRING}\"."
 }
 
 function log {
