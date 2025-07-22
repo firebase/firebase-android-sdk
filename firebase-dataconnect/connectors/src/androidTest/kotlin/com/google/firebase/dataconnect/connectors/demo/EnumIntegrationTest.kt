@@ -431,12 +431,28 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun enumAsPrimaryKey() = runTest {
     N5ekmae3jn.entries.forEach { enumValue ->
       val tagValue = Arb.dataConnect.tag().next(rs)
-      val key = connector.enumKeyInsert.execute(enumValue) { tag=tagValue }.data.key
-      withClue(key) {
-        key.enumValue.value shouldBe enumValue
-      }
+      val key = connector.enumKeyInsert.execute(enumValue) { tag = tagValue }.data.key
+      withClue(key) { key.enumValue shouldBe Known(enumValue) }
       val queryResult = connector.enumKeyGetByKey.execute(key).data
       withClue(queryResult) { queryResult.item?.tag shouldBe tagValue }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for MultipleEnumColumns table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun multipleEnumColumns() = runTest {
+    checkAll(NUM_ITERATIONS, Arb.enum<N5ekmae3jn>(), Arb.enum<S7yayynb25>()) { enum1, enum2 ->
+      val key = connector.multipleEnumColumnsInsert.execute(enum1, enum2).data.key
+      val queryResult = connector.multipleEnumColumnsGetByKey.execute(key).data
+      withClue(queryResult) {
+        assertSoftly {
+          queryResult.item?.enum1 shouldBe Known(enum1)
+          queryResult.item?.enum2 shouldBe Known(enum2)
+        }
+      }
     }
   }
 

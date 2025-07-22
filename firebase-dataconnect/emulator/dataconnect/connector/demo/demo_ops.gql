@@ -1781,3 +1781,15 @@ mutation EnumKey_Insert($enumValue: N5ekmae3jn!, $tag: String) @auth(level: PUBL
 query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
   item: enumKey(key: $key) { tag }
 }
+
+###############################################################################
+# Operations for table: type MultipleEnumColumns
+###############################################################################
+
+mutation MultipleEnumColumns_Insert($enum1: N5ekmae3jn!, $enum2: S7yayynb25!) @auth(level: PUBLIC) {
+  key: multipleEnumColumns_insert(data: { enum1: $enum1, enum2: $enum2 })
+}
+
+query MultipleEnumColumns_GetByKey($key: MultipleEnumColumns_Key!) @auth(level: PUBLIC) {
+  item: multipleEnumColumns(key: $key) { enum1 enum2 }
+}

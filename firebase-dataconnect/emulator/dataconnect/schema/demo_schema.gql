@@ -431,3 +431,15 @@ type EnumKey @table(key: ["id", "enumValue"]) {
   enumValue: N5ekmae3jn!
   tag: String!
 }
+
+enum S7yayynb25 {
+  XJ27ZAXKD3,
+  R36KQ8PT5K,
+  ETCV3FN9GH,
+  NMAJAGZHDS,
+}
+
+type MultipleEnumColumns @table {
+  enum1: N5ekmae3jn!
+  enum2: S7yayynb25!
+}
