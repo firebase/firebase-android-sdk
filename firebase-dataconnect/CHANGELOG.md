@@ -1,7 +1,9 @@
 # Unreleased
+
+
+# 17.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 * [changed] Removed superfluous and noisy debug logging of operation variables.
-
 
 # 16.0.3
 * [fixed] Fixed occasional `NullPointerException` when registering with
@@ -95,3 +97,4 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 * [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+

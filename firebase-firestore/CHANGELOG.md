@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 26.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 * [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
   (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
@@ -10,7 +13,6 @@
 * [changed] Use the `compare()` methods defined in standard `Integer`, `Long`, and `Character`
   classes instead of Firestore's bespoke implementations.
   [#7109](//github.com/firebase/firebase-android-sdk/pull/7109)
-
 
 # 25.1.4
 * [fixed] Fixed the `null` value handling in `whereNotEqualTo` and `whereNotIn` filters.
@@ -979,3 +981,4 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
+

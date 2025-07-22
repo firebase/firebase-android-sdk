@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.0.0-beta16
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 16.0.0-beta15
@@ -85,3 +88,4 @@ The [appdistro] Android library with Kotlin extensions is now available in
 beta. The Kotlin extensions library transitively includes the base
 `firebase-app-distribution` library. To learn more, visit the
 [[appdistro] KTX reference documentation](/docs/reference/kotlin/com/google/firebase/appdistribution/ktx/package-summary).
+

@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 3.0.0
 * [changed] Added internal api for Crashlytics to notify Sessions of crash events
 * [changed] Use multi-process DataStore instead of Preferences DataStore
 * [changed] Update the heuristic to detect cold app starts
@@ -52,3 +55,4 @@
 
 # 1.0.0
 * [feature] Initial Firebase sessions library.
+

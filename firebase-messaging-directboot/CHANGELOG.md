@@ -1,6 +1,8 @@
 # Unreleased
-* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
+
+# 25.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 24.1.2
 * [unchanged] Updated to keep messaging SDK versions aligned.
@@ -139,3 +141,4 @@ A fix for this issue was released on July 08, 2020
   and supports receiving FCM messages in Direct Boot mode. See
   [Receive FCM messages in direct boot mode](/docs/cloud-messaging/android/receive#receive_fcm_messages_in_direct_boot_mode)
   for more information.
+
