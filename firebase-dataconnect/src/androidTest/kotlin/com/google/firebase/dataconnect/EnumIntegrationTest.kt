@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.EnumValue.Unknown
 import com.google.firebase.dataconnect.serializers.EnumValueSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -664,10 +665,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertEnumKeyVariables(enumValue, tag)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       withClue(key) { key.enumValue shouldBe enumValue }
-
       val queryVariables = GetEnumKeyByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
-      val queryResult = queryRef.execute().data
+      val queryResult = dataConnect.query(queryVariables).execute().data
       withClue(queryResult) { queryResult?.item?.tag shouldBe tag }
     }
   }
@@ -684,6 +683,39 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Serializable
   private data class GetEnumKeyByKeyData(val item: Item?) {
     @Serializable data class Item(val tag: String)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for MultipleEnumColumns table.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun multipleEnumColumns() = runTest {
+    checkAll(NUM_ITERATIONS, Arb.enum<N5ekmae3jn>(), Arb.enum<S7yayynb25>()) { enum1, enum2 ->
+      val insertVariables = InsertMultipleEnumColumnsVariables(enum1, enum2)
+      val key = dataConnect.mutation(insertVariables).execute().data.key
+      val queryVariables = GetMultipleEnumColumnsByKeyVariables(key)
+      val queryResult = dataConnect.query(queryVariables).execute().data
+      withClue(queryResult) {
+        assertSoftly {
+          queryResult?.item?.enum1 shouldBe enum1
+          queryResult?.item?.enum2 shouldBe enum2
+        }
+      }
+    }
+  }
+
+  @Serializable
+  private data class InsertMultipleEnumColumnsVariables(
+    val enum1: N5ekmae3jn,
+    val enum2: S7yayynb25
+  )
+
+  @Serializable private data class GetMultipleEnumColumnsByKeyVariables(val key: RowKey)
+
+  @Serializable
+  private data class GetMultipleEnumColumnsByKeyData(val item: Item?) {
+    @Serializable data class Item(val enum1: N5ekmae3jn, val enum2: S7yayynb25)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -749,6 +781,14 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     QJX7C7RD5T;
 
     object Serializer : EnumValueSerializer<N5ekmae3jnSubset>(N5ekmae3jnSubset.entries)
+  }
+
+  @Suppress("SpellCheckingInspection")
+  enum class S7yayynb25 {
+    XJ27ZAXKD3,
+    R36KQ8PT5K,
+    ETCV3FN9GH,
+    NMAJAGZHDS
   }
 
   private companion object {
@@ -829,6 +869,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     ): MutationRef<InsertEnumKeyData, InsertEnumKeyVariables> =
       mutation("EnumKey_Insert", variables, serializer(), serializer())
 
+    fun FirebaseDataConnect.mutation(
+      variables: InsertMultipleEnumColumnsVariables
+    ): MutationRef<InsertData, InsertMultipleEnumColumnsVariables> =
+      mutation("MultipleEnumColumns_Insert", variables, serializer(), serializer())
+
     fun FirebaseDataConnect.query(
       variables: GetNonNullableByKeyVariables
     ): QueryRef<GetNonNullableByKeyData?, GetNonNullableByKeyVariables> =
@@ -858,11 +903,6 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       query("EnumNullableListOfNullable_GetByKey", variables, serializer(), serializer())
 
     fun FirebaseDataConnect.query(
-      variables: GetEnumKeyByKeyVariables
-    ): QueryRef<GetEnumKeyByKeyData?, GetEnumKeyByKeyVariables> =
-      query("EnumKey_GetByKey", variables, serializer(), serializer())
-
-    fun FirebaseDataConnect.query(
       variables: GetNonNullableByTagAndValueVariables
     ): QueryRef<QueryAllData, GetNonNullableByTagAndValueVariables> =
       query("EnumNonNullable_GetAllByTagAndValue", variables, serializer(), serializer())
@@ -871,6 +911,16 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       variables: GetNonNullableByTagAndDefaultValueVariables
     ): QueryRef<QueryAllData, GetNonNullableByTagAndDefaultValueVariables> =
       query("EnumNonNullable_GetAllByTagAndDefaultValue", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetEnumKeyByKeyVariables
+    ): QueryRef<GetEnumKeyByKeyData?, GetEnumKeyByKeyVariables> =
+      query("EnumKey_GetByKey", variables, serializer(), serializer())
+
+    fun FirebaseDataConnect.query(
+      variables: GetMultipleEnumColumnsByKeyVariables
+    ): QueryRef<GetMultipleEnumColumnsByKeyData?, GetMultipleEnumColumnsByKeyVariables> =
+      query("MultipleEnumColumns_GetByKey", variables, serializer(), serializer())
 
     fun FirebaseDataConnect.mutation(
       variables: InsertNullableVariables
