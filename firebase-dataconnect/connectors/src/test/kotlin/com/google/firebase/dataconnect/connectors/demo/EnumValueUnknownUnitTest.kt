@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -33,6 +32,7 @@ import io.kotest.property.arbitrary.of
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
@@ -47,10 +47,16 @@ class EnumValueUnknownUnitTest {
   }
 
   @Test
+  @Ignore(
+    "TODO(cl/785477120) Enable this test once a data connect emulator build that " +
+      "includes cl/785477120 is released, which will have a version >2.10.0 and " +
+      "a firebase-tools version >14.11.0"
+  )
   fun `value property should unconditionally be null`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.string()) { stringValue ->
       val enumValue = EnumValue.Unknown(stringValue)
-      enumValue.value.shouldBeNull()
+      // TODO(cl/785477120) Uncomment the line below when the test is re-enabled.
+      // enumValue.value.shouldBeNull()
     }
   }
 
