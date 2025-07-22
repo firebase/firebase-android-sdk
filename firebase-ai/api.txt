@@ -71,7 +71,7 @@ package com.google.firebase.ai {
     method public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
     method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
     method public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
@@ -115,7 +115,7 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
     method public abstract com.google.firebase.ai.ImagenModel getImageModel();
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
     field public static final com.google.firebase.ai.java.ImagenModelFutures.Companion Companion;
   }
 
@@ -556,31 +556,24 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagenControlType {
+    field public static final com.google.firebase.ai.type.ImagenControlType CANNY;
+    field public static final com.google.firebase.ai.type.ImagenControlType COLOR_SUPERPIXEL;
     field public static final com.google.firebase.ai.type.ImagenControlType.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenControlType FACE_MESH;
+    field public static final com.google.firebase.ai.type.ImagenControlType SCRIBBLE;
   }
 
   public static final class ImagenControlType.Companion {
-    method public com.google.firebase.ai.type.ImagenControlType getCANNY();
-    method public com.google.firebase.ai.type.ImagenControlType getCOLOR_SUPERPIXEL();
-    method public com.google.firebase.ai.type.ImagenControlType getFACE_MESH();
-    method public com.google.firebase.ai.type.ImagenControlType getSCRIBBLE();
-    property public final com.google.firebase.ai.type.ImagenControlType CANNY;
-    property public final com.google.firebase.ai.type.ImagenControlType COLOR_SUPERPIXEL;
-    property public final com.google.firebase.ai.type.ImagenControlType FACE_MESH;
-    property public final com.google.firebase.ai.type.ImagenControlType SCRIBBLE;
   }
 
   public final class ImagenEditMode {
     field public static final com.google.firebase.ai.type.ImagenEditMode.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
+    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
+    field public static final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
   }
 
   public static final class ImagenEditMode.Companion {
-    method public com.google.firebase.ai.type.ImagenEditMode getINPAINT_INSERTION();
-    method public com.google.firebase.ai.type.ImagenEditMode getINPAINT_REMOVAL();
-    method public com.google.firebase.ai.type.ImagenEditMode getOUTPAINT();
-    property public final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
-    property public final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
-    property public final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenEditingConfig {
@@ -652,33 +645,25 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagenImagePlacement {
+    method public static com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
     method public Integer? getX();
     method public Integer? getY();
     property public final Integer? x;
     property public final Integer? y;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
     field public static final com.google.firebase.ai.type.ImagenImagePlacement.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
   }
 
   public static final class ImagenImagePlacement.Companion {
     method public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
-    method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_CENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_LEFT();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getBOTTOM_RIGHT();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getCENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getLEFT_CENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getRIGHT_CENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_CENTER();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_LEFT();
-    method public com.google.firebase.ai.type.ImagenImagePlacement getTOP_RIGHT();
-    property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
-    property public final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenInlineImage {
@@ -694,11 +679,14 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
     field public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
   }
 
   public static final class ImagenMaskReference.Companion {
-    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = ImagenImagePlacement.CENTER);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
@@ -754,16 +742,13 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagenSubjectReferenceType {
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType ANIMAL;
     field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PERSON;
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PRODUCT;
   }
 
   public static final class ImagenSubjectReferenceType.Companion {
-    method public com.google.firebase.ai.type.ImagenSubjectReferenceType getANIMAL();
-    method public com.google.firebase.ai.type.ImagenSubjectReferenceType getPERSON();
-    method public com.google.firebase.ai.type.ImagenSubjectReferenceType getPRODUCT();
-    property public final com.google.firebase.ai.type.ImagenSubjectReferenceType ANIMAL;
-    property public final com.google.firebase.ai.type.ImagenSubjectReferenceType PERSON;
-    property public final com.google.firebase.ai.type.ImagenSubjectReferenceType PRODUCT;
   }
 
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {

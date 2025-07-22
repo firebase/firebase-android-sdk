@@ -390,8 +390,8 @@ internal class SerializationTests {
 
   @Test
   fun `test ReferenceImage serialization as Json`() {
-    val expectedJsonAsString =
-      """
+      val expectedJsonAsString =
+          """
      {
        "id": "ImagenReferenceImage",
        "type": "object",
