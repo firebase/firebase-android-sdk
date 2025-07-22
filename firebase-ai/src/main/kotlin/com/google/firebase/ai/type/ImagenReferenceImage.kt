@@ -80,8 +80,8 @@ internal constructor(
  * @param referenceId the reference ID for this image, to be referenced in the prompt
  * @param [enableComputation] requests that the reference image be generated serverside instead of
  * provided
- * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and [enableComputation] is true, this will
- * control the size of each superpixel region in pixels for the generated referenced image
+ * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and [enableComputation] is true, this
+ * will control the size of each superpixel region in pixels for the generated referenced image
  * @param superpixelRuler if type is COLOR_SUPERPIXEL and [enableComputation] is true, this will
  * control the superpixel smoothness factor for the generated referenced image
  */

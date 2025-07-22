@@ -26,21 +26,20 @@ import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
 class ImagenTests {
-    @Test
-    fun testGenerateAndEditImage() {
-        val imageGenerationModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-generate-002")
-        val imageEditingModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-capability-001")
+  @Test
+  fun testGenerateAndEditImage() {
+    val imageGenerationModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-generate-002")
+    val imageEditingModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-capability-001")
 
-        runBlocking {
-            val catImage = imageGenerationModel.generateImages("A cat").images.first()
-            val editedCatImage = imageEditingModel.editImage(
-                listOf(ImagenRawImage(catImage), ImagenBackgroundMask()),
-                "A cat flying through space",
-                ImagenEditingConfig(
-                    ImagenEditMode.INPAINT_INSERTION
-                )
-            )
-            assert(editedCatImage.images.size == 1)
-        }
+    runBlocking {
+      val catImage = imageGenerationModel.generateImages("A cat").images.first()
+      val editedCatImage =
+        imageEditingModel.editImage(
+          listOf(ImagenRawImage(catImage), ImagenBackgroundMask()),
+          "A cat flying through space",
+          ImagenEditingConfig(ImagenEditMode.INPAINT_INSERTION)
+        )
+      assert(editedCatImage.images.size == 1)
     }
+  }
 }
