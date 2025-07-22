@@ -42,8 +42,17 @@ public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProvi
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
   @NonNull
   public static RecaptchaEnterpriseAppCheckProviderFactory getInstance(@NonNull String siteKey) {
-    return factoryInstances.computeIfAbsent(
-        siteKey, RecaptchaEnterpriseAppCheckProviderFactory::new);
+    RecaptchaEnterpriseAppCheckProviderFactory factory = factoryInstances.get(siteKey);
+    if (factory == null) {
+      synchronized (factoryInstances) {
+        factory = factoryInstances.get(siteKey);
+        if (factory == null) {
+          factory = new RecaptchaEnterpriseAppCheckProviderFactory(siteKey);
+          factoryInstances.put(siteKey, factory);
+        }
+      }
+    }
+    return factory;
   }
 
   @NonNull
@@ -56,6 +65,7 @@ public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProvi
           ProviderMultiResourceComponent component =
               firebaseApp.get(ProviderMultiResourceComponent.class);
           provider = component.get(siteKey);
+          provider.initializeRecaptchaClient();
         }
       }
     }

@@ -37,7 +37,17 @@ public final class ProviderMultiResourceComponent {
 
   @NonNull
   public RecaptchaEnterpriseAppCheckProvider get(@NonNull String siteKey) {
-    return instances.computeIfAbsent(siteKey, providerFactory::create);
+    RecaptchaEnterpriseAppCheckProvider provider = instances.get(siteKey);
+    if (provider == null) {
+      synchronized (instances) {
+        provider = instances.get(siteKey);
+        if (provider == null) {
+          provider = providerFactory.create(siteKey);
+          instances.put(siteKey, provider);
+        }
+      }
+    }
+    return provider;
   }
 
   @AssistedFactory

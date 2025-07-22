@@ -89,6 +89,17 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
     this.recaptchaTasksClientTask = Tasks.forResult(recaptchaTasksClient);
   }
 
+  public void initializeRecaptchaClient() {
+    if (recaptchaTasksClientTask == null) {
+      synchronized (this) {
+        if (recaptchaTasksClientTask == null) {
+          Log.d(TAG, "Initializing RecaptchaTasksClient for siteKey: " + siteKey);
+          recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey);
+        }
+      }
+    }
+  }
+
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
@@ -116,13 +127,6 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
 
   @NonNull
   private Task<String> getRecaptchaEnterpriseAttestation() {
-    if (recaptchaTasksClientTask == null) {
-      synchronized (this) {
-        if (recaptchaTasksClientTask == null) {
-          recaptchaTasksClientTask = Recaptcha.fetchTaskClient(application, siteKey);
-        }
-      }
-    }
     return recaptchaTasksClientTask.continueWithTask(
         blockingExecutor,
         task -> {
