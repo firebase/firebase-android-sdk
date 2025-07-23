@@ -181,10 +181,7 @@ internal object LiveServerMessageSerializer :
       "toolCall" in jsonObject -> LiveServerToolCall.InternalWrapper.serializer()
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
-      else ->
-        throw SerializationException(
-          "The given subclass of LiveServerMessage (${javaClass.simpleName}) is not supported in the serialization yet."
-        )
+      else -> throw SerializationException("Unknown LiveServerMessage response type: $jsonObject.")
     }
   }
 }
