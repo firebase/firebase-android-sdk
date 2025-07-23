@@ -78,7 +78,7 @@ internal constructor(
  * @param image the image provided, required if [enableComputation] is false
  * @param type the type of control reference image
  * @param referenceId the reference ID for this image, to be referenced in the prompt
- * @param [enableComputation] requests that the reference image be generated serverside instead of
+ * @param enableComputation requests that the reference image be generated serverside instead of
  * provided
  * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and [enableComputation] is true, this
  * will control the size of each superpixel region in pixels for the generated referenced image
