@@ -14,37 +14,72 @@
 
 package com.google.firebase.appcheck.recaptchaenterprise;
 
-import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.AppCheckProvider;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
+import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /** Tests for {@link RecaptchaEnterpriseAppCheckProviderFactory}. */
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@RunWith(MockitoJUnitRunner.class)
 public class RecaptchaEnterpriseAppCheckProviderFactoryTest {
   static final String SITE_KEY_1 = "siteKey1";
-  static final String SITE_KEY_2 = "siteKey2";
 
-  @Test
-  public void testGetInstance_callTwiceSameSiteKey_sameInstance() {
-    RecaptchaEnterpriseAppCheckProviderFactory firstInstance =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
-    RecaptchaEnterpriseAppCheckProviderFactory secondInstance =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+  @Mock private FirebaseApp mockFirebaseApp;
+  @Mock private ProviderMultiResourceComponent mockComponent;
+  @Mock private RecaptchaEnterpriseAppCheckProvider mockProvider;
 
-    assertThat(firstInstance).isEqualTo(secondInstance);
+  @Before
+  public void setUp() {
+    when(mockFirebaseApp.get(eq(ProviderMultiResourceComponent.class))).thenReturn(mockComponent);
+    when(mockComponent.get(anyString())).thenReturn(mockProvider);
   }
 
   @Test
-  public void testGetInstance_callTwiceDifferentSiteKey_differentInstance() {
-    RecaptchaEnterpriseAppCheckProviderFactory firstInstance =
+  public void getInstance_nonNullSiteKey_returnsNonNullInstance() {
+    RecaptchaEnterpriseAppCheckProviderFactory factory =
         RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
-    RecaptchaEnterpriseAppCheckProviderFactory secondInstance =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_2);
+    assertNotNull(factory);
+  }
 
-    assertThat(firstInstance).isNotEqualTo(secondInstance);
+  @Test
+  public void getInstance_nullSiteKey_expectThrows() {
+    assertThrows(
+        NullPointerException.class,
+        () -> RecaptchaEnterpriseAppCheckProviderFactory.getInstance(null));
+  }
+
+  @Test
+  public void create_nonNullFirebaseApp_returnsRecaptchaEnterpriseAppCheckProvider() {
+    RecaptchaEnterpriseAppCheckProviderFactory factory =
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+    AppCheckProvider provider = factory.create(mockFirebaseApp);
+    assertNotNull(provider);
+    assertEquals(RecaptchaEnterpriseAppCheckProvider.class, provider.getClass());
+  }
+
+  @Test
+  public void create_callMultipleTimes_providerIsInitializedOnlyOnce() {
+    RecaptchaEnterpriseAppCheckProviderFactory factory =
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+
+    factory.create(mockFirebaseApp);
+    factory.create(mockFirebaseApp);
+    factory.create(mockFirebaseApp);
+    verify(mockProvider, times(1)).initializeRecaptchaClient();
   }
 }

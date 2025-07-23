@@ -21,8 +21,7 @@ import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Objects;
 
 /**
  * Implementation of an {@link AppCheckProviderFactory} that builds <br>
@@ -30,8 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProviderFactory {
 
-  private static final Map<String, RecaptchaEnterpriseAppCheckProviderFactory> factoryInstances =
-      new ConcurrentHashMap<>();
   private final String siteKey;
   private volatile RecaptchaEnterpriseAppCheckProvider provider;
 
@@ -42,17 +39,8 @@ public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProvi
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
   @NonNull
   public static RecaptchaEnterpriseAppCheckProviderFactory getInstance(@NonNull String siteKey) {
-    RecaptchaEnterpriseAppCheckProviderFactory factory = factoryInstances.get(siteKey);
-    if (factory == null) {
-      synchronized (factoryInstances) {
-        factory = factoryInstances.get(siteKey);
-        if (factory == null) {
-          factory = new RecaptchaEnterpriseAppCheckProviderFactory(siteKey);
-          factoryInstances.put(siteKey, factory);
-        }
-      }
-    }
-    return factory;
+    Objects.requireNonNull(siteKey, "siteKey cannot be null");
+    return new RecaptchaEnterpriseAppCheckProviderFactory(siteKey);
   }
 
   @NonNull
