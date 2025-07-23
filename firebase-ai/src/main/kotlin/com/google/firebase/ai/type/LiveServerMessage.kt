@@ -181,7 +181,7 @@ internal object LiveServerMessageSerializer :
       "toolCall" in jsonObject -> LiveServerToolCall.InternalWrapper.serializer()
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
-      else -> throw SerializationException("Unknown LiveServerMessage response type: $jsonObject.")
+      else -> throw SerializationException("Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}")
     }
   }
 }
