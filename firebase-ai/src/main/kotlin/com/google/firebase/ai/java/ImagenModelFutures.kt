@@ -60,6 +60,18 @@ public abstract class ImagenModelFutures internal constructor() {
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
   /**
+   * Generates an image from a single or set of base images, returning the result directly to the
+   * caller.
+   *
+   * @param prompt the text input given to the model as a prompt
+   * @param referenceImages the image inputs given to the model as a prompt
+   */
+  public abstract fun editImage(
+    referenceImages: List<ImagenReferenceImage>,
+    prompt: String,
+  ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
+
+  /**
    * Generates an image by inpainting a masked off part of a base image.
    *
    * @param image the base image
@@ -111,6 +123,12 @@ public abstract class ImagenModelFutures internal constructor() {
       config: ImagenEditingConfig?
     ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
       SuspendToFutureAdapter.launchFuture { model.editImage(referenceImages, prompt, config) }
+
+    override fun editImage(
+      referenceImages: List<ImagenReferenceImage>,
+      prompt: String,
+    ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>> =
+      editImage(referenceImages, prompt, null)
 
     override fun inpaintImage(
       image: ImagenInlineImage,
