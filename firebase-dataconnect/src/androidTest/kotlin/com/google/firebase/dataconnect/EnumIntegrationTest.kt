@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.EnumValue.Unknown
 import com.google.firebase.dataconnect.serializers.EnumValueSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.withNullAppended
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -275,7 +276,11 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryNullableByUndefinedEnumValue() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) { value1, value2, value3, tag ->
+    checkAll(NUM_ITERATIONS, enumArb, enumArb, enumArb, Arb.dataConnect.tag()) {
+      value1,
+      value2,
+      value3,
+      tag ->
       val insertVariables = Insert3NullableVariables(tag, value1, value2, value3)
       val insertResult = dataConnect.mutation(insertVariables).execute().data
       val queryVariables = GetNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
@@ -399,7 +404,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNonNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNonNullableListOfNonNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNonNullableByKeyVariables(key)
@@ -468,7 +473,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNonNullableListOfNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNonNullableListOfNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNullableByKeyVariables(key)
@@ -544,7 +549,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNullableListOfNonNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNullableListOfNonNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
@@ -613,7 +618,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun insertNullableListOfNullable_ListContainingNull() = runTest {
     val enumArb = Arb.enum<N5ekmae3jn>().orNull(nullProbability = 0.5)
-    checkAll(1, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
+    checkAll(NUM_ITERATIONS, Arb.list(enumArb, 0..9).filter { it.contains(null) }) { value ->
       val insertVariables = InsertNullableListOfNullableVariables(value)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNullableByKeyVariables(key)
@@ -764,7 +769,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
-  @Suppress("SpellCheckingInspection")
+  @Suppress("SpellCheckingInspection", "unused")
   private enum class N5ekmae3jn {
     DPSKD6HR3A,
     XGWGVMYTHJ,
@@ -774,7 +779,7 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     N3HWNCRWBP,
   }
 
-  @Suppress("SpellCheckingInspection")
+  @Suppress("SpellCheckingInspection", "unused")
   private enum class N5ekmae3jnSubset {
     DPSKD6HR3A,
     XGWGVMYTHJ,
@@ -783,8 +788,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     object Serializer : EnumValueSerializer<N5ekmae3jnSubset>(N5ekmae3jnSubset.entries)
   }
 
-  @Suppress("SpellCheckingInspection")
-  enum class S7yayynb25 {
+  @Suppress("SpellCheckingInspection", "unused")
+  private enum class S7yayynb25 {
     XJ27ZAXKD3,
     R36KQ8PT5K,
     ETCV3FN9GH,
@@ -795,12 +800,6 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
     /** The default number of iterations to use in property-based tests. */
     const val NUM_ITERATIONS = 10
-
-    fun <T> List<T>.withNullAppended(): List<T?> =
-      buildList(size + 1) {
-        addAll(this)
-        add(null)
-      }
 
     fun N5ekmae3jn.toN5ekmae3jnSubsetOrNull(): N5ekmae3jnSubset? =
       when (this) {

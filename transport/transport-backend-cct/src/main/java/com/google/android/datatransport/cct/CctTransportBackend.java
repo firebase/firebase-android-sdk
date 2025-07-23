@@ -465,7 +465,6 @@ final class CctTransportBackend implements TransportBackend {
 
   @VisibleForTesting
   static long getTzOffset() {
-    Calendar.getInstance();
     TimeZone tz = TimeZone.getDefault();
     return tz.getOffset(Calendar.getInstance().getTimeInMillis()) / 1000;
   }

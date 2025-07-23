@@ -1,5 +1,6 @@
 # Unreleased
-
+* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
+  transfer, and subject references (#7075)
 
 # 17.0.0
 * [feature] Added support for configuring the "thinking" budget when using Gemini

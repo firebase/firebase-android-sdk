@@ -183,7 +183,7 @@ internal object LiveServerMessageSerializer :
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       else ->
         throw SerializationException(
-          "The given subclass of LiveServerMessage (${javaClass.simpleName}) is not supported in the serialization yet."
+          "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
     }
   }
