@@ -25,7 +25,7 @@ class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver) :
   override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.PERFORMANCE
 
   override val isDataCollectionEnabled: Boolean
-    get() = configResolver.isPerformanceCollectionEnabled == true
+    get() = configResolver.isPerformanceCollectionEnabled ?: false
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
