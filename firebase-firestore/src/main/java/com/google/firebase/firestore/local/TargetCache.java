@@ -16,7 +16,7 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
@@ -100,7 +100,7 @@ interface TargetCache {
    * @return The cached TargetData entry, or null if the cache has no entry for the query.
    */
   @Nullable
-  TargetData getTargetData(Target target);
+  TargetData getTargetData(TargetOrPipeline target);
 
   /** Adds the given document keys to cached query results of the given target ID. */
   void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);

@@ -22,8 +22,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Pipeline;
+import com.google.firebase.firestore.RealtimePipeline;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.OrderBy.Direction;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -36,8 +38,12 @@ import com.google.firebase.firestore.pipeline.Expr;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FunctionExpr;
 import com.google.firebase.firestore.pipeline.InternalOptions;
+import com.google.firebase.firestore.pipeline.LimitStage;
 import com.google.firebase.firestore.pipeline.Ordering;
+import com.google.firebase.firestore.pipeline.SortStage;
 import com.google.firebase.firestore.pipeline.Stage;
+import com.google.firebase.firestore.pipeline.WhereStage;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.util.BiFunction;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.IntFunction;
@@ -524,11 +530,25 @@ public final class Query {
 
   @NonNull
   public Pipeline toPipeline(FirebaseFirestore firestore, UserDataReader userDataReader) {
-    Pipeline p = new Pipeline(firestore, userDataReader, pipelineSource(firestore));
+    return new Pipeline(firestore, userDataReader, convertToStages(userDataReader));
+  }
+
+  @NonNull
+  public RealtimePipeline toRealtimePipeline(
+      FirebaseFirestore firestore, UserDataReader userDataReader) {
+    return new RealtimePipeline(
+        new RemoteSerializer(userDataReader.getDatabaseId()),
+        userDataReader,
+        convertToStages(userDataReader));
+  }
+
+  private List<Stage<?>> convertToStages(UserDataReader userDataReader) {
+    List<Stage<?>> stages = new ArrayList<>();
+    stages.add(pipelineSource(userDataReader.getDatabaseId()));
 
     // Filters
     for (Filter filter : filters) {
-      p = p.where(filter.toPipelineExpr());
+      stages.add(new WhereStage(filter.toPipelineExpr(), InternalOptions.EMPTY));
     }
 
     // Orders
@@ -547,40 +567,46 @@ public final class Query {
     }
 
     if (fields.size() == 1) {
-      p = p.where(fields.get(0).exists());
+      stages.add(new WhereStage(fields.get(0).exists(), InternalOptions.EMPTY));
     } else {
       BooleanExpr[] conditions =
           skipFirstToArray(fields, BooleanExpr[]::new, Expr.Companion::exists);
-      p = p.where(and(fields.get(0).exists(), conditions));
+      stages.add(new WhereStage(and(fields.get(0).exists(), conditions), InternalOptions.EMPTY));
     }
 
     if (startAt != null) {
-      p = p.where(whereConditionsFromCursor(startAt, fields, FunctionExpr::gt));
+      stages.add(
+          new WhereStage(
+              whereConditionsFromCursor(startAt, fields, FunctionExpr::gt), InternalOptions.EMPTY));
     }
 
     if (endAt != null) {
-      p = p.where(whereConditionsFromCursor(endAt, fields, FunctionExpr::lt));
+      stages.add(
+          new WhereStage(
+              whereConditionsFromCursor(endAt, fields, FunctionExpr::lt), InternalOptions.EMPTY));
     }
 
     // Cursors, Limit, Offset
     if (hasLimit()) {
       // TODO: Handle situation where user enters limit larger than integer.
       if (limitType == LimitType.LIMIT_TO_FIRST) {
-        p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
-        p = p.limit((int) limit);
+        stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+        stages.add(new LimitStage((int) limit, InternalOptions.EMPTY));
       } else {
-        p =
-            p.sort(
-                orderings.get(0).reverse(),
-                skipFirstToArray(orderings, Ordering[]::new, Ordering::reverse));
-        p = p.limit((int) limit);
-        p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
+        List<Ordering> reversedOrderings = new ArrayList<>();
+        for (Ordering ordering : orderings) {
+          reversedOrderings.add(ordering.reverse());
+        }
+        stages.add(
+            new SortStage(reversedOrderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+        stages.add(new LimitStage((int) limit, InternalOptions.EMPTY));
+        stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
       }
     } else {
-      p = p.sort(orderings.get(0), skipFirstToArray(orderings, Ordering[]::new));
+      stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
     }
 
-    return p;
+    return stages;
   }
 
   // Many Pipelines require first parameter to be separated out from rest.
@@ -623,13 +649,13 @@ public final class Query {
   }
 
   @NonNull
-  private Stage<?> pipelineSource(FirebaseFirestore firestore) {
+  private Stage<?> pipelineSource(DatabaseId databaseId) {
     if (isDocumentQuery()) {
       return new DocumentsSource(path.canonicalString());
     } else if (isCollectionGroupQuery()) {
       return CollectionGroupSource.of(collectionGroup);
     } else {
-      return new CollectionSource(path.canonicalString(), firestore, InternalOptions.EMPTY);
+      return new CollectionSource(path, new RemoteSerializer(databaseId), InternalOptions.EMPTY);
     }
   }
 

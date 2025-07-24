@@ -15,10 +15,10 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.core.Canonicalizable
+import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
@@ -27,12 +27,10 @@ import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.constant
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
 
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
@@ -197,51 +195,36 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
 
 class CollectionSource
 internal constructor(
-  val path: String,
+  internal val path: ResourcePath,
   // We validate [firestore.databaseId] when adding to pipeline.
-  internal val firestore: FirebaseFirestore?,
+  internal val serializer: RemoteSerializer,
   options: InternalOptions
 ) : Stage<CollectionSource>("collection", options), Canonicalizable {
   override fun canonicalId(): String {
-    return "${name}(${path})"
+    return "${name}(${path.canonicalString()})"
   }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is CollectionSource) return false
     if (path != other.path) return false
-    if (firestore != other.firestore) return false
+    if (serializer.databaseId() != other.serializer.databaseId()) return false
     if (options != other.options) return false
     return true
   }
 
   override fun hashCode(): Int {
     var result = path.hashCode()
-    result = 31 * result + (firestore?.hashCode() ?: 0)
+    result = 31 * result + (serializer.databaseId().hashCode() ?: 0)
     result = 31 * result + options.hashCode()
     return result
   }
 
   override fun self(options: InternalOptions): CollectionSource =
-    CollectionSource(path, firestore, options)
+    CollectionSource(path, serializer, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(
-      Value.newBuilder().setReferenceValue(if (path.startsWith("/")) path else "/" + path).build()
-    )
+    sequenceOf(Value.newBuilder().setReferenceValue(path.canonicalString()).build())
   companion object {
-    /**
-     * Set the pipeline's source to the collection specified by the given path.
-     *
-     * @param path A path to a collection that will be the source of this pipeline.
-     * @return Pipeline with documents from target collection.
-     */
-    @JvmStatic
-    fun of(path: String): CollectionSource {
-      // Validate path by converting to ResourcePath
-      val resourcePath = ResourcePath.fromString(path)
-      return CollectionSource(resourcePath.canonicalString(), null, InternalOptions.EMPTY)
-    }
-
     /**
      * Set the pipeline's source to the collection specified by the given CollectionReference.
      *
@@ -249,8 +232,12 @@ internal constructor(
      * @return Pipeline with documents from target collection.
      */
     @JvmStatic
-    fun of(ref: CollectionReference): CollectionSource {
-      return CollectionSource(ref.path, ref.firestore, InternalOptions.EMPTY)
+    internal fun of(ref: CollectionReference, databaseId: DatabaseId): CollectionSource {
+      return CollectionSource(
+        ResourcePath.fromString(ref.path),
+        RemoteSerializer(databaseId),
+        InternalOptions.EMPTY
+      )
     }
   }
 
@@ -260,14 +247,11 @@ internal constructor(
     context: EvaluationContext,
     inputs: List<MutableDocument>
   ): List<MutableDocument> {
-    return inputs.filter { input ->
-      input.isFoundDocument && input.key.collectionPath.canonicalString() == path
-    }
+    return inputs.filter { input -> input.isFoundDocument && input.key.collectionPath == path }
   }
 }
 
-class CollectionGroupSource
-private constructor(val collectionId: String, options: InternalOptions) :
+class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options), Canonicalizable {
   override fun canonicalId(): String {
     return "${name}(${collectionId})"
@@ -322,9 +306,22 @@ private constructor(val collectionId: String, options: InternalOptions) :
 internal class DocumentsSource
 @JvmOverloads
 internal constructor(
-  val documents: Array<out String>,
+  val documents: Array<ResourcePath>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DocumentsSource>("documents", options), Canonicalizable {
+  private val docKeySet: HashSet<String> by lazy {
+    documents.map { it.canonicalString() }.toHashSet()
+  }
+
+  override fun evaluate(
+    context: EvaluationContext,
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
+    return inputs.filter { input ->
+      input.isFoundDocument && docKeySet.contains(input.key.path.canonicalString())
+    }
+  }
+
   override fun canonicalId(): String {
     val sortedDocuments = documents.sorted()
     return "${name}(${sortedDocuments.joinToString(",")})"
@@ -344,10 +341,10 @@ internal constructor(
     return result
   }
 
-  internal constructor(document: String) : this(arrayOf(document))
+  internal constructor(document: String) : this(arrayOf(ResourcePath.fromString(document)))
   override fun self(options: InternalOptions) = DocumentsSource(documents, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    documents.asSequence().map { if (it.startsWith("/")) it else "/" + it }.map(::encodeValue)
+    documents.asSequence().map(::encodeValue)
 }
 
 internal class AddFieldsStage
@@ -482,7 +479,7 @@ internal constructor(
 
 internal class WhereStage
 internal constructor(
-  internal val condition: BooleanExpr,
+  internal val condition: Expr,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<WhereStage>("where", options), Canonicalizable {
   override fun canonicalId(): String {
@@ -810,8 +807,6 @@ internal constructor(
     context: EvaluationContext,
     inputs: List<MutableDocument>
   ): List<MutableDocument> {
-    val evaluates: Array<EvaluateDocument> =
-      orders.map { it.expr.evaluateFunction(context) }.toTypedArray()
     return inputs.sortedWith(comparator(context))
   }
 

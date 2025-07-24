@@ -65,6 +65,10 @@ public final class UserDataReader {
     this.databaseId = databaseId;
   }
 
+  public DatabaseId getDatabaseId() {
+    return databaseId;
+  }
+
   /**
    * Parse document data from a non-merge {@code set()} call.
    *

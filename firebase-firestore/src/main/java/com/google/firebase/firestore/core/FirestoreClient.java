@@ -172,7 +172,7 @@ public final class FirestoreClient {
 
   /** Starts listening to a query. */
   public QueryListener listen(
-      Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
+      QueryOrPipeline query, ListenOptions options, EventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
@@ -208,7 +208,7 @@ public final class FirestoreClient {
             });
   }
 
-  public Task<ViewSnapshot> getDocumentsFromLocalCache(Query query) {
+  public Task<ViewSnapshot> getDocumentsFromLocalCache(QueryOrPipeline query) {
     this.verifyNotTerminated();
     return asyncQueue.enqueue(
         () -> {

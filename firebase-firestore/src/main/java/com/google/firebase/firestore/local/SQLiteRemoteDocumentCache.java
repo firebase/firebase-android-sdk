@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollection;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
@@ -24,7 +25,7 @@ import android.database.Cursor;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -255,18 +256,28 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      QueryOrPipeline query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
+    ResourcePath path = ResourcePath.EMPTY;
+    if (query.isQuery()) {
+      path = query.query().getPath();
+    } else {
+      String pathString = getPipelineCollection(query.pipeline());
+      hardAssert(
+          pathString != null,
+          "SQLiteRemoteDocumentCache.getDocumentsMatchingQuery receives pipeline without collection source.");
+      path = ResourcePath.fromString(pathString);
+    }
     return getAll(
-        Collections.singletonList(query.getPath()),
+        Collections.singletonList(path),
         offset,
         Integer.MAX_VALUE,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),

@@ -73,7 +73,10 @@ public class DocumentChangeTest {
       updates = updates.insert(doc.getKey(), doc);
     }
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view =
+        new View(
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(query),
+            DocumentKey.emptyKeySet());
     View.DocumentChanges initialChanges = view.computeDocChanges(initialDocs);
     TargetChange initialTargetChange = ackTarget(initialDocsList.toArray(new MutableDocument[] {}));
     ViewSnapshot initialSnapshot =
