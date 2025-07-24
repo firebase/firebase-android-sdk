@@ -21,6 +21,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -221,11 +222,20 @@ public final class LocalSerializer {
         .setSnapshotVersion(rpcSerializer.encodeVersion(targetData.getSnapshotVersion()))
         .setResumeToken(targetData.getResumeToken());
 
-    Target target = targetData.getTarget();
-    if (target.isDocumentQuery()) {
-      result.setDocuments(rpcSerializer.encodeDocumentsTarget(target));
+    TargetOrPipeline target = targetData.getTarget();
+    if (target.isTarget()) {
+      if (target.target().isDocumentQuery()) {
+        result.setDocuments(rpcSerializer.encodeDocumentsTarget(target.target()));
+      } else {
+        result.setQuery(rpcSerializer.encodeQueryTarget(target.target()));
+      }
     } else {
-      result.setQuery(rpcSerializer.encodeQueryTarget(target));
+      result.setPipelineQuery(
+          com.google.firestore.v1.Target.PipelineQueryTarget.newBuilder()
+              .setStructuredPipeline(
+                  target
+                      .pipeline()
+                      .toStructurePipelineProto$com_google_firebase_firebase_firestore()));
     }
 
     return result.build();
@@ -239,14 +249,24 @@ public final class LocalSerializer {
     ByteString resumeToken = targetProto.getResumeToken();
     long sequenceNumber = targetProto.getLastListenSequenceNumber();
 
-    Target target;
+    TargetOrPipeline target;
     switch (targetProto.getTargetTypeCase()) {
       case DOCUMENTS:
-        target = rpcSerializer.decodeDocumentsTarget(targetProto.getDocuments());
+        target =
+            new TargetOrPipeline.TargetWrapper(
+                rpcSerializer.decodeDocumentsTarget(targetProto.getDocuments()));
         break;
 
       case QUERY:
-        target = rpcSerializer.decodeQueryTarget(targetProto.getQuery());
+        target =
+            new TargetOrPipeline.TargetWrapper(
+                rpcSerializer.decodeQueryTarget(targetProto.getQuery()));
+        break;
+
+      case PIPELINE_QUERY:
+        target =
+            new TargetOrPipeline.PipelineWrapper(
+                rpcSerializer.decodePipelineQueryTarget(targetProto.getPipelineQuery()));
         break;
 
       default:

@@ -14,7 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
+import static com.google.firebase.firestore.TestUtil.DATABASE_ID;
+import static com.google.firebase.firestore.TestUtil.firestore;
 import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
@@ -27,12 +28,15 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -94,9 +98,14 @@ public abstract class QueryEngineTestCase {
 
   private @Nullable Boolean expectFullCollectionScan;
 
+  protected boolean shouldUsePipeline;
+  private FirebaseFirestore db;
+
   @Before
   public void setUp() {
     expectFullCollectionScan = null;
+    shouldUsePipeline = false;
+    db = firestore();
 
     persistence = getPersistence();
 
@@ -117,12 +126,12 @@ public abstract class QueryEngineTestCase {
             remoteDocumentCache, mutationQueue, documentOverlayCache, indexManager) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-              Query query, IndexOffset offset) {
+              QueryOrPipeline query, IndexOffset offset, @Nullable QueryContext context) {
             assertEquals(
                 "Observed query execution mode did not match expectation",
                 expectFullCollectionScan,
                 IndexOffset.NONE.equals(offset));
-            return super.getDocumentsMatchingQuery(query, offset);
+            return super.getDocumentsMatchingQuery(query, offset, context);
           }
         };
     queryEngine.initialize(localDocuments, indexManager);
@@ -200,17 +209,33 @@ public abstract class QueryEngineTestCase {
     }
   }
 
+  // Helper to convert a Query to a RealtimePipeline.
+  // This is identical to the one in LocalStoreTestCase.
+  private RealtimePipeline convertQueryToPipeline(Query query) {
+    return query.toRealtimePipeline(db, new UserDataReader(DATABASE_ID));
+  }
+
   protected DocumentSet runQuery(Query query, SnapshotVersion lastLimboFreeSnapshotVersion) {
-    Preconditions.checkNotNull(
+    com.google.android.gms.common.internal.Preconditions.checkNotNull(
         expectFullCollectionScan,
         "Encountered runQuery() call not wrapped in expectOptimizedCollectionQuery()/expectFullCollectionQuery()");
+
+    QueryOrPipeline queryOrPipeline;
+    if (shouldUsePipeline) {
+      queryOrPipeline = new QueryOrPipeline.PipelineWrapper(convertQueryToPipeline(query));
+    } else {
+      queryOrPipeline = new QueryOrPipeline.QueryWrapper(query);
+    }
+
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
-            query,
+            queryOrPipeline,
             lastLimboFreeSnapshotVersion,
             targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
     View view =
-        new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
+        new View(
+            queryOrPipeline,
+            new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
     return view.applyChanges(viewDocChanges).getSnapshot().getDocuments();
   }
@@ -402,11 +427,18 @@ public abstract class QueryEngineTestCase {
     addDocumentWithEventVersion(version(1), doc("coll/a", 1, map("order", 2)));
     addMutation(DOC_A_EMPTY_PATCH);
 
-    // Since the last document in the limit didn't change (and hence we know that all documents
-    // written prior to query execution still sort after "coll/b"), we should use an Index-Free
-    // query.
     DocumentSet docs =
-        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+        shouldUsePipeline
+            ?
+            // Pipeline always use full collection scan if there is a limit stage
+            expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT))
+            :
+            // Since the last document in the limit didn't change (and hence we know that all
+            // documents
+            // written prior to query execution still sort after "coll/b"), we should use an
+            // Index-Free
+            // query.
+            expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(
         docSet(
             query.comparator(),
@@ -425,14 +457,8 @@ public abstract class QueryEngineTestCase {
     // Add an unacknowledged mutation
     addMutation(new DeleteMutation(key("coll/b"), Precondition.NONE));
 
-    ImmutableSortedMap<DocumentKey, Document> docs =
-        expectFullCollectionScan(
-            () ->
-                queryEngine.getDocumentsMatchingQuery(
-                    query,
-                    LAST_LIMBO_FREE_SNAPSHOT,
-                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
-    assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query.comparator(), MATCHING_DOC_A), docs);
   }
 
   @Test

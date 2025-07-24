@@ -31,6 +31,7 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -542,7 +543,8 @@ public final class DocumentReference {
 
     return firestore.callClient(
         client -> {
-          QueryListener queryListener = client.listen(query, options, asyncListener);
+          QueryListener queryListener =
+              client.listen(new QueryOrPipeline.QueryWrapper(query), options, asyncListener);
           return ActivityScope.bind(
               activity,
               () -> {

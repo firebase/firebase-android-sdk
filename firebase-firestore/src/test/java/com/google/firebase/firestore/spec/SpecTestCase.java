@@ -55,7 +55,9 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.SyncEngine;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
@@ -577,7 +579,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     QueryListener listener =
         new QueryListener(
-            query,
+            new QueryOrPipeline.QueryWrapper(query),
             options,
             (value, error) -> {
               QueryEvent event = new QueryEvent();
@@ -1118,7 +1120,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             }
 
             TargetData targetData =
-                new TargetData(query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, purpose);
+                new TargetData(
+                    new TargetOrPipeline.TargetWrapper(query.toTarget()),
+                    targetId,
+                    ARBITRARY_SEQUENCE_NUMBER,
+                    purpose);
             if (queryDataJson.has("resumeToken")) {
               targetData =
                   targetData.withResumeToken(

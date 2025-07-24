@@ -4188,8 +4188,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
     block@{ input: MutableDocument ->
       EvaluateResultValue(
         when (fieldPath) {
-          KEY_PATH ->
-            encodeValue(DocumentReference.forPath(input.key.path, context.pipeline.firestore))
+          KEY_PATH -> Value.newBuilder().setReferenceValue(input.key.path.canonicalString()).build()
           CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
           UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
           else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
@@ -4225,6 +4224,11 @@ internal constructor(
   internal val params: Array<out Expr>,
   private val options: InternalOptions = InternalOptions.EMPTY
 ) : Expr() {
+  internal constructor(
+    name: String,
+    params: List<Expr>,
+    options: InternalOptions = InternalOptions.EMPTY
+  ) : this(name, FunctionRegistry.functions[name] ?: notImplemented, params.toTypedArray(), options)
   internal constructor(
     name: String,
     function: EvaluateFunction
@@ -4401,7 +4405,7 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-class Ordering private constructor(val expr: Expr, internal val dir: Direction) : Canonicalizable {
+class Ordering internal constructor(val expr: Expr, internal val dir: Direction) : Canonicalizable {
   override fun canonicalId(): String {
     val direction = if (dir == Direction.ASCENDING) "asc" else "desc"
     return "${expr.canonicalId()}$direction"

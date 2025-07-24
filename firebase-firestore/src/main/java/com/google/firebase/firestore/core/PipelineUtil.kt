@@ -115,6 +115,28 @@ sealed class TargetOrPipeline {
     return (this as PipelineWrapper).pipeline
   }
 
+  val singleDocPath: ResourcePath?
+    get() {
+      return when (this) {
+        is PipelineWrapper -> {
+          if (getPipelineSourceType(pipeline) == PipelineSourceType.DOCUMENTS) {
+            val docs = getPipelineDocuments(pipeline)
+            if (docs != null && docs.size == 1) {
+              return ResourcePath.fromString(docs[0])
+            }
+          }
+          return null
+        }
+        is TargetWrapper -> {
+          if (target.isDocumentQuery) {
+            return target.path
+          }
+
+          return null
+        }
+      }
+    }
+
   fun canonicalId(): String {
     return when (this) {
       is PipelineWrapper -> pipeline.canonicalId()
@@ -200,7 +222,7 @@ fun getPipelineCollection(pipeline: RealtimePipeline): String? {
     )
     val firstStage = pipeline.stages.first()
     if (firstStage is CollectionSource) {
-      return firstStage.path
+      return firstStage.path.canonicalString()
     }
   }
   return null
@@ -215,7 +237,7 @@ fun getPipelineDocuments(pipeline: RealtimePipeline): Array<out String>? {
     )
     val firstStage = pipeline.stages.first()
     if (firstStage is DocumentsSource) {
-      return firstStage.documents
+      return firstStage.documents.map { it.canonicalString() }.toTypedArray()
     }
   }
   return null
@@ -230,7 +252,7 @@ fun asCollectionPipelineAtPath(
   val newStages =
     pipeline.stages.map { stagePtr ->
       if (stagePtr is CollectionGroupSource) {
-        CollectionSource(path.canonicalString(), pipeline.firestore, InternalOptions.EMPTY)
+        CollectionSource(path, pipeline.serializer, InternalOptions.EMPTY)
       } else {
         stagePtr
       }
@@ -239,7 +261,7 @@ fun asCollectionPipelineAtPath(
   // Construct a new RealtimePipeline with the (potentially) modified stages
   // and the original user_data_reader.
   return RealtimePipeline(
-    pipeline.firestore,
+    pipeline.serializer,
     pipeline.userDataReader,
     newStages,
   )

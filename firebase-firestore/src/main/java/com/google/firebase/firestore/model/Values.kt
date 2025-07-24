@@ -34,7 +34,7 @@ import java.util.Date
 import java.util.TreeMap
 import kotlin.math.min
 
-internal object Values {
+object Values {
   const val TYPE_KEY: String = "__type__"
   @JvmField val NAN_VALUE: Value = Value.newBuilder().setDoubleValue(Double.NaN).build()
   @JvmField val NULL_VALUE: Value = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
@@ -670,6 +670,10 @@ internal object Values {
 
   @JvmStatic
   fun encodeValue(value: String): Value = Value.newBuilder().setStringValue(value).build()
+
+  @JvmStatic
+  fun encodeValue(value: ResourcePath): Value =
+    Value.newBuilder().setReferenceValue(value.canonicalString()).build()
 
   @JvmStatic fun encodeValue(date: Date): Value = encodeValue(com.google.firebase.Timestamp((date)))
 

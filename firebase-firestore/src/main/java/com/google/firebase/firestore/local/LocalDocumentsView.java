@@ -14,6 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.core.PipelineUtilKt.asCollectionPipelineAtPath;
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollection;
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollectionGroup;
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineDocuments;
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineSourceType;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -21,7 +26,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.core.PipelineSourceType;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -33,6 +41,8 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.util.Function;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -262,14 +272,17 @@ class LocalDocumentsView {
    *     query execution.
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nullable QueryContext context) {
-    ResourcePath path = query.getPath();
-    if (query.isDocumentQuery()) {
-      return getDocumentsMatchingDocumentQuery(path);
-    } else if (query.isCollectionGroupQuery()) {
-      return getDocumentsMatchingCollectionGroupQuery(query, offset, context);
+      QueryOrPipeline query, IndexOffset offset, @Nullable QueryContext context) {
+    if (query.isQuery()) {
+      if (query.query().isDocumentQuery()) {
+        return getDocumentsMatchingDocumentQuery(query.query().getPath());
+      } else if (query.query().isCollectionGroupQuery()) {
+        return getDocumentsMatchingCollectionGroupQuery(query.query(), offset, context);
+      } else {
+        return getDocumentsMatchingCollectionQuery(query.query(), offset, context);
+      }
     } else {
-      return getDocumentsMatchingCollectionQuery(query, offset, context);
+      return getDocumentsMatchingPipeline(query, offset, context);
     }
   }
 
@@ -280,7 +293,7 @@ class LocalDocumentsView {
    * @param offset Read time and key to start scanning by (exclusive).
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
+      QueryOrPipeline query, IndexOffset offset) {
     return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
 
@@ -379,7 +392,75 @@ class LocalDocumentsView {
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
     Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet(), context);
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            new QueryOrPipeline.QueryWrapper(query), offset, overlays.keySet(), context);
+
+    return retrieveMatchingLocalDocuments(overlays, remoteDocuments, query::matches);
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingPipeline(
+      QueryOrPipeline queryOrPipeline, IndexOffset offset, @Nullable QueryContext context) {
+    RealtimePipeline pipeline = queryOrPipeline.pipeline();
+    if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION_GROUP) {
+      String collectionGroup = getPipelineCollectionGroup(pipeline);
+      hardAssert(
+          collectionGroup != null, "Pipeline source type is COLLECTION_GROUP but is missing");
+
+      ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+      List<ResourcePath> parents = indexManager.getCollectionParents(collectionGroup);
+
+      for (ResourcePath parent : parents) {
+        RealtimePipeline collectionPipeline =
+            asCollectionPipelineAtPath(pipeline, parent.append(collectionGroup));
+        ImmutableSortedMap<DocumentKey, Document> collectionResults =
+            getDocumentsMatchingPipeline(
+                new QueryOrPipeline.PipelineWrapper(collectionPipeline), offset, context);
+        for (Map.Entry<DocumentKey, Document> kv : collectionResults) {
+          results = results.insert(kv.getKey(), kv.getValue());
+        }
+      }
+      return results;
+
+    } else {
+      Map<DocumentKey, Overlay> overlays =
+          getOverlaysForPipeline(pipeline, offset.getLargestBatchId());
+
+      Map<DocumentKey, MutableDocument> remoteDocuments;
+      switch (getPipelineSourceType(pipeline)) {
+        case COLLECTION:
+          remoteDocuments =
+              remoteDocumentCache.getDocumentsMatchingQuery(
+                  queryOrPipeline, offset, overlays.keySet(), context);
+          break;
+        case DOCUMENTS:
+          List<String> documentPaths = Arrays.asList(getPipelineDocuments(pipeline));
+          Set<DocumentKey> keySet = new HashSet<>();
+          for (String path : documentPaths) {
+            keySet.add(DocumentKey.fromPathString(path));
+          }
+          remoteDocuments = remoteDocumentCache.getAll(keySet);
+          break;
+        default:
+          throw new IllegalArgumentException(
+              "Invalid pipeline source to execute offline: " + pipeline);
+      }
+
+      return retrieveMatchingLocalDocuments(
+          overlays, remoteDocuments, pipeline::matches$com_google_firebase_firebase_firestore);
+    }
+  }
+
+  /** Returns a base document that can be used to apply `overlay`. */
+  private MutableDocument getBaseDocument(DocumentKey key, @Nullable Overlay overlay) {
+    return (overlay == null || overlay.getMutation() instanceof PatchMutation)
+        ? remoteDocumentCache.get(key)
+        : MutableDocument.newInvalidDocument(key);
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document> retrieveMatchingLocalDocuments(
+      Map<DocumentKey, Overlay> overlays,
+      Map<DocumentKey, MutableDocument> remoteDocuments,
+      Function<Document, Boolean> matcher) {
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.
@@ -399,7 +480,7 @@ class LocalDocumentsView {
             .applyToLocalView(docEntry.getValue(), FieldMask.EMPTY, Timestamp.now());
       }
       // Finally, insert the documents that still match the query
-      if (query.matches(docEntry.getValue())) {
+      if (matcher.apply(docEntry.getValue())) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
       }
     }
@@ -407,10 +488,29 @@ class LocalDocumentsView {
     return results;
   }
 
-  /** Returns a base document that can be used to apply `overlay`. */
-  private MutableDocument getBaseDocument(DocumentKey key, @Nullable Overlay overlay) {
-    return (overlay == null || overlay.getMutation() instanceof PatchMutation)
-        ? remoteDocumentCache.get(key)
-        : MutableDocument.newInvalidDocument(key);
+  private Map<DocumentKey, Overlay> getOverlaysForPipeline(
+      RealtimePipeline pipeline, int largestBatchId) {
+    switch (getPipelineSourceType(pipeline)) {
+      case COLLECTION:
+        {
+          String collection = getPipelineCollection(pipeline);
+          hardAssert(collection != null, "Pipeline source type is COLLECTION but is missing");
+          return documentOverlayCache.getOverlays(
+              ResourcePath.fromString(collection), largestBatchId);
+        }
+      case DOCUMENTS:
+        {
+          List<String> documents = Arrays.asList(getPipelineDocuments(pipeline));
+          hardAssert(documents != null, "Pipeline source type is DOCUMENTS but is missing");
+          SortedSet<DocumentKey> keySet = new TreeSet<>();
+          for (String keyString : documents) {
+            keySet.add(DocumentKey.fromPathString(keyString));
+          }
+          return documentOverlayCache.getOverlays(keySet);
+        }
+      default:
+        throw new IllegalArgumentException(
+            "GetOverlaysForPipeline: Unrecognized pipeline source type for pipeline " + pipeline);
+    }
   }
 }

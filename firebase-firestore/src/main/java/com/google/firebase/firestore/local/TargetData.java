@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.protobuf.ByteString;
@@ -25,7 +25,7 @@ import java.util.Objects;
 
 /** An immutable set of metadata that the store will need to keep track of for each target. */
 public final class TargetData {
-  private final Target target;
+  private final TargetOrPipeline target;
   private final int targetId;
   private final long sequenceNumber;
   private final QueryPurpose purpose;
@@ -52,8 +52,8 @@ public final class TargetData {
    *     read time. Documents are counted only when making a listen request with resume token or
    *     read time, otherwise, keep it null.
    */
-  TargetData(
-      Target target,
+  public TargetData(
+      TargetOrPipeline target,
       int targetId,
       long sequenceNumber,
       QueryPurpose purpose,
@@ -72,7 +72,8 @@ public final class TargetData {
   }
 
   /** Convenience constructor for use when creating a TargetData for the first time. */
-  public TargetData(Target target, int targetId, long sequenceNumber, QueryPurpose purpose) {
+  public TargetData(
+      TargetOrPipeline target, int targetId, long sequenceNumber, QueryPurpose purpose) {
     this(
         target,
         targetId,
@@ -136,7 +137,7 @@ public final class TargetData {
         expectedCount);
   }
 
-  public Target getTarget() {
+  public TargetOrPipeline getTarget() {
     return target;
   }
 
@@ -181,15 +182,15 @@ public final class TargetData {
       return false;
     }
 
-    TargetData targetData = (TargetData) o;
-    return target.equals(targetData.target)
-        && targetId == targetData.targetId
-        && sequenceNumber == targetData.sequenceNumber
-        && purpose.equals(targetData.purpose)
-        && snapshotVersion.equals(targetData.snapshotVersion)
-        && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
-        && resumeToken.equals(targetData.resumeToken)
-        && Objects.equals(expectedCount, targetData.expectedCount);
+    TargetData that = (TargetData) o;
+    return target.equals(that.target)
+        && targetId == that.targetId
+        && sequenceNumber == that.sequenceNumber
+        && purpose.equals(that.purpose)
+        && snapshotVersion.equals(that.snapshotVersion)
+        && lastLimboFreeSnapshotVersion.equals(that.lastLimboFreeSnapshotVersion)
+        && resumeToken.equals(that.resumeToken)
+        && Objects.equals(expectedCount, that.expectedCount);
   }
 
   @Override

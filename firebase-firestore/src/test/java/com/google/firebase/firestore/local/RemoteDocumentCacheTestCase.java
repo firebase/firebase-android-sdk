@@ -29,6 +29,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -183,7 +184,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("b"), IndexOffset.NONE, new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("b")),
+            IndexOffset.NONE,
+            new HashSet<DocumentKey>());
     assertThat(results.values())
         .containsExactly(doc("b/1", 42, DOC_DATA), doc("b/2", 42, DOC_DATA));
   }
@@ -196,7 +199,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("a"), IndexOffset.NONE, new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("a")),
+            IndexOffset.NONE,
+            new HashSet<DocumentKey>());
     assertThat(results.values())
         .containsExactly(doc("a/1", 42, DOC_DATA), doc("a/2", 42, DOC_DATA));
   }
@@ -209,7 +214,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("b"), IndexOffset.createSuccessor(version(12), -1), new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("b")),
+            IndexOffset.createSuccessor(version(12), -1),
+            new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/new", 3, DOC_DATA));
   }
 
@@ -221,7 +228,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("b"), IndexOffset.createSuccessor(version(1, 2), -1), new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("b")),
+            IndexOffset.createSuccessor(version(1, 2), -1),
+            new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/new", 1, DOC_DATA));
   }
 
@@ -234,7 +243,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("b"),
+            new QueryOrPipeline.QueryWrapper(query("b")),
             IndexOffset.create(version(11), key("b/b"), -1),
             new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/c", 3, DOC_DATA), doc("b/d", 4, DOC_DATA));
@@ -247,7 +256,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("b"), IndexOffset.createSuccessor(version(1), -1), new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("b")),
+            IndexOffset.createSuccessor(version(1), -1),
+            new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/old", 1, DOC_DATA));
   }
 
@@ -259,7 +270,8 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("a").filter(filter("matches", "==", true)),
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(
+                query("a").filter(filter("matches", "==", true))),
             IndexOffset.createSuccessor(version(1), -1),
             new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", true)));
@@ -272,7 +284,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("a").filter(filter("matches", "==", true)),
+            new QueryOrPipeline.QueryWrapper(query("a").filter(filter("matches", "==", true))),
             IndexOffset.createSuccessor(version(1), -1),
             new HashSet<DocumentKey>(Collections.singletonList(key("a/2"))));
     assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", false)));
