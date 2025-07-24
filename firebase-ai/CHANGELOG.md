@@ -1,4 +1,8 @@
 # Unreleased
+* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
+  transfer, and subject references (#7075)
+
+# 17.0.0
 * [feature] Added support for configuring the "thinking" budget when using Gemini
   2.5 series models. (#6990)
 * [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
@@ -39,3 +43,4 @@
 
  Note: This feature is in Public Preview, which means that it is not subject to any SLA or
  deprecation policy and could change in backwards-incompatible ways.
+
