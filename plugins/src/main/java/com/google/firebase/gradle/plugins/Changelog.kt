@@ -366,7 +366,7 @@ data class Change(val type: ChangeType, val message: String) {
     fun fromString(string: String): Change {
       val (type, description) = REGEX.findOrThrow(string).destructured
 
-      return Change(ChangeType.valueOf(type.toUpperCase()), description.trim())
+      return Change(ChangeType.valueOf(type.uppercase()), description.trim())
     }
   }
 }
@@ -384,5 +384,5 @@ enum class ChangeType {
   REMOVED,
   DEPRECATED;
 
-  override fun toString(): String = name.toLowerCase()
+  override fun toString(): String = name.lowercase()
 }

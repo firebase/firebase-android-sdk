@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 19.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 * [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
   (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
@@ -9,6 +12,7 @@
 * [changed] Bump internal dependencies
 * [changed] Internal support for `SafetyNet` has been dropped, as the [SafetyNet Attestation API
 has been deprecated.](https://developer.android.com/privacy-and-security/safetynet/deprecation-timeline#safetynet_attestation_deprecation_timeline)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -141,3 +145,4 @@ additional updates:
 # 16.0.0-beta01
 * [feature] Initial beta release of the [app_check] SDK with abuse reduction
   features.
+

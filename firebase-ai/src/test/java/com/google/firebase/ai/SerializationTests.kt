@@ -25,7 +25,9 @@ import com.google.firebase.ai.type.GroundingAttribution
 import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.ModalityTokenCount
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SearchEntryPoint
 import com.google.firebase.ai.type.Segment
@@ -34,6 +36,7 @@ import com.google.firebase.ai.type.WebGroundingChunk
 import io.kotest.assertions.json.shouldEqualJson
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class SerializationTests {
   @Test
   fun `test countTokensResponse serialization as Json`() {
@@ -382,6 +385,43 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(Schema.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test ReferenceImage serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+       "id": "ImagenReferenceImage",
+       "type": "object",
+        "properties": {
+            "referenceType": {
+                "type": "string"
+            },
+            "referenceImage": {
+                "${'$'}ref": "ImagenInlineImage"
+            },
+            "referenceId": {
+                "type": "integer"
+            },
+            "subjectImageConfig": {
+                "${'$'}ref": "ImagenSubjectConfig"
+            },
+            "maskImageConfig": {
+                "${'$'}ref": "ImagenMaskConfig"
+            },
+            "styleImageConfig": {
+                "${'$'}ref": "ImagenStyleConfig"
+            },
+            "controlConfig": {
+                "${'$'}ref": "ImagenControlConfig"
+            }
+        }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(ImagenReferenceImage.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 

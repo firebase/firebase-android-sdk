@@ -31,7 +31,7 @@ private constructor(
     public var thinkingBudget: Int? = null
 
     /**
-     * Indicates the thinking budget in tokens. 0 is DISABLED. -1 is AUTOMATIC. The default values
+     * Indicates the thinking budget in tokens. `0` is disabled. `-1` is dynamic. The default values
      * and allowed ranges are model dependent.
      */
     public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
