@@ -27,7 +27,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
