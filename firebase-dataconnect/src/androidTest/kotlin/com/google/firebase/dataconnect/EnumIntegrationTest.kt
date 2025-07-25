@@ -35,7 +35,6 @@ import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
-import org.junit.Ignore
 import org.junit.Test
 
 class EnumIntegrationTest : DataConnectIntegrationTestBase() {
@@ -605,10 +604,6 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  @Ignore(
-    "TODO(b/432793533) Re-enable this test once the emulator crash " +
-      "caused by the \"EnumKey_GetByKey\" query is fixed."
-  )
   fun enumAsPrimaryKey() = runTest {
     N5ekmae3jn.entries.forEach { enumValue ->
       val tag = Arb.dataConnect.tag().next(rs)
