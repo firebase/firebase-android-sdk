@@ -23,7 +23,6 @@ import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -68,9 +67,6 @@ abstract class DataConnectIntegrationTestBase {
       append(string.bind())
     }
   }
-
-  /** Generates and returns a value from the given [Arb] using [rs] as the [RandomSource]. */
-  fun <T> Arb<T>.next(): T = next(rs)
 
   companion object {
     val testConnectorConfig: ConnectorConfig
