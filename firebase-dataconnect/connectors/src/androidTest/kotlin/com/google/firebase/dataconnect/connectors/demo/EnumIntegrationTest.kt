@@ -433,7 +433,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     N5ekmae3jn.entries.forEach { enumValue ->
       val tagValue = Arb.dataConnect.tag().next(rs)
       val key = connector.enumKeyInsert.execute(enumValue) { tag = tagValue }.data.key
-      withClue(key) { key.enumValue shouldBe Known(enumValue) }
+      withClue(key) { key.enumValue shouldBe enumValue }
       val queryResult = connector.enumKeyGetByKey.execute(key).data
       withClue(queryResult) { queryResult.item?.tag shouldBe tagValue }
     }
