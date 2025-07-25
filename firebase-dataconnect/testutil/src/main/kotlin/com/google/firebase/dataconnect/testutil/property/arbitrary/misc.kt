@@ -17,6 +17,9 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropertyContext
+import io.kotest.property.Sample
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.filter
@@ -80,4 +83,9 @@ private fun pow10(n: Int): Int {
   var result = 1
   repeat(n) { result *= 10 }
   return result
+}
+
+fun <T> PropertyContext.sampleFromArb(arb: Arb<T>, edgeCaseProbability: Double): Sample<T> {
+  val edgeConfig = EdgeConfig(edgecasesGenerationProbability = edgeCaseProbability)
+  return arb.generate(randomSource(), edgeConfig).first()
 }
