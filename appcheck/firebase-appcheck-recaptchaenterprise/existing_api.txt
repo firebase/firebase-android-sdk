@@ -1,0 +1,10 @@
+// Signature format: 3.0
+package com.google.firebase.appcheck.recaptchaenterprise {
+
+  public class RecaptchaEnterpriseAppCheckProviderFactory implements com.google.firebase.appcheck.AppCheckProviderFactory {
+    method public com.google.firebase.appcheck.AppCheckProvider create(com.google.firebase.FirebaseApp);
+    method public static com.google.firebase.appcheck.recaptchaenterprise.RecaptchaEnterpriseAppCheckProviderFactory getInstance(String);
+  }
+
+}
+
