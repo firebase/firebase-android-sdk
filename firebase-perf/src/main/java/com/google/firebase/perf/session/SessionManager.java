@@ -54,6 +54,7 @@ public class SessionManager {
   private SessionManager() {
     // session should quickly updated by session subscriber.
     this(GaugeManager.getInstance(), PerfSession.createWithId(null));
+    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "SessionManager()");
   }
 
   @VisibleForTesting
