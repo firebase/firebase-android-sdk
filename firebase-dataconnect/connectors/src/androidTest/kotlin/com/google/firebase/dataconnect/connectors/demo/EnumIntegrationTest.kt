@@ -429,18 +429,13 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  @Ignore(
-    "TODO(b/432793533) Re-enable this test once the emulator crash " +
-      "caused by the \"EnumKey_GetByKey\" query is fixed."
-  )
   fun enumAsPrimaryKey() = runTest {
     N5ekmae3jn.entries.forEach { enumValue ->
       val tagValue = Arb.dataConnect.tag().next(rs)
       val key = connector.enumKeyInsert.execute(enumValue) { tag = tagValue }.data.key
-      withClue(key) { key.enumValue shouldBe Known(enumValue) }
-      // TODO(b/432793533): Uncomment once the "EnumKey_GetByKey" query is uncommented.
-      // val queryResult = connector.enumKeyGetByKey.execute(key).data
-      // withClue(queryResult) { queryResult.item?.tag shouldBe tagValue }
+      withClue(key) { key.enumValue shouldBe enumValue }
+      val queryResult = connector.enumKeyGetByKey.execute(key).data
+      withClue(queryResult) { queryResult.item?.tag shouldBe tagValue }
     }
   }
 
