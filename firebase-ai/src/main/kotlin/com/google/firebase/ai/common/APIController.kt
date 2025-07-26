@@ -161,7 +161,7 @@ internal constructor(
     }
 
   private fun getBidiEndpoint(location: String): String =
-    "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+    "wss://firebasevertexai.googleapis.com//ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
