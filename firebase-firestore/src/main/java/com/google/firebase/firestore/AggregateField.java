@@ -14,9 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.pipeline.Expr.field;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.firebase.firestore.pipeline.AggregateFunction;
+import com.google.firebase.firestore.pipeline.AggregateWithAlias;
 import java.util.Objects;
 
 /** Represents an aggregation that can be performed by Firestore. */
@@ -60,6 +64,9 @@ public abstract class AggregateField {
   public String getOperator() {
     return operator;
   }
+
+  @NonNull
+  abstract AggregateWithAlias toPipeline();
 
   /**
    * Returns true if the given object is equal to this object. Two `AggregateField` objects are
@@ -195,6 +202,12 @@ public abstract class AggregateField {
     private CountAggregateField() {
       super(null, "count");
     }
+
+    @NonNull
+    @Override
+    AggregateWithAlias toPipeline() {
+      return AggregateFunction.countAll().alias(getAlias());
+    }
   }
 
   /** Represents a "sum" aggregation that can be performed by Firestore. */
@@ -202,12 +215,24 @@ public abstract class AggregateField {
     private SumAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "sum");
     }
+
+    @NonNull
+    @Override
+    AggregateWithAlias toPipeline() {
+      return field(getFieldPath()).sum().alias(getAlias());
+    }
   }
 
   /** Represents an "average" aggregation that can be performed by Firestore. */
   public static class AverageAggregateField extends AggregateField {
     private AverageAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "average");
+    }
+
+    @NonNull
+    @Override
+    AggregateWithAlias toPipeline() {
+      return field(getFieldPath()).avg().alias(getAlias());
     }
   }
 }

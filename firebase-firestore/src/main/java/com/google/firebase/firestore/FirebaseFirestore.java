@@ -850,10 +850,12 @@ public class FirebaseFirestore {
     return clientProvider.call(call);
   }
 
+  @NonNull
   DatabaseId getDatabaseId() {
     return databaseId;
   }
 
+  @NonNull
   UserDataReader getUserDataReader() {
     return userDataReader;
   }
@@ -880,5 +882,16 @@ public class FirebaseFirestore {
   @Keep
   static void setClientLanguage(@NonNull String languageToken) {
     FirestoreChannel.setClientLanguage(languageToken);
+  }
+
+  /**
+   * Build a new Pipeline
+   *
+   * @return {@code PipelineSource} for this Firestore instance.
+   */
+  @NonNull
+  public PipelineSource pipeline() {
+    clientProvider.ensureConfigured();
+    return new PipelineSource(this);
   }
 }

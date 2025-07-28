@@ -47,9 +47,7 @@ public final class ObjectValue implements Cloneable {
   }
 
   public ObjectValue(Value value) {
-    hardAssert(
-        value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
-        "ObjectValues should be backed by a MapValue");
+    hardAssert(value.hasMapValue(), "ObjectValues should be backed by a MapValue");
     hardAssert(
         !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
@@ -103,7 +101,7 @@ public final class ObjectValue implements Cloneable {
   }
 
   @Nullable
-  private Value extractNestedValue(Value value, FieldPath fieldPath) {
+  private static Value extractNestedValue(Value value, FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
       return value;
     } else {
@@ -180,8 +178,7 @@ public final class ObjectValue implements Cloneable {
       if (currentValue instanceof Map) {
         // Re-use a previously created map
         currentLevel = (Map<String, Object>) currentValue;
-      } else if (currentValue instanceof Value
-          && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+      } else if (currentValue instanceof Value && ((Value) currentValue).hasMapValue()) {
         // Convert the existing Protobuf MapValue into a Java map
         Map<String, Object> nextLevel =
             new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
