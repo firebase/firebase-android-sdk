@@ -27,8 +27,10 @@ import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 
-abstract class Stage<T : Stage<T>>
-internal constructor(protected val name: String, internal val options: InternalOptions) {
+sealed class Stage<T : Stage<T>>(
+  protected val name: String,
+  internal val options: InternalOptions
+) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
     builder.setName(name)
@@ -40,7 +42,7 @@ internal constructor(protected val name: String, internal val options: InternalO
 
   internal abstract fun self(options: InternalOptions): T
 
-  protected fun with(key: String, value: Value): T = self(options.with(key, value))
+  protected fun withOption(key: String, value: Value): T = self(options.with(key, value))
 
   /**
    * Specify named [String] parameter
@@ -49,7 +51,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [String] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: String): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: String): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Boolean] parameter
@@ -58,7 +60,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Boolean] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Boolean): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Boolean): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Long] parameter
@@ -67,7 +69,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Long] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Long): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Long): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Double] parameter
@@ -76,7 +78,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Double] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Double): T = with(key, Values.encodeValue(value))
+  fun withOption(key: String, value: Double): T = withOption(key, Values.encodeValue(value))
 
   /**
    * Specify named [Field] parameter
@@ -85,7 +87,7 @@ internal constructor(protected val name: String, internal val options: InternalO
    * @param value The [Field] value of parameter
    * @return New stage with named parameter.
    */
-  fun with(key: String, value: Field): T = with(key, value.toProto())
+  fun withOption(key: String, value: Field): T = withOption(key, value.toProto())
 }
 
 /**
@@ -211,7 +213,7 @@ internal constructor(
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
 }
 
 class CollectionGroupSource
@@ -238,7 +240,7 @@ private constructor(private val collectionId: String, options: InternalOptions) 
     }
   }
 
-  fun withForceIndex(value: String) = with("force_index", value)
+  fun withForceIndex(value: String) = withOption("force_index", value)
 }
 
 internal class DocumentsSource
@@ -260,7 +262,7 @@ internal constructor(
 ) : Stage<AddFieldsStage>("add_fields", options) {
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 /**
@@ -334,8 +336,8 @@ internal constructor(
   fun withGroups(group: Selectable, vararg additionalGroups: Any) =
     AggregateStage(
       accumulators,
-      mapOf(group.getAlias() to group.getExpr())
-        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::getAlias))
+      mapOf(group.alias to group.expr)
+        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias))
     )
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -454,7 +456,7 @@ internal constructor(
    * @param limit must be a positive integer.
    * @return [FindNearestStage] with specified [limit].
    */
-  fun withLimit(limit: Long): FindNearestStage = with("limit", limit)
+  fun withLimit(limit: Long): FindNearestStage = withOption("limit", limit)
 
   /**
    * Add a field containing the distance to the result.
@@ -463,7 +465,7 @@ internal constructor(
    * @return [FindNearestStage] with specified [distanceField].
    */
   fun withDistanceField(distanceField: Field): FindNearestStage =
-    with("distance_field", distanceField)
+    withOption("distance_field", distanceField)
 
   /**
    * Add a field containing the distance to the result.
@@ -492,13 +494,23 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
 }
 
 internal class SelectStage
-internal constructor(
-  private val fields: Array<out Selectable>,
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SelectStage>("select", options) {
+private constructor(internal val fields: Array<out Selectable>, options: InternalOptions) :
+  Stage<SelectStage>("select", options) {
+  companion object {
+    @JvmStatic
+    fun of(selection: Selectable, vararg additionalSelections: Any): SelectStage =
+      SelectStage(
+        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray()),
+        InternalOptions.EMPTY
+      )
+
+    @JvmStatic
+    fun of(fieldName: String, vararg additionalSelections: Any): SelectStage =
+      of(field(fieldName), *additionalSelections)
+  }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class SortStage
@@ -518,7 +530,7 @@ internal constructor(
 ) : Stage<DistinctStage>("distinct", options) {
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(groups.associate { it.getAlias() to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(groups.associate { it.alias to it.toProto(userDataReader) }))
 }
 
 internal class RemoveFieldsStage
@@ -588,15 +600,15 @@ private constructor(
     /**
      * Creates [SampleStage] with size limited to number of documents.
      *
-     * The [documents] parameter represents the target number of documents to produce and must be a
+     * The [count] parameter represents the target number of documents to produce and must be a
      * non-negative integer value. If the previous stage produces less than size documents, the
      * entire previous results are returned. If the previous stage produces more than size, this
      * outputs a sample of exactly size entries where any sample is equally likely.
      *
-     * @param documents The number of documents to emit.
-     * @return [SampleStage] with specified [documents].
+     * @param count The number of documents to emit.
+     * @return [SampleStage] with specified [count].
      */
-    @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
+    @JvmStatic fun withCount(count: Int) = SampleStage(count, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)
@@ -652,11 +664,11 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Expr.field(arrayField).alias(alias))
+      UnnestStage(Expr.Companion.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(selectable.getAlias()), selectable.toProto(userDataReader))
+    sequenceOf(encodeValue(selectable.alias), selectable.toProto(userDataReader))
 
   /**
    * Adds index field to emitted documents
@@ -667,5 +679,5 @@ internal constructor(
    * @param indexField The field name of index field.
    * @return [SampleStage] that includes specified index field.
    */
-  fun withIndexField(indexField: String): UnnestStage = with("index_field", indexField)
+  fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }

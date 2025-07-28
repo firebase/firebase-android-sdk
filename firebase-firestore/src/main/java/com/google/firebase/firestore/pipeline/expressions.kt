@@ -24,6 +24,9 @@ import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.FieldPath as ModelFieldPath
+import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
+import com.google.firebase.firestore.model.FieldPath.KEY_PATH
+import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
@@ -154,6 +157,10 @@ abstract class Expr internal constructor() {
     @JvmStatic
     fun constant(value: Boolean): BooleanExpr {
       val encodedValue = encodeValue(value)
+      // To return a BooleanExpr, we need to break the pattern that expects a BooleanExpr to be a
+      // "pipeline function". In stead of building on serialization logic built into BooleanExpr,
+      // we override methods. The constructor parameters are irrelevant, since the internal
+      // BooleanExpr logic is never invoked.
       return object : BooleanExpr("N/A", emptyArray()) {
         override fun toProto(userDataReader: UserDataReader): Value {
           return encodedValue
@@ -224,10 +231,7 @@ abstract class Expr internal constructor() {
      * @param value The [VectorValue] value.
      * @return A new [Expr] constant instance.
      */
-    @JvmStatic
-    fun constant(value: VectorValue): Expr {
-      return Constant(encodeValue(value))
-    }
+    @JvmStatic fun constant(value: VectorValue): Expr = Constant(encodeValue(value))
 
     /**
      * Create a [Blob] constant from a [ByteArray].
@@ -235,20 +239,14 @@ abstract class Expr internal constructor() {
      * @param bytes The [ByteArray] to convert to a Blob.
      * @return A new [Expr] constant instance representing the Blob.
      */
-    @JvmStatic
-    fun blob(bytes: ByteArray): Expr {
-      return constant(Blob.fromBytes(bytes))
-    }
+    @JvmStatic fun blob(bytes: ByteArray): Expr = constant(Blob.fromBytes(bytes))
 
     /**
      * Constant for a null value.
      *
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun nullValue(): Expr {
-      return NULL
-    }
+    @JvmStatic fun nullValue(): Expr = NULL
 
     /**
      * Create a vector constant for a [DoubleArray] value.
@@ -256,10 +254,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: DoubleArray): Expr {
-      return Constant(Values.encodeVectorValue(vector))
-    }
+    @JvmStatic fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
 
     /**
      * Create a vector constant for a [VectorValue] value.
@@ -267,10 +262,7 @@ abstract class Expr internal constructor() {
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
      */
-    @JvmStatic
-    fun vector(vector: VectorValue): Expr {
-      return Constant(encodeValue(vector))
-    }
+    @JvmStatic fun vector(vector: VectorValue): Expr = Constant(encodeValue(vector))
 
     /**
      * Creates a [Field] instance representing the field at the given path.
@@ -283,10 +275,12 @@ abstract class Expr internal constructor() {
      */
     @JvmStatic
     fun field(name: String): Field {
-      if (name == DocumentKey.KEY_FIELD_NAME) {
-        return Field(ModelFieldPath.KEY_PATH)
+      return when (name) {
+        DocumentKey.KEY_FIELD_NAME -> Field(KEY_PATH)
+        ModelFieldPath.CREATE_TIME_NAME -> Field(CREATE_TIME_PATH)
+        ModelFieldPath.UPDATE_TIME_NAME -> Field(UPDATE_TIME_PATH)
+        else -> Field(FieldPath.fromDotSeparatedPath(name).internalPath)
       }
-      return Field(FieldPath.fromDotSeparatedPath(name).internalPath)
     }
 
     /**
@@ -298,10 +292,7 @@ abstract class Expr internal constructor() {
      * @param fieldPath The [FieldPath] to the field.
      * @return A new [Field] instance representing the specified path.
      */
-    @JvmStatic
-    fun field(fieldPath: FieldPath): Field {
-      return Field(fieldPath.internalPath)
-    }
+    @JvmStatic fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
 
     @JvmStatic fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, expr)
 
@@ -1263,7 +1254,7 @@ abstract class Expr internal constructor() {
       FunctionExpr("replace_all", fieldName, find, replace)
 
     /**
-     * Creates an expression that calculates the character length of a string expression in UTF8.
+     * Creates an expression that calculates the character length of a string expression.
      *
      * @param expr The expression representing the string.
      * @return A new [Expr] representing the charLength operation.
@@ -1271,7 +1262,7 @@ abstract class Expr internal constructor() {
     @JvmStatic fun charLength(expr: Expr): Expr = FunctionExpr("char_length", expr)
 
     /**
-     * Creates an expression that calculates the character length of a string field in UTF8.
+     * Creates an expression that calculates the character length of a string field.
      *
      * @param fieldName The name of the field containing the string.
      * @return A new [Expr] representing the charLength operation.
@@ -1399,7 +1390,8 @@ abstract class Expr internal constructor() {
       BooleanExpr("regex_contains", fieldName, pattern)
 
     /**
-     * Creates an expression that checks if a string field matches a specified regular expression.
+     * Creates an expression that checks if a string expression matches a specified regular
+     * expression.
      *
      * @param stringExpression The expression representing the string to match against.
      * @param pattern The regular expression to use for the match.
@@ -1410,7 +1402,8 @@ abstract class Expr internal constructor() {
       BooleanExpr("regex_match", stringExpression, pattern)
 
     /**
-     * Creates an expression that checks if a string field matches a specified regular expression.
+     * Creates an expression that checks if a string expression matches a specified regular
+     * expression.
      *
      * @param stringExpression The expression representing the string to match against.
      * @param pattern The regular expression to use for the match.
@@ -1573,7 +1566,7 @@ abstract class Expr internal constructor() {
       BooleanExpr("starts_with", stringExpr, prefix)
 
     /**
-     * Creates an expression that checks if a string expression starts with a given [prefix].
+     * Creates an expression that checks if a string field starts with a given [prefix].
      *
      * @param fieldName The name of field that contains a string to check.
      * @param prefix The prefix string expression to check for.
@@ -1584,7 +1577,7 @@ abstract class Expr internal constructor() {
       BooleanExpr("starts_with", fieldName, prefix)
 
     /**
-     * Creates an expression that checks if a string expression starts with a given [prefix].
+     * Creates an expression that checks if a string field starts with a given [prefix].
      *
      * @param fieldName The name of field that contains a string to check.
      * @param prefix The prefix string to check for.
@@ -1617,7 +1610,7 @@ abstract class Expr internal constructor() {
       BooleanExpr("ends_with", stringExpr, suffix)
 
     /**
-     * Creates an expression that checks if a string expression ends with a given [suffix].
+     * Creates an expression that checks if a string field ends with a given [suffix].
      *
      * @param fieldName The name of field that contains a string to check.
      * @param suffix The suffix string expression to check for.
@@ -1628,7 +1621,7 @@ abstract class Expr internal constructor() {
       BooleanExpr("ends_with", fieldName, suffix)
 
     /**
-     * Creates an expression that checks if a string expression ends with a given [suffix].
+     * Creates an expression that checks if a string field ends with a given [suffix].
      *
      * @param fieldName The name of field that contains a string to check.
      * @param suffix The suffix string to check for.
@@ -2910,6 +2903,9 @@ abstract class Expr internal constructor() {
     fun ifError(tryExpr: Expr, catchValue: Any): Expr =
       FunctionExpr("if_error", tryExpr, catchValue)
 
+    // TODO: we should double check that we want to ship `documentId` expression and that it wasn't
+    // intended for internal use in the backend
+
     /**
      * Creates an expression that returns the document ID from a path.
      *
@@ -3033,6 +3029,9 @@ abstract class Expr internal constructor() {
    * associates it with the provided alias.
    */
   open fun alias(alias: String) = ExprWithAlias(alias, this)
+
+  // TODO: we should double check that we want to ship `documentId` expression and that it wasn't
+  // intended for internal use in the backend
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -3515,6 +3514,14 @@ abstract class Expr internal constructor() {
   fun strConcat(vararg strings: Any): Expr = Companion.strConcat(this, *strings)
 
   /**
+   * Accesses a map (object) value using the provided [keyExpression].
+   *
+   * @param keyExpression The name of the key to remove from this map expression.
+   * @return A new [Expr] representing the value associated with the given key in the map.
+   */
+  fun mapGet(keyExpression: Expr) = Companion.mapGet(this, keyExpression)
+
+  /**
    * Accesses a map (object) value using the provided [key].
    *
    * @param key The key to access in the map.
@@ -3536,10 +3543,10 @@ abstract class Expr internal constructor() {
   /**
    * Creates an expression that removes a key from this map expression.
    *
-   * @param key The name of the key to remove from this map expression.
+   * @param keyExpression The name of the key to remove from this map expression.
    * @return A new [Expr] that evaluates to a modified map.
    */
-  fun mapRemove(key: Expr) = Companion.mapRemove(this, key)
+  fun mapRemove(keyExpression: Expr) = Companion.mapRemove(this, keyExpression)
 
   /**
    * Creates an expression that removes a key from this map expression.
@@ -4011,8 +4018,8 @@ abstract class Expr internal constructor() {
 
 /** Expressions that have an alias are [Selectable] */
 abstract class Selectable : Expr() {
-  internal abstract fun getAlias(): String
-  internal abstract fun getExpr(): Expr
+  internal abstract val alias: String
+  internal abstract val expr: Expr
 
   internal companion object {
     fun toSelectable(o: Any): Selectable {
@@ -4027,10 +4034,8 @@ abstract class Selectable : Expr() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-class ExprWithAlias internal constructor(private val alias: String, private val expr: Expr) :
+class ExprWithAlias internal constructor(override val alias: String, override val expr: Expr) :
   Selectable() {
-  override fun getAlias() = alias
-  override fun getExpr() = expr
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 }
 
@@ -4050,12 +4055,16 @@ class Field internal constructor(private val fieldPath: ModelFieldPath) : Select
      *
      * @return An [Field] representing the document ID.
      */
-    @JvmField val DOCUMENT_ID: Field = field(FieldPath.documentId())
+    @JvmField val DOCUMENT_ID: Field = Field(KEY_PATH)
+
+    @JvmField internal val UPDATE_TIME: Field = Field(UPDATE_TIME_PATH)
+
+    @JvmField internal val CREATE_TIME: Field = Field(CREATE_TIME_PATH)
   }
 
-  override fun getAlias(): String = fieldPath.canonicalString()
+  override val alias: String = fieldPath.canonicalString()
 
-  override fun getExpr(): Expr = this
+  override val expr: Expr = this
 
   override fun toProto(userDataReader: UserDataReader) = toProto()
 

@@ -33,7 +33,7 @@ private constructor(
 
   companion object {
 
-    @JvmStatic fun generic(name: String, vararg expr: Expr) = AggregateFunction(name, expr)
+    @JvmStatic fun raw(name: String, vararg expr: Expr) = AggregateFunction(name, expr)
 
     /**
      * Creates an aggregation that counts the total number of stage inputs.

@@ -32,6 +32,7 @@ import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expr
+import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.ExprWithAlias
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestStage
@@ -153,9 +154,7 @@ internal constructor(
    */
   fun removeFields(field: String, vararg additionalFields: String): Pipeline =
     append(
-      RemoveFieldsStage(
-        arrayOf(Expr.field(field), *additionalFields.map(Expr::field).toTypedArray())
-      )
+      RemoveFieldsStage(arrayOf(field(field), *additionalFields.map(Expr::field).toTypedArray()))
     )
 
   /**
@@ -178,11 +177,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun select(selection: Selectable, vararg additionalSelections: Any): Pipeline =
-    append(
-      SelectStage(
-        arrayOf(selection, *additionalSelections.map(Selectable::toSelectable).toTypedArray())
-      )
-    )
+    append(SelectStage.of(selection, *additionalSelections))
 
   /**
    * Selects or creates a set of fields from the outputs of previous stages.
@@ -204,14 +199,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun select(fieldName: String, vararg additionalSelections: Any): Pipeline =
-    append(
-      SelectStage(
-        arrayOf(
-          Expr.field(fieldName),
-          *additionalSelections.map(Selectable::toSelectable).toTypedArray()
-        )
-      )
-    )
+    append(SelectStage.of(fieldName, *additionalSelections))
 
   /**
    * Sorts the documents from previous stages based on one or more [Ordering] criteria.
@@ -320,10 +308,7 @@ internal constructor(
   fun distinct(groupField: String, vararg additionalGroups: Any): Pipeline =
     append(
       DistinctStage(
-        arrayOf(
-          Expr.field(groupField),
-          *additionalGroups.map(Selectable::toSelectable).toTypedArray()
-        )
+        arrayOf(field(groupField), *additionalGroups.map(Selectable::toSelectable).toTypedArray())
       )
     )
 
@@ -453,10 +438,10 @@ internal constructor(
    * @param field The [String] specifying the field name containing the nested map.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun replace(field: String): Pipeline = replace(Expr.field(field))
+  fun replace(field: String): Pipeline = replace(field(field))
 
   /**
-   * Fully overwrites all fields in a document with those coming from a nested map.
+   * Fully overwrites all fields in a document with those coming from a map.
    *
    * This stage allows you to emit a map value as a document. Each key of the map becomes a field on
    * the document that contains the corresponding value.
@@ -470,15 +455,15 @@ internal constructor(
   /**
    * Performs a pseudo-random sampling of the input documents.
    *
-   * The [documents] parameter represents the target number of documents to produce and must be a
+   * The [count] parameter represents the target number of documents to produce and must be a
    * non-negative integer value. If the previous stage produces less than size documents, the entire
    * previous results are returned. If the previous stage produces more than size, this outputs a
    * sample of exactly size entries where any sample is equally likely.
    *
-   * @param documents The number of documents to emit.
+   * @param count The number of documents to emit.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun sample(documents: Int): Pipeline = append(SampleStage.withDocLimit(documents))
+  fun sample(count: Int): Pipeline = append(SampleStage.withCount(count))
 
   /**
    * Performs a pseudo-random sampling of the input documents.
@@ -514,8 +499,7 @@ internal constructor(
    * @param alias The name of field to store emitted element of array.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun unnest(arrayField: String, alias: String): Pipeline =
-    unnest(Expr.field(arrayField).alias(alias))
+  fun unnest(arrayField: String, alias: String): Pipeline = unnest(field(arrayField).alias(alias))
 
   /**
    * Takes a specified array from the input documents and outputs a document for each element with
@@ -644,7 +628,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Set the pipeline's source to the collection specified by CollectionSource.
    *
    * @param stage A [CollectionSource] that will be the source of this pipeline.
-   * @return Pipeline with documents from target collection.
+   * @return A new [Pipeline] object with documents from target collection.
    * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
    * or database than the pipeline.
    */
@@ -659,6 +643,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * Set the pipeline's source to the collection group with the given id.
    *
    * @param collectionId The id of a collection group that will be the source of this pipeline.
+   * @return A new [Pipeline] object with documents from target collection group.
    */
   fun collectionGroup(collectionId: String): Pipeline =
     pipeline(CollectionGroupSource.of((collectionId)))
