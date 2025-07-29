@@ -127,6 +127,7 @@ public class SessionManager {
    * PerfSession} was already initialized a moment ago by getInstance(). Unlike updatePerfSession,
    * this does not reset the perfSession.
    */
+  @Deprecated // TODO(b/394127311): Delete this.
   public void initializeGaugeCollection() {
     startOrStopCollectingGauges();
   }
