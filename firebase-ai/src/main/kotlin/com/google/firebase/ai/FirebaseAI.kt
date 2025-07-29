@@ -25,7 +25,6 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenSafetySettings
-import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -124,6 +123,7 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): LiveGenerativeModel {
+
     if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
       Log.w(
         TAG,
@@ -138,7 +138,7 @@ internal constructor(
         GenerativeBackendEnum.VERTEX_AI ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
-          throw InvalidStateException("Live Model is not yet available on the Google AI backend")
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
       },
       firebaseApp.options.apiKey,
       firebaseApp,
@@ -150,6 +150,7 @@ internal constructor(
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
+      backend
     )
   }
 
