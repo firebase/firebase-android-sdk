@@ -52,7 +52,8 @@ public class SessionManager {
   }
 
   private SessionManager() {
-    // session should quickly updated by session subscriber.
+    // Creates a legacy session by default. This is a safety net to allow initializing
+    // SessionManager - but the current implementation replaces it immediately.
     this(GaugeManager.getInstance(), PerfSession.createWithId(null));
     FirebaseSessionsEnforcementCheck.checkSession(perfSession, "SessionManager()");
   }
