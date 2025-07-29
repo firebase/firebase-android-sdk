@@ -361,7 +361,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
-    FirebaseSessionsEnforcementCheck.checkSession(gaugeMetric.getSessionId(), "log(GaugeMetric)");
+    FirebaseSessionsEnforcementCheck.checkSession(gaugeMetric.getSessionId(), "log GaugeMetric");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }
