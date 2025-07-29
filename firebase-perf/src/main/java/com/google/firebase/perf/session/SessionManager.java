@@ -101,7 +101,11 @@ public class SessionManager {
 
     this.perfSession = perfSession;
 
-    // TODO(b/394127311): Update/verify behavior for Firebase Sessions.
+    // Log gauge metadata.
+    logGaugeMetadataIfCollectionEnabled();
+
+    // Start of stop the gauge data collection.
+    startOrStopCollectingGauges();
 
     synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
@@ -115,12 +119,6 @@ public class SessionManager {
         }
       }
     }
-
-    // Log gauge metadata.
-    logGaugeMetadataIfCollectionEnabled();
-
-    // Start of stop the gauge data collection.
-    startOrStopCollectingGauges();
   }
 
   /**
