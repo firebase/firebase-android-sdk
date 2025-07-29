@@ -101,7 +101,7 @@ internal constructor(
   private val appVersion: Int = 0,
   private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
-  private val backend: GenerativeBackend?
+  private val backend: GenerativeBackend? = null
 ) {
 
   constructor(
