@@ -167,12 +167,11 @@ internal constructor(
 
   private fun getBidiEndpoint(location: String): String =
     when (backend?.backend) {
-      GenerativeBackendEnum.VERTEX_AI ->
+      GenerativeBackendEnum.VERTEX_AI,
+      null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
         "wss://firebasevertexai.googleapis.com//ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
-      null ->
-        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
     }
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
