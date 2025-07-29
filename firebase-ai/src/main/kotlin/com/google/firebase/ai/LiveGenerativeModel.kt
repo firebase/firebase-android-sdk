@@ -69,7 +69,7 @@ internal constructor(
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
-    generativeBackend: GenerativeBackend? = null,
+    generativeBackend: GenerativeBackend,
   ) : this(
     modelName,
     blockingDispatcher,

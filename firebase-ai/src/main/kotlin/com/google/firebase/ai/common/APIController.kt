@@ -171,7 +171,7 @@ internal constructor(
       null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
-        "wss://firebasevertexai.googleapis.com//ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
     }
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
