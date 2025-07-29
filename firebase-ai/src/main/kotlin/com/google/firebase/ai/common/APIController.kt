@@ -111,6 +111,7 @@ internal constructor(
     apiClient: String,
     firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
+    backend: GenerativeBackend? = null,
   ) : this(
     key,
     model,
@@ -120,7 +121,8 @@ internal constructor(
     firebaseApp,
     getVersionNumber(firebaseApp),
     firebaseApp.options.applicationId,
-    headerProvider
+    headerProvider,
+    backend
   )
 
   private val model = fullModelName(model)
@@ -164,11 +166,13 @@ internal constructor(
     }
 
   private fun getBidiEndpoint(location: String): String =
-    when (backend.backend) {
+    when (backend?.backend) {
       GenerativeBackendEnum.VERTEX_AI ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
         "wss://firebasevertexai.googleapis.com//ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
+      null ->
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
     }
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
