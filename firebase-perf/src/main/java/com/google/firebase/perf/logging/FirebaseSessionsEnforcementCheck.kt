@@ -28,9 +28,7 @@ class FirebaseSessionsEnforcementCheck {
 
     @JvmStatic
     fun checkSession(sessions: List<ProtoPerfSession>, failureMessage: String) {
-      for (session in sessions) {
-        checkSession(session.sessionId, failureMessage)
-      }
+      sessions.forEach { checkSession(it.sessionId, failureMessage) }
     }
 
     @JvmStatic
