@@ -107,7 +107,7 @@ public class AffectedProjectFinder {
     while (itr.hasNext()) {
       String file = itr.next();
       if (file.startsWith(relativePath)) {
-        project.getLogger().info("Claiming file {} for project {}", file, project);
+        project.getLogger().info("Claiming file {} for {}", file, project);
         itr.remove();
         projects.add(project);
       }
