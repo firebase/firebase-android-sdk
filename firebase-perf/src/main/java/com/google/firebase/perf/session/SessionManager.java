@@ -52,7 +52,8 @@ public class SessionManager {
   }
 
   private SessionManager() {
-    // session should quickly updated by session subscriber.
+    // Creates a legacy session by default. This is a safety net to allow initializing
+    // SessionManager - but the current implementation replaces it immediately.
     this(GaugeManager.getInstance(), PerfSession.createWithId(null));
     FirebaseSessionsEnforcementCheck.checkSession(perfSession, "SessionManager()");
   }
@@ -101,7 +102,11 @@ public class SessionManager {
 
     this.perfSession = perfSession;
 
-    // TODO(b/394127311): Update/verify behavior for Firebase Sessions.
+    // Start or stop the gauge data collection ASAP.
+    startOrStopCollectingGauges();
+
+    // Log gauge metadata.
+    logGaugeMetadataIfCollectionEnabled();
 
     synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
@@ -115,12 +120,6 @@ public class SessionManager {
         }
       }
     }
-
-    // Log gauge metadata.
-    logGaugeMetadataIfCollectionEnabled();
-
-    // Start of stop the gauge data collection.
-    startOrStopCollectingGauges();
   }
 
   /**
@@ -129,6 +128,7 @@ public class SessionManager {
    * PerfSession} was already initialized a moment ago by getInstance(). Unlike updatePerfSession,
    * this does not reset the perfSession.
    */
+  @Deprecated // TODO(b/394127311): Delete this. AQS early initialization updates the session ASAP.
   public void initializeGaugeCollection() {
     startOrStopCollectingGauges();
   }

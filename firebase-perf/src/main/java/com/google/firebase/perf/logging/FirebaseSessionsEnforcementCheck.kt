@@ -18,6 +18,7 @@ package com.google.firebase.perf.logging
 
 import com.google.firebase.perf.session.PerfSession
 import com.google.firebase.perf.session.isLegacy
+import com.google.firebase.perf.v1.PerfSession as ProtoPerfSession
 
 class FirebaseSessionsEnforcementCheck {
   companion object {
@@ -26,9 +27,19 @@ class FirebaseSessionsEnforcementCheck {
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
     @JvmStatic
+    fun checkSession(sessions: List<ProtoPerfSession>, failureMessage: String) {
+      sessions.forEach { checkSession(it.sessionId, failureMessage) }
+    }
+
+    @JvmStatic
     fun checkSession(session: PerfSession, failureMessage: String) {
-      if (session.isLegacy()) {
-        logger.debug("legacy session ${session.sessionId()}: $failureMessage")
+      checkSession(session.sessionId(), failureMessage)
+    }
+
+    @JvmStatic
+    fun checkSession(sessionId: String, failureMessage: String) {
+      if (sessionId.isLegacy()) {
+        logger.debug("legacy session ${sessionId}: $failureMessage")
         assert(!enforcement) { failureMessage }
       }
     }
