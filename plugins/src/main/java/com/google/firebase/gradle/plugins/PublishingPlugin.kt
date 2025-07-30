@@ -385,6 +385,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
           "com.android.tools.build:gradle",
+          "com.google.firebase:firebase-vertexai",
           "com.google.firebase:firebase-analytics-ktx",
           "com.google.firebase:firebase-appcheck-ktx",
           "com.google.firebase:firebase-appdistribution-api-ktx",
