@@ -21,7 +21,9 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.Gen
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.next
 import io.kotest.property.asSample
 import kotlin.random.nextInt
@@ -71,44 +73,94 @@ private class ListContainingNullArb<T>(
       is Exhaustive<T> -> gen.toArb()
     }
 
-  private val edgeCaseArb: Arb<EdgeCase> = Arb.enum()
-
-  override fun edgecase(rs: RandomSource): List<T?> =
-    when (edgeCaseArb.next(rs)) {
-      EdgeCase.ALL_NULLS -> List(randomListSize(rs)) { null }
-      EdgeCase.MIN_SIZE -> generateListWithAtLeastOneNullElement(rs, size.first)
-      EdgeCase.MIN_SIZE_ALL_NULLS -> List(size.first) { null }
-      EdgeCase.MAX_SIZE -> generateListWithAtLeastOneNullElement(rs, size.last)
-      EdgeCase.MAX_SIZE_ALL_NULLS -> List(size.last) { null }
-    }
+  private val edgeCaseArb: Arb<EdgeCase> = Arb.edgeCase()
 
   override fun sample(rs: RandomSource): Sample<List<T?>> =
-    generateListWithAtLeastOneNullElement(rs).asSample()
+    sample(rs, listSize = randomListSize(rs)).asSample()
 
-  private fun generateListWithAtLeastOneNullElement(
-    rs: RandomSource,
-    listSize: Int = randomListSize(rs)
-  ): List<T?> =
-    buildList(listSize) {
-      repeat(listSize) {
-        if (rs.random.nextDouble() < nullProbability) {
-          add(null)
-        } else {
-          add(arb.next(rs))
-        }
-      }
-      if (!contains(null)) {
-        set(rs.random.nextInt(size), null)
+  private fun sample(rs: RandomSource, listSize: Int): List<T?> {
+    require(listSize > 0) { "invalid listSize: $listSize (must be greater than zero)" }
+    val guaranteedNullIndex = randomGuaranteedNullIndex(rs, listSize)
+    return List(listSize) { index ->
+      if (index == guaranteedNullIndex || rs.random.nextDouble() < nullProbability) {
+        null
+      } else {
+        arb.next(rs)
       }
     }
+  }
+
+  override fun edgecase(rs: RandomSource): List<T?> {
+    val (listSizeCategory, nullPositions) = edgeCaseArb.next(rs)
+
+    val listSize =
+      when (listSizeCategory) {
+        EdgeCase.ListSizeCategory.MIN -> size.first
+        EdgeCase.ListSizeCategory.MAX -> size.last
+        EdgeCase.ListSizeCategory.RANDOM -> randomListSize(rs)
+      }
+
+    val guaranteedNullIndex =
+      when (nullPositions) {
+        EdgeCase.NullPositions.RANDOM -> randomGuaranteedNullIndex(rs, listSize)
+        EdgeCase.NullPositions.FIRST,
+        EdgeCase.NullPositions.LAST,
+        EdgeCase.NullPositions.FIRST_AND_LAST,
+        EdgeCase.NullPositions.ALL -> -1
+      }
+
+    val firstIndex = 0
+    val lastIndex = listSize - 1
+
+    return List(listSize) {
+      val isNull =
+        when (nullPositions) {
+          EdgeCase.NullPositions.FIRST -> it == firstIndex
+          EdgeCase.NullPositions.LAST -> it == lastIndex
+          EdgeCase.NullPositions.FIRST_AND_LAST -> it == firstIndex || it == lastIndex
+          EdgeCase.NullPositions.ALL -> true
+          EdgeCase.NullPositions.RANDOM -> it == guaranteedNullIndex
+        }
+      if (isNull) null else arb.next(rs)
+    }
+  }
 
   private fun randomListSize(rs: RandomSource): Int = rs.random.nextInt(size)
 
-  private enum class EdgeCase {
-    ALL_NULLS,
-    MIN_SIZE,
-    MIN_SIZE_ALL_NULLS,
-    MAX_SIZE,
-    MAX_SIZE_ALL_NULLS,
+  private fun randomGuaranteedNullIndex(rs: RandomSource, listSize: Int): Int =
+    rs.random.nextInt(listSize)
+
+  private data class EdgeCase(
+    val listSizeCategory: ListSizeCategory,
+    val nullPositions: NullPositions
+  ) {
+
+    enum class ListSizeCategory {
+      MIN,
+      MAX,
+      RANDOM,
+    }
+
+    enum class NullPositions {
+      FIRST,
+      LAST,
+      FIRST_AND_LAST,
+      ALL,
+      RANDOM,
+    }
+  }
+
+  private companion object {
+    fun Arb.Companion.edgeCase(
+      listSizeCategory: Arb<EdgeCase.ListSizeCategory> = Arb.enum(),
+      nullPositions: Arb<EdgeCase.NullPositions> = Arb.enum()
+    ): Arb<EdgeCase> =
+      Arb.bind(listSizeCategory, nullPositions) { listSizeCategoryValue, nullPositionsValue ->
+          EdgeCase(listSizeCategoryValue, nullPositionsValue)
+        }
+        .filterNot {
+          it.listSizeCategory == EdgeCase.ListSizeCategory.RANDOM &&
+            it.nullPositions == EdgeCase.NullPositions.RANDOM
+        }
   }
 }

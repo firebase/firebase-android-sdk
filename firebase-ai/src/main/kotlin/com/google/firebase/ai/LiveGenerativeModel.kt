@@ -21,6 +21,7 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.LiveClientSetupMessage
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.LiveSession
@@ -54,7 +55,7 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val systemInstruction: Content? = null,
   private val location: String,
-  private val controller: APIController
+  private val controller: APIController,
 ) {
   internal constructor(
     modelName: String,
@@ -68,6 +69,7 @@ internal constructor(
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
+    generativeBackend: GenerativeBackend,
   ) : this(
     modelName,
     blockingDispatcher,
@@ -82,6 +84,7 @@ internal constructor(
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
       AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      generativeBackend
     ),
   )
 

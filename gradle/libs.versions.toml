@@ -4,8 +4,8 @@
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
 androidGradlePlugin = "8.6.1"
-androidx-test-core="1.5.0"
-androidx-test-junit="1.1.5"
+androidx-test-core = "1.5.0"
+androidx-test-junit = "1.1.5"
 androidx-test-truth = "1.6.0"
 appcompat = "1.7.1"
 autoValueParcel = "0.2.6"
@@ -128,7 +128,7 @@ grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grp
 grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
 grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
-grpc-testing = { module= "io.grpc:grpc-testing", version.ref="grpc" }
+grpc-testing = { module = "io.grpc:grpc-testing", version.ref = "grpc" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 hamcrest-junit = { module = "org.hamcrest:hamcrest-junit", version.ref = "hamcrestJunit" }
 hamcrest-library = { module = "org.hamcrest:hamcrest-library", version.ref = "hamcrestLibrary" }
