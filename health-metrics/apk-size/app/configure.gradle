@@ -24,11 +24,7 @@ repositories {
 if (project.hasProperty('sdks')) {
     project.android {
         sdks.split(',').each { sdk ->
-            def sdkParts = sdk.split(':')
-            if (sdkParts.size() != 3) {
-                throw new GradleException("Invalid SDK format: '${sdk}'. Expected format: 'groupId:artifactId:version'")
-            }
-            def (groupId, artifactId, version) = sdkParts
+            def (groupId, artifactId, version) = sdk.split(':')
             productFlavors.create(artifactId) {
                 dimension 'firebase'
             }
