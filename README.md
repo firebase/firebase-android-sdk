@@ -63,11 +63,6 @@ Unit tests can be executed on the command line by running
 ./gradlew :<firebase-project>:check
 ```
 
-#### Vertex AI for Firebase
-
-See the Vertex AI for Firebase [README](firebase-vertexai#running-tests) for setup
-instructions specific to that project.
-
 ### Integration Testing
 
 These are tests that run on a hardware device or emulator. These tests have
