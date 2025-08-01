@@ -16,7 +16,17 @@
 
 package com.google.firebase.ai.type
 
+import com.google.firebase.ai.annotation.ListSchemaDetails
+import com.google.firebase.ai.annotation.NumSchemaDetails
+import com.google.firebase.ai.annotation.SchemaDetails
+import com.google.firebase.ai.annotation.StringSchemaDetails
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
+import kotlin.reflect.full.findAnnotations
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.jvmErasure
 
 public abstract class StringFormat private constructor(internal val value: String) {
   public class Custom(value: String) : StringFormat(value)
@@ -320,7 +330,139 @@ internal constructor(
      */
     @JvmStatic
     public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "ANYOF", anyOf = schemas)
+
+    @JvmStatic
+    public fun fromClass(clazz: KClass<*>, nullable: Boolean = false): Schema {
+      return fromClassHelper(clazz, nullable)
+    }
+
+    @JvmStatic
+    private fun fromClassHelper(
+      clazz: KClass<*>,
+      nullable: Boolean = false,
+      propertyName: String? = null,
+      schemaDetails: SchemaDetails? = null,
+      numSchemaDetails: NumSchemaDetails? = null,
+      listSchemaDetails: ListSchemaDetails? = null,
+      stringSchemaDetails: StringSchemaDetails? = null
+    ): Schema {
+      return when (clazz) {
+        Int::class -> {
+          integer(
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title,
+            numSchemaDetails?.minimum,
+            numSchemaDetails?.maximum
+          )
+        }
+        Long::class -> {
+          long(
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title,
+            numSchemaDetails?.minimum,
+            numSchemaDetails?.maximum
+          )
+        }
+        Boolean::class -> {
+          boolean(
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title
+          )
+        }
+        Float::class -> {
+          float(
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title,
+            numSchemaDetails?.minimum,
+            numSchemaDetails?.maximum
+          )
+        }
+        Double::class -> {
+          double(
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title,
+            numSchemaDetails?.minimum,
+            numSchemaDetails?.maximum
+          )
+        }
+        String::class -> {
+          string(
+            schemaDetails?.description,
+            nullable,
+            stringSchemaDetails?.format?.let { StringFormat.Custom(it) },
+            schemaDetails?.title
+          )
+        }
+
+        List::class -> {
+          if (listSchemaDetails == null) {
+            throw IllegalStateException(
+              "${clazz.simpleName}$${propertyName} must include " +
+                      "@ListSchemaDetails to use automatic schema generation."
+            )
+          }
+          array(
+            fromClassHelper(listSchemaDetails.clazz),
+            schemaDetails?.description,
+            nullable,
+            schemaDetails?.title,
+            listSchemaDetails.minItems,
+            listSchemaDetails.maxItems
+          )
+        }
+        else -> {
+          val isSerializable = clazz.findAnnotations(Serializable::class).isNotEmpty()
+          if (!isSerializable) {
+            throw IllegalStateException("${clazz.simpleName} must be @Serializable to use automatic " +
+                    "schema generation.")
+          }
+          if (!clazz.isData) {
+            throw IllegalStateException("${clazz.simpleName} must be a data class to use automatic " +
+                    "schema generation.")
+          }
+          val classSchemaDetails = schemaDetails ?: clazz.findAnnotations(SchemaDetails::class).firstOrNull()
+            ?: throw IllegalStateException("${clazz.simpleName} must include @SchemaDetails to use " +
+                    "automatic schema generation.")
+          val properties = clazz.memberProperties.associate { property: KProperty1<out Any, *> ->
+            val propertyDetails = property.findAnnotations(SchemaDetails::class).firstOrNull()
+            val stringDetails =
+              property.findAnnotations(StringSchemaDetails::class).firstOrNull()
+            val numDetails = property.findAnnotations(NumSchemaDetails::class).firstOrNull()
+            val listDetails = property.findAnnotations(ListSchemaDetails::class).firstOrNull()
+            val serialName = property.findAnnotations(SerialName::class).firstOrNull()
+            val deepPropertyName = serialName?.value ?: property.name
+            val propertyClass = property.returnType
+            Pair(
+              deepPropertyName,
+              fromClassHelper(
+                propertyClass.jvmErasure,
+                propertyClass.isMarkedNullable,
+                deepPropertyName,
+                propertyDetails,
+                numDetails,
+                listDetails,
+                stringDetails
+              )
+            )
+          }
+          obj(
+            properties,
+            emptyList(),
+            classSchemaDetails.description,
+            nullable,
+            classSchemaDetails.title
+          )
+        }
+      }
+    }
   }
+
+
 
   internal fun toInternal(): Internal {
     val cleanedType =
