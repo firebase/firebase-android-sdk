@@ -12,20 +12,20 @@ import org.mockito.Mockito
 
 class LiveSessionTest {
 
-    @Test
-    fun `startAudioConversation without permission throws exception`() = doBlocking {
-        val mockContext = Mockito.mock(Context::class.java)
-        Mockito.`when`(mockContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)).thenReturn(PackageManager.PERMISSION_DENIED)
-        val mockFirebaseApp = Mockito.mock(FirebaseApp::class.java)
-        Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(mockContext)
-        val session = LiveSession(
-            session = EmptyWebSockets.client.session,
-            blockingDispatcher = Dispatchers.IO,
-            firebaseApp = mockFirebaseApp
-        )
+  @Test
+  fun `startAudioConversation without permission throws exception`() = doBlocking {
+    val mockContext = Mockito.mock(Context::class.java)
+    Mockito.`when`(mockContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO))
+      .thenReturn(PackageManager.PERMISSION_DENIED)
+    val mockFirebaseApp = Mockito.mock(FirebaseApp::class.java)
+    Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(mockContext)
+    val session =
+      LiveSession(
+        session = EmptyWebSockets.client.session,
+        blockingDispatcher = Dispatchers.IO,
+        firebaseApp = mockFirebaseApp
+      )
 
-        shouldThrow<PermissionMissingException> {
-            session.startAudioConversation()
-        }
-    }
+    shouldThrow<PermissionMissingException> { session.startAudioConversation() }
+  }
 }
