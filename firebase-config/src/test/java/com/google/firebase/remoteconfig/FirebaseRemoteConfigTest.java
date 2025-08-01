@@ -1533,8 +1533,8 @@ public final class FirebaseRemoteConfigTest {
         .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    configRealtimeHttpClientSpy.setIsInBackground(true);
     flushScheduledTasks();
+    configRealtimeHttpClientSpy.setIsInBackground(true);
 
     verify(mockHttpURLConnection, times(1)).disconnect();
   }
