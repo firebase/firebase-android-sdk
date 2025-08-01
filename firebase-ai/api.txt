@@ -80,6 +80,38 @@ package com.google.firebase.ai {
 
 }
 
+package com.google.firebase.ai.annotation {
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.PROPERTY) public @interface ListSchemaDetails {
+    method public abstract kotlin.reflect.KClass<? extends java.lang.Object?> clazz();
+    method public abstract int maxItems();
+    method public abstract int minItems();
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> clazz;
+    property public abstract int maxItems;
+    property public abstract int minItems;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.PROPERTY) public @interface NumSchemaDetails {
+    method public abstract double maximum();
+    method public abstract double minimum();
+    property public abstract double maximum;
+    property public abstract double minimum;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface SchemaDetails {
+    method public abstract String description();
+    method public abstract String title();
+    property public abstract String description;
+    property public abstract String title;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.PROPERTY) public @interface StringSchemaDetails {
+    method public abstract String format();
+    property public abstract String format;
+  }
+
+}
+
 package com.google.firebase.ai.java {
 
   public abstract class ChatFutures {
@@ -955,6 +987,7 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema fromClass(kotlin.reflect.KClass<? extends java.lang.Object?> clazz, boolean nullable = false);
     method public java.util.List<com.google.firebase.ai.type.Schema>? getAnyOf();
     method public String? getDescription();
     method public java.util.List<java.lang.String>? getEnum();
@@ -1036,6 +1069,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema fromClass(kotlin.reflect.KClass<? extends java.lang.Object?> clazz, boolean nullable = false);
     method public com.google.firebase.ai.type.Schema numDouble();
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null);
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false);

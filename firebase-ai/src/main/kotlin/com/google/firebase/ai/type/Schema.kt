@@ -20,13 +20,13 @@ import com.google.firebase.ai.annotation.ListSchemaDetails
 import com.google.firebase.ai.annotation.NumSchemaDetails
 import com.google.firebase.ai.annotation.SchemaDetails
 import com.google.firebase.ai.annotation.StringSchemaDetails
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.jvmErasure
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 public abstract class StringFormat private constructor(internal val value: String) {
   public class Custom(value: String) : StringFormat(value)
@@ -366,11 +366,7 @@ internal constructor(
           )
         }
         Boolean::class -> {
-          boolean(
-            schemaDetails?.description,
-            nullable,
-            schemaDetails?.title
-          )
+          boolean(schemaDetails?.description, nullable, schemaDetails?.title)
         }
         Float::class -> {
           float(
@@ -398,12 +394,11 @@ internal constructor(
             schemaDetails?.title
           )
         }
-
         List::class -> {
           if (listSchemaDetails == null) {
             throw IllegalStateException(
               "${clazz.simpleName}$${propertyName} must include " +
-                      "@ListSchemaDetails to use automatic schema generation."
+                "@ListSchemaDetails to use automatic schema generation."
             )
           }
           array(
@@ -418,38 +413,44 @@ internal constructor(
         else -> {
           val isSerializable = clazz.findAnnotations(Serializable::class).isNotEmpty()
           if (!isSerializable) {
-            throw IllegalStateException("${clazz.simpleName} must be @Serializable to use automatic " +
-                    "schema generation.")
-          }
-          if (!clazz.isData) {
-            throw IllegalStateException("${clazz.simpleName} must be a data class to use automatic " +
-                    "schema generation.")
-          }
-          val classSchemaDetails = schemaDetails ?: clazz.findAnnotations(SchemaDetails::class).firstOrNull()
-            ?: throw IllegalStateException("${clazz.simpleName} must include @SchemaDetails to use " +
-                    "automatic schema generation.")
-          val properties = clazz.memberProperties.associate { property: KProperty1<out Any, *> ->
-            val propertyDetails = property.findAnnotations(SchemaDetails::class).firstOrNull()
-            val stringDetails =
-              property.findAnnotations(StringSchemaDetails::class).firstOrNull()
-            val numDetails = property.findAnnotations(NumSchemaDetails::class).firstOrNull()
-            val listDetails = property.findAnnotations(ListSchemaDetails::class).firstOrNull()
-            val serialName = property.findAnnotations(SerialName::class).firstOrNull()
-            val deepPropertyName = serialName?.value ?: property.name
-            val propertyClass = property.returnType
-            Pair(
-              deepPropertyName,
-              fromClassHelper(
-                propertyClass.jvmErasure,
-                propertyClass.isMarkedNullable,
-                deepPropertyName,
-                propertyDetails,
-                numDetails,
-                listDetails,
-                stringDetails
-              )
+            throw IllegalStateException(
+              "${clazz.simpleName} must be @Serializable to use automatic " + "schema generation."
             )
           }
+          if (!clazz.isData) {
+            throw IllegalStateException(
+              "${clazz.simpleName} must be a data class to use automatic " + "schema generation."
+            )
+          }
+          val classSchemaDetails =
+            schemaDetails
+              ?: clazz.findAnnotations(SchemaDetails::class).firstOrNull()
+                ?: throw IllegalStateException(
+                "${clazz.simpleName} must include @SchemaDetails to use " +
+                  "automatic schema generation."
+              )
+          val properties =
+            clazz.memberProperties.associate { property: KProperty1<out Any, *> ->
+              val propertyDetails = property.findAnnotations(SchemaDetails::class).firstOrNull()
+              val stringDetails = property.findAnnotations(StringSchemaDetails::class).firstOrNull()
+              val numDetails = property.findAnnotations(NumSchemaDetails::class).firstOrNull()
+              val listDetails = property.findAnnotations(ListSchemaDetails::class).firstOrNull()
+              val serialName = property.findAnnotations(SerialName::class).firstOrNull()
+              val deepPropertyName = serialName?.value ?: property.name
+              val propertyClass = property.returnType
+              Pair(
+                deepPropertyName,
+                fromClassHelper(
+                  propertyClass.jvmErasure,
+                  propertyClass.isMarkedNullable,
+                  deepPropertyName,
+                  propertyDetails,
+                  numDetails,
+                  listDetails,
+                  stringDetails
+                )
+              )
+            }
           obj(
             properties,
             emptyList(),
@@ -461,8 +462,6 @@ internal constructor(
       }
     }
   }
-
-
 
   internal fun toInternal(): Internal {
     val cleanedType =

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.firebase.ai
 
 import com.google.firebase.ai.annotation.ListSchemaDetails
@@ -45,7 +60,9 @@ class SchemaGenerationTest {
               ),
             "val8" to
               Schema.obj(
-                mapOf("customSerialName" to Schema.array(Schema.string(), minItems = 0, maxItems = 500)),
+                mapOf(
+                  "customSerialName" to Schema.array(Schema.string(), minItems = 0, maxItems = 500)
+                ),
                 emptyList(),
                 "A test field (8)",
                 false,
@@ -53,31 +70,26 @@ class SchemaGenerationTest {
               ),
           ),
       )
-      assert(schema.toInternal() == generatedSchema.toInternal())
+    assert(schema.toInternal() == generatedSchema.toInternal())
   }
 
   @Serializable
   @SchemaDetails("A test class (1)", "TestClass1")
   data class TestClass1(
-    @SchemaDetails("A test field (1)", "var1")
-    val val1: Int,
+    @SchemaDetails("A test field (1)", "var1") val val1: Int,
     @NumSchemaDetails(minimum = 20.0, maximum = 30.0)
     @SchemaDetails("A test field (2)", "var2")
     val val2: Long,
-    @SchemaDetails("A test field (3)", "var3")
-    val val3: Boolean,
-    @SchemaDetails("A test field (4)", "var4")
-    val val4: Float,
-    @SchemaDetails("A test field (5)", "var5")
-    val val5: Double,
+    @SchemaDetails("A test field (3)", "var3") val val3: Boolean,
+    @SchemaDetails("A test field (4)", "var4") val val4: Float,
+    @SchemaDetails("A test field (5)", "var5") val val5: Double,
     @SchemaDetails("A test field (6)", "var6")
     @StringSchemaDetails("StringFormat")
     val val6: String,
     @SchemaDetails("A test field (7)", "var7")
     @ListSchemaDetails(0, 500, TestClass2::class)
     val val7: List<TestClass2>,
-    @SchemaDetails("A test field (8)", "var8")
-    val val8: TestClass3,
+    @SchemaDetails("A test field (8)", "var8") val val8: TestClass3,
   )
 
   @Serializable
@@ -87,8 +99,6 @@ class SchemaGenerationTest {
   @Serializable
   @SchemaDetails("A test class (3)", "TestClass3")
   data class TestClass3(
-    @ListSchemaDetails(0, 500, String::class)
-    @SerialName("customSerialName")
-    val val1: List<String>
+    @ListSchemaDetails(0, 500, String::class) @SerialName("customSerialName") val val1: List<String>
   )
 }
