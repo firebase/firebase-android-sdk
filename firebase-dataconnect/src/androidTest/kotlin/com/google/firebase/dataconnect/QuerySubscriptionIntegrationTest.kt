@@ -670,7 +670,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
      * in a row based on other asynchronous operations but testing for "distinctness" will consider
      * those two failures as "distinct" when the test wants them to be treated as "equal".
      *
-     * Googlers see b/399380932 for full details and history of the flaky test that this fixes.
+     * See https://github.com/firebase/firebase-android-sdk/pull/7210 for a full explanation.
      */
     fun areEquivalentQuerySubscriptionResults(
       old: QuerySubscriptionResult<*, *>,
