@@ -37,9 +37,10 @@ function parse_args {
 
   local OPTIND=1
   local OPTERR=0
-  while getopts ":c:p:v:hw" arg ; do
+  while getopts ":c:p:v:hwg" arg ; do
     case "$arg" in
       c) emulator_binary="${OPTARG}" ;;
+      g) emulator_binary="gradle" ;;
       p) postgresql_string="${OPTARG}" ;;
       v) preview_flags="${OPTARG}" ;;
       w) wipe_and_restart_postgres_pod=1 ;;
@@ -106,6 +107,9 @@ function print_help {
   echo "    Uses the Data Connect Emulator binary at the given path. A value of \"gradle\" "
   echo "    will use the same CLI as the Gradle build. If not specified, or if specified "
   echo "    as the empty string, then the emulator binary is downloaded."
+  echo
+  echo "  -g"
+  echo "    Shorthand for: -c gradle"
   echo
   echo "  -p <postgresql_connection_string>"
   echo "    Uses the given string to connect to the PostgreSQL server. If not specified "
