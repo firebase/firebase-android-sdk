@@ -75,7 +75,7 @@ function parse_args {
     if [[ ! -e $gradle_emulator_binary ]] ; then
       log_error_and_exit "emulator binary from gradle does not exist: ${gradle_emulator_binary}"
     fi
-    export DATACONNECT_EMULATOR_BINARY_PATH="${gradle_emulator_binaries[0]}"
+    export DATACONNECT_EMULATOR_BINARY_PATH="${gradle_emulator_binary}"
   fi
 
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
