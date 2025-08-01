@@ -105,7 +105,7 @@ function print_help {
   echo "Options:"
   echo "  -c <data_connect_emulator_binary_path>"
   echo "    Uses the Data Connect Emulator binary at the given path. A value of \"gradle\" "
-  echo "    will use the same CLI as the Gradle build. If not specified, or if specified "
+  echo "    will use the same binary as the Gradle build. If not specified, or if specified "
   echo "    as the empty string, then the emulator binary is downloaded."
   echo
   echo "  -g"
