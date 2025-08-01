@@ -155,9 +155,9 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
-                val output = it.readBytes().toString(Charsets.UTF_8)
-                println(output)
-                JSON.decodeFromString<InternalLiveServerMessage>(output)
+                JSON.decodeFromString<InternalLiveServerMessage>(
+                  it.readBytes().toString(Charsets.UTF_8)
+                )
               }
               ?.let { emit(it.toPublic()) }
             yield()
@@ -211,7 +211,6 @@ internal constructor(
           BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
             .toInternal()
         )
-      println(jsonString)
       session.send(Frame.Text(jsonString))
     }
   }
