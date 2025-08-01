@@ -271,6 +271,17 @@ jobs:
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
+  shellcheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/'
+      - name: shellcheck
+        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
+
   python-ci-unit-tests:
     continue-on-error: false
     runs-on: ubuntu-latest

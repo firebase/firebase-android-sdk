@@ -16,7 +16,8 @@
 
 set -euo pipefail
 
-readonly SCRIPT_DIR="$(dirname "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+readonly SCRIPT_DIR
 readonly SELF_EXECUTABLE="$0"
 readonly LOG_PREFIX="[$0] "
 readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
@@ -38,7 +39,7 @@ function parse_args {
   local OPTIND=1
   local OPTERR=0
   while getopts ":c:p:v:hw" arg ; do
-    case "$arg" in
+    case "${arg}" in
       c) emulator_binary="${OPTARG}" ;;
       p) postgresql_string="${OPTARG}" ;;
       v) preview_flags="${OPTARG}" ;;
@@ -58,7 +59,7 @@ function parse_args {
         exit 2
         ;;
       *)
-        echo "INTERNAL ERROR: unknown argument: $arg" >&2
+        echo "INTERNAL ERROR: unknown argument: ${arg}" >&2
         exit 1
         ;;
     esac
@@ -68,7 +69,7 @@ function parse_args {
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
   export DATA_CONNECT_PREVIEW="${preview_flags}"
 
-  if [[ $wipe_and_restart_postgres_pod == "1" ]] ; then
+  if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
     run_command "${SCRIPT_DIR}/wipe_postgres_db.sh"
     run_command "${SCRIPT_DIR}/start_postgres_pod.sh"
   fi
