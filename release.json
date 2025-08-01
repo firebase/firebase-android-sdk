@@ -1,0 +1,6 @@
+{
+    "name": "m168",
+    "libraries": [
+        ":firebase-ai"
+    ]
+}

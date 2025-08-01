@@ -1,0 +1,64 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "0c1302f7d0540ec7028aaf5ac4a9cfffc98ce1de",
+                "prId": "7208",
+                "author": "Vinay Guthal",
+                "message": "fix function calling issue (#7208)\n\nAdd support for code execution block but dont document it yet. This is a\nmore cleaner way to address the serialization exception rather than just\nswallowing the exception.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0c1302f7d0540ec7028aaf5ac4a9cfffc98ce1de",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7208"
+            },
+            {
+                "commitId": "09dc3109de025105c9bdab9c3f8a46e79981e8ae",
+                "prId": "7196",
+                "author": "Vinay Guthal",
+                "message": "Add developer api to bidi. (#7196)\n\nThis PR adds bidi support for developer api",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/09dc3109de025105c9bdab9c3f8a46e79981e8ae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7196"
+            },
+            {
+                "commitId": "bcc00a509b0f1d45ca22ef28bc602a3f4e129b96",
+                "prId": "7075",
+                "author": "David Motsonashvili",
+                "message": "Imagen Editing (#7075)\n\nAdds Imagen Editing controls which allows for inpainting, outpainting,\nstyle transfer, subject references, and controlnet features.\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcc00a509b0f1d45ca22ef28bc602a3f4e129b96",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7075"
+            },
+            {
+                "commitId": "89ccf1c3be349fc67e3c9ce525dbdd50b93754cb",
+                "prId": "7180",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Improve error messaging for LiveServerMessageSerializer (#7180)\n\nThe error message should include the actual content of the message that\ncouldn't be de-serialized instead of class around java class names,\nwhich are not useful before de-serialization succeds.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/89ccf1c3be349fc67e3c9ce525dbdd50b93754cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7180"
+            },
+            {
+                "commitId": "785785ae5664dc301648fa9a28005c29ec3dc674",
+                "prId": "7165",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Use `getOrPut` to update the multi resource map (#7165)\n\nThat method is cleaner, and the intended way, of inserting a value into\na map if it's missing.\n\nTag: cleanup",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/785785ae5664dc301648fa9a28005c29ec3dc674",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7165"
+            },
+            {
+                "commitId": "88feb6394d629ce35ca73de2285862ea739ce5d3",
+                "prId": "7168",
+                "author": "David Motsonashvili",
+                "message": "Documentation fixes from cl/782062615 (#7168)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/88feb6394d629ce35ca73de2285862ea739ce5d3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7168"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-dataconnect",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptchaenterprise",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
