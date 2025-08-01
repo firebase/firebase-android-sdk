@@ -1577,7 +1577,7 @@ public final class FirebaseRemoteConfigTest {
           long backoffDurationInMillis = expectedRetryIntervalInSeconds * 1000L;
           Date expectedBackoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
           return Math.abs(argument.getTime() - expectedBackoffEndTime.getTime())
-              <= TimeUnit.SECONDS.toSeconds(1);
+              <= TimeUnit.SECONDS.toMillis(1);
         };
 
     verify(sharedPrefsClient, times(1))
