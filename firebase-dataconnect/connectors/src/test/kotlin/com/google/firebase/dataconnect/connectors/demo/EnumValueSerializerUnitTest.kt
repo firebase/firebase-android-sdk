@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class, ExperimentalSerializationApi::class)
+@file:OptIn(ExperimentalKotest::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
@@ -27,7 +27,6 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -72,7 +71,7 @@ class EnumValueSerializerUnitTest {
     }
 
   @Suppress("unused")
-  enum class Dog {
+  private enum class Dog {
     Boxer,
     Bulldog,
     Dachshund,
