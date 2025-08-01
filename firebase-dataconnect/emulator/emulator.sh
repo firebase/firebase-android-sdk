@@ -37,9 +37,10 @@ function parse_args {
 
   local OPTIND=1
   local OPTERR=0
-  while getopts ":c:p:v:hw" arg ; do
+  while getopts ":c:p:v:hwg" arg ; do
     case "$arg" in
       c) emulator_binary="${OPTARG}" ;;
+      g) emulator_binary="gradle" ;;
       p) postgresql_string="${OPTARG}" ;;
       v) preview_flags="${OPTARG}" ;;
       w) wipe_and_restart_postgres_pod=1 ;;
@@ -58,13 +59,26 @@ function parse_args {
         exit 2
         ;;
       *)
-        echo "INTERNAL ERROR: unknown argument: $arg" >&2
-        exit 1
+        log_error_and_exit "INTERNAL ERROR: unknown argument: $arg"
         ;;
     esac
   done
 
-  export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
+  if [[ $emulator_binary != "gradle" ]] ; then
+    export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
+  else
+    run_command "${SCRIPT_DIR}/../../gradlew" -p "${SCRIPT_DIR}/../.." --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
+    local gradle_emulator_binaries=("${SCRIPT_DIR}"/../connectors/build/intermediates/dataconnect/debug/executable/*)
+    if [[ ${#gradle_emulator_binaries[@]} -ne 1 ]]; then
+      log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries[@]}: ${gradle_emulator_binaries[*]}"
+    fi
+    local gradle_emulator_binary="${gradle_emulator_binaries[@]}"
+    if [[ ! -e $gradle_emulator_binary ]] ; then
+      log_error_and_exit "emulator binary from gradle does not exist: ${gradle_emulator_binary}"
+    fi
+    export DATACONNECT_EMULATOR_BINARY_PATH="${gradle_emulator_binary}"
+  fi
+
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
   export DATA_CONNECT_PREVIEW="${preview_flags}"
 
@@ -90,8 +104,12 @@ function print_help {
   echo
   echo "Options:"
   echo "  -c <data_connect_emulator_binary_path>"
-  echo "    Uses the Data Connect Emulator binary at the given path. If not specified, "
-  echo "    or if specified as the empty string, then the emulator binary is downloaded."
+  echo "    Uses the Data Connect Emulator binary at the given path. A value of \"gradle\" "
+  echo "    will use the same binary as the Gradle build. If not specified, or if specified "
+  echo "    as the empty string, then the emulator binary is downloaded."
+  echo
+  echo "  -g"
+  echo "    Shorthand for: -c gradle"
   echo
   echo "  -p <postgresql_connection_string>"
   echo "    Uses the given string to connect to the PostgreSQL server. If not specified "
@@ -114,6 +132,11 @@ function print_help {
 
 function log {
   echo "${LOG_PREFIX}$*"
+}
+
+function log_error_and_exit {
+  echo "${LOG_PREFIX}ERROR: $*" >&2
+  exit 1
 }
 
 main "$@"
