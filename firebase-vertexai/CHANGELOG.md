@@ -1,6 +1,3 @@
-# Unreleased
-
-
 # 16.5.0
 * [changed] **Renamed / Replaced:** Vertex AI in Firebase (`firebase-vertexai`) has been renamed and
  replaced by the new Firebase AI SDK: `firebase-ai`. This is to accommodate the evolving set of
