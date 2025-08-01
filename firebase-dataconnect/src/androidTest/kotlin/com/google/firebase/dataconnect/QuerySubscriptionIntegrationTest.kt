@@ -41,7 +41,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -446,8 +445,18 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
-      val noName1Flow = noName1Query.subscribe().flow.distinctUntilChanged().testIn(backgroundScope)
-      val noName2Flow = noName2Query.subscribe().flow.distinctUntilChanged().testIn(backgroundScope)
+      val noName1Flow =
+        noName1Query
+          .subscribe()
+          .flow
+          .distinctUntilChanged(::areEquivalentQuerySubscriptionResults)
+          .testIn(backgroundScope)
+      val noName2Flow =
+        noName2Query
+          .subscribe()
+          .flow
+          .distinctUntilChanged(::areEquivalentQuerySubscriptionResults)
+          .testIn(backgroundScope)
       withClue("noName1Flow-0") { noName1Flow.awaitPersonWithName("Name0") }
       withClue("noName2Flow-0") { noName2Flow.awaitPersonWithName("Name0") }
 
@@ -636,5 +645,37 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       val person = withClue("data.person") { data.person.shouldNotBeNull() }
       withClue("person.name") { person.name shouldBe name }
     }
+
+    /**
+     * Returns `true` if, and only if, the receiver is a non-null instance of
+     * [DataConnectOperationException] that indicates that the failure is due to decoding of the
+     * server response failed.
+     */
+    fun Throwable?.isDecodingServerResponseFailed(): Boolean =
+      this is DataConnectOperationException && this.response.errors.isEmpty()
+
+    /**
+     * Returns `true` if, and only if, the receiver's result is a failure that indicates that
+     * decoding of the server response failed.
+     */
+    fun QuerySubscriptionResult<*, *>.isDecodingServerResponseFailed(): Boolean =
+      result.exceptionOrNull().isDecodingServerResponseFailed()
+
+    /**
+     * Checks if two [QuerySubscriptionResult] instances are "equivalent"; that is, they are both
+     * equal when compared using the `==` operator, or they are both failures due to decoding of the
+     * server response failed.
+     *
+     * This is useful when testing flows because the same decoding failure can happen more than once
+     * in a row based on other asynchronous operations but testing for "distinctness" will consider
+     * those two failures as "distinct" when the test wants them to be treated as "equal".
+     *
+     * See https://github.com/firebase/firebase-android-sdk/pull/7210 for a full explanation.
+     */
+    fun areEquivalentQuerySubscriptionResults(
+      old: QuerySubscriptionResult<*, *>,
+      new: QuerySubscriptionResult<*, *>
+    ): Boolean =
+      (old == new) || (old.isDecodingServerResponseFailed() && new.isDecodingServerResponseFailed())
   }
 }
