@@ -123,6 +123,8 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.ktor.client.mock)
 
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)

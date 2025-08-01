@@ -17,15 +17,15 @@
 package com.google.firebase.ai.type
 
 import android.Manifest.permission.RECORD_AUDIO
-import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import androidx.annotation.RequiresPermission
-import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
+import com.google.firebase.FirebaseApp
+import android.content.pm.PackageManager
 import com.google.firebase.ai.common.util.childJob
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
@@ -97,9 +97,8 @@ internal constructor(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
     val context = firebaseApp.applicationContext
-    if (
-      context.checkSelfPermission(RECORD_AUDIO) !=
-        android.content.pm.PackageManager.PERMISSION_GRANTED
+    if (context.checkSelfPermission(RECORD_AUDIO) !=
+      android.content.pm.PackageManager.PERMISSION_GRANTED
     ) {
       throw PermissionMissingException("Missing RECORD_AUDIO permission.")
     }
