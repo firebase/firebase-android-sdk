@@ -210,6 +210,14 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.Citation> citations;
   }
 
+  public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
+    ctor public CodeExecutionResultPart(String outcome, String output);
+    method public String getOutcome();
+    method public String getOutput();
+    property public final String outcome;
+    property public final String output;
+  }
+
   public final class Content {
     ctor public Content(String? role = "user", java.util.List<? extends com.google.firebase.ai.type.Part> parts);
     ctor public Content(java.util.List<? extends com.google.firebase.ai.type.Part> parts);
@@ -275,6 +283,14 @@ package com.google.firebase.ai.type {
     method public int getWidth();
     property public final int height;
     property public final int width;
+  }
+
+  public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
+    ctor public ExecutableCodePart(String language, String code);
+    method public String getCode();
+    method public String getLanguage();
+    property public final String code;
+    property public final String language;
   }
 
   public final class FileDataPart implements com.google.firebase.ai.type.Part {
