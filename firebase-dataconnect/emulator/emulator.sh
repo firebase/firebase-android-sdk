@@ -16,7 +16,8 @@
 
 set -euo pipefail
 
-readonly SCRIPT_DIR="$(dirname "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+readonly SCRIPT_DIR
 readonly SELF_EXECUTABLE="$0"
 readonly LOG_PREFIX="[$0] "
 readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
@@ -38,7 +39,7 @@ function parse_args {
   local OPTIND=1
   local OPTERR=0
   while getopts ":c:p:v:hwg" arg ; do
-    case "$arg" in
+    case "${arg}" in
       c) emulator_binary="${OPTARG}" ;;
       g) emulator_binary="gradle" ;;
       p) postgresql_string="${OPTARG}" ;;
@@ -59,12 +60,12 @@ function parse_args {
         exit 2
         ;;
       *)
-        log_error_and_exit "INTERNAL ERROR: unknown argument: $arg"
+        log_error_and_exit "INTERNAL ERROR: unknown argument: ${arg}"
         ;;
     esac
   done
 
-  if [[ $emulator_binary != "gradle" ]] ; then
+  if [[ ${emulator_binary} != "gradle" ]] ; then
     export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
   else
     run_command "${SCRIPT_DIR}/../../gradlew" -p "${SCRIPT_DIR}/../.." --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
@@ -72,8 +73,8 @@ function parse_args {
     if [[ ${#gradle_emulator_binaries[@]} -ne 1 ]]; then
       log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries[@]}: ${gradle_emulator_binaries[*]}"
     fi
-    local gradle_emulator_binary="${gradle_emulator_binaries[@]}"
-    if [[ ! -e $gradle_emulator_binary ]] ; then
+    local gradle_emulator_binary="${gradle_emulator_binaries[0]}"
+    if [[ ! -e ${gradle_emulator_binary} ]] ; then
       log_error_and_exit "emulator binary from gradle does not exist: ${gradle_emulator_binary}"
     fi
     export DATACONNECT_EMULATOR_BINARY_PATH="${gradle_emulator_binary}"
@@ -82,7 +83,7 @@ function parse_args {
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
   export DATA_CONNECT_PREVIEW="${preview_flags}"
 
-  if [[ $wipe_and_restart_postgres_pod == "1" ]] ; then
+  if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
     run_command "${SCRIPT_DIR}/wipe_postgres_db.sh"
     run_command "${SCRIPT_DIR}/start_postgres_pod.sh"
   fi
