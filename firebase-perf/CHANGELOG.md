@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Made a change that should help address an ANR on app launch. [#4831]
 
 # 22.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
