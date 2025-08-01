@@ -24,6 +24,8 @@ import androidx.annotation.RequiresPermission
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
+import com.google.firebase.FirebaseApp
+import android.content.pm.PackageManager
 import com.google.firebase.ai.common.util.childJob
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.ClientWebSocketSession
@@ -58,7 +60,8 @@ public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
-  private var audioHelper: AudioHelper? = null
+  private var audioHelper: AudioHelper? = null,
+  private val firebaseApp: FirebaseApp,
 ) {
   /**
    * Coroutine scope that we batch data on for [startAudioConversation].
@@ -93,12 +96,19 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
+    val context = firebaseApp.applicationContext
+    if (context.checkSelfPermission(RECORD_AUDIO) !=
+      android.content.pm.PackageManager.PERMISSION_GRANTED
+    ) {
+      throw PermissionMissingException("Missing RECORD_AUDIO permission.")
+    }
+
     FirebaseAIException.catchAsync {
       if (scope.isActive) {
         Log.w(
           TAG,
           "startAudioConversation called after the recording has already started. " +
-            "Call stopAudioConversation to close the previous connection."
+            "Call stopAudioAudioConversation to close the previous connection."
         )
         return@catchAsync
       }
