@@ -55,6 +55,13 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   affected_artifacts, all_artifacts = _parse_artifacts()
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
+  if not sdks:
+    _logger.info(
+      "No sdks found whose binary size to measure ("
+      "pull_request=%s affected_artifacts=%s all_artifacts=%s)",
+      pull_request, affected_artifacts, all_artifacts
+    )
+    return
 
   workdir = 'health-metrics/apk-size'
   process = gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)
