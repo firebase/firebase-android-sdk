@@ -72,6 +72,7 @@ jobs:
         run: |
           ./gradlew ${{matrix.module}}:check withErrorProne
       - name: Compute upload file name
+        if: always()
         run: |
           MODULE=${{matrix.module}}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
