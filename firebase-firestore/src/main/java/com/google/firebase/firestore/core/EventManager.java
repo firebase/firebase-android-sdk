@@ -16,6 +16,7 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
@@ -67,6 +68,9 @@ public final class EventManager implements SyncEngineCallback {
 
     /** Sets the source the query listens to. */
     public ListenSource source = ListenSource.DEFAULT;
+
+    public DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior =
+        DocumentSnapshot.ServerTimestampBehavior.NONE;
   }
 
   private final SyncEngine syncEngine;

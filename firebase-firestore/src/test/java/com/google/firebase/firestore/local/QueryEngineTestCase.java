@@ -521,9 +521,12 @@ public abstract class QueryEngineTestCase {
         expectFullCollectionScan(() -> runQuery(query6, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query6.comparator(), doc1, doc2), result6);
 
-    // Test with limits (implicit order by DESC): (a==1) || (b > 0) LIMIT_TO_LAST 2
+    // Test with limits (order by b ASC): (a==1) || (b > 0) LIMIT_TO_LAST 2
     Query query7 =
-        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", ">", 0))).limitToLast(2);
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", ">", 0)))
+            .orderBy(orderBy("b", "asc"))
+            .limitToLast(2);
     DocumentSet result7 =
         expectFullCollectionScan(() -> runQuery(query7, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query7.comparator(), doc3, doc4), result7);
