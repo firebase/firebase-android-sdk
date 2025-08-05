@@ -16,10 +16,14 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.math.DoubleMath
+import com.google.common.math.IntMath
 import com.google.common.math.LongMath
 import com.google.common.math.LongMath.checkedAdd
 import com.google.common.math.LongMath.checkedMultiply
 import com.google.common.math.LongMath.checkedSubtract
+import com.google.common.primitives.Ints
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
@@ -37,8 +41,13 @@ import com.google.re2j.PatternSyntaxException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.absoluteValue
+import kotlin.math.exp
 import kotlin.math.floor
+import kotlin.math.ln
+import kotlin.math.log
 import kotlin.math.log10
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -63,6 +72,14 @@ internal val evaluateExists: EvaluateFunction = unaryFunction { r: EvaluateResul
     EvaluateResultError -> r
     EvaluateResultUnset -> EvaluateResult.FALSE
     is EvaluateResultValue -> EvaluateResult.TRUE
+  }
+}
+
+internal val evaluateIsAbsent: EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  when (r) {
+    EvaluateResultError -> r
+    EvaluateResultUnset -> EvaluateResult.TRUE
+    is EvaluateResultValue -> EvaluateResult.FALSE
   }
 }
 
@@ -232,13 +249,33 @@ internal val evaluateMod = arithmeticPrimitive(Long::rem, Double::rem)
 internal val evaluateMultiply: EvaluateFunction =
   arithmeticPrimitive(LongMath::checkedMultiply, Double::times)
 
-internal val evaluatePow: EvaluateFunction = arithmeticPrimitive(Math::pow)
+internal val evaluatePow: EvaluateFunction =
+  arithmetic({ base: Double, exponent: Double ->
+    return@arithmetic if (exponent == 0.0 || base == 1.0) {
+      EvaluateResult.double(1.0)
+    } else if (base == -1.0 && exponent.isInfinite()) {
+      EvaluateResult.double(1.0)
+    }
+
+    // Not referenced by GoogleSQL, but put here to be explicit.
+    else if (exponent.isNaN() || base.isNaN()) {
+      EvaluateResult.double(Double.NaN)
+    }
+
+    // We can't have a non-integer exponent on a negative base because it may result in taking the
+    // undefined root of a negative number.
+    else if (base < 0 && base.isFinite() && !DoubleMath.isMathematicalInteger(exponent)) {
+      EvaluateResultError
+    } else if ((base == 0.0 || base == -0.0) && exponent < 0) {
+      EvaluateResultError
+    } else EvaluateResult.double(base.pow(exponent))
+  })
 
 internal val evaluateRound =
   arithmeticPrimitive(
     { it },
     { input ->
-      if (input.isInfinite()) {
+      if (input.isFinite()) {
         val remainder = (input % 1)
         val truncated = input - remainder
         if (remainder.absoluteValue >= 0.5) truncated + (if (input < 0) -1 else 1) else truncated
@@ -298,6 +335,35 @@ internal val evaluateRoundToPrecision =
       else EvaluateResultError // overflow error
     }
   )
+
+internal val evaluateAbs =
+  arithmeticPrimitive(
+    { l: Long ->
+      if (l == Long.MIN_VALUE) throw ArithmeticException("long overflow")
+      l.absoluteValue
+    },
+    { d: Double -> d.absoluteValue }
+  )
+
+internal val evaluateExp = arithmetic { value: Double -> EvaluateResult.double(exp(value)) }
+
+internal val evaluateLn = arithmetic { value: Double ->
+  if (value < 0) EvaluateResultError else EvaluateResult.double(ln(value))
+}
+
+internal val evaluateLog = arithmetic { value: Double, base: Double ->
+  return@arithmetic if (value == Double.NEGATIVE_INFINITY) {
+    EvaluateResultError
+  } else if (base == Double.POSITIVE_INFINITY) {
+    EvaluateResult.double(Double.NaN)
+  } else if (base <= 0 || value <= 0 || base == 1.0) {
+    EvaluateResultError
+  } else EvaluateResult.double(log(value, base))
+}
+
+internal val evaluateLog10 = arithmetic { value: Double ->
+  if (value < 0) EvaluateResultError else EvaluateResult.double(log10(value))
+}
 
 internal val evaluateSqrt = arithmetic { value: Double ->
   if (value < 0) EvaluateResultError else EvaluateResult.double(sqrt(value))
@@ -419,7 +485,75 @@ internal val evaluateReverse = unaryFunctionPrimitive(String::reversed)
 
 internal val evaluateSplit = notImplemented // TODO: Does not exist in expressions.kt yet.
 
-internal val evaluateSubstring = notImplemented // TODO: Does not exist in expressions.kt yet.
+private fun getIntegerOrElse(value: EvaluateResult): Long? {
+  if (!value.isSuccess) return null
+  if (value.value?.valueTypeCase != ValueTypeCase.INTEGER_VALUE) return null
+  return value.value?.integerValue
+}
+
+internal val evaluateSubstring = ternaryLazyFunction { strFn, startFn, lengthFn ->
+  var start = getIntegerOrElse(startFn()) ?: return@ternaryLazyFunction EvaluateResultError
+  val length = getIntegerOrElse(lengthFn()) ?: return@ternaryLazyFunction EvaluateResultError
+
+  if (length < 0) {
+    return@ternaryLazyFunction EvaluateResultError
+  }
+
+  val str = strFn().value
+  when (str?.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE -> {
+      val text = str.stringValue
+      // Rephrasing negative position to an equivalent positive value.
+      if (start < 0) {
+        start = max(0, text.codePointCount(0, text.length) + start)
+      }
+
+      val codePointCount = text.codePointCount(0, text.length)
+
+      if (start >= codePointCount) {
+        return@ternaryLazyFunction EvaluateResult.string("")
+      }
+
+      val substring = StringBuilder()
+      var curIndex = text.offsetByCodePoints(0, min(start, Int.MAX_VALUE.toLong()).toInt())
+      for (i in 0 until length) {
+        if (curIndex >= text.length) {
+          return@ternaryLazyFunction EvaluateResult.string(substring.toString())
+        }
+
+        substring.append(Character.toChars(text.codePointAt(curIndex)))
+        curIndex = text.offsetByCodePoints(curIndex, 1)
+      }
+
+      return@ternaryLazyFunction EvaluateResult.string(substring.toString())
+    }
+    ValueTypeCase.BYTES_VALUE -> {
+      val bytes = str.bytesValue
+      val bytesCount = bytes.size() - 1
+      if (start < 0) {
+        // Adding 1 since position is inclusive.
+        start = max(0, bytesCount + start + 1)
+      }
+
+      if (bytesCount < start) {
+        return@ternaryLazyFunction EvaluateResult.value(encodeValue(ByteArray(0)))
+      }
+
+      val end =
+        min(
+          Int.MAX_VALUE,
+          min(
+            IntMath.saturatedAdd(Ints.saturatedCast(start), Ints.saturatedCast(length)),
+            bytesCount + 1
+          )
+        )
+      return@ternaryLazyFunction EvaluateResult.value(
+        encodeValue(Blob.fromByteString(bytes.substring(start.toInt(), end.toInt())))
+      )
+    }
+    else -> return@ternaryLazyFunction EvaluateResultError
+  }
+}
 
 internal val evaluateTrim = unaryFunctionPrimitive(String::trim)
 

@@ -31,7 +31,7 @@ private val FAKE_USER_DATA_READER = UserDataReader(FAKE_DATABASE_ID)
 val EMPTY_DOC: MutableDocument = doc("foo/1", 0, mapOf())
 internal val EVALUATION_CONTEXT: EvaluationContext =
   EvaluationContext(
-    RealtimePipeline(RemoteSerializer(FAKE_DATABASE_ID), FAKE_USER_DATA_READER, emptyList())
+    RealtimePipeline(null, RemoteSerializer(FAKE_DATABASE_ID), FAKE_USER_DATA_READER, emptyList())
   )
 
 internal fun evaluate(expr: Expr): EvaluateResult = evaluate(expr, EMPTY_DOC)

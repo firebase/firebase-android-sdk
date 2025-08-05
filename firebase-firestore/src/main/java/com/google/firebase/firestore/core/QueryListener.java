@@ -53,7 +53,13 @@ public class QueryListener {
       QueryOrPipeline query,
       EventManager.ListenOptions options,
       EventListener<ViewSnapshot> listener) {
-    this.query = query;
+    if (query.isPipeline()) {
+      this.query =
+          new QueryOrPipeline.PipelineWrapper(
+              query.pipeline().withListenOptions$com_google_firebase_firebase_firestore(options));
+    } else {
+      this.query = query;
+    }
     this.listener = listener;
     this.options = options;
   }

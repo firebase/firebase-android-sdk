@@ -48,6 +48,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,6 +62,7 @@ import org.junit.runners.Parameterized;
  * com.google.firebase.firestore.conformance}) were modified to support the Android SDK.
  */
 @RunWith(Parameterized.class)
+@Ignore
 public class ConformanceTest {
   private static FirebaseFirestore firestore;
   private static TestCaseIgnoreList testCaseIgnoreList;

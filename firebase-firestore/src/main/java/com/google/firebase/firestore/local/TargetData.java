@@ -141,6 +141,18 @@ public final class TargetData {
     return target;
   }
 
+  TargetData withTarget(TargetOrPipeline target) {
+    return new TargetData(
+        target,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken,
+        expectedCount);
+  }
+
   public int getTargetId() {
     return targetId;
   }
