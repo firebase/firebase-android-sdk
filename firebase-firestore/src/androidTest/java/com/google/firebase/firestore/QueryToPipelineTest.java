@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.io.Files.map;
 import static com.google.firebase.firestore.Filter.and;
 import static com.google.firebase.firestore.Filter.arrayContains;
 import static com.google.firebase.firestore.Filter.arrayContainsAny;
@@ -29,6 +28,8 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.expectError;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
