@@ -25,6 +25,9 @@ import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
+import com.google.firebase.firestore.pipeline.Ordering
+import com.google.firebase.firestore.pipeline.SortStage
+import com.google.firebase.firestore.util.Assert
 import com.google.firebase.firestore.util.Assert.hardAssert
 
 /** A class that wraps either a Query or a RealtimePipeline. */
@@ -261,6 +264,7 @@ fun asCollectionPipelineAtPath(
   // Construct a new RealtimePipeline with the (potentially) modified stages
   // and the original user_data_reader.
   return RealtimePipeline(
+    pipeline.firestore,
     pipeline.serializer,
     pipeline.userDataReader,
     newStages,
@@ -282,12 +286,11 @@ fun getLastEffectiveLimit(pipeline: RealtimePipeline): Int? {
 private fun getLastEffectiveSortOrderings(pipeline: RealtimePipeline): List<Ordering> {
   for (stage in pipeline.rewrittenStages.asReversed()) {
     if (stage is SortStage) {
-      return stage.orders
+      return stage.orders.toList()
     }
     // TODO(pipeline): Consider stages that might invalidate ordering later,
     // like fineNearest
   }
-  HardAssert.hardFail(
-    "RealtimePipeline must contain at least one Sort stage (ensured by RewriteStages)."
-  )
+  Assert.fail("RealtimePipeline must contain at least one Sort stage (ensured by RewriteStages).")
+  return emptyList()
 }

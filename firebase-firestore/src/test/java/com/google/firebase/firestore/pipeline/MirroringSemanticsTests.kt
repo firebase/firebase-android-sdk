@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.pipeline.Expr.Companion.abs
 import com.google.firebase.firestore.pipeline.Expr.Companion.add
 import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContains
 import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAll
@@ -26,12 +27,16 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.divide
 import com.google.firebase.firestore.pipeline.Expr.Companion.endsWith
 import com.google.firebase.firestore.pipeline.Expr.Companion.eq
 import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
+import com.google.firebase.firestore.pipeline.Expr.Companion.exp
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.Expr.Companion.gt
 import com.google.firebase.firestore.pipeline.Expr.Companion.gte
 import com.google.firebase.firestore.pipeline.Expr.Companion.isNan
 import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNan
 import com.google.firebase.firestore.pipeline.Expr.Companion.like
+import com.google.firebase.firestore.pipeline.Expr.Companion.ln
+import com.google.firebase.firestore.pipeline.Expr.Companion.log
+import com.google.firebase.firestore.pipeline.Expr.Companion.log10
 import com.google.firebase.firestore.pipeline.Expr.Companion.lt
 import com.google.firebase.firestore.pipeline.Expr.Companion.lte
 import com.google.firebase.firestore.pipeline.Expr.Companion.mod
@@ -39,9 +44,11 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.multiply
 import com.google.firebase.firestore.pipeline.Expr.Companion.neq
 import com.google.firebase.firestore.pipeline.Expr.Companion.notEqAny
 import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expr.Companion.pow
 import com.google.firebase.firestore.pipeline.Expr.Companion.regexContains
 import com.google.firebase.firestore.pipeline.Expr.Companion.regexMatch
 import com.google.firebase.firestore.pipeline.Expr.Companion.reverse
+import com.google.firebase.firestore.pipeline.Expr.Companion.sqrt
 import com.google.firebase.firestore.pipeline.Expr.Companion.startsWith
 import com.google.firebase.firestore.pipeline.Expr.Companion.strConcat
 import com.google.firebase.firestore.pipeline.Expr.Companion.strContains
@@ -92,6 +99,11 @@ internal class MirroringSemanticsTests {
   fun `unary function input mirroring`() {
     val unaryFunctionBuilders =
       listOf<Pair<String, (Expr) -> Expr>>(
+        "abs" to { v -> abs(v) },
+        "exp" to { v -> exp(v) },
+        "ln" to { v -> ln(v) },
+        "log10" to { v -> log10(v) },
+        "sqrt" to { v -> sqrt(v) },
         "isNan" to { v -> isNan(v) },
         "isNotNan" to { v -> isNotNan(v) },
         "arrayLength" to { v -> arrayLength(v) },
@@ -147,6 +159,8 @@ internal class MirroringSemanticsTests {
         "multiply" to { v1, v2 -> multiply(v1, v2) },
         "divide" to { v1, v2 -> divide(v1, v2) },
         "mod" to { v1, v2 -> mod(v1, v2) },
+        "log" to { v1, v2 -> log(v1, v2) },
+        "pow" to { v1, v2 -> pow(v1, v2) },
         // Comparison
         "eq" to { v1, v2 -> eq(v1, v2) },
         "neq" to { v1, v2 -> neq(v1, v2) },

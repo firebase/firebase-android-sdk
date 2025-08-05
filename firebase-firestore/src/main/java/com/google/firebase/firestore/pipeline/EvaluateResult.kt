@@ -45,6 +45,7 @@ internal sealed class EvaluateResult(val value: Value?) {
       } catch (e: IllegalArgumentException) {
         EvaluateResultError
       }
+    fun value(value: Value) = EvaluateResultValue(value)
   }
 }
 
