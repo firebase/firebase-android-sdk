@@ -262,6 +262,7 @@ fun asCollectionPipelineAtPath(
   // Construct a new RealtimePipeline with the (potentially) modified stages
   // and the original user_data_reader.
   return RealtimePipeline(
+    pipeline.firestore,
     pipeline.serializer,
     pipeline.userDataReader,
     newStages,

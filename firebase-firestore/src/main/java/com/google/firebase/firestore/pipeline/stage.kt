@@ -223,7 +223,7 @@ internal constructor(
   override fun self(options: InternalOptions): CollectionSource =
     CollectionSource(path, serializer, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(Value.newBuilder().setReferenceValue(path.canonicalString()).build())
+    sequenceOf(Value.newBuilder().setReferenceValue("/${path.canonicalString()}").build())
   companion object {
     /**
      * Set the pipeline's source to the collection specified by the given CollectionReference.
@@ -436,7 +436,7 @@ internal constructor(
    * @return [AggregateStage] with specified groups.
    */
   fun withGroups(groupField: String, vararg additionalGroups: Any) =
-    withGroups(Expr.field(groupField), additionalGroups)
+    withGroups(Expr.field(groupField), *additionalGroups)
 
   /**
    * Add one or more groups to [AggregateStage]

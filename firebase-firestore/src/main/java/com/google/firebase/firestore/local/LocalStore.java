@@ -669,6 +669,9 @@ public final class LocalStore implements BundleCallback {
       // This query has been listened to previously, so reuse the previous targetID.
       // TODO: freshen last accessed date?
       targetId = cached.getTargetId();
+      // deserialized target is missing a firestore reference, so we use the one that has it
+      // to replace just to be safe.
+      cached = cached.withTarget(target);
     } else {
       final AllocateQueryHolder holder = new AllocateQueryHolder();
       persistence.runTransaction(

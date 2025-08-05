@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.pipeline.Expr.add;
 import static com.google.firebase.firestore.pipeline.Expr.and;
 import static com.google.firebase.firestore.pipeline.Expr.arrayContains;
 import static com.google.firebase.firestore.pipeline.Expr.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expr.constant;
 import static com.google.firebase.firestore.pipeline.Expr.cosineDistance;
 import static com.google.firebase.firestore.pipeline.Expr.endsWith;
 import static com.google.firebase.firestore.pipeline.Expr.eq;
@@ -37,6 +38,7 @@ import static com.google.firebase.firestore.pipeline.Expr.strConcat;
 import static com.google.firebase.firestore.pipeline.Expr.subtract;
 import static com.google.firebase.firestore.pipeline.Expr.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -47,6 +49,7 @@ import com.google.common.truth.Correspondence;
 import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
@@ -367,13 +370,14 @@ public class PipelineTest {
             .collection(randomCol)
             .where(or(eq("genre", "Romance"), eq("genre", "Dystopian")))
             .select("title")
+            .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
+            ImmutableMap.of("title", "1984"),
             ImmutableMap.of("title", "Pride and Prejudice"),
-            ImmutableMap.of("title", "The Handmaid's Tale"),
-            ImmutableMap.of("title", "1984"));
+            ImmutableMap.of("title", "The Handmaid's Tale"));
   }
 
   @Test
@@ -418,6 +422,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(arrayContainsAny("tags", ImmutableList.of("comedy", "classic")))
             .select("title")
+            .sort(field("title").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -480,7 +485,8 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(field("author").strConcat(" - ", field("title")).alias("bookInfo"))
+            .sort(ascending(Field.DOCUMENT_ID))
+            .select(strConcat(field("author"), constant(" - "), field("title")).alias("bookInfo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -545,12 +551,12 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore("Not supported yet")
   public void testToLowercase() {
     Task<PipelineSnapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
+            .sort(Field.DOCUMENT_ID.ascending())
             .select(field("title").toLower().alias("lowercaseTitle"))
             .limit(1)
             .execute();
@@ -560,12 +566,12 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore("Not supported yet")
   public void testToUppercase() {
     Task<PipelineSnapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
+            .sort(Field.DOCUMENT_ID.ascending())
             .select(field("author").toUpper().alias("uppercaseAuthor"))
             .limit(1)
             .execute();
@@ -597,6 +603,10 @@ public class PipelineTest {
 
   @Test
   public void testLike() {
+    if (isRunningAgainstEmulator()) {
+      return;
+    }
+
     Task<PipelineSnapshot> execute =
         firestore
             .pipeline()
@@ -611,6 +621,10 @@ public class PipelineTest {
 
   @Test
   public void testRegexContains() {
+    if (isRunningAgainstEmulator()) {
+      return;
+    }
+
     Task<PipelineSnapshot> execute =
         firestore
             .pipeline()
@@ -622,6 +636,10 @@ public class PipelineTest {
 
   @Test
   public void testRegexMatches() {
+    if (isRunningAgainstEmulator()) {
+      return;
+    }
+
     Task<PipelineSnapshot> execute =
         firestore
             .pipeline()
@@ -637,12 +655,13 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
+            .sort(ascending(Field.DOCUMENT_ID))
+            .limit(1)
             .select(
                 add(field("rating"), 1).alias("ratingPlusOne"),
                 subtract(field("published"), 1900).alias("yearsSince1900"),
                 field("rating").multiply(10).alias("ratingTimesTen"),
                 field("rating").divide(2).alias("ratingDividedByTwo"))
-            .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -749,6 +768,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
+            .sort(field("title").descending())
             .select(field("awards").mapGet("hugo").alias("hugoAward"), field("title"))
             .where(eq("hugoAward", true))
             .execute();
@@ -790,6 +810,7 @@ public class PipelineTest {
             .collection(randomCol)
             .where(eq("awards.hugo", true))
             .select("title", "awards.hugo")
+            .sort(field("title").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -805,6 +826,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(eq("awards.hugo", true))
+            .sort(field("title").descending())
             .select(
                 "title",
                 field("nestedField.level.1"),
