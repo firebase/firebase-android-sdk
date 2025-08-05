@@ -19,7 +19,6 @@ package com.google.firebase.firestore.core
 import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.ResourcePath
-import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
