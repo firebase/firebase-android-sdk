@@ -80,10 +80,11 @@ internal constructor(
  * @param referenceId the reference ID for this image, to be referenced in the prompt
  * @param enableComputation requests that the reference image be generated serverside instead of
  * provided
- * @param superpixelRegionSize if type is COLOR_SUPERPIXEL and [enableComputation] is true, this
- * will control the size of each superpixel region in pixels for the generated referenced image
- * @param superpixelRuler if type is COLOR_SUPERPIXEL and [enableComputation] is true, this will
- * control the superpixel smoothness factor for the generated referenced image
+ * @param superpixelRegionSize if type is [ImagenControlType.COLOR_SUPERPIXEL] and
+ * [enableComputation] is true, this will control the size of each superpixel region in pixels for
+ * the generated referenced image
+ * @param superpixelRuler if type is [ImagenControlType.COLOR_SUPERPIXEL] and [enableComputation] is
+ * true, this will control the superpixel smoothness factor for the generated referenced image
  */
 @PublicPreviewAPI
 public class ImagenControlReference(
@@ -102,9 +103,8 @@ public class ImagenControlReference(
   ) {}
 
 /**
- * Represents a reference image for Imagen editing which will mask of a region to be edited. This
- * image (generated or provided) should contain only black and white pixels, with black representing
- * parts of the image which should not change.
+ * Represents a mask for Imagen editing. This image (generated or provided) should contain only
+ * black and white pixels, with black representing parts of the image which should not change.
  */
 @PublicPreviewAPI
 public abstract class ImagenMaskReference
@@ -113,17 +113,16 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
 
   public companion object {
     /**
-     * Generates these two reference images in order:
+     * Generates two reference images of [ImagenRawImage] and [ImagenRawMask]. These images are
+     * generated in this order:
      * * One [ImagenRawImage] containing the original image, padded out to the new dimensions with
      * black pixels, with the original image placed at the given placement
      * * One [ImagenRawMask] of the same dimensions containing white everywhere except at the
-     * placement original image.
-     *
-     * This is the format expected by Imagen for outpainting requests.
+     * placement original image. This is the format expected by Imagen for outpainting requests.
      *
      * @param image the original image
-     * @param newDimensions the new dimensions for outpainting. This *must* be more than the
-     * original image.
+     * @param newDimensions the new dimensions for outpainting. These new dimensions *must* be more
+     * than the original image.
      * @param newPosition the placement of the original image within the new outpainted image.
      */
     @JvmOverloads
@@ -190,8 +189,8 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
 /**
  * A generated mask image which will auto-detect and mask out the background. The background will be
  * white, and the foreground black
- * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
- * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
+ * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
  */
 @PublicPreviewAPI
 public class ImagenBackgroundMask(dilation: Double? = null) :
@@ -200,21 +199,20 @@ public class ImagenBackgroundMask(dilation: Double? = null) :
 /**
  * A generated mask image which will auto-detect and mask out the foreground. The background will be
  * black, and the foreground white
- * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
- * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
+ * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
  */
 @PublicPreviewAPI
 public class ImagenForegroundMask(dilation: Double? = null) :
   ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.FOREGROUND, dilation)) {}
 
 /**
- * Represents a reference image for Imagen editing which will mask of a region to be edited. This
- * image should contain only black and white pixels, with black representing parts of the image
- * which should not change.
+ * Represents a mask for Imagen editing. This image should contain only black and white pixels, with
+ * black representing parts of the image which should not change.
  *
  * @param mask the mask image
- * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
- * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
+ * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
  */
 @PublicPreviewAPI
 public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
@@ -226,11 +224,11 @@ public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
 /**
  * Represents a generated mask for Imagen editing which masks out certain objects using object
  * detection.
- * @param classes the list of segmentation IDs for objects to detect and mask out. See
- * [here](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/imagen-api-edit#segment-ids)
- * for a list of segmentation IDs
- * @param dilation the amount to dilate the mask, this can help smooth the borders of an edit and
- * make it seem more convincing. For example, 0.05 would dilate the mask 5%.
+ * @param classes the list of segmentation IDs for objects to detect and mask out. Find a
+ * [list of segmentation IDs](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/imagen-api-edit#segment-ids)
+ * in the Vertex AI documentation.
+ * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
+ * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
  */
 @PublicPreviewAPI
 public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
