@@ -147,7 +147,7 @@ public class QueryTest {
 
     // Unlisten then re-listen limit query.
     limitRegistration.remove();
-    limit.addSnapshotListener(limitAccumulator.listener());
+    limitRegistration = limit.addSnapshotListener(limitAccumulator.listener());
 
     // Verify `limit` query still works.
     data = querySnapshotToValues(limitAccumulator.await());
@@ -165,13 +165,16 @@ public class QueryTest {
     // Unlisten to limitToLast, update a doc, then relisten to limitToLast
     limitToLastRegistration.remove();
     waitFor(collection.document("a").update(map("k", "a", "sort", -2)));
-    limitToLast.addSnapshotListener(limitToLastAccumulator.listener());
+    limitToLastRegistration = limitToLast.addSnapshotListener(limitToLastAccumulator.listener());
 
     // Verify both query get expected result.
     data = querySnapshotToValues(limitAccumulator.await());
     assertEquals(asList(map("k", "a", "sort", -2L), map("k", "e", "sort", -1L)), data);
     data = querySnapshotToValues(limitToLastAccumulator.await());
     assertEquals(asList(map("k", "e", "sort", -1L), map("k", "a", "sort", -2L)), data);
+
+    limitRegistration.remove();
+    limitToLastRegistration.remove();
   }
 
   @Test
@@ -507,19 +510,22 @@ public class QueryTest {
 
     Semaphore receivedDocument = new Semaphore(0);
 
-    collectionReference.addSnapshotListener(
-        MetadataChanges.INCLUDE,
-        (snapshot, error) -> {
-          if (!snapshot.isEmpty() && !snapshot.getMetadata().isFromCache()) {
-            receivedDocument.release();
-          }
-        });
+    ListenerRegistration listener =
+        collectionReference.addSnapshotListener(
+            MetadataChanges.INCLUDE,
+            (snapshot, error) -> {
+              if (!snapshot.isEmpty() && !snapshot.getMetadata().isFromCache()) {
+                receivedDocument.release();
+              }
+            });
 
     waitFor(firestore.disableNetwork());
     collectionReference.add(map("foo", FieldValue.serverTimestamp()));
     waitFor(firestore.enableNetwork());
 
     waitFor(receivedDocument);
+
+    listener.remove();
   }
 
   @Test
