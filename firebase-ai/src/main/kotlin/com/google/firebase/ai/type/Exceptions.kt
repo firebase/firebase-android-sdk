@@ -222,3 +222,6 @@ public class ServiceConnectionHandshakeFailedException(message: String, cause: T
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
+
+/** A required permission is missing. */
+public class PermissionMissingException(message: String) : FirebaseAIException(message)

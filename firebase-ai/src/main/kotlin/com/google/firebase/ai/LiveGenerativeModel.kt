@@ -113,7 +113,11 @@ internal constructor(
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
       return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
+        LiveSession(
+          session = webSession,
+          blockingDispatcher = blockingDispatcher,
+          firebaseApp = controller.firebaseApp
+        )
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
