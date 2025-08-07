@@ -105,6 +105,7 @@ dependencies {
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.reactive)
   implementation(libs.reactive.streams)
+  implementation(libs.kotlin.reflect)
   implementation("com.google.guava:listenablefuture:1.0")
   implementation("androidx.concurrent:concurrent-futures:1.2.0")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
