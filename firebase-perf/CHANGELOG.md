@@ -1,5 +1,8 @@
 # Unreleased
 * [fixed] Fixed an ANR on app launch. [#4831]
+* [changed] Updated `firebase-sessions` dependency to v3.0.0
+* [fixed] Fixed the issues around unifying the sessions in `firebase-sessions` 
+  and`firebase-performance`.
 
 # 22.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
@@ -442,4 +445,3 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
-

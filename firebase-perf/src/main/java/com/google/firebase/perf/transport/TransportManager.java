@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.transport;
 
+import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -38,6 +39,7 @@ import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
+import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
@@ -230,6 +232,7 @@ public class TransportManager implements AppStateCallback {
     applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
+        .setProcessName(getProcessName(appContext))
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
                 .setPackageName(packageName)
@@ -297,6 +300,8 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
+    FirebaseSessionsEnforcementCheck.checkSession(
+        traceMetric.getPerfSessionsList(), "log TraceMetric");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -325,6 +330,8 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
+    FirebaseSessionsEnforcementCheck.checkSession(
+        networkRequestMetric.getPerfSessionsList(), "log NetworkRequestMetric");
     executorService.execute(
         () ->
             syncLog(
@@ -354,6 +361,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
+    FirebaseSessionsEnforcementCheck.checkSession(gaugeMetric.getSessionId(), "log GaugeMetric");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }

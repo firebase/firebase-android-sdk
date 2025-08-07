@@ -25,9 +25,11 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeCounter;
 import com.google.firebase.perf.util.ImmutableBundle;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.robolectric.shadows.ShadowPackageManager;
 
 public class FirebasePerformanceTestBase {
@@ -53,6 +55,12 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
   protected Context appContext;
+
+  @BeforeClass
+  public static void setUpBeforeClass() {
+    // TODO(b/394127311): Explore removing this.
+    GaugeCounter.resetCounter();
+  }
 
   @Before
   public void setUpFirebaseApp() {
