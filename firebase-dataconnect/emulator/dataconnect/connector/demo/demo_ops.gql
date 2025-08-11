@@ -1778,10 +1778,9 @@ mutation EnumKey_Insert($enumValue: N5ekmae3jn!, $tag: String) @auth(level: PUBL
   key: enumKey_insert(data: { enumValue: $enumValue, tag: $tag })
 }
 
-# TODO(b/432793533) Uncomment once the emulator crash caused by this query is fixed.
-#query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
-#  item: enumKey(key: $key) { tag }
-#}
+query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
+  item: enumKey(key: $key) { tag }
+}
 
 ###############################################################################
 # Operations for table: type MultipleEnumColumns

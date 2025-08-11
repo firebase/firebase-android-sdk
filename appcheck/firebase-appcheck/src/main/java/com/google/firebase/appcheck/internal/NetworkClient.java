@@ -41,6 +41,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import org.json.JSONException;
 
 /**
@@ -57,9 +58,10 @@ public class NetworkClient {
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangePlayIntegrityToken?key=%s";
   private static final String PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:generatePlayIntegrityChallenge?key=%s";
+  private static final String RECAPTCHA_ENTERPRISE_URL_TEMPLATE =
+      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeRecaptchaEnterpriseToken?key=%s";
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
-  private static final String UTF_8 = "UTF-8";
   @VisibleForTesting static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
   @VisibleForTesting static final String X_ANDROID_PACKAGE = "X-Android-Package";
   @VisibleForTesting static final String X_ANDROID_CERT = "X-Android-Cert";
@@ -71,12 +73,13 @@ public class NetworkClient {
   private final Provider<HeartBeatController> heartBeatControllerProvider;
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY})
+  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY, RECAPTCHA_ENTERPRISE})
   public @interface AttestationTokenType {}
 
   public static final int UNKNOWN = 0;
   public static final int DEBUG = 2;
   public static final int PLAY_INTEGRITY = 3;
+  public static final int RECAPTCHA_ENTERPRISE = 4;
 
   public NetworkClient(@NonNull FirebaseApp firebaseApp) {
     this(
@@ -172,7 +175,8 @@ public class NetworkClient {
               ? urlConnection.getInputStream()
               : urlConnection.getErrorStream();
       StringBuilder response = new StringBuilder();
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8))) {
+      try (BufferedReader reader =
+          new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
         String line;
         while ((line = reader.readLine()) != null) {
           response.append(line);
@@ -236,6 +240,8 @@ public class NetworkClient {
         return DEBUG_EXCHANGE_URL_TEMPLATE;
       case PLAY_INTEGRITY:
         return PLAY_INTEGRITY_EXCHANGE_URL_TEMPLATE;
+      case RECAPTCHA_ENTERPRISE:
+        return RECAPTCHA_ENTERPRISE_URL_TEMPLATE;
       default:
         throw new IllegalArgumentException("Unknown token type.");
     }
@@ -246,7 +252,7 @@ public class NetworkClient {
     return (HttpURLConnection) url.openConnection();
   }
 
-  private static final boolean isResponseSuccess(int responseCode) {
+  private static boolean isResponseSuccess(int responseCode) {
     return responseCode >= 200 && responseCode < 300;
   }
 }

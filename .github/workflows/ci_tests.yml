@@ -56,10 +56,6 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Clone vertexai mock responses
-        if: matrix.module == ':firebase-vertexai'
-        run: firebase-vertexai/update_responses.sh
-
       - name: Clone ai mock responses
         if: matrix.module == ':firebase-ai'
         run: firebase-ai/update_responses.sh
@@ -76,6 +72,7 @@ jobs:
         run: |
           ./gradlew ${{matrix.module}}:check withErrorProne
       - name: Compute upload file name
+        if: always()
         run: |
           MODULE=${{matrix.module}}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
