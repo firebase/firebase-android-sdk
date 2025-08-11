@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Added better description for requests which fail due to the Gemini API not being
+  configured.
 * [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
   transfer, and subject references (#7075)
 
