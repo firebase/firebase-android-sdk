@@ -135,7 +135,8 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
         toolCall.functionCalls.map { functionCall ->
           FunctionCallPart(
             name = functionCall.name,
-            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+            id = functionCall.id
           )
         }
       )

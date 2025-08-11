@@ -25,8 +25,9 @@ function run_command {
   "$@"
 }
 
-# Determine the absolute path of the directory containing this file.
-readonly SCRIPT_DIR="$(readlink -f $(dirname "$0"))"
+# Determine the path of the directory containing this file.
+SCRIPT_DIR="$(dirname "$0")"
+readonly SCRIPT_DIR
 
 # Create the podman "pod" if it is not already created.
 # Bind the PostgreSQL server to port 5432 on the host, so that the host can connect to it.

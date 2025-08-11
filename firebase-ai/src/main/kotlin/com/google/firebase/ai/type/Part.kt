@@ -39,6 +39,35 @@ public class TextPart(public val text: String) : Part {
   @Serializable internal data class Internal(val text: String) : InternalPart
 }
 
+public class CodeExecutionResultPart(public val outcome: String, public val output: String) : Part {
+
+  @Serializable
+  internal data class Internal(
+    @SerialName("codeExecutionResult") val codeExecutionResult: CodeExecutionResult
+  ) : InternalPart {
+
+    @Serializable
+    internal data class CodeExecutionResult(
+      @SerialName("outcome") val outcome: String,
+      val output: String
+    )
+  }
+}
+
+public class ExecutableCodePart(public val language: String, public val code: String) : Part {
+
+  @Serializable
+  internal data class Internal(@SerialName("executableCode") val executableCode: ExecutableCode) :
+    InternalPart {
+
+    @Serializable
+    internal data class ExecutableCode(
+      @SerialName("language") val language: String,
+      val code: String
+    )
+  }
+}
+
 /**
  * Represents image data sent to and received from requests. The image is converted client-side to
  * JPEG encoding at 80% quality before being sent to the server.
@@ -176,6 +205,8 @@ internal object PartSerializer :
     val jsonObject = element.jsonObject
     return when {
       "text" in jsonObject -> TextPart.Internal.serializer()
+      "executableCode" in jsonObject -> ExecutableCodePart.Internal.serializer()
+      "codeExecutionResult" in jsonObject -> CodeExecutionResultPart.Internal.serializer()
       "functionCall" in jsonObject -> FunctionCallPart.Internal.serializer()
       "functionResponse" in jsonObject -> FunctionResponsePart.Internal.serializer()
       "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
@@ -207,6 +238,12 @@ internal fun Part.toInternal(): InternalPart {
       )
     is FileDataPart ->
       FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
+    is ExecutableCodePart ->
+      ExecutableCodePart.Internal(ExecutableCodePart.Internal.ExecutableCode(language, code))
+    is CodeExecutionResultPart ->
+      CodeExecutionResultPart.Internal(
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output)
+      )
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
@@ -241,6 +278,10 @@ internal fun InternalPart.toPublic(): Part {
     is FunctionResponsePart.Internal ->
       FunctionResponsePart(functionResponse.name, functionResponse.response, functionResponse.id)
     is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
+    is ExecutableCodePart.Internal ->
+      ExecutableCodePart(executableCode.language, executableCode.code)
+    is CodeExecutionResultPart.Internal ->
+      CodeExecutionResultPart(codeExecutionResult.outcome, codeExecutionResult.output)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

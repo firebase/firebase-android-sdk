@@ -152,7 +152,6 @@ internal constructor(
           while (true) {
             val response = session.incoming.tryReceive()
             if (response.isClosed || !startedReceiving.get()) break
-
             response
               .getOrNull()
               ?.let {
@@ -161,7 +160,6 @@ internal constructor(
                 )
               }
               ?.let { emit(it.toPublic()) }
-
             yield()
           }
         }

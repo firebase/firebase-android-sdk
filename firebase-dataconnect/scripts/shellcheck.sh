@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@
 
 set -euo pipefail
 
-PROJECT_ROOT_DIR="$(dirname "$0")/../.."
-readonly PROJECT_ROOT_DIR
+DATACONNECT_ROOT_DIR="$(dirname "$0")/.."
+readonly DATACONNECT_ROOT_DIR
 
-(
-  set -xv
-  cd "${PROJECT_ROOT_DIR}"/firebase-dataconnect/emulator
-  ./wipe_postgres_db.sh
-  ./start_postgres_pod.sh
+sh_files=(
+  "${DATACONNECT_ROOT_DIR}"/emulator/*.sh
+  "${DATACONNECT_ROOT_DIR}"/scripts/*.sh
 )
 
 readonly args=(
-  "${PROJECT_ROOT_DIR}/gradlew"
-  "-p"
-  "${PROJECT_ROOT_DIR}"
-  "--configure-on-demand"
-  "$@"
-  ":firebase-dataconnect:connectors:runDebugDataConnectEmulator"
+  shellcheck
+  --norc
+  --enable=all
+  --shell=bash
+  "${sh_files[@]}"
 )
 
 echo "${args[*]}"

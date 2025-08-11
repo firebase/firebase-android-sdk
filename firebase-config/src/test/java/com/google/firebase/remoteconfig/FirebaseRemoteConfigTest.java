@@ -1533,8 +1533,8 @@ public final class FirebaseRemoteConfigTest {
         .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    configRealtimeHttpClientSpy.setIsInBackground(true);
     flushScheduledTasks();
+    configRealtimeHttpClientSpy.setIsInBackground(true);
 
     verify(mockHttpURLConnection, times(1)).disconnect();
   }
@@ -1577,7 +1577,7 @@ public final class FirebaseRemoteConfigTest {
           long backoffDurationInMillis = expectedRetryIntervalInSeconds * 1000L;
           Date expectedBackoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
           return Math.abs(argument.getTime() - expectedBackoffEndTime.getTime())
-              <= TimeUnit.SECONDS.toSeconds(1);
+              <= TimeUnit.SECONDS.toMillis(1);
         };
 
     verify(sharedPrefsClient, times(1))
