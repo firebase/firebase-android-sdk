@@ -46,8 +46,6 @@ public class SessionManager {
 
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
-    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "PerfSession.perfSession()");
-
     return perfSession;
   }
 
@@ -55,7 +53,6 @@ public class SessionManager {
     // Creates a legacy session by default. This is a safety net to allow initializing
     // SessionManager - but the current implementation replaces it immediately.
     this(GaugeManager.getInstance(), PerfSession.createWithId(null));
-    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "SessionManager()");
   }
 
   @VisibleForTesting
@@ -78,9 +75,6 @@ public class SessionManager {
    * @see PerfSession#isSessionRunningTooLong()
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "SessionManager.stopGaugeCollectionIfSessionRunningTooLong");
-
     if (perfSession.isSessionRunningTooLong()) {
       gaugeManager.stopCollectingGauges();
     }
@@ -158,16 +152,12 @@ public class SessionManager {
   }
 
   private void logGaugeMetadataIfCollectionEnabled() {
-    FirebaseSessionsEnforcementCheck.checkSession(
-        perfSession, "logGaugeMetadataIfCollectionEnabled");
     if (perfSession.isVerbose()) {
       gaugeManager.logGaugeMetadata(perfSession.sessionId());
     }
   }
 
   private void startOrStopCollectingGauges() {
-    FirebaseSessionsEnforcementCheck.checkSession(perfSession, "startOrStopCollectingGauges");
-
     if (perfSession.isVerbose()) {
       gaugeManager.startCollectingGauges(perfSession);
     } else {
