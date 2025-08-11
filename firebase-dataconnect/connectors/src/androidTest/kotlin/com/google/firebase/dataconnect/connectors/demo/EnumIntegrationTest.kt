@@ -44,7 +44,6 @@ import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
-import org.junit.Ignore
 import org.junit.Test
 
 class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -484,7 +483,7 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
     checkAll(Exhaustive.enum<N5ekmae3jn>()) { enumValue ->
       val tagValue = Arb.dataConnect.tag().next(randomSource())
       val key = connector.enumKeyInsert.execute(enumValue) { tag = tagValue }.data.key
-      key.asClue { it.enumValue shouldBe enumValue }
+      key.asClue { it.enumValue shouldBe Known(enumValue) }
       val queryResult = connector.enumKeyGetByKey.execute(key)
       queryResult.asClue {
         val item = it.data.item.shouldNotBeNull()
@@ -498,11 +497,6 @@ class EnumIntegrationTest : DemoConnectorIntegrationTestBase() {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  @Ignore(
-    "TODO(cl/785956954) Re-enable this test once testing against a data connect " +
-      "emulator that fixes serialization when more than one user-defined enum type " +
-      "in the data"
-  )
   fun multipleEnumColumns() = runTest {
     checkAll(NUM_ITERATIONS, Arb.enum<N5ekmae3jn>(), Arb.enum<S7yayynb25>()) { enum1, enum2 ->
       val key = connector.multipleEnumColumnsInsert.execute(enum1, enum2).data.key
