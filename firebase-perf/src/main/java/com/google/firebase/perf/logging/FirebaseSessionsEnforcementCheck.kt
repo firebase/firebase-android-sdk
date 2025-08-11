@@ -19,6 +19,7 @@ package com.google.firebase.perf.logging
 import com.google.firebase.perf.session.isLegacy
 import com.google.firebase.perf.v1.NetworkRequestMetric
 import com.google.firebase.perf.v1.TraceMetric
+import java.util.Collections
 import com.google.firebase.perf.v1.PerfSession as ProtoPerfSession
 
 class FirebaseSessionsEnforcementCheck {
@@ -50,12 +51,12 @@ class FirebaseSessionsEnforcementCheck {
     }
 
     private fun filterLegacySessions(sessions: List<ProtoPerfSession>): List<ProtoPerfSession> {
-      val updatedSessions = sessions.filter { !it.sessionId.isLegacy() }
-      return if(updatedSessions.isEmpty()) {
-        assert(!enforcement) { "No session besides a legacy session present. "}
-        sessions
-      } else {
+      return if (sessions.count() > 0 && sessions[0].sessionId.isLegacy()) {
+        val updatedSessions = sessions.toMutableList<ProtoPerfSession>()
+        Collections.swap(updatedSessions, 0, 1)
         updatedSessions
+      } else {
+        sessions
       }
     }
   }
