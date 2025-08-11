@@ -52,6 +52,7 @@ class FirebaseSessionsEnforcementCheck {
     private fun filterLegacySessions(sessions: List<ProtoPerfSession>): List<ProtoPerfSession> {
       val updatedSessions = sessions.filter { !it.sessionId.isLegacy() }
       return if(updatedSessions.isEmpty()) {
+        assert(!enforcement) { "No session besides a legacy session present. "}
         sessions
       } else {
         updatedSessions
