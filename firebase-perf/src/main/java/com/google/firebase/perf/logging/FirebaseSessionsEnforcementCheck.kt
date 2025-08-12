@@ -17,10 +17,6 @@
 package com.google.firebase.perf.logging
 
 import com.google.firebase.perf.session.isLegacy
-import com.google.firebase.perf.v1.NetworkRequestMetric
-import com.google.firebase.perf.v1.TraceMetric
-import java.util.Collections
-import com.google.firebase.perf.v1.PerfSession as ProtoPerfSession
 
 class FirebaseSessionsEnforcementCheck {
   companion object {
@@ -29,34 +25,10 @@ class FirebaseSessionsEnforcementCheck {
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
     @JvmStatic
-    fun filterLegacySessions(trace: TraceMetric): TraceMetric {
-      val updatedTrace = trace.toBuilder().clearPerfSessions()
-      filterLegacySessions(trace.perfSessionsList).forEach { updatedTrace.addPerfSessions(it) }
-      return updatedTrace.build()
-    }
-
-    @JvmStatic
-    fun filterLegacySessions(networkRequestMetric: NetworkRequestMetric): NetworkRequestMetric {
-      val updatedNetworkRequestMetric = networkRequestMetric.toBuilder().clearPerfSessions()
-      filterLegacySessions(networkRequestMetric.perfSessionsList).forEach { updatedNetworkRequestMetric.addPerfSessions(it) }
-      return updatedNetworkRequestMetric.build()
-    }
-
-    @JvmStatic
     fun checkSession(sessionId: String, failureMessage: String) {
       if (sessionId.isLegacy()) {
-        logger.verbose("legacy session ${sessionId}: $failureMessage")
+        logger.verbose("Legacy Session ${sessionId}: $failureMessage")
         assert(!enforcement) { failureMessage }
-      }
-    }
-
-    private fun filterLegacySessions(sessions: List<ProtoPerfSession>): List<ProtoPerfSession> {
-      return if (sessions.count() > 0 && sessions[0].sessionId.isLegacy()) {
-        val updatedSessions = sessions.toMutableList<ProtoPerfSession>()
-        Collections.swap(updatedSessions, 0, 1)
-        updatedSessions
-      } else {
-        sessions
       }
     }
   }

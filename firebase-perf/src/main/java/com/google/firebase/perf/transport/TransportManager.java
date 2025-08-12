@@ -14,11 +14,10 @@
 
 package com.google.firebase.perf.transport;
 
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSession;
 import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.filterLegacySessions;
-import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSession;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -302,7 +301,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
     executorService.execute(
-        () -> syncLog(PerfMetric.newBuilder().setTraceMetric(filterLegacySessions(traceMetric)), appState));
+        () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
 
   /**
@@ -332,7 +331,7 @@ public class TransportManager implements AppStateCallback {
     executorService.execute(
         () ->
             syncLog(
-                PerfMetric.newBuilder().setNetworkRequestMetric(filterLegacySessions(networkRequestMetric)), appState));
+                PerfMetric.newBuilder().setNetworkRequestMetric(networkRequestMetric), appState));
   }
 
   /**
@@ -358,7 +357,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
-    checkSession(gaugeMetric.getSessionId(), "Logging GaugeMetric with Legacy Session ID.");
+    checkSession(gaugeMetric.getSessionId(), "log(GaugeMetric)");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }

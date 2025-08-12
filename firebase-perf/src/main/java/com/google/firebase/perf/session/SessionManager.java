@@ -18,7 +18,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
