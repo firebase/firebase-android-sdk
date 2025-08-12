@@ -96,7 +96,7 @@ internal class UnsupportedUserLocationException(cause: Throwable? = null) :
  * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
  * to enable the Gemini Developer API.
  */
-internal class GeminiNotConfiguredException(cause: Throwable? = null) :
+internal class APINotConfiguredException(cause: Throwable? = null) :
   FirebaseCommonAIException("Gemini Developer API not enabled in Firebase console.", cause)
 
 /**

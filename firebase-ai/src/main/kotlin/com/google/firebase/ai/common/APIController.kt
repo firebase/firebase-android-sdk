@@ -335,7 +335,7 @@ private suspend fun validateResponse(response: HttpResponse) {
     throw PromptBlockedException(message)
   }
   if (message.contains("genai config not found")) {
-    throw GeminiNotConfiguredException()
+    throw APINotConfiguredException()
   }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
