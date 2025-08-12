@@ -1,6 +1,10 @@
 # Unreleased
+
+
+# 17.1.0
 * [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
   transfer, and subject references (#7075)
+* [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
 
 # 17.0.0
 * [feature] Added support for configuring the "thinking" budget when using Gemini
