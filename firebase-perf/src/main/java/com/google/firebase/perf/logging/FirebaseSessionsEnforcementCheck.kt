@@ -17,12 +17,18 @@
 package com.google.firebase.perf.logging
 
 import com.google.firebase.perf.session.isLegacy
+import com.google.firebase.perf.v1.PerfSession as ProtoPerfSession
 
 class FirebaseSessionsEnforcementCheck {
   companion object {
     /** When enabled, failed preconditions will cause assertion errors for debugging. */
     @JvmStatic var enforcement: Boolean = false
     private var logger: AndroidLogger = AndroidLogger.getInstance()
+
+    @JvmStatic
+    fun checkSession(sessions: List<ProtoPerfSession>, failureMessage: String) {
+      sessions.forEach { checkSession(it.sessionId, failureMessage) }
+    }
 
     @JvmStatic
     fun checkSession(sessionId: String, failureMessage: String) {
