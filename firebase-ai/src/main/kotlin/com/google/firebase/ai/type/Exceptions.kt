@@ -61,8 +61,8 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
               ContentBlockedException(cause.message ?: "", cause.cause)
             is com.google.firebase.ai.common.QuotaExceededException ->
               QuotaExceededException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.NotConfiguredException ->
-              NotConfiguredException(cause.cause)
+            is com.google.firebase.ai.common.GeminiNotConfiguredException ->
+              GeminiNotConfiguredException(cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
           }
         is TimeoutCancellationException ->
@@ -158,7 +158,7 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
  * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
  * to enable the Gemini Developer API.
  */
-internal class NotConfiguredException internal constructor(cause: Throwable? = null) :
+internal class GeminiNotConfiguredException internal constructor(cause: Throwable? = null) :
   FirebaseAIException("Gemini Developer API not enabled in Firebase console.", cause)
 
 /**
