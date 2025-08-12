@@ -33,7 +33,7 @@ class FirebaseSessionsEnforcementCheck {
     @JvmStatic
     fun checkSession(sessionId: String, failureMessage: String) {
       if (sessionId.isLegacy()) {
-        logger.verbose("Legacy Session ${sessionId}: $failureMessage")
+        logger.verbose("Contains Legacy Session ${sessionId}: $failureMessage")
         assert(!enforcement) { failureMessage }
       }
     }

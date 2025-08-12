@@ -30,7 +30,7 @@ class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver) :
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
     val currentPerfSession = SessionManager.getInstance().perfSession()
     // TODO(b/394127311): Add logic to deal with app start gauges if necessary.
-    checkSession(currentPerfSession.sessionId(), "onSessionChanged called on Legacy Session ID.")
+    checkSession(currentPerfSession.sessionId(), "Existing session in onSessionChanged().")
 
     val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
     SessionManager.getInstance().updatePerfSession(updatedSession)
