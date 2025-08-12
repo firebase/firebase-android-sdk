@@ -26,8 +26,10 @@ class FirebaseSessionsEnforcementCheck {
     private var logger: AndroidLogger = AndroidLogger.getInstance()
 
     @JvmStatic
-    fun checkSession(sessions: List<ProtoPerfSession>, failureMessage: String) {
-      sessions.forEach { checkSession(it.sessionId, failureMessage) }
+    fun checkSessionsList(sessions: List<ProtoPerfSession>, failureMessage: String) {
+      if (sessions.count { it.sessionId.isLegacy() } == sessions.size) {
+        sessions.forEach { checkSession(it.sessionId, failureMessage) }
+      }
     }
 
     @JvmStatic

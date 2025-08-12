@@ -15,6 +15,7 @@
 package com.google.firebase.perf.transport;
 
 import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSession;
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSessionsList;
 import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -300,7 +301,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
-    checkSession(traceMetric.getPerfSessionsList(), "log(TraceMetric)");
+    checkSessionsList(traceMetric.getPerfSessionsList(), "log(TraceMetric)");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -329,7 +330,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
-    checkSession(networkRequestMetric.getPerfSessionsList(), "log(NetworkRequestMetric)");
+    checkSessionsList(networkRequestMetric.getPerfSessionsList(), "log(NetworkRequestMetric)");
     executorService.execute(
         () ->
             syncLog(
