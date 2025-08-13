@@ -14,5 +14,71 @@
 
 package com.google.firebase.dataconnect.cache
 
-/** A [DataConnectCache] that caches data on disk. */
-public class PersistentCache : DataConnectCache() {}
+import java.util.Objects
+
+/**
+ * A [DataConnectCache] that caches data in in persistent storage on disk.
+ *
+ * @param maxSizeBytes The value to use for [PersistentCache.maxSizeBytes].
+ *
+ * @property maxSizeBytes The maximum size, in bytes, of the cache. A value of `0` (zero) indicates
+ * that the size is unbounded. This value is _not_ a hard limit but rather a guideline as the exact
+ * cache size may not be easily computable and this limit may be briefly exceeded as entries are
+ * evicted to bring the cache below the maximum size.
+ */
+public class PersistentCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTES) :
+  DataConnectCache() {
+
+  init {
+    require(maxSizeBytes >= 0) {
+      "invalid maxSizeBytes: $maxSizeBytes (must be greater than or equal to zero)"
+    }
+  }
+
+  /** Creates and returns a new [PersistentCache] object with the given property values. */
+  public fun copy(maxSizeBytes: Long = this.maxSizeBytes): PersistentCache =
+    PersistentCache(maxSizeBytes = maxSizeBytes)
+
+  /**
+   * Compares this object with another object for equality.
+   *
+   * @param other The object to compare to this for equality.
+   * @return true if, and only if, the other object is an instance of [PersistentCache] whose public
+   * properties compare equal using the `==` operator to the corresponding properties of this
+   * object.
+   */
+  override fun equals(other: Any?): Boolean =
+    other is PersistentCache && (other.maxSizeBytes == maxSizeBytes)
+
+  /**
+   * Calculates and returns the hash code for this object.
+   *
+   * The hash code is _not_ guaranteed to be stable across application restarts.
+   *
+   * @return the hash code for this object, that incorporates the values of this object's public
+   * properties.
+   */
+  override fun hashCode(): Int = Objects.hash(PersistentCache::class, maxSizeBytes)
+
+  /**
+   * Returns a string representation of this object, useful for debugging.
+   *
+   * The string representation is _not_ guaranteed to be stable and may change without notice at any
+   * time. Therefore, the only recommended usage of the returned string is debugging and/or logging.
+   * Namely, parsing the returned string or storing the returned string in non-volatile storage
+   * should generally be avoided in order to be robust in case that the string representation
+   * changes.
+   *
+   * @return a string representation of this object, which includes the class name and the values of
+   * all public properties.
+   */
+  override fun toString(): String {
+    return "PersistentCache(maxSizeBytes=$maxSizeBytes)"
+  }
+
+  public companion object {
+
+    /** The default value of [PersistentCache.maxSizeBytes] (100 MB). */
+    public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
+  }
+}
