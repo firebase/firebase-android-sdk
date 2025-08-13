@@ -145,10 +145,10 @@ internal class QueryRefImpl<Data, Variables>(
     override val ref = this@QueryRefImpl
 
     override fun equals(other: Any?) =
-      other is QueryRefImpl<*, *>.QueryResultImpl && super.equals(other)
+      other is QueryRefImpl<*, *>.QueryResultImpl && super.equals(other) && other.source == source
 
-    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref)
+    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref, source)
 
-    override fun toString() = "QueryResultImpl(data=$data, ref=$ref)"
+    override fun toString() = "QueryResultImpl(data=$data, ref=$ref, source=$source)"
   }
 }

@@ -21,6 +21,7 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.cache.DataConnectCache
 import com.google.firebase.dataconnect.cache.InMemoryCache
 import com.google.firebase.dataconnect.cache.PersistentCache
@@ -33,6 +34,7 @@ import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
@@ -183,6 +185,28 @@ object DataConnectArb {
     range: IntRange = 0..10,
   ): Arb<List<DataConnectPathSegment>> = Arb.list(pathSegment, range)
 }
+
+object QueryResultSourceArb {
+
+  fun cache(isStale: Arb<Boolean> = Arb.boolean()): Arb<QueryResult.Source.Cache> =
+    isStale.map { QueryResult.Source.Cache(isStale = it) }
+
+  fun server(): Arb<QueryResult.Source.Server> = Arb.constant(QueryResult.Source.Server)
+}
+
+object QueryResultArb {
+
+  fun source(
+    cache: Arb<QueryResult.Source.Cache> = source.cache(),
+    server: Arb<QueryResult.Source.Server> = source.server()
+  ): Arb<QueryResult.Source> = Arb.choice(cache, server)
+}
+
+val QueryResultArb.source: QueryResultSourceArb
+  get() = QueryResultSourceArb
+
+val DataConnectArb.queryResult: QueryResultArb
+  get() = QueryResultArb
 
 val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb
