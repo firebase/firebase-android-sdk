@@ -2,7 +2,7 @@ name: Firebase AI Nightlies
 
 on:
   schedule:
-    - cron: 0 0 * * *  # Runs automatically once a day
+    - cron: 2 7 * * *  # Runs automatically once a day
   workflow_dispatch:   # Allow triggering the workflow manually
 
 jobs:
