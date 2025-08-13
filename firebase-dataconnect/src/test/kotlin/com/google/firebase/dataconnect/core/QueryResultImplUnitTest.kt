@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
@@ -47,7 +48,7 @@ class QueryResultImplUnitTest {
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
       query,
       data ->
-      val queryResult = query.QueryResultImpl(data)
+      val queryResult = query.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult.data shouldBeSameInstanceAs data
     }
   }
@@ -57,7 +58,7 @@ class QueryResultImplUnitTest {
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
       query,
       data ->
-      val queryResult = query.QueryResultImpl(data)
+      val queryResult = query.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult.ref shouldBeSameInstanceAs query
     }
   }
@@ -67,7 +68,7 @@ class QueryResultImplUnitTest {
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
       query,
       data ->
-      val queryResult = query.QueryResultImpl(data)
+      val queryResult = query.QueryResultImpl(data, QueryResult.Source.Server)
       val toStringResult = queryResult.toString()
       assertSoftly {
         toStringResult shouldStartWith "QueryResultImpl("
@@ -90,8 +91,8 @@ class QueryResultImplUnitTest {
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
       query,
       data ->
-      val queryResult1 = query.QueryResultImpl(data)
-      val queryResult2 = query.QueryResultImpl(data)
+      val queryResult1 = query.QueryResultImpl(data, QueryResult.Source.Server)
+      val queryResult2 = query.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
@@ -99,8 +100,8 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return true if all properties are equal, and 'data' is null`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { query ->
-      val queryResult1 = query.QueryResultImpl(null)
-      val queryResult2 = query.QueryResultImpl(null)
+      val queryResult1 = query.QueryResultImpl(null, QueryResult.Source.Server)
+      val queryResult2 = query.QueryResultImpl(null, QueryResult.Source.Server)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
@@ -129,8 +130,8 @@ class QueryResultImplUnitTest {
       Arb.dataConnect.testData()
     ) { query, data1, data2 ->
       assume(data1 != data2)
-      val queryResult1 = query.QueryResultImpl(data1)
-      val queryResult2 = query.QueryResultImpl(data2)
+      val queryResult1 = query.QueryResultImpl(data1, QueryResult.Source.Server)
+      val queryResult2 = query.QueryResultImpl(data2, QueryResult.Source.Server)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
@@ -145,8 +146,8 @@ class QueryResultImplUnitTest {
     ) { query1, query2, data,
       ->
       assume(query1 != query2)
-      val queryResult1 = query1.QueryResultImpl(data)
-      val queryResult2 = query2.QueryResultImpl(data)
+      val queryResult1 = query1.QueryResultImpl(data, QueryResult.Source.Server)
+      val queryResult2 = query2.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
@@ -158,8 +159,8 @@ class QueryResultImplUnitTest {
         query,
         data,
         ->
-        val queryResult1 = query.QueryResultImpl(null)
-        val queryResult2 = query.QueryResultImpl(data)
+        val queryResult1 = query.QueryResultImpl(null, QueryResult.Source.Server)
+        val queryResult2 = query.QueryResultImpl(data, QueryResult.Source.Server)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -171,8 +172,8 @@ class QueryResultImplUnitTest {
         query,
         data,
         ->
-        val queryResult1 = query.QueryResultImpl(data)
-        val queryResult2 = query.QueryResultImpl(null)
+        val queryResult1 = query.QueryResultImpl(data, QueryResult.Source.Server)
+        val queryResult2 = query.QueryResultImpl(null, QueryResult.Source.Server)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -194,8 +195,8 @@ class QueryResultImplUnitTest {
       query,
       data,
       ->
-      val queryResult1 = query.QueryResultImpl(data)
-      val queryResult2 = query.QueryResultImpl(data)
+      val queryResult1 = query.QueryResultImpl(data, QueryResult.Source.Server)
+      val queryResult2 = query.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult1.hashCode() shouldBe queryResult2.hashCode()
     }
   }
@@ -210,8 +211,8 @@ class QueryResultImplUnitTest {
     ) { query, data1, data2,
       ->
       assume(data1.hashCode() != data2.hashCode())
-      val queryResult1 = query.QueryResultImpl(data1)
-      val queryResult2 = query.QueryResultImpl(data2)
+      val queryResult1 = query.QueryResultImpl(data1, QueryResult.Source.Server)
+      val queryResult2 = query.QueryResultImpl(data2, QueryResult.Source.Server)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -226,8 +227,8 @@ class QueryResultImplUnitTest {
     ) { query1, query2, data,
       ->
       assume(query1.hashCode() != query2.hashCode())
-      val queryResult1 = query1.QueryResultImpl(data)
-      val queryResult2 = query2.QueryResultImpl(data)
+      val queryResult1 = query1.QueryResultImpl(data, QueryResult.Source.Server)
+      val queryResult2 = query2.QueryResultImpl(data, QueryResult.Source.Server)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -252,7 +253,7 @@ class QueryResultImplUnitTest {
       query: Arb<QueryRefImpl<TestData?, TestVariables>> = queryRefImpl(),
       data: Arb<TestData> = testData()
     ): Arb<QueryRefImpl<TestData?, TestVariables>.QueryResultImpl> = arbitrary {
-      query.bind().QueryResultImpl(data.bind())
+      query.bind().QueryResultImpl(data.bind(), QueryResult.Source.Server)
     }
 
     fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
