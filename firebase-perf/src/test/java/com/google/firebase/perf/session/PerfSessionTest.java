@@ -256,7 +256,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testBuildAndSortKeepsLegacySessionAtTopWithNoVerboseSessions() {
+  public void testBuildAndSortSwapsLegacySessionAtTopWithNoVerboseSessions() {
     // Force all the sessions from now onwards to be non-verbose
     forceNonVerboseSession();
 
