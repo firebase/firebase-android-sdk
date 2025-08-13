@@ -112,7 +112,9 @@ class InMemoryCacheUnitTest {
         Arb.dataConnect.errorPath(),
         Arb.dataConnect.persistentCache(),
       )
-    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache(), otherArb) { cache: InMemoryCache, other: Any ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache(), otherArb) {
+      cache: InMemoryCache,
+      other: Any ->
       cache.equals(other) shouldBe false
     }
   }
@@ -178,9 +180,11 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `copy should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache(), Arb.dataConnect.invalidMaxCacheSizeBytes()) {
-      cache: InMemoryCache,
-      invalidMaxSizeBytes ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.inMemoryCache(),
+      Arb.dataConnect.invalidMaxCacheSizeBytes()
+    ) { cache: InMemoryCache, invalidMaxSizeBytes ->
       val exception =
         shouldThrow<IllegalArgumentException> { cache.copy(maxSizeBytes = invalidMaxSizeBytes) }
       exception.message shouldContainWithNonAbuttingText "maxSizeBytes"

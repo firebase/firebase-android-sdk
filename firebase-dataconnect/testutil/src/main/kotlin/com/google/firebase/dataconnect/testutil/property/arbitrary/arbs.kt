@@ -130,13 +130,11 @@ object DataConnectArb {
 
   fun invalidMaxCacheSizeBytes(): Arb<Long> = Arb.long(max = -1)
 
-  fun inMemoryCache(
-    maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
-  ): Arb<InMemoryCache> = maxSizeBytes.map { InMemoryCache(it) }
+  fun inMemoryCache(maxSizeBytes: Arb<Long> = maxCacheSizeBytes()): Arb<InMemoryCache> =
+    maxSizeBytes.map { InMemoryCache(it) }
 
-  fun persistentCache(
-    maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
-  ): Arb<PersistentCache> = maxSizeBytes.map { PersistentCache(it) }
+  fun persistentCache(maxSizeBytes: Arb<Long> = maxCacheSizeBytes()): Arb<PersistentCache> =
+    maxSizeBytes.map { PersistentCache(it) }
 
   fun cache(
     inMemoryCache: Arb<InMemoryCache> = inMemoryCache(),

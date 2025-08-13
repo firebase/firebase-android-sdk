@@ -112,8 +112,9 @@ class PersistentCacheUnitTest {
         Arb.dataConnect.errorPath(),
         Arb.dataConnect.inMemoryCache(),
       )
-    checkAll(propTestConfig, Arb.dataConnect.persistentCache(), otherArb) { cache: PersistentCache, other: Any
-      ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache(), otherArb) {
+      cache: PersistentCache,
+      other: Any ->
       cache.equals(other) shouldBe false
     }
   }
@@ -179,9 +180,11 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `copy should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.persistentCache(), Arb.dataConnect.invalidMaxCacheSizeBytes()) {
-      cache: PersistentCache,
-      invalidMaxSizeBytes ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.persistentCache(),
+      Arb.dataConnect.invalidMaxCacheSizeBytes()
+    ) { cache: PersistentCache, invalidMaxSizeBytes ->
       val exception =
         shouldThrow<IllegalArgumentException> { cache.copy(maxSizeBytes = invalidMaxSizeBytes) }
       exception.message shouldContainWithNonAbuttingText "maxSizeBytes"
