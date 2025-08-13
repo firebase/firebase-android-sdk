@@ -21,3 +21,16 @@ as well as the default version are specified in the file
 gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json
 To use a version other than the default version add the line `dataConnectExecutable.version = NNN`
 (where "NNN" is the desired version) into the file `dataconnect.local.properties`.
+
+### Code Style
+
+All Android code is written in Kotlin, not Java.
+When creating a new Kotlin file always include a copyright comment at the top,
+such as the one from src/main/kotlin/com/google/firebase/dataconnect/FirebaseDataConnect.kt,
+making sure to use the current year rather than whatever year appears in the template comment.
+
+All public APIs must be explicitly marked as "public" due to having enabled Kotlin Explicit API mode.
+
+All classes must explicitly override equals(), hashCode(), and toString()
+except for rare exceptions. The implementations of these methods are usually simple.
+Use the implementations from src/main/kotlin/com/google/firebase/dataconnect/DataConnectSettings.kt as an example. 
