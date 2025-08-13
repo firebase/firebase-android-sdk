@@ -15,6 +15,4 @@
 package com.google.firebase.dataconnect.cache
 
 /** A [DataConnectCache] that caches data on disk. */
-public class PersistentCache : DataConnectCache() {
-
-}
+public class PersistentCache : DataConnectCache() {}

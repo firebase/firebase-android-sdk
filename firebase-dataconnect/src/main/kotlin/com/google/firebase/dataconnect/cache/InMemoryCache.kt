@@ -14,6 +14,8 @@
 
 package com.google.firebase.dataconnect.cache
 
+import java.util.Objects
+
 /**
  * A [DataConnectCache] that caches data in memory.
  *
@@ -22,11 +24,10 @@ package com.google.firebase.dataconnect.cache
  * cache size may not be easily computable and this limit may be briefly exceeded as entries are
  * evicted to bring the cache below the maximum size.
  */
-public class InMemoryCache internal constructor(public val maxSizeBytes: Long): DataConnectCache() {
+public class InMemoryCache internal constructor(public val maxSizeBytes: Long) :
+  DataConnectCache() {
 
-  /**
-   * Creates a new instance of [InMemoryCache] using all default values.
-   */
+  /** Creates a new instance of [InMemoryCache] using all default values. */
   public constructor() : this(maxSizeBytes = DEFAULT_MAX_SIZE_BYTES)
 
   init {
@@ -34,14 +35,49 @@ public class InMemoryCache internal constructor(public val maxSizeBytes: Long): 
   }
 
   /**
-   * An annotation that indicates to the Kotlin compiler that the builder is part of a DSL,
-   * causing compilation errors for error-prone property access.
+   * Compares this object with another object for equality.
+   *
+   * @param other The object to compare to this for equality.
+   * @return true if, and only if, the other object is an instance of [InMemoryCache] whose public
+   * properties compare equal using the `==` operator to the corresponding properties of this
+   * object.
+   */
+  override fun equals(other: Any?): Boolean =
+    other is InMemoryCache && (other.maxSizeBytes == maxSizeBytes)
+
+  /**
+   * Calculates and returns the hash code for this object.
+   *
+   * The hash code is _not_ guaranteed to be stable across application restarts.
+   *
+   * @return the hash code for this object, that incorporates the values of this object's public
+   * properties.
+   */
+  override fun hashCode(): Int = Objects.hash(InMemoryCache::class, maxSizeBytes)
+
+  /**
+   * Returns a string representation of this object, useful for debugging.
+   *
+   * The string representation is _not_ guaranteed to be stable and may change without notice at any
+   * time. Therefore, the only recommended usage of the returned string is debugging and/or logging.
+   * Namely, parsing the returned string or storing the returned string in non-volatile storage
+   * should generally be avoided in order to be robust in case that the string representation
+   * changes.
+   *
+   * @return a string representation of this object, which includes the class name and the values of
+   * all public properties.
+   */
+  override fun toString(): String {
+    return "InMemoryCache(maxSizeBytes=$maxSizeBytes)"
+  }
+
+  /**
+   * An annotation that indicates to the Kotlin compiler that the builder is part of a DSL, causing
+   * compilation errors for error-prone property access.
    */
   @DslMarker public annotation class BuilderDsl
 
-  /**
-   * A builder for creating instances of [InMemoryCache].
-   */
+  /** A builder for creating instances of [InMemoryCache]. */
   @BuilderDsl
   public interface Builder {
 
@@ -64,29 +100,22 @@ public class InMemoryCache internal constructor(public val maxSizeBytes: Long): 
 
   public companion object {
 
-    /**
-     * The default value of [InMemoryCache.maxSizeBytes] if not explicitly specified (100 MB).
-     */
+    /** The default value of [InMemoryCache.maxSizeBytes] if not explicitly specified (100 MB). */
     public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
 
     private fun verifyMaxSizeBytes(maxSizeBytes: Long): Long {
       require(maxSizeBytes >= 0) {
-        "invalid maxSizeBytes: $maxSizeBytes " +
-            "(must be greater than or equal to zero)"
+        "invalid maxSizeBytes: $maxSizeBytes " + "(must be greater than or equal to zero)"
       }
       return maxSizeBytes
     }
 
-    /**
-     * Builds and returns a new instance of [InMemoryCache] using the given builder.
-     */
-    public fun build(builder: Builder.() -> Unit) : InMemoryCache {
+    /** Builds and returns a new instance of [InMemoryCache] using the given builder. */
+    public fun build(builder: Builder.() -> Unit): InMemoryCache {
       return BuilderImpl().run {
         apply(builder)
         InMemoryCache(maxSizeBytes = maxSizeBytes)
       }
     }
-
   }
-
 }

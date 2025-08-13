@@ -290,14 +290,31 @@ package com.google.firebase.dataconnect {
 
 package com.google.firebase.dataconnect.cache {
 
-  public sealed interface DataConnectCache {
+  public abstract sealed class DataConnectCache {
   }
 
-  public final class InMemoryCache implements com.google.firebase.dataconnect.cache.DataConnectCache {
+  public final class InMemoryCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
     ctor public InMemoryCache();
+    method public long getMaxSizeBytes();
+    property public final long maxSizeBytes;
+    field public static final com.google.firebase.dataconnect.cache.InMemoryCache.Companion Companion;
+    field public static final long DEFAULT_MAX_SIZE_BYTES = 100000000L; // 0x5f5e100L
   }
 
-  public final class PersistentCache implements com.google.firebase.dataconnect.cache.DataConnectCache {
+  @com.google.firebase.dataconnect.cache.InMemoryCache.BuilderDsl public static interface InMemoryCache.Builder {
+    method public long getMaxSizeBytes();
+    method public void setMaxSizeBytes(long);
+    property public abstract long maxSizeBytes;
+  }
+
+  @kotlin.DslMarker public static @interface InMemoryCache.BuilderDsl {
+  }
+
+  public static final class InMemoryCache.Companion {
+    method public com.google.firebase.dataconnect.cache.InMemoryCache build(kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.cache.InMemoryCache.Builder,kotlin.Unit> builder);
+  }
+
+  public final class PersistentCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
     ctor public PersistentCache();
   }
 
