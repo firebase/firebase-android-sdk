@@ -21,6 +21,9 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.cache.DataConnectCache
+import com.google.firebase.dataconnect.cache.InMemoryCache
+import com.google.firebase.dataconnect.cache.PersistentCache
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -28,6 +31,7 @@ import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
@@ -36,6 +40,7 @@ import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
@@ -118,6 +123,23 @@ object DataConnectArb {
     arbitrary {
       "host_${string.bind()}"
     }
+
+  fun Arb.Companion.maxCacheSizeBytes(): Arb<Long> = long(min = 0)
+
+  fun Arb.Companion.invalidMaxCacheSizeBytes(): Arb<Long> = long(max = -1)
+
+  fun Arb.Companion.inMemoryCache(
+    maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
+  ): Arb<InMemoryCache> = maxSizeBytes.map { InMemoryCache(it) }
+
+  fun Arb.Companion.persistentCache(
+    maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
+  ): Arb<PersistentCache> = maxSizeBytes.map { PersistentCache(it) }
+
+  fun Arb.Companion.cache(
+    inMemoryCache: Arb<InMemoryCache> = inMemoryCache(),
+    persistentCache: Arb<PersistentCache> = persistentCache(),
+  ): Arb<DataConnectCache> = choice(inMemoryCache, persistentCache)
 
   fun dataConnectSettings(
     prefix: String? = null,
