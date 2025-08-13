@@ -288,6 +288,21 @@ package com.google.firebase.dataconnect {
 
 }
 
+package com.google.firebase.dataconnect.cache {
+
+  public sealed interface DataConnectCache {
+  }
+
+  public final class InMemoryCache implements com.google.firebase.dataconnect.cache.DataConnectCache {
+    ctor public InMemoryCache();
+  }
+
+  public final class PersistentCache implements com.google.firebase.dataconnect.cache.DataConnectCache {
+    ctor public PersistentCache();
+  }
+
+}
+
 package com.google.firebase.dataconnect.generated {
 
   public interface GeneratedConnector<T extends com.google.firebase.dataconnect.generated.GeneratedConnector<T>> {

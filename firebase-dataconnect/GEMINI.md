@@ -33,4 +33,4 @@ All public APIs must be explicitly marked as "public" due to having enabled Kotl
 
 All classes must explicitly override equals(), hashCode(), and toString()
 except for rare exceptions. The implementations of these methods are usually simple.
-Use the implementations from src/main/kotlin/com/google/firebase/dataconnect/DataConnectSettings.kt as an example. 
+Use the KDoc comments and implementations from src/main/kotlin/com/google/firebase/dataconnect/DataConnectSettings.kt as a template. 
