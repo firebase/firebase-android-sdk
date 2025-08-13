@@ -14,8 +14,6 @@
 
 package com.google.firebase.perf.session;
 
-import static com.google.firebase.perf.session.FirebaseSessionsHelperKt.isLegacy;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
@@ -132,14 +130,7 @@ public class PerfSession implements Parcelable {
     }
 
     if (!foundVerboseSession) {
-      // TODO(b/394127311): Added as part of legacy sessions. Remove this in a future release.
-      if (isLegacy(perfSessionAtIndexZero.getSessionId()) && sessions.size() > 1) {
-        // Swaps the first session ID that's a legacy session ID with the second in the list.
-        perfSessions[0] = perfSessions[1];
-        perfSessions[1] = perfSessionAtIndexZero;
-      } else {
-        perfSessions[0] = perfSessionAtIndexZero;
-      }
+      perfSessions[0] = perfSessionAtIndexZero;
     }
 
     return perfSessions;

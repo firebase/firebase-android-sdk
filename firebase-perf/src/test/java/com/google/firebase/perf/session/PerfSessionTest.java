@@ -256,7 +256,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testBuildAndSortSwapsLegacySessionAtTopWithNoVerboseSessions() {
+  public void testBuildAndSortKeepsLegacySessionAtTopWithNoVerboseSessions() {
     // Force all the sessions from now onwards to be non-verbose
     forceNonVerboseSession();
 
@@ -273,10 +273,8 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         PerfSession.buildAndSort(ImmutableList.copyOf(sessions));
 
     // Verify that after building the proto objects for PerfSessions, the first session in the array
-    // of proto objects is *not* a legacy session.
-    assertThat(isLegacy(perfSessions[0].getSessionId())).isFalse();
-    assertThat(isLegacy(perfSessions[1].getSessionId())).isTrue();
-    assertThat(isLegacy(perfSessions[0].getSessionId())).isFalse();
+    // of proto objects is a legacy session.
+    assertThat(isLegacy(perfSessions[0].getSessionId())).isTrue();
   }
 
   @Test
