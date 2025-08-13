@@ -15,42 +15,6 @@
 package com.google.firebase.dataconnect.cache
 
 /** A [DataConnectCache] that caches data on disk. */
-public class PersistentCache : DataConnectCache {
-  /**
-   * Compares this object with another object for equality.
-   *
-   * @param other The object to compare to this for equality.
-   * @return true if, and only if, the other object is an instance of [PersistentCache].
-   */
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is PersistentCache) return false
-    return true
-  }
+public class PersistentCache : DataConnectCache() {
 
-  /**
-   * Calculates and returns the hash code for this object.
-   *
-   * The hash code is _not_ guaranteed to be stable across application restarts.
-   *
-   * @return the hash code for this object.
-   */
-  override fun hashCode(): Int {
-    return javaClass.hashCode()
-  }
-
-  /**
-   * Returns a string representation of this object, useful for debugging.
-   *
-   * The string representation is _not_ guaranteed to be stable and may change without notice at any
-   * time. Therefore, the only recommended usage of the returned string is debugging and/or logging.
-   * Namely, parsing the returned string or storing the returned string in non-volatile storage
-   * should generally be avoided in order to be robust in case that the string representation
-   * changes.
-   *
-   * @return a string representation of this object.
-   */
-  override fun toString(): String {
-    return "PersistentCache()"
-  }
 }

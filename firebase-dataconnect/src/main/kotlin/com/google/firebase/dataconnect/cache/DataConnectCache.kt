@@ -15,4 +15,4 @@
 package com.google.firebase.dataconnect.cache
 
 /** Defines the caching behavior for Data Connect. */
-public sealed interface DataConnectCache
+public sealed class DataConnectCache
