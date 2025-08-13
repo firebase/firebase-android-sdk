@@ -84,15 +84,17 @@ package com.google.firebase.dataconnect {
   }
 
   public final class DataConnectSettings {
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
+    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.cache.DataConnectCache cache = com.google.firebase.dataconnect.cache.PersistentCache());
+    method public com.google.firebase.dataconnect.cache.DataConnectCache getCache();
     method public String getHost();
     method public boolean getSslEnabled();
+    property public final com.google.firebase.dataconnect.cache.DataConnectCache cache;
     property public final String host;
     property public final boolean sslEnabled;
   }
 
   public final class DataConnectSettingsKt {
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled);
+    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.cache.DataConnectCache cache = cache);
   }
 
   @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING, message="This declaration is \"experimental\": its signature and/or semantics " + "may change in backwards-incompatible ways at any time without notice, " + "up to and including complete removal. " + "If you have a use case that relies on this declaration please open a " + "\"feature request\" issue at https://github.com/firebase/firebase-android-sdk " + "requesting this declaration\'s promotion from \"experimental\" to \"fully-supported\".") @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFirebaseDataConnect {
@@ -255,15 +257,38 @@ package com.google.firebase.dataconnect {
 
   public interface QueryRef<Data, Variables> extends com.google.firebase.dataconnect.OperationRef<Data,Variables> {
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public com.google.firebase.dataconnect.QueryRef<Data,Variables> copy(String operationName, Variables variables, kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType callerSdkType, kotlinx.serialization.modules.SerializersModule? dataSerializersModule, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
-    method public suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
+    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy = com.google.firebase.dataconnect.QueryRef.FetchPolicy.DEFAULT, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
+    method public default suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public com.google.firebase.dataconnect.QuerySubscription<Data,Variables> subscribe();
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewData> com.google.firebase.dataconnect.QueryRef<NewData,Variables> withDataDeserializer(kotlinx.serialization.DeserializationStrategy<? extends NewData> dataDeserializer, kotlinx.serialization.modules.SerializersModule? dataSerializersModule);
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewVariables> com.google.firebase.dataconnect.QueryRef<Data,NewVariables> withVariablesSerializer(NewVariables variables, kotlinx.serialization.SerializationStrategy<? super NewVariables> variablesSerializer, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
   }
 
+  public enum QueryRef.FetchPolicy {
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy CACHE;
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy DEFAULT;
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy SERVER;
+  }
+
   public interface QueryResult<Data, Variables> extends com.google.firebase.dataconnect.OperationResult<Data,Variables> {
     method public com.google.firebase.dataconnect.QueryRef<Data,Variables> getRef();
+    method public com.google.firebase.dataconnect.QueryResult.Source getSource();
     property public abstract com.google.firebase.dataconnect.QueryRef<Data,Variables> ref;
+    property public abstract com.google.firebase.dataconnect.QueryResult.Source source;
+  }
+
+  public static sealed interface QueryResult.Source {
+  }
+
+  public static final class QueryResult.Source.Cache implements com.google.firebase.dataconnect.QueryResult.Source {
+    ctor public QueryResult.Source.Cache(boolean isStale);
+    method public com.google.firebase.dataconnect.QueryResult.Source.Cache copy(boolean isStale = isStale);
+    method public boolean isStale();
+    property public final boolean isStale;
+  }
+
+  public static final class QueryResult.Source.Server implements com.google.firebase.dataconnect.QueryResult.Source {
+    field public static final com.google.firebase.dataconnect.QueryResult.Source.Server INSTANCE;
   }
 
   public interface QuerySubscription<Data, Variables> {
@@ -294,28 +319,27 @@ package com.google.firebase.dataconnect.cache {
   }
 
   public final class InMemoryCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
-    ctor public InMemoryCache();
+    ctor public InMemoryCache(long maxSizeBytes = 100000000L);
+    method public com.google.firebase.dataconnect.cache.InMemoryCache copy(long maxSizeBytes = maxSizeBytes);
     method public long getMaxSizeBytes();
     property public final long maxSizeBytes;
     field public static final com.google.firebase.dataconnect.cache.InMemoryCache.Companion Companion;
     field public static final long DEFAULT_MAX_SIZE_BYTES = 100000000L; // 0x5f5e100L
   }
 
-  @com.google.firebase.dataconnect.cache.InMemoryCache.BuilderDsl public static interface InMemoryCache.Builder {
-    method public long getMaxSizeBytes();
-    method public void setMaxSizeBytes(long);
-    property public abstract long maxSizeBytes;
-  }
-
-  @kotlin.DslMarker public static @interface InMemoryCache.BuilderDsl {
-  }
-
   public static final class InMemoryCache.Companion {
-    method public com.google.firebase.dataconnect.cache.InMemoryCache build(kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.cache.InMemoryCache.Builder,kotlin.Unit> builder);
   }
 
   public final class PersistentCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
-    ctor public PersistentCache();
+    ctor public PersistentCache(long maxSizeBytes = 100000000L);
+    method public com.google.firebase.dataconnect.cache.PersistentCache copy(long maxSizeBytes = maxSizeBytes);
+    method public long getMaxSizeBytes();
+    property public final long maxSizeBytes;
+    field public static final com.google.firebase.dataconnect.cache.PersistentCache.Companion Companion;
+    field public static final long DEFAULT_MAX_SIZE_BYTES = 100000000L; // 0x5f5e100L
+  }
+
+  public static final class PersistentCache.Companion {
   }
 
 }
