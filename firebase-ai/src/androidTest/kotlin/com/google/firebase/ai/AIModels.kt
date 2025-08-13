@@ -17,7 +17,6 @@ package com.google.firebase.ai
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
 import com.google.firebase.ai.type.GenerativeBackend
 
 class AIModels {
@@ -48,19 +47,7 @@ class AIModels {
 
     fun setup() {
       val context = InstrumentationRegistry.getInstrumentation().context
-      app =
-        FirebaseApp.initializeApp(
-          context
-          /*,
-          FirebaseOptions.Builder()
-            /*
-            .setApiKey(API_KEY)
-            .setApplicationId(APP_ID)
-            .setProjectId(PROJECT_ID)
-            */
-            .build()
-            */
-        )
+      app = FirebaseApp.initializeApp(context)
       flash2Model =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
