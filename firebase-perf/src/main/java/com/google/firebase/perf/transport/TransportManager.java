@@ -301,7 +301,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
-    checkSessionsList(traceMetric.getPerfSessionsList(), "log(TraceMetric)");
+    checkSessionsList(traceMetric.getPerfSessionsList(), traceMetric.getName());
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -330,7 +330,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
-    checkSessionsList(networkRequestMetric.getPerfSessionsList(), "log(NetworkRequestMetric)");
+    checkSessionsList(networkRequestMetric.getPerfSessionsList(), networkRequestMetric.getUrl());
     executorService.execute(
         () ->
             syncLog(
