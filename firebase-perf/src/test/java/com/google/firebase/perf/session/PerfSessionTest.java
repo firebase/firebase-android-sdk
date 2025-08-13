@@ -273,7 +273,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
         PerfSession.buildAndSort(ImmutableList.copyOf(sessions));
 
     // Verify that after building the proto objects for PerfSessions, the first session in the array
-    // of proto objects is a legacy session.
+    // of proto objects is *not* a legacy session.
     assertThat(isLegacy(perfSessions[0].getSessionId())).isFalse();
   }
 
