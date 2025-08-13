@@ -145,10 +145,15 @@ object DataConnectArb {
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
+    cache: Arb<DataConnectCache> = Arb.cache(),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
     return arbitrary {
-      DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
+      DataConnectSettings(
+        host = wrappedHost.bind(),
+        sslEnabled = sslEnabled.bind(),
+        cache = cache.bind()
+      )
     }
   }
 

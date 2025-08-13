@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.cache.DataConnectCache
+import com.google.firebase.dataconnect.cache.PersistentCache
 import java.util.Objects
 
 /**
@@ -31,10 +33,12 @@ import java.util.Objects
  * @property sslEnabled Whether to use SSL for the connection; if `true`, then the connection will
  * be encrypted using SSL and, if false, the connection will _not_ be encrypted and all network
  * transmission will happen in plaintext.
+ * @property cache The local caching strategy to use.
  */
 public class DataConnectSettings(
   public val host: String = "firebasedataconnect.googleapis.com",
-  public val sslEnabled: Boolean = true
+  public val sslEnabled: Boolean = true,
+  public val cache: DataConnectCache = PersistentCache()
 ) {
 
   /**
@@ -46,7 +50,10 @@ public class DataConnectSettings(
    * object.
    */
   override fun equals(other: Any?): Boolean =
-    (other is DataConnectSettings) && other.host == host && other.sslEnabled == sslEnabled
+    (other is DataConnectSettings) &&
+      other.host == host &&
+      other.sslEnabled == sslEnabled &&
+      other.cache == cache
 
   /**
    * Calculates and returns the hash code for this object.
@@ -56,7 +63,7 @@ public class DataConnectSettings(
    * @return the hash code for this object, that incorporates the values of this object's public
    * properties.
    */
-  override fun hashCode(): Int = Objects.hash(DataConnectSettings::class, host, sslEnabled)
+  override fun hashCode(): Int = Objects.hash(DataConnectSettings::class, host, sslEnabled, cache)
 
   /**
    * Returns a string representation of this object, useful for debugging.
@@ -70,13 +77,15 @@ public class DataConnectSettings(
    * @return a string representation of this object, which includes the class name and the values of
    * all public properties.
    */
-  override fun toString(): String = "DataConnectSettings(host=$host, sslEnabled=$sslEnabled)"
+  override fun toString(): String =
+    "DataConnectSettings(host=$host, sslEnabled=$sslEnabled, cache=$cache)"
 }
 
 /** Creates and returns a new [DataConnectSettings] instance with the given property values. */
 public fun DataConnectSettings.copy(
   host: String = this.host,
-  sslEnabled: Boolean = this.sslEnabled
-): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled)
+  sslEnabled: Boolean = this.sslEnabled,
+  cache: DataConnectCache = this.cache,
+): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled, cache = cache)
 
 internal fun DataConnectSettings.isDefaultHost() = host == DataConnectSettings().host

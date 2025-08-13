@@ -94,9 +94,8 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
-      val cache1 = PersistentCache(maxSizeBytes)
-      val cache2 = PersistentCache(maxSizeBytes)
+    checkAll(propTestConfig, Arb.persistentCache()) { cache1: PersistentCache ->
+      val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.equals(cache2) shouldBe true }
     }
   }
@@ -145,19 +144,16 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
-      val cache1 = PersistentCache(maxSizeBytes)
-      val cache2 = PersistentCache(maxSizeBytes)
+    checkAll(propTestConfig, Arb.persistentCache()) { cache1: PersistentCache ->
+      val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldBe cache2.hashCode() }
     }
   }
 
   @Test
   fun `hashCode() should return a different value when 'maxSizeBytes' differs`() = runTest {
-    // Allow a small number of failures to account for the rare, but possible situation where two
-    // distinct instances produce the same hash code.
-    val config = propTestConfig.copy(minSuccess = propTestConfig.iterations!! - 2, maxFailure = 2)
-    checkAll(config, Arb.maxCacheSizeBytes().distinctPair()) { (maxSizeBytes1, maxSizeBytes2) ->
+    checkAll(hashEqualityPropTestConfig, Arb.maxCacheSizeBytes().distinctPair()) {
+      (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = PersistentCache(maxSizeBytes1)
       val cache2 = PersistentCache(maxSizeBytes2)
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldNotBe cache2.hashCode() }
@@ -199,5 +195,13 @@ class PersistentCacheUnitTest {
 
   private companion object {
     val propTestConfig = PropTestConfig(iterations = 20)
+
+    // Allow a small number of failures to account for the rare, but possible situation where two
+    // distinct instances produce the same hash code.
+    val hashEqualityPropTestConfig =
+      propTestConfig.copy(
+        minSuccess = propTestConfig.iterations!! - 2,
+        maxFailure = 2,
+      )
   }
 }
