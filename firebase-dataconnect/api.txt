@@ -270,6 +270,10 @@ package com.google.firebase.dataconnect {
     enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy SERVER;
   }
 
+  public final class QueryRefKt {
+    method public static com.google.firebase.dataconnect.QueryResult.Source.Cache copy(com.google.firebase.dataconnect.QueryResult.Source.Cache, boolean isStale = isStale);
+  }
+
   public interface QueryResult<Data, Variables> extends com.google.firebase.dataconnect.OperationResult<Data,Variables> {
     method public com.google.firebase.dataconnect.QueryRef<Data,Variables> getRef();
     method public com.google.firebase.dataconnect.QueryResult.Source getSource();
@@ -282,7 +286,6 @@ package com.google.firebase.dataconnect {
 
   public static final class QueryResult.Source.Cache implements com.google.firebase.dataconnect.QueryResult.Source {
     ctor public QueryResult.Source.Cache(boolean isStale);
-    method public com.google.firebase.dataconnect.QueryResult.Source.Cache copy(boolean isStale = isStale);
     method public boolean isStale();
     property public final boolean isStale;
   }
@@ -320,7 +323,6 @@ package com.google.firebase.dataconnect.cache {
 
   public final class InMemoryCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
     ctor public InMemoryCache(long maxSizeBytes = 100000000L);
-    method public com.google.firebase.dataconnect.cache.InMemoryCache copy(long maxSizeBytes = maxSizeBytes);
     method public long getMaxSizeBytes();
     property public final long maxSizeBytes;
     field public static final com.google.firebase.dataconnect.cache.InMemoryCache.Companion Companion;
@@ -330,9 +332,12 @@ package com.google.firebase.dataconnect.cache {
   public static final class InMemoryCache.Companion {
   }
 
+  public final class InMemoryCacheKt {
+    method public static com.google.firebase.dataconnect.cache.InMemoryCache copy(com.google.firebase.dataconnect.cache.InMemoryCache, long maxSizeBytes = maxSizeBytes);
+  }
+
   public final class PersistentCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
     ctor public PersistentCache(long maxSizeBytes = 100000000L);
-    method public com.google.firebase.dataconnect.cache.PersistentCache copy(long maxSizeBytes = maxSizeBytes);
     method public long getMaxSizeBytes();
     property public final long maxSizeBytes;
     field public static final com.google.firebase.dataconnect.cache.PersistentCache.Companion Companion;
@@ -340,6 +345,10 @@ package com.google.firebase.dataconnect.cache {
   }
 
   public static final class PersistentCache.Companion {
+  }
+
+  public final class PersistentCacheKt {
+    method public static com.google.firebase.dataconnect.cache.PersistentCache copy(com.google.firebase.dataconnect.cache.PersistentCache, long maxSizeBytes = maxSizeBytes);
   }
 
 }

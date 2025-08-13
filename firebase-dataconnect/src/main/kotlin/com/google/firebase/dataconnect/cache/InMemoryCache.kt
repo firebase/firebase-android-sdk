@@ -35,10 +35,6 @@ public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTE
     }
   }
 
-  /** Creates and returns a new [InMemoryCache] object with the given property values. */
-  public fun copy(maxSizeBytes: Long = this.maxSizeBytes): InMemoryCache =
-    InMemoryCache(maxSizeBytes = maxSizeBytes)
-
   /**
    * Compares this object with another object for equality.
    *
@@ -82,3 +78,7 @@ public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTE
     public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
   }
 }
+
+/** Creates and returns a new [InMemoryCache] object with the given property values. */
+public fun InMemoryCache.copy(maxSizeBytes: Long = this.maxSizeBytes): InMemoryCache =
+  InMemoryCache(maxSizeBytes = maxSizeBytes)

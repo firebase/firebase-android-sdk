@@ -137,9 +137,6 @@ public interface QueryResult<Data, Variables> : OperationResult<Data, Variables>
      */
     public class Cache(public val isStale: Boolean) : Source {
 
-      /** Creates and returns a new [Cache] object with the given property values. */
-      public fun copy(isStale: Boolean = this.isStale): Cache = Cache(isStale = isStale)
-
       /**
        * Compares this object with another object for equality.
        *
@@ -218,3 +215,8 @@ public interface QueryResult<Data, Variables> : OperationResult<Data, Variables>
     }
   }
 }
+
+/** Creates and returns a new [QueryResult.Source.Cache] object with the given property values. */
+public fun QueryResult.Source.Cache.copy(
+  isStale: Boolean = this.isStale
+): QueryResult.Source.Cache = QueryResult.Source.Cache(isStale = isStale)

@@ -35,10 +35,6 @@ public class PersistentCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BY
     }
   }
 
-  /** Creates and returns a new [PersistentCache] object with the given property values. */
-  public fun copy(maxSizeBytes: Long = this.maxSizeBytes): PersistentCache =
-    PersistentCache(maxSizeBytes = maxSizeBytes)
-
   /**
    * Compares this object with another object for equality.
    *
@@ -82,3 +78,7 @@ public class PersistentCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BY
     public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
   }
 }
+
+/** Creates and returns a new [PersistentCache] object with the given property values. */
+public fun PersistentCache.copy(maxSizeBytes: Long = this.maxSizeBytes): PersistentCache =
+  PersistentCache(maxSizeBytes = maxSizeBytes)
