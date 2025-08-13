@@ -1,7 +1,6 @@
 {
     "name": "ignore",
     "libraries": [
-        ":firebase-ai",
-        ":firebase-perf"
+        ":firebase-dataconnect"
     ]
 }
