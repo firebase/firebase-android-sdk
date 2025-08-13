@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Ignore too
 
 # 17.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.

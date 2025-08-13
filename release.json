@@ -1,0 +1,6 @@
+{
+    "name": "ignore",
+    "libraries": [
+        ":firebase-dataconnect"
+    ]
+}
