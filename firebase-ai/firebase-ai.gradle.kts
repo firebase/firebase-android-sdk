@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("firebase-library")
   id("kotlin-android")
+  id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
 }
 
