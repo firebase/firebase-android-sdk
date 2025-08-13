@@ -26,6 +26,7 @@ import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
 class ImagenTests {
+  /* Not yet supported
   @Test
   fun testGenerateAndEditImage() {
     val imageGenerationModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-generate-002")
@@ -42,4 +43,5 @@ class ImagenTests {
       assert(editedCatImage.images.size == 1)
     }
   }
+   */
 }

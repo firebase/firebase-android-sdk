@@ -50,12 +50,16 @@ class AIModels {
       val context = InstrumentationRegistry.getInstrumentation().context
       app =
         FirebaseApp.initializeApp(
-          context,
+          context
+          /*,
           FirebaseOptions.Builder()
+            /*
             .setApiKey(API_KEY)
             .setApplicationId(APP_ID)
             .setProjectId(PROJECT_ID)
+            */
             .build()
+            */
         )
       flash2Model =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
