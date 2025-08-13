@@ -19,6 +19,9 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.queryResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.source
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
@@ -65,16 +68,14 @@ class QueryResultSourceCacheTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache = QueryResult.Source.Cache(isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache ->
       cache.equals(cache) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache1 = QueryResult.Source.Cache(isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.equals(cache2) shouldBe true }
     }
@@ -82,26 +83,24 @@ class QueryResultSourceCacheTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache = QueryResult.Source.Cache(isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache ->
       cache.equals(null) shouldBe false
     }
   }
 
   @Test
   fun `equals() should return false for a different type`() = runTest {
-    val otherArb = Arb.choice(Arb.string(), Arb.int())
-    checkAll(propTestConfig, Arb.boolean(), otherArb) { isStale, other ->
-      val cache = QueryResult.Source.Cache(isStale)
+    val otherArb =
+      Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.queryResult.source.server().toArb())
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache(), otherArb) { cache, other ->
       cache.equals(other) shouldBe false
     }
   }
 
   @Test
   fun `equals() should return false when 'isStale' differs`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache1 = QueryResult.Source.Cache(isStale)
-      val cache2 = QueryResult.Source.Cache(!isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
+      val cache2 = cache1.copy(isStale = !cache1.isStale)
       withClue("cache1=$cache1 cache2=$cache2") { cache1.equals(cache2) shouldBe false }
     }
   }
@@ -109,8 +108,7 @@ class QueryResultSourceCacheTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, Arb.boolean()) { isStale ->
-        val cache = QueryResult.Source.Cache(isStale)
+      checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache ->
         val hashCode1 = cache.hashCode()
         cache.hashCode() shouldBe hashCode1
         cache.hashCode() shouldBe hashCode1
@@ -119,8 +117,7 @@ class QueryResultSourceCacheTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache1 = QueryResult.Source.Cache(isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldBe cache2.hashCode() }
     }
@@ -128,17 +125,15 @@ class QueryResultSourceCacheTest {
 
   @Test
   fun `hashCode() should return a different value when 'isStale' differs`() = runTest {
-    checkAll(hashEqualityPropTestConfig, Arb.boolean()) { isStale ->
-      val cache1 = QueryResult.Source.Cache(isStale)
-      val cache2 = QueryResult.Source.Cache(!isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
+      val cache2 = cache1.copy(isStale = !cache1.isStale)
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldNotBe cache2.hashCode() }
     }
   }
 
   @Test
   fun `copy with no arguments should create a distinct, but equal object`() = runTest {
-    checkAll(propTestConfig, Arb.boolean()) { isStale ->
-      val cache1 = QueryResult.Source.Cache(isStale)
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") {
         cache1 shouldNotBeSameInstanceAs cache2
@@ -149,22 +144,13 @@ class QueryResultSourceCacheTest {
 
   @Test
   fun `copy should use the given isStale`() = runTest {
-    checkAll(propTestConfig, Arb.boolean(), Arb.boolean()) { isStale1, isStale2 ->
-      val cache1 = QueryResult.Source.Cache(isStale1)
-      val cache2 = cache1.copy(isStale = isStale2)
-      cache2.isStale shouldBe isStale2
+    checkAll(propTestConfig, Arb.dataConnect.queryResult.source.cache()) { cache1 ->
+      val cache2 = cache1.copy(isStale = !cache1.isStale)
+      cache2.isStale shouldBe !cache1.isStale
     }
   }
 
   private companion object {
     val propTestConfig = PropTestConfig(iterations = 20)
-
-    // Allow a small number of failures to account for the rare, but possible situation where two
-    // distinct instances produce the same hash code.
-    val hashEqualityPropTestConfig =
-      propTestConfig.copy(
-        minSuccess = propTestConfig.iterations!! - 2,
-        maxFailure = 2,
-      )
   }
 }

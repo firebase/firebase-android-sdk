@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.cache.DataConnectCache
 import com.google.firebase.dataconnect.cache.InMemoryCache
 import com.google.firebase.dataconnect.cache.PersistentCache
 import io.kotest.property.Arb
+import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
@@ -34,7 +35,6 @@ import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
-import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
@@ -47,6 +47,9 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.kotest.property.exhaustive.boolean
+import io.kotest.property.exhaustive.map
+import io.kotest.property.exhaustive.of
 import io.mockk.mockk
 import kotlinx.serialization.modules.SerializersModule
 
@@ -186,17 +189,17 @@ object DataConnectArb {
 
 object QueryResultSourceArb {
 
-  fun cache(isStale: Arb<Boolean> = Arb.boolean()): Arb<QueryResult.Source.Cache> =
-    isStale.map { QueryResult.Source.Cache(isStale = it) }
+  fun cache(): Exhaustive<QueryResult.Source.Cache> =
+    Exhaustive.boolean().map { QueryResult.Source.Cache(it) }
 
-  fun server(): Arb<QueryResult.Source.Server> = Arb.constant(QueryResult.Source.Server)
+  fun server(): Exhaustive<QueryResult.Source.Server> = Exhaustive.of(QueryResult.Source.Server)
 }
 
 object QueryResultArb {
 
   fun source(
-    cache: Arb<QueryResult.Source.Cache> = source.cache(),
-    server: Arb<QueryResult.Source.Server> = source.server()
+    cache: Arb<QueryResult.Source.Cache> = source.cache().toArb(),
+    server: Arb<QueryResult.Source.Server> = source.server().toArb(),
   ): Arb<QueryResult.Source> = Arb.choice(cache, server)
 }
 
