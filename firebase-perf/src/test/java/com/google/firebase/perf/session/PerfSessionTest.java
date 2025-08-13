@@ -275,6 +275,8 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     // Verify that after building the proto objects for PerfSessions, the first session in the array
     // of proto objects is *not* a legacy session.
     assertThat(isLegacy(perfSessions[0].getSessionId())).isFalse();
+    assertThat(isLegacy(perfSessions[1].getSessionId())).isTrue();
+    assertThat(isLegacy(perfSessions[0].getSessionId())).isFalse();
   }
 
   @Test
