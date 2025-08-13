@@ -19,10 +19,6 @@
 
 package com.google.firebase.dataconnect.cache
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.inMemoryCache
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.invalidMaxCacheSizeBytes
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.maxCacheSizeBytes
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.persistentCache
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -57,7 +53,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `properties should be the same objects given to the constructor`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes()) { maxSizeBytes ->
       val cache = InMemoryCache(maxSizeBytes)
       cache.asClue { it.maxSizeBytes shouldBe maxSizeBytes }
     }
@@ -65,7 +61,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `constructor should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.invalidMaxCacheSizeBytes()) { invalidMaxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.invalidMaxCacheSizeBytes()) { invalidMaxSizeBytes ->
       val exception = shouldThrow<IllegalArgumentException> { InMemoryCache(invalidMaxSizeBytes) }
       exception.message shouldContainWithNonAbuttingText "maxSizeBytes"
       exception.message shouldContainWithNonAbuttingText invalidMaxSizeBytes.toString()
@@ -74,7 +70,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes()) { maxSizeBytes ->
       val cache = InMemoryCache(maxSizeBytes)
       val toStringResult = cache.toString()
       assertSoftly {
@@ -87,14 +83,14 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache()) { cache: InMemoryCache ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache: InMemoryCache ->
       cache.equals(cache) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache()) { cache1: InMemoryCache ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache1: InMemoryCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.equals(cache2) shouldBe true }
     }
@@ -102,7 +98,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache()) { cache: InMemoryCache ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache: InMemoryCache ->
       cache.equals(null) shouldBe false
     }
   }
@@ -114,16 +110,16 @@ class InMemoryCacheUnitTest {
         Arb.string(),
         Arb.int(),
         Arb.dataConnect.errorPath(),
-        Arb.persistentCache(),
+        Arb.dataConnect.persistentCache(),
       )
-    checkAll(propTestConfig, Arb.inMemoryCache(), otherArb) { cache: InMemoryCache, other: Any ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache(), otherArb) { cache: InMemoryCache, other: Any ->
       cache.equals(other) shouldBe false
     }
   }
 
   @Test
   fun `equals() should return false when 'maxSizeBytes' differs`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes().distinctPair()) {
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes().distinctPair()) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = InMemoryCache(maxSizeBytes1)
       val cache2 = InMemoryCache(maxSizeBytes2)
@@ -134,7 +130,7 @@ class InMemoryCacheUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, Arb.inMemoryCache()) { cache: InMemoryCache ->
+      checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache: InMemoryCache ->
         val hashCode1 = cache.hashCode()
         cache.hashCode() shouldBe hashCode1
         cache.hashCode() shouldBe hashCode1
@@ -143,7 +139,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache()) { cache1: InMemoryCache ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache1: InMemoryCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldBe cache2.hashCode() }
     }
@@ -151,7 +147,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `hashCode() should return a different value when 'maxSizeBytes' differs`() = runTest {
-    checkAll(hashEqualityPropTestConfig, Arb.maxCacheSizeBytes().distinctPair()) {
+    checkAll(hashEqualityPropTestConfig, Arb.dataConnect.maxCacheSizeBytes().distinctPair()) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = InMemoryCache(maxSizeBytes1)
       val cache2 = InMemoryCache(maxSizeBytes2)
@@ -161,7 +157,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `copy with no arguments should create a distinct, but equal object`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache()) { cache1: InMemoryCache ->
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache()) { cache1: InMemoryCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") {
         cache1 shouldNotBeSameInstanceAs cache2
@@ -172,7 +168,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `copy should use the given maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.twoValues(Arb.maxCacheSizeBytes())) {
+    checkAll(propTestConfig, Arb.twoValues(Arb.dataConnect.maxCacheSizeBytes())) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = InMemoryCache(maxSizeBytes1)
       val cache2 = cache1.copy(maxSizeBytes = maxSizeBytes2)
@@ -182,7 +178,7 @@ class InMemoryCacheUnitTest {
 
   @Test
   fun `copy should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.inMemoryCache(), Arb.invalidMaxCacheSizeBytes()) {
+    checkAll(propTestConfig, Arb.dataConnect.inMemoryCache(), Arb.dataConnect.invalidMaxCacheSizeBytes()) {
       cache: InMemoryCache,
       invalidMaxSizeBytes ->
       val exception =

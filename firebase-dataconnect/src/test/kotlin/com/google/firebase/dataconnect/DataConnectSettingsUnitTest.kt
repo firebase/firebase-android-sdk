@@ -20,7 +20,6 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.cache.PersistentCache
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.cache
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
@@ -54,7 +53,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `properties should be the same objects given to the constructor`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.cache()) { host, sslEnabled, cache ->
+    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cache()) { host, sslEnabled, cache ->
       val settings = DataConnectSettings(host, sslEnabled, cache)
       assertSoftly {
         settings.host shouldBeSameInstanceAs host
@@ -66,7 +65,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.cache()) { host, sslEnabled, cache ->
+    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cache()) { host, sslEnabled, cache ->
       val settings = DataConnectSettings(host, sslEnabled, cache)
       val toStringResult = settings.toString()
       assertSoftly {
@@ -103,7 +102,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false for a different type`() = runTest {
-    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.errorPath(), Arb.cache())
+    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.errorPath(), Arb.dataConnect.cache())
     checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
       settings.equals(other) shouldBe false
     }
@@ -129,7 +128,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false when only 'cache' differs`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.cache()) {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.cache()) {
       settings1,
       newCache ->
       assume(settings1.cache != newCache)
@@ -179,7 +178,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return a different value when only 'cache' differs`() = runTest {
-    checkAll(hashEqualityPropTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.cache()) {
+    checkAll(hashEqualityPropTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.cache()) {
       settings1,
       newCache ->
       assume { settings1.cache.hashCode() != newCache.hashCode() }
@@ -233,7 +232,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `copy() should return an object with the given 'cache'`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.cache()) {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.cache()) {
       settings1,
       newCache ->
       val settings2 = settings1.copy(cache = newCache)
@@ -252,7 +251,7 @@ class DataConnectSettingsUnitTest {
       Arb.dataConnect.dataConnectSettings(),
       Arb.dataConnect.string(),
       Arb.boolean(),
-      Arb.cache(),
+      Arb.dataConnect.cache(),
     ) { settings1, newHost, newSslEnabled, newCache ->
       val settings2 = settings1.copy(host = newHost, sslEnabled = newSslEnabled, cache = newCache)
       assertSoftly {

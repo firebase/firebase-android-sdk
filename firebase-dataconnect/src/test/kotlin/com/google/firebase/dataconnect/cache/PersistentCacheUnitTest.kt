@@ -19,10 +19,6 @@
 
 package com.google.firebase.dataconnect.cache
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.inMemoryCache
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.invalidMaxCacheSizeBytes
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.maxCacheSizeBytes
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.persistentCache
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -57,7 +53,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `properties should be the same objects given to the constructor`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes()) { maxSizeBytes ->
       val cache = PersistentCache(maxSizeBytes)
       cache.asClue { it.maxSizeBytes shouldBe maxSizeBytes }
     }
@@ -65,7 +61,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `constructor should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.invalidMaxCacheSizeBytes()) { invalidMaxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.invalidMaxCacheSizeBytes()) { invalidMaxSizeBytes ->
       val exception = shouldThrow<IllegalArgumentException> { PersistentCache(invalidMaxSizeBytes) }
       exception.message shouldContainWithNonAbuttingText "maxSizeBytes"
       exception.message shouldContainWithNonAbuttingText invalidMaxSizeBytes.toString()
@@ -74,7 +70,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes()) { maxSizeBytes ->
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes()) { maxSizeBytes ->
       val cache = PersistentCache(maxSizeBytes)
       val toStringResult = cache.toString()
       assertSoftly {
@@ -87,14 +83,14 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache()) { cache: PersistentCache ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache: PersistentCache ->
       cache.equals(cache) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache()) { cache1: PersistentCache ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache1: PersistentCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.equals(cache2) shouldBe true }
     }
@@ -102,7 +98,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache()) { cache: PersistentCache ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache: PersistentCache ->
       cache.equals(null) shouldBe false
     }
   }
@@ -114,9 +110,9 @@ class PersistentCacheUnitTest {
         Arb.string(),
         Arb.int(),
         Arb.dataConnect.errorPath(),
-        Arb.inMemoryCache(),
+        Arb.dataConnect.inMemoryCache(),
       )
-    checkAll(propTestConfig, Arb.persistentCache(), otherArb) { cache: PersistentCache, other: Any
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache(), otherArb) { cache: PersistentCache, other: Any
       ->
       cache.equals(other) shouldBe false
     }
@@ -124,7 +120,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `equals() should return false when 'maxSizeBytes' differs`() = runTest {
-    checkAll(propTestConfig, Arb.maxCacheSizeBytes().distinctPair()) {
+    checkAll(propTestConfig, Arb.dataConnect.maxCacheSizeBytes().distinctPair()) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = PersistentCache(maxSizeBytes1)
       val cache2 = PersistentCache(maxSizeBytes2)
@@ -135,7 +131,7 @@ class PersistentCacheUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, Arb.persistentCache()) { cache: PersistentCache ->
+      checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache: PersistentCache ->
         val hashCode1 = cache.hashCode()
         cache.hashCode() shouldBe hashCode1
         cache.hashCode() shouldBe hashCode1
@@ -144,7 +140,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache()) { cache1: PersistentCache ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache1: PersistentCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") { cache1.hashCode() shouldBe cache2.hashCode() }
     }
@@ -152,7 +148,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `hashCode() should return a different value when 'maxSizeBytes' differs`() = runTest {
-    checkAll(hashEqualityPropTestConfig, Arb.maxCacheSizeBytes().distinctPair()) {
+    checkAll(hashEqualityPropTestConfig, Arb.dataConnect.maxCacheSizeBytes().distinctPair()) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = PersistentCache(maxSizeBytes1)
       val cache2 = PersistentCache(maxSizeBytes2)
@@ -162,7 +158,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `copy with no arguments should create a distinct, but equal object`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache()) { cache1: PersistentCache ->
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache()) { cache1: PersistentCache ->
       val cache2 = cache1.copy()
       withClue("cache1=$cache1 cache2=$cache2") {
         cache1 shouldNotBeSameInstanceAs cache2
@@ -173,7 +169,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `copy should use the given maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.twoValues(Arb.maxCacheSizeBytes())) {
+    checkAll(propTestConfig, Arb.twoValues(Arb.dataConnect.maxCacheSizeBytes())) {
       (maxSizeBytes1, maxSizeBytes2) ->
       val cache1 = PersistentCache(maxSizeBytes1)
       val cache2 = cache1.copy(maxSizeBytes = maxSizeBytes2)
@@ -183,7 +179,7 @@ class PersistentCacheUnitTest {
 
   @Test
   fun `copy should throw for invalid maxSizeBytes`() = runTest {
-    checkAll(propTestConfig, Arb.persistentCache(), Arb.invalidMaxCacheSizeBytes()) {
+    checkAll(propTestConfig, Arb.dataConnect.persistentCache(), Arb.dataConnect.invalidMaxCacheSizeBytes()) {
       cache: PersistentCache,
       invalidMaxSizeBytes ->
       val exception =

@@ -124,28 +124,28 @@ object DataConnectArb {
       "host_${string.bind()}"
     }
 
-  fun Arb.Companion.maxCacheSizeBytes(): Arb<Long> = long(min = 0)
+  fun maxCacheSizeBytes(): Arb<Long> = Arb.long(min = 0)
 
-  fun Arb.Companion.invalidMaxCacheSizeBytes(): Arb<Long> = long(max = -1)
+  fun invalidMaxCacheSizeBytes(): Arb<Long> = Arb.long(max = -1)
 
-  fun Arb.Companion.inMemoryCache(
+  fun inMemoryCache(
     maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
   ): Arb<InMemoryCache> = maxSizeBytes.map { InMemoryCache(it) }
 
-  fun Arb.Companion.persistentCache(
+  fun persistentCache(
     maxSizeBytes: Arb<Long> = maxCacheSizeBytes()
   ): Arb<PersistentCache> = maxSizeBytes.map { PersistentCache(it) }
 
-  fun Arb.Companion.cache(
+  fun cache(
     inMemoryCache: Arb<InMemoryCache> = inMemoryCache(),
     persistentCache: Arb<PersistentCache> = persistentCache(),
-  ): Arb<DataConnectCache> = choice(inMemoryCache, persistentCache)
+  ): Arb<DataConnectCache> = Arb.choice(inMemoryCache, persistentCache)
 
   fun dataConnectSettings(
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
-    cache: Arb<DataConnectCache> = Arb.cache(),
+    cache: Arb<DataConnectCache> = cache(),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
     return arbitrary {
