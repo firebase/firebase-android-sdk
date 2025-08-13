@@ -25,3 +25,5 @@ fun createTestSession(suffix: Int): PerfSession {
 }
 
 fun testSessionId(suffix: Int): String = "abc$suffix"
+
+fun testLegacySessionId(suffix: Int): String = "zabc$suffix"

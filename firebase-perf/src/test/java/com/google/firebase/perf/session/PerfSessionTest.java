@@ -15,7 +15,9 @@
 package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.perf.session.FirebaseSessionsHelperKt.isLegacy;
 import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testLegacySessionId;
 import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 import static com.google.firebase.perf.util.Constants.PREFS_NAME;
 import static org.mockito.Mockito.mock;
@@ -222,6 +224,57 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     // Verify that after building the proto objects for PerfSessions, the first session in the array
     // of proto objects is a verbose session
     assertThat(PerfSession.isVerbose(perfSessions[0])).isTrue();
+  }
+
+  @Test
+  public void testBuildAndSortMovesTheVerboseSessionToTop_legacySession() {
+    // Force all the sessions from now onwards to be non-verbose
+    forceNonVerboseSession();
+
+    // Next, create 3 non-verbose sessions, including a legacy session.
+    List<PerfSession> sessions = new ArrayList<>();
+    sessions.add(PerfSession.createWithId(testLegacySessionId(1)));
+    sessions.add(PerfSession.createWithId(testSessionId(2)));
+    sessions.add(PerfSession.createWithId(testSessionId(3)));
+
+    // Force all the sessions from now onwards to be verbose
+    forceVerboseSession();
+
+    // Next, create 2 verbose sessions
+    sessions.add(PerfSession.createWithId(testSessionId(4)));
+    sessions.add(PerfSession.createWithId(testSessionId(5)));
+
+    // Verify that the first session in the list of sessions was not verbose
+    assertThat(sessions.get(0).isVerbose()).isFalse();
+
+    com.google.firebase.perf.v1.PerfSession[] perfSessions =
+        PerfSession.buildAndSort(ImmutableList.copyOf(sessions));
+
+    // Verify that after building the proto objects for PerfSessions, the first session in the array
+    // of proto objects is a verbose session
+    assertThat(PerfSession.isVerbose(perfSessions[0])).isTrue();
+  }
+
+  @Test
+  public void testBuildAndSortKeepsLegacySessionAtTopWithNoVerboseSessions() {
+    // Force all the sessions from now onwards to be non-verbose
+    forceNonVerboseSession();
+
+    // Next, create 3 non-verbose sessions, including a legacy session.
+    List<PerfSession> sessions = new ArrayList<>();
+    sessions.add(PerfSession.createWithId(testLegacySessionId(1)));
+    sessions.add(PerfSession.createWithId(testSessionId(2)));
+    sessions.add(PerfSession.createWithId(testSessionId(3)));
+
+    // Verify that the first session in the list of sessions was legacy.
+    assertThat(isLegacy(sessions.get(0))).isTrue();
+
+    com.google.firebase.perf.v1.PerfSession[] perfSessions =
+        PerfSession.buildAndSort(ImmutableList.copyOf(sessions));
+
+    // Verify that after building the proto objects for PerfSessions, the first session in the array
+    // of proto objects is a legacy session.
+    assertThat(isLegacy(perfSessions[0].getSessionId())).isTrue();
   }
 
   @Test
