@@ -19,20 +19,25 @@ import java.util.Objects
 /**
  * A [DataConnectCache] that caches data in memory.
  *
+ * @param maxSizeBytes The value to use for [InMemoryCache.maxSizeBytes].
+ *
  * @property maxSizeBytes The maximum size, in bytes, of the cache. A value of `0` (zero) indicates
  * that the size is unbounded. This value is _not_ a hard limit but rather a guideline as the exact
  * cache size may not be easily computable and this limit may be briefly exceeded as entries are
  * evicted to bring the cache below the maximum size.
  */
-public class InMemoryCache internal constructor(public val maxSizeBytes: Long) :
+public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTES) :
   DataConnectCache() {
 
-  /** Creates a new instance of [InMemoryCache] using all default values. */
-  public constructor() : this(maxSizeBytes = DEFAULT_MAX_SIZE_BYTES)
-
   init {
-    verifyMaxSizeBytes(maxSizeBytes)
+    require(maxSizeBytes >= 0) {
+      "invalid maxSizeBytes: $maxSizeBytes (must be greater than or equal to zero)"
+    }
   }
+
+  /** Creates and returns a new [InMemoryCache] object with the given property values. */
+  public fun copy(maxSizeBytes: Long = this.maxSizeBytes): InMemoryCache =
+    InMemoryCache(maxSizeBytes = maxSizeBytes)
 
   /**
    * Compares this object with another object for equality.
@@ -71,51 +76,9 @@ public class InMemoryCache internal constructor(public val maxSizeBytes: Long) :
     return "InMemoryCache(maxSizeBytes=$maxSizeBytes)"
   }
 
-  /**
-   * An annotation that indicates to the Kotlin compiler that the builder is part of a DSL, causing
-   * compilation errors for error-prone property access.
-   */
-  @DslMarker public annotation class BuilderDsl
-
-  /** A builder for creating instances of [InMemoryCache]. */
-  @BuilderDsl
-  public interface Builder {
-
-    /**
-     * The value to use for [InMemoryCache.maxSizeBytes].
-     * @throws IllegalArgumentException if the value is less than zero.
-     */
-    public var maxSizeBytes: Long
-  }
-
-  private class BuilderImpl : Builder {
-    private var _maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTES
-
-    override var maxSizeBytes: Long
-      get() = _maxSizeBytes
-      set(value) {
-        _maxSizeBytes = verifyMaxSizeBytes(value)
-      }
-  }
-
   public companion object {
 
-    /** The default value of [InMemoryCache.maxSizeBytes] if not explicitly specified (100 MB). */
+    /** The default value of [InMemoryCache.maxSizeBytes] (100 MB). */
     public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
-
-    private fun verifyMaxSizeBytes(maxSizeBytes: Long): Long {
-      require(maxSizeBytes >= 0) {
-        "invalid maxSizeBytes: $maxSizeBytes " + "(must be greater than or equal to zero)"
-      }
-      return maxSizeBytes
-    }
-
-    /** Builds and returns a new instance of [InMemoryCache] using the given builder. */
-    public fun build(builder: Builder.() -> Unit): InMemoryCache {
-      return BuilderImpl().run {
-        apply(builder)
-        InMemoryCache(maxSizeBytes = maxSizeBytes)
-      }
-    }
   }
 }
