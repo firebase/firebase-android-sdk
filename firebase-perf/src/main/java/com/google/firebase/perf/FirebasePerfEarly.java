@@ -18,10 +18,12 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
+import com.google.firebase.sessions.FirebaseSessions;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.concurrent.Executor;
 
@@ -35,12 +37,18 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
+      FirebaseApp app,
+      @Nullable StartupTime startupTime,
+      Executor uiExecutor,
+      Provider<FirebaseSessions> firebaseSessions) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setApplicationContext(context);
+
+    // Ensure FirebaseSessions was initialized
+    firebaseSessions.get();
 
     // Register FirebasePerformance as a subscriber ASAP - which will start collecting gauges if the
     // FirebaseSession is verbose.
