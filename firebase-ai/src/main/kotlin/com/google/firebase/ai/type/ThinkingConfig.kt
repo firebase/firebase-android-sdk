@@ -47,7 +47,8 @@ private constructor(
       this.includeThoughts = includeThoughts
     }
 
-    public fun build(): ThinkingConfig = ThinkingConfig(thinkingBudget = thinkingBudget)
+    public fun build(): ThinkingConfig =
+      ThinkingConfig(thinkingBudget = thinkingBudget, includeThoughts = includeThoughts)
   }
 
   internal fun toInternal() = Internal(thinkingBudget, includeThoughts)
