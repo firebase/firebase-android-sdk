@@ -142,9 +142,11 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return a different value when only 'host' differs`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) {
-      settings1,
-      newHost ->
+    checkAll(
+      hashEqualityPropTestConfig,
+      Arb.dataConnect.dataConnectSettings(),
+      Arb.dataConnect.string()
+    ) { settings1, newHost ->
       assume { settings1.host.hashCode() != newHost.hashCode() }
       val settings2 = settings1.copy(host = newHost)
       settings1.equals(settings2) shouldBe false
@@ -153,7 +155,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return a different value when only 'sslEnabled' differs`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
+    checkAll(hashEqualityPropTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy(sslEnabled = !settings1.sslEnabled)
       settings1.equals(settings2) shouldBe false
     }
@@ -180,9 +182,8 @@ class DataConnectSettingsUnitTest {
       newHost ->
       val settings2 = settings1.copy(host = newHost)
       assertSoftly {
-        settings1 shouldNotBeSameInstanceAs settings2
-        settings1.equals(settings2) shouldBe false
         settings2.host shouldBeSameInstanceAs newHost
+        settings2.sslEnabled shouldBe settings1.sslEnabled
       }
     }
   }
@@ -194,8 +195,7 @@ class DataConnectSettingsUnitTest {
       newSslEnabled ->
       val settings2 = settings1.copy(sslEnabled = newSslEnabled)
       assertSoftly {
-        settings1 shouldNotBeSameInstanceAs settings2
-        settings1.equals(settings2) shouldBe (settings1.sslEnabled == newSslEnabled)
+        settings2.host shouldBeSameInstanceAs settings1.host
         settings2.sslEnabled shouldBe newSslEnabled
       }
     }
@@ -211,8 +211,6 @@ class DataConnectSettingsUnitTest {
     ) { settings1, newHost, newSslEnabled ->
       val settings2 = settings1.copy(host = newHost, sslEnabled = newSslEnabled)
       assertSoftly {
-        settings1 shouldNotBeSameInstanceAs settings2
-        settings1.equals(settings2) shouldBe false
         settings2.host shouldBeSameInstanceAs newHost
         settings2.sslEnabled shouldBe newSslEnabled
       }
@@ -221,5 +219,13 @@ class DataConnectSettingsUnitTest {
 
   private companion object {
     val propTestConfig = PropTestConfig(iterations = 20)
+
+    // Allow a small number of failures to account for the rare, but possible situation where two
+    // distinct instances produce the same hash code.
+    val hashEqualityPropTestConfig =
+      propTestConfig.copy(
+        minSuccess = propTestConfig.iterations!! - 2,
+        maxFailure = 2,
+      )
   }
 }
