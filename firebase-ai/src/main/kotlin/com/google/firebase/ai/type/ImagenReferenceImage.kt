@@ -124,6 +124,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * @param newDimensions the new dimensions for outpainting. These new dimensions *must* be more
      * than the original image.
      * @param newPosition the placement of the original image within the new outpainted image.
+     * @param dilation the dilation for the outpainting mask. See: [ImagenRawMask].
      */
     @JvmOverloads
     @JvmStatic
@@ -131,6 +132,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       image: ImagenInlineImage,
       newDimensions: Dimensions,
       newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+      dilation: Double = 0.01
     ): List<ImagenReferenceImage> {
       val originalBitmap = image.asBitmap()
       if (
@@ -180,7 +182,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       newImageCanvas.drawBitmap(originalBitmap, null, normalizedImageRectangle, null)
       return listOf(
         ImagenRawImage(newImageBitmap.toImagenInlineImage()),
-        ImagenRawMask(maskBitmap.toImagenInlineImage()),
+        ImagenRawMask(maskBitmap.toImagenInlineImage(), dilation),
       )
     }
   }
