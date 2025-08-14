@@ -31,15 +31,28 @@ import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
-public interface Part {}
+public interface Part {
+  public val isThought: Boolean
+}
 
 /** Represents text or string based data sent to and received from requests. */
-public class TextPart(public val text: String) : Part {
+public class TextPart
+private constructor(public val text: String, public override val isThought: Boolean = false) :
+  Part {
+
+  public constructor(text: String) : this(text, false)
 
   @Serializable internal data class Internal(val text: String) : InternalPart
 }
 
-public class CodeExecutionResultPart(public val outcome: String, public val output: String) : Part {
+public class CodeExecutionResultPart
+private constructor(
+  public val outcome: String,
+  public val output: String,
+  public override val isThought: Boolean = false
+) : Part {
+
+  public constructor(outcome: String, output: String) : this(outcome, output, false)
 
   @Serializable
   internal data class Internal(
@@ -54,7 +67,14 @@ public class CodeExecutionResultPart(public val outcome: String, public val outp
   }
 }
 
-public class ExecutableCodePart(public val language: String, public val code: String) : Part {
+public class ExecutableCodePart
+private constructor(
+  public val language: String,
+  public val code: String,
+  public override val isThought: Boolean = false
+) : Part {
+
+  public constructor(language: String, code: String) : this(language, code, false)
 
   @Serializable
   internal data class Internal(@SerialName("executableCode") val executableCode: ExecutableCode) :
@@ -74,7 +94,11 @@ public class ExecutableCodePart(public val language: String, public val code: St
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-public class ImagePart(public val image: Bitmap) : Part {
+public class ImagePart
+private constructor(public val image: Bitmap, public override val isThought: Boolean = false) :
+  Part {
+
+  public constructor(image: Bitmap) : this(image, false)
 
   internal fun toInlineDataPart() =
     InlineDataPart(
@@ -90,7 +114,14 @@ public class ImagePart(public val image: Bitmap) : Part {
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
-public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part {
+public class InlineDataPart
+private constructor(
+  public val inlineData: ByteArray,
+  public val mimeType: String,
+  public override val isThought: Boolean = false
+) : Part {
+
+  public constructor(inlineData: ByteArray, mimeType: String) : this(inlineData, mimeType, false)
 
   @Serializable
   internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
@@ -110,12 +141,19 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * have a matching `id` field.
  */
 public class FunctionCallPart
-@JvmOverloads
-constructor(
+private constructor(
   public val name: String,
   public val args: Map<String, JsonElement>,
-  public val id: String? = null
+  public val id: String? = null,
+  public override val isThought: Boolean = false
 ) : Part {
+
+  @JvmOverloads
+  public constructor(
+    name: String,
+    args: Map<String, JsonElement>,
+    id: String? = null
+  ) : this(name, args, id, false)
 
   @Serializable
   internal data class Internal(val functionCall: FunctionCall) : InternalPart {
@@ -137,12 +175,19 @@ constructor(
  * @param id Matching `id` for a [FunctionCallPart], if one was provided.
  */
 public class FunctionResponsePart
-@JvmOverloads
-constructor(
+private constructor(
   public val name: String,
   public val response: JsonObject,
-  public val id: String? = null
+  public val id: String? = null,
+  public override val isThought: Boolean = false
 ) : Part {
+
+  @JvmOverloads
+  public constructor(
+    name: String,
+    response: JsonObject,
+    id: String? = null
+  ) : this(name, response, id, false)
 
   @Serializable
   internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
@@ -168,7 +213,14 @@ constructor(
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
-public class FileDataPart(public val uri: String, public val mimeType: String) : Part {
+public class FileDataPart
+private constructor(
+  public val uri: String,
+  public val mimeType: String,
+  public override val isThought: Boolean = false
+) : Part {
+
+  public constructor(uri: String, mimeType: String) : this(uri, mimeType, false)
 
   @Serializable
   internal data class Internal(@SerialName("file_data") val fileData: FileData) : InternalPart {
