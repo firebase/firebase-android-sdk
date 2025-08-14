@@ -30,6 +30,7 @@ import com.google.firebase.perf.injection.components.FirebasePerformanceComponen
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import java.util.concurrent.Executor;
  */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
+
   private static final String LIBRARY_NAME = "fire-perf";
   private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
 
@@ -73,15 +75,17 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .add(Dependency.required(uiExecutor))
+            .add(Dependency.optionalProvider(FirebaseSessions.class))
             .eagerInDefaultApp()
             .factory(
                 container ->
                     new FirebasePerfEarly(
                         container.get(FirebaseApp.class),
                         container.getProvider(StartupTime.class).get(),
-                        container.get(uiExecutor)))
+                        container.get(uiExecutor),
+                        container.getProvider(FirebaseSessions.class)))
             .build(),
-        /**
+        /*
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
          * com.google.firebase.perf.application.AppStateMonitor#onActivityResumed(Activity)}. we use
          * "lazy" dependency for some components that are not required during initialization so as
