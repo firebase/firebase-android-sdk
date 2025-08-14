@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.int
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class UtilUnitTest {
+class AlphanumericStringUtilUnitTest {
 
   @Test
-  fun `ByteArray toAlphaNumericString() interprets the alphabet`() {
+  fun `toAlphaNumericString() interprets the alphabet`() {
     val byteArray =
       byteArrayOf(
         0,
@@ -52,13 +58,13 @@ class UtilUnitTest {
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 1 bit`() {
+  fun `toAlphaNumericString() where the final 5-bit chunk is 1 bit`() {
     byteArrayOf(75, 50).let { it.toAlphaNumericString() shouldBe "bet2" }
     byteArrayOf(75, 51).let { it.toAlphaNumericString() shouldBe "bet3" }
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 2 bits`() {
+  fun `toAlphaNumericString() where the final 5-bit chunk is 2 bits`() {
     byteArrayOf(117, -40, -116, -66, -105, -61, 18, -117, -52).let {
       it.toAlphaNumericString() shouldBe "greathorsebarn2"
     }
@@ -68,61 +74,61 @@ class UtilUnitTest {
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 3 bits`() {
+  fun `toAlphaNumericString() where the final 5-bit chunk is 3 bits`() {
     byteArrayOf(64).let { it.toAlphaNumericString() shouldBe "a2" }
     byteArrayOf(71).let { it.toAlphaNumericString() shouldBe "a9" }
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 4 bits`() {
+  fun `toAlphaNumericString() where the final 5-bit chunk is 4 bits`() {
     byteArrayOf(-58, 117, 48).let { it.toAlphaNumericString() shouldBe "stun2" }
     byteArrayOf(-58, 117, 63).let { it.toAlphaNumericString() shouldBe "stunh" }
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on empty byte array`() {
+  fun `toAlphaNumericString() on empty byte array`() {
     val emptyByteArray = byteArrayOf()
     emptyByteArray.toAlphaNumericString() shouldBe ""
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 0`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value 0`() {
     val byteArray = byteArrayOf(0)
     byteArray.toAlphaNumericString() shouldBe "22"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 1`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value 1`() {
     val byteArray = byteArrayOf(1)
     byteArray.toAlphaNumericString() shouldBe "23"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 0xff`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value 0xff`() {
     val byteArray = byteArrayOf(0xff.toByte())
     byteArray.toAlphaNumericString() shouldBe "z9"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value -1`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value -1`() {
     val byteArray = byteArrayOf(-1)
     byteArray.toAlphaNumericString() shouldBe "z9"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value MIN_VALUE`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value MIN_VALUE`() {
     val byteArray = byteArrayOf(Byte.MIN_VALUE)
     byteArray.toAlphaNumericString() shouldBe "j2"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array with 1 element of value MAX_VALUE`() {
+  fun `toAlphaNumericString() on byte array with 1 element of value MAX_VALUE`() {
     val byteArray = byteArrayOf(Byte.MAX_VALUE)
     byteArray.toAlphaNumericString() shouldBe "h9"
   }
 
   @Test
-  fun `ByteArray toAlphaNumericString() on byte array containing all possible values`() {
+  fun `toAlphaNumericString() on byte array containing all possible values`() {
     val byteArray =
       buildList {
           for (i in 0 until 512) {
@@ -141,6 +147,12 @@ class UtilUnitTest {
         "mynvhkyrwzw2j83a9367ju5sk4eckg8av5ohm4at76womqdbh86tncftt9eynyjc5ap5ommufbxap8pcrd7fpu" +
         "rv3efmqguddfprr4wvpgxwrqzdzj83sd3wbkg8sz6enmqdtn8wxnyju9bf9p8puvdxkqguvhgfvrqzw5jy7sz6" +
         "wrnghu9bxdpytvhgxzsh5wrnynuzfxzsz9xhrz9xzvz3"
+  }
+
+  @Test
+  fun `toAlphaNumericString() with random byte arrays`() = runTest {
+    val byteArrayArb = Arb.byteArray(length = Arb.int(0, 100), content = Arb.byte())
+    checkAll(100_000, byteArrayArb) { byteArray -> byteArray.toAlphaNumericString() }
   }
 }
 
