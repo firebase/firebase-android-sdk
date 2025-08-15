@@ -32,16 +32,34 @@ public class GenerateContentResponse(
   public val usageMetadata: UsageMetadata?,
 ) {
   /**
-   * Convenience field representing all the text parts in the response as a single string, if they
-   * exists.
+   * Convenience field representing all the non-thought text parts in the response as a single
+   * string, if they exists.
    */
   public val text: String? by lazy {
-    candidates.first().content.parts.filterIsInstance<TextPart>().joinToString(" ") { it.text }
+    candidates
+      .first()
+      .content
+      .parts
+      .filter { !it.isThought && it is TextPart }
+      .joinToString(" ") { (it as TextPart).text }
   }
 
   /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
   public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+  }
+
+  /**
+   * Convenience field representing all the text parts in the response that are marked as thoughts
+   * as a single string, if they exists.
+   */
+  public val thoughtSummary: String? by lazy {
+    candidates
+      .first()
+      .content
+      .parts
+      .filter { it.isThought && it is TextPart }
+      .joinToString(" ") { (it as TextPart).text }
   }
 
   /**
