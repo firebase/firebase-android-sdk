@@ -48,6 +48,7 @@ public class FirebasePerfEarly {
     if (startupTime != null) {
       AppStartTrace appStartTrace = AppStartTrace.getInstance();
       appStartTrace.registerActivityLifecycleCallbacks(context);
+      // TODO(b/339891952): Investigate why this runs *before* the activity lifecycle callbacks.
       uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
 
