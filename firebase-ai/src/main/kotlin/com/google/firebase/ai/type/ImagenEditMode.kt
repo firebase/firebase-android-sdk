@@ -25,7 +25,7 @@ public class ImagenEditMode private constructor(internal val value: String) {
     /** Removes an element from an image */
     @JvmField
     public val INPAINT_REMOVAL: ImagenEditMode = ImagenEditMode("EDIT_MODE_INPAINT_REMOVAL")
-    /** Extend the borders of an image outwards */
+    /** Extends the borders of an image outwards */
     @JvmField public val OUTPAINT: ImagenEditMode = ImagenEditMode("EDIT_MODE_OUTPAINT")
   }
 }

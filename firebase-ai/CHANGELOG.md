@@ -1,7 +1,9 @@
 # Unreleased
-
+* [changed] Added better description for requests which fail due to the Gemini API not being
+  configured.
 
 # 17.1.0
+=======
 * [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
   transfer, and subject references (#7075)
 * [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
