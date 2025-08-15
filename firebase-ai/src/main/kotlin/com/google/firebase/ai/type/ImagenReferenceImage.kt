@@ -147,7 +147,6 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * @param newPosition the placement of the original image within the new outpainted image.
      * @param dilation the dilation for the outpainting mask. See: [ImagenRawMask].
      */
-    @JvmOverloads
     @JvmStatic
     public fun generateMaskAndPadForOutpainting(
       image: ImagenInlineImage,
