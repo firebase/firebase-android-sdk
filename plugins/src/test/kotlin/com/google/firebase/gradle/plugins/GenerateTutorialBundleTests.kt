@@ -293,7 +293,9 @@ class GenerateTutorialBundleTests : FunSpec() {
         val (groupId, artifactId, version) = it.split(":")
         "$groupId:$artifactId" to version
       }
-      .onEach { entry -> every { service.latestNonAlphaVersionOrNull(entry.key) } answers { entry.value } }
+      .onEach { entry ->
+        every { service.latestNonAlphaVersionOrNull(entry.key) } answers { entry.value }
+      }
   }
 
   private fun makeTutorial(
