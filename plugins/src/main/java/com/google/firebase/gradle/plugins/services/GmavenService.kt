@@ -151,6 +151,37 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
     controller.latestVersionOrNull(groupId, artifactId)
 
   /**
+   * Gets the latest non-alpha version of the artifact that has been uploaded to GMaven, if any.
+   *
+   * ```
+   * gmaven.latestVersionOrNull("com.google.firebase", "firebase-components") // "18.0.1"
+   * ```
+   *
+   * @param groupId The group to search under.
+   * @param artifactId The artifact to search for.
+   * @return The latest released version as a string, or null if the artifact couldn't be found.
+   * @see latestVersion
+   */
+  fun latestNonAlphaVersionOrNull(groupId: String, artifactId: String) =
+    controller.latestNonAlphaVersionOrNull(groupId, artifactId)
+
+  /**
+   * Gets the latest non-alpha version of the artifact that has been uploaded to GMaven, if any.
+   *
+   * ```
+   * gmaven.latestVersionOrNull("com.google.firebase", "firebase-components") // "18.0.1"
+   * ```
+   *
+   * @param fullArtifactName The artifact to search for, represented as "groupId:artifactId".
+   * @return The latest released version as a string, or null if the artifact couldn't be found.
+   * @see latestVersion
+   */
+  fun latestNonAlphaVersionOrNull(fullArtifactName: String): String? {
+    val (groupId, artifactId) = fullArtifactName.split(":")
+    return latestNonAlphaVersionOrNull(groupId, artifactId)
+  }
+
+  /**
    * Gets the latest version of the artifact that has been uploaded to GMaven, if any.
    *
    * ```
@@ -179,6 +210,24 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
    * @see latestVersionOrNull
    */
   fun latestVersion(groupId: String, artifactId: String) =
+    latestVersionOrNull(groupId, artifactId)
+      ?: throw RuntimeException(
+        "Failed to get the latest version from gmaven for \'$artifactId\'. Has it been published?"
+      )
+
+  /**
+   * Gets the latest non-alpha version of the artifact that has been uploaded to GMaven.
+   *
+   * ```
+   * gmaven.latestVersion("com.google.firebase", "firebase-components") // "18.0.1"
+   * ```
+   *
+   * @param groupId The group to search under.
+   * @param artifactId The artifact to search for.
+   * @return The latest released version as a string.
+   * @see latestNonAlphaVersionOrNull
+   */
+  fun latestNonAlphaVersion(groupId: String, artifactId: String) =
     latestVersionOrNull(groupId, artifactId)
       ?: throw RuntimeException(
         "Failed to get the latest version from gmaven for \'$artifactId\'. Has it been published?"
@@ -403,6 +452,11 @@ class GMavenServiceController(
     return findFirebaseArtifact(groupId, artifactId)?.latestVersion
   }
 
+  /** @see GMavenService.latestVersionOrNull */
+  fun latestNonAlphaVersionOrNull(groupId: String, artifactId: String): String? {
+    return findFirebaseArtifact(groupId, artifactId)?.latestNonAlphaVersion
+  }
+
   /** @see GMavenService.hasReleasedArtifact */
   fun hasReleasedArtifact(groupId: String, artifactId: String): Boolean {
     return findFirebaseArtifact(groupId, artifactId) !== null
@@ -555,6 +609,7 @@ data class GroupIndexArtifact(
   val artifactId: String,
   val versions: List<String>,
   val latestVersion: String = versions.last(),
+  val latestNonAlphaVersion: String = versions.last { !it.contains("alpha") }
 ) {
 
   /**
