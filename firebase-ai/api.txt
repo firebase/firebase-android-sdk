@@ -157,6 +157,9 @@ package com.google.firebase.ai.java {
 
 package com.google.firebase.ai.type {
 
+  public final class APINotConfiguredException extends com.google.firebase.ai.type.FirebaseAIException {
+  }
+
   public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public AudioRecordInitializationFailedException(String message);
   }
