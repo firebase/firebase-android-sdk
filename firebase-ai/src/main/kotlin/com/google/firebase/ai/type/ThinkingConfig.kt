@@ -43,6 +43,14 @@ private constructor(
       this.thinkingBudget = thinkingBudget
     }
 
+    /**
+     * Indicates whether to request the model to include the thoughts parts in the response.
+     *
+     * Keep in mind that once enabled, you should check for the `isThought` property when processing
+     * a `Part` instance to correctly handle both thoughts and the actual response.
+     *
+     * The default value is `false`.
+     */
     public fun setIncludeThoughts(includeThoughts: Boolean): Builder = apply {
       this.includeThoughts = includeThoughts
     }
