@@ -32,47 +32,54 @@ public class GenerateContentResponse(
   public val usageMetadata: UsageMetadata?,
 ) {
   /**
-   * Convenience field representing all the non-thought text parts in the response as a single
-   * string, if they exists.
+   * Convenience field representing all text parts in the response as a single string, if they
+   * exists.
+   *
+   * Any part that's marked as a thought will be ignored. Learn more about
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val text: String? by lazy {
-    candidates
-      .first()
-      .content
-      .parts
-      .filter { !it.isThought && it is TextPart }
-      .joinToString(" ") { (it as TextPart).text }
+    candidates.first().nonThoughtParts().filterIsInstance<TextPart>().joinToString(" ") { it.text }
   }
 
-  /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
+  /**
+   * Convenience field to list all the [FunctionCallPart]s in the response.
+   *
+   * Any part that's marked as a thought will be ignored. Learn more about
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
+   */
   public val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    candidates.first().nonThoughtParts().filterIsInstance<FunctionCallPart>()
   }
 
   /**
    * Convenience field representing all the text parts in the response that are marked as thoughts
    * as a single string, if they exists.
+   *
+   * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val thoughtSummary: String? by lazy {
-    candidates
-      .first()
-      .content
-      .parts
-      .filter { it.isThought && it is TextPart }
-      .joinToString(" ") { (it as TextPart).text }
+    candidates.first().thoughtParts().filterIsInstance<TextPart>().joinToString(" ")
   }
 
   /**
-   * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
+   * Convenience field representing all the [InlineDataPart]s in the first candidate.
    *
    * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
+   *
+   * Any part that's marked as a thought will be ignored. Learn more about
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
-    candidates.first().content.parts.let { parts ->
+    candidates.first().nonThoughtParts().let { parts ->
       parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
         parts.filterIsInstance<InlineDataPart>()
     }
   }
+
+  private fun Candidate.thoughtParts(): List<Part> = content.parts.filter { it.isThought }
+
+  private fun Candidate.nonThoughtParts(): List<Part> = content.parts.filter { !it.isThought }
 
   @Serializable
   internal data class Internal(
