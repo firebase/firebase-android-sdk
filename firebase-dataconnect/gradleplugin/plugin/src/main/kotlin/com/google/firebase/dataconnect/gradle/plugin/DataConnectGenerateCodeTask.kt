@@ -205,8 +205,8 @@ private fun determineCallingConvention(
                 standardOutput = logFileStream
                 errorOutput = logFileStream
                 when (callingConvention) {
-                  CallingConvention.GRADLE -> args("gradle").args("help").args("generate")
-                  CallingConvention.SDK_GENERATE -> args("sdk").args("help").args("generate")
+                  CallingConvention.GRADLE -> args("gradle", "help", "generate")
+                  CallingConvention.SDK_GENERATE -> args("sdk", "help", "generate")
                 }
               }
             }
