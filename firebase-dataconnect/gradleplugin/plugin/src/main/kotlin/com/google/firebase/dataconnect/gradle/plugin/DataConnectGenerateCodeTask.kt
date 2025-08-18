@@ -194,10 +194,9 @@ private fun determineCallingConvention(
         callingConvention,
         logFile.absolutePath
       )
-      val logFileStream = logFile.outputStream()
 
       val exitCode: Int =
-        try {
+        logFile.outputStream().use { logFileStream ->
           execOperations
             .exec { execSpec ->
               execSpec.run {
@@ -212,8 +211,6 @@ private fun determineCallingConvention(
               }
             }
             .exitValue
-        } finally {
-          logFileStream.close()
         }
 
       val callingConventionSupported = exitCode == 0
