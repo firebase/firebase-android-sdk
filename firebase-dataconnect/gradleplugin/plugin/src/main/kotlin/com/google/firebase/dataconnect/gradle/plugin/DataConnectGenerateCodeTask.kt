@@ -160,14 +160,14 @@ private fun DataConnectGenerateCodeTask.runKtfmt(
 
 fun DataConnectGenerateCodeTask.detectedCallingConvention(
   dataConnectExecutable: RegularFileProperty = this.dataConnectExecutable,
-  buildDirectory: File = this.buildDirectory.get().asFile,
+  buildDirectory: DirectoryProperty = this.buildDirectory,
   execOperations: ExecOperations = this.execOperations,
   logger: Logger = this.logger
 ): Provider<CallingConvention> =
   dataConnectExecutable.map {
     determineCallingConvention(
       dataConnectExecutable = it.asFile,
-      workDirectory = File(buildDirectory, "determineCallingConvention"),
+      workDirectory = File(buildDirectory.get().asFile, "determineCallingConvention"),
       execOperations = execOperations,
       logger = logger,
     )
