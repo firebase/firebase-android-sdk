@@ -14,6 +14,9 @@
 
 package com.google.firebase.perf.transport;
 
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSession;
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSessionsList;
+import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -230,6 +233,7 @@ public class TransportManager implements AppStateCallback {
     applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
+        .setProcessName(getProcessName(appContext))
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
                 .setPackageName(packageName)
@@ -297,6 +301,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
+    checkSessionsList(traceMetric.getPerfSessionsList(), "log(TraceMetric)");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -325,6 +330,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
+    checkSessionsList(networkRequestMetric.getPerfSessionsList(), "log(NetworkRequestMetric)");
     executorService.execute(
         () ->
             syncLog(
@@ -354,6 +360,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
+    checkSession(gaugeMetric.getSessionId(), "log(GaugeMetric)");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }

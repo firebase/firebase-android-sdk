@@ -39,6 +39,8 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -80,6 +82,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Before
   public void setUp() {
     currentTime = 0;
+    SessionManager.getInstance().updatePerfSession(PerfSession.createWithId("sessionId"));
     initMocks(this);
     doAnswer((Answer<Timer>) invocationOnMock -> new Timer(currentTime)).when(clock).getTime();
 
