@@ -131,6 +131,17 @@ internal constructor(
     }
   }
 
+
+  /**
+   * Indicates whether the underlying websocket connection is active.
+   */
+  public fun isActive(): Boolean = session.isActive
+
+  /**
+   * Indicates whether an audio conversation is being used for this session object.
+   */
+  public fun isAudioConversationRunning(): Boolean = (audioHelper == null)
+
   /**
    * Receives responses from the model for both streaming and standard requests.
    *

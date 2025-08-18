@@ -219,6 +219,10 @@ public class AudioRecordInitializationFailedException(message: String) :
 public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
 
+/** The request is missing a permission that is required to perform the requested operation. */
+public class PermissionMissingException(message: String, cause: Throwable? = null) :
+  FirebaseAIException(message, cause)
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
