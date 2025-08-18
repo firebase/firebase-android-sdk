@@ -27,6 +27,7 @@ internal class ToolTest {
 
     tool.googleSearch.shouldNotBeNull()
     tool.functionDeclarations.shouldBeNull()
+    tool.codeExecution.shouldBeNull()
   }
 
   @Test
@@ -35,6 +36,15 @@ internal class ToolTest {
     val tool = Tool.functionDeclarations(listOf(functionDeclaration))
 
     tool.functionDeclarations?.first() shouldBe functionDeclaration
+    tool.googleSearch.shouldBeNull()
+    tool.codeExecution.shouldBeNull()
+  }
+
+  @Test
+  fun `codeExecution() creates a tool with code execution`() {
+    val tool = Tool.codeExecution()
+    tool.codeExecution.shouldNotBeNull()
+    tool.functionDeclarations.shouldBeNull()
     tool.googleSearch.shouldBeNull()
   }
 }
