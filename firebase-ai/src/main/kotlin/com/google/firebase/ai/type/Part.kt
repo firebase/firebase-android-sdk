@@ -39,7 +39,21 @@ public class TextPart(public val text: String) : Part {
   @Serializable internal data class Internal(val text: String) : InternalPart
 }
 
-public class CodeExecutionResultPart(public val outcome: String, public val output: String) : Part {
+/* Represents the result of the code execution */
+public enum class Outcome {
+  OUTCOME_UNSPECIFIED,
+  OUTCOME_OK,
+  OUTCOME_FAILED,
+  OUTCOME_DEADLINE_EXCEEDED
+}
+
+/**
+ * Represents the code execution result from the model.
+ * @property outcome The result of the execution.
+ * @property output The stdout from the code execution, or an error message if it failed.
+ */
+public class CodeExecutionResultPart(public val outcome: Outcome, public val output: String) :
+  Part {
 
   @Serializable
   internal data class Internal(
@@ -48,12 +62,17 @@ public class CodeExecutionResultPart(public val outcome: String, public val outp
 
     @Serializable
     internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: String,
+      @SerialName("outcome") val outcome: Outcome,
       val output: String
     )
   }
 }
 
+/**
+ * Represents the code that is executed by the model.
+ * @property language The programming language of the code.
+ * @property code The source code to be executed.
+ */
 public class ExecutableCodePart(public val language: String, public val code: String) : Part {
 
   @Serializable
