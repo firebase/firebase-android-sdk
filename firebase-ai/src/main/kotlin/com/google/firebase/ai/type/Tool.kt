@@ -54,6 +54,7 @@ internal constructor(
       return Tool(functionDeclarations, null, null)
     }
 
+    /** Creates a [Tool] instance that allows the model to use Code Execution. */
     @JvmStatic
     public fun codeExecution(): Tool {
       return Tool(null, null, JsonObject(emptyMap()))

@@ -369,12 +369,16 @@ package com.google.firebase.ai.type {
   public final class GenerateContentResponse {
     ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata);
     method public java.util.List<com.google.firebase.ai.type.Candidate> getCandidates();
+    method public java.util.List<com.google.firebase.ai.type.CodeExecutionResultPart> getCodeExecutionResults();
+    method public java.util.List<com.google.firebase.ai.type.ExecutableCodePart> getExecutableCodeList();
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
     method public String? getText();
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
+    property public final java.util.List<com.google.firebase.ai.type.CodeExecutionResultPart> codeExecutionResults;
+    property public final java.util.List<com.google.firebase.ai.type.ExecutableCodePart> executableCodeList;
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
@@ -1158,12 +1162,14 @@ package com.google.firebase.ai.type {
   }
 
   public final class Tool {
+    method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
   public static final class Tool.Companion {
+    method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
   }
