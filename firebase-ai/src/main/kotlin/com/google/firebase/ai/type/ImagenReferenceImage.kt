@@ -133,6 +133,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
     ): List<ImagenReferenceImage> =
       generateMaskAndPadForOutpainting(image, newDimensions, newPosition, 0.01)
+
     /**
      * Generates two reference images of [ImagenRawImage] and [ImagenRawMask]. These images are
      * generated in this order:
