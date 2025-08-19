@@ -133,7 +133,7 @@ internal class DevAPIUnarySnapshotTests {
     }
 
   @Test
-  fun `thinking function call and though signtaure`() =
+  fun `thinking function call and thought signature`() =
     goldenDevAPIUnaryFile("unary-success-thinking-function-call-thought-summary-signature.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
