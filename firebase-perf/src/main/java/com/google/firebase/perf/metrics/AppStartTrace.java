@@ -323,11 +323,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     logExperimentTrace(this.experimentTtid);
   }
 
-  private boolean isStartedFromBackground() {
+  private void resolveIsStartedFromBackground() {
     // This a fix for b/339891952 where the runnable on the background thread can run before the
     // activity lifecycle callbacks.
     if (mainThreadRunnableTime == null) {
-      return false;
+      return;
     }
 
     if (isStartedFromBackground
@@ -335,13 +335,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       // Reset it to false as it was executed pre-emptively.
       isStartedFromBackground = false;
     }
-
-    return isStartedFromBackground;
   }
 
   @Override
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-    if (isStartedFromBackground() || onCreateTime != null // An activity already called onCreate()
+    resolveIsStartedFromBackground();
+
+    if (isStartedFromBackground || onCreateTime != null // An activity already called onCreate()
     ) {
       return;
     }
@@ -357,7 +357,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
-    if (isStartedFromBackground()
+    if (isStartedFromBackground
         || onStartTime != null // An activity already called onStart()
         || isTooLateToInitUI) {
       return;
@@ -367,7 +367,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   @Override
   public synchronized void onActivityResumed(Activity activity) {
-    if (isStartedFromBackground() || isTooLateToInitUI) {
+    if (isStartedFromBackground || isTooLateToInitUI) {
       return;
     }
 
@@ -460,7 +460,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   @Override
   public void onActivityPaused(Activity activity) {
-    if (isStartedFromBackground()
+    if (isStartedFromBackground
         || isTooLateToInitUI
         || !configResolver.getIsExperimentTTIDEnabled()) {
       return;
@@ -478,7 +478,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   @Keep
   @OnLifecycleEvent(Lifecycle.Event.ON_START)
   public void onAppEnteredForeground() {
-    if (isStartedFromBackground() || isTooLateToInitUI || firstForegroundTime != null) {
+    if (isStartedFromBackground || isTooLateToInitUI || firstForegroundTime != null) {
       return;
     }
     // firstForeground is equivalent to the first Activity onStart. This marks the beginning of
@@ -496,7 +496,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   @Keep
   @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
   public void onAppEnteredBackground() {
-    if (isStartedFromBackground() || isTooLateToInitUI || firstBackgroundTime != null) {
+    if (isStartedFromBackground || isTooLateToInitUI || firstBackgroundTime != null) {
       return;
     }
     firstBackgroundTime = clock.getTime();
