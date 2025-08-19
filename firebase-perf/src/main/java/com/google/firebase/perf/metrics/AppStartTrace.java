@@ -343,8 +343,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
     if (isStartedFromBackground() || onCreateTime != null // An activity already called onCreate()
     ) {
-      AndroidLogger.getInstance()
-          .debug("onActivityCreated: isStartedFromBackground - " + isStartedFromBackground());
       return;
     }
 
@@ -597,8 +595,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       // if no activity has ever been created.
       if (trace.onCreateTime == null) {
         trace.mainThreadRunnableTime = new Timer();
-        AndroidLogger.getInstance()
-            .debug("StartFromBackgroundThreadRunnable: " + trace.onCreateTime);
         trace.isStartedFromBackground = true;
       }
     }
