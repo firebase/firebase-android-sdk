@@ -40,7 +40,7 @@ internal class ThinkingConfigTest {
   }
 
   @Test
-  fun `Include though thinkingConfig`() {
+  fun `Include thought thinkingConfig`() {
     val thinkingConfig = ThinkingConfig.Builder().setIncludeThoughts(true).build()
     // CamelCase or snake_case work equally fine
     val expectedJson =
