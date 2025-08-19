@@ -37,16 +37,17 @@ public interface Part {
 
 /** Represents text or string based data sent to and received from requests. */
 public class TextPart
-private constructor(public val text: String, public override val isThought: Boolean = false) :
+internal constructor(public val text: String, public override val isThought: Boolean = false) :
   Part {
 
   public constructor(text: String) : this(text, false)
 
-  @Serializable internal data class Internal(val text: String) : InternalPart
+  @Serializable
+  internal data class Internal(val text: String, val thought: Boolean? = null) : InternalPart
 }
 
 public class CodeExecutionResultPart
-private constructor(
+internal constructor(
   public val outcome: String,
   public val output: String,
   public override val isThought: Boolean = false
@@ -62,13 +63,14 @@ private constructor(
     @Serializable
     internal data class CodeExecutionResult(
       @SerialName("outcome") val outcome: String,
-      val output: String
+      val output: String,
+      val thought: Boolean? = null
     )
   }
 }
 
 public class ExecutableCodePart
-private constructor(
+internal constructor(
   public val language: String,
   public val code: String,
   public override val isThought: Boolean = false
@@ -83,7 +85,8 @@ private constructor(
     @Serializable
     internal data class ExecutableCode(
       @SerialName("language") val language: String,
-      val code: String
+      val code: String,
+      val thought: Boolean? = null
     )
   }
 }
@@ -95,7 +98,7 @@ private constructor(
  * @param image [Bitmap] to convert into a [Part]
  */
 public class ImagePart
-private constructor(public val image: Bitmap, public override val isThought: Boolean = false) :
+internal constructor(public val image: Bitmap, public override val isThought: Boolean = false) :
   Part {
 
   public constructor(image: Bitmap) : this(image, false)
@@ -103,7 +106,8 @@ private constructor(public val image: Bitmap, public override val isThought: Boo
   internal fun toInlineDataPart() =
     InlineDataPart(
       android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
-      "image/jpeg"
+      "image/jpeg",
+      isThought
     )
 }
 
@@ -115,7 +119,7 @@ private constructor(public val image: Bitmap, public override val isThought: Boo
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
 public class InlineDataPart
-private constructor(
+internal constructor(
   public val inlineData: ByteArray,
   public val mimeType: String,
   public override val isThought: Boolean = false
@@ -128,7 +132,11 @@ private constructor(
     InternalPart {
 
     @Serializable
-    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
+    internal data class InlineData(
+      @SerialName("mimeType") val mimeType: String,
+      val data: Base64,
+      val thought: Boolean? = null
+    )
   }
 }
 
@@ -141,7 +149,7 @@ private constructor(
  * have a matching `id` field.
  */
 public class FunctionCallPart
-private constructor(
+internal constructor(
   public val name: String,
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
@@ -162,7 +170,8 @@ private constructor(
     internal data class FunctionCall(
       val name: String,
       val args: Map<String, JsonElement?>? = null,
-      val id: String? = null
+      val id: String? = null,
+      val thought: Boolean? = null
     )
   }
 }
@@ -175,7 +184,7 @@ private constructor(
  * @param id Matching `id` for a [FunctionCallPart], if one was provided.
  */
 public class FunctionResponsePart
-private constructor(
+internal constructor(
   public val name: String,
   public val response: JsonObject,
   public val id: String? = null,
@@ -196,12 +205,13 @@ private constructor(
     internal data class FunctionResponse(
       val name: String,
       val response: JsonObject,
-      val id: String? = null
+      val id: String? = null,
+      val thought: Boolean? = null
     )
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(name, response, id)
+    return Internal.FunctionResponse(name, response, id, isThought)
   }
 }
 
@@ -214,7 +224,7 @@ private constructor(
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
 public class FileDataPart
-private constructor(
+internal constructor(
   public val uri: String,
   public val mimeType: String,
   public override val isThought: Boolean = false
@@ -229,6 +239,7 @@ private constructor(
     internal data class FileData(
       @SerialName("mime_type") val mimeType: String,
       @SerialName("file_uri") val fileUri: String,
+      val thought: Boolean? = null
     )
   }
 }
@@ -270,31 +281,36 @@ internal object PartSerializer :
 
 internal fun Part.toInternal(): InternalPart {
   return when (this) {
-    is TextPart -> TextPart.Internal(text)
+    is TextPart -> TextPart.Internal(text, isThought)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image))
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image), isThought)
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
         InlineDataPart.Internal.InlineData(
           mimeType,
-          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
+          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS),
+          isThought
         )
       )
     is FunctionCallPart ->
-      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id))
+      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id, isThought))
     is FunctionResponsePart ->
       FunctionResponsePart.Internal(
-        FunctionResponsePart.Internal.FunctionResponse(name, response, id)
+        FunctionResponsePart.Internal.FunctionResponse(name, response, id, isThought)
       )
     is FileDataPart ->
-      FileDataPart.Internal(FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri))
+      FileDataPart.Internal(
+        FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri, thought = isThought)
+      )
     is ExecutableCodePart ->
-      ExecutableCodePart.Internal(ExecutableCodePart.Internal.ExecutableCode(language, code))
+      ExecutableCodePart.Internal(
+        ExecutableCodePart.Internal.ExecutableCode(language, code, isThought)
+      )
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
-        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output)
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output, isThought)
       )
     else ->
       throw com.google.firebase.ai.type.SerializationException(
@@ -312,28 +328,43 @@ private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
 
 internal fun InternalPart.toPublic(): Part {
   return when (this) {
-    is TextPart.Internal -> TextPart(text)
+    is TextPart.Internal -> TextPart(text, thought ?: false)
     is InlineDataPart.Internal -> {
       val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
-        ImagePart(decodeBitmapFromImage(data))
+        ImagePart(decodeBitmapFromImage(data), inlineData.thought ?: false)
       } else {
-        InlineDataPart(data, inlineData.mimeType)
+        InlineDataPart(data, inlineData.mimeType, inlineData.thought ?: false)
       }
     }
     is FunctionCallPart.Internal ->
       FunctionCallPart(
         functionCall.name,
         functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
-        functionCall.id
+        functionCall.id,
+        functionCall.thought ?: false
       )
     is FunctionResponsePart.Internal ->
-      FunctionResponsePart(functionResponse.name, functionResponse.response, functionResponse.id)
-    is FileDataPart.Internal -> FileDataPart(fileData.mimeType, fileData.fileUri)
+      FunctionResponsePart(
+        functionResponse.name,
+        functionResponse.response,
+        functionResponse.id,
+        functionResponse.thought ?: false
+      )
+    is FileDataPart.Internal ->
+      FileDataPart(fileData.mimeType, fileData.fileUri, fileData.thought ?: false)
     is ExecutableCodePart.Internal ->
-      ExecutableCodePart(executableCode.language, executableCode.code)
+      ExecutableCodePart(
+        executableCode.language,
+        executableCode.code,
+        executableCode.thought ?: false
+      )
     is CodeExecutionResultPart.Internal ->
-      CodeExecutionResultPart(codeExecutionResult.outcome, codeExecutionResult.output)
+      CodeExecutionResultPart(
+        codeExecutionResult.outcome,
+        codeExecutionResult.output,
+        codeExecutionResult.thought ?: false
+      )
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
