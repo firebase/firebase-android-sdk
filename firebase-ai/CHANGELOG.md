@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Added support for thoughts and thinking signatures.
 * [changed] Added better description for requests which fail due to the Gemini API not being
   configured.
 * [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
@@ -6,7 +7,7 @@
 
 # 17.1.0
 =======
-* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style 
+* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
   transfer, and subject references (#7075)
 * [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
 
@@ -51,4 +52,3 @@
 
  Note: This feature is in Public Preview, which means that it is not subject to any SLA or
  deprecation policy and could change in backwards-incompatible ways.
-
