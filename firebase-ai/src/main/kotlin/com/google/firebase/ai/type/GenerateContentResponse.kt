@@ -32,8 +32,9 @@ public class GenerateContentResponse(
   public val usageMetadata: UsageMetadata?,
 ) {
   /**
-   * Convenience field representing all the text parts in the response as a single string, if they
-   * exists.
+   * Convenience field representing all the text parts in the response as a single string.
+   *
+   * The value is null if the response contains no [candidates].
    */
   public val text: String? by lazy {
     candidates.firstOrNull()?.content?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") {
@@ -41,7 +42,11 @@ public class GenerateContentResponse(
     }
   }
 
-  /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
+  /**
+   * Convenience field to list all the [FunctionCallPart]s in the response.
+   *
+   * The value is an empty list if the response contains no [candidates].
+   */
   public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.firstOrNull()?.content?.parts?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
@@ -50,6 +55,8 @@ public class GenerateContentResponse(
    * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
    *
    * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
+   *
+   * The value is an empty list if the response contains no [candidates].
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
     candidates
