@@ -37,34 +37,43 @@ public interface Part {
 
 /** Represents text or string based data sent to and received from requests. */
 public class TextPart
-internal constructor(public val text: String, public override val isThought: Boolean = false) :
-  Part {
+internal constructor(
+  public val text: String,
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
+) : Part {
 
-  public constructor(text: String) : this(text, false)
+  public constructor(text: String) : this(text, false, null)
 
   @Serializable
-  internal data class Internal(val text: String, val thought: Boolean? = null) : InternalPart
+  internal data class Internal(
+    val text: String,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart
 }
 
 public class CodeExecutionResultPart
 internal constructor(
   public val outcome: String,
   public val output: String,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(outcome: String, output: String) : this(outcome, output, false)
+  public constructor(outcome: String, output: String) : this(outcome, output, false, null)
 
   @Serializable
   internal data class Internal(
-    @SerialName("codeExecutionResult") val codeExecutionResult: CodeExecutionResult
+    @SerialName("codeExecutionResult") val codeExecutionResult: CodeExecutionResult,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
   ) : InternalPart {
 
     @Serializable
     internal data class CodeExecutionResult(
       @SerialName("outcome") val outcome: String,
-      val output: String,
-      val thought: Boolean? = null
+      val output: String
     )
   }
 }
@@ -73,20 +82,23 @@ public class ExecutableCodePart
 internal constructor(
   public val language: String,
   public val code: String,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(language: String, code: String) : this(language, code, false)
+  public constructor(language: String, code: String) : this(language, code, false, null)
 
   @Serializable
-  internal data class Internal(@SerialName("executableCode") val executableCode: ExecutableCode) :
-    InternalPart {
+  internal data class Internal(
+    @SerialName("executableCode") val executableCode: ExecutableCode,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart {
 
     @Serializable
     internal data class ExecutableCode(
       @SerialName("language") val language: String,
-      val code: String,
-      val thought: Boolean? = null
+      val code: String
     )
   }
 }
@@ -98,16 +110,20 @@ internal constructor(
  * @param image [Bitmap] to convert into a [Part]
  */
 public class ImagePart
-internal constructor(public val image: Bitmap, public override val isThought: Boolean = false) :
-  Part {
+internal constructor(
+  public val image: Bitmap,
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
+) : Part {
 
-  public constructor(image: Bitmap) : this(image, false)
+  public constructor(image: Bitmap) : this(image, false, null)
 
   internal fun toInlineDataPart() =
     InlineDataPart(
       android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
       "image/jpeg",
-      isThought
+      isThought,
+      thoughtSignature
     )
 }
 
@@ -122,21 +138,24 @@ public class InlineDataPart
 internal constructor(
   public val inlineData: ByteArray,
   public val mimeType: String,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(inlineData: ByteArray, mimeType: String) : this(inlineData, mimeType, false)
+  public constructor(
+    inlineData: ByteArray,
+    mimeType: String
+  ) : this(inlineData, mimeType, false, null)
 
   @Serializable
-  internal data class Internal(@SerialName("inlineData") val inlineData: InlineData) :
-    InternalPart {
+  internal data class Internal(
+    @SerialName("inlineData") val inlineData: InlineData,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart {
 
     @Serializable
-    internal data class InlineData(
-      @SerialName("mimeType") val mimeType: String,
-      val data: Base64,
-      val thought: Boolean? = null
-    )
+    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
   }
 }
 
@@ -153,25 +172,29 @@ internal constructor(
   public val name: String,
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
   @JvmOverloads
   public constructor(
     name: String,
     args: Map<String, JsonElement>,
-    id: String? = null
-  ) : this(name, args, id, false)
+    id: String? = null,
+  ) : this(name, args, id, false, null)
 
   @Serializable
-  internal data class Internal(val functionCall: FunctionCall) : InternalPart {
+  internal data class Internal(
+    val functionCall: FunctionCall,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart {
 
     @Serializable
     internal data class FunctionCall(
       val name: String,
       val args: Map<String, JsonElement?>? = null,
-      val id: String? = null,
-      val thought: Boolean? = null
+      val id: String? = null
     )
   }
 }
@@ -188,7 +211,8 @@ internal constructor(
   public val name: String,
   public val response: JsonObject,
   public val id: String? = null,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
   @JvmOverloads
@@ -196,22 +220,25 @@ internal constructor(
     name: String,
     response: JsonObject,
     id: String? = null
-  ) : this(name, response, id, false)
+  ) : this(name, response, id, false, null)
 
   @Serializable
-  internal data class Internal(val functionResponse: FunctionResponse) : InternalPart {
+  internal data class Internal(
+    val functionResponse: FunctionResponse,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart {
 
     @Serializable
     internal data class FunctionResponse(
       val name: String,
       val response: JsonObject,
-      val id: String? = null,
-      val thought: Boolean? = null
+      val id: String? = null
     )
   }
 
   internal fun toInternalFunctionCall(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(name, response, id, isThought)
+    return Internal.FunctionResponse(name, response, id)
   }
 }
 
@@ -227,19 +254,23 @@ public class FileDataPart
 internal constructor(
   public val uri: String,
   public val mimeType: String,
-  public override val isThought: Boolean = false
+  public override val isThought: Boolean,
+  internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(uri: String, mimeType: String) : this(uri, mimeType, false)
+  public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 
   @Serializable
-  internal data class Internal(@SerialName("file_data") val fileData: FileData) : InternalPart {
+  internal data class Internal(
+    @SerialName("file_data") val fileData: FileData,
+    val thought: Boolean? = null,
+    val thoughtSignature: String? = null
+  ) : InternalPart {
 
     @Serializable
     internal data class FileData(
       @SerialName("mime_type") val mimeType: String,
-      @SerialName("file_uri") val fileUri: String,
-      val thought: Boolean? = null
+      @SerialName("file_uri") val fileUri: String
     )
   }
 }
@@ -281,36 +312,51 @@ internal object PartSerializer :
 
 internal fun Part.toInternal(): InternalPart {
   return when (this) {
-    is TextPart -> TextPart.Internal(text, isThought)
+    is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image), isThought)
+        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image)),
+        isThought,
+        thoughtSignature
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
         InlineDataPart.Internal.InlineData(
           mimeType,
-          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS),
-          isThought
-        )
+          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
+        ),
+        isThought,
+        thoughtSignature
       )
     is FunctionCallPart ->
-      FunctionCallPart.Internal(FunctionCallPart.Internal.FunctionCall(name, args, id, isThought))
+      FunctionCallPart.Internal(
+        FunctionCallPart.Internal.FunctionCall(name, args, id),
+        isThought,
+        thoughtSignature
+      )
     is FunctionResponsePart ->
       FunctionResponsePart.Internal(
-        FunctionResponsePart.Internal.FunctionResponse(name, response, id, isThought)
+        FunctionResponsePart.Internal.FunctionResponse(name, response, id),
+        isThought,
+        thoughtSignature
       )
     is FileDataPart ->
       FileDataPart.Internal(
-        FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri, thought = isThought)
+        FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri),
+        isThought,
+        thoughtSignature
       )
     is ExecutableCodePart ->
       ExecutableCodePart.Internal(
-        ExecutableCodePart.Internal.ExecutableCode(language, code, isThought)
+        ExecutableCodePart.Internal.ExecutableCode(language, code),
+        isThought,
+        thoughtSignature
       )
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
-        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output, isThought)
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output),
+        isThought,
+        thoughtSignature
       )
     else ->
       throw com.google.firebase.ai.type.SerializationException(
@@ -328,13 +374,13 @@ private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
 
 internal fun InternalPart.toPublic(): Part {
   return when (this) {
-    is TextPart.Internal -> TextPart(text, thought ?: false)
+    is TextPart.Internal -> TextPart(text, thought ?: false, thoughtSignature)
     is InlineDataPart.Internal -> {
       val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
-        ImagePart(decodeBitmapFromImage(data), inlineData.thought ?: false)
+        ImagePart(decodeBitmapFromImage(data), thought ?: false, thoughtSignature)
       } else {
-        InlineDataPart(data, inlineData.mimeType, inlineData.thought ?: false)
+        InlineDataPart(data, inlineData.mimeType, thought ?: false, thoughtSignature)
       }
     }
     is FunctionCallPart.Internal ->
@@ -342,28 +388,32 @@ internal fun InternalPart.toPublic(): Part {
         functionCall.name,
         functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
         functionCall.id,
-        functionCall.thought ?: false
+        thought ?: false,
+        thoughtSignature
       )
     is FunctionResponsePart.Internal ->
       FunctionResponsePart(
         functionResponse.name,
         functionResponse.response,
         functionResponse.id,
-        functionResponse.thought ?: false
+        thought ?: false,
+        thoughtSignature
       )
     is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri, fileData.thought ?: false)
+      FileDataPart(fileData.mimeType, fileData.fileUri, thought ?: false, thoughtSignature)
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(
         executableCode.language,
         executableCode.code,
-        executableCode.thought ?: false
+        thought ?: false,
+        thoughtSignature
       )
     is CodeExecutionResultPart.Internal ->
       CodeExecutionResultPart(
         codeExecutionResult.outcome,
         codeExecutionResult.output,
-        codeExecutionResult.thought ?: false
+        thought ?: false,
+        thoughtSignature
       )
     else ->
       throw com.google.firebase.ai.type.SerializationException(

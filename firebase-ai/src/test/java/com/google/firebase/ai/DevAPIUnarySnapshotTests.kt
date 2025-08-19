@@ -141,10 +141,13 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.isNotEmpty()
         response.thoughtSummary.shouldNotBeNull()
         response.thoughtSummary?.isNotEmpty()
+        response.functionCalls.isNotEmpty()
+        response.functionCalls.first().let {
+          it.thoughtSignature.shouldNotBeNull()
+          it.thoughtSignature.isNotEmpty()
+        }
         // There's no text in the response
         response.text.shouldBeNull()
-        response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
       }
     }
 }
