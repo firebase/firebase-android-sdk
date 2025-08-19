@@ -64,7 +64,7 @@ public class GenerateContentResponse(
    * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val thoughtSummary: String? by lazy {
-    candidates.firstOrNull()?.thoughtParts()?.filterIsInstance<TextPart>()?.joinToString(" ")
+    candidates.firstOrNull()?.thoughtParts()?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
   }
 
   /**
