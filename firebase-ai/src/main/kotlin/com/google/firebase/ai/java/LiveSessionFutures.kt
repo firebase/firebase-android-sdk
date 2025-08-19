@@ -68,7 +68,6 @@ public abstract class LiveSessionFutures internal constructor() {
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun stopAudioConversation(): ListenableFuture<Unit>
 
-
   /**
    * Stops receiving from the model.
    *

@@ -97,7 +97,7 @@ internal constructor(
   private val requestOptions: RequestOptions,
   httpEngine: HttpClientEngine,
   private val apiClient: String,
-  private val firebaseApp: FirebaseApp,
+  internal val firebaseApp: FirebaseApp,
   private val appVersion: Int = 0,
   private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
