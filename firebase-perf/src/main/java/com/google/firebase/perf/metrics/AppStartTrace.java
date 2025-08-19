@@ -638,4 +638,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   void setIsStartFromBackground() {
     isStartedFromBackground = true;
   }
+
+  @VisibleForTesting
+  void setMainThreadRunnableTime(Timer timer) {
+    mainThreadRunnableTime = timer;
+  }
 }

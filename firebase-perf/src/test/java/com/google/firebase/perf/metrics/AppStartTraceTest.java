@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -253,6 +254,34 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
     verify(transportManager, times(0))
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
+  }
+
+  @Test
+  public void testStartFromBackground_invertedOrder() {
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    Timer fakeTimer = spy(new Timer(currentTime));
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
+    trace.setIsStartFromBackground();
+    trace.setMainThreadRunnableTime(fakeTimer);
+
+    when(fakeTimer.getDurationMicros()).thenReturn(99L);
+    trace.onActivityCreated(activity1, bundle);
+    Assert.assertNotNull(trace.getOnCreateTime());
+    ++currentTime;
+    trace.onActivityStarted(activity1);
+    Assert.assertNotNull(trace.getOnStartTime());
+    ++currentTime;
+    trace.onActivityResumed(activity1);
+    Assert.assertNotNull(trace.getOnResumeTime());
+    // There should be a trace sent since the delay between the main thread and onActivityCreated
+    // is limited.
+    fakeExecutorService.runAll();
+    verify(transportManager, times(1))
         .log(
             traceArgumentCaptor.capture(),
             ArgumentMatchers.nullable(ApplicationProcessState.class));
