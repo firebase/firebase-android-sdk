@@ -75,7 +75,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
-  private static final long MAX_BACKGROUND_THREAD_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
+  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
 
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
@@ -331,7 +331,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     }
 
     if (isStartedFromBackground
-        && (mainThreadRunnableTime.getDurationMicros() < MAX_BACKGROUND_THREAD_DELAY)) {
+        && (mainThreadRunnableTime.getDurationMicros() < MAX_BACKGROUND_RUNNABLE_DELAY)) {
       // Reset it to false as it was executed pre-emptively.
       isStartedFromBackground = false;
     }
