@@ -698,12 +698,14 @@ package com.google.firebase.ai.type {
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
     method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
     method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
     field public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
   }
 
   public static final class ImagenMaskReference.Companion {
     method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
     method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
