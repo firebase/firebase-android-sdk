@@ -39,7 +39,9 @@ public class GenerateContentResponse(
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val text: String? by lazy {
-    candidates.first().nonThoughtParts().filterIsInstance<TextPart>().joinToString(" ") { it.text }
+    candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<TextPart>()?.joinToString(" ") {
+      it.text
+    }
   }
 
   /**
@@ -49,7 +51,7 @@ public class GenerateContentResponse(
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.first().nonThoughtParts().filterIsInstance<FunctionCallPart>()
+    candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
 
   /**
@@ -59,7 +61,7 @@ public class GenerateContentResponse(
    * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val thoughtSummary: String? by lazy {
-    candidates.first().thoughtParts().filterIsInstance<TextPart>().joinToString(" ")
+    candidates.firstOrNull()?.thoughtParts()?.filterIsInstance<TextPart>()?.joinToString(" ")
   }
 
   /**
@@ -71,10 +73,14 @@ public class GenerateContentResponse(
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
-    candidates.first().nonThoughtParts().let { parts ->
-      parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
-        parts.filterIsInstance<InlineDataPart>()
-    }
+    candidates
+      .firstOrNull()
+      ?.nonThoughtParts()
+      ?.let { parts ->
+        parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
+          parts.filterIsInstance<InlineDataPart>()
+      }
+      .orEmpty()
   }
 
   private fun Candidate.thoughtParts(): List<Part> = content.parts.filter { it.isThought }
