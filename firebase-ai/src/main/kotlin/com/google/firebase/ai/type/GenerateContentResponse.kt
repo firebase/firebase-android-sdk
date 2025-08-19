@@ -54,7 +54,7 @@ public class GenerateContentResponse(
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.firstOrNull()?.content?.parts?.filterIsInstance<FunctionCallPart>().orEmpty()
+    candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
 
   /**
