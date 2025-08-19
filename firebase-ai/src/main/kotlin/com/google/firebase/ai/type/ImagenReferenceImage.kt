@@ -131,6 +131,29 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       image: ImagenInlineImage,
       newDimensions: Dimensions,
       newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+    ): List<ImagenReferenceImage> =
+      generateMaskAndPadForOutpainting(image, newDimensions, newPosition, 0.01)
+
+    /**
+     * Generates two reference images of [ImagenRawImage] and [ImagenRawMask]. These images are
+     * generated in this order:
+     * * One [ImagenRawImage] containing the original image, padded out to the new dimensions with
+     * black pixels, with the original image placed at the given placement
+     * * One [ImagenRawMask] of the same dimensions containing white everywhere except at the
+     * placement original image. This is the format expected by Imagen for outpainting requests.
+     *
+     * @param image the original image
+     * @param newDimensions the new dimensions for outpainting. These new dimensions *must* be more
+     * than the original image.
+     * @param newPosition the placement of the original image within the new outpainted image.
+     * @param dilation the dilation for the outpainting mask. See: [ImagenRawMask].
+     */
+    @JvmStatic
+    public fun generateMaskAndPadForOutpainting(
+      image: ImagenInlineImage,
+      newDimensions: Dimensions,
+      newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+      dilation: Double = 0.01
     ): List<ImagenReferenceImage> {
       val originalBitmap = image.asBitmap()
       if (
@@ -180,7 +203,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
       newImageCanvas.drawBitmap(originalBitmap, null, normalizedImageRectangle, null)
       return listOf(
         ImagenRawImage(newImageBitmap.toImagenInlineImage()),
-        ImagenRawMask(maskBitmap.toImagenInlineImage()),
+        ImagenRawMask(maskBitmap.toImagenInlineImage(), dilation),
       )
     }
   }

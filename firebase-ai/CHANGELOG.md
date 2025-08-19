@@ -1,6 +1,8 @@
 # Unreleased
 * [changed] Added better description for requests which fail due to the Gemini API not being
   configured.
+* [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
+  (#7260)
 
 # 17.1.0
 =======
