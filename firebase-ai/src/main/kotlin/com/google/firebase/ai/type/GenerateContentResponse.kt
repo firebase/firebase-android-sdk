@@ -36,12 +36,14 @@ public class GenerateContentResponse(
    * exists.
    */
   public val text: String? by lazy {
-    candidates.first().content.parts.filterIsInstance<TextPart>().joinToString(" ") { it.text }
+    candidates.firstOrNull()?.content?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") {
+      it.text
+    }
   }
 
   /** Convenience field to list all the [FunctionCallPart]s in the response, if they exist. */
   public val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    candidates.firstOrNull()?.content?.parts?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
 
   /**
@@ -50,10 +52,15 @@ public class GenerateContentResponse(
    * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
-    candidates.first().content.parts.let { parts ->
-      parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
-        parts.filterIsInstance<InlineDataPart>()
-    }
+    candidates
+      .firstOrNull()
+      ?.content
+      ?.parts
+      ?.let { parts ->
+        parts.filterIsInstance<ImagePart>().map { it.toInlineDataPart() } +
+          parts.filterIsInstance<InlineDataPart>()
+      }
+      .orEmpty()
   }
 
   @Serializable
