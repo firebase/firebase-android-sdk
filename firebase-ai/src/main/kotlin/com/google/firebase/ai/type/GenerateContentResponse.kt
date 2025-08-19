@@ -32,8 +32,9 @@ public class GenerateContentResponse(
   public val usageMetadata: UsageMetadata?,
 ) {
   /**
-   * Convenience field representing all text parts in the response as a single string, if they
-   * exists.
+   * Convenience field representing all the text parts in the response as a single string.
+   *
+   * The value is null if the response contains no valid text [candidates].
    *
    * Any part that's marked as a thought will be ignored. Learn more about
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
@@ -47,11 +48,13 @@ public class GenerateContentResponse(
   /**
    * Convenience field to list all the [FunctionCallPart]s in the response.
    *
+   * The value is an empty list if the response contains no [candidates].
+   *
    * Any part that's marked as a thought will be ignored. Learn more about
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
   public val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<FunctionCallPart>().orEmpty()
+    candidates.firstOrNull()?.content?.parts?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
 
   /**
@@ -68,6 +71,8 @@ public class GenerateContentResponse(
    * Convenience field representing all the [InlineDataPart]s in the first candidate.
    *
    * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
+   *
+   * The value is an empty list if the response contains no [candidates].
    *
    * Any part that's marked as a thought will be ignored. Learn more about
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).

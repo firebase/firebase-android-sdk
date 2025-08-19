@@ -22,12 +22,12 @@ import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
@@ -42,9 +42,24 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().content.parts.shouldNotBeEmpty()
+      }
+    }
+
+  @Test
+  fun `only prompt feedback reply`() =
+    goldenDevAPIUnaryFile("unary-failure-only-prompt-feedback.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldBeEmpty()
+
+        // Check response from accessors
+        response.text.shouldBeNull()
+        response.functionCalls.shouldBeEmpty()
+        response.inlineDataParts.shouldBeEmpty()
       }
     }
 
@@ -54,9 +69,9 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().content.parts.shouldNotBeEmpty()
       }
     }
 
@@ -66,11 +81,11 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().citationMetadata?.citations?.size shouldBe 4
         response.candidates.first().citationMetadata?.citations?.forEach {
-          it.startIndex shouldNotBe null
-          it.endIndex shouldNotBe null
+          it.startIndex.shouldNotBeNull()
+          it.endIndex.shouldNotBeNull()
         }
       }
     }
