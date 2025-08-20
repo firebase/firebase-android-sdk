@@ -324,16 +324,14 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   private void resolveIsStartedFromBackground() {
-    // This a fix for b/339891952 where the runnable on the background thread can run before the
-    // activity lifecycle callbacks.
+    // If the runnable hasn't run, it isn't a background start.
     if (mainThreadRunnableTime == null) {
       return;
     }
 
-    if (isStartedFromBackground
-        && (mainThreadRunnableTime.getDurationMicros() < MAX_BACKGROUND_RUNNABLE_DELAY)) {
-      // Reset it to false as it was executed pre-emptively.
-      isStartedFromBackground = false;
+    // Set it to true if the runnable ran more than 100ms prior to onActivityCreated()
+    if (mainThreadRunnableTime.getDurationMicros() >= MAX_BACKGROUND_RUNNABLE_DELAY) {
+      isStartedFromBackground = true;
     }
   }
 
@@ -631,11 +629,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   @VisibleForTesting
   Timer getOnResumeTime() {
     return onResumeTime;
-  }
-
-  @VisibleForTesting
-  void setIsStartFromBackground() {
-    isStartedFromBackground = true;
   }
 
   @VisibleForTesting
