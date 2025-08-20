@@ -1,0 +1,7 @@
+{
+    "name": "m169",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-perf"
+    ]
+}
