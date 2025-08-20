@@ -257,7 +257,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityResumed(activity1);
     Assert.assertNotNull(trace.getOnResumeTime());
     fakeExecutorService.runAll();
-    // There should be no trace sent.
+    // There should be a trace sent since the delay between the main thread and onActivityCreated
+    // is limited.
     verify(transportManager, times(1))
         .log(
             traceArgumentCaptor.capture(),
@@ -282,8 +283,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     ++currentTime;
     trace.onActivityResumed(activity1);
     Assert.assertNull(trace.getOnResumeTime());
-    // There should be a trace sent since the delay between the main thread and onActivityCreated
-    // is limited.
+    // There should be no trace sent.
     fakeExecutorService.runAll();
     verify(transportManager, times(0))
         .log(
