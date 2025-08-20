@@ -589,11 +589,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
-      // if no activity has ever been created.
-      if (trace.onCreateTime == null) {
-        trace.mainThreadRunnableTime = new Timer();
-        trace.isStartedFromBackground = true;
-      }
+      trace.mainThreadRunnableTime = new Timer();
     }
   }
 
