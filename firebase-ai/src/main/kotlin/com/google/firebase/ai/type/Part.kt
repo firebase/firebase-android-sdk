@@ -39,14 +39,6 @@ public class TextPart(public val text: String) : Part {
   @Serializable internal data class Internal(val text: String) : InternalPart
 }
 
-/* Represents the result of the code execution */
-public enum class Outcome {
-  OUTCOME_UNSPECIFIED,
-  OUTCOME_OK,
-  OUTCOME_FAILED,
-  OUTCOME_DEADLINE_EXCEEDED
-}
-
 /**
  * Represents the code execution result from the model.
  * @property outcome The result of the execution.
@@ -62,7 +54,7 @@ public class CodeExecutionResultPart(public val outcome: Outcome, public val out
 
     @Serializable
     internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: Outcome,
+      @SerialName("outcome") val outcome: Outcome.Internal,
       val output: String
     )
   }
@@ -261,7 +253,7 @@ internal fun Part.toInternal(): InternalPart {
       ExecutableCodePart.Internal(ExecutableCodePart.Internal.ExecutableCode(language, code))
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
-        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output)
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome.toInternal(), output)
       )
     else ->
       throw com.google.firebase.ai.type.SerializationException(
@@ -300,7 +292,7 @@ internal fun InternalPart.toPublic(): Part {
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(executableCode.language, executableCode.code)
     is CodeExecutionResultPart.Internal ->
-      CodeExecutionResultPart(codeExecutionResult.outcome, codeExecutionResult.output)
+      CodeExecutionResultPart(codeExecutionResult.outcome.toPublic(), codeExecutionResult.output)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

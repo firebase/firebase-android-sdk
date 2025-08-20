@@ -45,18 +45,6 @@ public class GenerateContentResponse(
   }
 
   /**
-   * Convenience field to list all the [CodeExecutionResultPart]s in the response, if they exist.
-   */
-  public val codeExecutionResults: List<CodeExecutionResultPart> by lazy {
-    candidates.first().content.parts.filterIsInstance<CodeExecutionResultPart>()
-  }
-
-  /** Convenience field to list all the [ExecutableCodePart]s in the response, if they exist. */
-  public val executableCodeList: List<ExecutableCodePart> by lazy {
-    candidates.first().content.parts.filterIsInstance<ExecutableCodePart>()
-  }
-
-  /**
    * Convenience field representing all the [InlineDataPart]s in the first candidate, if they exist.
    *
    * This also includes any [ImagePart], but they will be represented as [InlineDataPart] instead.
