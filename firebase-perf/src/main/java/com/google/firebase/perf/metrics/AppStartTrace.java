@@ -324,15 +324,19 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   private void resolveIsStartedFromBackground() {
-    // If the runnable hasn't run, it isn't a background start.
+    // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
+    // already been made.
     if (mainThreadRunnableTime == null) {
       return;
     }
 
     // Set it to true if the runnable ran more than 100ms prior to onActivityCreated()
-    if (mainThreadRunnableTime.getDurationMicros() >= MAX_BACKGROUND_RUNNABLE_DELAY) {
+    if (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY) {
       isStartedFromBackground = true;
     }
+
+    // Set this to null to prevent additional checks if `onActivityCreated()` is called again.
+    mainThreadRunnableTime = null;
   }
 
   @Override
