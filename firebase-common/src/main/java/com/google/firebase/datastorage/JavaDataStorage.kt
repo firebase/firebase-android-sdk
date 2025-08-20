@@ -17,11 +17,15 @@
 package com.google.firebase.datastorage
 
 import android.content.Context
+import android.os.Process
+import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.annotations.concurrent.Background
 import kotlinx.coroutines.flow.firstOrNull
@@ -60,7 +64,15 @@ class JavaDataStorage(val context: Context, val name: String) {
   private val Context.dataStore: DataStore<Preferences> by
     preferencesDataStore(
       name = name,
-      produceMigrations = { listOf(SharedPreferencesMigration(it, name)) }
+      produceMigrations = { listOf(SharedPreferencesMigration(it, name)) },
+      corruptionHandler =
+        ReplaceFileCorruptionHandler { ex ->
+          Log.w(
+            JavaDataStorage::class.simpleName,
+            "CorruptionException in ${name} DataStore running in process ${Process.myPid()}"
+          )
+          emptyPreferences()
+        }
     )
 
   private val dataStore = context.dataStore
