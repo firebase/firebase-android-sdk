@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Added support for code execution.
 * [feature] Added support for returning thought summaries, which are synthesized
   versions of a model's internal reasoning process.
 * [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an exception
