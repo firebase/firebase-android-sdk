@@ -1,6 +1,5 @@
 # Unreleased
 * [fixed] Fixed an ANR on app launch. [#4831]
-* [fixed] Fixed app start traces on API 34+. [#5920]
 
 # 22.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
