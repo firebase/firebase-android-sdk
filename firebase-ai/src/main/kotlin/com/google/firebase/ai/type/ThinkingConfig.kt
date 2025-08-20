@@ -23,12 +23,17 @@ import kotlinx.serialization.Serializable
 public class ThinkingConfig
 private constructor(
   internal val thinkingBudget: Int? = null,
+  internal val includeThoughts: Boolean? = null
 ) {
 
   public class Builder() {
     @JvmField
     @set:JvmSynthetic // hide void setter from Java
     public var thinkingBudget: Int? = null
+
+    @JvmField
+    @set:JvmSynthetic // hide void setter from Java
+    public var includeThoughts: Boolean? = null
 
     /**
      * Indicates the thinking budget in tokens. `0` is disabled. `-1` is dynamic. The default values
@@ -38,13 +43,29 @@ private constructor(
       this.thinkingBudget = thinkingBudget
     }
 
-    public fun build(): ThinkingConfig = ThinkingConfig(thinkingBudget = thinkingBudget)
+    /**
+     * Indicates whether to request the model to include the thoughts parts in the response.
+     *
+     * Keep in mind that once enabled, you should check for the `isThought` property when processing
+     * a `Part` instance to correctly handle both thoughts and the actual response.
+     *
+     * The default value is `false`.
+     */
+    public fun setIncludeThoughts(includeThoughts: Boolean): Builder = apply {
+      this.includeThoughts = includeThoughts
+    }
+
+    public fun build(): ThinkingConfig =
+      ThinkingConfig(thinkingBudget = thinkingBudget, includeThoughts = includeThoughts)
   }
 
-  internal fun toInternal() = Internal(thinkingBudget)
+  internal fun toInternal() = Internal(thinkingBudget, includeThoughts)
 
   @Serializable
-  internal data class Internal(@SerialName("thinking_budget") val thinkingBudget: Int?)
+  internal data class Internal(
+    @SerialName("thinking_budget") val thinkingBudget: Int? = null,
+    val includeThoughts: Boolean? = null
+  )
 }
 
 /**

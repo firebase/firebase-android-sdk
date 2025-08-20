@@ -131,4 +131,23 @@ internal class DevAPIUnarySnapshotTests {
         groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
       }
     }
+
+  @Test
+  fun `thinking function call and thought signature`() =
+    goldenDevAPIUnaryFile("unary-success-thinking-function-call-thought-summary-signature.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isNotEmpty()
+        response.thoughtSummary.shouldNotBeNull()
+        response.thoughtSummary?.isNotEmpty()
+        response.functionCalls.isNotEmpty()
+        response.functionCalls.first().let {
+          it.thoughtSignature.shouldNotBeNull()
+          it.thoughtSignature.isNotEmpty()
+        }
+        // There's no text in the response
+        response.text.shouldBeNull()
+      }
+    }
 }

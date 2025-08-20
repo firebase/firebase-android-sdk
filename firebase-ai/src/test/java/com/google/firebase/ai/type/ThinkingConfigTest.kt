@@ -40,6 +40,21 @@ internal class ThinkingConfigTest {
   }
 
   @Test
+  fun `Include thought thinkingConfig`() {
+    val thinkingConfig = ThinkingConfig.Builder().setIncludeThoughts(true).build()
+    // CamelCase or snake_case work equally fine
+    val expectedJson =
+      """
+      {
+          "includeThoughts": true
+      }
+      """
+        .trimIndent()
+
+    Json.encodeToString(thinkingConfig.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
   fun `thinkingConfig DSL correctly delegates to ThinkingConfig#Builder`() {
     val thinkingConfig = ThinkingConfig.Builder().setThinkingBudget(1024).build()
 

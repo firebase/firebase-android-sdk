@@ -1,4 +1,6 @@
 # Unreleased
+* [feature] Added support for returning thought summaries, which are synthesized
+  versions of a model's internal reasoning process.
 * [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an exception
   when the response contained no candidates.
 * [changed] Added better description for requests which fail due to the Gemini API not being
