@@ -580,8 +580,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
    * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
-   * be executed before any activity's onCreate() method. If app is started from foreground,
-   * activity's onCreate() method is executed before this runnable.
+   * be executed earlier than 100ms of any activity's onCreate() method.
    */
   public static class StartFromBackgroundRunnable implements Runnable {
     private final AppStartTrace trace;
