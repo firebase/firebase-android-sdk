@@ -157,6 +157,9 @@ package com.google.firebase.ai.java {
 
 package com.google.firebase.ai.type {
 
+  public final class APINotConfiguredException extends com.google.firebase.ai.type.FirebaseAIException {
+  }
+
   public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public AudioRecordInitializationFailedException(String message);
   }
@@ -214,6 +217,8 @@ package com.google.firebase.ai.type {
     ctor public CodeExecutionResultPart(String outcome, String output);
     method public String getOutcome();
     method public String getOutput();
+    method public boolean isThought();
+    property public boolean isThought;
     property public final String outcome;
     property public final String output;
   }
@@ -289,7 +294,9 @@ package com.google.firebase.ai.type {
     ctor public ExecutableCodePart(String language, String code);
     method public String getCode();
     method public String getLanguage();
+    method public boolean isThought();
     property public final String code;
+    property public boolean isThought;
     property public final String language;
   }
 
@@ -297,6 +304,8 @@ package com.google.firebase.ai.type {
     ctor public FileDataPart(String uri, String mimeType);
     method public String getMimeType();
     method public String getUri();
+    method public boolean isThought();
+    property public boolean isThought;
     property public final String mimeType;
     property public final String uri;
   }
@@ -331,8 +340,10 @@ package com.google.firebase.ai.type {
     method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
     method public String? getId();
     method public String getName();
+    method public boolean isThought();
     property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
     property public final String? id;
+    property public boolean isThought;
     property public final String name;
   }
 
@@ -361,7 +372,9 @@ package com.google.firebase.ai.type {
     method public String? getId();
     method public String getName();
     method public kotlinx.serialization.json.JsonObject getResponse();
+    method public boolean isThought();
     property public final String? id;
+    property public boolean isThought;
     property public final String name;
     property public final kotlinx.serialization.json.JsonObject response;
   }
@@ -375,6 +388,7 @@ package com.google.firebase.ai.type {
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
     method public String? getText();
+    method public String? getThoughtSummary();
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
     property public final java.util.List<com.google.firebase.ai.type.CodeExecutionResultPart> codeExecutionResults;
@@ -383,6 +397,7 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
     property public final String? text;
+    property public final String? thoughtSummary;
     property public final com.google.firebase.ai.type.UsageMetadata? usageMetadata;
   }
 
@@ -553,7 +568,9 @@ package com.google.firebase.ai.type {
   public final class ImagePart implements com.google.firebase.ai.type.Part {
     ctor public ImagePart(android.graphics.Bitmap image);
     method public android.graphics.Bitmap getImage();
+    method public boolean isThought();
     property public final android.graphics.Bitmap image;
+    property public boolean isThought;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenAspectRatio {
@@ -702,12 +719,14 @@ package com.google.firebase.ai.type {
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
     method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
     method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
     field public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
   }
 
   public static final class ImagenMaskReference.Companion {
     method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
     method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
@@ -776,7 +795,9 @@ package com.google.firebase.ai.type {
     ctor public InlineDataPart(byte[] inlineData, String mimeType);
     method public byte[] getInlineData();
     method public String getMimeType();
+    method public boolean isThought();
     property public final byte[] inlineData;
+    property public boolean isThought;
     property public final String mimeType;
   }
 
@@ -885,6 +906,8 @@ package com.google.firebase.ai.type {
   }
 
   public interface Part {
+    method public boolean isThought();
+    property public abstract boolean isThought;
   }
 
   public final class PartKt {
@@ -1145,6 +1168,8 @@ package com.google.firebase.ai.type {
   public final class TextPart implements com.google.firebase.ai.type.Part {
     ctor public TextPart(String text);
     method public String getText();
+    method public boolean isThought();
+    property public boolean isThought;
     property public final String text;
   }
 
@@ -1154,6 +1179,7 @@ package com.google.firebase.ai.type {
   public static final class ThinkingConfig.Builder {
     ctor public ThinkingConfig.Builder();
     method public com.google.firebase.ai.type.ThinkingConfig build();
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setIncludeThoughts(boolean includeThoughts);
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
   }
 

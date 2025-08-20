@@ -334,6 +334,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("The prompt could not be submitted")) {
     throw PromptBlockedException(message)
   }
+  if (message.contains("genai config not found")) {
+    throw APINotConfiguredException()
+  }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
