@@ -214,12 +214,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
-    ctor public CodeExecutionResultPart(String outcome, String output);
-    method public String getOutcome();
+    ctor public CodeExecutionResultPart(com.google.firebase.ai.type.Outcome outcome, String output);
+    method public com.google.firebase.ai.type.Outcome getOutcome();
     method public String getOutput();
     method public boolean isThought();
     property public boolean isThought;
-    property public final String outcome;
+    property public final com.google.firebase.ai.type.Outcome outcome;
     property public final String output;
   }
 
@@ -382,8 +382,6 @@ package com.google.firebase.ai.type {
   public final class GenerateContentResponse {
     ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata);
     method public java.util.List<com.google.firebase.ai.type.Candidate> getCandidates();
-    method public java.util.List<com.google.firebase.ai.type.CodeExecutionResultPart> getCodeExecutionResults();
-    method public java.util.List<com.google.firebase.ai.type.ExecutableCodePart> getExecutableCodeList();
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
@@ -391,8 +389,6 @@ package com.google.firebase.ai.type {
     method public String? getThoughtSummary();
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
-    property public final java.util.List<com.google.firebase.ai.type.CodeExecutionResultPart> codeExecutionResults;
-    property public final java.util.List<com.google.firebase.ai.type.ExecutableCodePart> executableCodeList;
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
@@ -903,6 +899,19 @@ package com.google.firebase.ai.type {
     method public int getTokenCount();
     property public final com.google.firebase.ai.type.ContentModality modality;
     property public final int tokenCount;
+  }
+
+  public final class Outcome {
+    method public int getOrdinal();
+    property public final int ordinal;
+    field public static final com.google.firebase.ai.type.Outcome.Companion Companion;
+    field public static final com.google.firebase.ai.type.Outcome OUTCOME_DEADLINE_EXCEEDED;
+    field public static final com.google.firebase.ai.type.Outcome OUTCOME_FAILED;
+    field public static final com.google.firebase.ai.type.Outcome OUTCOME_OK;
+    field public static final com.google.firebase.ai.type.Outcome OUTCOME_UNSPECIFIED;
+  }
+
+  public static final class Outcome.Companion {
   }
 
   public interface Part {
