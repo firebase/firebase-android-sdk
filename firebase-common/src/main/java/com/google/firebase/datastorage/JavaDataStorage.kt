@@ -69,7 +69,8 @@ class JavaDataStorage(val context: Context, val name: String) {
         ReplaceFileCorruptionHandler { ex ->
           Log.w(
             JavaDataStorage::class.simpleName,
-            "CorruptionException in ${name} DataStore running in process ${Process.myPid()}"
+            "CorruptionException in ${name} DataStore running in process ${Process.myPid()}",
+            ex
           )
           emptyPreferences()
         }
