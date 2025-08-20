@@ -195,7 +195,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     } else {
       logger.info("Fetching the latest version for an artifact: $fullArtifactName")
 
-      return gmaven.get().latestVersionOrNull(fullArtifactName)
+      return gmaven.get().latestNonAlphaVersionOrNull(fullArtifactName)
         ?: throw RuntimeException(
           "An artifact required for the tutorial bundle is missing from gmaven: $fullArtifactName"
         )

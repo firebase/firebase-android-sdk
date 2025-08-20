@@ -22,10 +22,13 @@ import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenRawImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
 class ImagenTests {
+
+  @Ignore("Currently not supported by backend model")
   @Test
   fun testGenerateAndEditImage() {
     val imageGenerationModel = FirebaseAI.getInstance(app()).imagenModel("imagen-3.0-generate-002")
