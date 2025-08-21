@@ -324,13 +324,14 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   /**
-   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnable` time was set
-   * from the `StartFromBackgroundRunnable` more than 100ms prior to the first time
-   * `onActivityCreated` was called.
+   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnableTime` was set
+   * from the `StartFromBackgroundRunnable`.
    * <p>
-   * If it was called less than 100ms before `onActivityCreated` the assumption is that it was a
-   * change in order on API 34+ devices where the runnable executes before the activity
-   * lifecycle callbacks.
+   * If it's prior to API 34, it's always set to true if `mainThreadRunnableTime` was set.
+   * <p>
+   * If it's on or after API 34, and it was called less than 100ms before `onActivityCreated`, the
+   * assumption is that it was called immediately before the activity lifecycle callbacks in a
+   * foreground start.
    * See https://github.com/firebase/firebase-android-sdk/issues/5920.
    */
   private void resolveIsStartedFromBackground() {
@@ -340,12 +341,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
 
-    // Set it to true if the runnable ran more than 100ms prior to onActivityCreated()
-    if (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY) {
+    // If the `minaThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
+    // a background start.
+    // Otherwise it's assumed to be a background start if the runnable was set more than 100ms
+    // before the first `onActivityCreated` call.
+    // TODO(b/339891952): Investigate removing the API check, and setting a more precise delay.
+    if ((Build.VERSION.SDK_INT < 34)
+        || (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY)) {
       isStartedFromBackground = true;
     }
 
-    // Set this to null to prevent additional checks if `onActivityCreated()` is called again.
+    // Set this to null to prevent additional checks.
     mainThreadRunnableTime = null;
   }
 
