@@ -156,7 +156,6 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
  *
  * For the Gemini Developer API, see
  * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
- * .
  */
 public class APINotConfiguredException
 internal constructor(message: String, cause: Throwable? = null) :
