@@ -75,6 +75,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
+  // If the `mainThreadRunnableTime` was set earlier than this this duration, the assumption
+  // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
   private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
 
   // Core pool size 0 allows threads to shut down if they're idle
@@ -329,7 +331,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * <p>
    * If it's prior to API 34, it's always set to true if `mainThreadRunnableTime` was set.
    * <p>
-   * If it's on or after API 34, and it was called less than 100ms before `onActivityCreated`, the
+   * If it's on or after API 34, and it was called less than `MAX_BACKGROUND_RUNNABLE_DELAY`
+   * before `onActivityCreated`, the
    * assumption is that it was called immediately before the activity lifecycle callbacks in a
    * foreground start.
    * See https://github.com/firebase/firebase-android-sdk/issues/5920.
@@ -343,7 +346,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     // If the `minaThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
     // a background start.
-    // Otherwise it's assumed to be a background start if the runnable was set more than 100ms
+    // Otherwise it's assumed to be a background start if the runnable was set more than
+    // `MAX_BACKGROUND_RUNNABLE_DELAY`
     // before the first `onActivityCreated` call.
     // TODO(b/339891952): Investigate removing the API check, and setting a more precise delay.
     if ((Build.VERSION.SDK_INT < 34)
