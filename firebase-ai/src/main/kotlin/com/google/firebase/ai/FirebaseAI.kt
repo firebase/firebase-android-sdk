@@ -241,7 +241,7 @@ internal constructor(
     ): FirebaseAI {
       val multiResourceComponent = app[FirebaseAIMultiResourceComponent::class.java]
       return multiResourceComponent.get(
-        InstanceKey(backend.location, backend, useLimitedUseAppCheckTokens)
+        InstanceKey(backend, useLimitedUseAppCheckTokens)
       )
     }
 

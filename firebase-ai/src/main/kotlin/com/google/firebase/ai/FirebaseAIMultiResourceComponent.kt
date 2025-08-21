@@ -55,7 +55,6 @@ internal class FirebaseAIMultiResourceComponent(
 }
 
 internal data class InstanceKey(
-  val location: String,
   val backend: GenerativeBackend,
   val useLimitedUseAppCheckTokens: Boolean
 )
