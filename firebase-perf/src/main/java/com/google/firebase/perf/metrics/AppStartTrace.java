@@ -323,6 +323,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     logExperimentTrace(this.experimentTtid);
   }
 
+  /**
+   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnable` time was set
+   * from the `StartFromBackgroundRunnable` more than 100ms prior to the first time
+   * `onActivityCreated` was called.
+   * <p>
+   * If it was called less than 100ms before `onActivityCreated` the assumption is that it was a
+   * change in order on API 34+ devices where the runnable executes before the activity
+   * lifecycle callbacks.
+   * See https://github.com/firebase/firebase-android-sdk/issues/5920.
+   */
   private void resolveIsStartedFromBackground() {
     // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
     // already been made.
@@ -593,6 +603,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
+      // Only set the `mainThreadRunnableTime` if `onActivityCreate` has never been called.
       if (trace.onCreateTime == null) {
         trace.mainThreadRunnableTime = new Timer();
       }
