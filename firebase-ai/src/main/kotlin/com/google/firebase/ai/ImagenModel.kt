@@ -41,6 +41,9 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
+ *
+ * See the documentation for a list of
+ * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
 @PublicPreviewAPI
 public class ImagenModel

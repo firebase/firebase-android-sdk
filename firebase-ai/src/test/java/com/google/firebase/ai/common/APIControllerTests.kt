@@ -41,7 +41,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
