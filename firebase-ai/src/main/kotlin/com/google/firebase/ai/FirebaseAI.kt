@@ -225,12 +225,12 @@ internal constructor(
      *
      * _This flag is set to `false` by default._
      *
-     * > **Important:** Replay protection is not currently supported for the FirebaseAI backend. >
-     * While this feature is being developed, you can still migrate to using > limited-use tokens.
-     * Because limited-use tokens are backwards compatible, you can still > use them without replay
-     * protection. Due to their shorter TTL over standard App Check > tokens, they still provide a
-     * security benefit. > Migrating to limited-use tokens sooner minimizes disruption when support
-     * for replay > protection is added.
+     * **Important:** Replay protection is not currently supported for the FirebaseAI backend.
+     * While this feature is being developed, you can still migrate to using limited-use tokens.
+     * Because limited-use tokens are backwards compatible, you can still use them without replay
+     * protection. Due to their shorter TTL over standard App Check tokens, they still provide a
+     * security benefit. Migrating to limited-use tokens sooner minimizes disruption when support
+     * for replay protection is added.
      */
     @JvmStatic
     @JvmOverloads
