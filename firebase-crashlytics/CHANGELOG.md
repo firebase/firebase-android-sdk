@@ -1,5 +1,5 @@
 # Unreleased
-
+** [changed] Updated `firebase-sessions` dependency to v3.0.1
 
 # 20.0.0
 * [changed] **Breaking Change**: Removed deprecated public constructor `KeyValueBuilder(crashlytics: FirebaseCrashlytics)`
@@ -683,12 +683,12 @@ The following release notes describe changes in the new SDK.
     <li>If you're using [crashlytics] for NDK crash reporting in your app for
       the first time, follow the
       <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
-        started instructions</a>.
+	started instructions</a>.
     </li>
     <li>If you're upgrading from the legacy Fabric SDK to the
       [firebase_crashlytics] SDK, follow the
       <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
-        instructions</a> to update your app with the following SDK changes.
+	instructions</a> to update your app with the following SDK changes.
     </li>
   </ul>
 </aside>
@@ -702,4 +702,3 @@ The following release notes describe changes in the new SDK.
   from your `AndroidManifest.xml` file.
 * [removed] The `fabric.properties` and `crashlytics.properties` files are no
   longer supported. Remove them from your app.
-
