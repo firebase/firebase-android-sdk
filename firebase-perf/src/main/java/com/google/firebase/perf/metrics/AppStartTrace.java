@@ -75,8 +75,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
-  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
-
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
@@ -113,8 +111,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final @Nullable Timer processStartTime;
   private final @Nullable Timer firebaseClassLoadTime;
   private Timer onCreateTime = null;
-
-  private Timer mainThreadRunnableTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstForegroundTime = null;
@@ -323,26 +319,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     logExperimentTrace(this.experimentTtid);
   }
 
-  private void resolveIsStartedFromBackground() {
-    // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
-    // already been made.
-    if (mainThreadRunnableTime == null) {
-      return;
-    }
-
-    // Set it to true if the runnable ran more than 100ms prior to onActivityCreated()
-    if (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY) {
-      isStartedFromBackground = true;
-    }
-
-    // Set this to null to prevent additional checks if `onActivityCreated()` is called again.
-    mainThreadRunnableTime = null;
-  }
-
   @Override
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-    resolveIsStartedFromBackground();
-
     if (isStartedFromBackground || onCreateTime != null // An activity already called onCreate()
     ) {
       return;
@@ -582,7 +560,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
    * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
-   * be executed earlier than 100ms of any activity's onCreate() method.
+   * be executed before any activity's onCreate() method. If app is started from foreground,
+   * activity's onCreate() method is executed before this runnable.
    */
   public static class StartFromBackgroundRunnable implements Runnable {
     private final AppStartTrace trace;
@@ -593,7 +572,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
-      trace.mainThreadRunnableTime = new Timer();
+      // if no activity has ever been created.
+      if (trace.onCreateTime == null) {
+        trace.isStartedFromBackground = true;
+      }
     }
   }
 
@@ -632,7 +614,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   @VisibleForTesting
-  void setMainThreadRunnableTime(Timer timer) {
-    mainThreadRunnableTime = timer;
+  void setIsStartFromBackground() {
+    isStartedFromBackground = true;
   }
 }
