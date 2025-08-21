@@ -4,7 +4,7 @@
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
 androidGradlePlugin = "8.6.1"
-androidx-core = "1.17.0"
+androidx-core = "1.13.1"
 androidx-test-core = "1.5.0"
 androidx-test-junit = "1.1.5"
 androidx-test-truth = "1.6.0"
