@@ -304,7 +304,7 @@ class ToolTests {
               ToolConfig(
                 functionCallingConfig = FunctionCallingConfig(FunctionCallingConfig.Mode.ANY)
               ),
-            tools = listOf(Tool(functions.toList())),
+            tools = listOf(Tool.functionDeclarations(functions.toList())),
           )
       return model
     }

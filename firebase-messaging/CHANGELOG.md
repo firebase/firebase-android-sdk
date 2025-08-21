@@ -1,8 +1,15 @@
 # Unreleased
 
 
+# 25.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
+
 # 24.1.2
-* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service 
+* [changed] Added a NamedThreadFactory to WithinAppServiceConnection's service
   connection Executor.
 
 

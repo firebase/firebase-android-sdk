@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("firebase-library")
   id("kotlin-android")
+  id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
 }
 
@@ -30,7 +31,6 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{firebase_ai_logic}}")
     versionName.set("ai")
-    hasKTX.set(false)
   }
 }
 
@@ -40,7 +40,7 @@ android {
   namespace = "com.google.firebase.ai"
   compileSdk = 34
   defaultConfig {
-    minSdk = 21
+    minSdk = rootProject.extra["minSdkVersion"] as Int
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -95,9 +95,9 @@ dependencies {
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.ktor.client.logging)
 
-  api("com.google.firebase:firebase-common:21.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-common:22.0.0")
+  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation("com.google.firebase:firebase-annotations:17.0.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)

@@ -31,7 +31,7 @@ fun Project.isAndroid(): Boolean =
   }
 
 fun toBoolean(value: Any?): Boolean {
-  val trimmed = value?.toString()?.trim()?.toLowerCase()
+  val trimmed = value?.toString()?.trim()?.lowercase()
   return "true" == trimmed || "y" == trimmed || "1" == trimmed
 }
 

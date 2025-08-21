@@ -21,6 +21,7 @@ plugins {
   id("firebase-vendor")
   id("kotlin-android")
   id("kotlin-kapt")
+  id("kotlinx-serialization")
 }
 
 firebaseLibrary {
@@ -28,7 +29,8 @@ firebaseLibrary {
 
   testLab.enabled = true
   publishJavadoc = false
-  releaseNotes { enabled.set(false) }
+
+  releaseNotes { enabled = false }
 }
 
 android {
@@ -52,7 +54,10 @@ android {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    baseline = file("lint-baseline.xml")
+    targetSdk = targetSdkVersion
+  }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
@@ -60,23 +65,23 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api("com.google.firebase:firebase-common:22.0.0")
 
-  api("com.google.firebase:firebase-components:18.0.0")
+  api("com.google.firebase:firebase-components:19.0.0")
   api("com.google.firebase:firebase-installations-interop:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
-  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-annotations:17.0.0")
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
 
   implementation("com.google.android.datatransport:transport-api:3.2.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
-  implementation(libs.androidx.datastore.preferences)
+  implementation(libs.androidx.datastore)
+  implementation(libs.kotlinx.serialization.json)
 
   vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
 
@@ -84,6 +89,7 @@ dependencies {
 
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {

@@ -25,7 +25,6 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenSafetySettings
-import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -52,7 +51,8 @@ internal constructor(
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for content generation.
    * @param safetySettings The safety bounds the model will abide to during content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
@@ -107,7 +107,8 @@ internal constructor(
   /**
    * Instantiates a new [LiveGenerationConfig] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
    * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
@@ -124,6 +125,7 @@ internal constructor(
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ): LiveGenerativeModel {
+
     if (!modelName.startsWith(GEMINI_MODEL_NAME_PREFIX)) {
       Log.w(
         TAG,
@@ -138,7 +140,7 @@ internal constructor(
         GenerativeBackendEnum.VERTEX_AI ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
-          throw InvalidStateException("Live Model is not yet available on the Google AI backend")
+          "projects/${firebaseApp.options.projectId}/models/${modelName}"
       },
       firebaseApp.options.apiKey,
       firebaseApp,
@@ -150,13 +152,15 @@ internal constructor(
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
+      backend
     )
   }
 
   /**
    * Instantiates a new [ImagenModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"imagen-3.0-generate-001"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for image generation.
    * @param safetySettings The safety bounds the model will abide by during image generation.
    * @param requestOptions Configuration options for sending requests to the backend.

@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.annotations.concurrent.Lightweight;
@@ -63,6 +64,20 @@ class TaskCache<T> {
           }
           TaskUtils.shadowTask(taskCompletionSource, cachedTask);
         });
+    return taskCompletionSource.getTask();
+  }
+
+  /**
+   * Returns a task that completes when this object's internal sequential executor has finished
+   * processing all enqueued operations.
+   * <p>
+   * This method should never be called in production code; however, it is useful in unit tests to
+   * ensure deterministic behavior.
+   */
+  @VisibleForTesting
+  Task<Void> newTaskForSequentialExecutorFlush() {
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    sequentialExecutor.execute(() -> taskCompletionSource.setResult(null));
     return taskCompletionSource.getTask();
   }
 

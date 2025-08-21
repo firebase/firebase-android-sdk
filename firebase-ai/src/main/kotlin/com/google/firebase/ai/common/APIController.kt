@@ -25,6 +25,8 @@ import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.GRpcErrorResponse
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -99,6 +101,7 @@ internal constructor(
   private val appVersion: Int = 0,
   private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
+  private val backend: GenerativeBackend? = null
 ) {
 
   constructor(
@@ -108,6 +111,7 @@ internal constructor(
     apiClient: String,
     firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
+    backend: GenerativeBackend? = null,
   ) : this(
     key,
     model,
@@ -117,7 +121,8 @@ internal constructor(
     firebaseApp,
     getVersionNumber(firebaseApp),
     firebaseApp.options.applicationId,
-    headerProvider
+    headerProvider,
+    backend
   )
 
   private val model = fullModelName(model)
@@ -161,7 +166,13 @@ internal constructor(
     }
 
   private fun getBidiEndpoint(location: String): String =
-    "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+    when (backend?.backend) {
+      GenerativeBackendEnum.VERTEX_AI,
+      null ->
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+      GenerativeBackendEnum.GOOGLE_AI ->
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
+    }
 
   suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
@@ -322,6 +333,9 @@ private suspend fun validateResponse(response: HttpResponse) {
   }
   if (message.contains("The prompt could not be submitted")) {
     throw PromptBlockedException(message)
+  }
+  if (message.contains("genai config not found")) {
+    throw APINotConfiguredException()
   }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =

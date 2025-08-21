@@ -1,5 +1,8 @@
 # Unreleased
+* [changed] Updated `firebase-crashlytics` dependency to 20.0.1
 
+# 20.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 19.4.4
 * [changed] Updated `firebase-crashlytics` dependency to v19.4.4
@@ -240,12 +243,12 @@ change. The following release notes describe changes in the new SDK.
     <li>If you're using [crashlytics] for NDK crash reporting in your app for
       the first time, follow the
       <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
-        started instructions</a>.
+	started instructions</a>.
     </li>
     <li>If you're upgrading from the legacy Fabric SDK to the
       [firebase_crashlytics] SDK for NDK crash reporting, follow the
       <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
-        instructions</a> to update your app with the following SDK changes.
+	instructions</a> to update your app with the following SDK changes.
     </li>
   </ul>
 </aside>
@@ -256,4 +259,3 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
-

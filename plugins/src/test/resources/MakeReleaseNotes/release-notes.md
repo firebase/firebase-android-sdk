@@ -45,12 +45,3 @@ Note: We did some super cool stuff here!
 * {{unchanged}} Idk ig we did some stuff
 
 * {{removed}} some stuff that we didn't really like got removed
-
-#### {{firebase_storage_full}} Kotlin extensions version 24.6.0 {: #storage-ktx_v24-6-0}
-
-* {{feature}} Added
-  [`Query.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects)
-  and
-  [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
-  Kotlin Flows to listen for realtime updates and convert its values to a
-  specific type.

@@ -22,9 +22,12 @@ import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
@@ -39,9 +42,24 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().content.parts.shouldNotBeEmpty()
+      }
+    }
+
+  @Test
+  fun `only prompt feedback reply`() =
+    goldenDevAPIUnaryFile("unary-failure-only-prompt-feedback.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldBeEmpty()
+
+        // Check response from accessors
+        response.text.shouldBeNull()
+        response.functionCalls.shouldBeEmpty()
+        response.inlineDataParts.shouldBeEmpty()
       }
     }
 
@@ -51,9 +69,9 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
+        response.candidates.first().content.parts.shouldNotBeEmpty()
       }
     }
 
@@ -63,11 +81,11 @@ internal class DevAPIUnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
+        response.candidates.shouldNotBeEmpty()
         response.candidates.first().citationMetadata?.citations?.size shouldBe 4
         response.candidates.first().citationMetadata?.citations?.forEach {
-          it.startIndex shouldNotBe null
-          it.endIndex shouldNotBe null
+          it.startIndex.shouldNotBeNull()
+          it.endIndex.shouldNotBeNull()
         }
       }
     }
@@ -94,5 +112,42 @@ internal class DevAPIUnarySnapshotTests {
   fun `unknown model`() =
     goldenDevAPIUnaryFile("unary-failure-unknown-model.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
+    }
+
+  // This test case can be removed once b/422779395 is
+  // fixed.
+  @Test
+  fun `google search grounding empty grounding chunks`() =
+    goldenDevAPIUnaryFile("unary-success-google-search-grounding-empty-grounding-chunks.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
+      }
+    }
+
+  @Test
+  fun `thinking function call and thought signature`() =
+    goldenDevAPIUnaryFile("unary-success-thinking-function-call-thought-summary-signature.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isNotEmpty()
+        response.thoughtSummary.shouldNotBeNull()
+        response.thoughtSummary?.isNotEmpty()
+        response.functionCalls.isNotEmpty()
+        response.functionCalls.first().let {
+          it.thoughtSignature.shouldNotBeNull()
+          it.thoughtSignature.isNotEmpty()
+        }
+        // There's no text in the response
+        response.text.shouldBeNull()
+      }
     }
 }

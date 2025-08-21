@@ -1,6 +1,13 @@
 # Unreleased
 
 
+# 19.0.0
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+* [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin extensions
+  (KTX) module and removed it from the Firebase Android BoM. Instead, use the KTX APIs
+  from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
+
 # 18.0.0
 * [changed] Bump internal dependencies
 
@@ -31,7 +38,7 @@ updates.
 * [changed] Internal changes to improve startup time
 
 # 17.1.2
-* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 
+* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was
   causing a nondeterministic crash on startup.
 
 # 17.1.0

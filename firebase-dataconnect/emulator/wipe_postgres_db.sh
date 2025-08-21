@@ -19,10 +19,14 @@
 # server is already running (it will just be a no-op).
 
 set -euo pipefail
-set -xv
+
+function run_command {
+  echo "$*"
+  "$@"
+}
 
 # Shut down the pod, if it's running
-podman pod stop dataconnect_postgres
+run_command podman pod stop dataconnect_postgres
 
 # Delete the postgresql database
-podman volume rm --force dataconnect_pgdata
+run_command podman volume rm --force dataconnect_pgdata

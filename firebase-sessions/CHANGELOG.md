@@ -1,14 +1,16 @@
 # Unreleased
+* [fixed] Bumped DataStore dependency to include the mitigation for
+ `CorruptionException` released in version `1.1.5`. See Jetpacks' DataStore
+ [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
 
+# 3.0.0
+* [changed] Added internal api for Crashlytics to notify Sessions of crash events
+* [changed] Use multi-process DataStore instead of Preferences DataStore
+* [changed] Update the heuristic to detect cold app starts
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 2.1.1
 * [unchanged] Updated to keep SDK versions aligned.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
 
 # 2.1.0
 * [changed] Add warning for known issue b/328687152
@@ -16,20 +18,8 @@ updates.
 * [changed] Updated datastore dependency to v1.1.3 to
   fix [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
 
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
-
 # 2.0.9
 * [fixed] Make AQS resilient to background init in multi-process apps.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
 
 # 2.0.7
 * [fixed] Removed extraneous logs that risk leaking internal identifiers.
@@ -67,4 +57,3 @@ updates.
 
 # 1.0.0
 * [feature] Initial Firebase sessions library.
-

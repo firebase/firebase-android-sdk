@@ -1,5 +1,29 @@
 # Unreleased
+* [feature] Added support for returning thought summaries, which are synthesized
+  versions of a model's internal reasoning process.
+* [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an exception
+  when the response contained no candidates.
+* [changed] Added better description for requests which fail due to the Gemini API not being
+  configured.
+* [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
+  (#7260)
 
+# 17.1.0
+=======
+* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
+  transfer, and subject references (#7075)
+* [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
+
+# 17.0.0
+* [feature] Added support for configuring the "thinking" budget when using Gemini
+  2.5 series models. (#6990)
+* [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
+    * **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`, `retrievalQueries` in `GroundingMetadata` to be non-optional.
+* [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
+  `countTokens()`.
+* [feature] Added new overloads for `generateContent()`, `generateContentStream()` and
+ `countTokens()` that take a `List<Content>` parameter.
+* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
 
 # 16.2.0
 * [changed] Deprecate the `totalBillableCharacters` field (only usable with pre-2.0 models). (#7042)
@@ -31,4 +55,3 @@
 
  Note: This feature is in Public Preview, which means that it is not subject to any SLA or
  deprecation policy and could change in backwards-incompatible ways.
-
