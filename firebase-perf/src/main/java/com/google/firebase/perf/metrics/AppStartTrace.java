@@ -75,7 +75,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
-  // If the `mainThreadRunnableTime` was set earlier than this this duration, the assumption
+  // If the `mainThreadRunnableTime` was set within this duration, the assumption
   // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
   private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
 
