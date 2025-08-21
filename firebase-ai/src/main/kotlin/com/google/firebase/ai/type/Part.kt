@@ -132,7 +132,7 @@ internal constructor(
  *
  * @param inlineData the binary data as a [ByteArray]
  * @param mimeType an IANA standard MIME type. For supported values, see the
- * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
+ * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
 public class InlineDataPart
 internal constructor(
