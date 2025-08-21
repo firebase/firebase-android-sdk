@@ -7,6 +7,11 @@
   configured.
 * [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
   (#7260)
+* [feature] Added a new configuration option to enable limited-use App Check tokens for attesting
+  Firebase AI Logic requests. This enhances security against replay attacks. To use this feature,
+  configure it explicitly via the new `useLimitedUseAppCheckTokens` parameter when initializing
+  `FirebaseAI`. We recommend migrating to limited-use tokens now, so your app will be ready to take
+  advantage of replay protection when it becomes available for Firebase AI Logic. 
 
 # 17.1.0
 =======
