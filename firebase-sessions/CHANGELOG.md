@@ -1,5 +1,7 @@
 # Unreleased
-
+* [fixed] Bumped DataStore dependency to include the mitigation for
+ `CorruptionException` released in version `1.1.5`. See Jetpacks' DataStore
+ [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
 
 # 3.0.0
 * [changed] Added internal api for Crashlytics to notify Sessions of crash events
@@ -55,4 +57,3 @@
 
 # 1.0.0
 * [feature] Initial Firebase sessions library.
-

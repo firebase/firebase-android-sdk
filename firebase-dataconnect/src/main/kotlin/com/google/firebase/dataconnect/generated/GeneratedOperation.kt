@@ -31,13 +31,11 @@ import kotlinx.serialization.SerializationStrategy
  * All methods and properties of [GeneratedOperation] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  *
- * ### Stable for Inheritance (after graduating to "Generally Available")
+ * ### Stable for Inheritance
  *
  * The [GeneratedOperation] interface _is_ stable for inheritance in third-party libraries, as new
  * methods will not be added to this interface and contracts of the existing methods will not be
- * changed. Note, however, that this interface is still subject to changes, up to and including
- * outright deletion, until the Firebase Data Connect product graduates from "alpha" and/or "beta"
- * to "Generally Available" status.
+ * changed, except possibly during major version number changes.
  */
 public interface GeneratedOperation<Connector : GeneratedConnector<Connector>, Data, Variables> {
 

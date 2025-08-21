@@ -27,7 +27,7 @@ plugins {
 firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false
-  publishJavadoc = false
+  publishJavadoc = true
   releaseNotes {
     name.set("{{data_connect_short}}")
     versionName.set("data-connect")

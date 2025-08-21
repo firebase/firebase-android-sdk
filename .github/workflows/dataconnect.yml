@@ -34,7 +34,7 @@ env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.11.1' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.12.0' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
@@ -270,6 +270,17 @@ jobs:
       - uses: docker://rhysd/actionlint:1.7.7
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
+
+  shellcheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/'
+      - name: shellcheck
+        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
 
   python-ci-unit-tests:
     continue-on-error: false
