@@ -46,6 +46,7 @@ internal constructor(
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
+  private val useLimitedUseAppCheckTokens: Boolean
 ) {
 
   /**
@@ -92,6 +93,7 @@ internal constructor(
       modelUri,
       firebaseApp.options.apiKey,
       firebaseApp,
+      useLimitedUseAppCheckTokens,
       generationConfig,
       safetySettings,
       tools,
@@ -152,7 +154,8 @@ internal constructor(
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
-      backend
+      backend,
+      useLimitedUseAppCheckTokens,
     )
   }
 
@@ -194,6 +197,7 @@ internal constructor(
       modelUri,
       firebaseApp.options.apiKey,
       firebaseApp,
+      useLimitedUseAppCheckTokens,
       generationConfig,
       safetySettings,
       requestOptions,
@@ -219,8 +223,39 @@ internal constructor(
       app: FirebaseApp = Firebase.app,
       backend: GenerativeBackend
     ): FirebaseAI {
+      return getInstance(app, backend, false)
+    }
+
+    /**
+     * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+     *
+     * @param backend the backend reference to make generative AI requests to.
+     * @param useLimitedUseAppCheckTokens when sending tokens to the backend, this option enables
+     * the usage of App Check's limited-use tokens instead of the standard cached tokens.
+     *
+     * A new limited-use tokens will be generated for each request; providing a smaller attack
+     * surface for malicious parties to hijack tokens. When used alongside replay protection,
+     * limited-use tokens are also _consumed_ after each request, ensuring they can't be used again.
+     *
+     * _This flag is set to `false` by default._
+     *
+     * **Important:** Replay protection is not currently supported for the FirebaseAI backend. While
+     * this feature is being developed, you can still migrate to using limited-use tokens. Because
+     * limited-use tokens are backwards compatible, you can still use them without replay
+     * protection. Due to their shorter TTL over standard App Check tokens, they still provide a
+     * security benefit. Migrating to limited-use tokens sooner minimizes disruption when support
+     * for replay protection is added.
+     */
+    // TODO(b/440356335): Update docs above when web page goes live in M170
+    @JvmStatic
+    @JvmOverloads
+    public fun getInstance(
+      app: FirebaseApp = Firebase.app,
+      backend: GenerativeBackend,
+      useLimitedUseAppCheckTokens: Boolean,
+    ): FirebaseAI {
       val multiResourceComponent = app[FirebaseAIMultiResourceComponent::class.java]
-      return multiResourceComponent.get(backend)
+      return multiResourceComponent.get(InstanceKey(backend, useLimitedUseAppCheckTokens))
     }
 
     /** The [FirebaseAI] instance for the provided [FirebaseApp] using the Google AI Backend. */
@@ -249,3 +284,17 @@ public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,
   backend: GenerativeBackend = GenerativeBackend.googleAI()
 ): FirebaseAI = FirebaseAI.getInstance(app, backend)
+
+/**
+ * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+ *
+ * @param backend the backend reference to make generative AI requests to.
+ * @param useLimitedUseAppCheckTokens use App Check's limited-use tokens when sending requests to
+ * the backend. To learn more about what this means, see the full docs on [FirebaseAI.getInstance].
+ */
+// TODO(b/440356335): Update docs above when web page goes live in M170
+public fun Firebase.ai(
+  app: FirebaseApp = Firebase.app,
+  backend: GenerativeBackend = GenerativeBackend.googleAI(),
+  useLimitedUseAppCheckTokens: Boolean
+): FirebaseAI = FirebaseAI.getInstance(app, backend, useLimitedUseAppCheckTokens)
