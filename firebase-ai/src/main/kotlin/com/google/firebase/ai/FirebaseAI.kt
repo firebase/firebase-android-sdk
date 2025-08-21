@@ -246,6 +246,7 @@ internal constructor(
      * security benefit. Migrating to limited-use tokens sooner minimizes disruption when support
      * for replay protection is added.
      */
+    // TODO(b/440356335): Update docs above when web page goes live in M170
     @JvmStatic
     @JvmOverloads
     public fun getInstance(
@@ -291,6 +292,7 @@ public fun Firebase.ai(
  * @param useLimitedUseAppCheckTokens use App Check's limited-use tokens when sending requests to
  * the backend. To learn more about what this means, see the full docs on [FirebaseAI.getInstance].
  */
+// TODO(b/440356335): Update docs above when web page goes live in M170
 public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,
   backend: GenerativeBackend = GenerativeBackend.googleAI(),
