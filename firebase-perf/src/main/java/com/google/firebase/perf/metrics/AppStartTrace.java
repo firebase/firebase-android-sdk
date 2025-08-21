@@ -593,7 +593,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
-      trace.mainThreadRunnableTime = new Timer();
+      if (trace.onCreateTime == null) {
+        trace.mainThreadRunnableTime = new Timer();
+      }
     }
   }
 
