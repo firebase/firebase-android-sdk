@@ -344,7 +344,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
 
-    // If the `minaThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
+    // If the `mainThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
     // a background start.
     // Otherwise it's assumed to be a background start if the runnable was set more than
     // `MAX_BACKGROUND_RUNNABLE_DELAY`
