@@ -216,6 +216,20 @@ internal constructor(
      * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
      *
      * @param backend the backend reference to make generative AI requests to.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun getInstance(
+      app: FirebaseApp = Firebase.app,
+      backend: GenerativeBackend
+    ): FirebaseAI {
+      return getInstance(app, backend, false)
+    }
+
+    /**
+     * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+     *
+     * @param backend the backend reference to make generative AI requests to.
      * @param useLimitedUseAppCheckTokens when sending tokens to the backend, this option enables
      * the usage of App Check's limited-use tokens instead of the standard cached tokens.
      *
@@ -237,7 +251,7 @@ internal constructor(
     public fun getInstance(
       app: FirebaseApp = Firebase.app,
       backend: GenerativeBackend,
-      useLimitedUseAppCheckTokens: Boolean = false,
+      useLimitedUseAppCheckTokens: Boolean,
     ): FirebaseAI {
       val multiResourceComponent = app[FirebaseAIMultiResourceComponent::class.java]
       return multiResourceComponent.get(InstanceKey(backend, useLimitedUseAppCheckTokens))
@@ -264,11 +278,21 @@ public val Firebase.ai: FirebaseAI
  * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
  *
  * @param backend the backend reference to make generative AI requests to.
+ */
+public fun Firebase.ai(
+  app: FirebaseApp = Firebase.app,
+  backend: GenerativeBackend = GenerativeBackend.googleAI()
+): FirebaseAI = FirebaseAI.getInstance(app, backend)
+
+/**
+ * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+ *
+ * @param backend the backend reference to make generative AI requests to.
  * @param useLimitedUseAppCheckTokens use App Check's limited-use tokens when sending requests to
  * the backend. To learn more about what this means, see the full docs on [FirebaseAI.getInstance].
  */
 public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,
   backend: GenerativeBackend = GenerativeBackend.googleAI(),
-  useLimitedUseAppCheckTokens: Boolean = false
+  useLimitedUseAppCheckTokens: Boolean
 ): FirebaseAI = FirebaseAI.getInstance(app, backend, useLimitedUseAppCheckTokens)
