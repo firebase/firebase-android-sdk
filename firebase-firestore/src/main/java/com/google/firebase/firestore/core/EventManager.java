@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
 import com.google.firebase.firestore.util.Util;
@@ -264,5 +265,15 @@ public final class EventManager implements SyncEngineCallback {
     if (raisedEvent) {
       raiseSnapshotsInSyncEvent();
     }
+  }
+
+  public void abortAllTargets() {
+    FirebaseFirestoreException error = Util.exceptionFromStatus(Status.ABORTED);
+    for (QueryListenersInfo info : queries.values()) {
+      for (QueryListener listener : info.listeners) {
+        listener.onError(error);
+      }
+    }
+    queries.clear();
   }
 }

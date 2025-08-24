@@ -165,12 +165,13 @@ public class ListenerRegistrationTest {
     DocumentReference documentReference = collectionReference.document();
 
     Semaphore events = new Semaphore(0);
-    collectionReference.addSnapshotListener(
-        activity,
-        (value, error) -> {
-          assertNull(error);
-          events.release();
-        });
+    ListenerRegistration listener =
+        collectionReference.addSnapshotListener(
+            activity,
+            (value, error) -> {
+              assertNull(error);
+              events.release();
+            });
 
     // Initial events
     waitFor(events, 1);
@@ -188,6 +189,8 @@ public class ListenerRegistrationTest {
     // No listeners, therefore, there should be no events.
     waitFor(documentReference.set(map("foo", "new-bar")));
     assertEquals(0, events.availablePermits());
+
+    listener.remove();
   }
 
   /** @param activity Must be a TestActivity or a TestFragmentActivity */
