@@ -41,6 +41,12 @@ public final class ObjectValue implements Cloneable {
    */
   private final Map<String, Object> overlayMap = new HashMap<>();
 
+  /**
+   * Dirty bit for when `overlayMap` is modified. The memoized `partialValue` only needs to be
+   * updated when dirty bit is true.
+   */
+  private boolean dirty = false;
+
   public static ObjectValue fromMap(Map<String, Value> value) {
     return new ObjectValue(
         Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(value)).build());
@@ -103,18 +109,22 @@ public final class ObjectValue implements Cloneable {
   }
 
   @Nullable
-  private Value extractNestedValue(Value value, FieldPath fieldPath) {
+  private static Value extractNestedValue(Value value, FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
       return value;
     } else {
       for (int i = 0; i < fieldPath.length() - 1; ++i) {
-        value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
-        if (!Values.isMapValue(value)) {
+        value = extractSegmentValue(value, fieldPath.getSegment(i));
+        if (value == null) {
           return null;
         }
       }
-      return value.getMapValue().getFieldsOrDefault(fieldPath.getLastSegment(), null);
+      return extractSegmentValue(value, fieldPath.getLastSegment());
     }
+  }
+
+  private static Value extractSegmentValue(Value value, String segment) {
+    return Values.isMapValue(value) ? value.getMapValue().getFieldsOrDefault(segment, null) : null;
   }
 
   /**
@@ -124,11 +134,16 @@ public final class ObjectValue implements Cloneable {
    * invocations are based on this memoized result.
    */
   private Value buildProto() {
-    synchronized (overlayMap) {
-      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult != null) {
-        partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-        overlayMap.clear();
+    if (dirty) {
+      synchronized (overlayMap) {
+        if (dirty) {
+          MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap, partialValue);
+          if (mergedResult != null) {
+            partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+          }
+          overlayMap.clear();
+          dirty = false;
+        }
       }
     }
     return partialValue;
@@ -142,7 +157,9 @@ public final class ObjectValue implements Cloneable {
    */
   public void delete(FieldPath path) {
     hardAssert(!path.isEmpty(), "Cannot delete field for empty path on ObjectValue");
-    setOverlay(path, null);
+    synchronized (overlayMap) {
+      setOverlay(path, null);
+    }
   }
 
   /**
@@ -153,16 +170,18 @@ public final class ObjectValue implements Cloneable {
    */
   public void set(FieldPath path, Value value) {
     hardAssert(!path.isEmpty(), "Cannot set field for empty path on ObjectValue");
-    setOverlay(path, value);
+    synchronized (overlayMap) {
+      setOverlay(path, value);
+    }
   }
 
   public void setAll(Map<FieldPath, Value> data) {
-    for (Map.Entry<FieldPath, Value> entry : data.entrySet()) {
-      FieldPath path = entry.getKey();
-      if (entry.getValue() == null) {
-        delete(path);
-      } else {
-        set(path, entry.getValue());
+    hardAssert(
+        !data.containsKey(FieldPath.EMPTY_PATH),
+        "Cannot setAll on ObjectValue because map contains empty path");
+    synchronized (overlayMap) {
+      for (Map.Entry<FieldPath, Value> entry : data.entrySet()) {
+        setOverlay(entry.getKey(), entry.getValue());
       }
     }
   }
@@ -195,7 +214,19 @@ public final class ObjectValue implements Cloneable {
       }
     }
 
-    currentLevel.put(path.getLastSegment(), value);
+    String lastSegment = path.getLastSegment();
+    if (value == null) { // Delete
+      // Get will return null if entry does not exist, so we must also do containsKey.
+      if (currentLevel.get(lastSegment) != null || !currentLevel.containsKey(lastSegment)) {
+        currentLevel.put(lastSegment, null);
+        dirty = true;
+      }
+    } else { // Set
+      if (!value.equals(currentLevel.get(lastSegment))) {
+        currentLevel.put(lastSegment, value);
+        dirty = true;
+      }
+    }
   }
 
   /**
@@ -206,18 +237,20 @@ public final class ObjectValue implements Cloneable {
    *     FieldValue.EMPTY_PATH} to represent the root.
    * @param currentOverlays The overlays at the current nesting level in the same format as {@code
    *     overlayMap}.
+   * @param currentValue The existing value at the current nesting level.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
-  private @Nullable MapValue applyOverlay(
-      FieldPath currentPath, Map<String, Object> currentOverlays) {
+  private static @Nullable MapValue applyOverlay(
+      FieldPath currentPath, Map<String, Object> currentOverlays, Value currentValue) {
+    if (currentOverlays.isEmpty()) {
+      return null;
+    }
     boolean modified = false;
-
-    @Nullable Value existingValue = extractNestedValue(partialValue, currentPath);
     MapValue.Builder resultAtPath =
-        Values.isMapValue(existingValue)
+        Values.isMapValue(currentValue)
             // If there is already data at the current path, base our modifications on top
             // of the existing data.
-            ? existingValue.getMapValue().toBuilder()
+            ? currentValue.getMapValue().toBuilder()
             : MapValue.newBuilder();
 
     for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {
@@ -227,7 +260,10 @@ public final class ObjectValue implements Cloneable {
       if (value instanceof Map) {
         @Nullable
         MapValue nested =
-            applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
+            applyOverlay(
+                currentPath.append(pathSegment),
+                (Map<String, Object>) value,
+                extractSegmentValue(currentValue, pathSegment));
         if (nested != null) {
           resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
           modified = true;
