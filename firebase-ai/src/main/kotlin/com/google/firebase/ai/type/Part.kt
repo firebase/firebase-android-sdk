@@ -53,15 +53,21 @@ internal constructor(
   ) : InternalPart
 }
 
+/**
+ * Represents the code execution result from the model.
+ * @property outcome The result of the execution.
+ * @property output The stdout from the code execution, or an error message if it failed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class CodeExecutionResultPart
 internal constructor(
-  public val outcome: String,
+  public val outcome: Outcome,
   public val output: String,
   public override val isThought: Boolean,
   internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(outcome: String, output: String) : this(outcome, output, false, null)
+  public constructor(outcome: Outcome, output: String) : this(outcome, output, false, null)
 
   @Serializable
   internal data class Internal(
@@ -72,12 +78,18 @@ internal constructor(
 
     @Serializable
     internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: String,
+      @SerialName("outcome") val outcome: Outcome.Internal,
       val output: String
     )
   }
 }
 
+/**
+ * Represents the code that is executed by the model.
+ * @property language The programming language of the code.
+ * @property code The source code to be executed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class ExecutableCodePart
 internal constructor(
   public val language: String,
@@ -354,7 +366,7 @@ internal fun Part.toInternal(): InternalPart {
       )
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
-        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output),
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome.toInternal(), output),
         isThought,
         thoughtSignature
       )
@@ -410,7 +422,7 @@ internal fun InternalPart.toPublic(): Part {
       )
     is CodeExecutionResultPart.Internal ->
       CodeExecutionResultPart(
-        codeExecutionResult.outcome,
+        codeExecutionResult.outcome.toPublic(),
         codeExecutionResult.output,
         thought ?: false,
         thoughtSignature
