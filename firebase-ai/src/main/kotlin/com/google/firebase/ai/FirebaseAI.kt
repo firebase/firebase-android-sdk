@@ -231,10 +231,9 @@ internal constructor(
      *
      * @param backend the backend reference to make generative AI requests to.
      * @param useLimitedUseAppCheckTokens when sending tokens to the backend, this option enables
-     * the usage of App Check's limited-use tokens instead of the standard cached tokens. Learn
-     * more about [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check),
-     * including their nuances, when to use them, and best practices for integrating them into your
-     * app.
+     * the usage of App Check's limited-use tokens instead of the standard cached tokens. Learn more
+     * about [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check), including
+     * their nuances, when to use them, and best practices for integrating them into your app.
      *
      * _This flag is set to `false` by default._
      */
@@ -281,8 +280,9 @@ public fun Firebase.ai(
  *
  * @param backend the backend reference to make generative AI requests to.
  * @param useLimitedUseAppCheckTokens use App Check's limited-use tokens when sending requests to
- * the backend. Learn more about [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check),
- * including their nuances, when to use them, and best practices for integrating them into your app.
+ * the backend. Learn more about
+ * [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check), including their
+ * nuances, when to use them, and best practices for integrating them into your app.
  */
 // TODO(b/440356335): Update docs above when web page goes live in M170
 public fun Firebase.ai(
