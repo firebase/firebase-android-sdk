@@ -228,7 +228,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             " UNION ");
     sql.append("ORDER BY read_time_seconds, read_time_nanos, path LIMIT ?");
 
-    Object[] bindVars = new Object[BINDS_PER_STATEMENT * collections.size() + 1 + (filterDocumentType != null ? 1 : 0)];
+    Object[] bindVars =
+        new Object
+            [BINDS_PER_STATEMENT * collections.size() + 1 + (filterDocumentType != null ? 1 : 0)];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
@@ -267,7 +269,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       IndexOffset offset,
       int count,
       @Nullable Function<MutableDocument, Boolean> filter) {
-    return getAll(collections, offset, count, /*filterDocumentType*/ null, filter, /*context*/ null);
+    return getAll(
+        collections, offset, count, /*filterDocumentType*/ null, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
