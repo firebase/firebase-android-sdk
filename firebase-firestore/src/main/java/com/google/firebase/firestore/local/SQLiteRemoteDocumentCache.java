@@ -65,6 +65,32 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     this.indexManager = indexManager;
   }
 
+  private enum DocumentType {
+    NO_DOCUMENT(1),
+    FOUND_DOCUMENT(2),
+    UNKNOWN_DOCUMENT(3),
+    INVALID_DOCUMENT(4);
+
+    final int dbValue;
+
+    DocumentType(int dbValue) {
+      this.dbValue = dbValue;
+    }
+
+    static DocumentType forMutableDocument(MutableDocument document) {
+      if (document.isNoDocument()) {
+        return NO_DOCUMENT;
+      } else if (document.isFoundDocument()) {
+        return FOUND_DOCUMENT;
+      } else if (document.isUnknownDocument()) {
+        return UNKNOWN_DOCUMENT;
+      } else {
+        hardAssert(!document.isValidDocument(), "MutableDocument has an unknown type");
+        return INVALID_DOCUMENT;
+      }
+    }
+  }
+
   @Override
   public void add(MutableDocument document, SnapshotVersion readTime) {
     hardAssert(
@@ -77,12 +103,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, path_length, read_time_seconds, read_time_nanos, contents) "
-            + "VALUES (?, ?, ?, ?, ?)",
+            + "(path, path_length, read_time_seconds, read_time_nanos, document_type, contents) "
+            + "VALUES (?, ?, ?, ?, ?, ?)",
         EncodedPath.encode(documentKey.getPath()),
         documentKey.getPath().length(),
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
+        DocumentType.forMutableDocument(document).dbValue,
         message.toByteArray());
 
     indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
@@ -182,6 +209,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
+      @Nullable DocumentType filterDocumentType,
       @Nullable Function<MutableDocument, Boolean> filter,
       @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
@@ -192,6 +220,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             "SELECT contents, read_time_seconds, read_time_nanos, path "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
+                + (filterDocumentType == null ? "" : " AND document_type = ? ")
                 + "AND (read_time_seconds > ? OR ( "
                 + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
                 + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
@@ -199,13 +228,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             " UNION ");
     sql.append("ORDER BY read_time_seconds, read_time_nanos, path LIMIT ?");
 
-    Object[] bindVars = new Object[BINDS_PER_STATEMENT * collections.size() + 1];
+    Object[] bindVars = new Object[BINDS_PER_STATEMENT * collections.size() + 1 + (filterDocumentType != null ? 1 : 0)];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
       bindVars[i++] = prefixPath;
       bindVars[i++] = EncodedPath.prefixSuccessor(prefixPath);
       bindVars[i++] = collection.length() + 1;
+      if (filterDocumentType != null) {
+        bindVars[i++] = filterDocumentType.dbValue;
+      }
       bindVars[i++] = readTime.getSeconds();
       bindVars[i++] = readTime.getSeconds();
       bindVars[i++] = readTime.getNanoseconds();
@@ -235,7 +267,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       IndexOffset offset,
       int count,
       @Nullable Function<MutableDocument, Boolean> filter) {
-    return getAll(collections, offset, count, filter, /*context*/ null);
+    return getAll(collections, offset, count, /*filterDocumentType*/ null, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
@@ -278,6 +310,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
+        DocumentType.FOUND_DOCUMENT,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
         context);
   }

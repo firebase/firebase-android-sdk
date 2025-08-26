@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 17;
+  static final int VERSION = 18;
 
   /**
    * The batch size for data migrations.
@@ -181,6 +181,10 @@ class SQLiteSchema {
 
     if (fromVersion < 17 && toVersion >= 17) {
       createGlobalsTable();
+    }
+
+    if (fromVersion < 18 && toVersion >= 18) {
+      addDocumentType();
     }
 
     /*
@@ -445,6 +449,12 @@ class SQLiteSchema {
     if (!tableContainsColumn("remote_documents", "path_length")) {
       // The "path_length" column store the number of segments in the path.
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN path_length INTEGER");
+    }
+  }
+
+  private void addDocumentType() {
+    if (!tableContainsColumn("remote_documents", "document_type")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN document_type INTEGER");
     }
   }
 
