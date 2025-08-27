@@ -220,7 +220,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             "SELECT contents, read_time_seconds, read_time_nanos, path "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
-                + (filterDocumentType == null ? "" : " AND document_type = ? ")
+                + (filterDocumentType == null
+                    ? ""
+                    : " AND (document_type IS NULL OR document_type = ?) ")
                 + "AND (read_time_seconds > ? OR ( "
                 + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
                 + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
