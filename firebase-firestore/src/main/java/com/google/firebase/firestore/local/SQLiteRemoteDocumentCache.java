@@ -232,7 +232,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     Object[] bindVars =
         new Object
-            [BINDS_PER_STATEMENT * collections.size() + 1 + (filterDocumentType != null ? 1 : 0)];
+            [(BINDS_PER_STATEMENT + (filterDocumentType != null ? 1 : 0)) * collections.size() + 1];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
