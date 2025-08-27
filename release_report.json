@@ -1,0 +1,158 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "ca65d4bfbfcdc5e8161b408a57131003433a50c0",
+                "prId": "7284",
+                "author": "emilypgoogle",
+                "message": "Make APINotConfiguredException adjustments (#7284)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ca65d4bfbfcdc5e8161b408a57131003433a50c0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7284"
+            },
+            {
+                "commitId": "5fdf0247f5b9aa08cd07a02c518ad8d52bd53ca8",
+                "prId": "7285",
+                "author": "Daymon",
+                "message": "[FAL] Add support for limited-use tokens (#7285)\n\nPer [b/440338679](https://b.corp.google.com/issues/440338679),\n\nThis adds support for the `useLimitedUseAppCheckTokens` parameter to the\n`getInstance` constructor and the `.ai` helper method.\n\nTo help assist this process, I've also update the\n`FirebaseAIMultiResourceComponent` to use a hashed data class containing\nall the unique data of each `getInstance`. Previously, it only tracked\ninstances by the location. Now, it tracks instances by the location,\nbackend, and the value of `useLimitedUseAppCheckTokens`. In all\npracticality, this is unlikely to get much usage, but it helps avoid any\npotential edge-case issues where customers expect different instances.\n\nDocumentation is present for the added changes, as well as a changelog\nentry. These both match what we did on the iCore side, but feel free to\nadjust as needed. Furthermore, the `api.txt` file has been updated with\nthe corresponding changes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fdf0247f5b9aa08cd07a02c518ad8d52bd53ca8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7285"
+            },
+            {
+                "commitId": "d8cb105c8f0749ed0f76543f72e94d32e2344349",
+                "prId": "7282",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Improve refdocs (#7282)\n\nThe improvements include:\n\n- Link directly to the list of supported models in the documentation.\n- Fix rendering issues with numbers being translated as numbered lists\n- Link to firebase documentation instead of vertex documentation when\ncorresponding.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d8cb105c8f0749ed0f76543f72e94d32e2344349",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7282"
+            },
+            {
+                "commitId": "be8f4809baa8eaca33cd7d4c21b955d40204dfd7",
+                "prId": "7272",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add support for thinkingSummaries and thoughtSignatures (#7272)\n\nAdded support for returning [thought\nsummaries](https://ai.google.dev/gemini-api/docs/thinking#summaries)\nwhen using thinking-compatible models.\n\nAdditionally, it adds support for automatic handling of\n`thoughtSignatures`.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/be8f4809baa8eaca33cd7d4c21b955d40204dfd7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7272"
+            },
+            {
+                "commitId": "c85227e344230aa676066352184bc6ccd510294f",
+                "prId": "7270",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Correctly handle empty candidates in the accessors (#7270)\n\nBefore, if a response had no candidates, accessors would throw an\nexception when used instead of handle the case elegantly. Now they\neither return an empty list, for collections, or null, for string.\n\nThe test file is added in\nhttps://github.com/FirebaseExtended/vertexai-sdk-test-data/pull/48",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c85227e344230aa676066352184bc6ccd510294f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7270"
+            },
+            {
+                "commitId": "da659d7d614c41375a29868bed234b6890329e18",
+                "prId": "7259",
+                "author": "Rodrigo Lazo",
+                "message": "[Ai] Expose `APINotConfiguredException` in the public API (#7259)\n\nThe exception was added in #7233 but was mistakenly marked as internal.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/da659d7d614c41375a29868bed234b6890329e18",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7259"
+            },
+            {
+                "commitId": "628a6c6131fe14916592e60da5b4eeea94537b03",
+                "prId": "7260",
+                "author": "David Motsonashvili",
+                "message": "Added dilation parameter to generateMaskAndPadForOutpainting (#7260)\n\nThe dilation parameter gets passed through to the mask, and is optional.\n\nEnded up doing manual overloading to preserve binary compatibility.\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/628a6c6131fe14916592e60da5b4eeea94537b03",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7260"
+            },
+            {
+                "commitId": "2253d3f53da5b047b1525b5ef0bb07f80df2d1d0",
+                "prId": "7229",
+                "author": "David Motsonashvili",
+                "message": "documentation fixes for M168 (#7229)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2253d3f53da5b047b1525b5ef0bb07f80df2d1d0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7229"
+            },
+            {
+                "commitId": "5e778b940e72d6ce10455a6604f2857820df1d28",
+                "prId": "7250",
+                "author": "emilypgoogle",
+                "message": "Configure Firebase AI tests to run nightly (#7250)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5e778b940e72d6ce10455a6604f2857820df1d28",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7250"
+            },
+            {
+                "commitId": "8b1b50d421d558ca0d7e3f606fb289a5a370275d",
+                "prId": "7233",
+                "author": "emilypgoogle",
+                "message": "Add NotConfiguredException with a better error message than provided by the server. (#7233)\n\nThe previous error text \"genai config not found\" is ambiguous and as a\ngeneric ServerException did not provide documentation for resolutions.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8b1b50d421d558ca0d7e3f606fb289a5a370275d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7233"
+            },
+            {
+                "commitId": "316e1686c3ac9675384da435f43a1eff6c78f755",
+                "prId": "7228",
+                "author": "Ryan Wilson",
+                "message": "Temporarily remove CHANGELOG entry (#7228)\n\nThe backend won't be published until sometime next week, removing this\nuntil it's ready. No changes to the code are necessary as there are no\npublic API changes and it'll still hit a runtime error.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/316e1686c3ac9675384da435f43a1eff6c78f755",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7228"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prId": "7277",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Improve datastore support  (#7277)\n\nBump the dependency to version 1.1.7 to include the mitigation\nintroduced in\n\nhttps://developer.android.com/jetpack/androidx/releases/datastore#1.1.5\n\nAdditionally, a corruption handler has been added to the\n`JavaDataStorage` class.\n\nInclude `firebase-sessions` changelog entry so it's released.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7277"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prId": "7277",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Improve datastore support  (#7277)\n\nBump the dependency to version 1.1.7 to include the mitigation\nintroduced in\n\nhttps://developer.android.com/jetpack/androidx/releases/datastore#1.1.5\n\nAdditionally, a corruption handler has been added to the\n`JavaDataStorage` class.\n\nInclude `firebase-sessions` changelog entry so it's released.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7277"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prId": "7277",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Improve datastore support  (#7277)\n\nBump the dependency to version 1.1.7 to include the mitigation\nintroduced in\n\nhttps://developer.android.com/jetpack/androidx/releases/datastore#1.1.5\n\nAdditionally, a corruption handler has been added to the\n`JavaDataStorage` class.\n\nInclude `firebase-sessions` changelog entry so it's released.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/296ab29eaf48de0b1b243f0ea98e33771bfea91b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7277"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "3c6bed3e768712ead6ea7c556f68dd9dc4017e0c",
+                "prId": "7278",
+                "author": "Tejas Deshpande",
+                "message": "Revert \"Make a change to prevent false positive background app starts.\" (#7278)\n\nReverts firebase/firebase-android-sdk#7274\n\nReverting this if the current change is going to be included in M169. \n\nAn additional change is needed to verify that the\n`mainThreadRunnableTime` should be set only if no activity's onCreate\nhas been called - otherwise this can cause a regression of *genuine*\nbackground starts.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c6bed3e768712ead6ea7c556f68dd9dc4017e0c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7278"
+            },
+            {
+                "commitId": "e11e900b31360e6dba51adab7b26b5329903ebf4",
+                "prId": "7274",
+                "author": "Tejas Deshpande",
+                "message": "Make a change to prevent false positive background app starts. (#7274)\n\nAdded a change in `AppStartTrace` to prevent false positives of a\nbackground app start on API 34+ devices.\n\nSee https://github.com/firebase/firebase-android-sdk/issues/5920\n\nVerified locally:\n\n```\n2025-08-20 10:34:51.283 18373-18373 AppMonDemo              com.tdeshpande.appmontester          D  mainThreadRunnable.run(): activityCreated = false\n2025-08-20 10:34:51.292 18373-18373 AppMonDemo              com.tdeshpande.appmontester          D  onActivityPreCreated: mainThreadRunnableRun = true\n2025-08-20 10:34:51.294 18373-18373 AppMonDemo              com.tdeshpande.appmontester          D  onActivityCreated: mainThreadRunnableRun = true\n2025-08-20 10:34:51.314 18373-18373 AppMonDemo              com.tdeshpande.appmontester          D  onActivityStarted: mainThreadRunnableRun = true\n2025-08-20 10:34:51.318 18373-18373 FirebasePerformance     com.tdeshpande.appmontester          I  Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: \n2025-08-20 10:34:51.319 18373-18373 FirebasePerformance     com.tdeshpande.appmontester          D  onResume(): com.tdeshpande.appmontester.MainActivity: 74362 microseconds\n2025-08-20 10:34:51.320 18373-18373 AppMonDemo              com.tdeshpande.appmontester          D  onActivityResumed: mainThreadRunnableRun = true\n2025-08-20 10:34:51.323 18373-18431 FirebasePerformance     com.tdeshpande.appmontester          I  Logging trace metric: _as (duration: 74.362ms). In a minute, visit the Firebase console to view your data: \n```",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e11e900b31360e6dba51adab7b26b5329903ebf4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7274"
+            },
+            {
+                "commitId": "042827da3e2106264b87dd777eed3f32034851f2",
+                "prId": "7214",
+                "author": "Tejas Deshpande",
+                "message": "Refactor RCM fetch random delay to not depend on FirebaseApp initialization. (#7214)\n\nThis should help address the issue where there could be a deadlock if\n`FirebaseApp` is still being initialized.\n\nSee https://github.com/firebase/firebase-android-sdk/issues/4831",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/042827da3e2106264b87dd777eed3f32034851f2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7214"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-common",
+        ":firebase-config",
+        ":firebase-dataconnect",
+        ":firebase-ml-modeldownloader"
+    ]
+}
