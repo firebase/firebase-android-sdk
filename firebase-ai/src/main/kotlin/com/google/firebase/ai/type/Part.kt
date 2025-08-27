@@ -126,11 +126,7 @@ internal constructor(
     )
 }
 
-/**
- * Represents binary data with an associated MIME type sent to and received from requests.
- *
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
- */
+/** Represents binary data with an associated MIME type sent to and received from requests. */
 public class InlineDataPart
 internal constructor(
   public val inlineData: ByteArray,
@@ -142,6 +138,7 @@ internal constructor(
   /**
    * @param inlineData the binary data as a [ByteArray]
    * @param mimeType an IANA standard MIME type. For supported values, see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
    */
   public constructor(
     inlineData: ByteArray,
