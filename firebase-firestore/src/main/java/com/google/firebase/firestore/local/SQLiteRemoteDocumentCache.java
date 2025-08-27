@@ -315,6 +315,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
+        // Specify filterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because
+        // query.matches(doc) will return false for all non-"found" document types anyways.
+        // See https://github.com/firebase/firebase-android-sdk/issues/7295
         DocumentType.FOUND_DOCUMENT,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
         context);
