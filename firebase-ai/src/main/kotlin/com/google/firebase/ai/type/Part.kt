@@ -106,8 +106,6 @@ internal constructor(
 /**
  * Represents image data sent to and received from requests. The image is converted client-side to
  * JPEG encoding at 80% quality before being sent to the server.
- *
- * @param image [Bitmap] to convert into a [Part]
  */
 public class ImagePart
 internal constructor(
@@ -116,6 +114,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /** @param image [Bitmap] to convert into a [Part] */
   public constructor(image: Bitmap) : this(image, false, null)
 
   internal fun toInlineDataPart() =
@@ -127,13 +126,7 @@ internal constructor(
     )
 }
 
-/**
- * Represents binary data with an associated MIME type sent to and received from requests.
- *
- * @param inlineData the binary data as a [ByteArray]
- * @param mimeType an IANA standard MIME type. For supported values, see the
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
- */
+/** Represents binary data with an associated MIME type sent to and received from requests. */
 public class InlineDataPart
 internal constructor(
   public val inlineData: ByteArray,
@@ -142,6 +135,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param inlineData the binary data as a [ByteArray]
+   * @param mimeType an IANA standard MIME type. For supported values, see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   */
   public constructor(
     inlineData: ByteArray,
     mimeType: String
@@ -199,13 +197,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents function call output to be returned to the model when it requests a function call.
- *
- * @param name The name of the called function.
- * @param response The response produced by the function as a [JSONObject].
- * @param id Matching `id` for a [FunctionCallPart], if one was provided.
- */
+/** Represents function call output to be returned to the model when it requests a function call. */
 public class FunctionResponsePart
 internal constructor(
   public val name: String,
@@ -215,6 +207,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param name The name of the called function.
+   * @param response The response produced by the function as a [JSONObject].
+   * @param id Matching `id` for a [FunctionCallPart], if one was provided.
+   */
   @JvmOverloads
   public constructor(
     name: String,
@@ -242,14 +239,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents file data stored in Cloud Storage for Firebase, referenced by URI.
- *
- * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
- * `"gs://bucket-name/path/image.jpg"`
- * @param mimeType an IANA standard MIME type. For supported MIME type values see the
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
- */
+/** Represents file data stored in Cloud Storage for Firebase, referenced by URI. */
 public class FileDataPart
 internal constructor(
   public val uri: String,
@@ -258,6 +248,12 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
+   * `"gs://bucket-name/path/image.jpg"`
+   * @param mimeType an IANA standard MIME type. For supported MIME type values see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 
   @Serializable
