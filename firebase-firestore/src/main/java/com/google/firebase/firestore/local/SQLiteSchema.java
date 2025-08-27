@@ -453,6 +453,12 @@ class SQLiteSchema {
   }
 
   private void addDocumentType() {
+    // The new "document_type" column is a copy of the document type encoded in the "contents" blob.
+    // Its range of values are defined in the `SQLiteRemoteDocumentCache.DocumentType` enum.
+    // The "document_type" value for a given row must be equal to the document type encoded in the
+    // "contents" column for that row. The purpose of the "document_type" column is to enable
+    // efficient filtering on document type. But when using it as a filter, a null value must also
+    // be considered as their document type must be determined by parsing the the "contents" column.
     if (!tableContainsColumn("remote_documents", "document_type")) {
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN document_type INTEGER");
     }
