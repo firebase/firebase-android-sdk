@@ -114,9 +114,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
-  /**
-   * @param image [Bitmap] to convert into a [Part]
-   */
+  /** @param image [Bitmap] to convert into a [Part] */
   public constructor(image: Bitmap) : this(image, false, null)
 
   internal fun toInlineDataPart() =
@@ -202,9 +200,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents function call output to be returned to the model when it requests a function call.
- */
+/** Represents function call output to be returned to the model when it requests a function call. */
 public class FunctionResponsePart
 internal constructor(
   public val name: String,
@@ -246,9 +242,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents file data stored in Cloud Storage for Firebase, referenced by URI.
- */
+/** Represents file data stored in Cloud Storage for Firebase, referenced by URI. */
 public class FileDataPart
 internal constructor(
   public val uri: String,
