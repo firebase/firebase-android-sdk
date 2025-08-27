@@ -157,14 +157,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents function call name and params received from requests.
- *
- * @param name the name of the function to call
- * @param args the function parameters and values as a [Map]
- * @param id Unique id of the function call. If present, the returned [FunctionResponsePart] should
- * have a matching `id` field.
- */
+/** Represents function call name and params received from requests. */
 public class FunctionCallPart
 internal constructor(
   public val name: String,
@@ -174,6 +167,12 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param name the name of the function to call
+   * @param args the function parameters and values as a [Map]
+   * @param id Unique id of the function call. If present, the returned [FunctionResponsePart]
+   * should have a matching `id` field.
+   */
   @JvmOverloads
   public constructor(
     name: String,
