@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins.ci;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -63,7 +64,7 @@ public class AffectedProjectFinder {
     if (path.startsWith("docs/")) {
       return true;
     }
-    return DOC_EXTENSIONS.stream().anyMatch(ext -> path.endsWith("." + ext));
+    return DOC_EXTENSIONS.contains(Files.getFileExtension(path));
   }
 
   Set<Project> find() {
