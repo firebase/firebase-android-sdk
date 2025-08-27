@@ -39,6 +39,8 @@ public class AffectedProjectFinder {
     this(project, changedPaths(project.getRootDir()), ignorePaths);
   }
 
+  private static final Set<String> DOC_EXTENSIONS = ImmutableSet.of("md", "txt", "html");
+
   public AffectedProjectFinder(
       Project project, Set<String> changedPaths, List<Pattern> ignorePaths) {
     this.project = project;
@@ -53,7 +55,15 @@ public class AffectedProjectFinder {
                   }
                   return true;
                 })
+            .filter(p -> !isDocFile(p))
             .collect(Collectors.toSet());
+  }
+
+  private static boolean isDocFile(String path) {
+    if (path.startsWith("docs/")) {
+      return true;
+    }
+    return DOC_EXTENSIONS.stream().anyMatch(ext -> path.endsWith("." + ext));
   }
 
   Set<Project> find() {
