@@ -209,7 +209,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable DocumentType filterDocumentType,
+      @Nullable DocumentType tryFilterDocumentType,
       @Nullable Function<MutableDocument, Boolean> filter,
       @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
@@ -220,7 +220,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             "SELECT contents, read_time_seconds, read_time_nanos, path "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
-                + (filterDocumentType == null
+                + (tryFilterDocumentType == null
                     ? ""
                     : " AND (document_type IS NULL OR document_type = ?) ")
                 + "AND (read_time_seconds > ? OR ( "
@@ -232,15 +232,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     Object[] bindVars =
         new Object
-            [(BINDS_PER_STATEMENT + (filterDocumentType != null ? 1 : 0)) * collections.size() + 1];
+            [(BINDS_PER_STATEMENT + (tryFilterDocumentType != null ? 1 : 0)) * collections.size()
+                + 1];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
       bindVars[i++] = prefixPath;
       bindVars[i++] = EncodedPath.prefixSuccessor(prefixPath);
       bindVars[i++] = collection.length() + 1;
-      if (filterDocumentType != null) {
-        bindVars[i++] = filterDocumentType.dbValue;
+      if (tryFilterDocumentType != null) {
+        bindVars[i++] = tryFilterDocumentType.dbValue;
       }
       bindVars[i++] = readTime.getSeconds();
       bindVars[i++] = readTime.getSeconds();
@@ -272,7 +273,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       int count,
       @Nullable Function<MutableDocument, Boolean> filter) {
     return getAll(
-        collections, offset, count, /*filterDocumentType*/ null, filter, /*context*/ null);
+        collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
@@ -315,7 +316,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
-        // Specify filterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because
+        // Specify tryFilterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because
         // query.matches(doc) will return false for all non-"found" document types anyways.
         // See https://github.com/firebase/firebase-android-sdk/issues/7295
         DocumentType.FOUND_DOCUMENT,
