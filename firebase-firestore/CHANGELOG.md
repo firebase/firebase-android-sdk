@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 26.0.0
 * [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
