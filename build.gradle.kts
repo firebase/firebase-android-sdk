@@ -62,6 +62,7 @@ fun Project.applySpotless() {
     }
     format("styling") {
       target("**/*.md")
+      targetExclude("**/third_party/**")
       prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
     }
   }
