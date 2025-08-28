@@ -61,7 +61,7 @@ fun Project.applySpotless() {
       ktfmt("0.41").googleStyle()
     }
     format("styling") {
-      target("**/*.md")
+      target("src/**/*.md", "*.md", "docs/**/*.md")
       targetExclude("**/third_party/**")
       prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
     }
