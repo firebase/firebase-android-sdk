@@ -377,11 +377,31 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     BackfillResult backfill(SQLitePersistence db) {
+      // Just return immediately if there are no pending backfills, as a performance optimization.
+      // This just elides a few allocations (e.g. the ArrayList below) that would otherwise
+      // needlessly occur.
+      if (documentTypeByBackfillKey.isEmpty()) {
+        return BackfillResult.NO_PENDING_BACKFILLS;
+      }
+
+      ArrayList<Object> sqlBindings = new ArrayList<>();
+      String sql = calculateBackfillSql(sqlBindings);
+      if (sql != null) {
+        db.execute(sql, sqlBindings.toArray());
+      }
+
+      return documentTypeByBackfillKey.isEmpty()
+          ? BackfillResult.NO_PENDING_BACKFILLS
+          : BackfillResult.HAS_PENDING_BACKFILLS;
+    }
+
+    @Nullable
+    String calculateBackfillSql(ArrayList<Object> bindings) {
       StringBuilder caseClauses = new StringBuilder();
       StringBuilder whereClauses = new StringBuilder();
-      ArrayList<Object> bindings = new ArrayList<>();
 
       Iterator<BackfillKey> backfillKeys = documentTypeByBackfillKey.keySet().iterator();
+      boolean backfillsFound = false;
       while (backfillKeys.hasNext() && bindings.size() < SQLitePersistence.LongQuery.LIMIT) {
         BackfillKey backfillKey = backfillKeys.next();
         DocumentType documentType = documentTypeByBackfillKey.remove(backfillKey);
@@ -389,6 +409,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           continue;
         }
 
+        backfillsFound = true;
         bindings.add(backfillKey.path);
         int pathBindingNumber = bindings.size();
         bindings.add(backfillKey.readTimeSeconds);
@@ -421,19 +442,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             .append(')');
       }
 
-      if (!bindings.isEmpty()) {
-        String sql =
-            "UPDATE remote_documents SET document_type = CASE"
-                + caseClauses
-                + " ELSE NULL END WHERE"
-                + whereClauses;
-        android.util.Log.i("zzyzx", sql);
-        db.execute(sql, bindings.toArray());
+      if (!backfillsFound) {
+        return null;
       }
 
-      return documentTypeByBackfillKey.isEmpty()
-          ? BackfillResult.NO_PENDING_BACKFILLS
-          : BackfillResult.HAS_PENDING_BACKFILLS;
+      return "UPDATE remote_documents SET document_type = CASE"
+          + caseClauses
+          + " ELSE NULL END WHERE"
+          + whereClauses;
     }
 
     private static class BackfillKey {
