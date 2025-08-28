@@ -62,7 +62,7 @@ fun Project.applySpotless() {
     }
     format("styling") {
       target("src/**/*.md", "*.md", "docs/**/*.md")
-      targetExclude("**/third_party/**")
+      targetExclude("**/third_party/**", "src/test/resources/**")
       prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
     }
   }
