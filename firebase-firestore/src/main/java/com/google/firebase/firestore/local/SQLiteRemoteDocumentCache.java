@@ -177,6 +177,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     backgroundQueue.drain();
 
+    // TODO(dconeybe): schedule the backfill asynchronously.
     documentTypeBackfills.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
@@ -277,6 +278,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             });
     backgroundQueue.drain();
 
+    // TODO(dconeybe): schedule the backfill asynchronously.
     documentTypeBackfills.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
