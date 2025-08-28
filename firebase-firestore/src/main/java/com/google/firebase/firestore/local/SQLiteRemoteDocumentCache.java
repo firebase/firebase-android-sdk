@@ -152,14 +152,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     List<Object> bindVars = new ArrayList<>();
-    synchronized (results) {
-      for (DocumentKey key : documentKeys) {
-        bindVars.add(EncodedPath.encode(key.getPath()));
+    for (DocumentKey key : documentKeys) {
+      bindVars.add(EncodedPath.encode(key.getPath()));
 
-        // Make sure each key has a corresponding entry, which is null in case the document is not
-        // found.
-        results.put(key, MutableDocument.newInvalidDocument(key));
-      }
+      // Make sure each key has a corresponding entry, which is null in case the document is not
+      // found.
+      results.put(key, MutableDocument.newInvalidDocument(key));
     }
 
     SQLitePersistence.LongQuery longQuery =
@@ -181,6 +179,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     documentTypeBackfills.backfill(db);
 
+    // Synchronize on `results` to avoid a data race with the background queue.
     synchronized (results) {
       return results;
     }
@@ -280,6 +279,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     documentTypeBackfills.backfill(db);
 
+    // Synchronize on `results` to avoid a data race with the background queue.
     synchronized (results) {
       return results;
     }
@@ -358,8 +358,25 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
   }
 
-  // This class is thread safe and all public methods may be safely called concurrently from
-  // multiple threads. This makes it safe to use instances of this class from BackgroundQueue.
+  /**
+   * Helper class to backfill the `document_type` column in the `remote_documents` table.
+   * <p>
+   * The `document_type` column was added as an optimization to skip deleted document tombstones
+   * when running queries. Any time a new row is added to the `remote_documents` table it _should_
+   * have its `document_type` column set to the value that matches the `contents` field. However,
+   * when upgrading from an older schema version the column value for existing rows will be null
+   * and this backfiller is intended to replace those null values to improve the future performance
+   * of queries.
+   * <p>
+   * When traversing the `remote_documents` table call `add()` upon finding a row whose
+   * `document_type` is null. Then, call `backfill()` later on to efficiently update the added
+   * rows in batches.
+   * <p>
+   * This class is thread safe and all public methods may be safely called concurrently from
+   * multiple threads. This makes it safe to use instances of this class from BackgroundQueue.
+   *
+   * @see <a href="https://github.com/firebase/firebase-android-sdk/issues/7295">#7295</a>
+   */
   private static class DocumentTypeBackfills {
 
     private final ConcurrentHashMap<BackfillKey, DocumentType> documentTypeByBackfillKey =
