@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -147,30 +148,40 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     List<Object> bindVars = new ArrayList<>();
-    for (DocumentKey key : documentKeys) {
-      bindVars.add(EncodedPath.encode(key.getPath()));
+    synchronized (results) {
+      for (DocumentKey key : documentKeys) {
+        bindVars.add(EncodedPath.encode(key.getPath()));
 
-      // Make sure each key has a corresponding entry, which is null in case the document is not
-      // found.
-      results.put(key, MutableDocument.newInvalidDocument(key));
+        // Make sure each key has a corresponding entry, which is null in case the document is not
+        // found.
+        results.put(key, MutableDocument.newInvalidDocument(key));
+      }
     }
 
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
-            "SELECT contents, read_time_seconds, read_time_nanos FROM remote_documents "
+            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
+                + "FROM remote_documents "
                 + "WHERE path IN (",
             bindVars,
             ") ORDER BY path");
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
+    ArrayList<DocumentTypeUpdateInfo> documentTypeBackfills = new ArrayList<>();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+          .forEach(
+              row ->
+                  processRowInBackground(
+                      backgroundQueue, results, row, documentTypeBackfills, /*filter*/ null));
     }
     backgroundQueue.drain();
-    return results;
+
+    synchronized (results) {
+      return results;
+    }
   }
 
   @Override
@@ -217,7 +228,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     StringBuilder sql =
         repeatSequence(
-            "SELECT contents, read_time_seconds, read_time_nanos, path "
+            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
                 + (tryFilterDocumentType == null
@@ -254,17 +265,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
+    ArrayList<DocumentTypeUpdateInfo> documentTypeBackfills = new ArrayList<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
+              processRowInBackground(backgroundQueue, results, row, documentTypeBackfills, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
     backgroundQueue.drain();
-    return results;
+
+    synchronized (results) {
+      return results;
+    }
   }
 
   private Map<DocumentKey, MutableDocument> getAll(
@@ -280,10 +295,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
+      List<DocumentTypeUpdateInfo> documentTypeBackfills,
       @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
+    boolean documentTypeIsNull = row.isNull(3);
+    String path = row.getString(4);
 
     // Since scheduling background tasks incurs overhead, we only dispatch to a
     // background thread if there are still some documents remaining.
@@ -292,6 +310,17 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+          if (documentTypeIsNull) {
+            DocumentTypeUpdateInfo updateInfo =
+                new DocumentTypeUpdateInfo(
+                    path,
+                    readTimeSeconds,
+                    readTimeNanos,
+                    DocumentType.forMutableDocument(document));
+            synchronized (documentTypeBackfills) {
+              documentTypeBackfills.add(updateInfo);
+            }
+          }
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
               results.put(document.getKey(), document);
@@ -332,6 +361,35 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
     } catch (InvalidProtocolBufferException e) {
       throw fail("MaybeDocument failed to parse: %s", e);
+    }
+  }
+
+  private static class DocumentTypeUpdateInfo {
+    final String path;
+    final int readTimeSeconds;
+    final int readTimeNanos;
+    final DocumentType documentType;
+
+    DocumentTypeUpdateInfo(
+        String path, int readTimeSeconds, int readTimeNanos, DocumentType documentType) {
+      this.path = path;
+      this.readTimeSeconds = readTimeSeconds;
+      this.readTimeNanos = readTimeNanos;
+      this.documentType = documentType;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+      return "DocumentTypeUpdateInfo(path="
+          + path
+          + ", readTimeSeconds="
+          + readTimeSeconds
+          + ", readTimeNanos="
+          + readTimeNanos
+          + ", documentType="
+          + documentType
+          + ")";
     }
   }
 }
