@@ -4756,6 +4756,29 @@ public class QueryTest {
   }
 
   @Test
+  public void testGetCleansUpTags()
+      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+          TestFailure {
+    FirebaseDatabase db = getNewDatabase();
+    DatabaseReference myRef = db.getReference(UUID.randomUUID().toString());
+    Query query = myRef.startAfter(1);
+    await(query.get()).getValue();
+    /**
+     * If we add a listener for the same query and the tag still exists, but the view doesn't,
+     * {{@link com.google.firebase.database.core.SyncTree#addEventRegistration(EventRegistration,
+     * boolean)} throws an error
+     */
+    ReadFuture future =
+        new ReadFuture(
+            query,
+            events -> {
+              assertEquals(1, events.size());
+              return true;
+            });
+    future.timedGet(10000, TimeUnit.MILLISECONDS);
+  }
+
+  @Test
   public void testGetWaitsForConnection() throws DatabaseException, InterruptedException {
     FirebaseDatabase db = getNewDatabase();
     DatabaseReference node =
