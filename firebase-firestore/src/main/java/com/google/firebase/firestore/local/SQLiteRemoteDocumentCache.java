@@ -21,7 +21,6 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -378,58 +377,58 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     BackfillResult backfill(SQLitePersistence db) {
-      ArrayList<String> caseClauses = new ArrayList<>();
-      ArrayList<Object> caseClauseBindings = new ArrayList<>();
-      ArrayList<String> whereClauses = new ArrayList<>();
-      ArrayList<Object> whereClauseBindings = new ArrayList<>();
+      StringBuilder caseClauses = new StringBuilder();
+      StringBuilder whereClauses = new StringBuilder();
+      ArrayList<Object> bindings = new ArrayList<>();
 
       Iterator<BackfillKey> backfillKeys = documentTypeByBackfillKey.keySet().iterator();
-      while (backfillKeys.hasNext()
-          && caseClauseBindings.size() + whereClauseBindings.size() < 900) {
+      while (backfillKeys.hasNext() && bindings.size() < SQLitePersistence.LongQuery.LIMIT) {
         BackfillKey backfillKey = backfillKeys.next();
         DocumentType documentType = documentTypeByBackfillKey.remove(backfillKey);
         if (documentType == null) {
           continue;
         }
 
-        caseClauses.add("WHEN path=? AND read_time_seconds=? AND read_time_nanos=? THEN ?");
-        caseClauseBindings.add(backfillKey.path);
-        caseClauseBindings.add(backfillKey.readTimeSeconds);
-        caseClauseBindings.add(backfillKey.readTimeNanos);
-        caseClauseBindings.add(documentType.dbValue);
+        bindings.add(backfillKey.path);
+        int pathBindingNumber = bindings.size();
+        bindings.add(backfillKey.readTimeSeconds);
+        int readTimeSecondsBindingNumber = bindings.size();
+        bindings.add(backfillKey.readTimeNanos);
+        int readTimeNanosBindingNumber = bindings.size();
+        bindings.add(documentType.dbValue);
+        int dbValueBindingNumber = bindings.size();
 
-        whereClauses.add("(path=? AND read_time_seconds=? AND read_time_nanos=?)");
-        whereClauseBindings.add(backfillKey.path);
-        whereClauseBindings.add(backfillKey.readTimeSeconds);
-        whereClauseBindings.add(backfillKey.readTimeNanos);
+        caseClauses
+            .append(" WHEN path=?")
+            .append(pathBindingNumber)
+            .append(" AND read_time_seconds=?")
+            .append(readTimeSecondsBindingNumber)
+            .append(" AND read_time_nanos=?")
+            .append(readTimeNanosBindingNumber)
+            .append(" THEN ?")
+            .append(dbValueBindingNumber);
+
+        if (whereClauses.length() > 0) {
+          whereClauses.append(" OR");
+        }
+        whereClauses
+            .append(" (path=?")
+            .append(pathBindingNumber)
+            .append(" AND read_time_seconds=?")
+            .append(readTimeSecondsBindingNumber)
+            .append(" AND read_time_nanos=?")
+            .append(readTimeNanosBindingNumber)
+            .append(')');
       }
 
-      if (!caseClauseBindings.isEmpty()) {
-        String sql;
-        {
-          StringBuilder sb = new StringBuilder("UPDATE remote_documents SET document_type = CASE");
-          for (String caseClause : caseClauses) {
-            sb.append(' ').append(caseClause);
-          }
-          sb.append(" ELSE NULL END WHERE ");
-          boolean isFirstWhereClause = true;
-          for (String whereClause : whereClauses) {
-            if (isFirstWhereClause) {
-              isFirstWhereClause = false;
-            } else {
-              sb.append(" OR ");
-            }
-            sb.append(whereClause);
-          }
-          sql = sb.toString();
-        }
-
-        caseClauseBindings.addAll(whereClauseBindings);
-        Object[] bindings = caseClauseBindings.toArray();
-
-        Log.i("zzyzx", "sql=sql");
-
-        db.execute(sql, bindings);
+      if (!bindings.isEmpty()) {
+        String sql =
+            "UPDATE remote_documents SET document_type = CASE"
+                + caseClauses
+                + " ELSE NULL END WHERE"
+                + whereClauses;
+        android.util.Log.i("zzyzx", sql);
+        db.execute(sql, bindings.toArray());
       }
 
       return documentTypeByBackfillKey.isEmpty()
