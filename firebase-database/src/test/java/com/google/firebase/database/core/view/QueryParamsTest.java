@@ -43,9 +43,29 @@ public class QueryParamsTest {
   }
 
   @Test
+  public void startAfterNullIsSerializable() {
+    QueryParams params = QueryParams.DEFAULT_PARAMS;
+    params = params.startAfter(EmptyNode.Empty(), ck("key"));
+    Map<String, Object> serialized = params.getWireProtocolParams();
+    QueryParams parsed = QueryParams.fromQueryObject(serialized);
+    assertEquals(params, parsed);
+    assertTrue(params.hasStart());
+  }
+
+  @Test
   public void endAtNullIsSerializable() {
     QueryParams params = QueryParams.DEFAULT_PARAMS;
     params = params.endAt(EmptyNode.Empty(), ck("key"));
+    Map<String, Object> serialized = params.getWireProtocolParams();
+    QueryParams parsed = QueryParams.fromQueryObject(serialized);
+    assertEquals(params, parsed);
+    assertTrue(params.hasEnd());
+  }
+
+  @Test
+  public void endBeforeNullIsSerializable() {
+    QueryParams params = QueryParams.DEFAULT_PARAMS;
+    params = params.endBefore(EmptyNode.Empty(), ck("key"));
     Map<String, Object> serialized = params.getWireProtocolParams();
     QueryParams parsed = QueryParams.fromQueryObject(serialized);
     assertEquals(params, parsed);
