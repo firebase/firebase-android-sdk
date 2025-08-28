@@ -60,6 +60,10 @@ fun Project.applySpotless() {
       target("*.gradle.kts") // default target for kotlinGradle
       ktfmt("0.41").googleStyle()
     }
+    format("styling") {
+      target("*.md")
+      prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
+    }
   }
 }
 
