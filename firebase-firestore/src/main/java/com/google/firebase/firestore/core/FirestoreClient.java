@@ -148,6 +148,7 @@ public final class FirestoreClient {
   public Task<Void> terminate() {
     authProvider.removeChangeListener();
     appCheckProvider.removeChangeListener();
+    asyncQueue.enqueueAndForgetEvenAfterShutdown(() -> eventManager.abortAllTargets());
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
           remoteStore.shutdown();
