@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -41,9 +42,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,6 +58,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
   private IndexManager indexManager;
+
+  private final DocumentTypeBackfills documentTypeBackfills = new DocumentTypeBackfills();
 
   SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
@@ -168,16 +173,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             ") ORDER BY path");
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
-    ArrayList<DocumentTypeUpdateInfo> documentTypeBackfills = new ArrayList<>();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(
-              row ->
-                  processRowInBackground(
-                      backgroundQueue, results, row, documentTypeBackfills, /*filter*/ null));
+          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
     }
     backgroundQueue.drain();
+
+    documentTypeBackfills.backfill(db);
 
     synchronized (results) {
       return results;
@@ -265,17 +268,18 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    ArrayList<DocumentTypeUpdateInfo> documentTypeBackfills = new ArrayList<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRowInBackground(backgroundQueue, results, row, documentTypeBackfills, filter);
+              processRowInBackground(backgroundQueue, results, row, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
     backgroundQueue.drain();
+
+    documentTypeBackfills.backfill(db);
 
     synchronized (results) {
       return results;
@@ -295,7 +299,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      List<DocumentTypeUpdateInfo> documentTypeBackfills,
       @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
@@ -311,15 +314,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
           if (documentTypeIsNull) {
-            DocumentTypeUpdateInfo updateInfo =
-                new DocumentTypeUpdateInfo(
-                    path,
-                    readTimeSeconds,
-                    readTimeNanos,
-                    DocumentType.forMutableDocument(document));
-            synchronized (documentTypeBackfills) {
-              documentTypeBackfills.add(updateInfo);
-            }
+            documentTypeBackfills.add(path, readTimeSeconds, readTimeNanos, document);
           }
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
@@ -364,32 +359,106 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
   }
 
-  private static class DocumentTypeUpdateInfo {
-    final String path;
-    final int readTimeSeconds;
-    final int readTimeNanos;
-    final DocumentType documentType;
+  // This class is thread safe and all public methods may be safely called concurrently from
+  // multiple threads. This makes it safe to use instances of this class from BackgroundQueue.
+  private static class DocumentTypeBackfills {
 
-    DocumentTypeUpdateInfo(
-        String path, int readTimeSeconds, int readTimeNanos, DocumentType documentType) {
-      this.path = path;
-      this.readTimeSeconds = readTimeSeconds;
-      this.readTimeNanos = readTimeNanos;
-      this.documentType = documentType;
+    private final ConcurrentHashMap<BackfillKey, DocumentType> documentTypeByBackfillKey =
+        new ConcurrentHashMap<>();
+
+    enum BackfillResult {
+      NO_PENDING_BACKFILLS,
+      HAS_PENDING_BACKFILLS,
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-      return "DocumentTypeUpdateInfo(path="
-          + path
-          + ", readTimeSeconds="
-          + readTimeSeconds
-          + ", readTimeNanos="
-          + readTimeNanos
-          + ", documentType="
-          + documentType
-          + ")";
+    void add(String path, int readTimeSeconds, int readTimeNanos, MutableDocument document) {
+      BackfillKey backfillKey = new BackfillKey(path, readTimeSeconds, readTimeNanos);
+      DocumentType documentType = DocumentType.forMutableDocument(document);
+      documentTypeByBackfillKey.putIfAbsent(backfillKey, documentType);
+    }
+
+    BackfillResult backfill(SQLitePersistence db) {
+      ArrayList<String> caseClauses = new ArrayList<>();
+      ArrayList<Object> caseClauseBindings = new ArrayList<>();
+      ArrayList<String> whereClauses = new ArrayList<>();
+      ArrayList<Object> whereClauseBindings = new ArrayList<>();
+
+      Iterator<BackfillKey> backfillKeys = documentTypeByBackfillKey.keySet().iterator();
+      while (backfillKeys.hasNext()
+          && caseClauseBindings.size() + whereClauseBindings.size() < 900) {
+        BackfillKey backfillKey = backfillKeys.next();
+        DocumentType documentType = documentTypeByBackfillKey.remove(backfillKey);
+        if (documentType == null) {
+          continue;
+        }
+
+        caseClauses.add("WHEN path=? AND read_time_seconds=? AND read_time_nanos=? THEN ?");
+        caseClauseBindings.add(backfillKey.path);
+        caseClauseBindings.add(backfillKey.readTimeSeconds);
+        caseClauseBindings.add(backfillKey.readTimeNanos);
+        caseClauseBindings.add(documentType.dbValue);
+
+        whereClauses.add("(path=? AND read_time_seconds=? AND read_time_nanos=?)");
+        whereClauseBindings.add(backfillKey.path);
+        whereClauseBindings.add(backfillKey.readTimeSeconds);
+        whereClauseBindings.add(backfillKey.readTimeNanos);
+      }
+
+      if (!caseClauseBindings.isEmpty()) {
+        String sql;
+        {
+          StringBuilder sb = new StringBuilder("UPDATE remote_documents SET document_type = CASE");
+          for (String caseClause : caseClauses) {
+            sb.append(' ').append(caseClause);
+          }
+          sb.append(" ELSE NULL END WHERE ");
+          boolean isFirstWhereClause = true;
+          for (String whereClause : whereClauses) {
+            if (isFirstWhereClause) {
+              isFirstWhereClause = false;
+            } else {
+              sb.append(" OR ");
+            }
+            sb.append(whereClause);
+          }
+          sql = sb.toString();
+        }
+
+        caseClauseBindings.addAll(whereClauseBindings);
+        Object[] bindings = caseClauseBindings.toArray();
+
+        Log.i("zzyzx", "sql=sql");
+
+        db.execute(sql, bindings);
+      }
+
+      return documentTypeByBackfillKey.isEmpty()
+          ? BackfillResult.NO_PENDING_BACKFILLS
+          : BackfillResult.HAS_PENDING_BACKFILLS;
+    }
+
+    private static class BackfillKey {
+      final String path;
+      final int readTimeSeconds;
+      final int readTimeNanos;
+
+      BackfillKey(String path, int readTimeSeconds, int readTimeNanos) {
+        this.path = path;
+        this.readTimeSeconds = readTimeSeconds;
+        this.readTimeNanos = readTimeNanos;
+      }
+
+      @NonNull
+      @Override
+      public String toString() {
+        return "DocumentTypeBackfills.BackfillKey(path="
+            + path
+            + ", readTimeSeconds="
+            + readTimeSeconds
+            + ", readTimeNanos="
+            + readTimeNanos
+            + ")";
+      }
     }
   }
 }
