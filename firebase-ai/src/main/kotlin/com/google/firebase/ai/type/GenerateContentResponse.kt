@@ -59,7 +59,7 @@ public class GenerateContentResponse(
 
   /**
    * Convenience field representing all the text parts in the response that are marked as thoughts
-   * as a single string, if they exists.
+   * as a single string, if they exist.
    *
    * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
