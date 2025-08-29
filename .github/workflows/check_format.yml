@@ -66,8 +66,8 @@ jobs:
     runs-on: ubuntu-22.04
     if: always()
     name: Check Format (matrix)
-    needs: [check_format, determine_changed]
+    needs: check_format
     steps:
       - name: Check matrix
-        if: ${{ needs.determine_changed.outputs.modules != "[]" && needs.check_format.result != 'success' }}
+        if: needs.check_format.result != 'success'
         run: exit 1
