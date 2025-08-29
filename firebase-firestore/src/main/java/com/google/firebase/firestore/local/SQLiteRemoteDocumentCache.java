@@ -58,7 +58,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   private final LocalSerializer serializer;
   private IndexManager indexManager;
 
-  private final DocumentTypeBackfills documentTypeBackfills = new DocumentTypeBackfills();
+  private final DocumentTypeBackfiller documentTypeBackfiller = new DocumentTypeBackfiller();
 
   SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
@@ -177,8 +177,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     backgroundQueue.drain();
 
-    // TODO(dconeybe): schedule the backfill asynchronously.
-    documentTypeBackfills.backfill(db);
+    // Backfill any rows with null "document_type" discovered by processRowInBackground().
+    documentTypeBackfiller.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
     synchronized (results) {
@@ -278,8 +278,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             });
     backgroundQueue.drain();
 
-    // TODO(dconeybe): schedule the backfill asynchronously.
-    documentTypeBackfills.backfill(db);
+    // Backfill any null "document_type" columns discovered by processRowInBackground().
+    documentTypeBackfiller.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
     synchronized (results) {
@@ -315,7 +315,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
           if (documentTypeIsNull) {
-            documentTypeBackfills.add(path, readTimeSeconds, readTimeNanos, document);
+            documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
           }
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
@@ -379,48 +379,54 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
    *
    * @see <a href="https://github.com/firebase/firebase-android-sdk/issues/7295">#7295</a>
    */
-  private static class DocumentTypeBackfills {
+  private static class DocumentTypeBackfiller {
 
     private final ConcurrentHashMap<BackfillKey, DocumentType> documentTypeByBackfillKey =
         new ConcurrentHashMap<>();
 
-    enum BackfillResult {
-      NO_PENDING_BACKFILLS,
-      HAS_PENDING_BACKFILLS,
-    }
-
-    void add(String path, int readTimeSeconds, int readTimeNanos, MutableDocument document) {
+    void enqueue(String path, int readTimeSeconds, int readTimeNanos, MutableDocument document) {
       BackfillKey backfillKey = new BackfillKey(path, readTimeSeconds, readTimeNanos);
       DocumentType documentType = DocumentType.forMutableDocument(document);
       documentTypeByBackfillKey.putIfAbsent(backfillKey, documentType);
     }
 
-    BackfillResult backfill(SQLitePersistence db) {
-      // Just return immediately if there are no pending backfills, as a performance optimization.
-      // This just elides a few allocations (e.g. the ArrayList below) that would otherwise
-      // needlessly occur.
-      if (documentTypeByBackfillKey.isEmpty()) {
-        return BackfillResult.NO_PENDING_BACKFILLS;
+    void backfill(SQLitePersistence db) {
+      while (true) {
+        BackfillSqlInfo backfillSqlInfo = calculateBackfillSql();
+        if (backfillSqlInfo == null) {
+          break;
+        }
+        android.util.Log.i(
+            "zzyzx",
+            "Backfilling document_type for " + backfillSqlInfo.numDocumentsAffected + " documents");
+        db.execute(backfillSqlInfo.sql, backfillSqlInfo.bindings);
       }
+    }
 
-      ArrayList<Object> sqlBindings = new ArrayList<>();
-      String sql = calculateBackfillSql(sqlBindings);
-      if (sql != null) {
-        db.execute(sql, sqlBindings.toArray());
+    private static class BackfillSqlInfo {
+      final String sql;
+      final Object[] bindings;
+      final int numDocumentsAffected;
+
+      BackfillSqlInfo(String sql, Object[] bindings, int numDocumentsAffected) {
+        this.sql = sql;
+        this.bindings = bindings;
+        this.numDocumentsAffected = numDocumentsAffected;
       }
-
-      return documentTypeByBackfillKey.isEmpty()
-          ? BackfillResult.NO_PENDING_BACKFILLS
-          : BackfillResult.HAS_PENDING_BACKFILLS;
     }
 
     @Nullable
-    String calculateBackfillSql(ArrayList<Object> bindings) {
+    BackfillSqlInfo calculateBackfillSql() {
+      if (documentTypeByBackfillKey.isEmpty()) {
+        return null; // short circuit
+      }
+
+      ArrayList<Object> bindings = new ArrayList<>();
       StringBuilder caseClauses = new StringBuilder();
       StringBuilder whereClauses = new StringBuilder();
 
       Iterator<BackfillKey> backfillKeys = documentTypeByBackfillKey.keySet().iterator();
-      boolean backfillsFound = false;
+      int numDocumentsAffected = 0;
       while (backfillKeys.hasNext() && bindings.size() < SQLitePersistence.LongQuery.LIMIT) {
         BackfillKey backfillKey = backfillKeys.next();
         DocumentType documentType = documentTypeByBackfillKey.remove(backfillKey);
@@ -428,7 +434,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           continue;
         }
 
-        backfillsFound = true;
+        numDocumentsAffected++;
         bindings.add(backfillKey.path);
         int pathBindingNumber = bindings.size();
         bindings.add(backfillKey.readTimeSeconds);
@@ -461,14 +467,17 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             .append(')');
       }
 
-      if (!backfillsFound) {
+      if (numDocumentsAffected == 0) {
         return null;
       }
 
-      return "UPDATE remote_documents SET document_type = CASE"
-          + caseClauses
-          + " ELSE NULL END WHERE"
-          + whereClauses;
+      String sql =
+          "UPDATE remote_documents SET document_type = CASE"
+              + caseClauses
+              + " ELSE NULL END WHERE"
+              + whereClauses;
+
+      return new BackfillSqlInfo(sql, bindings.toArray(), numDocumentsAffected);
     }
 
     private static class BackfillKey {
@@ -485,7 +494,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       @NonNull
       @Override
       public String toString() {
-        return "DocumentTypeBackfills.BackfillKey(path="
+        return "DocumentTypeBackfiller.BackfillKey(path="
             + path
             + ", readTimeSeconds="
             + readTimeSeconds
