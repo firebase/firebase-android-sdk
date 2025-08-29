@@ -8,6 +8,7 @@ More information about Firebase can be found at https://firebase.google.com.
 ## Table of contents
 
 1. [Getting Started](#getting-started)
+
 1. [Testing](#testing)
    1. [Unit Testing](#unit-testing)
    1. [Integration Testing](#integration-testing)
