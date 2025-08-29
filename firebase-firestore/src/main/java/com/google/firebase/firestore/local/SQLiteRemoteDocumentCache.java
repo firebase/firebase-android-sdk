@@ -396,9 +396,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         if (backfillSqlInfo == null) {
           break;
         }
-        android.util.Log.i(
-            "zzyzx",
-            "Backfilling document_type for " + backfillSqlInfo.numDocumentsAffected + " documents");
         db.execute(backfillSqlInfo.sql, backfillSqlInfo.bindings);
       }
     }
