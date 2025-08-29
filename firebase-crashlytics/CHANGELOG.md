@@ -1,6 +1,8 @@
 # Unreleased
 
-\*\* [changed] Updated `firebase-sessions` dependency to v3.0.1
+
+# 20.0.1
+** [changed] Updated `firebase-sessions` dependency to v3.0.1
 
 # 20.0.0
 
@@ -676,11 +678,13 @@ name change. The following release notes describe changes in the new SDK.
   </ul>
 </aside>
 
-- [changed] Replaced static methods with new instance methods that are more consistent with other
-  Firebase SDKs and more intuitive to use. The new APIs give your users more control over how you
-  collect their data.
-- [removed] Removed the Fabric [crashlytics] API key. Now, [crashlytics] will always use the
-  `google-services.json` file to associate your app with your Firebase project. If you linked your
-  app from Fabric, remove the Fabric API key from your `AndroidManifest.xml` file.
-- [removed] The `fabric.properties` and `crashlytics.properties` files are no longer supported.
-  Remove them from your app.
+* [changed] Replaced static methods with new instance methods that are more
+  consistent with other Firebase SDKs and more intuitive to use. The new APIs
+  give your users more control over how you collect their data.
+* [removed] Removed the Fabric [crashlytics] API key. Now, [crashlytics]
+  will always use the `google-services.json` file to associate your app with your
+  Firebase project. If you linked your app from Fabric, remove the Fabric API key
+  from your `AndroidManifest.xml` file.
+* [removed] The `fabric.properties` and `crashlytics.properties` files are no
+  longer supported. Remove them from your app.
+
