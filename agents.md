@@ -1,18 +1,6 @@
-# Jules Onboarding Guide for `firebase-android-sdk`
+# Agents
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
-
-## Table of Contents
-
-- [Environment Setup](#environment-setup)
-- [Testing](#testing)
-- [API Surface](#api-surface)
-- [Best Practices](#best-practices)
-- [Common Patterns](#common-patterns)
-- [External Dependencies](#external-dependencies)
-- [Updating this Guide](#updating-this-guide)
-
----
 
 ## Environment Setup
 
@@ -41,7 +29,7 @@ tool for this purpose.
       sdkmanager "platform-tools" "platforms;android-33"
 
       # Accept all licenses
-      sdkmanager --licenses
+      yes | sdkmanager --licenses
       ```
 
     - Refer to the specific requirements of the project to determine which packages to install.
