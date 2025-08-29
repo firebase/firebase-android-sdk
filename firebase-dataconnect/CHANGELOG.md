@@ -1,4 +1,7 @@
 # Unreleased
+- [changed] Ignore unknown fields in response data instead of throwing a
+  `DataConnectOperationException` with message "decoding data from the server's response failed:
+  An unknown field for index -3"
 
 # 17.0.0
 
