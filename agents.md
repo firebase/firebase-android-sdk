@@ -81,18 +81,6 @@ The public API of the Firebase SDKs is managed using a set of annotations:
 
 ---
 
-## Best Practices
-
-- **Code Formatting**: The repository uses `spotless` for code formatting. To format the code in a
-  specific project, run:
-  ```bash
-  ./gradlew :<firebase-project>:spotlessApply
-  ```
-- **Dependency Management**: Dependencies are managed using Gradle. Be mindful of the impact of new
-  dependencies on the size of the SDKs.
-
----
-
 ## Common Patterns
 
 This repository uses a combination of dependency injection frameworks:
@@ -108,9 +96,28 @@ This repository uses a combination of dependency injection frameworks:
 
 ---
 
+## Iteration Loop
+
+After you make a change, here's the flow you should follow:
+
+- Format the code using `spotless`. It can be run with:
+  ```bash
+  ./gradlew :<firebase-project>:spotlessApply
+  ```
+- Run unit tests:
+  ```bash
+  ./gradlew :<firebase-project>:check
+  ```
+- If necessary, run integration tests based on the instructions above.
+
+---
+
 ## External Dependencies
 
-Do not add new external dependencies to the project unless explicitly asked to do so. The Firebase
+---
+
+Do not add, under any circunstance, any new dependency to a SDK that does not already exists in the
+`gradle/libs.versions.toml`, and even then, only do it if cxexplicitly asked to do so. The Firebase
 SDKs are designed to be lightweight, and adding new dependencies can increase the size of the final
 artifacts.
 
