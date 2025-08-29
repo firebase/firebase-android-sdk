@@ -1,16 +1,17 @@
 # Unreleased
 
-
 # 17.2.0
-* [feature] Added support for returning thought summaries, which are synthesized
-  versions of a model's internal reasoning process.
-* [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an exception
-  when the response contained no candidates.
-* [changed] Added better description for requests which fail due to the Gemini API not being
+
+- [feature] Added support for returning thought summaries, which are synthesized versions of a
+  model's internal reasoning process.
+- [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an
+  exception when the response contained no candidates.
+- [changed] Added better description for requests which fail due to the Gemini API not being
   configured.
-- [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
+
+* [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
   (#7260)
-- [feature] Added support for limited-use tokens with Firebase App Check. These short-lived tokens
+* [feature] Added support for limited-use tokens with Firebase App Check. These short-lived tokens
   provide greater protection for the APIs that give you access to Gemini and Imagen models. Learn
   how to [enable usage of limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check).
   (#7285)
@@ -19,9 +20,10 @@
 
 =======
 
-* [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
+- [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
   transfer, and subject references (#7075)
-- [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
+
+* [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
 
 # 17.0.0
 
@@ -64,6 +66,5 @@
     free tier offering.
   - Using the Firebase AI SDK with the Vertex AI Gemini API is still generally available (GA).
 
- Note: This feature is in Public Preview, which means that it is not subject to any SLA or
- deprecation policy and could change in backwards-incompatible ways.
-
+Note: This feature is in Public Preview, which means that it is not subject to any SLA or
+deprecation policy and could change in backwards-incompatible ways.

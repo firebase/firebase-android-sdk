@@ -1,10 +1,10 @@
 # Unreleased
 
-
 # 3.0.1
-* [fixed] Bumped DataStore dependency to include the mitigation for
- `CorruptionException` released in version `1.1.5`. See Jetpacks' DataStore
- [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
+
+- [fixed] Bumped DataStore dependency to include the mitigation for `CorruptionException` released
+  in version `1.1.5`. See Jetpacks' DataStore
+  [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
 
 # 3.0.0
 
@@ -72,5 +72,5 @@
 - [fixed] Populate DataCollectionStatus fields for Crashlytics and Perf.
 
 # 1.0.0
-* [feature] Initial Firebase sessions library.
 
+- [feature] Initial Firebase sessions library.

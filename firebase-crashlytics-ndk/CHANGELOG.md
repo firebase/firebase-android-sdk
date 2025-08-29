@@ -1,8 +1,8 @@
 # Unreleased
 
-
 # 20.0.1
-* [changed] Updated `firebase-crashlytics` dependency to 20.0.1
+
+- [changed] Updated `firebase-crashlytics` dependency to 20.0.1
 
 # 20.0.0
 
@@ -303,10 +303,9 @@ the new SDK.
   </ul>
 </aside>
 
- * [changed] [crashlytics] NDK crash reporting will now start automatically
- when the [crashlytics] NDK dependency is included in your app.
- * [changed] The [crashlytics] Gradle plugin has new tasks to support
- uploading symbol files to [crashlytics] servers. See the
- [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
- for more information.
-
+- [changed] [crashlytics] NDK crash reporting will now start automatically when the [crashlytics]
+  NDK dependency is included in your app.
+- [changed] The [crashlytics] Gradle plugin has new tasks to support uploading symbol files to
+  [crashlytics] servers. See the
+  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk) for more
+  information.

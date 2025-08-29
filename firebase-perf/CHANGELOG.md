@@ -1,8 +1,8 @@
 # Unreleased
 
-
 # 22.0.1
-* [fixed] Fixed an ANR on app launch. [#4831]
+
+- [fixed] Fixed an ANR on app launch. [#4831]
 
 # 22.0.0
 
