@@ -105,3 +105,10 @@ mutation createPersonWithPartialFailureInTransaction($id: String!, $name: String
   person2: person_insert(data: { id_expr: "uuidV4()", name: $name }) @check(expr: "false", message: "te36b3zkvn")
 }
 
+mutation create5People @auth(level: PUBLIC) {
+  person1: person_upsert(data: { id: "8a218894521f457a9be45a0986494058", name: "Name1" })
+  person2: person_upsert(data: { id: "464443371f284194be4b2e78c3ef000c", name: "Name2" })
+  person3: person_upsert(data: { id: "903d83db81754bd29860458f127ef124", name: "Name3" })
+  person4: person_upsert(data: { id: "ef8de2a4a6de400e94d555f148b643c0", name: "Name4" })
+  person5: person_upsert(data: { id: "8584fd7ca2b6453da18d21d4341f1804", name: "Name5" })
+}

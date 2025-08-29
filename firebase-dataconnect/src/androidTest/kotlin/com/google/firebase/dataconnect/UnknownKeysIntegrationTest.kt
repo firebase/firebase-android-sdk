@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalFirebaseDataConnect::class)
+
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
@@ -29,6 +33,7 @@ import org.junit.Test
 
 class UnknownKeysIntegrationTest : DataConnectIntegrationTestBase() {
 
+  private val personSchema by lazy { PersonSchema(dataConnectFactory) }
   private val allTypesSchema by lazy { AllTypesSchema(dataConnectFactory) }
 
   @Test
@@ -64,7 +69,6 @@ class UnknownKeysIntegrationTest : DataConnectIntegrationTestBase() {
     @Serializable
     data class PrimitiveQueryDataMissingSomeKeys(val primitive: PrimitiveQueryDataValues)
 
-    @OptIn(ExperimentalFirebaseDataConnect::class)
     val result =
       allTypesSchema
         .getPrimitive(id = id)
@@ -79,5 +83,58 @@ class UnknownKeysIntegrationTest : DataConnectIntegrationTestBase() {
         stringField = "TestString",
         stringFieldNullable = "TestNullableString"
       )
+  }
+
+  @Test
+  fun unknownKeysInMutationResponseDataShouldBeIgnored() = runTest {
+    @Serializable data class PersonKeyWithId(val id: String)
+    val person1 = PersonKeyWithId(id = "8a218894521f457a9be45a0986494058")
+    val person4 = PersonKeyWithId(id = "ef8de2a4a6de400e94d555f148b643c0")
+    val mutationRef =
+      personSchema.dataConnect.mutation("create5People", Unit, serializer<Unit>(), serializer())
+
+    // Precondition check: Verify that the response contains person1..person5 and the expected IDs.
+    withClue("precondition check") {
+      @Serializable
+      data class Create5PeopleData(
+        val person1: PersonKeyWithId,
+        val person3: PersonKeyWithId,
+        val person2: PersonKeyWithId,
+        val person4: PersonKeyWithId,
+        val person5: PersonKeyWithId,
+      )
+
+      val mutationResult =
+        mutationRef.withDataDeserializer(serializer<Create5PeopleData>()).execute()
+      mutationResult.data shouldBe
+        Create5PeopleData(
+          person1 = person1,
+          person2 = PersonKeyWithId(id = "464443371f284194be4b2e78c3ef000c"),
+          person3 = PersonKeyWithId(id = "903d83db81754bd29860458f127ef124"),
+          person4 = person4,
+          person5 = PersonKeyWithId(id = "8584fd7ca2b6453da18d21d4341f1804"),
+        )
+    }
+
+    withClue("actual test") {
+      // Create5PeopleDataWithMissingKeys is missing "person2.id", "person3", and "person5" which
+      // will be present in the response.
+      @Serializable data class PersonKeyWithoutId(val foo: Nothing? = null)
+      @Serializable
+      data class Create5PeopleDataWithMissingKeys(
+        val person1: PersonKeyWithId,
+        val person2: PersonKeyWithoutId,
+        val person4: PersonKeyWithId,
+      )
+
+      val mutationResult =
+        mutationRef.withDataDeserializer(serializer<Create5PeopleDataWithMissingKeys>()).execute()
+      mutationResult.data shouldBe
+        Create5PeopleDataWithMissingKeys(
+          person1 = person1,
+          person2 = PersonKeyWithoutId(),
+          person4 = PersonKeyWithId(id = "ef8de2a4a6de400e94d555f148b643c0"),
+        )
+    }
   }
 }
