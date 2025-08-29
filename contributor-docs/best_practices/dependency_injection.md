@@ -5,38 +5,43 @@ parent: Best Practices
 # Dependency Injection
 
 While [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) provides basic
-Dependency Injection capabilities for interop between Firebase SDKs, it's not ideal as a general purpose
-DI framework for a few reasons, to name some:
+Dependency Injection capabilities for interop between Firebase SDKs, it's not ideal as a general
+purpose DI framework for a few reasons, to name some:
 
-* It's verbose, i.e. requires manually specifying dependencies and constructing instances of components in Component
-  definitions.
-* It has a runtime cost, i.e. initialization time is linear in the number of Components present in the graph
+- It's verbose, i.e. requires manually specifying dependencies and constructing instances of
+  components in Component definitions.
+- It has a runtime cost, i.e. initialization time is linear in the number of Components present in
+  the graph
 
-As a result using [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) is appropriate only
-for inter-SDK injection and scoping instances per `FirebaseApp`.
+As a result using [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) is
+appropriate only for inter-SDK injection and scoping instances per `FirebaseApp`.
 
-On the other hand, manually instantiating SDKs is often tedious, errorprone, and leads to code smells
-that make code less testable and couples it to the implementation rather than the interface. For more context see
-[Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) and  [Motivation](https://github.com/google/guice/wiki/Motivation).
+On the other hand, manually instantiating SDKs is often tedious, errorprone, and leads to code
+smells that make code less testable and couples it to the implementation rather than the interface.
+For more context see [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) and
+[Motivation](https://github.com/google/guice/wiki/Motivation).
 
-{: .important }
-It's recommended to use [Dagger](https://dagger.dev) for internal dependency injection within the SDKs and
-[Components]({{ site.baseurl }}{% link components/components.md %}) to inject inter-sdk dependencies that are available only at
-runtime into the [Dagger Graph](https://dagger.dev/dev-guide/#building-the-graph) via
-[builder setters](https://dagger.dev/dev-guide/#binding-instances) or [factory arguments](https://dagger.dev/api/latest/dagger/Component.Factory.html).
+{: .important } It's recommended to use [Dagger](https://dagger.dev) for internal dependency
+injection within the SDKs and [Components]({{ site.baseurl }}{% link components/components.md %}) to
+inject inter-sdk dependencies that are available only at runtime into the
+[Dagger Graph](https://dagger.dev/dev-guide/#building-the-graph) via
+[builder setters](https://dagger.dev/dev-guide/#binding-instances) or
+[factory arguments](https://dagger.dev/api/latest/dagger/Component.Factory.html).
 
-See: [Dagger docs](https://dagger.dev)
-See: [Dagger tutorial](https://dagger.dev/tutorial/)
+See: [Dagger docs](https://dagger.dev) See: [Dagger tutorial](https://dagger.dev/tutorial/)
 
-{: .highlight }
-While Hilt is the recommended way to use dagger in Android applications, it's not suitable for SDK/library development.
+{: .highlight } While Hilt is the recommended way to use dagger in Android applications, it's not
+suitable for SDK/library development.
 
 ## How to get started
 
-Since [Dagger](https://dagger.dev) does not strictly follow semver and requires the dagger-compiler version to match the dagger library version,
-it's not safe to depend on it via a pom level dependency, see [This comment](https://github.com/firebase/firebase-android-sdk/issues/1677#issuecomment-645669608) for context. For this reason in Firebase SDKs we "vendor/repackage" Dagger into the SDK itself under
-`com.google.firebase.{sdkname}.dagger`. While it incurs in a size increase, it's usually on the order of a couple of KB and is considered
-negligible.
+Since [Dagger](https://dagger.dev) does not strictly follow semver and requires the dagger-compiler
+version to match the dagger library version, it's not safe to depend on it via a pom level
+dependency, see
+[This comment](https://github.com/firebase/firebase-android-sdk/issues/1677#issuecomment-645669608)
+for context. For this reason in Firebase SDKs we "vendor/repackage" Dagger into the SDK itself under
+`com.google.firebase.{sdkname}.dagger`. While it incurs in a size increase, it's usually on the
+order of a couple of KB and is considered negligible.
 
 To use Dagger in your SDK use the following in your Gradle build file:
 
@@ -56,10 +61,12 @@ dependencies {
 
 ## General Dagger setup
 
-As mentioned in [Firebase Components]({{ site.baseurl }}{% link components/components.md %}), all components are scoped per `FirebaseApp`
-meaning there is a single instance of the component within a given `FirebaseApp`.
+As mentioned in [Firebase Components]({{ site.baseurl }}{% link components/components.md %}), all
+components are scoped per `FirebaseApp` meaning there is a single instance of the component within a
+given `FirebaseApp`.
 
-This makes it a natural fit to get all inter-sdk dependencies and instatiate the Dagger component inside the `ComponentRegistrar`.
+This makes it a natural fit to get all inter-sdk dependencies and instatiate the Dagger component
+inside the `ComponentRegistrar`.
 
 ```kotlin
 class MyRegistrar : ComponentRegistrar {
@@ -122,15 +129,17 @@ class MySdkInteropAdapter @Inject constructor(private val interop: com.google.fi
 
 ## Scope
 
-Unlike Component, Dagger does not use singleton scope by default and instead injects a new instance of a type at each injection point,
-in the example above we want `MySdk` and `MySdkInteropAdapter` to be singletons so they are are annotated with `@Singleton`.
+Unlike Component, Dagger does not use singleton scope by default and instead injects a new instance
+of a type at each injection point, in the example above we want `MySdk` and `MySdkInteropAdapter` to
+be singletons so they are are annotated with `@Singleton`.
 
-See [Scoped bindings](https://dagger.dev/dev-guide/#singletons-and-scoped-bindings) for more details.
+See [Scoped bindings](https://dagger.dev/dev-guide/#singletons-and-scoped-bindings) for more
+details.
 
 ### Support multiple instances of the SDK per `FirebaseApp`(multi-resource)
 
-As mentioned in [Firebase Components]({{ site.baseurl }}{% link components/components.md %}), some SDKs support multi-resource mode,
-which effectively means that there are 2 scopes at play:
+As mentioned in [Firebase Components]({{ site.baseurl }}{% link components/components.md %}), some
+SDKs support multi-resource mode, which effectively means that there are 2 scopes at play:
 
 1. `@Singleton` scope that the main `MultiResourceComponent` has.
 2. Each instance of the sdk will have its own scope.
@@ -143,7 +152,7 @@ flowchart LR
       direction BT
       subgraph GlobalComponents[Outside of SDK]
         direction LR
-        
+
         FirebaseOptions
         SomeInterop
         Executor["@Background Executor"]
@@ -155,7 +164,7 @@ flowchart LR
           SomeImpl -.-> SomeInterop
           SomeImpl -.-> Executor
         end
-          
+
         subgraph Default["@DbScope SDK(default)"]
           MainClassDefault[FirebaseDatabase] --> SomeImpl
           SomeOtherImplDefault[SomeOtherImpl] -.-> FirebaseOptions
@@ -169,7 +178,7 @@ flowchart LR
       end
     end
   end
-  
+
   classDef green fill:#4db6ac
   classDef blue fill:#1a73e8
   class GlobalComponents green
@@ -178,9 +187,11 @@ flowchart LR
   class MyDbName blue
 ```
 
-As you can see above, `DatabaseMultiDb` and `SomeImpl` are singletons, while `FirebaseDatabase` and `SomeOtherImpl` are scoped per `database name`.
+As you can see above, `DatabaseMultiDb` and `SomeImpl` are singletons, while `FirebaseDatabase` and
+`SomeOtherImpl` are scoped per `database name`.
 
-It can be easily achieved with the help of [Dagger's subcomponents](https://dagger.dev/dev-guide/subcomponents).
+It can be easily achieved with the help of
+[Dagger's subcomponents](https://dagger.dev/dev-guide/subcomponents).
 
 For example:
 
@@ -235,7 +246,7 @@ Implementing `DatabaseMultiDb`:
 @Singleton
 class DatabaseMultiDb @Inject constructor(private val factory: DbInstanceComponent.Factory) {
   private val instances = mutableMapOf<String, FirebaseDatabase>()
-  
+
   @Synchronized
   fun get(dbName: String) : FirebaseDatabase {
     if (!instances.containsKey(dbName)) {
