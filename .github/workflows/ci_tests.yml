@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
+    if: ${{ needs.determine_changed.outputs.modules != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -89,12 +90,11 @@ jobs:
   # to be used as a required check for merging.
   check_all:
     runs-on: ubuntu-22.04
-    if: always()
     name: Unit Tests (matrix)
     needs: unit_tests
+    if: ${{ failure() }}
     steps:
-      - name: Check test matrix
-        if: needs.unit_tests.result != 'success'
+      - name: Check test matrix results
         run: exit 1
 
 
