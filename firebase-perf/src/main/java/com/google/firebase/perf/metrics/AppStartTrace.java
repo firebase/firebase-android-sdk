@@ -77,6 +77,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   // If the `mainThreadRunnableTime` was set within this duration, the assumption
   // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
+  // See b/339891952.
   private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
 
   // Core pool size 0 allows threads to shut down if they're idle
@@ -335,7 +336,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * before `onActivityCreated`, the
    * assumption is that it was called immediately before the activity lifecycle callbacks in a
    * foreground start.
-   * See https://github.com/firebase/firebase-android-sdk/issues/5920.
+   * See b/339891952.
    */
   private void resolveIsStartedFromBackground() {
     // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
@@ -349,7 +350,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     // Otherwise it's assumed to be a background start if the runnable was set more than
     // `MAX_BACKGROUND_RUNNABLE_DELAY`
     // before the first `onActivityCreated` call.
-    // TODO(b/339891952): Investigate removing the API check, and setting a more precise delay.
+    // TODO(b/339891952): Investigate removing the API check.
     if ((Build.VERSION.SDK_INT < 34)
         || (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY)) {
       isStartedFromBackground = true;
