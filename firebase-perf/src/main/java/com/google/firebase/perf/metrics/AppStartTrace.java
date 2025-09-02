@@ -117,7 +117,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final @Nullable Timer firebaseClassLoadTime;
   private Timer onCreateTime = null;
 
-  // TODO(b/339891952): Investigate simplifying Timers in app start trace to use timestamps.
+  // TODO(b/339891952): Explore simplifying Timers in app start trace to use timestamps.
   private Timer mainThreadRunnableTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
