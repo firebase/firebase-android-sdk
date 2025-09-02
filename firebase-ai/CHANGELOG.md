@@ -1,4 +1,8 @@
 # Unreleased
+- [feature] Introduced `MissingPermissionsException`, which is thrown when the necessary
+  permissions have not been granted by the user.
+- [feature] Added helper functions to LiveSession to allow developers to track the status of
+  the audio session and the underlying websocket connection.
 
 # 17.2.0
 
