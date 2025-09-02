@@ -1,4 +1,4 @@
-# Firebase Android Open Source Development T
+# Firebase Android Open Source Development
 
 This repository contains the source code for all Android Firebase SDKs except Analytics and Auth.
 
