@@ -20,7 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.pipeline.AggregateFunction;
-import com.google.firebase.firestore.pipeline.AggregateWithAlias;
+import com.google.firebase.firestore.pipeline.AliasedAggregate;
 import java.util.Objects;
 
 /** Represents an aggregation that can be performed by Firestore. */
@@ -66,7 +66,7 @@ public abstract class AggregateField {
   }
 
   @NonNull
-  abstract AggregateWithAlias toPipeline();
+  abstract AliasedAggregate toPipeline();
 
   /**
    * Returns true if the given object is equal to this object. Two `AggregateField` objects are
@@ -205,7 +205,7 @@ public abstract class AggregateField {
 
     @NonNull
     @Override
-    AggregateWithAlias toPipeline() {
+    AliasedAggregate toPipeline() {
       return AggregateFunction.countAll().alias(getAlias());
     }
   }
@@ -218,7 +218,7 @@ public abstract class AggregateField {
 
     @NonNull
     @Override
-    AggregateWithAlias toPipeline() {
+    AliasedAggregate toPipeline() {
       return field(getFieldPath()).sum().alias(getAlias());
     }
   }
@@ -231,7 +231,7 @@ public abstract class AggregateField {
 
     @NonNull
     @Override
-    AggregateWithAlias toPipeline() {
+    AliasedAggregate toPipeline() {
       return field(getFieldPath()).avg().alias(getAlias());
     }
   }

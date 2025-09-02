@@ -14,11 +14,9 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.core.Canonicalizable
-import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
@@ -28,9 +26,9 @@ import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expr.Companion.constant
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.remote.RemoteSerializer
-import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
+import javax.annotation.Nonnull
 
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
@@ -118,7 +116,7 @@ private constructor(
      * Specify name of stage
      *
      * @param name The unique name of the stage to add.
-     * @return [RawStage] with specified parameters.
+     * @return A new [RawStage] for the specified stage name.
      */
     @JvmStatic fun ofName(name: String) = RawStage(name, emptyList(), InternalOptions.EMPTY)
   }
@@ -200,6 +198,13 @@ internal constructor(
   internal val serializer: RemoteSerializer,
   options: InternalOptions
 ) : Stage<CollectionSource>("collection", options), Canonicalizable {
+
+  internal constructor(
+    path: ResourcePath,
+    serializer: RemoteSerializer,
+    options: CollectionSourceOptions
+  ) : this(path, serializer, options.options)
+
   override fun canonicalId(): String {
     return "${name}(${path.canonicalString()})"
   }
@@ -224,24 +229,6 @@ internal constructor(
     CollectionSource(path, serializer, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("/${path.canonicalString()}").build())
-  companion object {
-    /**
-     * Set the pipeline's source to the collection specified by the given CollectionReference.
-     *
-     * @param ref A CollectionReference for a collection that will be the source of this pipeline.
-     * @return Pipeline with documents from target collection.
-     */
-    @JvmStatic
-    internal fun of(ref: CollectionReference, databaseId: DatabaseId): CollectionSource {
-      return CollectionSource(
-        ResourcePath.fromString(ref.path),
-        RemoteSerializer(databaseId),
-        InternalOptions.EMPTY
-      )
-    }
-  }
-
-  fun withForceIndex(value: String) = withOption("force_index", value)
 
   override fun evaluate(
     context: EvaluationContext,
@@ -251,8 +238,62 @@ internal constructor(
   }
 }
 
+class CollectionSourceOptions internal constructor(options: InternalOptions) :
+  AbstractOptions<CollectionSourceOptions>(options) {
+  /** Creates a new, empty `CollectionSourceOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  /**
+   * Specifies query hints for the collection source.
+   *
+   * @param hints The hints to apply to the collection source.
+   * @return A new `CollectionSourceOptions` with the specified hints.
+   */
+  fun withHints(hints: CollectionHints) = adding(hints)
+
+  override fun self(options: InternalOptions): CollectionSourceOptions {
+    return CollectionSourceOptions(options)
+  }
+}
+
+class CollectionHints internal constructor(options: InternalOptions) :
+  AbstractOptions<CollectionHints>(options) {
+  /** Creates a new, empty `CollectionHints` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): CollectionHints {
+    return CollectionHints(options)
+  }
+
+  /**
+   * Forces the query to use a specific index.
+   *
+   * @param value The name of the index to force.
+   * @return A new `CollectionHints` with the specified forced index.
+   */
+  fun withForceIndex(value: String): CollectionHints {
+    return with("force_index", value)
+  }
+
+  /**
+   * Specifies fields to ignore in the index.
+   *
+   * @param values The names of the fields to ignore in the index.
+   * @return A new `CollectionHints` with the specified ignored index fields.
+   */
+  fun withIgnoreIndexFields(vararg values: String): CollectionHints {
+    return with("ignore_index_fields", *values)
+  }
+}
+
 class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options), Canonicalizable {
+
+  internal constructor(
+    collectionId: String,
+    options: CollectionGroupOptions
+  ) : this(collectionId, options.options)
+
   override fun canonicalId(): String {
     return "${name}(${collectionId})"
   }
@@ -282,25 +323,24 @@ class CollectionGroupSource(val collectionId: String, options: InternalOptions) 
       input.isFoundDocument && input.key.collectionGroup == collectionId
     }
   }
+}
 
-  companion object {
+class CollectionGroupOptions internal constructor(options: InternalOptions) :
+  AbstractOptions<CollectionGroupOptions>(options) {
+  /** Creates a new, empty `CollectionGroupOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
 
-    /**
-     * Set the pipeline's source to the collection group with the given id.
-     *
-     * @param collectionId The id of a collection group that will be the source of this pipeline.
-     */
-    @JvmStatic
-    fun of(collectionId: String): CollectionGroupSource {
-      Preconditions.checkNotNull(collectionId, "Provided collection ID must not be null.")
-      require(!collectionId.contains("/")) {
-        "Invalid collectionId '$collectionId'. Collection IDs must not contain '/'."
-      }
-      return CollectionGroupSource(collectionId, InternalOptions.EMPTY)
-    }
+  public override fun self(options: InternalOptions): CollectionGroupOptions {
+    return CollectionGroupOptions(options)
   }
 
-  fun withForceIndex(value: String) = withOption("force_index", value)
+  /**
+   * Specifies query hints for the collection group source.
+   *
+   * @param hints The hints to apply to the collection group source.
+   * @return A new `CollectionGroupOptions` with the specified hints.
+   */
+  fun withHints(hints: CollectionHints): CollectionGroupOptions = adding(hints)
 }
 
 internal class DocumentsSource
@@ -391,12 +431,12 @@ internal constructor(
  * groups is the same as putting the entire inputs into one group.
  *
  * - **AggregateFunctions:** One or more accumulation operations to perform within each group. These
- * are defined using [AggregateWithAlias] expressions, which are typically created by calling
+ * are defined using [AliasedAggregate] expressions, which are typically created by calling
  * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
  * (e.g., sum, average, count) based on the documents within its group.
  */
 class AggregateStage
-internal constructor(
+private constructor(
   private val accumulators: Map<String, AggregateFunction>,
   private val groups: Map<String, Expr>,
   options: InternalOptions = InternalOptions.EMPTY
@@ -407,16 +447,16 @@ internal constructor(
     /**
      * Create [AggregateStage] with one or more accumulators.
      *
-     * @param accumulator The first [AggregateWithAlias] expression, wrapping an {@link
-     * AggregateFunction} with an alias for the accumulated results.
-     * @param additionalAccumulators The [AggregateWithAlias] expressions, each wrapping an
+     * @param accumulator The first [AliasedAggregate] expression, wrapping an [AggregateFunction]
+     * with an alias for the accumulated results.
+     * @param additionalAccumulators The [AliasedAggregate] expressions, each wrapping an
      * [AggregateFunction] with an alias for the accumulated results.
      * @return [AggregateStage] with specified accumulators.
      */
     @JvmStatic
     fun withAccumulators(
-      accumulator: AggregateWithAlias,
-      vararg additionalAccumulators: AggregateWithAlias
+      accumulator: AliasedAggregate,
+      vararg additionalAccumulators: AliasedAggregate
     ): AggregateStage {
       return AggregateStage(
         mapOf(accumulator.alias to accumulator.expr)
@@ -441,8 +481,7 @@ internal constructor(
   /**
    * Add one or more groups to [AggregateStage]
    *
-   * @param groupField The [Selectable] expression to consider when determining group value
-   * combinations.
+   * @param group The [Selectable] expression to consider when determining group value combinations.
    * @param additionalGroups The [Selectable] expressions to consider when determining group value
    * combinations or [String]s representing field names.
    * @return [AggregateStage] with specified groups.
@@ -451,8 +490,12 @@ internal constructor(
     AggregateStage(
       accumulators,
       mapOf(group.alias to group.expr)
-        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias))
+        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias)),
+      options
     )
+
+  internal fun withOptions(options: AggregateOptions) =
+    AggregateStage(accumulators, groups, options.options)
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
@@ -475,6 +518,38 @@ internal constructor(
     result = 31 * result + options.hashCode()
     return result
   }
+}
+
+class AggregateHints internal constructor(options: InternalOptions) :
+  AbstractOptions<AggregateHints>(options) {
+  /** Creates a new, empty `AggregateHints` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): AggregateHints {
+    return AggregateHints(options)
+  }
+
+  fun withForceStreamableEnabled(): AggregateHints {
+    return with("force_streamable", true)
+  }
+}
+
+class AggregateOptions internal constructor(options: InternalOptions) :
+  AbstractOptions<AggregateOptions>(options) {
+  /** Creates a new, empty `AggregateOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): AggregateOptions {
+    return AggregateOptions(options)
+  }
+
+  /**
+   * Specifies query hints for the aggregation.
+   *
+   * @param hints The hints to apply to the aggregation.
+   * @return A new `AggregateOptions` with the specified hints.
+   */
+  fun withHints(hints: AggregateHints): AggregateOptions = adding(hints)
 }
 
 internal class WhereStage
@@ -525,6 +600,13 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<FindNearestStage>("find_nearest", options) {
 
+  private constructor(
+    property: Expr,
+    vector: Expr,
+    distanceMeasure: DistanceMeasure,
+    options: FindNearestOptions
+  ) : this(property, vector, distanceMeasure, options.options)
+
   companion object {
 
     /**
@@ -538,8 +620,12 @@ internal constructor(
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
-    fun of(vectorField: Field, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(vectorField, constant(vectorValue), distanceMeasure)
+    internal fun of(
+      vectorField: Field,
+      vectorValue: VectorValue,
+      distanceMeasure: DistanceMeasure,
+      options: FindNearestOptions = FindNearestOptions()
+    ) = FindNearestStage(vectorField, constant(vectorValue), distanceMeasure, options)
 
     /**
      * Create [FindNearestStage].
@@ -552,8 +638,12 @@ internal constructor(
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
-    fun of(vectorField: Field, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(vectorField, Expr.vector(vectorValue), distanceMeasure)
+    internal fun of(
+      vectorField: Field,
+      vectorValue: DoubleArray,
+      distanceMeasure: DistanceMeasure,
+      options: FindNearestOptions = FindNearestOptions()
+    ) = FindNearestStage(vectorField, Expr.vector(vectorValue), distanceMeasure, options)
 
     /**
      * Create [FindNearestStage].
@@ -566,8 +656,12 @@ internal constructor(
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
-    fun of(vectorField: String, vectorValue: VectorValue, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(constant(vectorField), constant(vectorValue), distanceMeasure)
+    internal fun of(
+      vectorField: String,
+      vectorValue: VectorValue,
+      distanceMeasure: DistanceMeasure,
+      options: FindNearestOptions = FindNearestOptions()
+    ) = FindNearestStage(field(vectorField), constant(vectorValue), distanceMeasure, options)
 
     /**
      * Create [FindNearestStage].
@@ -580,18 +674,32 @@ internal constructor(
      * @return [FindNearestStage] with specified parameters.
      */
     @JvmStatic
-    fun of(vectorField: String, vectorValue: DoubleArray, distanceMeasure: DistanceMeasure) =
-      FindNearestStage(constant(vectorField), Expr.vector(vectorValue), distanceMeasure)
+    internal fun of(
+      vectorField: String,
+      vectorValue: DoubleArray,
+      distanceMeasure: DistanceMeasure,
+      options: FindNearestOptions = FindNearestOptions()
+    ) = FindNearestStage(field(vectorField), Expr.vector(vectorValue), distanceMeasure, options)
+
+    internal fun of(
+      vectorField: String,
+      vectorValue: Expr,
+      distanceMeasure: DistanceMeasure,
+      options: FindNearestOptions = FindNearestOptions()
+    ) = FindNearestStage(field(vectorField), vectorValue, distanceMeasure, options)
   }
 
   class DistanceMeasure private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
 
     companion object {
+      /** The Euclidean distance measure. */
       @JvmField val EUCLIDEAN = DistanceMeasure("euclidean")
 
+      /** The Cosine distance measure. */
       @JvmField val COSINE = DistanceMeasure("cosine")
 
+      /** The Dot Product distance measure. */
       @JvmField val DOT_PRODUCT = DistanceMeasure("dot_product")
     }
   }
@@ -623,32 +731,46 @@ internal constructor(
     result = 31 * result + options.hashCode()
     return result
   }
+}
+
+class FindNearestOptions private constructor(options: InternalOptions) :
+  AbstractOptions<FindNearestOptions>(options) {
+  /** Creates a new, empty `FindNearestOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): FindNearestOptions {
+    return FindNearestOptions(options)
+  }
 
   /**
    * Specifies the upper bound of documents to return.
    *
    * @param limit must be a positive integer.
-   * @return [FindNearestStage] with specified [limit].
+   * @return A new `FindNearestOptions` with the specified limit.
    */
-  fun withLimit(limit: Long): FindNearestStage = withOption("limit", limit)
+  fun withLimit(limit: Long): FindNearestOptions {
+    return with("limit", limit)
+  }
 
   /**
    * Add a field containing the distance to the result.
    *
    * @param distanceField The [Field] that will be added to the result.
-   * @return [FindNearestStage] with specified [distanceField].
+   * @return A new `FindNearestOptions` with the specified distance field.
    */
-  fun withDistanceField(distanceField: Field): FindNearestStage =
-    withOption("distance_field", distanceField)
+  fun withDistanceField(distanceField: Field): FindNearestOptions {
+    return with("distance_field", distanceField)
+  }
 
   /**
    * Add a field containing the distance to the result.
    *
    * @param distanceField The name of the field that will be added to the result.
-   * @return [FindNearestStage] with specified [distanceField].
+   * @return A new `FindNearestOptions` with the specified distance field.
    */
-  fun withDistanceField(distanceField: String): FindNearestStage =
-    withDistanceField(field(distanceField))
+  fun withDistanceField(distanceField: String?): FindNearestOptions? {
+    return withDistanceField(field(distanceField!!))
+  }
 }
 
 internal class LimitStage
@@ -885,7 +1007,7 @@ internal constructor(
   private val mapValue: Expr,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<ReplaceStage>("replace", options) {
+) : Stage<ReplaceStage>("replace_with", options) {
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
@@ -933,7 +1055,9 @@ private constructor(
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
+      /** Sample by a fixed number of documents. */
       val DOCUMENTS = Mode("documents")
+      /** Sample by a percentage of documents. */
       val PERCENT = Mode("percent")
     }
   }
@@ -1030,7 +1154,7 @@ internal constructor(
      * original array field will be replaced with the individual element.
      *
      * @param arrayWithAlias The input array with field alias to store output element of array.
-     * @return [SampleStage] with input array and alias specified.
+     * @return [UnnestStage] with input array and alias specified.
      */
     @JvmStatic fun withField(arrayWithAlias: Selectable) = UnnestStage(arrayWithAlias)
 
@@ -1043,7 +1167,7 @@ internal constructor(
      * document. The element of the input array will be stored in a field with name specified by
      * [alias] parameter on the augmented document.
      *
-     * @return [SampleStage] with input array and alias specified.
+     * @return [UnnestStage] with input array and alias specified.
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
@@ -1051,7 +1175,7 @@ internal constructor(
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(selectable.alias), selectable.toProto(userDataReader))
+    sequenceOf(selectable.toProto(userDataReader), field(selectable.alias).toProto())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1068,13 +1192,37 @@ internal constructor(
   }
 
   /**
+   * Adds an index field to the output documents.
+   *
+   * A field with the name specified in [indexField] will be added to each output document. The
+   * value of this field is a numeric value that corresponds to the array index of the element from
+   * the input array.
+   *
+   * @param indexField The name of the index field.
+   * @return A new `UnnestStage` that includes the specified index field.
+   */
+  fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
+}
+
+class UnnestOptions private constructor(options: InternalOptions) :
+  AbstractOptions<UnnestOptions>(options) {
+  /** Creates a new, empty `UnnestOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  /**
    * Adds index field to emitted documents
    *
    * A field with name specified in [indexField] will be added to emitted document. The index is a
    * numeric value that corresponds to array index of the element from input array.
    *
    * @param indexField The field name of index field.
-   * @return [SampleStage] that includes specified index field.
+   * @return A new `UnnestOptions` that includes the specified index field.
    */
-  fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
+  fun withIndexField(@Nonnull indexField: String): UnnestOptions {
+    return with("index_field", Value.newBuilder().setFieldReferenceValue(indexField).build())
+  }
+
+  public override fun self(options: InternalOptions): UnnestOptions {
+    return UnnestOptions(options)
+  }
 }

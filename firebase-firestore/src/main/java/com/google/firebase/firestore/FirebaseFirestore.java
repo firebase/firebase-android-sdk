@@ -885,7 +885,11 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Build a new Pipeline
+   * Builds a new Pipeline from this Firestore instance.
+   *
+   * NOTE: Pipeline does not have realtime updates support and SDK cache access, it completely relies
+   * on the connection to the server for the results, and does not augment the results with the SDK
+   * cache. To get realtime updates and SDK cache access use {@code realTimePipeline()} instead.
    *
    * @return {@code PipelineSource} for this Firestore instance.
    */
@@ -896,7 +900,13 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Build a new RealtimePipeline
+   * Build a new RealtimePipeline from this Firestore instance.
+   *
+   * NOTE: RealtimePipeline utilizes the Firestore realtime backend and SDK cache to provide final
+   * results, this is the equivalent to classic Firestore {@link Query}, but with more features
+   * supported. However, its feature set is only a subset of {@code Pipeline}. If you need features
+   * unavailable in {@code RealtimePipeline} and realtime or SDK cache access are not a must, use
+   * {@code pipeline()} instead.
    *
    * @return {@code RealtimePipelineSource} for this Firestore instance.
    */

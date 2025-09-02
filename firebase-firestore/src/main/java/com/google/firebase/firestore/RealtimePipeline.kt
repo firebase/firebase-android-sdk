@@ -23,9 +23,12 @@ import com.google.firebase.firestore.core.QueryOrPipeline
 import com.google.firebase.firestore.core.ViewSnapshot
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.pipeline.BooleanExpr
+import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
+import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.EvaluationContext
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FunctionExpr
@@ -33,8 +36,6 @@ import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
-import com.google.firebase.firestore.pipeline.SelectStage
-import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.WhereStage
@@ -81,7 +82,13 @@ class RealtimePipelineSource internal constructor(private val firestore: Firebas
    * database than the pipeline.
    */
   fun collection(ref: CollectionReference): RealtimePipeline =
-    collection(CollectionSource.of(ref, firestore.databaseId))
+    collection(
+      CollectionSource(
+        ResourcePath.fromString(ref.path),
+        RemoteSerializer(firestore.databaseId),
+        CollectionSourceOptions()
+      )
+    )
 
   /**
    * Set the pipeline's source to the collection specified by CollectionSource.
@@ -91,7 +98,7 @@ class RealtimePipelineSource internal constructor(private val firestore: Firebas
    * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
    * or database than the pipeline.
    */
-  fun collection(stage: CollectionSource): RealtimePipeline {
+  internal fun collection(stage: CollectionSource): RealtimePipeline {
     if (stage.serializer.databaseId() != firestore.databaseId) {
       throw IllegalArgumentException("Provided collection is from a different Firestore instance.")
     }
@@ -110,9 +117,9 @@ class RealtimePipelineSource internal constructor(private val firestore: Firebas
    * @return A new [RealtimePipeline] object with documents from target collection group.
    */
   fun collectionGroup(collectionId: String): RealtimePipeline =
-    collectionGroup(CollectionGroupSource.of((collectionId)))
+    collectionGroup(CollectionGroupSource(collectionId, CollectionGroupOptions()))
 
-  fun collectionGroup(stage: CollectionGroupSource): RealtimePipeline =
+  internal fun collectionGroup(stage: CollectionGroupSource): RealtimePipeline =
     RealtimePipeline(
       firestore,
       RemoteSerializer(firestore.databaseId),
@@ -144,23 +151,98 @@ internal constructor(
 
   private fun append(stage: Stage<*>): RealtimePipeline = with(stages.plus(stage))
 
+  /**
+   * Limits the maximum number of documents returned by previous stages to `limit`.
+   *
+   * This stage is particularly useful when you want to retrieve a controlled subset of data from a
+   * potentially large result set. It's often used for:
+   * - **Pagination:** In combination with [where] to retrieve specific pages of results.
+   * - **Limiting Data Retrieval:** To prevent excessive data transfer and improve performance,
+   * especially when dealing with large collections.
+   *
+   * Example:
+   * ```
+   * // Limit the results to the top 10 highest-rated books
+   * firestore.pipeline().collection("books")
+   *     .sort(field("rating").descending())
+   *     .limit(10);
+   * ```
+   *
+   * @param limit The maximum number of documents to return.
+   * @return A new [RealtimePipeline] object with this stage appended to the stage list.
+   */
   fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
 
-  fun offset(offset: Int): RealtimePipeline = append(OffsetStage(offset))
-
-  fun select(selection: Selectable, vararg additionalSelections: Any): RealtimePipeline =
-    append(SelectStage.of(selection, *additionalSelections))
-
-  fun select(fieldName: String, vararg additionalSelections: Any): RealtimePipeline =
-    append(SelectStage.of(fieldName, *additionalSelections))
-
+  /**
+   * Sorts the documents from previous stages based on one or more [Ordering] criteria.
+   *
+   * This stage allows you to order the results of your pipeline. You can specify multiple
+   * [Ordering] instances to sort by multiple fields in ascending or descending order. If documents
+   * have the same value for a field used for sorting, the next specified ordering will be used. If
+   * all orderings result in equal comparison, the documents are considered equal and the order is
+   * unspecified.
+   *
+   * Example:
+   * ```
+   * // Sort books by rating in descending order, and then by title in ascending order for books with the same rating
+   * firestore.pipeline().collection("books")
+   *     .sort(
+   *         Ordering.of("rating").descending(),
+   *         Ordering.of("title")  // Ascending order is the default
+   *     );
+   * ```
+   *
+   * @param order The first [Ordering] instance specifying the sorting criteria.
+   * @param additionalOrders Optional additional [Ordering] instances specifying the sorting
+   * criteria.
+   * @return A new [RealtimePipeline] object with this stage appended to the stage list.
+   */
   fun sort(order: Ordering, vararg additionalOrders: Ordering): RealtimePipeline =
     append(SortStage(arrayOf(order, *additionalOrders)))
 
+  /**
+   * Filters the documents from previous stages to only include those matching the specified
+   * [BooleanExpr].
+   *
+   * This stage allows you to apply conditions to the data, similar to a "WHERE" clause in SQL.
+   *
+   * You can filter documents based on their field values, using implementations of [BooleanExpr],
+   * typically including but not limited to:
+   * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt] (greater than), etc.
+   * - logical operators: [Expr.and], [Expr.or], [Expr.not], etc.
+   * - advanced functions: [Expr.arrayContains], [Expr.eqAny]etc.
+   *
+   * Example:
+   * ```
+   * firestore.pipeline().collection("books")
+   *   .where(
+   *     and(
+   *         gt("rating", 4.0),   // Filter for ratings greater than 4.0
+   *         field("genre").eq("Science Fiction") // Equivalent to eq("genre", "Science Fiction")
+   *     )
+   *   );
+   * ```
+   *
+   * @param condition The [BooleanExpr] to apply.
+   * @return A new [RealtimePipeline] object with this stage appended to the stage list.
+   */
   fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
 
+  /**
+   * Starts listening to this pipeline and emits a [RealtimePipelineSnapshot] every time the results
+   * change.
+   *
+   * @return A [Flow] of [RealtimePipelineSnapshot] that emits new snapshots on every change.
+   */
   fun snapshots(): Flow<RealtimePipelineSnapshot> = snapshots(RealtimePipelineOptions.DEFAULT)
 
+  /**
+   * Starts listening to this pipeline and emits a [RealtimePipelineSnapshot] every time the results
+   * change.
+   *
+   * @param options The [RealtimePipelineOptions] to use for this listen.
+   * @return A [Flow] of [RealtimePipelineSnapshot] that emits new snapshots on every change.
+   */
   fun snapshots(options: RealtimePipelineOptions): Flow<RealtimePipelineSnapshot> = callbackFlow {
     val listener =
       addSnapshotListener(options) { snapshot, error ->
@@ -173,20 +255,48 @@ internal constructor(
     awaitClose { listener.remove() }
   }
 
+  /**
+   * Starts listening to this pipeline using an [EventListener].
+   *
+   * @param listener The event listener to receive the results.
+   * @return A [ListenerRegistration] that can be used to stop listening.
+   */
   fun addSnapshotListener(listener: EventListener<RealtimePipelineSnapshot>): ListenerRegistration =
     addSnapshotListener(RealtimePipelineOptions.DEFAULT, listener)
 
+  /**
+   * Starts listening to this pipeline using an [EventListener].
+   *
+   * @param options The [RealtimePipelineOptions] to use for this listen.
+   * @param listener The event listener to receive the results.
+   * @return A [ListenerRegistration] that can be used to stop listening.
+   */
   fun addSnapshotListener(
     options: RealtimePipelineOptions,
     listener: EventListener<RealtimePipelineSnapshot>
   ): ListenerRegistration =
     addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, options, listener)
 
+  /**
+   * Starts listening to this pipeline using an [EventListener].
+   *
+   * @param executor The executor to use for the listener.
+   * @param listener The event listener to receive the results.
+   * @return A [ListenerRegistration] that can be used to stop listening.
+   */
   fun addSnapshotListener(
     executor: Executor,
     listener: EventListener<RealtimePipelineSnapshot>
   ): ListenerRegistration = addSnapshotListener(executor, RealtimePipelineOptions.DEFAULT, listener)
 
+  /**
+   * Starts listening to this pipeline using an [EventListener].
+   *
+   * @param executor The executor to use for the listener.
+   * @param options The [RealtimePipelineOptions] to use for this listen.
+   * @param listener The event listener to receive the results.
+   * @return A [ListenerRegistration] that can be used to stop listening.
+   */
   fun addSnapshotListener(
     executor: Executor,
     options: RealtimePipelineOptions,
@@ -424,19 +534,31 @@ private constructor(
   }
 }
 
+/**
+ * A `RealtimePipelineSnapshot` contains the results of a realtime pipeline listen. It can be used
+ * to retrieve the full list of results, or the incremental changes since the last snapshot.
+ */
 class RealtimePipelineSnapshot
 internal constructor(
   private val viewSnapshot: ViewSnapshot,
   private val firestore: FirebaseFirestore,
   private val options: RealtimePipelineOptions
 ) {
+  /** Returns the metadata for this snapshot. */
   val metadata: PipelineSnapshotMetadata
     get() = PipelineSnapshotMetadata(viewSnapshot.hasPendingWrites(), !viewSnapshot.isFromCache)
 
+  /** Returns the results of the pipeline for this snapshot. */
   val results: List<PipelineResult>
     get() =
       viewSnapshot.documents.map { PipelineResult(it, options.serverTimestampBehavior, firestore) }
 
+  /**
+   * Returns the incremental changes since the last snapshot.
+   *
+   * @param metadataChanges Whether to include metadata-only changes.
+   * @return A list of [PipelineResultChange] objects.
+   */
   fun getChanges(metadataChanges: MetadataChanges? = null): List<PipelineResultChange> =
     changesFromSnapshot(metadataChanges ?: MetadataChanges.EXCLUDE, viewSnapshot) {
       doc,
@@ -454,9 +576,26 @@ internal constructor(
     }
 }
 
+/**
+ * Metadata about a [RealtimePipelineSnapshot], including information about the source of the data
+ * and whether the snapshot has pending writes.
+ *
+ * @property hasPendingWrites True if the snapshot contains results that have not yet been written
+ * to the backend.
+ * @property isConsistentBetweenListeners True if the snapshot is guaranteed to be consistent with
+ * other active listeners on the same Firestore instance.
+ */
 data class PipelineSnapshotMetadata
 internal constructor(val hasPendingWrites: Boolean, val isConsistentBetweenListeners: Boolean)
 
+/**
+ * A `PipelineResultChange` represents a change to a single result in a `RealtimePipelineSnapshot`.
+ *
+ * @property result The `PipelineResult` that changed.
+ * @property type The type of change.
+ * @property oldIndex The index of the result in the previous snapshot, or -1 if it's a new result.
+ * @property newIndex The index of the result in the new snapshot, or -1 if it was removed.
+ */
 data class PipelineResultChange
 internal constructor(
   val result: PipelineResult,
@@ -464,6 +603,7 @@ internal constructor(
   val oldIndex: Int?,
   val newIndex: Int?
 ) {
+  /** An enumeration of the different types of changes that can occur. */
   enum class ChangeType {
     ADDED,
     MODIFIED,
