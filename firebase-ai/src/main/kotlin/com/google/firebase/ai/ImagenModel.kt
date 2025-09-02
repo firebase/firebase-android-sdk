@@ -41,6 +41,9 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
+ *
+ * See the documentation for a list of
+ * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
 @PublicPreviewAPI
 public class ImagenModel
@@ -55,6 +58,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
+    useLimitedUseAppCheckTokens: Boolean,
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
@@ -70,7 +74,12 @@ internal constructor(
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
-      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      AppCheckHeaderProvider(
+        TAG,
+        useLimitedUseAppCheckTokens,
+        appCheckTokenProvider,
+        internalAuthProvider
+      ),
     ),
   )
 

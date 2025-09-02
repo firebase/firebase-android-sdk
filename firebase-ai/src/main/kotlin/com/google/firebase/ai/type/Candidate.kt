@@ -76,8 +76,8 @@ internal constructor(
  *
  * @property category The category of harm being assessed (e.g., Hate speech).
  * @property probability The likelihood of the content causing harm.
- * @property probabilityScore A numerical score representing the probability of harm, between 0 and
- * 1.
+ * @property probabilityScore A numerical score representing the probability of harm, between `0`
+ * and `1`.
  * @property blocked Indicates whether the content was blocked due to safety concerns.
  * @property severity The severity of the potential harm.
  * @property severityScore A numerical score representing the severity of harm.
