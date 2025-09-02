@@ -51,12 +51,6 @@ public abstract class LiveSessionFutures internal constructor() {
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
 
-  /** Indicates whether the underlying websocket connection is active. */
-  public abstract fun isClosed(): Boolean
-
-  /** Indicates whether an audio conversation is being used for this session object. */
-  public abstract fun isAudioConversationActive(): Boolean
-
   /**
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation].
@@ -174,10 +168,6 @@ public abstract class LiveSessionFutures internal constructor() {
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
-
-    override fun isClosed() = session.isClosed()
-
-    override fun isAudioConversationActive() = session.isAudioConversationActive()
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }
