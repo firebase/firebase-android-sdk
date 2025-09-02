@@ -29,7 +29,6 @@ import com.google.firebase.ai.type.MediaData
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SessionAlreadyReceivingException
 import io.ktor.websocket.close
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
@@ -53,10 +52,10 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /** Indicates whether the underlying websocket connection is active. */
-  public abstract fun isActive(): ListenableFuture<Boolean>
+  public abstract fun isClosed(): Boolean
 
   /** Indicates whether an audio conversation is being used for this session object. */
-  public abstract fun isAudioConversationActive(): ListenableFuture<Boolean>
+  public abstract fun isAudioConversationActive(): Boolean
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -176,10 +175,9 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
-    override fun isActive() = SuspendToFutureAdapter.launchFuture { session.isActive() }
+    override fun isClosed() = session.isClosed()
 
-    override fun isAudioConversationActive() =
-      SuspendToFutureAdapter.launchFuture { session.isAudioConversationActive() }
+    override fun isAudioConversationActive() = session.isAudioConversationActive()
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }

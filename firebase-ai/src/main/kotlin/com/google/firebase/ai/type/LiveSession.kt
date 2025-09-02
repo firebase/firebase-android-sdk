@@ -144,7 +144,7 @@ internal constructor(
   }
 
   /** Indicates whether the underlying websocket connection is active. */
-  public fun isActive(): Boolean = session.isActive
+  public fun isClosed(): Boolean = !(session.isActive && !session.incoming.tryReceive().isClosed)
 
   /** Indicates whether an audio conversation is being used for this session object. */
   public fun isAudioConversationActive(): Boolean = (audioHelper != null)

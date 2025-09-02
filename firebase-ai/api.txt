@@ -142,6 +142,8 @@ package com.google.firebase.ai.java {
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveSessionFutures {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
+    method public abstract boolean isAudioConversationActive();
+    method public abstract boolean isClosed();
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
@@ -879,6 +881,8 @@ package com.google.firebase.ai.type {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public boolean isAudioConversationActive();
+    method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -916,6 +920,10 @@ package com.google.firebase.ai.type {
     method public static android.graphics.Bitmap? asImageOrNull(com.google.firebase.ai.type.Part);
     method public static com.google.firebase.ai.type.InlineDataPart? asInlineDataPartOrNull(com.google.firebase.ai.type.Part);
     method public static String? asTextOrNull(com.google.firebase.ai.type.Part);
+  }
+
+  public final class PermissionMissingException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public PermissionMissingException(String message, Throwable? cause = null);
   }
 
   public final class PromptBlockedException extends com.google.firebase.ai.type.FirebaseAIException {
