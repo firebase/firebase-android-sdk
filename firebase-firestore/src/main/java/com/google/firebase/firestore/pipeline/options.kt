@@ -45,6 +45,18 @@ class InternalOptions internal constructor(private val options: ImmutableMap<Str
     return with(key, value.toValue())
   }
 
+  internal fun with(key: String, value: AbstractOptions<*>): InternalOptions {
+    return with(key, value.options)
+  }
+
+  internal fun adding(newOptions: InternalOptions): InternalOptions {
+    val builder =
+      ImmutableMap.builderWithExpectedSize<String, Value>(options.size + newOptions.options.size)
+    builder.putAll(options)
+    builder.putAll(newOptions.options)
+    return InternalOptions(builder.build())
+  }
+
   internal fun forEach(f: (String, Value) -> Unit) {
     for (entry in options.entries) {
       f(entry.key, entry.value)
@@ -73,6 +85,18 @@ internal constructor(internal val options: InternalOptions) {
   protected fun with(key: String, value: InternalOptions): T = self(options.with(key, value))
 
   protected fun with(key: String, value: Value): T = self(options.with(key, value))
+
+  protected fun with(key: String, vararg values: String): T {
+    return self(options.with(key, listOf(*values).map { s: String -> Values.encodeValue(s) }))
+  }
+
+  protected fun with(key: String, subSection: AbstractOptions<*>): T {
+    return self(options.with(key, subSection.options))
+  }
+
+  protected fun adding(newOptions: AbstractOptions<*>): T {
+    return self(options.adding(newOptions.options))
+  }
 
   /**
    * Specify generic [String] option
@@ -141,11 +165,9 @@ class RawOptions private constructor(options: InternalOptions) :
 class PipelineOptions private constructor(options: InternalOptions) :
   AbstractOptions<PipelineOptions>(options) {
 
-  override fun self(options: InternalOptions) = PipelineOptions(options)
+  constructor() : this(InternalOptions.EMPTY)
 
-  companion object {
-    @JvmField val DEFAULT: PipelineOptions = PipelineOptions(InternalOptions.EMPTY)
-  }
+  override fun self(options: InternalOptions) = PipelineOptions(options)
 
   class IndexMode private constructor(internal val value: String) {
     companion object {

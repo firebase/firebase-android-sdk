@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.pipeline.BooleanExpr;
+import com.google.firebase.firestore.pipeline.CollectionGroupOptions;
 import com.google.firebase.firestore.pipeline.CollectionGroupSource;
 import com.google.firebase.firestore.pipeline.CollectionSource;
 import com.google.firebase.firestore.pipeline.DocumentsSource;
@@ -660,7 +661,7 @@ public final class Query {
     if (isDocumentQuery()) {
       return new DocumentsSource(path.canonicalString());
     } else if (isCollectionGroupQuery()) {
-      return CollectionGroupSource.of(collectionGroup);
+      return new CollectionGroupSource(collectionGroup, new CollectionGroupOptions());
     } else {
       return new CollectionSource(path, new RemoteSerializer(databaseId), InternalOptions.EMPTY);
     }
