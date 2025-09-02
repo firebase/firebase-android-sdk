@@ -77,7 +77,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   // If the `mainThreadRunnableTime` was set within this duration, the assumption
   // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
-  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
+  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
 
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
