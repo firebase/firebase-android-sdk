@@ -179,9 +179,10 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "android" to "https://developer.android.com/reference/kotlin/",
         "androidx" to "https://developer.android.com/reference/kotlin/",
         "google" to "https://developers.google.com/android/reference/",
-        "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
+        "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/",
+        "serialization" to "https://kotlinlang.org/api/kotlinx.serialization/",
       )
 
     return packageLists
