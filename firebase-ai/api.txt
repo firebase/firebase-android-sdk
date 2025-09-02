@@ -142,8 +142,6 @@ package com.google.firebase.ai.java {
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveSessionFutures {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> close();
     method public static final com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
-    method public abstract boolean isAudioConversationActive();
-    method public abstract boolean isClosed();
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
