@@ -129,7 +129,7 @@ internal constructor(
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
     } catch (e: ClosedReceiveChannelException) {
-      throw ServiceConnectionHandshakeFailedException("Error: Too many concurrent live requests", e)
+      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server", e)
     }
   }
 
