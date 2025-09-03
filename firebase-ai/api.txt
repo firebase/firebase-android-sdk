@@ -531,6 +531,10 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.HarmCategory DANGEROUS_CONTENT;
     field public static final com.google.firebase.ai.type.HarmCategory HARASSMENT;
     field public static final com.google.firebase.ai.type.HarmCategory HATE_SPEECH;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_DANGEROUS_CONTENT;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_HARASSMENT;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_HATE;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_SEXUALLY_EXPLICIT;
     field public static final com.google.firebase.ai.type.HarmCategory SEXUALLY_EXPLICIT;
     field public static final com.google.firebase.ai.type.HarmCategory UNKNOWN;
   }
