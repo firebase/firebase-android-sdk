@@ -102,7 +102,7 @@ class MoveUnreleasedChangesTests : FunSpec() {
     val originalEntry = original.releases.first()
 
     releasedEntry.content.changes shouldContainExactly originalEntry.content.changes
-    releasedEntry.content.subtext shouldMatch originalEntry.content.subtext
+    releasedEntry.content.subtext shouldBe originalEntry.content.subtext
   }
 
   companion object {
