@@ -86,16 +86,16 @@ public class HarmCategory private constructor(public val ordinal: Int) {
     /** Content that may be used to harm civic integrity. */
     @JvmField public val CIVIC_INTEGRITY: HarmCategory = HarmCategory(5)
 
-    /** Content that may be used to harm civic integrity. */
+    /** Content that is image hate. */
     @JvmField public val IMAGE_HATE: HarmCategory = HarmCategory(6)
 
-    /** Content that may be used to harm civic integrity. */
+    /** Image dangerous content. */
     @JvmField public val IMAGE_DANGEROUS_CONTENT: HarmCategory = HarmCategory(7)
 
-    /** Content that may be used to harm civic integrity. */
+    /** Content is image harassment. */
     @JvmField public val IMAGE_HARASSMENT: HarmCategory = HarmCategory(8)
 
-    /** Content that may be used to harm civic integrity. */
+    /** Image sexually explicit content. */
     @JvmField public val IMAGE_SEXUALLY_EXPLICIT: HarmCategory = HarmCategory(9)
   }
 }
