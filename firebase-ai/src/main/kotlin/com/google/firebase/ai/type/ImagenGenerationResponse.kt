@@ -42,7 +42,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     internal fun toPublicInline() =
       ImagenGenerationResponse(
         images = predictions.filter { it.mimeType != null }.map { it.toPublicInline() },
-          predictions.firstNotNullOfOrNull { it.raiFilteredReason },
+        predictions.firstNotNullOfOrNull { it.raiFilteredReason },
       )
   }
 
@@ -68,7 +68,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
   internal data class ImagenSafetyAttributes(
     val categories: List<String>? = null,
     val scores: List<Double>? = null
-  ){
+  ) {
     internal fun toPublic(): Map<String, Double> {
       return categories?.zip(scores!!)?.toMap() ?: emptyMap()
     }

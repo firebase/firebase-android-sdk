@@ -35,7 +35,8 @@ public class ImagenInlineImage
 internal constructor(
   public val data: ByteArray,
   public val mimeType: String,
-  public val safetyAttributes: Map<String, Double>) {
+  public val safetyAttributes: Map<String, Double>
+) {
 
   /**
    * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.

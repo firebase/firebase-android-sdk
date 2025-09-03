@@ -1,4 +1,5 @@
 # Unreleased
+- [feature] Added support for `ImagenGenerationResponse.safetyAttributes` (#7322)
 
 # 17.2.0
 
