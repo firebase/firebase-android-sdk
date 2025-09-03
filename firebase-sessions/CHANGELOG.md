@@ -1,5 +1,7 @@
 # Unreleased
 
+# 3.0.1
+
 - [fixed] Bumped DataStore dependency to include the mitigation for `CorruptionException` released
   in version `1.1.5`. See Jetpacks' DataStore
   [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
