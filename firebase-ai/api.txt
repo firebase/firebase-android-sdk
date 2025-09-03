@@ -713,10 +713,8 @@ package com.google.firebase.ai.type {
     method public android.graphics.Bitmap asBitmap();
     method public byte[] getData();
     method public String getMimeType();
-    method public java.util.Map<java.lang.String,java.lang.Double> getSafetyAttributes();
     property public final byte[] data;
     property public final String mimeType;
-    property public final java.util.Map<java.lang.String,java.lang.Double> safetyAttributes;
   }
 
   public final class ImagenInlineImageKt {

@@ -35,7 +35,6 @@ public class ImagenInlineImage
 internal constructor(
   public val data: ByteArray,
   public val mimeType: String,
-  public val safetyAttributes: Map<String, Double>
 ) {
 
   /**
@@ -58,5 +57,5 @@ public fun Bitmap.toImagenInlineImage(): ImagenInlineImage {
   val byteArrayOutputStream = ByteArrayOutputStream()
   this.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
   val byteArray = byteArrayOutputStream.toByteArray()
-  return ImagenInlineImage(data = byteArray, mimeType = "image/jpeg", safetyAttributes = emptyMap())
+  return ImagenInlineImage(data = byteArray, mimeType = "image/jpeg")
 }
