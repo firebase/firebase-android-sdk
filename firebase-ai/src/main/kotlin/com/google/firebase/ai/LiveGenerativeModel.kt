@@ -55,7 +55,8 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val systemInstruction: Content? = null,
   private val location: String,
-  private val controller: APIController,
+  private val firebaseApp: FirebaseApp,
+  private val controller: APIController
 ) {
   internal constructor(
     modelName: String,
@@ -78,6 +79,7 @@ internal constructor(
     tools,
     systemInstruction,
     location,
+    firebaseApp,
     APIController(
       apiKey,
       modelName,
@@ -122,7 +124,7 @@ internal constructor(
         LiveSession(
           session = webSession,
           blockingDispatcher = blockingDispatcher,
-          firebaseApp = controller.firebaseApp
+          firebaseApp = firebaseApp
         )
       } else {
         webSession.close()
