@@ -70,7 +70,10 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     val scores: List<Double>? = null
   ) {
     internal fun toPublic(): Map<String, Double> {
-      return categories?.zip(scores!!)?.toMap() ?: emptyMap()
+      if (categories == null || scores == null) {
+        return emptyMap()
+      }
+      return categories.zip(scores).toMap()
     }
   }
 }
