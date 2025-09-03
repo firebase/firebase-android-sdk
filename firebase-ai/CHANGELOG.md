@@ -1,4 +1,5 @@
 # Unreleased
+
 - [feature] Added support for `ImagenGenerationResponse.safetyAttributes` (#7322)
 
 - [feature] Introduced `MissingPermissionsException`, which is thrown when the necessary permissions
