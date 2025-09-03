@@ -42,7 +42,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     internal fun toPublicInline() =
       ImagenGenerationResponse(
         images = predictions.filter { it.mimeType != null }.map { it.toPublicInline() },
-        null,
+          predictions.firstNotNullOfOrNull { it.raiFilteredReason },
       )
   }
 
@@ -52,10 +52,25 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     val gcsUri: String? = null,
     val mimeType: String? = null,
     val raiFilteredReason: String? = null,
+    val safetyAttributes: ImagenSafetyAttributes? = null,
   ) {
     internal fun toPublicInline() =
-      ImagenInlineImage(Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP), mimeType!!)
+      ImagenInlineImage(
+        Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP),
+        mimeType!!,
+        safetyAttributes?.toPublic() ?: emptyMap()
+      )
 
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
+  }
+
+  @Serializable
+  internal data class ImagenSafetyAttributes(
+    val categories: List<String>? = null,
+    val scores: List<Double>? = null
+  ){
+    internal fun toPublic(): Map<String, Double> {
+      return categories?.zip(scores!!)?.toMap() ?: emptyMap()
+    }
   }
 }
