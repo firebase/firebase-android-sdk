@@ -28,10 +28,14 @@ import kotlinx.serialization.Serializable
  * @property data The raw image bytes in JPEG or PNG format, as specified by [mimeType].
  * @property mimeType The IANA standard MIME type of the image data; either `"image/png"` or
  * `"image/jpeg"`; to request a different format, see [ImagenGenerationConfig.imageFormat].
+ * @property safetyAttributes a set of safety attributes with their associated score.
  */
 @PublicPreviewAPI
 public class ImagenInlineImage
-internal constructor(public val data: ByteArray, public val mimeType: String) {
+internal constructor(
+  public val data: ByteArray,
+  public val mimeType: String,
+) {
 
   /**
    * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.
