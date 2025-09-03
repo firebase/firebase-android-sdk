@@ -55,11 +55,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     val safetyAttributes: ImagenSafetyAttributes? = null,
   ) {
     internal fun toPublicInline() =
-      ImagenInlineImage(
-        Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP),
-        mimeType!!,
-        safetyAttributes?.toPublic() ?: emptyMap()
-      )
+      ImagenInlineImage(Base64.decode(bytesBase64Encoded!!, Base64.NO_WRAP), mimeType!!)
 
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }
