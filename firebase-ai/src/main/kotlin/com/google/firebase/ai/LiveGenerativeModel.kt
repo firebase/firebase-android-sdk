@@ -55,7 +55,8 @@ internal constructor(
   private val tools: List<Tool>? = null,
   private val systemInstruction: Content? = null,
   private val location: String,
-  private val controller: APIController,
+  private val firebaseApp: FirebaseApp,
+  private val controller: APIController
 ) {
   internal constructor(
     modelName: String,
@@ -78,6 +79,7 @@ internal constructor(
     tools,
     systemInstruction,
     location,
+    firebaseApp,
     APIController(
       apiKey,
       modelName,
@@ -119,7 +121,11 @@ internal constructor(
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
       return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
+        LiveSession(
+          session = webSession,
+          blockingDispatcher = blockingDispatcher,
+          firebaseApp = firebaseApp
+        )
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
