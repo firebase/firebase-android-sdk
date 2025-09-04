@@ -28,6 +28,7 @@ firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false
   publishJavadoc = true
+  onlyPublishKotlindoc = true
   releaseNotes {
     name.set("{{data_connect_short}}")
     versionName.set("data-connect")

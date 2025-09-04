@@ -56,6 +56,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       project.gradle.sharedServices.registerIfAbsent<GMavenService, _>("gmaven")
       previewMode.convention("")
       publishJavadoc.convention(true)
+      onlyPublishKotlindoc.convention(false)
       artifactId.convention(project.name)
       groupId.convention(project.provider { project.group.toString() })
       libraryGroup.convention(artifactId)

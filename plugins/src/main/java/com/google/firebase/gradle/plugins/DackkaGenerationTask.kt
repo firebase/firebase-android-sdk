@@ -98,6 +98,7 @@ data class ExternalDocumentationLink(val packageList: File, val externalLink: St
 abstract class GenerateDocumentationTask
 @Inject
 constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationTaskExtension() {
+  @get:Input abstract val kotlindocOnly: Property<Boolean>
 
   @TaskAction
   fun build() {
@@ -120,7 +121,11 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
-
+    var javadoc: String? = "android"
+    if (kotlindocOnly.get()) {
+      // A null path disables javadoc generation
+      javadoc = null
+    }
     val jsonMap =
       mapOf(
         "moduleName" to "",
@@ -152,7 +157,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                 JSONObject(
                     mapOf(
                       "docRootPath" to "/docs/reference/",
-                      "javaDocsPath" to "android",
+                      "javaDocsPath" to javadoc,
                       "kotlinDocsPath" to "kotlin",
                       "projectPath" to "client/${clientName.get()}",
                       "includedHeadTagsPathJava" to
