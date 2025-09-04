@@ -293,6 +293,33 @@ class ToolTests {
     }
   }
 
+  @Test
+  fun testTools_enumParameter() {
+    val enumValues = listOf("red", "green", "blue")
+    val schema =
+      mapOf(
+        Pair("color", Schema.enumeration(enumValues, "A color from the provided list"))
+      )
+    val model =
+      setupModel(
+        FunctionDeclaration(
+          name = "getHexCode",
+          description = "returns the hex code for a given color",
+          parameters = schema
+        ),
+      )
+    runBlocking {
+      val response = model.generateContent("what is the hex code for green?")
+      validator.validateResponse((response))
+      assert(response.functionCalls.size == 1)
+      val call = response.functionCalls[0]
+      assert(call.name == "getHexCode")
+      validateSchema(schema, call.args)
+      val color = call.args["color"]!!.jsonPrimitive.content
+      assert(color in enumValues)
+    }
+  }
+
   companion object {
     @JvmStatic
     fun setupModel(vararg functions: FunctionDeclaration): GenerativeModel {
