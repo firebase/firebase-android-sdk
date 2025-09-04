@@ -121,11 +121,8 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
-    var javadoc: String? = "android"
-    if (kotlindocOnly.get()) {
-      // A null path disables javadoc generation
-      javadoc = null
-    }
+    // A null path disables javadoc generation
+    val javadoc: String? = "android".takeUnless { kotlindocOnly.get() }
     val jsonMap =
       mapOf(
         "moduleName" to "",

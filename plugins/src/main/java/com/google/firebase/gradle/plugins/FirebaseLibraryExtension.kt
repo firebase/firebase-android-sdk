@@ -72,6 +72,8 @@ constructor(val project: Project, val type: LibraryType) {
   /**
    * Only publish Kotlindocs instead of also publishing Javadocs for this library.
    *
+   * This property is only effective when `publishJavadoc` is `true`.
+   *
    * Defaults to `false`.
    *
    * ```sh
