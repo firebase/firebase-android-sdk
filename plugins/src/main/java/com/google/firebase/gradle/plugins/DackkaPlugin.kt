@@ -124,9 +124,7 @@ abstract class DackkaPlugin : Plugin<Project> {
     project.afterEvaluate {
       if (weShouldPublish(this)) {
         val kdocOnly = publishKotlindocOnly(this)
-        val generateDocumentation = registerGenerateDackkaDocumentationTask(
-          project, kdocOnly
-        )
+        val generateDocumentation = registerGenerateDackkaDocumentationTask(project, kdocOnly)
 
         val outputDir = generateDocumentation.flatMap { it.outputDirectory }
 
@@ -179,7 +177,8 @@ abstract class DackkaPlugin : Plugin<Project> {
   }
 
   private fun registerGenerateDackkaDocumentationTask(
-    project: Project, kotlindocOnly: Boolean
+    project: Project,
+    kotlindocOnly: Boolean,
   ): TaskProvider<GenerateDocumentationTask> =
     project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation") {
       this.kotlindocOnly.set(kotlindocOnly)
