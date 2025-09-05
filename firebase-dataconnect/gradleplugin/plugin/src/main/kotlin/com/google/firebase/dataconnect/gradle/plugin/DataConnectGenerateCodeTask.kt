@@ -101,7 +101,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       dataConnectExecutable = dataConnectExecutable,
       subCommand = subCommand,
       configDirectory = configDirectory,
-      execOperations=execOperations,
+      execOperations = execOperations,
     ) {
       when (dataConnectExecutableCallingConvention) {
         CallingConvention.GRADLE -> this.connectors = connectors

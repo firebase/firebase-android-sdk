@@ -16,6 +16,7 @@
 package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -27,7 +28,6 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
-import javax.inject.Inject
 
 abstract class DataConnectRunEmulatorTask : DefaultTask() {
 
@@ -61,7 +61,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
       dataConnectExecutable = dataConnectExecutable,
       subCommand = listOf("dev"),
       configDirectory = configDirectory,
-      execOperations=execOperations,
+      execOperations = execOperations,
     ) {
       this.listen = "127.0.0.1:9399"
       this.localConnectionString = postgresConnectionUrl

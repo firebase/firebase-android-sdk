@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.Companion.downloadDataConnectExecutable
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.FileInfo
 import java.io.File
+import javax.inject.Inject
 import kotlin.random.Random
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -31,7 +32,6 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
-import javax.inject.Inject
 
 @Suppress("unused")
 abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {

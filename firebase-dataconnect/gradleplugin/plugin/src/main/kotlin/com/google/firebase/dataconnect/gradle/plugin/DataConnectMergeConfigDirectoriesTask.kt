@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import java.util.Locale
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -28,7 +29,6 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import javax.inject.Inject
 
 abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
 
