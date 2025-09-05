@@ -37,7 +37,7 @@ import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firebase.firestore.util.Util;
@@ -399,7 +399,7 @@ public final class UserDataReader {
       DocumentReference ref = (DocumentReference) input;
       validateDocumentReference(ref, context::createError);
       return Values.encodeValue(ref);
-    } else if (input instanceof Expr) {
+    } else if (input instanceof Expression) {
       throw context.createError("Pipeline expressions are not supported user objects");
     } else {
       try {
