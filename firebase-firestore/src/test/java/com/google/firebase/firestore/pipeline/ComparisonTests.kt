@@ -17,17 +17,17 @@ package com.google.firebase.firestore.pipeline
 import com.google.firebase.Timestamp // For creating Timestamp instances
 import com.google.firebase.firestore.GeoPoint // For creating GeoPoint instances
 import com.google.firebase.firestore.model.Values.NULL_VALUE
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.eq
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.gt
-import com.google.firebase.firestore.pipeline.Expr.Companion.gte
-import com.google.firebase.firestore.pipeline.Expr.Companion.lt
-import com.google.firebase.firestore.pipeline.Expr.Companion.lte
-import com.google.firebase.firestore.pipeline.Expr.Companion.map
-import com.google.firebase.firestore.pipeline.Expr.Companion.neq
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.equal
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
+import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThanOrEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.lessThan
+import com.google.firebase.firestore.pipeline.Expression.Companion.lessThanOrEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.testutil.TestUtil // For test helpers like map, array, etc.
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc // For creating MutableDocument
 import org.junit.Test
@@ -38,9 +38,9 @@ import org.robolectric.RobolectricTestRunner
 internal object ComparisonTestData {
   private const val MAX_LONG_EXACTLY_REPRESENTABLE_AS_DOUBLE = 1L shl 53
 
-  private val BOOLEAN_VALUES: List<Expr> = listOf(constant(false), constant(true))
+  private val BOOLEAN_VALUES: List<Expression> = listOf(constant(false), constant(true))
 
-  private val NUMERIC_VALUES: List<Expr> =
+  private val NUMERIC_VALUES: List<Expression> =
     listOf(
       constant(Double.NEGATIVE_INFINITY),
       constant(-Double.MAX_VALUE),
@@ -63,7 +63,7 @@ internal object ComparisonTestData {
 
   val doubleNaN = constant(Double.NaN)
 
-  private val TIMESTAMP_VALUES: List<Expr> =
+  private val TIMESTAMP_VALUES: List<Expression> =
     listOf(
       constant(Timestamp(-42, 0)),
       constant(Timestamp(-42, 42000000)),
@@ -73,7 +73,7 @@ internal object ComparisonTestData {
       constant(Timestamp(42, 42000000))
     )
 
-  private val STRING_VALUES: List<Expr> =
+  private val STRING_VALUES: List<Expression> =
     listOf(
       constant(""),
       constant("a"),
@@ -83,7 +83,7 @@ internal object ComparisonTestData {
       constant("z")
     )
 
-  private val BLOB_VALUES: List<Expr> =
+  private val BLOB_VALUES: List<Expression> =
     listOf(
       constant(TestUtil.blob()), // Empty
       constant(TestUtil.blob(0, 2, 56, 42)),
@@ -93,7 +93,7 @@ internal object ComparisonTestData {
 
   // Note: TestUtil.ref uses a default project "project" and default database "(default)"
   // So TestUtil.ref("foo/bar") becomes "projects/project/databases/(default)/documents/foo/bar"
-  private val REF_VALUES: List<Expr> =
+  private val REF_VALUES: List<Expression> =
     listOf(
       constant(TestUtil.ref("foo/bar")),
       constant(TestUtil.ref("foo/bar/qux/a")),
@@ -103,7 +103,7 @@ internal object ComparisonTestData {
       constant(TestUtil.ref("foo/baz"))
     )
 
-  private val GEO_POINT_VALUES: List<Expr> =
+  private val GEO_POINT_VALUES: List<Expression> =
     listOf(
       constant(GeoPoint(-87.0, -92.0)),
       constant(GeoPoint(-87.0, 0.0)),
@@ -116,7 +116,7 @@ internal object ComparisonTestData {
       constant(GeoPoint(42.0, 42.0))
     )
 
-  private val ARRAY_VALUES: List<Expr> =
+  private val ARRAY_VALUES: List<Expression> =
     listOf(
       array(),
       array(constant(true), constant(15L)),
@@ -128,7 +128,7 @@ internal object ComparisonTestData {
       array(map(emptyMap()))
     )
 
-  private val MAP_VALUES: List<Expr> =
+  private val MAP_VALUES: List<Expression> =
     listOf(
       map(emptyMap()),
       map(mapOf("ABA" to "qux")),
@@ -140,7 +140,7 @@ internal object ComparisonTestData {
 
   // Combine all comparable, non-NaN, non-Null values from the categorized lists
   // This is useful for testing against Null or NaN.
-  val allSupportedComparableValues: List<Expr> =
+  val allSupportedComparableValues: List<Expression> =
     BOOLEAN_VALUES +
       NUMERIC_VALUES + // numericValuesForNanTest already excludes NaN
       TIMESTAMP_VALUES +
@@ -152,13 +152,13 @@ internal object ComparisonTestData {
       MAP_VALUES
 
   // For tests specifically about numeric comparisons against NaN
-  val numericValuesForNanTest: List<Expr> = NUMERIC_VALUES // This list already excludes NaN
+  val numericValuesForNanTest: List<Expression> = NUMERIC_VALUES // This list already excludes NaN
 
   // --- Dynamically generated comparison pairs based on Firestore type ordering ---
   // Type Order: Null < Boolean < Number < Timestamp < String < Blob < Reference < GeoPoint < Array
   // < Map
 
-  private val allValueCategories: List<List<Expr>> =
+  private val allValueCategories: List<List<Expression>> =
     listOf(
       listOf(nullValue()), // Null first
       BOOLEAN_VALUES,
@@ -172,7 +172,7 @@ internal object ComparisonTestData {
       MAP_VALUES
     )
 
-  val equivalentValues: List<Pair<Expr, Expr>> = buildList {
+  val equivalentValues: List<Pair<Expression, Expression>> = buildList {
     // Self-equality for all defined values (except NaN, which is special)
     allSupportedComparableValues.forEach { add(it to it) }
 
@@ -189,7 +189,7 @@ internal object ComparisonTestData {
     add(map(mapOf("a" to 1L, "b" to 2L)) to map(mapOf("b" to 2L, "a" to 1L)))
   }
 
-  val lessThanValues: List<Pair<Expr, Expr>> = buildList {
+  val lessThanValues: List<Pair<Expression, Expression>> = buildList {
     // Intra-type comparisons
     for (category in allValueCategories) {
       for (i in 0 until category.size - 1) {
@@ -200,7 +200,7 @@ internal object ComparisonTestData {
     }
   }
 
-  val mixedTypeValues: List<Pair<Expr, Expr>> = buildList {
+  val mixedTypeValues: List<Pair<Expression, Expression>> = buildList {
     val categories = allValueCategories.filter { it.isNotEmpty() }
     for (i in categories.indices) {
       for (j in i + 1 until categories.size) {
@@ -237,7 +237,7 @@ internal class ComparisonTests {
   @Test
   fun eq_equivalentValues_returnTrue() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
-      val result = evaluate(eq(v1, v2))
+      val result = evaluate(equal(v1, v2))
       assertEvaluatesTo(result, true, "eq(%s, %s)", v1, v2)
     }
   }
@@ -246,10 +246,10 @@ internal class ComparisonTests {
   fun eq_lessThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
       // eq(v1, v2)
-      val result1 = evaluate(eq(v1, v2))
+      val result1 = evaluate(equal(v1, v2))
       assertEvaluatesTo(result1, false, "eq(%s, %s)", v1, v2)
       // eq(v2, v1)
-      val result2 = evaluate(eq(v2, v1))
+      val result2 = evaluate(equal(v2, v1))
       assertEvaluatesTo(result2, false, "eq(%s, %s)", v2, v1)
     }
   }
@@ -259,7 +259,7 @@ internal class ComparisonTests {
   fun eq_greaterThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
       // eq(greater, less)
-      val result = evaluate(eq(greater, less))
+      val result = evaluate(equal(greater, less))
       assertEvaluatesTo(result, false, "eq(%s, %s)", greater, less)
     }
   }
@@ -267,9 +267,9 @@ internal class ComparisonTests {
   @Test
   fun eq_mixedTypeValues_returnFalse() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
-      val result1 = evaluate(eq(v1, v2))
+      val result1 = evaluate(equal(v1, v2))
       assertEvaluatesTo(result1, false, "eq(%s, %s)", v1, v2)
-      val result2 = evaluate(eq(v2, v1))
+      val result2 = evaluate(equal(v2, v1))
       assertEvaluatesTo(result2, false, "eq(%s, %s)", v2, v1)
     }
   }
@@ -280,7 +280,7 @@ internal class ComparisonTests {
     // Firestore's behavior for direct comparison of two NULL constants:
     val v1 = nullValue()
     val v2 = nullValue()
-    val result = evaluate(eq(v1, v2))
+    val result = evaluate(equal(v1, v2))
     assertEvaluatesToNull(result, "eq(%s, %s)", v1, v2)
   }
 
@@ -289,14 +289,19 @@ internal class ComparisonTests {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
       // eq(null, value)
-      assertEvaluatesToNull(evaluate(eq(nullVal, value)), "eq(%s, %s)", nullVal, value)
+      assertEvaluatesToNull(evaluate(equal(nullVal, value)), "eq(%s, %s)", nullVal, value)
       // eq(value, null)
-      assertEvaluatesToNull(evaluate(eq(value, nullVal)), "eq(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(evaluate(equal(value, nullVal)), "eq(%s, %s)", value, nullVal)
     }
     // eq(null, nonExistentField)
     val nullVal = nullValue()
     val missingField = field("nonexistent")
-    assertEvaluatesToError(evaluate(eq(nullVal, missingField)), "eq(%s, %s)", nullVal, missingField)
+    assertEvaluatesToError(
+      evaluate(equal(nullVal, missingField)),
+      "eq(%s, %s)",
+      nullVal,
+      missingField
+    )
   }
 
   @Test
@@ -304,11 +309,11 @@ internal class ComparisonTests {
     val nanExpr = ComparisonTestData.doubleNaN
 
     // NaN == NaN is false
-    assertEvaluatesTo(evaluate(eq(nanExpr, nanExpr)), false, "eq(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(evaluate(equal(nanExpr, nanExpr)), false, "eq(%s, %s)", nanExpr, nanExpr)
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(eq(nanExpr, numVal)), false, "eq(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(eq(numVal, nanExpr)), false, "eq(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(evaluate(equal(nanExpr, numVal)), false, "eq(%s, %s)", nanExpr, numVal)
+      assertEvaluatesTo(evaluate(equal(numVal, nanExpr)), false, "eq(%s, %s)", numVal, nanExpr)
     }
 
     // Compare NaN with non-numeric types
@@ -317,8 +322,20 @@ internal class ComparisonTests {
         nanExpr)
       .forEach { otherVal ->
         if (otherVal != nanExpr) { // Ensure we are not re-testing NaN vs NaN or NaN vs Numeric
-          assertEvaluatesTo(evaluate(eq(nanExpr, otherVal)), false, "eq(%s, %s)", nanExpr, otherVal)
-          assertEvaluatesTo(evaluate(eq(otherVal, nanExpr)), false, "eq(%s, %s)", otherVal, nanExpr)
+          assertEvaluatesTo(
+            evaluate(equal(nanExpr, otherVal)),
+            false,
+            "eq(%s, %s)",
+            nanExpr,
+            otherVal
+          )
+          assertEvaluatesTo(
+            evaluate(equal(otherVal, nanExpr)),
+            false,
+            "eq(%s, %s)",
+            otherVal,
+            nanExpr
+          )
         }
       }
 
@@ -326,7 +343,7 @@ internal class ComparisonTests {
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(eq(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(equal(arrayWithNaN1, arrayWithNaN2)),
       false,
       "eq(%s, %s)",
       arrayWithNaN1,
@@ -337,7 +354,7 @@ internal class ComparisonTests {
     val mapWithNaN1 = map(mapOf("foo" to Double.NaN))
     val mapWithNaN2 = map(mapOf("foo" to Double.NaN))
     assertEvaluatesTo(
-      evaluate(eq(mapWithNaN1, mapWithNaN2)),
+      evaluate(equal(mapWithNaN1, mapWithNaN2)),
       false,
       "eq(%s, %s)",
       mapWithNaN1,
@@ -349,29 +366,34 @@ internal class ComparisonTests {
   fun eq_nullContainerEquality_various() {
     val nullArray = array(nullValue()) // Array containing a Firestore Null
 
-    assertEvaluatesTo(evaluate(eq(nullArray, constant(1L))), false, "eq(%s, 1L)", nullArray)
-    assertEvaluatesTo(evaluate(eq(nullArray, constant("1"))), false, "eq(%s, \\\"1\\\")", nullArray)
+    assertEvaluatesTo(evaluate(equal(nullArray, constant(1L))), false, "eq(%s, 1L)", nullArray)
+    assertEvaluatesTo(
+      evaluate(equal(nullArray, constant("1"))),
+      false,
+      "eq(%s, \\\"1\\\")",
+      nullArray
+    )
     assertEvaluatesToNull(
-      evaluate(eq(nullArray, nullValue())),
+      evaluate(equal(nullArray, nullValue())),
       "eq(%s, %s)",
       nullArray,
       nullValue()
     )
     assertEvaluatesTo(
-      evaluate(eq(nullArray, ComparisonTestData.doubleNaN)),
+      evaluate(equal(nullArray, ComparisonTestData.doubleNaN)),
       false,
       "eq(%s, %s)",
       nullArray,
       ComparisonTestData.doubleNaN
     )
-    assertEvaluatesTo(evaluate(eq(nullArray, array())), false, "eq(%s, [])", nullArray)
+    assertEvaluatesTo(evaluate(equal(nullArray, array())), false, "eq(%s, [])", nullArray)
 
     val nanArray = array(constant(Double.NaN))
-    assertEvaluatesToNull(evaluate(eq(nullArray, nanArray)), "eq(%s, %s)", nullArray, nanArray)
+    assertEvaluatesToNull(evaluate(equal(nullArray, nanArray)), "eq(%s, %s)", nullArray, nanArray)
 
     val anotherNullArray = array(nullValue())
     assertEvaluatesToNull(
-      evaluate(eq(nullArray, anotherNullArray)),
+      evaluate(equal(nullArray, anotherNullArray)),
       "eq(%s, %s)",
       nullArray,
       anotherNullArray
@@ -380,12 +402,12 @@ internal class ComparisonTests {
     val nullMap = map(mapOf("foo" to NULL_VALUE)) // Map containing a Firestore Null
     val anotherNullMap = map(mapOf("foo" to NULL_VALUE))
     assertEvaluatesToNull(
-      evaluate(eq(nullMap, anotherNullMap)),
+      evaluate(equal(nullMap, anotherNullMap)),
       "eq(%s, %s)",
       nullMap,
       anotherNullMap
     )
-    assertEvaluatesTo(evaluate(eq(nullMap, map(emptyMap()))), false, "eq(%s, {})", nullMap)
+    assertEvaluatesTo(evaluate(equal(nullMap, map(emptyMap()))), false, "eq(%s, {})", nullMap)
   }
 
   @Test
@@ -396,26 +418,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(eq(errorExpr, value), testDoc),
+        evaluate(equal(errorExpr, value), testDoc),
         "eq(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(eq(value, errorExpr), testDoc),
+        evaluate(equal(value, errorExpr), testDoc),
         "eq(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(eq(errorExpr, errorExpr), testDoc),
+      evaluate(equal(errorExpr, errorExpr), testDoc),
       "eq(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(eq(errorExpr, nullValue()), testDoc),
+      evaluate(equal(errorExpr, nullValue()), testDoc),
       "eq(%s, %s)",
       errorExpr,
       nullValue()
@@ -429,13 +451,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/eqMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(eq(missingField, presentValue), testDoc),
+      evaluate(equal(missingField, presentValue), testDoc),
       "eq(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(eq(presentValue, missingField), testDoc),
+      evaluate(equal(presentValue, missingField), testDoc),
       "eq(%s, %s)",
       presentValue,
       missingField
@@ -447,7 +469,7 @@ internal class ComparisonTests {
   @Test
   fun neq_equivalentValues_returnFalse() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
-      val result = evaluate(neq(v1, v2))
+      val result = evaluate(notEqual(v1, v2))
       if (v1 == nullValue() && v2 == nullValue()) {
         assertEvaluatesToNull(result, "neq(%s, %s)", v1, v2)
       } else {
@@ -459,15 +481,15 @@ internal class ComparisonTests {
   @Test
   fun neq_lessThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
-      assertEvaluatesTo(evaluate(neq(v1, v2)), true, "neq(%s, %s)", v1, v2)
-      assertEvaluatesTo(evaluate(neq(v2, v1)), true, "neq(%s, %s)", v2, v1)
+      assertEvaluatesTo(evaluate(notEqual(v1, v2)), true, "neq(%s, %s)", v1, v2)
+      assertEvaluatesTo(evaluate(notEqual(v2, v1)), true, "neq(%s, %s)", v2, v1)
     }
   }
 
   @Test
   fun neq_greaterThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(neq(greater, less)), true, "neq(%s, %s)", greater, less)
+      assertEvaluatesTo(evaluate(notEqual(greater, less)), true, "neq(%s, %s)", greater, less)
     }
   }
 
@@ -475,11 +497,11 @@ internal class ComparisonTests {
   fun neq_mixedTypeValues_returnTrue() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
       if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(neq(v1, v2)), "neq(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(neq(v2, v1)), "neq(%s, %s)", v2, v1)
+        assertEvaluatesToNull(evaluate(notEqual(v1, v2)), "neq(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(notEqual(v2, v1)), "neq(%s, %s)", v2, v1)
       } else {
-        assertEvaluatesTo(evaluate(neq(v1, v2)), true, "neq(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(neq(v2, v1)), true, "neq(%s, %s)", v2, v1)
+        assertEvaluatesTo(evaluate(notEqual(v1, v2)), true, "neq(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(notEqual(v2, v1)), true, "neq(%s, %s)", v2, v1)
       }
     }
   }
@@ -488,7 +510,7 @@ internal class ComparisonTests {
   fun neq_nullNotEqualsNull_returnsNull() {
     val v1 = nullValue()
     val v2 = nullValue()
-    val result = evaluate(neq(v1, v2))
+    val result = evaluate(notEqual(v1, v2))
     assertEvaluatesToNull(result, "neq(%s, %s)", v1, v2)
   }
 
@@ -496,13 +518,13 @@ internal class ComparisonTests {
   fun neq_nullOperand_returnsNullOrError() {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(neq(nullVal, value)), "neq(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(neq(value, nullVal)), "neq(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(evaluate(notEqual(nullVal, value)), "neq(%s, %s)", nullVal, value)
+      assertEvaluatesToNull(evaluate(notEqual(value, nullVal)), "neq(%s, %s)", value, nullVal)
     }
     val nullVal = nullValue()
     val missingField = field("nonexistent")
     assertEvaluatesToError(
-      evaluate(neq(nullVal, missingField)),
+      evaluate(notEqual(nullVal, missingField)),
       "neq(%s, %s)",
       nullVal,
       missingField
@@ -512,11 +534,11 @@ internal class ComparisonTests {
   @Test
   fun neq_nanComparisons_returnTrue() {
     val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(evaluate(neq(nanExpr, nanExpr)), true, "neq(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(evaluate(notEqual(nanExpr, nanExpr)), true, "neq(%s, %s)", nanExpr, nanExpr)
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(neq(nanExpr, numVal)), true, "neq(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(neq(numVal, nanExpr)), true, "neq(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(evaluate(notEqual(nanExpr, numVal)), true, "neq(%s, %s)", nanExpr, numVal)
+      assertEvaluatesTo(evaluate(notEqual(numVal, nanExpr)), true, "neq(%s, %s)", numVal, nanExpr)
     }
 
     (ComparisonTestData.allSupportedComparableValues -
@@ -525,14 +547,14 @@ internal class ComparisonTests {
       .forEach { otherVal ->
         if (otherVal != nanExpr) {
           assertEvaluatesTo(
-            evaluate(neq(nanExpr, otherVal)),
+            evaluate(notEqual(nanExpr, otherVal)),
             true,
             "neq(%s, %s)",
             nanExpr,
             otherVal
           )
           assertEvaluatesTo(
-            evaluate(neq(otherVal, nanExpr)),
+            evaluate(notEqual(otherVal, nanExpr)),
             true,
             "neq(%s, %s)",
             otherVal,
@@ -544,7 +566,7 @@ internal class ComparisonTests {
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(neq(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(notEqual(arrayWithNaN1, arrayWithNaN2)),
       true,
       "neq(%s, %s)",
       arrayWithNaN1,
@@ -554,7 +576,7 @@ internal class ComparisonTests {
     val mapWithNaN1 = map(mapOf("foo" to Double.NaN))
     val mapWithNaN2 = map(mapOf("foo" to Double.NaN))
     assertEvaluatesTo(
-      evaluate(neq(mapWithNaN1, mapWithNaN2)),
+      evaluate(notEqual(mapWithNaN1, mapWithNaN2)),
       true,
       "neq(%s, %s)",
       mapWithNaN1,
@@ -569,26 +591,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(neq(errorExpr, value), testDoc),
+        evaluate(notEqual(errorExpr, value), testDoc),
         "neq(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(neq(value, errorExpr), testDoc),
+        evaluate(notEqual(value, errorExpr), testDoc),
         "neq(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(neq(errorExpr, errorExpr), testDoc),
+      evaluate(notEqual(errorExpr, errorExpr), testDoc),
       "neq(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(neq(errorExpr, nullValue()), testDoc),
+      evaluate(notEqual(errorExpr, nullValue()), testDoc),
       "neq(%s, %s)",
       errorExpr,
       nullValue()
@@ -602,13 +624,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/neqMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(neq(missingField, presentValue), testDoc),
+      evaluate(notEqual(missingField, presentValue), testDoc),
       "neq(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(neq(presentValue, missingField), testDoc),
+      evaluate(notEqual(presentValue, missingField), testDoc),
       "neq(%s, %s)",
       presentValue,
       missingField
@@ -621,9 +643,9 @@ internal class ComparisonTests {
   fun lt_equivalentValues_returnFalse() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
       if (v1 == nullValue() && v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(lt(v1, v2)), "lt(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(lessThan(v1, v2)), "lt(%s, %s)", v1, v2)
       } else {
-        assertEvaluatesTo(evaluate(lt(v1, v2)), false, "lt(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(lessThan(v1, v2)), false, "lt(%s, %s)", v1, v2)
       }
     }
   }
@@ -631,7 +653,7 @@ internal class ComparisonTests {
   @Test
   fun lt_lessThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
-      val result = evaluate(lt(v1, v2))
+      val result = evaluate(lessThan(v1, v2))
       assertEvaluatesTo(result, true, "lt(%s, %s)", v1, v2)
     }
   }
@@ -639,7 +661,7 @@ internal class ComparisonTests {
   @Test
   fun lt_greaterThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(lt(greater, less)), false, "lt(%s, %s)", greater, less)
+      assertEvaluatesTo(evaluate(lessThan(greater, less)), false, "lt(%s, %s)", greater, less)
     }
   }
 
@@ -647,11 +669,11 @@ internal class ComparisonTests {
   fun lt_mixedTypeValues_returnFalse() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
       if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(lt(v1, v2)), "lt(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(lt(v2, v1)), "lt(%s, %s)", v2, v1)
+        assertEvaluatesToNull(evaluate(lessThan(v1, v2)), "lt(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(lessThan(v2, v1)), "lt(%s, %s)", v2, v1)
       } else {
-        assertEvaluatesTo(evaluate(lt(v1, v2)), false, "lt(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(lt(v2, v1)), false, "lt(%s, %s)", v2, v1)
+        assertEvaluatesTo(evaluate(lessThan(v1, v2)), false, "lt(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(lessThan(v2, v1)), false, "lt(%s, %s)", v2, v1)
       }
     }
   }
@@ -660,37 +682,54 @@ internal class ComparisonTests {
   fun lt_nullOperand_returnsNullOrError() {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(lt(nullVal, value)), "lt(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(lt(value, nullVal)), "lt(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(evaluate(lessThan(nullVal, value)), "lt(%s, %s)", nullVal, value)
+      assertEvaluatesToNull(evaluate(lessThan(value, nullVal)), "lt(%s, %s)", value, nullVal)
     }
     val nullVal = nullValue()
-    assertEvaluatesToNull(evaluate(lt(nullVal, nullVal)), "lt(%s, %s)", nullVal, nullVal)
+    assertEvaluatesToNull(evaluate(lessThan(nullVal, nullVal)), "lt(%s, %s)", nullVal, nullVal)
     val missingField = field("nonexistent")
-    assertEvaluatesToError(evaluate(lt(nullVal, missingField)), "lt(%s, %s)", nullVal, missingField)
+    assertEvaluatesToError(
+      evaluate(lessThan(nullVal, missingField)),
+      "lt(%s, %s)",
+      nullVal,
+      missingField
+    )
   }
 
   @Test
   fun lt_nanComparisons_returnFalse() {
     val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(evaluate(lt(nanExpr, nanExpr)), false, "lt(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(evaluate(lessThan(nanExpr, nanExpr)), false, "lt(%s, %s)", nanExpr, nanExpr)
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(lt(nanExpr, numVal)), false, "lt(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(lt(numVal, nanExpr)), false, "lt(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(evaluate(lessThan(nanExpr, numVal)), false, "lt(%s, %s)", nanExpr, numVal)
+      assertEvaluatesTo(evaluate(lessThan(numVal, nanExpr)), false, "lt(%s, %s)", numVal, nanExpr)
     }
     (ComparisonTestData.allSupportedComparableValues -
         ComparisonTestData.numericValuesForNanTest.toSet() -
         nanExpr)
       .forEach { otherVal ->
         if (otherVal != nanExpr) {
-          assertEvaluatesTo(evaluate(lt(nanExpr, otherVal)), false, "lt(%s, %s)", nanExpr, otherVal)
-          assertEvaluatesTo(evaluate(lt(otherVal, nanExpr)), false, "lt(%s, %s)", otherVal, nanExpr)
+          assertEvaluatesTo(
+            evaluate(lessThan(nanExpr, otherVal)),
+            false,
+            "lt(%s, %s)",
+            nanExpr,
+            otherVal
+          )
+          assertEvaluatesTo(
+            evaluate(lessThan(otherVal, nanExpr)),
+            false,
+            "lt(%s, %s)",
+            otherVal,
+            nanExpr
+          )
         }
       }
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(lt(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(lessThan(arrayWithNaN1, arrayWithNaN2)),
       false,
       "lt(%s, %s)",
       arrayWithNaN1,
@@ -705,26 +744,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(lt(errorExpr, value), testDoc),
+        evaluate(lessThan(errorExpr, value), testDoc),
         "lt(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(lt(value, errorExpr), testDoc),
+        evaluate(lessThan(value, errorExpr), testDoc),
         "lt(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(lt(errorExpr, errorExpr), testDoc),
+      evaluate(lessThan(errorExpr, errorExpr), testDoc),
       "lt(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(lt(errorExpr, nullValue()), testDoc),
+      evaluate(lessThan(errorExpr, nullValue()), testDoc),
       "lt(%s, %s)",
       errorExpr,
       nullValue()
@@ -738,13 +777,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/ltMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(lt(missingField, presentValue), testDoc),
+      evaluate(lessThan(missingField, presentValue), testDoc),
       "lt(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(lt(presentValue, missingField), testDoc),
+      evaluate(lessThan(presentValue, missingField), testDoc),
       "lt(%s, %s)",
       presentValue,
       missingField
@@ -757,9 +796,9 @@ internal class ComparisonTests {
   fun lte_equivalentValues_returnTrue() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
       if (v1 == nullValue() && v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(lte(v1, v2)), "lte(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(lessThanOrEqual(v1, v2)), "lte(%s, %s)", v1, v2)
       } else {
-        assertEvaluatesTo(evaluate(lte(v1, v2)), true, "lte(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(lessThanOrEqual(v1, v2)), true, "lte(%s, %s)", v1, v2)
       }
     }
   }
@@ -767,14 +806,20 @@ internal class ComparisonTests {
   @Test
   fun lte_lessThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
-      assertEvaluatesTo(evaluate(lte(v1, v2)), true, "lte(%s, %s)", v1, v2)
+      assertEvaluatesTo(evaluate(lessThanOrEqual(v1, v2)), true, "lte(%s, %s)", v1, v2)
     }
   }
 
   @Test
   fun lte_greaterThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(lte(greater, less)), false, "lte(%s, %s)", greater, less)
+      assertEvaluatesTo(
+        evaluate(lessThanOrEqual(greater, less)),
+        false,
+        "lte(%s, %s)",
+        greater,
+        less
+      )
     }
   }
 
@@ -782,11 +827,11 @@ internal class ComparisonTests {
   fun lte_mixedTypeValues_returnFalse() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
       if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(lte(v1, v2)), "lte(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(lte(v2, v1)), "lte(%s, %s)", v2, v1)
+        assertEvaluatesToNull(evaluate(lessThanOrEqual(v1, v2)), "lte(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(lessThanOrEqual(v2, v1)), "lte(%s, %s)", v2, v1)
       } else {
-        assertEvaluatesTo(evaluate(lte(v1, v2)), false, "lte(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(lte(v2, v1)), false, "lte(%s, %s)", v2, v1)
+        assertEvaluatesTo(evaluate(lessThanOrEqual(v1, v2)), false, "lte(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(lessThanOrEqual(v2, v1)), false, "lte(%s, %s)", v2, v1)
       }
     }
   }
@@ -795,14 +840,29 @@ internal class ComparisonTests {
   fun lte_nullOperand_returnsNullOrError() {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(lte(nullVal, value)), "lte(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(lte(value, nullVal)), "lte(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(
+        evaluate(lessThanOrEqual(nullVal, value)),
+        "lte(%s, %s)",
+        nullVal,
+        value
+      )
+      assertEvaluatesToNull(
+        evaluate(lessThanOrEqual(value, nullVal)),
+        "lte(%s, %s)",
+        value,
+        nullVal
+      )
     }
     val nullVal = nullValue()
-    assertEvaluatesToNull(evaluate(lte(nullVal, nullVal)), "lte(%s, %s)", nullVal, nullVal)
+    assertEvaluatesToNull(
+      evaluate(lessThanOrEqual(nullVal, nullVal)),
+      "lte(%s, %s)",
+      nullVal,
+      nullVal
+    )
     val missingField = field("nonexistent")
     assertEvaluatesToError(
-      evaluate(lte(nullVal, missingField)),
+      evaluate(lessThanOrEqual(nullVal, missingField)),
       "lte(%s, %s)",
       nullVal,
       missingField
@@ -812,11 +872,29 @@ internal class ComparisonTests {
   @Test
   fun lte_nanComparisons_returnFalse() {
     val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(evaluate(lte(nanExpr, nanExpr)), false, "lte(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(
+      evaluate(lessThanOrEqual(nanExpr, nanExpr)),
+      false,
+      "lte(%s, %s)",
+      nanExpr,
+      nanExpr
+    )
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(lte(nanExpr, numVal)), false, "lte(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(lte(numVal, nanExpr)), false, "lte(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(
+        evaluate(lessThanOrEqual(nanExpr, numVal)),
+        false,
+        "lte(%s, %s)",
+        nanExpr,
+        numVal
+      )
+      assertEvaluatesTo(
+        evaluate(lessThanOrEqual(numVal, nanExpr)),
+        false,
+        "lte(%s, %s)",
+        numVal,
+        nanExpr
+      )
     }
     (ComparisonTestData.allSupportedComparableValues -
         ComparisonTestData.numericValuesForNanTest.toSet() -
@@ -824,14 +902,14 @@ internal class ComparisonTests {
       .forEach { otherVal ->
         if (otherVal != nanExpr) {
           assertEvaluatesTo(
-            evaluate(lte(nanExpr, otherVal)),
+            evaluate(lessThanOrEqual(nanExpr, otherVal)),
             false,
             "lte(%s, %s)",
             nanExpr,
             otherVal
           )
           assertEvaluatesTo(
-            evaluate(lte(otherVal, nanExpr)),
+            evaluate(lessThanOrEqual(otherVal, nanExpr)),
             false,
             "lte(%s, %s)",
             otherVal,
@@ -842,7 +920,7 @@ internal class ComparisonTests {
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(lte(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(lessThanOrEqual(arrayWithNaN1, arrayWithNaN2)),
       false,
       "lte(%s, %s)",
       arrayWithNaN1,
@@ -857,26 +935,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(lte(errorExpr, value), testDoc),
+        evaluate(lessThanOrEqual(errorExpr, value), testDoc),
         "lte(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(lte(value, errorExpr), testDoc),
+        evaluate(lessThanOrEqual(value, errorExpr), testDoc),
         "lte(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(lte(errorExpr, errorExpr), testDoc),
+      evaluate(lessThanOrEqual(errorExpr, errorExpr), testDoc),
       "lte(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(lte(errorExpr, nullValue()), testDoc),
+      evaluate(lessThanOrEqual(errorExpr, nullValue()), testDoc),
       "lte(%s, %s)",
       errorExpr,
       nullValue()
@@ -890,13 +968,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/lteMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(lte(missingField, presentValue), testDoc),
+      evaluate(lessThanOrEqual(missingField, presentValue), testDoc),
       "lte(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(lte(presentValue, missingField), testDoc),
+      evaluate(lessThanOrEqual(presentValue, missingField), testDoc),
       "lte(%s, %s)",
       presentValue,
       missingField
@@ -909,9 +987,9 @@ internal class ComparisonTests {
   fun gt_equivalentValues_returnFalse() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
       if (v1 == nullValue() && v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(gt(v1, v2)), "gt(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(greaterThan(v1, v2)), "gt(%s, %s)", v1, v2)
       } else {
-        assertEvaluatesTo(evaluate(gt(v1, v2)), false, "gt(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
       }
     }
   }
@@ -919,14 +997,14 @@ internal class ComparisonTests {
   @Test
   fun gt_lessThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
-      assertEvaluatesTo(evaluate(gt(v1, v2)), false, "gt(%s, %s)", v1, v2)
+      assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
     }
   }
 
   @Test
   fun gt_greaterThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(gt(greater, less)), true, "gt(%s, %s)", greater, less)
+      assertEvaluatesTo(evaluate(greaterThan(greater, less)), true, "gt(%s, %s)", greater, less)
     }
   }
 
@@ -934,11 +1012,11 @@ internal class ComparisonTests {
   fun gt_mixedTypeValues_returnFalse() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
       if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(gt(v1, v2)), "gt(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(gt(v2, v1)), "gt(%s, %s)", v2, v1)
+        assertEvaluatesToNull(evaluate(greaterThan(v1, v2)), "gt(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(greaterThan(v2, v1)), "gt(%s, %s)", v2, v1)
       } else {
-        assertEvaluatesTo(evaluate(gt(v1, v2)), false, "gt(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(gt(v2, v1)), false, "gt(%s, %s)", v2, v1)
+        assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(greaterThan(v2, v1)), false, "gt(%s, %s)", v2, v1)
       }
     }
   }
@@ -947,37 +1025,72 @@ internal class ComparisonTests {
   fun gt_nullOperand_returnsNullOrError() {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(gt(nullVal, value)), "gt(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(gt(value, nullVal)), "gt(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(evaluate(greaterThan(nullVal, value)), "gt(%s, %s)", nullVal, value)
+      assertEvaluatesToNull(evaluate(greaterThan(value, nullVal)), "gt(%s, %s)", value, nullVal)
     }
     val nullVal = nullValue()
-    assertEvaluatesToNull(evaluate(gt(nullVal, nullVal)), "gt(%s, %s)", nullVal, nullVal)
+    assertEvaluatesToNull(evaluate(greaterThan(nullVal, nullVal)), "gt(%s, %s)", nullVal, nullVal)
     val missingField = field("nonexistent")
-    assertEvaluatesToError(evaluate(gt(nullVal, missingField)), "gt(%s, %s)", nullVal, missingField)
+    assertEvaluatesToError(
+      evaluate(greaterThan(nullVal, missingField)),
+      "gt(%s, %s)",
+      nullVal,
+      missingField
+    )
   }
 
   @Test
   fun gt_nanComparisons_returnFalse() {
     val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(evaluate(gt(nanExpr, nanExpr)), false, "gt(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(
+      evaluate(greaterThan(nanExpr, nanExpr)),
+      false,
+      "gt(%s, %s)",
+      nanExpr,
+      nanExpr
+    )
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(gt(nanExpr, numVal)), false, "gt(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(gt(numVal, nanExpr)), false, "gt(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(
+        evaluate(greaterThan(nanExpr, numVal)),
+        false,
+        "gt(%s, %s)",
+        nanExpr,
+        numVal
+      )
+      assertEvaluatesTo(
+        evaluate(greaterThan(numVal, nanExpr)),
+        false,
+        "gt(%s, %s)",
+        numVal,
+        nanExpr
+      )
     }
     (ComparisonTestData.allSupportedComparableValues -
         ComparisonTestData.numericValuesForNanTest.toSet() -
         nanExpr)
       .forEach { otherVal ->
         if (otherVal != nanExpr) {
-          assertEvaluatesTo(evaluate(gt(nanExpr, otherVal)), false, "gt(%s, %s)", nanExpr, otherVal)
-          assertEvaluatesTo(evaluate(gt(otherVal, nanExpr)), false, "gt(%s, %s)", otherVal, nanExpr)
+          assertEvaluatesTo(
+            evaluate(greaterThan(nanExpr, otherVal)),
+            false,
+            "gt(%s, %s)",
+            nanExpr,
+            otherVal
+          )
+          assertEvaluatesTo(
+            evaluate(greaterThan(otherVal, nanExpr)),
+            false,
+            "gt(%s, %s)",
+            otherVal,
+            nanExpr
+          )
         }
       }
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(gt(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(greaterThan(arrayWithNaN1, arrayWithNaN2)),
       false,
       "gt(%s, %s)",
       arrayWithNaN1,
@@ -992,26 +1105,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(gt(errorExpr, value), testDoc),
+        evaluate(greaterThan(errorExpr, value), testDoc),
         "gt(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(gt(value, errorExpr), testDoc),
+        evaluate(greaterThan(value, errorExpr), testDoc),
         "gt(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(gt(errorExpr, errorExpr), testDoc),
+      evaluate(greaterThan(errorExpr, errorExpr), testDoc),
       "gt(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(gt(errorExpr, nullValue()), testDoc),
+      evaluate(greaterThan(errorExpr, nullValue()), testDoc),
       "gt(%s, %s)",
       errorExpr,
       nullValue()
@@ -1025,13 +1138,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/gtMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(gt(missingField, presentValue), testDoc),
+      evaluate(greaterThan(missingField, presentValue), testDoc),
       "gt(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(gt(presentValue, missingField), testDoc),
+      evaluate(greaterThan(presentValue, missingField), testDoc),
       "gt(%s, %s)",
       presentValue,
       missingField
@@ -1044,9 +1157,9 @@ internal class ComparisonTests {
   fun gte_equivalentValues_returnTrue() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
       if (v1 == nullValue() && v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(gte(v1, v2)), "gte(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(greaterThanOrEqual(v1, v2)), "gte(%s, %s)", v1, v2)
       } else {
-        assertEvaluatesTo(evaluate(gte(v1, v2)), true, "gte(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(greaterThanOrEqual(v1, v2)), true, "gte(%s, %s)", v1, v2)
       }
     }
   }
@@ -1054,14 +1167,20 @@ internal class ComparisonTests {
   @Test
   fun gte_lessThanValues_returnFalse() {
     ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
-      assertEvaluatesTo(evaluate(gte(v1, v2)), false, "gte(%s, %s)", v1, v2)
+      assertEvaluatesTo(evaluate(greaterThanOrEqual(v1, v2)), false, "gte(%s, %s)", v1, v2)
     }
   }
 
   @Test
   fun gte_greaterThanValues_returnTrue() {
     ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(gte(greater, less)), true, "gte(%s, %s)", greater, less)
+      assertEvaluatesTo(
+        evaluate(greaterThanOrEqual(greater, less)),
+        true,
+        "gte(%s, %s)",
+        greater,
+        less
+      )
     }
   }
 
@@ -1069,11 +1188,11 @@ internal class ComparisonTests {
   fun gte_mixedTypeValues_returnFalse() {
     ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
       if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(gte(v1, v2)), "gte(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(gte(v2, v1)), "gte(%s, %s)", v2, v1)
+        assertEvaluatesToNull(evaluate(greaterThanOrEqual(v1, v2)), "gte(%s, %s)", v1, v2)
+        assertEvaluatesToNull(evaluate(greaterThanOrEqual(v2, v1)), "gte(%s, %s)", v2, v1)
       } else {
-        assertEvaluatesTo(evaluate(gte(v1, v2)), false, "gte(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(gte(v2, v1)), false, "gte(%s, %s)", v2, v1)
+        assertEvaluatesTo(evaluate(greaterThanOrEqual(v1, v2)), false, "gte(%s, %s)", v1, v2)
+        assertEvaluatesTo(evaluate(greaterThanOrEqual(v2, v1)), false, "gte(%s, %s)", v2, v1)
       }
     }
   }
@@ -1082,14 +1201,29 @@ internal class ComparisonTests {
   fun gte_nullOperand_returnsNullOrError() {
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(gte(nullVal, value)), "gte(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(gte(value, nullVal)), "gte(%s, %s)", value, nullVal)
+      assertEvaluatesToNull(
+        evaluate(greaterThanOrEqual(nullVal, value)),
+        "gte(%s, %s)",
+        nullVal,
+        value
+      )
+      assertEvaluatesToNull(
+        evaluate(greaterThanOrEqual(value, nullVal)),
+        "gte(%s, %s)",
+        value,
+        nullVal
+      )
     }
     val nullVal = nullValue()
-    assertEvaluatesToNull(evaluate(gte(nullVal, nullVal)), "gte(%s, %s)", nullVal, nullVal)
+    assertEvaluatesToNull(
+      evaluate(greaterThanOrEqual(nullVal, nullVal)),
+      "gte(%s, %s)",
+      nullVal,
+      nullVal
+    )
     val missingField = field("nonexistent")
     assertEvaluatesToError(
-      evaluate(gte(nullVal, missingField)),
+      evaluate(greaterThanOrEqual(nullVal, missingField)),
       "gte(%s, %s)",
       nullVal,
       missingField
@@ -1099,11 +1233,29 @@ internal class ComparisonTests {
   @Test
   fun gte_nanComparisons_returnFalse() {
     val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(evaluate(gte(nanExpr, nanExpr)), false, "gte(%s, %s)", nanExpr, nanExpr)
+    assertEvaluatesTo(
+      evaluate(greaterThanOrEqual(nanExpr, nanExpr)),
+      false,
+      "gte(%s, %s)",
+      nanExpr,
+      nanExpr
+    )
 
     ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
-      assertEvaluatesTo(evaluate(gte(nanExpr, numVal)), false, "gte(%s, %s)", nanExpr, numVal)
-      assertEvaluatesTo(evaluate(gte(numVal, nanExpr)), false, "gte(%s, %s)", numVal, nanExpr)
+      assertEvaluatesTo(
+        evaluate(greaterThanOrEqual(nanExpr, numVal)),
+        false,
+        "gte(%s, %s)",
+        nanExpr,
+        numVal
+      )
+      assertEvaluatesTo(
+        evaluate(greaterThanOrEqual(numVal, nanExpr)),
+        false,
+        "gte(%s, %s)",
+        numVal,
+        nanExpr
+      )
     }
     (ComparisonTestData.allSupportedComparableValues -
         ComparisonTestData.numericValuesForNanTest.toSet() -
@@ -1111,14 +1263,14 @@ internal class ComparisonTests {
       .forEach { otherVal ->
         if (otherVal != nanExpr) {
           assertEvaluatesTo(
-            evaluate(gte(nanExpr, otherVal)),
+            evaluate(greaterThanOrEqual(nanExpr, otherVal)),
             false,
             "gte(%s, %s)",
             nanExpr,
             otherVal
           )
           assertEvaluatesTo(
-            evaluate(gte(otherVal, nanExpr)),
+            evaluate(greaterThanOrEqual(otherVal, nanExpr)),
             false,
             "gte(%s, %s)",
             otherVal,
@@ -1129,7 +1281,7 @@ internal class ComparisonTests {
     val arrayWithNaN1 = array(constant(Double.NaN))
     val arrayWithNaN2 = array(constant(Double.NaN))
     assertEvaluatesTo(
-      evaluate(gte(arrayWithNaN1, arrayWithNaN2)),
+      evaluate(greaterThanOrEqual(arrayWithNaN1, arrayWithNaN2)),
       false,
       "gte(%s, %s)",
       arrayWithNaN1,
@@ -1144,26 +1296,26 @@ internal class ComparisonTests {
 
     ComparisonTestData.allSupportedComparableValues.forEach { value ->
       assertEvaluatesToError(
-        evaluate(gte(errorExpr, value), testDoc),
+        evaluate(greaterThanOrEqual(errorExpr, value), testDoc),
         "gte(%s, %s)",
         errorExpr,
         value
       )
       assertEvaluatesToError(
-        evaluate(gte(value, errorExpr), testDoc),
+        evaluate(greaterThanOrEqual(value, errorExpr), testDoc),
         "gte(%s, %s)",
         value,
         errorExpr
       )
     }
     assertEvaluatesToError(
-      evaluate(gte(errorExpr, errorExpr), testDoc),
+      evaluate(greaterThanOrEqual(errorExpr, errorExpr), testDoc),
       "gte(%s, %s)",
       errorExpr,
       errorExpr
     )
     assertEvaluatesToError(
-      evaluate(gte(errorExpr, nullValue()), testDoc),
+      evaluate(greaterThanOrEqual(errorExpr, nullValue()), testDoc),
       "gte(%s, %s)",
       errorExpr,
       nullValue()
@@ -1177,13 +1329,13 @@ internal class ComparisonTests {
     val testDoc = doc("test/gteMissing", 0, mapOf("exists" to 10L))
 
     assertEvaluatesToError(
-      evaluate(gte(missingField, presentValue), testDoc),
+      evaluate(greaterThanOrEqual(missingField, presentValue), testDoc),
       "gte(%s, %s)",
       missingField,
       presentValue
     )
     assertEvaluatesToError(
-      evaluate(gte(presentValue, missingField), testDoc),
+      evaluate(greaterThanOrEqual(presentValue, missingField), testDoc),
       "gte(%s, %s)",
       presentValue,
       missingField

@@ -38,8 +38,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
+import com.google.firebase.firestore.Pipeline;
 import com.google.firebase.firestore.PipelineResult;
-import com.google.firebase.firestore.PipelineSnapshot;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
@@ -468,7 +468,7 @@ public class IntegrationTestUtil {
   }
 
   public static List<Map<String, Object>> pipelineSnapshotToValues(
-      PipelineSnapshot pipelineSnapshot) {
+      Pipeline.Snapshot pipelineSnapshot) {
     List<Map<String, Object>> res = new ArrayList<>();
     for (PipelineResult result : pipelineSnapshot) {
       res.add(result.getData());
@@ -484,7 +484,7 @@ public class IntegrationTestUtil {
     return res;
   }
 
-  public static List<String> pipelineSnapshotToIds(PipelineSnapshot pipelineResults) {
+  public static List<String> pipelineSnapshotToIds(Pipeline.Snapshot pipelineResults) {
     List<String> res = new ArrayList<>();
     for (PipelineResult result : pipelineResults) {
       DocumentReference ref = result.getRef();
@@ -597,7 +597,7 @@ public class IntegrationTestUtil {
     } catch (Exception e) {
       throw new RuntimeException("Classic Query FAILED", e);
     }
-    PipelineSnapshot docsFromPipeline;
+    Pipeline.Snapshot docsFromPipeline;
     try {
       docsFromPipeline = waitFor(query.getFirestore().pipeline().createFrom(query).execute());
     } catch (Exception e) {

@@ -15,36 +15,44 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.pipeline.AggregateFunction.avg;
-import static com.google.firebase.firestore.pipeline.Expr.add;
-import static com.google.firebase.firestore.pipeline.Expr.and;
-import static com.google.firebase.firestore.pipeline.Expr.array;
-import static com.google.firebase.firestore.pipeline.Expr.arrayContains;
-import static com.google.firebase.firestore.pipeline.Expr.arrayContainsAny;
-import static com.google.firebase.firestore.pipeline.Expr.constant;
-import static com.google.firebase.firestore.pipeline.Expr.cosineDistance;
-import static com.google.firebase.firestore.pipeline.Expr.endsWith;
-import static com.google.firebase.firestore.pipeline.Expr.eq;
-import static com.google.firebase.firestore.pipeline.Expr.euclideanDistance;
-import static com.google.firebase.firestore.pipeline.Expr.field;
-import static com.google.firebase.firestore.pipeline.Expr.gt;
-import static com.google.firebase.firestore.pipeline.Expr.logicalMaximum;
-import static com.google.firebase.firestore.pipeline.Expr.logicalMinimum;
-import static com.google.firebase.firestore.pipeline.Expr.lt;
-import static com.google.firebase.firestore.pipeline.Expr.lte;
-import static com.google.firebase.firestore.pipeline.Expr.map;
-import static com.google.firebase.firestore.pipeline.Expr.mapGet;
-import static com.google.firebase.firestore.pipeline.Expr.neq;
-import static com.google.firebase.firestore.pipeline.Expr.not;
-import static com.google.firebase.firestore.pipeline.Expr.or;
-import static com.google.firebase.firestore.pipeline.Expr.startsWith;
-import static com.google.firebase.firestore.pipeline.Expr.strConcat;
-import static com.google.firebase.firestore.pipeline.Expr.subtract;
-import static com.google.firebase.firestore.pipeline.Expr.vector;
+import static com.google.firebase.firestore.pipeline.Expression.add;
+import static com.google.firebase.firestore.pipeline.Expression.and;
+import static com.google.firebase.firestore.pipeline.Expression.array;
+import static com.google.firebase.firestore.pipeline.Expression.arrayContains;
+import static com.google.firebase.firestore.pipeline.Expression.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expression.collectionId;
+import static com.google.firebase.firestore.pipeline.Expression.concat;
+import static com.google.firebase.firestore.pipeline.Expression.constant;
+import static com.google.firebase.firestore.pipeline.Expression.cosineDistance;
+import static com.google.firebase.firestore.pipeline.Expression.currentTimestamp;
+import static com.google.firebase.firestore.pipeline.Expression.documentId;
+import static com.google.firebase.firestore.pipeline.Expression.endsWith;
+import static com.google.firebase.firestore.pipeline.Expression.equal;
+import static com.google.firebase.firestore.pipeline.Expression.euclideanDistance;
+import static com.google.firebase.firestore.pipeline.Expression.field;
+import static com.google.firebase.firestore.pipeline.Expression.greaterThan;
+import static com.google.firebase.firestore.pipeline.Expression.join;
+import static com.google.firebase.firestore.pipeline.Expression.length;
+import static com.google.firebase.firestore.pipeline.Expression.lessThan;
+import static com.google.firebase.firestore.pipeline.Expression.logicalMaximum;
+import static com.google.firebase.firestore.pipeline.Expression.logicalMinimum;
+import static com.google.firebase.firestore.pipeline.Expression.map;
+import static com.google.firebase.firestore.pipeline.Expression.mapGet;
+import static com.google.firebase.firestore.pipeline.Expression.not;
+import static com.google.firebase.firestore.pipeline.Expression.notEqual;
+import static com.google.firebase.firestore.pipeline.Expression.nullValue;
+import static com.google.firebase.firestore.pipeline.Expression.or;
+import static com.google.firebase.firestore.pipeline.Expression.split;
+import static com.google.firebase.firestore.pipeline.Expression.startsWith;
+import static com.google.firebase.firestore.pipeline.Expression.stringConcat;
+import static com.google.firebase.firestore.pipeline.Expression.subtract;
+import static com.google.firebase.firestore.pipeline.Expression.timestampTrunc;
+import static com.google.firebase.firestore.pipeline.Expression.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.pipeline.Ordering.descending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
 
@@ -61,20 +69,22 @@ import com.google.firebase.firestore.pipeline.AggregateOptions;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.CollectionHints;
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
-import com.google.firebase.firestore.pipeline.PipelineOptions;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -172,6 +182,7 @@ public class PipelineTest {
                   entry("published", 1954),
                   entry("rating", 4.7),
                   entry("tags", ImmutableList.of("adventure", "magic", "epic")),
+                  entry("sales", ImmutableList.of(100, 200, 50)),
                   entry(
                       "embedding",
                       FieldValue.vector(
@@ -277,20 +288,21 @@ public class PipelineTest {
 
   @Test
   public void emptyResults() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore.pipeline().collection(randomCol.getPath()).limit(0).execute();
     assertThat(waitFor(execute).getResults()).isEmpty();
   }
 
   @Test
   public void fullResults() {
-    Task<PipelineSnapshot> execute = firestore.pipeline().collection(randomCol.getPath()).execute();
+    Task<Pipeline.Snapshot> execute =
+        firestore.pipeline().collection(randomCol.getPath()).execute();
     assertThat(waitFor(execute).getResults()).hasSize(11);
   }
 
   @Test
   public void aggregateResultsCountAll() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -304,14 +316,14 @@ public class PipelineTest {
   @Test
   @Ignore("Not supported yet")
   public void aggregateResultsMany() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("genre", "Science Fiction"))
+            .where(equal("genre", "Science Fiction"))
             .aggregate(
                 AggregateFunction.countAll().alias("count"),
-                avg("rating").alias("avgRating"),
+                AggregateFunction.average("rating").alias("avgRating"),
                 field("rating").maximum().alias("maxRating"))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -322,15 +334,16 @@ public class PipelineTest {
 
   @Test
   public void groupAndAccumulateResults() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(lt(field("published"), 1984))
+            .where(Expression.lessThan(field("published"), 1984))
             .aggregate(
-                AggregateStage.withAccumulators(avg("rating").alias("avgRating"))
+                AggregateStage.withAccumulators(
+                        AggregateFunction.average("rating").alias("avgRating"))
                     .withGroups("genre"))
-            .where(gt("avgRating", 4.3))
+            .where(greaterThan("avgRating", 4.3))
             .sort(field("avgRating").descending())
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -343,17 +356,19 @@ public class PipelineTest {
 
   @Test
   public void groupAndAccumulateResultsGeneric() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .rawStage(RawStage.ofName("where").withArguments(lt(field("published"), 1984)))
+            .rawStage(
+                RawStage.ofName("where")
+                    .withArguments(Expression.lessThan(field("published"), 1984)))
             .rawStage(
                 RawStage.ofName("aggregate")
                     .withArguments(
-                        ImmutableMap.of("avgRating", avg("rating")),
+                        ImmutableMap.of("avgRating", AggregateFunction.average("rating")),
                         ImmutableMap.of("genre", field("genre"))))
-            .rawStage(RawStage.ofName("where").withArguments(gt("avgRating", 4.3)))
+            .rawStage(RawStage.ofName("where").withArguments(greaterThan("avgRating", 4.3)))
             .rawStage(RawStage.ofName("sort").withArguments(field("avgRating").descending()))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -366,7 +381,7 @@ public class PipelineTest {
 
   @Test
   public void minAndMaxAccumulations() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -384,7 +399,7 @@ public class PipelineTest {
 
   @Test
   public void canSelectFields() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -417,11 +432,11 @@ public class PipelineTest {
 
   @Test
   public void whereWithAnd() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(and(gt("rating", 4.5), eq("genre", "Science Fiction")))
+            .where(and(greaterThan("rating", 4.5), equal("genre", "Science Fiction")))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(ID_CORRESPONDENCE)
@@ -430,11 +445,11 @@ public class PipelineTest {
 
   @Test
   public void whereWithOr() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(or(eq("genre", "Romance"), eq("genre", "Dystopian")))
+            .where(or(equal("genre", "Romance"), equal("genre", "Dystopian")))
             .select("title")
             .sort(field("title").ascending())
             .execute();
@@ -448,7 +463,7 @@ public class PipelineTest {
 
   @Test
   public void offsetAndLimits() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -468,7 +483,7 @@ public class PipelineTest {
 
   @Test
   public void arrayContainsWorks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -482,7 +497,7 @@ public class PipelineTest {
 
   @Test
   public void arrayContainsAnyWorks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -499,7 +514,7 @@ public class PipelineTest {
 
   @Test
   public void arrayContainsAllWorks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -513,12 +528,12 @@ public class PipelineTest {
 
   @Test
   public void arrayLengthWorks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .select(field("tags").arrayLength().alias("tagsCount"))
-            .where(eq("tagsCount", 3))
+            .where(equal("tagsCount", 3))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(10);
   }
@@ -526,11 +541,11 @@ public class PipelineTest {
   @Test
   @Ignore("Not supported yet")
   public void arrayConcatWorks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .select(
                 field("tags")
                     .arrayConcat(ImmutableList.of("newTag1", "newTag2"))
@@ -546,13 +561,83 @@ public class PipelineTest {
   }
 
   @Test
+  public void arraySumWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(Expression.arraySum("sales").alias("totalSales"))
+            .limit(1)
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("totalSales", 350));
+  }
+
+  @Test
+  public void testConcat() {
+    // String concat
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(concat(field("author"), " ", field("title")).alias("author_title"))
+            .execute();
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("author_title"))
+        .isEqualTo("Douglas Adams The Hitchhiker's Guide to the Galaxy");
+
+    // Array concat
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(concat(field("tags"), ImmutableList.of("newTag")).alias("new_tags"))
+            .execute();
+    result = waitFor(execute).getResults().get(0).getData();
+    assertThat((List<Object>) result.get("new_tags"))
+        .containsExactly("comedy", "space", "adventure", "newTag")
+        .inOrder();
+
+    // Blob concat
+    byte[] bytes1 = new byte[] {1, 2};
+    byte[] bytes2 = new byte[] {3, 4};
+    byte[] expected = new byte[] {1, 2, 3, 4};
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .select(
+                concat(constant(Blob.fromBytes(bytes1)), Blob.fromBytes(bytes2))
+                    .alias("concatenated_blob"))
+            .execute();
+    result = waitFor(execute).getResults().get(0).getData();
+    assertThat(((Blob) result.get("concatenated_blob")).toBytes()).isEqualTo(expected);
+
+    // Mismatched types should fail
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(concat(field("title"), field("tags")).alias("mismatched"))
+            .execute();
+    assertThat(waitForException(execute)).isNotNull();
+  }
+
+  @Test
   public void testStrConcat() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .sort(ascending(Field.DOCUMENT_ID))
-            .select(strConcat(field("author"), constant(" - "), field("title")).alias("bookInfo"))
+            .select(
+                stringConcat(field("author"), constant(" - "), field("title")).alias("bookInfo"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -563,7 +648,7 @@ public class PipelineTest {
 
   @Test
   public void testStartsWith() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -582,7 +667,7 @@ public class PipelineTest {
 
   @Test
   public void testEndsWith() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -599,12 +684,12 @@ public class PipelineTest {
 
   @Test
   public void testLength() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .select(field("title").charLength().alias("titleLength"), field("title"))
-            .where(gt("titleLength", 20))
+            .where(greaterThan("titleLength", 20))
             .sort(field("title").ascending())
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -617,8 +702,99 @@ public class PipelineTest {
   }
 
   @Test
+  public void canComputeTheLengthOfStringValue() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(field("title").length().alias("titleLength"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("titleLength", 36));
+  }
+
+  @Test
+  public void canComputeTheLengthOfStringValueWithTheTopLevelFunction() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(length("title").alias("titleLength"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("titleLength", 36));
+  }
+
+  @Test
+  public void canComputeTheLengthOfArrayValue() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(field("tags").length().alias("tagsLength"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("tagsLength", 3));
+  }
+
+  @Test
+  public void canComputeTheLengthOfArrayValueWithTheTopLevelFunction() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(length("tags").alias("tagsLength"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("tagsLength", 3));
+  }
+
+  @Test
+  public void canComputeTheLengthOfMapValue() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(field("awards").length().alias("awardsLength"))
+            .execute();
+    // The "awards" map for this book is {"hugo": true, "nebula": false}, which has a length of 2.
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("awardsLength", 2));
+  }
+
+  @Test
+  public void canComputeTheLengthOfVectorValue() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .limit(1)
+            .select(field("embedding").length().alias("embeddingLength"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("embeddingLength", 10));
+  }
+
+  @Test
   public void testToLowercase() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -633,7 +809,7 @@ public class PipelineTest {
 
   @Test
   public void testToUppercase() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -647,22 +823,46 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore("Not supported yet")
   public void testTrim() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .addFields(strConcat(" ", field("title"), " ").alias("spacedTitle"))
-            .select(field("spacedTitle").trim().alias("trimmedTitle"))
+            .sort(field(FieldPath.documentId()).ascending())
             .limit(1)
+            .addFields(
+                Expression.stringConcat(constant("  "), field("title"), " \t ")
+                    .alias("spacedTitle"))
+            .select("spacedTitle", field("spacedTitle").trim().alias("trimmedTitle"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             ImmutableMap.of(
                 "spacedTitle",
-                " The Hitchhiker's Guide to the Galaxy ",
+                "  The Hitchhiker's Guide to the Galaxy \t ",
+                "trimmedTitle",
+                "The Hitchhiker's Guide to the Galaxy"));
+  }
+
+  @Test
+  public void testTrimWithCharacters() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .sort(field(FieldPath.documentId()).ascending())
+            .limit(1)
+            .addFields(
+                Expression.stringConcat(constant("_-"), field("title"), "-_").alias("paddedTitle"))
+            .select(field("paddedTitle").trimValue("_-").alias("trimmedTitle"), "paddedTitle")
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "paddedTitle",
+                "_-The Hitchhiker's Guide to the Galaxy-_",
                 "trimmedTitle",
                 "The Hitchhiker's Guide to the Galaxy"));
   }
@@ -671,11 +871,11 @@ public class PipelineTest {
   public void testLike() {
     assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
 
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.like("title", "%Guide%"))
+            .where(Expression.like("title", "%Guide%"))
             .select("title")
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -684,14 +884,50 @@ public class PipelineTest {
   }
 
   @Test
-  public void testRegexContains() {
-    assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
-
-    Task<PipelineSnapshot> execute =
+  public void testJoin() {
+    // Test join with a constant delimiter
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.regexContains("title", "(?i)(the|of)"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(join("tags", ", ").alias("joined_tags"))
+            .execute();
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("joined_tags")).isEqualTo("comedy, space, adventure");
+
+    // Test join with an expression delimiter
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(join(field("tags"), constant(" | ")).alias("joined_tags"))
+            .execute();
+    result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("joined_tags")).isEqualTo("comedy | space | adventure");
+
+    // Test extension method
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(field("tags").join(" - ").alias("joined_tags"))
+            .execute();
+    result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("joined_tags")).isEqualTo("comedy - space - adventure");
+  }
+
+  @Test
+  public void testRegexContains() {
+    assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(Expression.regexContains("title", "(?i)(the|of)"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
@@ -700,18 +936,18 @@ public class PipelineTest {
   public void testRegexMatches() {
     assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
 
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.regexContains("title", ".*(?i)(the|of).*"))
+            .where(Expression.regexContains("title", ".*(?i)(the|of).*"))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(5);
   }
 
   @Test
   public void testArithmeticOperations() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -735,12 +971,15 @@ public class PipelineTest {
 
   @Test
   public void testComparisonOperators() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .where(
-                and(gt("rating", 4.2), lte(field("rating"), 4.5), neq("genre", "Science Function")))
+                and(
+                    greaterThan("rating", 4.2),
+                    Expression.lessThanOrEqual(field("rating"), 4.5),
+                    notEqual("genre", "Science Function")))
             .select("rating", "title")
             .sort(field("title").ascending())
             .execute();
@@ -754,14 +993,14 @@ public class PipelineTest {
 
   @Test
   public void testLogicalOperators() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .where(
                 or(
-                    and(gt("rating", 4.5), eq("genre", "Science Fiction")),
-                    lt(field("published"), 1900)))
+                    and(greaterThan("rating", 4.5), equal("genre", "Science Fiction")),
+                    Expression.lessThan(field("published"), 1900)))
             .select("title")
             .sort(field("title").ascending())
             .execute();
@@ -775,15 +1014,16 @@ public class PipelineTest {
 
   @Test
   public void testChecks() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(not(field("rating").isNan()))
+            .sort(ascending(Field.DOCUMENT_ID))
+            .where(field("rating").notEqual(Double.NaN))
             .select(
-                field("rating").isNull().alias("ratingIsNull"),
-                field("rating").eq(Expr.nullValue()).alias("ratingEqNull"),
-                not(field("rating").isNan()).alias("ratingIsNotNan"))
+                field("rating").equal(nullValue()).alias("ratingIsNull"),
+                field("rating").equal(Expression.nullValue()).alias("ratingEqNull"),
+                not(field("rating").equal(Double.NaN)).alias("ratingIsNotNan"))
             .limit(1)
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -791,17 +1031,17 @@ public class PipelineTest {
         .containsExactly(
             mapOfEntries(
                 entry("ratingIsNull", false),
-                entry("ratingEqNull", null),
+                entry("ratingEqNull", false),
                 entry("ratingIsNotNan", true)));
   }
 
   @Test
   public void testLogicalMax() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(field("author").eq("Douglas Adams"))
+            .where(field("author").equal("Douglas Adams"))
             .select(
                 field("rating").logicalMaximum(4.5).alias("max_rating"),
                 logicalMaximum(field("published"), 1900).alias("max_published"))
@@ -813,11 +1053,11 @@ public class PipelineTest {
 
   @Test
   public void testLogicalMin() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(field("author").eq("Douglas Adams"))
+            .where(field("author").equal("Douglas Adams"))
             .select(
                 field("rating").logicalMinimum(4.5).alias("min_rating"),
                 logicalMinimum(field("published"), 1900).alias("min_published"))
@@ -830,13 +1070,13 @@ public class PipelineTest {
 
   @Test
   public void testMapGet() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .sort(field("title").descending())
             .select(field("awards").mapGet("hugo").alias("hugoAward"), field("title"))
-            .where(eq("hugoAward", true))
+            .where(equal("hugoAward", true))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -849,13 +1089,14 @@ public class PipelineTest {
   public void testDistanceFunctions() {
     double[] sourceVector = {0.1, 0.1};
     double[] targetVector = {0.5, 0.8};
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .select(
                 cosineDistance(vector(sourceVector), targetVector).alias("cosineDistance"),
-                Expr.dotProduct(vector(sourceVector), targetVector).alias("dotProductDistance"),
+                Expression.dotProduct(vector(sourceVector), targetVector)
+                    .alias("dotProductDistance"),
                 euclideanDistance(vector(sourceVector), targetVector).alias("euclideanDistance"))
             .limit(1)
             .execute();
@@ -870,11 +1111,11 @@ public class PipelineTest {
 
   @Test
   public void testNestedFields() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("awards.hugo", true))
+            .where(equal("awards.hugo", true))
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
@@ -887,11 +1128,11 @@ public class PipelineTest {
 
   @Test
   public void testMapGetWithFieldNameIncludingNotation() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("awards.hugo", true))
+            .where(equal("awards.hugo", true))
             .sort(field("title").descending())
             .select(
                 "title",
@@ -902,22 +1143,17 @@ public class PipelineTest {
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"),
-                entry("nestedField.level.`1`", null),
-                entry("nested", true)),
-            mapOfEntries(
-                entry("title", "Dune"),
-                entry("nestedField.level.`1`", null),
-                entry("nested", null)));
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
+            mapOfEntries(entry("title", "Dune")));
   }
 
   @Test
   public void testListEquals() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("tags", ImmutableList.of("philosophy", "crime", "redemption")))
+            .where(equal("tags", ImmutableList.of("philosophy", "crime", "redemption")))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(ID_CORRESPONDENCE)
@@ -926,11 +1162,11 @@ public class PipelineTest {
 
   @Test
   public void testMapEquals() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("awards", ImmutableMap.of("nobel", true, "nebula", false)))
+            .where(equal("awards", ImmutableMap.of("nobel", true, "nebula", false)))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(ID_CORRESPONDENCE)
@@ -966,7 +1202,7 @@ public class PipelineTest {
             new Timestamp(refDate),
             refBytes);
 
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol.getPath())
@@ -975,7 +1211,7 @@ public class PipelineTest {
                 constant(1L).alias("number"),
                 constant("a string").alias("string"),
                 constant(true).alias("boolean"),
-                Expr.nullValue().alias("null"),
+                Expression.nullValue().alias("null"),
                 constant(refTimestamp).alias("timestamp"),
                 constant(refDate).alias("date"),
                 constant(refGeoPoint).alias("geoPoint"),
@@ -1004,7 +1240,7 @@ public class PipelineTest {
   @Test
   public void testResultMetadata() {
     Pipeline pipeline = firestore.pipeline().collection(randomCol.getPath());
-    PipelineSnapshot snapshot = waitFor(pipeline.execute());
+    Pipeline.Snapshot snapshot = waitFor(pipeline.execute());
     assertThat(snapshot.getExecutionTime()).isNotNull();
 
     for (PipelineResult result : snapshot.getResults()) {
@@ -1014,7 +1250,7 @@ public class PipelineTest {
 
     waitFor(randomCol.document("book1").update("rating", 5.0));
     snapshot =
-        waitFor(pipeline.where(eq("title", "The Hitchhiker's Guide to the Galaxy")).execute());
+        waitFor(pipeline.where(equal("title", "The Hitchhiker's Guide to the Galaxy")).execute());
     for (PipelineResult result : snapshot.getResults()) {
       assertThat(result.getCreateTime().compareTo(result.getUpdateTime())).isLessThan(0);
     }
@@ -1024,9 +1260,9 @@ public class PipelineTest {
   public void testResultIsEqual() {
     Pipeline pipeline =
         firestore.pipeline().collection(randomCol.getPath()).sort(field("title").ascending());
-    PipelineSnapshot snapshot1 = waitFor(pipeline.limit(1).execute());
-    PipelineSnapshot snapshot2 = waitFor(pipeline.limit(1).execute());
-    PipelineSnapshot snapshot3 = waitFor(pipeline.offset(1).limit(1).execute());
+    Pipeline.Snapshot snapshot1 = waitFor(pipeline.limit(1).execute());
+    Pipeline.Snapshot snapshot2 = waitFor(pipeline.limit(1).execute());
+    Pipeline.Snapshot snapshot3 = waitFor(pipeline.offset(1).limit(1).execute());
 
     assertThat(snapshot1.getResults()).hasSize(1);
     assertThat(snapshot2.getResults()).hasSize(1);
@@ -1042,7 +1278,7 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .aggregate(AggregateFunction.countAll().alias("count"));
-    PipelineSnapshot snapshot = waitFor(pipeline.execute());
+    Pipeline.Snapshot snapshot = waitFor(pipeline.execute());
     assertThat(snapshot.getResults()).hasSize(1);
     assertThat(snapshot.getExecutionTime()).isNotNull();
 
@@ -1058,16 +1294,16 @@ public class PipelineTest {
 
   @Test
   public void addAndRemoveFields() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(field("author").neq("Timestamp Author"))
+            .where(field("author").notEqual("Timestamp Author"))
             .addFields(
-                strConcat(field("author"), "_", field("title")).alias("author_title"),
-                strConcat(field("title"), "_", field("author")).alias("title_author"))
+                Expression.stringConcat(field("author"), "_", field("title")).alias("author_title"),
+                Expression.stringConcat(field("title"), "_", field("author")).alias("title_author"))
             .removeFields("title_author", "tags", "awards", "rating", "title", "embedding")
-            .removeFields("published", "genre", "nestedField")
+            .removeFields("published", "genre", "nestedField", "sales")
             .sort(field("author_title").ascending())
             .execute();
 
@@ -1107,11 +1343,11 @@ public class PipelineTest {
 
   @Test
   public void testDistinct() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(lt("published", 1900))
+            .where(lessThan("published", 1900))
             .distinct(field("genre").toLower().alias("lower_genre"))
             .sort(field("lower_genre").descending())
             .execute();
@@ -1124,11 +1360,11 @@ public class PipelineTest {
 
   @Test
   public void testReplaceWith() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .replaceWith("awards")
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -1139,11 +1375,14 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .replaceWith(
-                Expr.map(
+                Expression.map(
                     ImmutableMap.of(
-                        "foo", "bar", "baz", Expr.map(ImmutableMap.of("title", field("title"))))))
+                        "foo",
+                        "bar",
+                        "baz",
+                        Expression.map(ImmutableMap.of("title", field("title"))))))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -1155,13 +1394,14 @@ public class PipelineTest {
 
   @Test
   public void testSampleLimit() {
-    Task<PipelineSnapshot> execute = firestore.pipeline().collection(randomCol).sample(3).execute();
+    Task<Pipeline.Snapshot> execute =
+        firestore.pipeline().collection(randomCol).sample(3).execute();
     assertThat(waitFor(execute).getResults()).hasSize(3);
   }
 
   @Test
   public void testUnion() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -1172,11 +1412,11 @@ public class PipelineTest {
 
   @Test
   public void testUnnest() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .unnest("tags", "tag")
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(3);
@@ -1195,7 +1435,7 @@ public class PipelineTest {
     Pipeline pipeline =
         firestore.pipeline().collection(paginationCollection).sort(ascending("order")).limit(2);
 
-    PipelineSnapshot snapshot = waitFor(pipeline.execute());
+    Pipeline.Snapshot snapshot = waitFor(pipeline.execute());
     assertThat(snapshot.getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("order", 1), ImmutableMap.of("order", 2));
@@ -1210,7 +1450,7 @@ public class PipelineTest {
 
   @Test
   public void testFindNearest() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -1234,7 +1474,7 @@ public class PipelineTest {
 
   @Test
   public void testMoreAggregates() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -1251,11 +1491,13 @@ public class PipelineTest {
 
   @Test
   public void testCountIfAggregate() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .aggregate(AggregateFunction.countIf(gt(field("rating"), 4.3)).alias("count"))
+            .aggregate(
+                AggregateFunction.countIf(Expression.greaterThan(field("rating"), 4.3))
+                    .alias("count"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -1264,12 +1506,12 @@ public class PipelineTest {
 
   @Test
   public void testStringFunctions() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .select(field("title").strReverse().alias("reversed_title"), field("author"))
-            .where(field("author").eq("Douglas Adams"))
+            .select(field("title").stringReverse().alias("reversed_title"), field("author"))
+            .where(field("author").equal("Douglas Adams"))
             .execute();
     assertThat(waitFor(execute).getResults().get(0).getData().get("reversed_title"))
         .isEqualTo("yxalaG eht ot ediuG s'rekihhctiH ehT");
@@ -1280,8 +1522,8 @@ public class PipelineTest {
             .collection(randomCol)
             .select(
                 field("author"),
-                field("title").strConcat("_银河系漫", "游指南").byteLength().alias("title_byte_length"))
-            .where(field("author").eq("Douglas Adams"))
+                field("title").stringConcat("_银河系漫", "游指南").byteLength().alias("title_byte_length"))
+            .where(field("author").equal("Douglas Adams"))
             .execute();
     assertThat(waitFor(execute).getResults().get(0).getData().get("title_byte_length"))
         .isEqualTo(58);
@@ -1289,11 +1531,11 @@ public class PipelineTest {
 
   @Test
   public void testStrContains() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.strContains(field("title"), "'s"))
+            .where(Expression.stringContains(field("title"), "'s"))
             .select("title")
             .sort(field("title").ascending())
             .execute();
@@ -1306,14 +1548,14 @@ public class PipelineTest {
 
   @Test
   public void testSubstring() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Lord of the Rings"))
+            .where(equal("title", "The Lord of the Rings"))
             .select(
-                Expr.substr(field("title"), constant(9), constant(2)).alias("of"),
-                Expr.substr("title", 16, 5).alias("Rings"))
+                Expression.substring(field("title"), constant(9), constant(2)).alias("of"),
+                Expression.substring("title", 16, 5).alias("Rings"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -1321,17 +1563,169 @@ public class PipelineTest {
   }
 
   @Test
+  public void testSplitStringByStringDelimiter() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(split(field("title"), " ").alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(field("title").split(" ").alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+  }
+
+  @Test
+  public void testSplitStringByExpressionDelimiter() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(split(field("title"), constant(" ")).alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(field("title").split(constant(" ")).alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+  }
+
+  @Test
+  public void testSplitBlobByByteArrayDelimiter() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .addFields(
+                constant(Blob.fromBytes(new byte[] {0x01, 0x02, 0x03, 0x04, 0x01, 0x05}))
+                    .alias("data"))
+            .select(split(field("data"), Blob.fromBytes(new byte[] {0x01})).alias("split_data"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_data",
+                ImmutableList.of(
+                    Blob.fromBytes(new byte[] {}),
+                    Blob.fromBytes(new byte[] {0x02, 0x03, 0x04}),
+                    Blob.fromBytes(new byte[] {0x05}))));
+
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .addFields(
+                constant(Blob.fromBytes(new byte[] {0x01, 0x02, 0x03, 0x04, 0x01, 0x05}))
+                    .alias("data"))
+            .select(field("data").split(Blob.fromBytes(new byte[] {0x01})).alias("split_data"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_data",
+                ImmutableList.of(
+                    Blob.fromBytes(new byte[] {}),
+                    Blob.fromBytes(new byte[] {0x02, 0x03, 0x04}),
+                    Blob.fromBytes(new byte[] {0x05}))));
+  }
+
+  @Test
+  public void testSplitStringFieldByStringDelimiter() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(split("title", " ").alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+  }
+
+  @Test
+  public void testSplitStringFieldByExpressionDelimiter() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(split("title", constant(" ")).alias("split_title"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "split_title",
+                ImmutableList.of("The", "Hitchhiker's", "Guide", "to", "the", "Galaxy")));
+  }
+
+  @Test
+  public void testSplitWithMismatchedTypesShouldFail() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(
+                split(field("title"), Blob.fromBytes(new byte[] {0x01})).alias("mismatched_split"))
+            .execute();
+    assertThat(waitForException(execute)).isNotNull();
+  }
+
+  @Test
   public void testLogicalAndComparisonOperators() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .where(
-                Expr.xor(
-                    eq("genre", "Romance"),
-                    eq("genre", "Dystopian"),
-                    eq("genre", "Fantasy"),
-                    eq("published", 1949)))
+                Expression.xor(
+                    equal("genre", "Romance"),
+                    equal("genre", "Dystopian"),
+                    equal("genre", "Fantasy"),
+                    equal("published", 1949)))
             .select("title")
             .sort(field("title").ascending())
             .execute();
@@ -1346,7 +1740,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.eqAny("genre", ImmutableList.of("Romance", "Dystopian")))
+            .where(Expression.equalAny("genre", ImmutableList.of("Romance", "Dystopian")))
             .select("title")
             .sort(descending("title"))
             .execute();
@@ -1361,7 +1755,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(Expr.notEqAny("genre", ImmutableList.of("Romance", "Dystopian")))
+            .where(Expression.notEqualAny("genre", ImmutableList.of("Romance", "Dystopian")))
             .select("genre")
             .distinct("genre")
             .sort(ascending("genre"))
@@ -1379,13 +1773,15 @@ public class PipelineTest {
 
   @Test
   public void testCondExpression() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(field("title").neq("Timestamp Book"))
+            .where(field("title").notEqual("Timestamp Book"))
             .select(
-                Expr.cond(gt(field("published"), 1980), "Modern", "Classic").alias("era"),
+                Expression.conditional(
+                        Expression.greaterThan(field("published"), 1980), "Modern", "Classic")
+                    .alias("era"),
                 field("title"),
                 field("published"))
             .sort(field("published").ascending())
@@ -1406,14 +1802,15 @@ public class PipelineTest {
 
   @Test
   public void testDataManipulationExpressions() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "Timestamp Book"))
+            .where(equal("title", "Timestamp Book"))
             .select(
-                Expr.timestampAdd(field("timestamp"), "day", 1).alias("timestamp_plus_day"),
-                Expr.timestampSub(field("timestamp"), "hour", 1).alias("timestamp_minus_hour"))
+                Expression.timestampAdd(field("timestamp"), "day", 1).alias("timestamp_plus_day"),
+                Expression.timestampSubtract(field("timestamp"), "hour", 1)
+                    .alias("timestamp_minus_hour"))
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(1);
@@ -1429,11 +1826,11 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .select(
-                Expr.arrayGet("tags", 1).alias("second_tag"),
+                Expression.arrayGet("tags", 1).alias("second_tag"),
                 field("awards")
-                    .mapMerge(Expr.map(ImmutableMap.of("new_award", true)))
+                    .mapMerge(Expression.map(ImmutableMap.of("new_award", true)))
                     .alias("merged_awards"))
             .execute();
     assertThat(waitFor(execute).getResults())
@@ -1449,10 +1846,10 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
             .select(
-                Expr.arrayReverse("tags").alias("reversed_tags"),
-                Expr.mapRemove(field("awards"), "nebula").alias("removed_awards"))
+                Expression.arrayReverse("tags").alias("reversed_tags"),
+                Expression.mapRemove(field("awards"), "nebula").alias("removed_awards"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -1463,18 +1860,79 @@ public class PipelineTest {
   }
 
   @Test
-  public void testMathExpressions() {
-    Task<PipelineSnapshot> execute =
+  public void testTimestampTrunc() {
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Hitchhiker's Guide to the Galaxy"))
+            .where(equal("title", "Timestamp Book"))
             .select(
-                Expr.ceil(field("rating")).alias("ceil_rating"),
-                Expr.floor(field("rating")).alias("floor_rating"),
-                Expr.pow(field("rating"), 2).alias("pow_rating"),
-                Expr.round(field("rating")).alias("round_rating"),
-                Expr.sqrt(field("rating")).alias("sqrt_rating"),
+                timestampTrunc(field("timestamp"), "year").alias("trunc_year"),
+                timestampTrunc(field("timestamp"), "month").alias("trunc_month"),
+                timestampTrunc(field("timestamp"), "day").alias("trunc_day"),
+                timestampTrunc(field("timestamp"), "hour").alias("trunc_hour"),
+                timestampTrunc(field("timestamp"), "minute").alias("trunc_minute"),
+                timestampTrunc(field("timestamp"), "second").alias("trunc_second"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+    Map<String, Object> data = results.get(0).getData();
+    Date originalDate = (Date) bookDocs.get("book11").get("timestamp");
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    cal.setTime(originalDate);
+
+    cal.set(Calendar.MONTH, Calendar.JANUARY);
+    cal.set(Calendar.DAY_OF_MONTH, 1);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_year")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.DAY_OF_MONTH, 1);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_month")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_day")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_hour")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_minute")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("trunc_second")).isEqualTo(new Timestamp(cal.getTime()));
+  }
+
+  @Test
+  public void testMathExpressions() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(
+                Expression.ceil(field("rating")).alias("ceil_rating"),
+                Expression.floor(field("rating")).alias("floor_rating"),
+                Expression.pow(field("rating"), 2).alias("pow_rating"),
+                Expression.round(field("rating")).alias("round_rating"),
+                Expression.sqrt(field("rating")).alias("sqrt_rating"),
                 field("published").mod(10).alias("mod_published"))
             .execute();
     Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
@@ -1488,35 +1946,39 @@ public class PipelineTest {
 
   @Test
   public void testAdvancedMathExpressions() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(eq("title", "The Lord of the Rings"))
+            .where(equal("title", "The Lord of the Rings"))
             .select(
-                Expr.exp(field("rating")).alias("exp_rating"),
-                Expr.ln(field("rating")).alias("ln_rating"),
-                Expr.log(field("rating"), 10).alias("log_rating"))
+                Expression.exp(field("rating")).alias("exp_rating"),
+                Expression.ln(field("rating")).alias("ln_rating"),
+                Expression.log(field("rating"), 10).alias("log_rating"),
+                field("rating").log10().alias("log10_rating"))
             .execute();
     Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
     assertThat((Double) result.get("exp_rating")).isWithin(0.00001).of(109.94717);
     assertThat((Double) result.get("ln_rating")).isWithin(0.00001).of(1.54756);
     assertThat((Double) result.get("log_rating")).isWithin(0.00001).of(0.67209);
+    assertThat((Double) result.get("log10_rating")).isWithin(0.00001).of(0.67209);
   }
 
   @Test
   public void testTimestampConversions() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .limit(1)
             .select(
-                Expr.unixSecondsToTimestamp(constant(1741380235L)).alias("unixSecondsToTimestamp"),
-                Expr.unixMillisToTimestamp(constant(1741380235123L)).alias("unixMillisToTimestamp"),
-                Expr.timestampToUnixSeconds(constant(new Timestamp(1741380235L, 123456789)))
+                Expression.unixSecondsToTimestamp(constant(1741380235L))
+                    .alias("unixSecondsToTimestamp"),
+                Expression.unixMillisToTimestamp(constant(1741380235123L))
+                    .alias("unixMillisToTimestamp"),
+                Expression.timestampToUnixSeconds(constant(new Timestamp(1741380235L, 123456789)))
                     .alias("timestampToUnixSeconds"),
-                Expr.timestampToUnixMillis(constant(new Timestamp(1741380235L, 123456789)))
+                Expression.timestampToUnixMillis(constant(new Timestamp(1741380235L, 123456789)))
                     .alias("timestampToUnixMillis"))
             .execute();
     Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
@@ -1528,32 +1990,97 @@ public class PipelineTest {
   }
 
   @Test
-  public void testRand() {
-    Task<PipelineSnapshot> execute =
+  public void testCurrentTimestamp() {
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
-            .collection(randomCol)
-            .limit(10)
-            .select(Expr.rand().alias("result"))
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(currentTimestamp().alias("now"))
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
-    assertThat(results).hasSize(10);
-    for (PipelineResult result : results) {
-      Double randVal = (Double) result.getData().get("result");
-      assertThat(randVal).isAtLeast(0.0);
-      assertThat(randVal).isLessThan(1.0);
-    }
+    assertThat(results).hasSize(1);
+    Object nowValue = results.get(0).getData().get("now");
+    assertThat(nowValue).isInstanceOf(Timestamp.class);
+    Timestamp nowTimestamp = (Timestamp) nowValue;
+    // Check that the timestamp is recent (e.g., within the last 5 seconds)
+    long diff = new Date().getTime() - nowTimestamp.toDate().getTime();
+    assertThat(diff).isAtMost(5000L);
+  }
+
+  @Test
+  public void testTypeFunction() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .sort(field(FieldPath.documentId()).ascending())
+            .limit(1)
+            .select(
+                field("title").type().alias("titleType"),
+                field("published").type().alias("publishedType"),
+                field("published").add(1.2).type().alias("publishedToDoubleType"),
+                field("awards").mapGet("hugo").type().alias("hugoType"),
+                Expression.nullValue().type().alias("nullType"),
+                field("tags").type().alias("tagsType"),
+                field("awards").type().alias("awardsType"),
+                constant(new Date()).type().alias("timestampType"),
+                field("embedding").type().alias("embeddingType"),
+                field("nestedField").type().alias("nestedFieldType"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("titleType")).isEqualTo("string");
+    assertThat(result.get("publishedType")).isEqualTo("int64");
+    assertThat(result.get("publishedToDoubleType")).isEqualTo("float64");
+    assertThat(result.get("hugoType")).isEqualTo("boolean");
+    assertThat(result.get("nullType")).isEqualTo("null");
+    assertThat(result.get("tagsType")).isEqualTo("array");
+    assertThat(result.get("awardsType")).isEqualTo("map");
+    assertThat(result.get("timestampType")).isEqualTo("timestamp");
+    assertThat(result.get("embeddingType")).isEqualTo("vector");
+    assertThat(result.get("nestedFieldType")).isEqualTo("map");
+
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .sort(field(FieldPath.documentId()).ascending())
+            .limit(1)
+            .select(
+                Expression.type("title").alias("titleType"),
+                Expression.type("published").alias("publishedType"),
+                Expression.type(field("awards").mapGet("hugo")).alias("hugoType"),
+                Expression.type(Expression.nullValue()).alias("nullType"),
+                Expression.type("tags").alias("tagsType"),
+                Expression.type("awards").alias("awardsType"),
+                Expression.type(constant(new Date())).alias("timestampType"),
+                Expression.type("embedding").alias("embeddingType"),
+                Expression.type("nestedField").alias("nestedFieldType"))
+            .execute();
+
+    result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("titleType")).isEqualTo("string");
+    assertThat(result.get("publishedType")).isEqualTo("int64");
+    assertThat(result.get("hugoType")).isEqualTo("boolean");
+    assertThat(result.get("nullType")).isEqualTo("null");
+    assertThat(result.get("tagsType")).isEqualTo("array");
+    assertThat(result.get("awardsType")).isEqualTo("map");
+    assertThat(result.get("timestampType")).isEqualTo("timestamp");
+    assertThat(result.get("embeddingType")).isEqualTo("vector");
+    assertThat(result.get("nestedFieldType")).isEqualTo("map");
   }
 
   @Test
   public void testVectorLength() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
             .limit(1)
             .select(
-                Expr.vectorLength(Expr.vector(new double[] {1.0, 2.0, 3.0})).alias("vectorLength"))
+                Expression.vectorLength(Expression.vector(new double[] {1.0, 2.0, 3.0}))
+                    .alias("vectorLength"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -1561,8 +2088,63 @@ public class PipelineTest {
   }
 
   @Test
+  public void canGetTheCollectionIdFromAPath() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(field("__name__").collectionId().alias("collectionId"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("collectionId", randomCol.getId()));
+  }
+
+  @Test
+  public void canGetTheCollectionIdFromAPathWithTheTopLevelFunction() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(collectionId("__name__").alias("collectionId"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("collectionId", randomCol.getId()));
+  }
+
+  @Test
+  public void testSupportsDocumentId() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .sort(field("rating").descending())
+            .limit(1)
+            .select(documentId(field("__name__")).alias("docId"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("docId", "book4"));
+
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .sort(field("rating").descending())
+            .limit(1)
+            .select(field("__name__").documentId().alias("docId"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("docId", "book4"));
+  }
+
+  @Test
   public void testDocumentsAsSource() {
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .documents(
@@ -1580,7 +2162,7 @@ public class PipelineTest {
         randomCol.document("book1").collection(subcollectionId).add(ImmutableMap.of("order", 1)));
     waitFor(
         randomCol.document("book2").collection(subcollectionId).add(ImmutableMap.of("order", 2)));
-    Task<PipelineSnapshot> execute =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collectionGroup(subcollectionId)
@@ -1607,6 +2189,88 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIfAbsent() {
+    // Case 1: Field is present, should return the field value.
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(field("rating").ifAbsent(0.0).alias("rating_or_default"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("rating_or_default", 4.2));
+
+    // Case 2: Field is absent, should return the default value.
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+            .select(
+                Expression.ifAbsent(field("non_existent_field"), "default")
+                    .alias("field_or_default"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("field_or_default", "default"));
+
+    // Case 3: Field is present and null, should return null.
+    Map values = new HashMap<>();
+    values.put("title", "Book With Null");
+    values.put("optional_field", null);
+    waitFor(randomCol.document("bookWithNull").set(values));
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "Book With Null"))
+            .select(
+                Expression.ifAbsent(field("optional_field"), "default").alias("field_or_default"))
+            .execute();
+    assertThat(waitFor(execute).getResults().get(0).get("field_or_default")).isNull();
+    waitFor(randomCol.document("bookWithNull").delete());
+
+    // Case 4: Test different overloads.
+    // ifAbsent(String, Any)
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "Dune"))
+            .select(Expression.ifAbsent("non_existent_field", "default_string").alias("res"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("res", "default_string"));
+
+    // ifAbsent(String, Expression)
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "Dune"))
+            .select(Expression.ifAbsent("non_existent_field", field("author")).alias("res"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("res", "Frank Herbert"));
+
+    // ifAbsent(Expression, Expression)
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "Dune"))
+            .select(Expression.ifAbsent(field("non_existent_field"), field("author")).alias("res"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("res", "Frank Herbert"));
+  }
+
+  @Test
   public void testCrossDatabaseRejection() {
     FirebaseFirestore firestore2 = IntegrationTestUtil.testAlternateFirestore();
     CollectionReference collection2 = firestore2.collection("test-collection");
@@ -1624,8 +2288,8 @@ public class PipelineTest {
     assumeFalse(
         "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
 
-    PipelineOptions opts =
-        new PipelineOptions().withIndexMode(PipelineOptions.IndexMode.RECOMMENDED);
+    Pipeline.ExecuteOptions opts =
+        new Pipeline.ExecuteOptions().withIndexMode(Pipeline.ExecuteOptions.IndexMode.RECOMMENDED);
 
     double[] vector = {1.0, 2.0, 3.0};
 
@@ -1643,12 +2307,75 @@ public class PipelineTest {
                 new FindNearestOptions().withLimit(10).withDistanceField("distance"))
             .unnest(field("awards").alias("award"), new UnnestOptions().withIndexField("fgoo"))
             .aggregate(
-                AggregateStage.withAccumulators(avg("rating").alias("avg_rating"))
+                AggregateStage.withAccumulators(
+                        AggregateFunction.average("rating").alias("avg_rating"))
                     .withGroups("genre"),
                 new AggregateOptions()
                     .withHints(new AggregateHints().withForceStreamableEnabled()));
 
     waitFor(pipeline.execute(opts));
+  }
+
+  @Test
+  public void disallowDuplicateAliasesInAggregate() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              firestore
+                  .pipeline()
+                  .collection(randomCol)
+                  .aggregate(
+                      AggregateFunction.countAll().alias("dup"),
+                      AggregateFunction.average("rating").alias("dup"))
+                  .execute();
+            });
+    assertThat(exception.getMessage()).contains("Duplicate alias: 'dup'");
+  }
+
+  @Test
+  public void disallowDuplicateAliasesInSelect() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              firestore
+                  .pipeline()
+                  .collection(randomCol)
+                  .select(field("rating").alias("dup"), field("published").alias("dup"))
+                  .execute();
+            });
+    assertThat(exception.getMessage()).contains("Duplicate alias: 'dup'");
+  }
+
+  @Test
+  public void disallowDuplicateAliasesInAddFields() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              firestore
+                  .pipeline()
+                  .collection(randomCol)
+                  .addFields(field("rating").alias("dup"), field("published").alias("dup"))
+                  .execute();
+            });
+    assertThat(exception.getMessage()).contains("Duplicate alias: 'dup'");
+  }
+
+  @Test
+  public void disallowDuplicateAliasesInDistinct() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              firestore
+                  .pipeline()
+                  .collection(randomCol)
+                  .distinct(field("rating").alias("dup"), field("published").alias("dup"))
+                  .execute();
+            });
+    assertThat(exception.getMessage()).contains("Duplicate alias: 'dup'");
   }
 
   static <T> Map.Entry<String, T> entry(String key, T value) {

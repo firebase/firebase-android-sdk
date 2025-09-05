@@ -400,12 +400,8 @@ public class AggregationTest {
 
     assertThat(e, instanceOf(FirebaseFirestoreException.class));
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
-    if (isRunningAgainstEmulator()) {
-      assertEquals(FirebaseFirestoreException.Code.UNKNOWN, firestoreException.getCode());
-    } else {
-      assertEquals(FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
-      assertTrue(firestoreException.getMessage().contains("maximum number of aggregations"));
-    }
+    assertEquals(FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
+    assertTrue(firestoreException.getMessage().contains("maximum number of aggregations"));
   }
 
   @Test

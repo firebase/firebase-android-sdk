@@ -885,13 +885,33 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Builds a new Pipeline from this Firestore instance.
+   * Creates a new {@link PipelineSource} to build and execute a data pipeline.
    *
-   * NOTE: Pipeline does not have realtime updates support and SDK cache access, it completely relies
-   * on the connection to the server for the results, and does not augment the results with the SDK
-   * cache. To get realtime updates and SDK cache access use {@code realTimePipeline()} instead.
+   * <p>A pipeline is composed of a sequence of stages. Each stage processes the
+   * output from the previous one, and the final stage's output is the result of the
+   * pipeline's execution.
    *
-   * @return {@code PipelineSource} for this Firestore instance.
+   * <p><b>Example usage:</b>
+   * <pre>{@code
+   * Pipeline pipeline = firestore.pipeline()
+   * .collection("books")
+   * .where(Field("rating").isGreaterThan(4.5))
+   * .sort(Field("rating").descending())
+   * .limit(2);
+   * }</pre>
+   *
+   * <p><b>Note on Execution:</b> The stages are conceptual. The Firestore backend may
+   * optimize execution (e.g., reordering or merging stages) as long as the
+   * final result remains the same.
+   *
+   * <p><b>Important Limitations:</b>
+   * <ul>
+   * <li>Pipelines operate on a <b>request/response basis only</b>.
+   * <li>They do <b>not</b> utilize or update the local SDK cache.
+   * <li>They do <b>not</b> support realtime snapshot listeners.
+   * </ul>
+   *
+   * @return A {@code PipelineSource} to begin defining the pipeline's stages.
    */
   @NonNull
   public PipelineSource pipeline() {

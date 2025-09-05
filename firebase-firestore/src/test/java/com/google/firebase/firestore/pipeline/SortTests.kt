@@ -19,14 +19,13 @@ import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.exists
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,7 +99,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(field("age").eq(10L))
+        .where(field("age").equal(10L))
         .sort(field("age").ascending())
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
@@ -138,7 +137,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(field("age").eq(10L))
+        .where(field("age").equal(10L))
         .sort(field("age").descending())
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
@@ -206,7 +205,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(field("age").gt(0.0))
+        .where(field("age").greaterThan(0.0))
         .sort(field("age").descending())
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc1, doc2, doc4, doc5).inOrder()
@@ -287,7 +286,7 @@ internal class SortTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(field("age").eq(field("age"))) // Implicit exists age
+        .where(field("age").equal(field("age"))) // Implicit exists age
         .where(field("name").regexMatch(".*")) // Implicit exists name
         .sort(field("age").descending(), field("name").ascending())
 
