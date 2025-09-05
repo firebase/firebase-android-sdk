@@ -21,12 +21,14 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
 
 abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
 
@@ -37,6 +39,8 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputDirectory @get:Optional abstract val mergedDirectory: DirectoryProperty
+
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
   @TaskAction
   fun run() {
@@ -52,14 +56,14 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
     logger.info(
       "defaultConfigDirectories ({}): {}",
       defaultConfigDirectories.size,
-      defaultConfigDirectories.map { it.absolutePath }.joinToString(", ")
+      defaultConfigDirectories.joinToString(", ") { it.absolutePath }
     )
     logger.info("customConfigDirectory: {}", customConfigDirectory?.absolutePath)
     logger.info("buildDirectory: {}", buildDirectory.absolutePath)
     logger.info("mergedDirectory: {}", mergedDirectory?.absolutePath)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    project.delete(buildDirectory)
+    buildDirectory.deleteRecursively()
 
     val configDirectories =
       buildList {
@@ -110,7 +114,7 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
       existingConfigDirectories.joinToString(", ") { it.absolutePath },
       mergedDirectory.absolutePath
     )
-    project.copy {
+    fileSystemOperations.copy {
       it.from(existingConfigDirectories)
       it.into(mergedDirectory)
       it.duplicatesStrategy = DuplicatesStrategy.FAIL

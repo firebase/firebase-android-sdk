@@ -26,6 +26,8 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
 abstract class DataConnectRunEmulatorTask : DefaultTask() {
 
@@ -38,6 +40,8 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
   @get:Optional @get:Input abstract val schemaExtensionsOutputEnabled: Property<Boolean>
 
   @get:Internal abstract val buildDirectory: DirectoryProperty
+
+  @get:Inject abstract val execOperations: ExecOperations
 
   @TaskAction
   fun run() {
@@ -57,6 +61,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
       dataConnectExecutable = dataConnectExecutable,
       subCommand = listOf("dev"),
       configDirectory = configDirectory,
+      execOperations=execOperations,
     ) {
       this.listen = "127.0.0.1:9399"
       this.localConnectionString = postgresConnectionUrl

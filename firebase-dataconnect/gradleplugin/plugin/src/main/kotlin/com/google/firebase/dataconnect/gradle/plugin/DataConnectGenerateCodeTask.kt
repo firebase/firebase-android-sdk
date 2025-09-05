@@ -83,7 +83,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
     if (outputDirectory.exists()) {
       logger.info("Deleting directory: $outputDirectory")
-      project.delete(outputDirectory)
+      outputDirectory.deleteRecursively()
     }
 
     if (configDirectory === null) {
@@ -101,6 +101,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       dataConnectExecutable = dataConnectExecutable,
       subCommand = subCommand,
       configDirectory = configDirectory,
+      execOperations=execOperations,
     ) {
       when (dataConnectExecutableCallingConvention) {
         CallingConvention.GRADLE -> this.connectors = connectors
@@ -131,11 +132,11 @@ private fun DataConnectGenerateCodeTask.runKtfmt(
   directory: File,
   logFile: File,
 ) {
-  project.mkdir(logFile.parentFile)
+  logFile.parentFile.mkdirs()
   val logFileStream = logFile.outputStream()
 
   try {
-    project.javaexec { execSpec ->
+    execOperations.javaexec { execSpec ->
       execSpec.run {
         classpath(ktfmtJarFile)
         mainClass.set("com.facebook.ktfmt.cli.Main")
