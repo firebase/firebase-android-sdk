@@ -123,8 +123,7 @@ abstract class DackkaPlugin : Plugin<Project> {
     // TODO(b/270576405): remove afterEvalutate after fixed
     project.afterEvaluate {
       if (weShouldPublish(this)) {
-        val kdocOnly = publishKotlindocOnly(this)
-        val generateDocumentation = registerGenerateDackkaDocumentationTask(project, kdocOnly)
+        val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
 
         val outputDir = generateDocumentation.flatMap { it.outputDirectory }
 
@@ -155,14 +154,6 @@ abstract class DackkaPlugin : Plugin<Project> {
   private fun weShouldPublish(project: Project) = project.firebaseLibrary.publishJavadoc.get()
 
   /**
-   * Checks if the [Project] should only release Kotlindocs
-   *
-   * This is done via the [FirebaseLibraryExtension.onlyPublishKotlindoc] property.
-   */
-  private fun publishKotlindocOnly(project: Project) =
-    project.firebaseLibrary.onlyPublishKotlindoc.get()
-
-  /**
    * Applies common configuration to the [javadocConfig], that is otherwise not present.
    *
    * @see javadocConfig
@@ -177,11 +168,9 @@ abstract class DackkaPlugin : Plugin<Project> {
   }
 
   private fun registerGenerateDackkaDocumentationTask(
-    project: Project,
-    kotlindocOnly: Boolean,
+    project: Project
   ): TaskProvider<GenerateDocumentationTask> =
     project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation") {
-      this.kotlindocOnly.set(kotlindocOnly)
       with(project.extensions.getByType<LibraryExtension>()) {
         libraryVariants.all {
           if (name == "release") {
