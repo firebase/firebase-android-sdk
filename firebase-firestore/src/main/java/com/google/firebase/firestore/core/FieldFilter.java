@@ -15,16 +15,16 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.Values.isNanValue;
-import static com.google.firebase.firestore.pipeline.Expr.and;
-import static com.google.firebase.firestore.pipeline.Expr.ifError;
+import static com.google.firebase.firestore.pipeline.Expression.and;
+import static com.google.firebase.firestore.pipeline.Expression.ifError;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
-import com.google.firebase.firestore.pipeline.BooleanExpr;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.BooleanExpression;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
@@ -183,50 +183,52 @@ public class FieldFilter extends Filter {
   }
 
   @Override
-  BooleanExpr toPipelineExpr() {
+  BooleanExpression toPipelineExpr() {
     Field x = new Field(field);
-    BooleanExpr exists = x.exists();
+    BooleanExpression exists = x.exists();
     switch (operator) {
       case LESS_THAN:
-        return and(exists, x.lt(value));
+        return and(exists, x.lessThan(value));
       case LESS_THAN_OR_EQUAL:
-        return and(exists, x.lte(value));
+        return and(exists, x.lessThanOrEqual(value));
       case EQUAL:
         if (value.hasNullValue()) {
           return and(exists, x.isNull());
         } else if (isNanValue(value)) {
           // The isNan will error on non-numeric values.
-          return and(exists, ifError(x.isNan(), Expr.constant(false)));
+          return and(exists, ifError(x.isNan(), Expression.constant(false)));
         } else {
-          return and(exists, x.eq(value));
+          return and(exists, x.equal(value));
         }
       case NOT_EQUAL:
         if (value.hasNullValue()) {
           return and(exists, x.isNotNull());
         } else if (isNanValue(value)) {
           // The isNotNan will error on non-numeric values.
-          return and(exists, ifError(x.isNotNan(), Expr.constant(true)));
+          return and(exists, ifError(x.isNotNan(), Expression.constant(true)));
         } else {
-          return and(exists, x.neq(value));
+          return and(exists, x.notEqual(value));
         }
       case GREATER_THAN:
-        return and(exists, x.gt(value));
+        return and(exists, x.greaterThan(value));
       case GREATER_THAN_OR_EQUAL:
-        return and(exists, x.gte(value));
+        return and(exists, x.greaterThanOrEqual(value));
       case ARRAY_CONTAINS:
         return and(exists, x.arrayContains(value));
       case ARRAY_CONTAINS_ANY:
         return and(exists, x.arrayContainsAny(value.getArrayValue().getValuesList()));
       case IN:
-        return and(exists, x.eqAny(value.getArrayValue().getValuesList()));
+        return and(exists, x.equalAny(value.getArrayValue().getValuesList()));
       case NOT_IN:
         {
           List<Value> list = value.getArrayValue().getValuesList();
           if (hasNaN(list)) {
             return and(
-                exists, x.notEqAny(filterNaN(list)), ifError(x.isNotNan(), Expr.constant(true)));
+                exists,
+                x.notEqualAny(filterNaN(list)),
+                ifError(x.isNotNan(), Expression.constant(true)));
           } else {
-            return and(exists, x.notEqAny(list));
+            return and(exists, x.notEqualAny(list));
           }
         }
       default:

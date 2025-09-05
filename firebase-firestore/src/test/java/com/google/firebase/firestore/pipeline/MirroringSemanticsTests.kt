@@ -14,54 +14,54 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.firebase.firestore.pipeline.Expr.Companion.abs
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAll
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.byteLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.charLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.divide
-import com.google.firebase.firestore.pipeline.Expr.Companion.endsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.eq
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.exp
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.gt
-import com.google.firebase.firestore.pipeline.Expr.Companion.gte
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.like
-import com.google.firebase.firestore.pipeline.Expr.Companion.ln
-import com.google.firebase.firestore.pipeline.Expr.Companion.log
-import com.google.firebase.firestore.pipeline.Expr.Companion.log10
-import com.google.firebase.firestore.pipeline.Expr.Companion.lt
-import com.google.firebase.firestore.pipeline.Expr.Companion.lte
-import com.google.firebase.firestore.pipeline.Expr.Companion.mod
-import com.google.firebase.firestore.pipeline.Expr.Companion.multiply
-import com.google.firebase.firestore.pipeline.Expr.Companion.neq
-import com.google.firebase.firestore.pipeline.Expr.Companion.notEqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.pow
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexMatch
-import com.google.firebase.firestore.pipeline.Expr.Companion.reverse
-import com.google.firebase.firestore.pipeline.Expr.Companion.sqrt
-import com.google.firebase.firestore.pipeline.Expr.Companion.startsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.strConcat
-import com.google.firebase.firestore.pipeline.Expr.Companion.strContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.subtract
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMicros
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMillis
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixSeconds
-import com.google.firebase.firestore.pipeline.Expr.Companion.toLower
-import com.google.firebase.firestore.pipeline.Expr.Companion.toUpper
-import com.google.firebase.firestore.pipeline.Expr.Companion.trim
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMicrosToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMillisToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixSecondsToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.abs
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAll
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.charLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.Expression.Companion.endsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.equal
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.exp
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
+import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThanOrEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.lessThan
+import com.google.firebase.firestore.pipeline.Expression.Companion.lessThanOrEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.like
+import com.google.firebase.firestore.pipeline.Expression.Companion.ln
+import com.google.firebase.firestore.pipeline.Expression.Companion.log
+import com.google.firebase.firestore.pipeline.Expression.Companion.log10
+import com.google.firebase.firestore.pipeline.Expression.Companion.mod
+import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqual
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expression.Companion.pow
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexMatch
+import com.google.firebase.firestore.pipeline.Expression.Companion.reverse
+import com.google.firebase.firestore.pipeline.Expression.Companion.sqrt
+import com.google.firebase.firestore.pipeline.Expression.Companion.startsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringConcat
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.subtract
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMicros
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMillis
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixSeconds
+import com.google.firebase.firestore.pipeline.Expression.Companion.toLower
+import com.google.firebase.firestore.pipeline.Expression.Companion.toUpper
+import com.google.firebase.firestore.pipeline.Expression.Companion.trim
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMicrosToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMillisToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixSecondsToTimestamp
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -83,14 +83,14 @@ internal class MirroringSemanticsTests {
   }
 
   private data class UnaryTestCase(
-    val inputExpr: Expr,
+    val inputExpr: Expression,
     val expectedOutcome: ExpectedOutcome,
     val description: String
   )
 
   private data class BinaryTestCase(
-    val left: Expr,
-    val right: Expr,
+    val left: Expression,
+    val right: Expression,
     val expectedOutcome: ExpectedOutcome,
     val description: String
   )
@@ -98,7 +98,7 @@ internal class MirroringSemanticsTests {
   @Test
   fun `unary function input mirroring`() {
     val unaryFunctionBuilders =
-      listOf<Pair<String, (Expr) -> Expr>>(
+      listOf<Pair<String, (Expression) -> Expression>>(
         "abs" to { v -> abs(v) },
         "exp" to { v -> exp(v) },
         "ln" to { v -> ln(v) },
@@ -152,7 +152,7 @@ internal class MirroringSemanticsTests {
   @Test
   fun `binary function input mirroring`() {
     val binaryFunctionBuilders =
-      listOf<Pair<String, (Expr, Expr) -> Expr>>(
+      listOf<Pair<String, (Expression, Expression) -> Expression>>(
         // Arithmetic (Variadic, base is binary)
         "add" to { v1, v2 -> add(v1, v2) },
         "subtract" to { v1, v2 -> subtract(v1, v2) },
@@ -162,26 +162,26 @@ internal class MirroringSemanticsTests {
         "log" to { v1, v2 -> log(v1, v2) },
         "pow" to { v1, v2 -> pow(v1, v2) },
         // Comparison
-        "eq" to { v1, v2 -> eq(v1, v2) },
-        "neq" to { v1, v2 -> neq(v1, v2) },
-        "lt" to { v1, v2 -> lt(v1, v2) },
-        "lte" to { v1, v2 -> lte(v1, v2) },
-        "gt" to { v1, v2 -> gt(v1, v2) },
-        "gte" to { v1, v2 -> gte(v1, v2) },
+        "eq" to { v1, v2 -> equal(v1, v2) },
+        "neq" to { v1, v2 -> notEqual(v1, v2) },
+        "lt" to { v1, v2 -> lessThan(v1, v2) },
+        "lte" to { v1, v2 -> lessThanOrEqual(v1, v2) },
+        "gt" to { v1, v2 -> greaterThan(v1, v2) },
+        "gte" to { v1, v2 -> greaterThanOrEqual(v1, v2) },
         // Array
         "arrayContains" to { v1, v2 -> arrayContains(v1, v2) },
         "arrayContainsAll" to { v1, v2 -> arrayContainsAll(v1, v2) },
         "arrayContainsAny" to { v1, v2 -> arrayContainsAny(v1, v2) },
-        "eqAny" to { v1, v2 -> eqAny(v1, v2) }, // Maps to EqAnyExpr
-        "notEqAny" to { v1, v2 -> notEqAny(v1, v2) }, // Maps to NotEqAnyExpr
+        "eqAny" to { v1, v2 -> equalAny(v1, v2) }, // Maps to EqAnyExpr
+        "notEqAny" to { v1, v2 -> notEqualAny(v1, v2) }, // Maps to NotEqAnyExpr
         // String
         "like" to { v1, v2 -> like(v1, v2) },
         "regexContains" to { v1, v2 -> regexContains(v1, v2) },
         "regexMatch" to { v1, v2 -> regexMatch(v1, v2) },
-        "strContains" to { v1, v2 -> strContains(v1, v2) }, // Maps to StrContainsExpr
+        "strContains" to { v1, v2 -> stringContains(v1, v2) }, // Maps to StrContainsExpr
         "startsWith" to { v1, v2 -> startsWith(v1, v2) },
         "endsWith" to { v1, v2 -> endsWith(v1, v2) },
-        "strConcat" to { v1, v2 -> strConcat(v1, v2) } // Maps to StrConcatExpr
+        "strConcat" to { v1, v2 -> stringConcat(v1, v2) } // Maps to StrConcatExpr
         // TODO(b/351084804): mapGet is not implemented yet
         )
 

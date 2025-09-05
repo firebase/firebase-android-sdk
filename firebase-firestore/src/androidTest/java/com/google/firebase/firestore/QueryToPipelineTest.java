@@ -67,7 +67,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.limit(2);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(asList(map("k", "a"), map("k", "b")), data);
   }
@@ -84,7 +84,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.limit(2).orderBy("sort", Direction.DESCENDING);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
 
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L), map("k", "c", "sort", 1L)), data);
@@ -114,7 +114,7 @@ public class QueryToPipelineTest {
     Query query = collection.limitToLast(3).orderBy("sort").endBefore(2);
     FirebaseFirestore db = collection.firestore;
 
-    PipelineSnapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
     List<Map<String, Object>> data = pipelineSnapshotToValues(set);
     assertEquals(
         asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 1L)),
@@ -162,7 +162,7 @@ public class QueryToPipelineTest {
 
     Query query = collection.whereGreaterThan("foo", 21.0).orderBy("foo", Direction.DESCENDING);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot result = waitFor(db.pipeline().createFrom(query).execute());
+    Pipeline.Snapshot result = waitFor(db.pipeline().createFrom(query).execute());
     assertEquals(asList("g", "f", "c", "b", "a"), pipelineSnapshotToIds(result));
   }
 
@@ -175,7 +175,7 @@ public class QueryToPipelineTest {
                 "b", map("null", null, "nan", 0),
                 "c", map("null", false, "nan", Double.NaN)));
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot results =
+    Pipeline.Snapshot results =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereEqualTo("null", null).whereEqualTo("nan", Double.NaN))
@@ -195,7 +195,7 @@ public class QueryToPipelineTest {
                 "a", map("inf", Double.POSITIVE_INFINITY),
                 "b", map("inf", Double.NEGATIVE_INFINITY)));
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot results =
+    Pipeline.Snapshot results =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereEqualTo("inf", Double.POSITIVE_INFINITY))
@@ -215,7 +215,7 @@ public class QueryToPipelineTest {
     FirebaseFirestore db = collection.firestore;
     // Ideally this would be descending to validate it's different than
     // the default, but that requires an extra index
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(db.pipeline().createFrom(collection.orderBy(FieldPath.documentId())).execute());
     assertEquals(
         asList(testDocs.get("a"), testDocs.get("b"), testDocs.get("c")),
@@ -232,7 +232,7 @@ public class QueryToPipelineTest {
             "bb", map("key", "bb"));
     CollectionReference collection = testCollectionWithDocs(testDocs);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereEqualTo(FieldPath.documentId(), "ab"))
@@ -260,7 +260,7 @@ public class QueryToPipelineTest {
             "bb", map("key", "bb"));
     CollectionReference collection = testCollectionWithDocs(testDocs);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(
             db.pipeline()
                 .createFrom(
@@ -284,11 +284,11 @@ public class QueryToPipelineTest {
     CollectionReference collection = testCollection();
     FirebaseFirestore db = collection.firestore;
     collection.add(map());
-    Task<PipelineSnapshot> query1 =
+    Task<Pipeline.Snapshot> query1 =
         db.pipeline()
             .createFrom(collection.orderBy(FieldPath.documentId(), Direction.ASCENDING))
             .execute();
-    Task<PipelineSnapshot> query2 = db.pipeline().createFrom(collection).execute();
+    Task<Pipeline.Snapshot> query2 = db.pipeline().createFrom(collection).execute();
 
     waitFor(query1);
     waitFor(query2);
@@ -325,7 +325,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
 
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", 98101L)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
 
@@ -372,7 +372,7 @@ public class QueryToPipelineTest {
             "bb", docD);
     CollectionReference collection = testCollectionWithDocs(testDocs);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereNotEqualTo(FieldPath.documentId(), "aa"))
@@ -394,7 +394,7 @@ public class QueryToPipelineTest {
     FirebaseFirestore db = collection.firestore;
 
     // Search for "array" to contain 42
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(db.pipeline().createFrom(collection.whereArrayContains("array", 42L)).execute());
     assertEquals(asList(docA, docB, docD), pipelineSnapshotToValues(snapshot));
 
@@ -426,7 +426,7 @@ public class QueryToPipelineTest {
     FirebaseFirestore db = collection.firestore;
 
     // Search for zips matching 98101, 98103, or [98101, 98102].
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(
             db.pipeline()
                 .createFrom(
@@ -480,7 +480,7 @@ public class QueryToPipelineTest {
             "bb", docD);
     CollectionReference collection = testCollectionWithDocs(testDocs);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")))
@@ -518,7 +518,7 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
 
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(
             db.pipeline()
                 .createFrom(
@@ -581,7 +581,7 @@ public class QueryToPipelineTest {
             "bb", docD);
     CollectionReference collection = testCollectionWithDocs(testDocs);
     FirebaseFirestore db = collection.firestore;
-    PipelineSnapshot docs =
+    Pipeline.Snapshot docs =
         waitFor(
             db.pipeline()
                 .createFrom(collection.whereNotIn(FieldPath.documentId(), asList("aa", "ab")))
@@ -611,7 +611,7 @@ public class QueryToPipelineTest {
     // Search for "array" to contain [42, 43].
     Pipeline pipeline =
         db.pipeline().createFrom(collection.whereArrayContainsAny("array", asList(42L, 43L)));
-    PipelineSnapshot snapshot = waitFor(pipeline.execute());
+    Pipeline.Snapshot snapshot = waitFor(pipeline.execute());
     assertEquals(asList(docA, docB, docD, docE), pipelineSnapshotToValues(snapshot));
 
     // With objects.
@@ -673,7 +673,7 @@ public class QueryToPipelineTest {
     }
     waitFor(batch.commit());
 
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(db.pipeline().createFrom(db.collectionGroup(collectionGroup)).execute());
     assertEquals(
         asList("cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5"),
@@ -703,7 +703,7 @@ public class QueryToPipelineTest {
     }
     waitFor(batch.commit());
 
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(
             db.pipeline()
                 .createFrom(
@@ -749,7 +749,7 @@ public class QueryToPipelineTest {
     }
     waitFor(batch.commit());
 
-    PipelineSnapshot snapshot =
+    Pipeline.Snapshot snapshot =
         waitFor(
             db.pipeline()
                 .createFrom(

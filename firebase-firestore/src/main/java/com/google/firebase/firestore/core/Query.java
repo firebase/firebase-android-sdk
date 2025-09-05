@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.pipeline.Expr.and;
-import static com.google.firebase.firestore.pipeline.Expr.or;
+import static com.google.firebase.firestore.pipeline.Expression.and;
+import static com.google.firebase.firestore.pipeline.Expression.or;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
@@ -30,14 +30,14 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.pipeline.BooleanExpr;
+import com.google.firebase.firestore.pipeline.BooleanExpression;
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions;
 import com.google.firebase.firestore.pipeline.CollectionGroupSource;
 import com.google.firebase.firestore.pipeline.CollectionSource;
 import com.google.firebase.firestore.pipeline.DocumentsSource;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
-import com.google.firebase.firestore.pipeline.FunctionExpr;
+import com.google.firebase.firestore.pipeline.FunctionExpression;
 import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.LimitStage;
 import com.google.firebase.firestore.pipeline.Ordering;
@@ -572,21 +572,23 @@ public final class Query {
     if (fields.size() == 1) {
       stages.add(new WhereStage(fields.get(0).exists(), InternalOptions.EMPTY));
     } else {
-      BooleanExpr[] conditions =
-          skipFirstToArray(fields, BooleanExpr[]::new, Expr.Companion::exists);
+      BooleanExpression[] conditions =
+          skipFirstToArray(fields, BooleanExpression[]::new, Expression.Companion::exists);
       stages.add(new WhereStage(and(fields.get(0).exists(), conditions), InternalOptions.EMPTY));
     }
 
     if (startAt != null) {
       stages.add(
           new WhereStage(
-              whereConditionsFromCursor(startAt, fields, FunctionExpr::gt), InternalOptions.EMPTY));
+              whereConditionsFromCursor(startAt, fields, FunctionExpression::greaterThan),
+              InternalOptions.EMPTY));
     }
 
     if (endAt != null) {
       stages.add(
           new WhereStage(
-              whereConditionsFromCursor(endAt, fields, FunctionExpr::lt), InternalOptions.EMPTY));
+              whereConditionsFromCursor(endAt, fields, FunctionExpression::lessThan),
+              InternalOptions.EMPTY));
     }
 
     // Cursors, Limit, Offset
@@ -603,7 +605,11 @@ public final class Query {
 
         List<Ordering> reversedOrderings = new ArrayList<>();
         for (Ordering ordering : orderings) {
-          reversedOrderings.add(ordering.reverse());
+          Ordering reversed =
+              ordering.getDir() == Ordering.Direction.ASCENDING
+                  ? ordering.getExpr().descending()
+                  : ordering.getExpr().ascending();
+          reversedOrderings.add(reversed);
         }
         stages.add(
             new SortStage(reversedOrderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
@@ -638,20 +644,20 @@ public final class Query {
     return result;
   }
 
-  private static BooleanExpr whereConditionsFromCursor(
-      Bound bound, List<Field> fields, BiFunction<Expr, Object, BooleanExpr> cmp) {
+  private static BooleanExpression whereConditionsFromCursor(
+      Bound bound, List<Field> fields, BiFunction<Expression, Object, BooleanExpression> cmp) {
     List<Value> boundPosition = bound.getPosition();
     int size = boundPosition.size();
     hardAssert(size <= fields.size(), "Bound positions must not exceed order fields.");
     int last = size - 1;
-    BooleanExpr condition = cmp.apply(fields.get(last), boundPosition.get(last));
+    BooleanExpression condition = cmp.apply(fields.get(last), boundPosition.get(last));
     if (bound.isInclusive()) {
-      condition = or(condition, Expr.eq(fields.get(last), boundPosition.get(last)));
+      condition = or(condition, Expression.equal(fields.get(last), boundPosition.get(last)));
     }
     for (int i = size - 2; i >= 0; i--) {
       final Field field = fields.get(i);
       final Value value = boundPosition.get(i);
-      condition = or(cmp.apply(field, value), and(field.eq(value), condition));
+      condition = or(cmp.apply(field, value), and(field.equal(value), condition));
     }
     return condition;
   }
