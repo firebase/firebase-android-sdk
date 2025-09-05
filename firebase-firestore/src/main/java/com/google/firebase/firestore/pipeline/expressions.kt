@@ -128,6 +128,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [String] value.
      *
+     * ```kotlin
+     * // Create a constant with the value "hello"
+     * constant("hello")
+     * ```
+     *
      * @param value The [String] value.
      * @return A new [Expr] constant instance.
      */
@@ -138,6 +143,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a constant for a [Number] value.
+     *
+     * ```kotlin
+     * // Create a constant with the value 123
+     * constant(123)
+     * ```
      *
      * @param value The [Number] value.
      * @return A new [Expr] constant instance.
@@ -150,6 +160,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [Date] value.
      *
+     * ```kotlin
+     * // Create a constant with the current date
+     * constant(Date())
+     * ```
+     *
      * @param value The [Date] value.
      * @return A new [Expr] constant instance.
      */
@@ -161,6 +176,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [Timestamp] value.
      *
+     * ```kotlin
+     * // Create a constant with the current timestamp
+     * constant(Timestamp.now())
+     * ```
+     *
      * @param value The [Timestamp] value.
      * @return A new [Expr] constant instance.
      */
@@ -171,6 +191,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a constant for a [Boolean] value.
+     *
+     * ```kotlin
+     * // Create a constant with the value true
+     * constant(true)
+     * ```
      *
      * @param value The [Boolean] value.
      * @return A new [BooleanExpr] constant instance.
@@ -197,6 +222,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [GeoPoint] value.
      *
+     * ```kotlin
+     * // Create a constant with a GeoPoint
+     * constant(GeoPoint(37.7749, -122.4194))
+     * ```
+     *
      * @param value The [GeoPoint] value.
      * @return A new [Expr] constant instance.
      */
@@ -207,6 +237,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a constant for a bytes value.
+     *
+     * ```kotlin
+     * // Create a constant with a byte array
+     * constant(byteArrayOf(0x48, 0x65, 0x6c, 0x6c, 0x6f)) // "Hello"
+     * ```
      *
      * @param value The bytes value.
      * @return A new [Expr] constant instance.
@@ -219,6 +254,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [Blob] value.
      *
+     * ```kotlin
+     * // Create a constant with a Blob
+     * constant(Blob.fromBytes(byteArrayOf(0x48, 0x65, 0x6c, 0x6c, 0x6f))) // "Hello"
+     * ```
+     *
      * @param value The [Blob] value.
      * @return A new [Expr] constant instance.
      */
@@ -229,6 +269,12 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a constant for a [DocumentReference] value.
+     *
+     * ```kotlin
+     * // val firestore = FirebaseFirestore.getInstance()
+     * // val docRef = firestore.collection("cities").document("SF")
+     * // constant(docRef)
+     * ```
      *
      * @param ref The [DocumentReference] value.
      * @return A new [Expr] constant instance.
@@ -241,6 +287,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a constant for a [VectorValue] value.
      *
+     * ```kotlin
+     * // Create a constant with a VectorValue
+     * constant(VectorValue(listOf(1.0, 2.0, 3.0)))
+     * ```
+     *
      * @param value The [VectorValue] value.
      * @return A new [Expr] constant instance.
      */
@@ -248,6 +299,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a [Blob] constant from a [ByteArray].
+     *
+     * ```kotlin
+     * // Create a Blob constant from a byte array
+     * blob(byteArrayOf(0x48, 0x65, 0x6c, 0x6c, 0x6f)) // "Hello"
+     * ```
      *
      * @param bytes The [ByteArray] to convert to a Blob.
      * @return A new [Expr] constant instance representing the Blob.
@@ -257,12 +313,22 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Constant for a null value.
      *
+     * ```kotlin
+     * // Create a null constant
+     * nullValue()
+     * ```
+     *
      * @return A [Expr] constant instance.
      */
     @JvmStatic fun nullValue(): Expr = NULL
 
     /**
      * Create a vector constant for a [DoubleArray] value.
+     *
+     * ```kotlin
+     * // Create a vector constant from a DoubleArray
+     * vector(doubleArrayOf(1.0, 2.0, 3.0))
+     * ```
      *
      * @param vector The [DoubleArray] value.
      * @return A [Expr] constant instance.
@@ -271,6 +337,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Create a vector constant for a [VectorValue] value.
+     *
+     * ```kotlin
+     * // Create a vector constant from a VectorValue
+     * vector(VectorValue(listOf(1.0, 2.0, 3.0)))
+     * ```
      *
      * @param vector The [VectorValue] value.
      * @return A [Expr] constant instance.
@@ -302,6 +373,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * The path can be a simple field name (e.g., "name") or a dot-separated path to a nested field
      * (e.g., "address.city").
      *
+     * ```kotlin
+     * // Get the 'address.city' field
+     * field(FieldPath.of("address", "city"))
+     * ```
+     *
      * @param fieldPath The [FieldPath] to the field.
      * @return A new [Field] instance representing the specified path.
      */
@@ -309,6 +385,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates a generic function expression that is not yet implemented.
+     *
+     * ```kotlin
+     * // Create a generic function call
+     * generic("my_function", field("arg1"), constant(42))
+     * ```
      *
      * @param name The name of the generic function.
      * @param expr The expressions to be passed as arguments to the function.
@@ -319,6 +400,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that performs a logical 'AND' operation.
+     *
+     * ```kotlin
+     * // Check if 'status' is "new" and 'priority' is greater than 1
+     * and(field("status").equal("new"), field("priority").greaterThan(1))
+     * ```
      *
      * @param condition The first [BooleanExpr].
      * @param conditions Additional [BooleanExpr]s.
@@ -331,6 +417,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that performs a logical 'OR' operation.
      *
+     * ```kotlin
+     * // Check if 'status' is "new" or "open"
+     * or(field("status").equal("new"), field("status").equal("open"))
+     * ```
+     *
      * @param condition The first [BooleanExpr].
      * @param conditions Additional [BooleanExpr]s.
      * @return A new [BooleanExpr] representing the logical 'OR' operation.
@@ -341,6 +432,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that performs a logical 'XOR' operation.
+     *
+     * ```kotlin
+     * // Check if either 'a' is true or 'b' is true, but not both
+     * xor(field("a"), field("b"))
+     * ```
      *
      * @param condition The first [BooleanExpr].
      * @param conditions Additional [BooleanExpr]s.
@@ -353,6 +449,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that negates a boolean expression.
      *
+     * ```kotlin
+     * // Check if 'is_admin' is not true
+     * not(field("is_admin"))
+     * ```
+     *
      * @param condition The boolean expression to negate.
      * @return A new [BooleanExpr] representing the not operation.
      */
@@ -361,6 +462,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise AND operation between two expressions.
+     *
+     * ```kotlin
+     * // Bitwise AND the value of the 'flags' field with the value of the 'mask' field.
+     * bitAnd(field("flags"), field("mask"))
+     * ```
      *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther An expression that returns bits when evaluated.
@@ -374,6 +480,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise AND operation between an expression and a
      * constant.
      *
+     * ```kotlin
+     * // Bitwise AND the value of the 'flags' field with a constant mask.
+     * bitAnd(field("flags"), byteArrayOf(0b00001111))
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther A constant byte array.
      * @return A new [Expr] representing the bitwise AND operation.
@@ -386,6 +497,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise AND operation between an field and an
      * expression.
      *
+     * ```kotlin
+     * // Bitwise AND the value of the 'flags' field with the value of the 'mask' field.
+     * bitAnd("flags", field("mask"))
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther An expression that returns bits when evaluated.
      * @return A new [Expr] representing the bitwise AND operation.
@@ -397,6 +513,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that applies a bitwise AND operation between an field and constant.
      *
+     * ```kotlin
+     * // Bitwise AND the value of the 'flags' field with a constant mask.
+     * bitAnd("flags", byteArrayOf(0b00001111))
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther A constant byte array.
      * @return A new [Expr] representing the bitwise AND operation.
@@ -407,6 +528,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise OR operation between two expressions.
+     *
+     * ```kotlin
+     * // Bitwise OR the value of the 'flags' field with the value of the 'mask' field.
+     * bitOr(field("flags"), field("mask"))
+     * ```
      *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther An expression that returns bits when evaluated.
@@ -420,6 +546,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise OR operation between an expression and a
      * constant.
      *
+     * ```kotlin
+     * // Bitwise OR the value of the 'flags' field with a constant mask.
+     * bitOr(field("flags"), byteArrayOf(0b00001111))
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther A constant byte array.
      * @return A new [Expr] representing the bitwise OR operation.
@@ -430,6 +561,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise OR operation between an field and an expression.
+     *
+     * ```kotlin
+     * // Bitwise OR the value of the 'flags' field with the value of the 'mask' field.
+     * bitOr("flags", field("mask"))
+     * ```
      *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther An expression that returns bits when evaluated.
@@ -442,6 +578,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that applies a bitwise OR operation between an field and constant.
      *
+     * ```kotlin
+     * // Bitwise OR the value of the 'flags' field with a constant mask.
+     * bitOr("flags", byteArrayOf(0b00001111))
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther A constant byte array.
      * @return A new [Expr] representing the bitwise OR operation.
@@ -452,6 +593,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise XOR operation between two expressions.
+     *
+     * ```kotlin
+     * // Bitwise XOR the value of the 'flags' field with the value of the 'mask' field.
+     * bitXor(field("flags"), field("mask"))
+     * ```
      *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther An expression that returns bits when evaluated.
@@ -465,6 +611,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise XOR operation between an expression and a
      * constant.
      *
+     * ```kotlin
+     * // Bitwise XOR the value of the 'flags' field with a constant mask.
+     * bitXor(field("flags"), byteArrayOf(0b00001111))
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @param bitsOther A constant byte array.
      * @return A new [Expr] representing the bitwise XOR operation.
@@ -477,6 +628,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise XOR operation between an field and an
      * expression.
      *
+     * ```kotlin
+     * // Bitwise XOR the value of the 'flags' field with the value of the 'mask' field.
+     * bitXor("flags", field("mask"))
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther An expression that returns bits when evaluated.
      * @return A new [Expr] representing the bitwise XOR operation.
@@ -487,6 +643,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise XOR operation between an field and constant.
+     *
+     * ```kotlin
+     * // Bitwise XOR the value of the 'flags' field with a constant mask.
+     * bitXor("flags", byteArrayOf(0b00001111))
+     * ```
      *
      * @param bitsFieldName Name of field that contains bits data.
      * @param bitsOther A constant byte array.
@@ -499,6 +660,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that applies a bitwise NOT operation to an expression.
      *
+     * ```kotlin
+     * // Bitwise NOT the value of the 'flags' field.
+     * bitNot(field("flags"))
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @return A new [Expr] representing the bitwise NOT operation.
      */
@@ -506,6 +672,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise NOT operation to a field.
+     *
+     * ```kotlin
+     * // Bitwise NOT the value of the 'flags' field.
+     * bitNot("flags")
+     * ```
      *
      * @param bitsFieldName Name of field that contains bits data.
      * @return A new [Expr] representing the bitwise NOT operation.
@@ -515,6 +686,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise left shift operation between two expressions.
+     *
+     * ```kotlin
+     * // Left shift the value of the 'bits' field by the value of the 'shift' field.
+     * bitLeftShift(field("bits"), field("shift"))
+     * ```
      *
      * @param bits An expression that returns bits when evaluated.
      * @param numberExpr The number of bits to shift.
@@ -528,6 +704,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise left shift operation between an expression and a
      * constant.
      *
+     * ```kotlin
+     * // Left shift the value of the 'bits' field by 2.
+     * bitLeftShift(field("bits"), 2)
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @param number The number of bits to shift.
      * @return A new [Expr] representing the bitwise left shift operation.
@@ -539,6 +720,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that applies a bitwise left shift operation between a field and an
      * expression.
+     *
+     * ```kotlin
+     * // Left shift the value of the 'bits' field by the value of the 'shift' field.
+     * bitLeftShift("bits", field("shift"))
+     * ```
      *
      * @param bitsFieldName Name of field that contains bits data.
      * @param numberExpr The number of bits to shift.
@@ -552,6 +738,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise left shift operation between a field and a
      * constant.
      *
+     * ```kotlin
+     * // Left shift the value of the 'bits' field by 2.
+     * bitLeftShift("bits", 2)
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param number The number of bits to shift.
      * @return A new [Expr] representing the bitwise left shift operation.
@@ -562,6 +753,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that applies a bitwise right shift operation between two expressions.
+     *
+     * ```kotlin
+     * // Right shift the value of the 'bits' field by the value of the 'shift' field.
+     * bitRightShift(field("bits"), field("shift"))
+     * ```
      *
      * @param bits An expression that returns bits when evaluated.
      * @param numberExpr The number of bits to shift.
@@ -575,6 +771,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise right shift operation between an expression and
      * a constant.
      *
+     * ```kotlin
+     * // Right shift the value of the 'bits' field by 2.
+     * bitRightShift(field("bits"), 2)
+     * ```
+     *
      * @param bits An expression that returns bits when evaluated.
      * @param number The number of bits to shift.
      * @return A new [Expr] representing the bitwise right shift operation.
@@ -586,6 +787,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that applies a bitwise right shift operation between a field and an
      * expression.
+     *
+     * ```kotlin
+     * // Right shift the value of the 'bits' field by the value of the 'shift' field.
+     * bitRightShift("bits", field("shift"))
+     * ```
      *
      * @param bitsFieldName Name of field that contains bits data.
      * @param numberExpr The number of bits to shift.
@@ -599,6 +805,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that applies a bitwise right shift operation between a field and a
      * constant.
      *
+     * ```kotlin
+     * // Right shift the value of the 'bits' field by 2.
+     * bitRightShift("bits", 2)
+     * ```
+     *
      * @param bitsFieldName Name of field that contains bits data.
      * @param number The number of bits to shift.
      * @return A new [Expr] representing the bitwise right shift operation.
@@ -610,6 +821,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that rounds [numericExpr] to nearest integer.
      *
+     * ```kotlin
+     * // Round the value of the 'price' field.
+     * round(field("price"))
+     * ```
+     *
      * Rounds away from zero in halfway cases.
      *
      * @param numericExpr An expression that returns number when evaluated.
@@ -620,6 +836,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that rounds [numericField] to nearest integer.
+     *
+     * ```kotlin
+     * // Round the value of the 'price' field.
+     * round("price")
+     * ```
      *
      * Rounds away from zero in halfway cases.
      *
@@ -634,6 +855,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
      * [decimalPlace] is negative. Rounds away from zero in halfway cases.
      *
+     * ```kotlin
+     * // Round the value of the 'price' field to 2 decimal places.
+     * roundToPrecision(field("price"), 2)
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @param decimalPlace The number of decimal places to round.
      * @return A new [Expr] representing the round operation.
@@ -646,6 +872,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that rounds off [numericField] to [decimalPlace] decimal places if
      * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
      * [decimalPlace] is negative. Rounds away from zero in halfway cases.
+     *
+     * ```kotlin
+     * // Round the value of the 'price' field to 2 decimal places.
+     * roundToPrecision("price", 2)
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @param decimalPlace The number of decimal places to round.
@@ -660,6 +891,12 @@ abstract class Expr internal constructor() : Canonicalizable {
      * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
      * [decimalPlace] is negative. Rounds away from zero in halfway cases.
      *
+     * ```kotlin
+     * // Round the value of the 'price' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * roundToPrecision(field("price"), field("precision"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @param decimalPlace The number of decimal places to round.
      * @return A new [Expr] representing the round operation.
@@ -673,6 +910,12 @@ abstract class Expr internal constructor() : Canonicalizable {
      * [decimalPlace] is positive, rounds off digits to the left of the decimal point if
      * [decimalPlace] is negative. Rounds away from zero in halfway cases.
      *
+     * ```kotlin
+     * // Round the value of the 'price' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * roundToPrecision("price", field("precision"))
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @param decimalPlace The number of decimal places to round.
      * @return A new [Expr] representing the round operation.
@@ -684,6 +927,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the smallest integer that isn't less than [numericExpr].
      *
+     * ```kotlin
+     * // Compute the ceiling of the 'price' field.
+     * ceil(field("price"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
      */
@@ -691,6 +939,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the smallest integer that isn't less than [numericField].
+     *
+     * ```kotlin
+     * // Compute the ceiling of the 'price' field.
+     * ceil("price")
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
@@ -700,7 +953,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the largest integer that is not greater than [numericExpr]
-     * .
+     *
+     * ```kotlin
+     * // Compute the floor of the 'price' field.
+     * floor(field("price"))
+     * ```
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
@@ -712,6 +969,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the largest integer that is not greater than
      * [numericField].
      *
+     * ```kotlin
+     * // Compute the floor of the 'price' field.
+     * floor("price")
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
      */
@@ -721,6 +983,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
      * Returns infinity on overflow and zero on underflow.
+     *
+     * ```kotlin
+     * // Raise the value of the 'base' field to the power of 2.
+     * pow(field("base"), 2)
+     * ```
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @param exponent The numeric power to raise the [numericExpr].
@@ -735,6 +1002,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the [numericField] raised to the power of the [exponent].
      * Returns infinity on overflow and zero on underflow.
      *
+     * ```kotlin
+     * // Raise the value of the 'base' field to the power of 2.
+     * pow("base", 2)
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @param exponent The numeric power to raise the [numericField].
      * @return A new [Expr] representing a numeric result from raising [numericField] to the power
@@ -747,6 +1019,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the [numericExpr] raised to the power of the [exponent].
      * Returns infinity on overflow and zero on underflow.
+     *
+     * ```kotlin
+     * // Raise the value of the 'base' field to the power of the 'exponent' field.
+     * pow(field("base"), field("exponent"))
+     * ```
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @param exponent The numeric power to raise the [numericExpr].
@@ -761,6 +1038,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the [numericField] raised to the power of the [exponent].
      * Returns infinity on overflow and zero on underflow.
      *
+     * ```kotlin
+     * // Raise the value of the 'base' field to the power of the 'exponent' field.
+     * pow("base", field("exponent"))
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @param exponent The numeric power to raise the [numericField].
      * @return A new [Expr] representing a numeric result from raising [numericField] to the power
@@ -773,6 +1055,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the absolute value of [numericExpr].
      *
+     * ```kotlin
+     * // Get the absolute value of the 'change' field.
+     * abs(field("change"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the absolute value operation.
      */
@@ -780,6 +1067,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the absolute value of [numericField].
+     *
+     * ```kotlin
+     * // Get the absolute value of the 'change' field.
+     * abs("change")
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the absolute value operation.
@@ -789,6 +1081,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns Euler's number e raised to the power of [numericExpr].
      *
+     * ```kotlin
+     * // Compute e to the power of the 'value' field.
+     * exp(field("value"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the exponentiation.
      */
@@ -796,6 +1093,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns Euler's number e raised to the power of [numericField].
+     *
+     * ```kotlin
+     * // Compute e to the power of the 'value' field.
+     * exp("value")
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the exponentiation.
@@ -805,6 +1107,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the natural logarithm (base e) of [numericExpr].
      *
+     * ```kotlin
+     * // Compute the natural logarithm of the 'value' field.
+     * ln(field("value"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the natural logarithm.
      */
@@ -813,6 +1120,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the natural logarithm (base e) of [numericField].
      *
+     * ```kotlin
+     * // Compute the natural logarithm of the 'value' field.
+     * ln("value")
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the natural logarithm.
      */
@@ -820,6 +1132,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the logarithm of [numericExpr] with a given [base].
+     *
+     * ```kotlin
+     * // Compute the logarithm of the 'value' field with base 10.
+     * log(field("value"), 10)
+     * ```
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @param base The base of the logarithm.
@@ -833,6 +1150,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the logarithm of [numericField] with a given [base].
      *
+     * ```kotlin
+     * // Compute the logarithm of the 'value' field with base 10.
+     * log("value", 10)
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @param base The base of the logarithm.
      * @return A new [Expr] representing a numeric result from the logarithm of [numericField] with
@@ -844,6 +1166,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the logarithm of [numericExpr] with a given [base].
+     *
+     * ```kotlin
+     * // Compute the logarithm of the 'value' field with the base in the 'base' field.
+     * log(field("value"), field("base"))
+     * ```
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @param base The base of the logarithm.
@@ -857,6 +1184,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the logarithm of [numericField] with a given [base].
      *
+     * ```kotlin
+     * // Compute the logarithm of the 'value' field with the base in the 'base' field.
+     * log("value", field("base"))
+     * ```
+     *
      * @param numericField Name of field that returns number when evaluated.
      * @param base The base of the logarithm.
      * @return A new [Expr] representing a numeric result from the logarithm of [numericField] with
@@ -869,6 +1201,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the base 10 logarithm of [numericExpr].
      *
+     * ```kotlin
+     * // Compute the base 10 logarithm of the 'value' field.
+     * log10(field("value"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the base 10 logarithm.
      */
@@ -877,6 +1214,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the base 10 logarithm of [numericField].
+     *
+     * ```kotlin
+     * // Compute the base 10 logarithm of the 'value' field.
+     * log10("value")
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the base 10 logarithm.
@@ -887,6 +1229,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the square root of [numericExpr].
      *
+     * ```kotlin
+     * // Compute the square root of the 'value' field.
+     * sqrt(field("value"))
+     * ```
+     *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the square root operation.
      */
@@ -894,6 +1241,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the square root of [numericField].
+     *
+     * ```kotlin
+     * // Compute the square root of the 'value' field.
+     * sqrt("value")
+     * ```
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing the numeric result of the square root operation.
@@ -903,6 +1255,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that adds numeric expressions.
+     *
+     * ```kotlin
+     * // Add the value of the 'quantity' field and the 'reserve' field.
+     * add(field("quantity"), field("reserve"))
+     * ```
      *
      * @param first Numeric expression to add.
      * @param second Numeric expression to add.
@@ -914,6 +1271,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that adds numeric expressions with a constant.
      *
+     * ```kotlin
+     * // Add 5 to the value of the 'quantity' field.
+     * add(field("quantity"), 5)
+     * ```
+     *
      * @param first Numeric expression to add.
      * @param second Constant to add.
      * @return A new [Expr] representing the addition operation.
@@ -923,6 +1285,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that adds a numeric field with a numeric expression.
+     *
+     * ```kotlin
+     * // Add the value of the 'quantity' field and the 'reserve' field.
+     * add("quantity", field("reserve"))
+     * ```
      *
      * @param numericFieldName Numeric field to add.
      * @param second Numeric expression to add to field value.
@@ -935,6 +1302,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that adds a numeric field with constant.
      *
+     * ```kotlin
+     * // Add 5 to the value of the 'quantity' field.
+     * add("quantity", 5)
+     * ```
+     *
      * @param numericFieldName Numeric field to add.
      * @param second Constant to add.
      * @return A new [Expr] representing the addition operation.
@@ -945,6 +1317,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that subtracts two expressions.
+     *
+     * ```kotlin
+     * // Subtract the 'discount' field from the 'price' field
+     * subtract(field("price"), field("discount"))
+     * ```
      *
      * @param minuend Numeric expression to subtract from.
      * @param subtrahend Numeric expression to subtract.
@@ -957,6 +1334,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that subtracts a constant value from a numeric expression.
      *
+     * ```kotlin
+     * // Subtract 10 from the 'price' field.
+     * subtract(field("price"), 10)
+     * ```
+     *
      * @param minuend Numeric expression to subtract from.
      * @param subtrahend Constant to subtract.
      * @return A new [Expr] representing the subtract operation.
@@ -967,6 +1349,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that subtracts a numeric expressions from numeric field.
+     *
+     * ```kotlin
+     * // Subtract the 'discount' field from the 'price' field.
+     * subtract("price", field("discount"))
+     * ```
      *
      * @param numericFieldName Numeric field to subtract from.
      * @param subtrahend Numeric expression to subtract.
@@ -979,6 +1366,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that subtracts a constant from numeric field.
      *
+     * ```kotlin
+     * // Subtract 10 from the 'price' field.
+     * subtract("price", 10)
+     * ```
+     *
      * @param numericFieldName Numeric field to subtract from.
      * @param subtrahend Constant to subtract.
      * @return A new [Expr] representing the subtract operation.
@@ -989,6 +1381,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that multiplies numeric expressions.
+     *
+     * ```kotlin
+     * // Multiply the 'quantity' field by the 'price' field
+     * multiply(field("quantity"), field("price"))
+     * ```
      *
      * @param first Numeric expression to multiply.
      * @param second Numeric expression to multiply.
@@ -1001,6 +1398,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that multiplies numeric expressions with a constant.
      *
+     * ```kotlin
+     * // Multiply the 'quantity' field by 1.1.
+     * multiply(field("quantity"), 1.1)
+     * ```
+     *
      * @param first Numeric expression to multiply.
      * @param second Constant to multiply.
      * @return A new [Expr] representing the multiplication operation.
@@ -1011,6 +1413,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that multiplies a numeric field with a numeric expression.
+     *
+     * ```kotlin
+     * // Multiply the 'quantity' field by the 'price' field.
+     * multiply("quantity", field("price"))
+     * ```
      *
      * @param numericFieldName Numeric field to multiply.
      * @param second Numeric expression to multiply.
@@ -1023,6 +1430,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that multiplies a numeric field with a constant.
      *
+     * ```kotlin
+     * // Multiply the 'quantity' field by 1.1.
+     * multiply("quantity", 1.1)
+     * ```
+     *
      * @param numericFieldName Numeric field to multiply.
      * @param second Constant to multiply.
      * @return A new [Expr] representing the multiplication operation.
@@ -1033,6 +1445,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that divides two numeric expressions.
+     *
+     * ```kotlin
+     * // Divide the 'total' field by the 'count' field
+     * divide(field("total"), field("count"))
+     * ```
      *
      * @param dividend The numeric expression to be divided.
      * @param divisor The numeric expression to divide by.
@@ -1045,6 +1462,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that divides a numeric expression by a constant.
      *
+     * ```kotlin
+     * // Divide the 'value' field by 10
+     * divide(field("value"), 10)
+     * ```
+     *
      * @param dividend The numeric expression to be divided.
      * @param divisor The constant to divide by.
      * @return A new [Expr] representing the division operation.
@@ -1056,6 +1478,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that divides numeric field by a numeric expression.
      *
+     * ```kotlin
+     * // Divide the 'total' field by the 'count' field.
+     * divide("total", field("count"))
+     * ```
+     *
      * @param dividendFieldName The numeric field name to be divided.
      * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the divide operation.
@@ -1066,6 +1493,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that divides a numeric field by a constant.
+     *
+     * ```kotlin
+     * // Divide the 'total' field by 2.
+     * divide("total", 2)
+     * ```
      *
      * @param dividendFieldName The numeric field name to be divided.
      * @param divisor The constant to divide by.
@@ -1079,6 +1511,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that calculates the modulo (remainder) of dividing two numeric
      * expressions.
      *
+     * ```kotlin
+     * // Calculate the remainder of dividing the 'value' field by the 'divisor' field
+     * mod(field("value"), field("divisor"))
+     * ```
+     *
      * @param dividend The numeric expression to be divided.
      * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the modulo operation.
@@ -1090,6 +1527,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric expression
      * by a constant.
+     *
+     * ```kotlin
+     * // Calculate the remainder of dividing the 'value' field by 3.
+     * mod(field("value"), 3)
+     * ```
      *
      * @param dividend The numeric expression to be divided.
      * @param divisor The constant to divide by.
@@ -1103,6 +1545,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
      * constant.
      *
+     * ```kotlin
+     * // Calculate the remainder of dividing the 'value' field by the 'divisor' field.
+     * mod("value", field("divisor"))
+     * ```
+     *
      * @param dividendFieldName The numeric field name to be divided.
      * @param divisor The numeric expression to divide by.
      * @return A new [Expr] representing the modulo operation.
@@ -1114,6 +1561,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the modulo (remainder) of dividing a numeric field by a
      * constant.
+     *
+     * ```kotlin
+     * // Calculate the remainder of dividing the 'value' field by 3.
+     * mod("value", 3)
+     * ```
      *
      * @param dividendFieldName The numeric field name to be divided.
      * @param divisor The constant to divide by.
@@ -1127,6 +1579,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
      * provided [values].
      *
+     * ```kotlin
+     * // Check if the 'category' field is either "Electronics" or the value of the 'primaryType' field.
+     * eqAny(field("category"), listOf("Electronics", field("primaryType")))
+     * ```
+     *
      * @param expression The expression whose results to compare.
      * @param values The values to check against.
      * @return A new [BooleanExpr] representing the 'IN' comparison.
@@ -1137,6 +1594,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if an [expression], when evaluated, is equal to any of the
      * elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'category' field is in the 'availableCategories' array field.
+     * eqAny(field("category"), field("availableCategories"))
+     * ```
      *
      * @param expression The expression whose results to compare.
      * @param arrayExpression An expression that evaluates to an array, whose elements to check for
@@ -1151,6 +1613,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if a field's value is equal to any of the provided [values]
      * .
      *
+     * ```kotlin
+     * // Check if the 'category' field is either "Electronics" or "Apparel".
+     * eqAny("category", listOf("Electronics", "Apparel"))
+     * ```
+     *
      * @param fieldName The field to compare.
      * @param values The values to check against.
      * @return A new [BooleanExpr] representing the 'IN' comparison.
@@ -1161,6 +1628,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is equal to any of the elements of
      * [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'category' field is in the 'availableCategories' array field.
+     * eqAny("category", field("availableCategories"))
+     * ```
      *
      * @param fieldName The field to compare.
      * @param arrayExpression An expression that evaluates to an array, whose elements to check for
@@ -1175,6 +1647,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
      * provided [values].
      *
+     * ```kotlin
+     * // Check if the 'status' field is neither "pending" nor the value of the 'rejectedStatus' field.
+     * notEqAny(field("status"), listOf("pending", field("rejectedStatus")))
+     * ```
+     *
      * @param expression The expression whose results to compare.
      * @param values The values to check against.
      * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
@@ -1186,6 +1663,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
      * elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'status' field is not in the 'inactiveStatuses' array field.
+     * notEqAny(field("status"), field("inactiveStatuses"))
+     * ```
      *
      * @param expression The expression whose results to compare.
      * @param arrayExpression An expression that evaluates to an array, whose elements to check for
@@ -1200,6 +1682,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if a field's value is not equal to all of the provided
      * [values].
      *
+     * ```kotlin
+     * // Check if the 'status' field is not "archived" or "deleted".
+     * notEqAny("status", listOf("archived", "deleted"))
+     * ```
+     *
      * @param fieldName The field to compare.
      * @param values The values to check against.
      * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
@@ -1211,6 +1698,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is not equal to all of the elements of
      * [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'status' field is not in the 'inactiveStatuses' array field.
+     * notEqAny("status", field("inactiveStatuses"))
+     * ```
      *
      * @param fieldName The field to compare.
      * @param arrayExpression An expression that evaluates to an array, whose elements to check for
@@ -1225,6 +1717,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns true if a value is absent. Otherwise, returns false even
      * if the value is null.
      *
+     * ```kotlin
+     * // Check if the field `value` is absent.
+     * isAbsent(field("value"))
+     * ```
+     *
      * @param value The expression to check.
      * @return A new [BooleanExpr] representing the isAbsent operation.
      */
@@ -1234,6 +1731,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns true if a field is absent. Otherwise, returns false even
      * if the field value is null.
+     *
+     * ```kotlin
+     * // Check if the field `value` is absent.
+     * isAbsent("value")
+     * ```
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isAbsent operation.
@@ -1245,6 +1747,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
      *
+     * ```kotlin
+     * // Check if the result of a calculation is NaN
+     * isNan(divide("value", 0))
+     * ```
+     *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNan operation.
      */
@@ -1252,6 +1759,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if the field's value evaluates to 'NaN' (Not a Number).
+     *
+     * ```kotlin
+     * // Check if the value of a field is NaN
+     * isNan("value")
+     * ```
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNan operation.
@@ -1262,6 +1774,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
      *
+     * ```kotlin
+     * // Check if the result of a calculation is NOT NaN
+     * isNotNan(divide("value", 0))
+     * ```
+     *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
      */
@@ -1270,6 +1787,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if the field's value is NOT 'NaN' (Not a Number).
+     *
+     * ```kotlin
+     * // Check if the value of a field is NOT NaN
+     * isNotNan("value")
+     * ```
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
@@ -1281,6 +1803,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the result of [expr] is null.
      *
+     * ```kotlin
+     * // Check if the value of the 'name' field is null
+     * isNull("name")
+     * ```
+     *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNull operation.
      */
@@ -1288,6 +1815,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if the value of a field is null.
+     *
+     * ```kotlin
+     * // Check if the value of the 'name' field is null
+     * isNull("name")
+     * ```
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNull operation.
@@ -1298,6 +1830,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the result of [expr] is not null.
      *
+     * ```kotlin
+     * // Check if the value of the 'name' field is not null
+     * isNotNull(field("name"))
+     * ```
+     *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
      */
@@ -1306,6 +1843,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if the value of a field is not null.
+     *
+     * ```kotlin
+     * // Check if the value of the 'name' field is not null
+     * isNotNull("name")
+     * ```
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
@@ -1317,6 +1859,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that replaces the first occurrence of a substring within the
      * [stringExpression].
+     *
+     * ```kotlin
+     * // In the 'message' field, replace the first occurrence of the value in 'old' with the value in 'new'.
+     * replaceFirst(field("message"), field("old"), field("new"))
+     * ```
      *
      * @param stringExpression The expression representing the string to perform the replacement on.
      * @param find The expression representing the substring to search for in [stringExpression].
@@ -1332,6 +1879,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that replaces the first occurrence of a substring within the
      * [stringExpression].
      *
+     * ```kotlin
+     * // Replace the first occurrence of "old" with "new" in the 'message' field.
+     * replaceFirst(field("message"), "old", "new")
+     * ```
+     *
      * @param stringExpression The expression representing the string to perform the replacement on.
      * @param find The substring to search for in [stringExpression].
      * @param replace The replacement for the first occurrence of [find] with.
@@ -1344,6 +1896,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that replaces the first occurrence of a substring within the specified
      * string field.
+     *
+     * ```kotlin
+     * // In the 'message' field, replace the first occurrence of the value in 'old' with the value in 'new'.
+     * replaceFirst("message", field("old"), field("new"))
+     * ```
      *
      * @param fieldName The name of the field representing the string to perform the replacement on.
      * @param find The expression representing the substring to search for in specified string
@@ -1360,6 +1917,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that replaces the first occurrence of a substring within the specified
      * string field.
      *
+     * ```kotlin
+     * // In the 'message' field, replace the first "old" with "new".
+     * replaceFirst("message", "old", "new")
+     * ```
+     *
      * @param fieldName The name of the field representing the string to perform the replacement on.
      * @param find The substring to search for in specified string field.
      * @param replace The replacement for the first occurrence of [find] with.
@@ -1372,6 +1934,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that replaces all occurrences of a substring within the
      * [stringExpression].
+     *
+     * ```kotlin
+     * // In the 'message' field, replace all occurrences of the value in 'old' with the value in 'new'.
+     * replaceAll(field("message"), field("old"), field("new"))
+     * ```
      *
      * @param stringExpression The expression representing the string to perform the replacement on.
      * @param find The expression representing the substring to search for in [stringExpression].
@@ -1386,6 +1953,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that replaces all occurrences of a substring within the
      * [stringExpression].
      *
+     * ```kotlin
+     * // Replace all occurrences of " " with "_" in the 'tags' field.
+     * replaceAll(field("tags"), " ", "_")
+     * ```
+     *
      * @param stringExpression The expression representing the string to perform the replacement on.
      * @param find The substring to search for in [stringExpression].
      * @param replace The replacement for all occurrences of [find] with.
@@ -1398,6 +1970,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that replaces all occurrences of a substring within the specified
      * string field.
+     *
+     * ```kotlin
+     * // In the 'message' field, replace all occurrences of the value in 'old' with the value in 'new'.
+     * replaceAll("message", field("old"), field("new"))
+     * ```
      *
      * @param fieldName The name of the field representing the string to perform the replacement on.
      * @param find The expression representing the substring to search for in specified string
@@ -1414,6 +1991,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that replaces all occurrences of a substring within the specified
      * string field.
      *
+     * ```kotlin
+     * // In the 'tags' field, replace all " " with "_".
+     * replaceAll("tags", " ", "_")
+     * ```
+     *
      * @param fieldName The name of the field representing the string to perform the replacement on.
      * @param find The substring to search for in specified string field.
      * @param replace The replacement for all occurrences of [find] with.
@@ -1426,6 +2008,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the character length of a string expression in UTF8.
      *
+     * ```kotlin
+     * // Get the character length of the 'name' field in UTF-8.
+     * charLength("name")
+     * ```
+     *
      * @param expr The expression representing the string.
      * @return A new [Expr] representing the charLength operation.
      */
@@ -1434,6 +2021,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that calculates the character length of a string field in UTF8.
+     *
+     * ```kotlin
+     * // Get the character length of the 'name' field in UTF-8.
+     * charLength("name")
+     * ```
      *
      * @param fieldName The name of the field containing the string.
      * @return A new [Expr] representing the charLength operation.
@@ -1446,6 +2038,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the
      * length of a Blob.
      *
+     * ```kotlin
+     * // Calculate the length of the 'myString' field in bytes.
+     * byteLength("myString")
+     * ```
+     *
      * @param value The expression representing the string.
      * @return A new [Expr] representing the length of the string in bytes.
      */
@@ -1455,6 +2052,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the length of a string represented by a field in UTF-8
      * bytes, or just the length of a Blob.
+     *
+     * ```kotlin
+     * // Calculate the length of the 'myString' field in bytes.
+     * byteLength("myString")
+     * ```
      *
      * @param fieldName The name of the field containing the string.
      * @return A new [Expr] representing the length of the string in bytes.
@@ -1466,6 +2068,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
      *
+     * ```kotlin
+     * // Check if the 'title' field contains the string "guide"
+     * like(field("title"), "%guide%")
+     * ```
+     *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param pattern The pattern to search for. You can use "%" as a wildcard character.
      * @return A new [BooleanExpr] representing the like operation.
@@ -1476,6 +2083,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
+     *
+     * ```kotlin
+     * // Check if the 'title' field contains the string "guide"
+     * like(field("title"), "%guide%")
+     * ```
      *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param pattern The pattern to search for. You can use "%" as a wildcard character.
@@ -1489,6 +2101,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
      * field.
      *
+     * ```kotlin
+     * // Check if the 'title' field contains the string "guide"
+     * like("title", "%guide%")
+     * ```
+     *
      * @param fieldName The name of the field containing the string.
      * @param pattern The pattern to search for. You can use "%" as a wildcard character.
      * @return A new [BooleanExpr] representing the like comparison.
@@ -1500,6 +2117,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
      * field.
+     *
+     * ```kotlin
+     * // Check if the 'title' field contains the string "guide"
+     * like("title", "%guide%")
+     * ```
      *
      * @param fieldName The name of the field containing the string.
      * @param pattern The pattern to search for. You can use "%" as a wildcard character.
@@ -1513,6 +2135,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns a pseudo-random number of type double in the range of [0,
      * 1), inclusive of 0 and exclusive of 1.
      *
+     * ```kotlin
+     * // Get a random number.
+     * rand()
+     * ```
+     *
      * @return A new [Expr] representing the random number operation.
      */
     @JvmStatic fun rand(): Expr = FunctionExpr("rand", notImplemented)
@@ -1520,6 +2147,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression contains a specified regular
      * expression as a substring.
+     *
+     * ```kotlin
+     * // Check if the 'description' field contains "example" (case-insensitive)
+     * regexContains(field("description"), "(?i)example")
+     * ```
      *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param pattern The regular expression to use for the search.
@@ -1533,6 +2165,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if a string expression contains a specified regular
      * expression as a substring.
      *
+     * ```kotlin
+     * // Check if the 'description' field contains "example" (case-insensitive)
+     * regexContains(field("description"), "(?i)example")
+     * ```
+     *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param pattern The regular expression to use for the search.
      * @return A new [BooleanExpr] representing the contains regular expression comparison.
@@ -1544,6 +2181,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
      * as a substring.
+     *
+     * ```kotlin
+     * // Check if the 'description' field contains the regex from the 'pattern' field.
+     * regexContains("description", field("pattern"))
+     * ```
      *
      * @param fieldName The name of the field containing the string.
      * @param pattern The regular expression to use for the search.
@@ -1557,6 +2199,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if a string field contains a specified regular expression
      * as a substring.
      *
+     * ```kotlin
+     * // Check if the 'description' field contains "example" (case-insensitive)
+     * regexContains("description", "(?i)example")
+     * ```
+     *
      * @param fieldName The name of the field containing the string.
      * @param pattern The regular expression to use for the search.
      * @return A new [BooleanExpr] representing the contains regular expression comparison.
@@ -1567,6 +2214,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * ```kotlin
+     * // Check if the 'email' field matches a valid email pattern
+     * regexMatch(field("email"), "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+     * ```
      *
      * @param stringExpression The expression representing the string to match against.
      * @param pattern The regular expression to use for the match.
@@ -1579,6 +2231,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
      *
+     * ```kotlin
+     * // Check if the 'email' field matches a valid email pattern
+     * regexMatch(field("email"), "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+     * ```
+     *
      * @param stringExpression The expression representing the string to match against.
      * @param pattern The regular expression to use for the match.
      * @return A new [BooleanExpr] representing the regular expression match comparison.
@@ -1590,6 +2247,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
      *
+     * ```kotlin
+     * // Check if the 'email' field matches the regex from the 'pattern' field.
+     * regexMatch("email", field("pattern"))
+     * ```
+     *
      * @param fieldName The name of the field containing the string.
      * @param pattern The regular expression to use for the match.
      * @return A new [BooleanExpr] representing the regular expression match comparison.
@@ -1600,6 +2262,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
+     *
+     * ```kotlin
+     * // Check if the 'email' field matches a valid email pattern
+     * regexMatch("email", "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+     * ```
      *
      * @param fieldName The name of the field containing the string.
      * @param pattern The regular expression to use for the match.
@@ -1613,6 +2280,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the largest value between multiple input expressions or
      * literal values. Based on Firestore's value type ordering.
      *
+     * ```kotlin
+     * // Returns the larger value between the 'timestamp' field and the current timestamp.
+     * logicalMaximum(field("timestamp"), currentTimestamp())
+     * ```
+     *
      * @param expr The first operand expression.
      * @param others Optional additional expressions or literals.
      * @return A new [Expr] representing the logical maximum operation.
@@ -1624,6 +2296,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
      * literal values. Based on Firestore's value type ordering.
+     *
+     * ```kotlin
+     * // Returns the larger value between the 'timestamp' field and the current timestamp.
+     * logicalMaximum("timestamp", currentTimestamp())
+     * ```
      *
      * @param fieldName The first operand field name.
      * @param others Optional additional expressions or literals.
@@ -1637,6 +2314,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the smallest value between multiple input expressions or
      * literal values. Based on Firestore's value type ordering.
      *
+     * ```kotlin
+     * // Returns the smaller value between the 'timestamp' field and the current timestamp.
+     * logicalMinimum(field("timestamp"), currentTimestamp())
+     * ```
+     *
      * @param expr The first operand expression.
      * @param others Optional additional expressions or literals.
      * @return A new [Expr] representing the logical minimum operation.
@@ -1649,6 +2331,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the smallest value between multiple input expressions or
      * literal values. Based on Firestore's value type ordering.
      *
+     * ```kotlin
+     * // Returns the smaller value between the 'timestamp' field and the current timestamp.
+     * logicalMinimum("timestamp", currentTimestamp())
+     * ```
+     *
      * @param fieldName The first operand field name.
      * @param others Optional additional expressions or literals.
      * @return A new [Expr] representing the logical minimum operation.
@@ -1660,6 +2347,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that reverses a string.
      *
+     * ```kotlin
+     * // Reverse the value of the 'myString' field.
+     * reverse(field("myString"))
+     * ```
+     *
      * @param stringExpression An expression evaluating to a string value, which will be reversed.
      * @return A new [Expr] representing the reversed string.
      */
@@ -1670,6 +2362,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that reverses a string value from the specified field.
      *
+     * ```kotlin
+     * // Reverse the value of the 'myString' field.
+     * reverse("myString")
+     * ```
+     *
      * @param fieldName The name of the field that contains the string to reverse.
      * @return A new [Expr] representing the reversed string.
      */
@@ -1678,6 +2375,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that reverses a string.
+     *
+     * ```kotlin
+     * // Reverse the value of the 'myString' field.
+     * strReverse(field("myString"))
+     * ```
      *
      * @param stringExpression An expression evaluating to a string value, which will be reversed.
      * @return A new [Expr] representing the reversed string.
@@ -1689,6 +2391,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that reverses a string value from the specified field.
      *
+     * ```kotlin
+     * // Reverse the value of the 'myString' field.
+     * strReverse("myString")
+     * ```
+     *
      * @param fieldName The name of the field that contains the string to reverse.
      * @return A new [Expr] representing the reversed string.
      */
@@ -1698,6 +2405,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
+     *
+     * ```kotlin
+     * // Check if the 'description' field contains the value of the 'keyword' field.
+     * strContains(field("description"), field("keyword"))
+     * ```
      *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param substring The expression representing the substring to search for.
@@ -1710,6 +2422,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
      *
+     * ```kotlin
+     * // Check if the 'description' field contains "example".
+     * strContains(field("description"), "example")
+     * ```
+     *
      * @param stringExpression The expression representing the string to perform the comparison on.
      * @param substring The substring to search for.
      * @return A new [BooleanExpr] representing the contains comparison.
@@ -1720,6 +2437,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
+     *
+     * ```kotlin
+     * // Check if the 'description' field contains the value of the 'keyword' field.
+     * strContains("description", field("keyword"))
+     * ```
      *
      * @param fieldName The name of the field to perform the comparison on.
      * @param substring The expression representing the substring to search for.
@@ -1732,6 +2454,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string field contains a specified substring.
      *
+     * ```kotlin
+     * // Check if the 'description' field contains "example".
+     * strContains("description", "example")
+     * ```
+     *
      * @param fieldName The name of the field to perform the comparison on.
      * @param substring The substring to search for.
      * @return A new [BooleanExpr] representing the contains comparison.
@@ -1741,7 +2468,10 @@ abstract class Expr internal constructor() : Canonicalizable {
       BooleanExpr("str_contains", evaluateStrContains, fieldName, substring)
 
     /**
-     * Creates an expression that checks if a string expression starts with a given [prefix].
+     * ```kotlin
+     * // Check if the 'fullName' field starts with the value of the 'firstName' field
+     * startsWith(field("fullName"), field("firstName"))
+     * ```
      *
      * @param stringExpr The expression to check.
      * @param prefix The prefix string expression to check for.
@@ -1754,6 +2484,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
      *
+     * ```kotlin
+     * // Check if the 'name' field starts with "Mr."
+     * startsWith(field("name"), "Mr.")
+     * ```
+     *
      * @param stringExpr The expression to check.
      * @param prefix The prefix string to check for.
      * @return A new [BooleanExpr] representing the 'starts with' comparison.
@@ -1764,6 +2499,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
+     *
+     * ```kotlin
+     * // Check if the 'fullName' field starts with the value of the 'firstName' field
+     * startsWith("fullName", field("firstName"))
+     * ```
      *
      * @param fieldName The name of field that contains a string to check.
      * @param prefix The prefix string expression to check for.
@@ -1776,6 +2516,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
      *
+     * ```kotlin
+     * // Check if the 'name' field starts with "Mr."
+     * startsWith("name", "Mr.")
+     * ```
+     *
      * @param fieldName The name of field that contains a string to check.
      * @param prefix The prefix string to check for.
      * @return A new [BooleanExpr] representing the 'starts with' comparison.
@@ -1786,6 +2531,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * ```kotlin
+     * // Check if the 'url' field ends with the value of the 'extension' field
+     * endsWith(field("url"), field("extension"))
+     * ```
      *
      * @param stringExpr The expression to check.
      * @param suffix The suffix string expression to check for.
@@ -1798,6 +2548,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
      *
+     * ```kotlin
+     * // Check if the 'filename' field ends with ".txt"
+     * endsWith(field("filename"), ".txt")
+     * ```
+     *
      * @param stringExpr The expression to check.
      * @param suffix The suffix string to check for.
      * @return A new [BooleanExpr] representing the 'ends with' comparison.
@@ -1808,6 +2563,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
+     *
+     * ```kotlin
+     * // Check if the 'url' field ends with the value of the 'extension' field
+     * endsWith("url", field("extension"))
+     * ```
      *
      * @param fieldName The name of field that contains a string to check.
      * @param suffix The suffix string expression to check for.
@@ -1820,6 +2580,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
      *
+     * ```kotlin
+     * // Check if the 'filename' field ends with ".txt"
+     * endsWith("filename", ".txt")
+     * ```
+     *
      * @param fieldName The name of field that contains a string to check.
      * @param suffix The suffix string to check for.
      * @return A new [BooleanExpr] representing the 'ends with' comparison.
@@ -1830,6 +2595,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns a substring of the given string.
+     *
+     * ```kotlin
+     * // Get a substring of the 'message' field starting at index 5 with length 10.
+     * substr(field("message"), constant(5), constant(10))
+     * ```
      *
      * @param stringExpression The expression representing the string to get a substring from.
      * @param index The starting index of the substring.
@@ -1843,6 +2613,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns a substring of the given string.
      *
+     * ```kotlin
+     * // Get a substring of the 'message' field starting at index 5 with length 10.
+     * substr("message", 5, 10)
+     * ```
+     *
      * @param fieldName The name of the field containing the string to get a substring from.
      * @param index The starting index of the substring.
      * @param length The length of the substring.
@@ -1855,6 +2630,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that converts a string expression to lowercase.
      *
+     * ```kotlin
+     * // Convert the 'name' field to lowercase
+     * toLower(field("name"))
+     * ```
+     *
      * @param stringExpression The expression representing the string to convert to lowercase.
      * @return A new [Expr] representing the lowercase string.
      */
@@ -1865,6 +2645,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that converts a string field to lowercase.
      *
+     * ```kotlin
+     * // Convert the 'name' field to lowercase
+     * toLower("name")
+     * ```
+     *
      * @param fieldName The name of the field containing the string to convert to lowercase.
      * @return A new [Expr] representing the lowercase string.
      */
@@ -1873,6 +2658,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that converts a string expression to uppercase.
+     *
+     * ```kotlin
+     * // Convert the 'title' field to uppercase
+     * toUpper(field("title"))
+     * ```
      *
      * @param stringExpression The expression representing the string to convert to uppercase.
      * @return A new [Expr] representing the uppercase string.
@@ -1884,6 +2674,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that converts a string field to uppercase.
      *
+     * ```kotlin
+     * // Convert the 'title' field to uppercase
+     * toUpper("title")
+     * ```
+     *
      * @param fieldName The name of the field containing the string to convert to uppercase.
      * @return A new [Expr] representing the uppercase string.
      */
@@ -1892,6 +2687,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that removes leading and trailing whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim whitespace from the 'userInput' field
+     * trim(field("userInput"))
+     * ```
      *
      * @param stringExpression The expression representing the string to trim.
      * @return A new [Expr] representing the trimmed string.
@@ -1902,6 +2702,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that removes leading and trailing whitespace from a string field.
      *
+     * ```kotlin
+     * // Trim whitespace from the 'userInput' field
+     * trim("userInput")
+     * ```
+     *
      * @param fieldName The name of the field containing the string to trim.
      * @return A new [Expr] representing the trimmed string.
      */
@@ -1909,6 +2714,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that concatenates string expressions together.
+     *
+     * ```kotlin
+     * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+     * strConcat(field("firstName"), constant(" "), field("lastName"))
+     * ```
      *
      * @param firstString The expression representing the initial string value.
      * @param otherStrings Optional additional string expressions to concatenate.
@@ -1920,6 +2730,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that concatenates string expressions together.
+     *
+     * ```kotlin
+     * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+     * strConcat(field("firstName"), " ", field("lastName"))
+     * ```
      *
      * @param firstString The expression representing the initial string value.
      * @param otherStrings Optional additional string expressions or string constants to
@@ -1933,6 +2748,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that concatenates string expressions together.
      *
+     * ```kotlin
+     * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+     * strConcat("firstName", constant(" "), field("lastName"))
+     * ```
+     *
      * @param fieldName The field name containing the initial string value.
      * @param otherStrings Optional additional string expressions to concatenate.
      * @return A new [Expr] representing the concatenated string.
@@ -1943,6 +2763,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that concatenates string expressions together.
+     *
+     * ```kotlin
+     * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+     * strConcat("firstName", " ", "lastName")
+     * ```
      *
      * @param fieldName The field name containing the initial string value.
      * @param otherStrings Optional additional string expressions or string constants to
@@ -1958,6 +2783,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that creates a Firestore map value from an input object.
      *
+     * ```kotlin
+     * // Create a map with a constant key and a field value
+     * map(mapOf("name" to field("productName"), "quantity" to 1))
+     * ```
+     *
      * @param elements The input map to evaluate in the expression.
      * @return A new [Expr] representing the map function.
      */
@@ -1967,6 +2797,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
+     *
+     * ```kotlin
+     * // Get the 'city' value from the 'address' map field
+     * mapGet(field("address"), "city")
+     * ```
      *
      * @param mapExpression The expression representing the map.
      * @param key The key to access in the map.
@@ -1979,6 +2814,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Accesses a value from a map (object) field using the provided [key].
      *
+     * ```kotlin
+     * // Get the 'city' value from the 'address' map field
+     * mapGet("address", "city")
+     * ```
+     *
      * @param fieldName The field name of the map field.
      * @param key The key to access in the map.
      * @return A new [Expr] representing the value associated with the given key in the map.
@@ -1989,6 +2829,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Accesses a value from a map (object) field using the provided [keyExpression].
+     *
+     * ```kotlin
+     * // Get the value from the 'address' map field, using the key from the 'keyField' field
+     * mapGet(field("address"), field("keyField"))
+     * ```
      *
      * @param mapExpression The expression representing the map.
      * @param keyExpression The key to access in the map.
@@ -2001,6 +2846,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Accesses a value from a map (object) field using the provided [keyExpression].
      *
+     * ```kotlin
+     * // Get the value from the 'address' map field, using the key from the 'keyField' field
+     * mapGet("address", field("keyField"))
+     * ```
+     *
      * @param fieldName The field name of the map field.
      * @param keyExpression The key to access in the map.
      * @return A new [Expr] representing the value associated with the given key in the map.
@@ -2012,6 +2862,20 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
      * same key, the later value is used.
+     *
+     * ```kotlin
+     * // Merges the map in the settings field with, a map literal, and a map in
+     * // that is conditionally returned by another expression
+     * mapMerge(
+     *   field("settings"),
+     *   map(mapOf("enabled" to true)),
+     *   cond(
+     *     field("isAdmin").eq(true),
+     *     map(mapOf("admin" to true)),
+     *     map(emptyMap<String, Any>())
+     *   )
+     * )
+     * ```
      *
      * @param firstMap First map expression that will be merged.
      * @param secondMap Second map expression that will be merged.
@@ -2026,6 +2890,20 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that merges multiple maps into a single map. If multiple maps have the
      * same key, the later value is used.
      *
+     * ```kotlin
+     * // Merges the map in the settings field with, a map literal, and a map in
+     * // that is conditionally returned by another expression
+     * mapMerge(
+     *   "settings",
+     *   map(mapOf("enabled" to true)),
+     *   cond(
+     *     field("isAdmin").eq(true),
+     *     map(mapOf("admin" to true)),
+     *     map(emptyMap<String, Any>())
+     *   )
+     * )
+     * ```
+     *
      * @param firstMapFieldName First map field name that will be merged.
      * @param secondMap Second map expression that will be merged.
      * @param otherMaps Additional maps to merge.
@@ -2038,6 +2916,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
      *
+     * ```kotlin
+     * // Removes the key 'baz' from the input map.
+     * mapRemove(map(mapOf("foo" to "bar", "baz" to true)), constant("baz"))
+     * ```
+     *
      * @param mapExpr An expression that evaluates to a map.
      * @param key The name of the key to remove from the input map.
      * @return A new [Expr] that evaluates to a modified map.
@@ -2048,6 +2931,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * ```kotlin
+     * // Removes the key 'city' field from the map in the address field of the input document.
+     * mapRemove("address", constant("city"))
+     * ```
      *
      * @param mapField The name of a field containing a map value.
      * @param key The name of the key to remove from the input map.
@@ -2060,6 +2948,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
      *
+     * ```kotlin
+     * // Removes the key 'baz' from the input map.
+     * mapRemove(map(mapOf("foo" to "bar", "baz" to true)), "baz")
+     * ```
+     *
      * @param mapExpr An expression that evaluates to a map.
      * @param key The name of the key to remove from the input map.
      * @return A new [Expr] that evaluates to a modified map.
@@ -2070,6 +2963,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that removes a key from the map produced by evaluating an expression.
+     *
+     * ```kotlin
+     * // Removes the key 'city' field from the map in the address field of the input document.
+     * mapRemove("address", "city")
+     * ```
      *
      * @param mapField The name of a field containing a map value.
      * @param key The name of the key to remove from the input map.
@@ -2082,6 +2980,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Cosine distance between two vector expressions.
      *
+     * ```kotlin
+     * // Calculate the cosine distance between the 'userVector' field and the 'itemVector' field
+     * cosineDistance(field("userVector"), field("itemVector"))
+     * ```
+     *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (represented as an Expr) to compare against.
      * @return A new [Expr] representing the cosine distance between the two vectors.
@@ -2092,6 +2995,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the Cosine distance between the 'location' field and a target location
+     * cosineDistance(field("location"), doubleArrayOf(37.7749, -122.4194))
+     * ```
      *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (as an array of doubles) to compare against.
@@ -2104,6 +3012,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the Cosine distance between the 'location' field and a target location
+     * cosineDistance(field("location"), VectorValue.from(listOf(37.7749, -122.4194)))
+     * ```
+     *
      * @param vector1 The first vector (represented as an [Expr]) to compare against.
      * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
      * @return A new [Expr] representing the cosine distance between the two vectors.
@@ -2114,6 +3027,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Cosine distance between a vector field and a vector expression.
+     *
+     * ```kotlin
+     * // Calculate the cosine distance between the 'userVector' field and the 'itemVector' field
+     * cosineDistance("userVector", field("itemVector"))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an Expr) to compare against.
@@ -2126,6 +3044,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the Cosine distance between the 'location' field and a target location
+     * cosineDistance("location", doubleArrayOf(37.7749, -122.4194))
+     * ```
+     *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (as an array of doubles) to compare against.
      * @return A new [Expr] representing the cosine distance between the two vectors.
@@ -2136,6 +3059,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the Cosine distance between the 'location' field and a target location
+     * cosineDistance("location", VectorValue.from(listOf(37.7749, -122.4194)))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an [VectorValue]) to compare against.
@@ -2148,6 +3076,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the dot product distance between two vector expressions.
      *
+     * ```kotlin
+     * // Calculate the dot product between the 'userVector' field and the 'itemVector' field
+     * dotProduct(field("userVector"), field("itemVector"))
+     * ```
+     *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (represented as an Expr) to compare against.
      * @return A new [Expr] representing the dot product distance between the two vectors.
@@ -2158,6 +3091,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the dot product between the 'vector' field and a constant vector
+     * dotProduct(field("vector"), doubleArrayOf(1.0, 2.0, 3.0))
+     * ```
      *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (as an array of doubles) to compare against.
@@ -2170,6 +3108,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the dot product between the 'vector' field and a constant vector
+     * dotProduct(field("vector"), VectorValue.from(listOf(1.0, 2.0, 3.0)))
+     * ```
+     *
      * @param vector1 The first vector (represented as an [Expr]) to compare against.
      * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
      * @return A new [Expr] representing the dot product distance between the two vectors.
@@ -2180,6 +3123,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the dot product distance between a vector field and a vector expression.
+     *
+     * ```kotlin
+     * // Calculate the dot product between the 'userVector' field and the 'itemVector' field
+     * dotProduct("userVector", field("itemVector"))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an Expr) to compare against.
@@ -2192,6 +3140,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the dot product distance between vector field and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the dot product between the 'vector' field and a constant vector
+     * dotProduct("vector", doubleArrayOf(1.0, 2.0, 3.0))
+     * ```
+     *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (as an array of doubles) to compare against.
      * @return A new [Expr] representing the dot product distance between the two vectors.
@@ -2202,6 +3155,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the dot product distance between a vector field and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the dot product between the 'vector' field and a constant vector
+     * dotProduct("vector", VectorValue.from(listOf(1.0, 2.0, 3.0)))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an [VectorValue]) to compare against.
@@ -2214,6 +3172,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Euclidean distance between two vector expressions.
      *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'userVector' field and the 'itemVector' field
+     * euclideanDistance(field("userVector"), field("itemVector"))
+     * ```
+     *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (represented as an Expr) to compare against.
      * @return A new [Expr] representing the Euclidean distance between the two vectors.
@@ -2224,6 +3187,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+     * euclideanDistance(field("vector"), doubleArrayOf(1.0, 2.0, 3.0))
+     * ```
      *
      * @param vector1 The first vector (represented as an Expr) to compare against.
      * @param vector2 The other vector (as an array of doubles) to compare against.
@@ -2236,6 +3204,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+     * euclideanDistance(field("vector"), VectorValue.from(listOf(1.0, 2.0, 3.0)))
+     * ```
+     *
      * @param vector1 The first vector (represented as an [Expr]) to compare against.
      * @param vector2 The other vector (represented as an [VectorValue]) to compare against.
      * @return A new [Expr] representing the Euclidean distance between the two vectors.
@@ -2246,6 +3219,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector expression.
+     *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'userVector' field and the 'itemVector' field
+     * euclideanDistance("userVector", field("itemVector"))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an Expr) to compare against.
@@ -2258,6 +3236,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
      *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+     * euclideanDistance("vector", doubleArrayOf(1.0, 2.0, 3.0))
+     * ```
+     *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (as an array of doubles) to compare against.
      * @return A new [Expr] representing the Euclidean distance between the two vectors.
@@ -2268,6 +3251,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
+     *
+     * ```kotlin
+     * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+     * euclideanDistance("vector", VectorValue.from(listOf(1.0, 2.0, 3.0)))
+     * ```
      *
      * @param vectorFieldName The name of the field containing the first vector.
      * @param vector The other vector (represented as an [VectorValue]) to compare against.
@@ -2280,6 +3268,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
      *
+     * ```kotlin
+     * // Get the vector length (dimension) of the field 'embedding'.
+     * vectorLength(field("embedding"))
+     * ```
+     *
      * @param vectorExpression The expression representing the Firestore Vector.
      * @return A new [Expr] representing the length (dimension) of the vector.
      */
@@ -2289,6 +3282,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
+     *
+     * ```kotlin
+     * // Get the vector length (dimension) of the field 'embedding'.
+     * vectorLength("embedding")
+     * ```
      *
      * @param fieldName The name of the field containing the Firestore Vector.
      * @return A new [Expr] representing the length (dimension) of the vector.
@@ -2301,6 +3299,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that interprets an expression as the number of microseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
      *
+     * ```kotlin
+     * // Interpret the 'microseconds' field as microseconds since epoch.
+     * unixMicrosToTimestamp(field("microseconds"))
+     * ```
+     *
      * @param expr The expression representing the number of microseconds since epoch.
      * @return A new [Expr] representing the timestamp.
      */
@@ -2311,6 +3314,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that interprets a field's value as the number of microseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * ```kotlin
+     * // Interpret the 'microseconds' field as microseconds since epoch.
+     * unixMicrosToTimestamp("microseconds")
+     * ```
      *
      * @param fieldName The name of the field containing the number of microseconds since epoch.
      * @return A new [Expr] representing the timestamp.
@@ -2323,6 +3331,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a timestamp expression to the number of microseconds
      * since the Unix epoch (1970-01-01 00:00:00 UTC).
      *
+     * ```kotlin
+     * // Convert the 'timestamp' field to microseconds since epoch.
+     * timestampToUnixMicros(field("timestamp"))
+     * ```
+     *
      * @param expr The expression representing the timestamp.
      * @return A new [Expr] representing the number of microseconds since epoch.
      */
@@ -2333,6 +3346,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that converts a timestamp field to the number of microseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * ```kotlin
+     * // Convert the 'timestamp' field to microseconds since epoch.
+     * timestampToUnixMicros("timestamp")
+     * ```
      *
      * @param fieldName The name of the field that contains the timestamp.
      * @return A new [Expr] representing the number of microseconds since epoch.
@@ -2345,6 +3363,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that interprets an expression as the number of milliseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
      *
+     * ```kotlin
+     * // Interpret the 'milliseconds' field as milliseconds since epoch.
+     * unixMillisToTimestamp(field("milliseconds"))
+     * ```
+     *
      * @param expr The expression representing the number of milliseconds since epoch.
      * @return A new [Expr] representing the timestamp.
      */
@@ -2355,6 +3378,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that interprets a field's value as the number of milliseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * ```kotlin
+     * // Interpret the 'milliseconds' field as milliseconds since epoch.
+     * unixMillisToTimestamp("milliseconds")
+     * ```
      *
      * @param fieldName The name of the field containing the number of milliseconds since epoch.
      * @return A new [Expr] representing the timestamp.
@@ -2367,6 +3395,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a timestamp expression to the number of milliseconds
      * since the Unix epoch (1970-01-01 00:00:00 UTC).
      *
+     * ```kotlin
+     * // Convert the 'timestamp' field to milliseconds since epoch.
+     * timestampToUnixMillis(field("timestamp"))
+     * ```
+     *
      * @param expr The expression representing the timestamp.
      * @return A new [Expr] representing the number of milliseconds since epoch.
      */
@@ -2377,6 +3410,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that converts a timestamp field to the number of milliseconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC).
+     *
+     * ```kotlin
+     * // Convert the 'timestamp' field to milliseconds since epoch.
+     * timestampToUnixMillis("timestamp")
+     * ```
      *
      * @param fieldName The name of the field that contains the timestamp.
      * @return A new [Expr] representing the number of milliseconds since epoch.
@@ -2389,6 +3427,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that interprets an expression as the number of seconds since the Unix
      * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
      *
+     * ```kotlin
+     * // Interpret the 'seconds' field as seconds since epoch.
+     * unixSecondsToTimestamp(field("seconds"))
+     * ```
+     *
      * @param expr The expression representing the number of seconds since epoch.
      * @return A new [Expr] representing the timestamp.
      */
@@ -2399,6 +3442,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that interprets a field's value as the number of seconds since the Unix
      * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
+     *
+     * ```kotlin
+     * // Interpret the 'seconds' field as seconds since epoch.
+     * unixSecondsToTimestamp("seconds")
+     * ```
      *
      * @param fieldName The name of the field containing the number of seconds since epoch.
      * @return A new [Expr] representing the timestamp.
@@ -2411,6 +3459,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a timestamp expression to the number of seconds since the
      * Unix epoch (1970-01-01 00:00:00 UTC).
      *
+     * ```kotlin
+     * // Convert the 'timestamp' field to seconds since epoch.
+     * timestampToUnixSeconds(field("timestamp"))
+     * ```
+     *
      * @param expr The expression representing the timestamp.
      * @return A new [Expr] representing the number of seconds since epoch.
      */
@@ -2422,6 +3475,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a timestamp field to the number of seconds since the Unix
      * epoch (1970-01-01 00:00:00 UTC).
      *
+     * ```kotlin
+     * // Convert the 'timestamp' field to seconds since epoch.
+     * timestampToUnixSeconds("timestamp")
+     * ```
+     *
      * @param fieldName The name of the field that contains the timestamp.
      * @return A new [Expr] representing the number of seconds since epoch.
      */
@@ -2431,6 +3489,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * ```kotlin
+     * // Add some duration determined by field 'unit' and 'amount' to the 'timestamp' field.
+     * timestampAdd(field("timestamp"), field("unit"), field("amount"))
+     * ```
      *
      * @param timestamp The expression representing the timestamp.
      * @param unit The expression representing the unit of time to add. Valid units include
@@ -2445,6 +3508,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
      *
+     * ```kotlin
+     * // Add 1 day to the 'timestamp' field.
+     * timestampAdd(field("timestamp"), "day", 1)
+     * ```
+     *
      * @param timestamp The expression representing the timestamp.
      * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
      * "second", "minute", "hour" and "day".
@@ -2457,6 +3525,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
+     *
+     * ```kotlin
+     * // Add some duration determined by field 'unit' and 'amount' to the 'timestamp' field.
+     * timestampAdd("timestamp", field("unit"), field("amount"))
+     * ```
      *
      * @param fieldName The name of the field that contains the timestamp.
      * @param unit The expression representing the unit of time to add. Valid units include
@@ -2471,6 +3544,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that adds a specified amount of time to a timestamp.
      *
+     * ```kotlin
+     * // Add 1 day to the 'timestamp' field.
+     * timestampAdd("timestamp", "day", 1)
+     * ```
+     *
      * @param fieldName The name of the field that contains the timestamp.
      * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
      * "second", "minute", "hour" and "day".
@@ -2483,6 +3561,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * ```kotlin
+     * // Subtract some duration determined by field 'unit' and 'amount' from the 'timestamp' field.
+     * timestampSub(field("timestamp"), field("unit"), field("amount"))
+     * ```
      *
      * @param timestamp The expression representing the timestamp.
      * @param unit The expression representing the unit of time to subtract. Valid units include
@@ -2497,6 +3580,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
      *
+     * ```kotlin
+     * // Subtract 1 day from the 'timestamp' field.
+     * timestampSub(field("timestamp"), "day", 1)
+     * ```
+     *
      * @param timestamp The expression representing the timestamp.
      * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
      * "second", "minute", "hour" and "day".
@@ -2509,6 +3597,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
+     *
+     * ```kotlin
+     * // Subtract some duration determined by field 'unit' and 'amount' from the 'timestamp' field.
+     * timestampSub("timestamp", field("unit"), field("amount"))
+     * ```
      *
      * @param fieldName The name of the field that contains the timestamp.
      * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
@@ -2523,6 +3616,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that subtracts a specified amount of time to a timestamp.
      *
+     * ```kotlin
+     * // Subtract 1 day from the 'timestamp' field.
+     * timestampSub("timestamp", "day", 1)
+     * ```
+     *
      * @param fieldName The name of the field that contains the timestamp.
      * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
      * "second", "minute", "hour" and "day".
@@ -2536,6 +3634,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if two expressions are equal.
      *
+     * ```kotlin
+     * // Check if the 'age' field is equal to an expression
+     * eq(field("age"), field("minAge").add(10))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the equality comparison.
@@ -2546,6 +3649,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if an expression is equal to a value.
      *
+     * ```kotlin
+     * // Check if the 'age' field is equal to 21
+     * eq(field("age"), 21)
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the equality comparison.
@@ -2555,6 +3663,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a field's value is equal to an expression.
+     *
+     * ```kotlin
+     * // Check if the 'age' field is equal to the 'limit' field
+     * eq("age", field("limit"))
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
@@ -2567,6 +3680,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is equal to another value.
      *
+     * ```kotlin
+     * // Check if the 'city' field is equal to string constant "London"
+     * eq("city", "London")
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
      * @return A new [BooleanExpr] representing the equality comparison.
@@ -2578,6 +3696,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if two expressions are not equal.
      *
+     * ```kotlin
+     * // Check if the 'status' field is not equal to the value of the 'otherStatus' field
+     * neq(field("status"), field("otherStatus"))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the inequality comparison.
@@ -2587,6 +3710,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if an expression is not equal to a value.
+     *
+     * ```kotlin
+     * // Check if the 'status' field is not equal to "completed"
+     * neq(field("status"), "completed")
+     * ```
      *
      * @param left The first expression to compare.
      * @param right The value to compare to.
@@ -2598,6 +3726,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is not equal to an expression.
      *
+     * ```kotlin
+     * // Check if the 'status' field is not equal to the value of the 'otherStatus' field
+     * neq("status", field("otherStatus"))
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
      * @return A new [BooleanExpr] representing the inequality comparison.
@@ -2608,6 +3741,14 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a field's value is not equal to another value.
+     *
+     * ```kotlin
+     * // Check if the 'status' field is not equal to "completed"
+     * neq("status", "completed")
+     *
+     * // Check if the 'country' field is not equal to "USA"
+     * neq("country", "USA")
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
@@ -2621,6 +3762,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if the first expression is greater than the second
      * expression.
      *
+     * ```kotlin
+     * // Check if the 'age' field is greater than the 'limit' field
+     * gt(field("age"), field("limit"))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the greater than comparison.
@@ -2630,6 +3776,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if an expression is greater than a value.
+     *
+     * ```kotlin
+     * // Check if the 'price' field is greater than 100
+     * gt(field("price"), 100)
+     * ```
      *
      * @param left The first expression to compare.
      * @param right The value to compare to.
@@ -2641,6 +3792,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is greater than an expression.
      *
+     * ```kotlin
+     * // Check if the 'age' field is greater than the 'limit' field
+     * gt("age", field("limit"))
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
      * @return A new [BooleanExpr] representing the greater than comparison.
@@ -2651,6 +3807,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a field's value is greater than another value.
+     *
+     * ```kotlin
+     * // Check if the 'price' field is greater than 100
+     * gt("price", 100)
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
@@ -2664,6 +3825,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if the first expression is greater than or equal to the
      * second expression.
      *
+     * ```kotlin
+     * // Check if the 'quantity' field is greater than or equal to field 'requirement' plus 1
+     * gte(field("quantity"), field("requirement").add(1))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the greater than or equal to comparison.
@@ -2673,6 +3839,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if an expression is greater than or equal to a value.
+     *
+     * ```kotlin
+     * // Check if the 'score' field is greater than or equal to 80
+     * gte(field("score"), 80)
+     * ```
      *
      * @param left The first expression to compare.
      * @param right The value to compare to.
@@ -2684,6 +3855,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is greater than or equal to an
      * expression.
+     *
+     * ```kotlin
+     * // Check if the 'quantity' field is greater than or equal to field 'requirement' plus 1
+     * gte("quantity", field("requirement").add(1))
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
@@ -2697,6 +3873,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if a field's value is greater than or equal to another
      * value.
      *
+     * ```kotlin
+     * // Check if the 'score' field is greater than or equal to 80
+     * gte("score", 80)
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
      * @return A new [BooleanExpr] representing the greater than or equal to comparison.
@@ -2708,6 +3889,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the first expression is less than the second expression.
      *
+     * ```kotlin
+     * // Check if the 'age' field is less than 'limit'
+     * lt(field("age"), field("limit"))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the less than comparison.
@@ -2717,6 +3903,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if an expression is less than a value.
+     *
+     * ```kotlin
+     * // Check if the 'price' field is less than 50
+     * lt(field("price"), 50)
+     * ```
      *
      * @param left The first expression to compare.
      * @param right The value to compare to.
@@ -2728,6 +3919,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is less than an expression.
      *
+     * ```kotlin
+     * // Check if the 'age' field is less than 'limit'
+     * lt("age", field("limit"))
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
      * @return A new [BooleanExpr] representing the less than comparison.
@@ -2738,6 +3934,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a field's value is less than another value.
+     *
+     * ```kotlin
+     * // Check if the 'price' field is less than 50
+     * lt("price", 50)
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
@@ -2751,6 +3952,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that checks if the first expression is less than or equal to the second
      * expression.
      *
+     * ```kotlin
+     * // Check if the 'quantity' field is less than or equal to 20
+     * lte(field("quantity"), constant(20))
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The second expression to compare to.
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
@@ -2761,6 +3967,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if an expression is less than or equal to a value.
      *
+     * ```kotlin
+     * // Check if the 'score' field is less than or equal to 70
+     * lte(field("score"), 70)
+     * ```
+     *
      * @param left The first expression to compare.
      * @param right The value to compare to.
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
@@ -2770,6 +3981,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if a field's value is less than or equal to an expression.
+     *
+     * ```kotlin
+     * // Check if the 'quantity' field is less than or equal to 20
+     * lte("quantity", constant(20))
+     * ```
      *
      * @param fieldName The field name to compare.
      * @param expression The expression to compare to.
@@ -2782,6 +3998,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a field's value is less than or equal to another value.
      *
+     * ```kotlin
+     * // Check if the 'score' field is less than or equal to 70
+     * lte("score", 70)
+     * ```
+     *
      * @param fieldName The field name to compare.
      * @param value The value to compare to.
      * @return A new [BooleanExpr] representing the less than or equal to comparison.
@@ -2792,6 +4013,14 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
+     *
+     * ```kotlin
+     * // Create an array of numbers
+     * array(1, 2, 3)
+     *
+     * // Create an array containing a field value and a constant
+     * array(field("quantity"), 10)
+     * ```
      *
      * @param elements The input array to evaluate in the expression.
      * @return A new [Expr] representing the array function.
@@ -2813,6 +4042,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that concatenates an array with other arrays.
      *
+     * ```kotlin
+     * // Combine the 'items' array with another array field.
+     * arrayConcat(field("items"), field("otherItems"))
+     * ```
+     *
      * @param firstArray The first array expression to concatenate to.
      * @param secondArray An expression that evaluates to array to concatenate.
      * @param otherArrays Optional additional array expressions or array literals to concatenate.
@@ -2824,6 +4058,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that concatenates an array with other arrays.
+     *
+     * ```kotlin
+     * // Combine the 'items' array with another array field.
+     * arrayConcat(field("items"), field("otherItems"))
+     * ```
      *
      * @param firstArray The first array expression to concatenate to.
      * @param secondArray An array expression or array literal to concatenate.
@@ -2837,6 +4076,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
      *
+     * ```kotlin
+     * // Combine the 'items' array with another array field.
+     * arrayConcat("items", field("otherItems"))
+     * ```
+     *
      * @param firstArrayField The name of field that contains first array to concatenate to.
      * @param secondArray An expression that evaluates to array to concatenate.
      * @param otherArrays Optional additional array expressions or array literals to concatenate.
@@ -2848,6 +4092,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
+     *
+     * ```kotlin
+     * // Combine the 'items' array with a literal array.
+     * arrayConcat("items", listOf("a", "b"))
+     * ```
      *
      * @param firstArrayField The name of field that contains first array to concatenate to.
      * @param secondArray An array expression or array literal to concatenate.
@@ -2861,6 +4110,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Reverses the order of elements in the [array].
      *
+     * ```kotlin
+     * // Reverse the value of the 'myArray' field.
+     * arrayReverse(field("myArray"))
+     * ```
+     *
      * @param array The array expression to reverse.
      * @return A new [Expr] representing the arrayReverse operation.
      */
@@ -2869,6 +4123,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Reverses the order of elements in the array field.
+     *
+     * ```kotlin
+     * // Reverse the value of the 'myArray' field.
+     * arrayReverse("myArray")
+     * ```
      *
      * @param arrayFieldName The name of field that contains the array to reverse.
      * @return A new [Expr] representing the arrayReverse operation.
@@ -2891,6 +4150,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the array field contains a specific [element].
      *
+     * ```kotlin
+     * // Check if the 'sizes' array contains the value from the 'selectedSize' field
+     * arrayContains("sizes", field("selectedSize"))
+     * ```
+     *
      * @param arrayFieldName The name of field that contains array to check.
      * @param element The element to search for in the array.
      * @return A new [BooleanExpr] representing the arrayContains operation.
@@ -2901,6 +4165,14 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if the [array] contains a specific [element].
+     *
+     * ```kotlin
+     * // Check if the 'sizes' array contains the value from the 'selectedSize' field
+     * arrayContains(field("sizes"), field("selectedSize"))
+     *
+     * // Check if the 'colors' array contains "red"
+     * arrayContains(field("colors"), "red")
+     * ```
      *
      * @param array The array expression to check.
      * @param element The element to search for in the array.
@@ -2913,6 +4185,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if the array field contains a specific [element].
      *
+     * ```kotlin
+     * // Check if the 'colors' array contains "red"
+     * arrayContains("colors", "red")
+     * ```
+     *
      * @param arrayFieldName The name of field that contains array to check.
      * @param element The element to search for in the array.
      * @return A new [BooleanExpr] representing the arrayContains operation.
@@ -2924,6 +4201,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if [array] contains all the specified [values].
      *
+     * ```kotlin
+     * // Check if the 'tags' array contains both the value in field "tag1" and the literal value "tag2"
+     * arrayContainsAll(field("tags"), listOf(field("tag1"), "tag2"))
+     * ```
+     *
      * @param array The array expression to check.
      * @param values The elements to check for in the array.
      * @return A new [BooleanExpr] representing the arrayContainsAll operation.
@@ -2933,6 +4215,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if [array] contains all elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'tags' array contains both of the values from field "tag1" and the literal value "tag2"
+     * arrayContainsAll(field("tags"), array(field("tag1"), "tag2"))
+     * ```
      *
      * @param array The array expression to check.
      * @param arrayExpression The elements to check for in the array.
@@ -2945,6 +4232,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if array field contains all the specified [values].
      *
+     * ```kotlin
+     * // Check if the 'tags' array contains both "internal" and "public"
+     * arrayContainsAll("tags", listOf("internal", "public"))
+     * ```
+     *
      * @param arrayFieldName The name of field that contains array to check.
      * @param values The elements to check for in the array.
      * @return A new [BooleanExpr] representing the arrayContainsAll operation.
@@ -2955,6 +4247,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if array field contains all elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'permissions' array contains all the required permissions
+     * arrayContainsAll("permissions", field("requiredPermissions"))
+     * ```
      *
      * @param arrayFieldName The name of field that contains array to check.
      * @param arrayExpression The elements to check for in the array.
@@ -2967,6 +4264,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if [array] contains any of the specified [values].
      *
+     * ```kotlin
+     * // Check if the 'categories' array contains either values from field "cate1" or "cate2"
+     * arrayContainsAny(field("categories"), listOf(field("cate1"), field("cate2")))
+     * ```
+     *
      * @param array The array expression to check.
      * @param values The elements to check for in the array.
      * @return A new [BooleanExpr] representing the arrayContainsAny operation.
@@ -2977,6 +4279,12 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if [array] contains any elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'groups' array contains either the value from the 'userGroup' field
+     * // or the value "guest"
+     * arrayContainsAny(field("groups"), array(field("userGroup"), "guest"))
+     * ```
      *
      * @param array The array expression to check.
      * @param arrayExpression The elements to check for in the array.
@@ -2989,6 +4297,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if array field contains any of the specified [values].
      *
+     * ```kotlin
+     * // Check if the 'roles' array contains "admin" or "editor"
+     * arrayContainsAny("roles", listOf("admin", "editor"))
+     * ```
+     *
      * @param arrayFieldName The name of field that contains array to check.
      * @param values The elements to check for in the array.
      * @return A new [BooleanExpr] representing the arrayContainsAny operation.
@@ -2999,6 +4312,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that checks if array field contains any elements of [arrayExpression].
+     *
+     * ```kotlin
+     * // Check if the 'userGroups' array contains any of the 'targetGroups'
+     * arrayContainsAny("userGroups", field("targetGroups"))
+     * ```
      *
      * @param arrayFieldName The name of field that contains array to check.
      * @param arrayExpression The elements to check for in the array.
@@ -3011,6 +4329,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that calculates the length of an [array] expression.
      *
+     * ```kotlin
+     * // Get the number of items in the 'cart' array
+     * arrayLength(field("cart"))
+     * ```
+     *
      * @param array The array expression to calculate the length of.
      * @return A new [Expr] representing the length of the array.
      */
@@ -3019,6 +4342,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that calculates the length of an array field.
+     *
+     * ```kotlin
+     * // Get the number of items in the 'cart' array
+     * arrayLength("cart")
+     * ```
      *
      * @param arrayFieldName The name of the field containing an array to calculate the length of.
      * @return A new [Expr] representing the length of the array.
@@ -3031,6 +4359,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that indexes into an array from the beginning or end and return the
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
+     *
+     * ```kotlin
+     * // Return the value in the tags field array at index specified by field 'favoriteTag'.
+     * arrayGet(field("tags"), field("favoriteTag"))
+     * ```
      *
      * @param array An [Expr] evaluating to an array.
      * @param offset An Expr evaluating to the index of the element to return.
@@ -3045,6 +4378,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
      *
+     * ```kotlin
+     * // Return the value in the 'tags' field array at index `1`.
+     * arrayGet(field("tags"), 1)
+     * ```
+     *
      * @param array An [Expr] evaluating to an array.
      * @param offset The index of the element to return.
      * @return A new [Expr] representing the arrayOffset operation.
@@ -3058,6 +4396,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
      *
+     * ```kotlin
+     * // Return the value in the tags field array at index specified by field 'favoriteTag'.
+     * arrayGet("tags", field("favoriteTag"))
+     * ```
+     *
      * @param arrayFieldName The name of an array field.
      * @param offset An Expr evaluating to the index of the element to return.
      * @return A new [Expr] representing the arrayOffset operation.
@@ -3070,6 +4413,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that indexes into an array from the beginning or end and return the
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
+     *
+     * ```kotlin
+     * // Return the value in the 'tags' field array at index `1`.
+     * arrayGet("tags", 1)
+     * ```
      *
      * @param arrayFieldName The name of an array field.
      * @param offset The index of the element to return.
@@ -3095,6 +4443,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates a conditional expression that evaluates to a [thenValue] if a condition is true or an
      * [elseValue] if the condition is false.
+     *
+     * ```kotlin
+     * // If the 'quantity' field is greater than 10, return "High", otherwise return "Low"
+     * cond(field("quantity").gt(10), "High", "Low")
+     * ```
      *
      * @param condition The condition to evaluate.
      * @param thenValue Value if the condition is true.
@@ -3126,6 +4479,12 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that returns the [catchExpr] argument if there is an error, else return
      * the result of the [tryExpr] argument evaluation.
      *
+     * ```kotlin
+     * // Returns the first item in the title field arrays, or returns
+     * // the entire title field if the array is empty or the field is another type.
+     * ifError(arrayGet(field("title"), 0), field("title"))
+     * ```
+     *
      * @param tryExpr The try expression.
      * @param catchExpr The catch expression that will be evaluated and returned if the [tryExpr]
      * produces an error.
@@ -3141,6 +4500,11 @@ abstract class Expr internal constructor() : Canonicalizable {
      *
      * This overload will return [BooleanExpr] when both parameters are also [BooleanExpr].
      *
+     * ```kotlin
+     * // Returns the result of the boolean expression, or false if it errors.
+     * ifError(field("is_premium"), false)
+     * ```
+     *
      * @param tryExpr The try boolean expression.
      * @param catchExpr The catch boolean expression that will be evaluated and returned if the
      * [tryExpr] produces an error.
@@ -3153,6 +4517,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that checks if a given expression produces an error.
      *
+     * ```kotlin
+     * // Check if the result of a calculation is an error
+     * isError(arrayContains(field("title"), 1))
+     * ```
+     *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the `isError` check.
      */
@@ -3161,6 +4530,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
      * return the result of the [tryExpr] argument evaluation.
+     *
+     * ```kotlin
+     * // Returns the first item in the title field arrays, or returns "Default Title"
+     * ifError(arrayGet(field("title"), 0), "Default Title")
+     * ```
      *
      * @param tryExpr The try expression.
      * @param catchValue The value that will be returned if the [tryExpr] produces an error.
@@ -3173,6 +4547,11 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Creates an expression that returns the document ID from a path.
      *
+     * ```kotlin
+     * // Get the document ID from the 'path' field
+     * documentId(field("path"))
+     * ```
+     *
      * @param documentPath An expression the evaluates to document path.
      * @return A new [Expr] representing the documentId operation.
      */
@@ -3182,6 +4561,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
     /**
      * Creates an expression that returns the document ID from a path.
+     *
+     * ```kotlin
+     * // Get the document ID from a path string
+     * documentId("projects/p/databases/d/documents/c/d")
+     * ```
      *
      * @param documentPath The string representation of the document path.
      * @return A new [Expr] representing the documentId operation.
@@ -3200,6 +4584,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise AND operation with other expression.
    *
+   * ```kotlin
+   * // Bitwise AND the value of the 'flags' field with the value of the 'mask' field.
+   * field("flags").bitAnd(field("mask"))
+   * ```
+   *
    * @param bitsOther An expression that returns bits when evaluated.
    * @return A new [Expr] representing the bitwise AND operation.
    */
@@ -3207,6 +4596,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that applies a bitwise AND operation with a constant.
+   *
+   * ```kotlin
+   * // Bitwise AND the value of the 'flags' field with a constant mask.
+   * field("flags").bitAnd(byteArrayOf(0b00001111))
+   * ```
    *
    * @param bitsOther A constant byte array.
    * @return A new [Expr] representing the bitwise AND operation.
@@ -3216,6 +4610,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise OR operation with other expression.
    *
+   * ```kotlin
+   * // Bitwise OR the value of the 'flags' field with the value of the 'mask' field.
+   * field("flags").bitOr(field("mask"))
+   * ```
+   *
    * @param bitsOther An expression that returns bits when evaluated.
    * @return A new [Expr] representing the bitwise OR operation.
    */
@@ -3223,6 +4622,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that applies a bitwise OR operation with a constant.
+   *
+   * ```kotlin
+   * // Bitwise OR the value of the 'flags' field with a constant mask.
+   * field("flags").bitOr(byteArrayOf(0b00001111))
+   * ```
    *
    * @param bitsOther A constant byte array.
    * @return A new [Expr] representing the bitwise OR operation.
@@ -3232,6 +4636,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise XOR operation with an expression.
    *
+   * ```kotlin
+   * // Bitwise XOR the value of the 'flags' field with the value of the 'mask' field.
+   * field("flags").bitXor(field("mask"))
+   * ```
+   *
    * @param bitsOther An expression that returns bits when evaluated.
    * @return A new [Expr] representing the bitwise XOR operation.
    */
@@ -3239,6 +4648,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that applies a bitwise XOR operation with a constant.
+   *
+   * ```kotlin
+   * // Bitwise XOR the value of the 'flags' field with a constant mask.
+   * field("flags").bitXor(byteArrayOf(0b00001111))
+   * ```
    *
    * @param bitsOther A constant byte array.
    * @return A new [Expr] representing the bitwise XOR operation.
@@ -3248,12 +4662,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise NOT operation to this expression.
    *
+   * ```kotlin
+   * // Bitwise NOT the value of the 'flags' field.
+   * field("flags").bitNot()
+   * ```
+   *
    * @return A new [Expr] representing the bitwise NOT operation.
    */
   fun bitNot(): Expr = Companion.bitNot(this)
 
   /**
    * Creates an expression that applies a bitwise left shift operation with an expression.
+   *
+   * ```kotlin
+   * // Left shift the value of the 'bits' field by the value of the 'shift' field.
+   * field("bits").bitLeftShift(field("shift"))
+   * ```
    *
    * @param numberExpr The number of bits to shift.
    * @return A new [Expr] representing the bitwise left shift operation.
@@ -3263,6 +4687,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise left shift operation with a constant.
    *
+   * ```kotlin
+   * // Left shift the value of the 'bits' field by 2.
+   * field("bits").bitLeftShift(2)
+   * ```
+   *
    * @param number The number of bits to shift.
    * @return A new [Expr] representing the bitwise left shift operation.
    */
@@ -3271,6 +4700,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that applies a bitwise right shift operation with an expression.
    *
+   * ```kotlin
+   * // Right shift the value of the 'bits' field by the value of the 'shift' field.
+   * field("bits").bitRightShift(field("shift"))
+   * ```
+   *
    * @param numberExpr The number of bits to shift.
    * @return A new [Expr] representing the bitwise right shift operation.
    */
@@ -3278,6 +4712,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that applies a bitwise right shift operation with a constant.
+   *
+   * ```kotlin
+   * // Right shift the value of the 'bits' field by 2.
+   * field("bits").bitRightShift(2)
+   * ```
    *
    * @param number The number of bits to shift.
    * @return A new [Expr] representing the bitwise right shift operation.
@@ -3299,12 +4738,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that returns the document ID from this path expression.
    *
+   * ```kotlin
+   * // Get the document ID from the 'path' field
+   * field("path").documentId()
+   * ```
+   *
    * @return A new [Expr] representing the documentId operation.
    */
   fun documentId(): Expr = Companion.documentId(this)
 
   /**
    * Creates an expression that adds this numeric expression to another numeric expression.
+   *
+   * ```kotlin
+   * // Add the value of the 'quantity' field and the 'reserve' field.
+   * field("quantity").add(field("reserve"))
+   * ```
    *
    * @param second Numeric expression to add.
    * @return A new [Expr] representing the addition operation.
@@ -3314,6 +4763,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that adds this numeric expression to a constants.
    *
+   * ```kotlin
+   * // Add 5 to the value of the 'quantity' field.
+   * field("quantity").add(5)
+   * ```
+   *
    * @param second Constant to add.
    * @return A new [Expr] representing the addition operation.
    */
@@ -3321,6 +4775,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that subtracts a constant from this numeric expression.
+   *
+   * ```kotlin
+   * // Subtract the 'discount' field from the 'price' field
+   * field("price").subtract(field("discount"))
+   * ```
    *
    * @param subtrahend Numeric expression to subtract.
    * @return A new [Expr] representing the subtract operation.
@@ -3330,6 +4789,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that subtracts a numeric expressions from this numeric expression.
    *
+   * ```kotlin
+   * // Subtract 10 from the 'price' field.
+   * field("price").subtract(10)
+   * ```
+   *
    * @param subtrahend Constant to subtract.
    * @return A new [Expr] representing the subtract operation.
    */
@@ -3337,6 +4801,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that multiplies this numeric expression with another numeric expression.
+   *
+   * ```kotlin
+   * // Multiply the 'quantity' field by the 'price' field
+   * field("quantity").multiply(field("price"))
+   * ```
    *
    * @param second Numeric expression to multiply.
    * @return A new [Expr] representing the multiplication operation.
@@ -3346,6 +4815,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that multiplies this numeric expression with a constant.
    *
+   * ```kotlin
+   * // Multiply the 'quantity' field by 1.1.
+   * field("quantity").multiply(1.1)
+   * ```
+   *
    * @param second Constant to multiply.
    * @return A new [Expr] representing the multiplication operation.
    */
@@ -3354,6 +4828,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that divides this numeric expression by another numeric expression.
    *
+   * ```kotlin
+   * // Divide the 'total' field by the 'count' field
+   * field("total").divide(field("count"))
+   * ```
+   *
    * @param divisor Numeric expression to divide this numeric expression by.
    * @return A new [Expr] representing the division operation.
    */
@@ -3361,6 +4840,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that divides this numeric expression by a constant.
+   *
+   * ```kotlin
+   * // Divide the 'value' field by 10
+   * field("value").divide(10)
+   * ```
    *
    * @param divisor Constant to divide this expression by.
    * @return A new [Expr] representing the division operation.
@@ -3371,6 +4855,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that calculates the modulo (remainder) of dividing this numeric
    * expressions by another numeric expression.
    *
+   * ```kotlin
+   * // Calculate the remainder of dividing the 'value' field by the 'divisor' field
+   * field("value").mod(field("divisor"))
+   * ```
+   *
    * @param divisor The numeric expression to divide this expression by.
    * @return A new [Expr] representing the modulo operation.
    */
@@ -3380,6 +4869,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that calculates the modulo (remainder) of dividing this numeric
    * expressions by a constant.
    *
+   * ```kotlin
+   * // Calculate the remainder of dividing the 'value' field by 3.
+   * field("value").mod(3)
+   * ```
+   *
    * @param divisor The constant to divide this expression by.
    * @return A new [Expr] representing the modulo operation.
    */
@@ -3387,6 +4881,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that rounds this numeric expression to nearest integer.
+   *
+   * ```kotlin
+   * // Round the value of the 'price' field.
+   * field("price").round()
+   * ```
    *
    * Rounds away from zero in halfway cases.
    *
@@ -3399,6 +4898,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * if [decimalPlace] is positive, rounds off digits to the left of the decimal point if
    * [decimalPlace] is negative. Rounds away from zero in halfway cases.
    *
+   * ```kotlin
+   * // Round the value of the 'price' field to 2 decimal places.
+   * field("price").roundToPrecision(2)
+   * ```
+   *
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
@@ -3409,6 +4913,12 @@ abstract class Expr internal constructor() : Canonicalizable {
    * if [decimalPlace] is positive, rounds off digits to the left of the decimal point if
    * [decimalPlace] is negative. Rounds away from zero in halfway cases.
    *
+   * ```kotlin
+   * // Round the value of the 'price' field to the number of decimal places specified in the
+   * // 'precision' field.
+   * field("price").roundToPrecision(field("precision"))
+   * ```
+   *
    * @param decimalPlace The number of decimal places to round.
    * @return A new [Expr] representing the round operation.
    */
@@ -3418,6 +4928,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the smallest integer that isn't less than this numeric
    * expression.
    *
+   * ```kotlin
+   * // Compute the ceiling of the 'price' field.
+   * field("price").ceil()
+   * ```
+   *
    * @return A new [Expr] representing an integer result from the ceil operation.
    */
   fun ceil(): Expr = Companion.ceil(this)
@@ -3426,6 +4941,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the largest integer that is not greater than this numeric
    * expression.
    *
+   * ```kotlin
+   * // Compute the floor of the 'price' field.
+   * field("price").floor()
+   * ```
+   *
    * @return A new [Expr] representing an integer result from the floor operation.
    */
   fun floor(): Expr = Companion.floor(this)
@@ -3433,6 +4953,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that returns this numeric expression raised to the power of the
    * [exponent]. Returns infinity on overflow and zero on underflow.
+   *
+   * ```kotlin
+   * // Raise the value of the 'base' field to the power of 2.
+   * field("base").pow(2)
+   * ```
    *
    * @param exponent The numeric power to raise this numeric expression.
    * @return A new [Expr] representing a numeric result from raising this numeric expression to the
@@ -3444,6 +4969,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns this numeric expression raised to the power of the
    * [exponent]. Returns infinity on overflow and zero on underflow.
    *
+   * ```kotlin
+   * // Raise the value of the 'base' field to the power of the 'exponent' field.
+   * field("base").pow(field("exponent"))
+   * ```
+   *
    * @param exponent The numeric power to raise this numeric expression.
    * @return A new [Expr] representing a numeric result from raising this numeric expression to the
    * power of [exponent].
@@ -3453,6 +4983,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that returns the square root of this numeric expression.
    *
+   * ```kotlin
+   * // Compute the square root of the 'value' field.
+   * field("value").sqrt()
+   * ```
+   *
    * @return A new [Expr] representing the numeric result of the square root operation.
    */
   fun sqrt(): Expr = Companion.sqrt(this)
@@ -3460,6 +4995,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expression, when evaluated, is equal to any of the
    * provided [values].
+   *
+   * ```kotlin
+   * // Check if the 'category' field is either "Electronics" or the value of the 'primaryType' field.
+   * field("category").eqAny(listOf("Electronics", field("primaryType")))
+   * ```
    *
    * @param values The values to check against.
    * @return A new [BooleanExpr] representing the 'IN' comparison.
@@ -3469,6 +5009,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expression, when evaluated, is equal to any of the
    * elements of [arrayExpression].
+   *
+   * ```kotlin
+   * // Check if the 'category' field is in the 'availableCategories' array field.
+   * field("category").eqAny(field("availableCategories"))
+   * ```
    *
    * @param arrayExpression An expression that evaluates to an array, whose elements to check for
    * equality to the input.
@@ -3480,6 +5025,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this expression, when evaluated, is not equal to all the
    * provided [values].
    *
+   * ```kotlin
+   * // Check if the 'status' field is neither "pending" nor the value of the 'rejectedStatus' field.
+   * field("status").notEqAny(listOf("pending", field("rejectedStatus")))
+   * ```
+   *
    * @param values The values to check against.
    * @return A new [BooleanExpr] representing the 'NOT IN' comparison.
    */
@@ -3488,6 +5038,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expression, when evaluated, is not equal to all the
    * elements of [arrayExpression].
+   *
+   * ```kotlin
+   * // Check if the 'status' field is not in the 'inactiveStatuses' array field.
+   * field("status").notEqAny(field("inactiveStatuses"))
+   * ```
    *
    * @param arrayExpression An expression that evaluates to an array, whose elements to check for
    * equality to the input.
@@ -3499,12 +5054,22 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns true if the result of this expression is absent. Otherwise,
    * returns false even if the value is null.
    *
+   * ```kotlin
+   * // Check if the field `value` is absent.
+   * field("value").isAbsent()
+   * ```
+   *
    * @return A new [BooleanExpr] representing the isAbsent operation.
    */
   fun isAbsent(): BooleanExpr = Companion.isAbsent(this)
 
   /**
    * Creates an expression that checks if this expression evaluates to 'NaN' (Not a Number).
+   *
+   * ```kotlin
+   * // Check if the result of a calculation is NaN
+   * divide("value", 0).isNan()
+   * ```
    *
    * @return A new [BooleanExpr] representing the isNan operation.
    */
@@ -3514,12 +5079,22 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
    * Number).
    *
+   * ```kotlin
+   * // Check if the result of a calculation is NOT NaN
+   * divide("value", 0).isNotNan()
+   * ```
+   *
    * @return A new [BooleanExpr] representing the isNotNan operation.
    */
   fun isNotNan(): BooleanExpr = Companion.isNotNan(this)
 
   /**
    * Creates an expression that checks if the result of this expression is null.
+   *
+   * ```kotlin
+   * // Check if the value of the 'name' field is null
+   * field("name").isNull()
+   * ```
    *
    * @return A new [BooleanExpr] representing the isNull operation.
    */
@@ -3528,6 +5103,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if the result of this expression is not null.
    *
+   * ```kotlin
+   * // Check if the value of the 'name' field is not null
+   * field("name").isNotNull()
+   * ```
+   *
    * @return A new [BooleanExpr] representing the isNotNull operation.
    */
   fun isNotNull(): BooleanExpr = Companion.isNotNull(this)
@@ -3535,6 +5115,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that replaces the first occurrence of a substring within this string
    * expression.
+   *
+   * ```kotlin
+   * // In the 'message' field, replace the first occurrence of the value in 'old' with the value in 'new'.
+   * field("message").replaceFirst(field("old"), field("new"))
+   * ```
    *
    * @param find The expression representing the substring to search for in this expressions.
    * @param replace The expression representing the replacement for the first occurrence of [find].
@@ -3546,6 +5131,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that replaces the first occurrence of a substring within this string
    * expression.
    *
+   * ```kotlin
+   * // Replace the first occurrence of "old" with "new" in the 'message' field.
+   * field("message").replaceFirst("old", "new")
+   * ```
+   *
    * @param find The substring to search for in this string expression.
    * @param replace The replacement for the first occurrence of [find] with.
    * @return A new [Expr] representing the string with the first occurrence replaced.
@@ -3555,6 +5145,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that replaces all occurrences of a substring within this string
    * expression.
+   *
+   * ```kotlin
+   * // In the 'message' field, replace all occurrences of the value in 'old' with the value in 'new'.
+   * field("message").replaceAll(field("old"), field("new"))
+   * ```
    *
    * @param find The expression representing the substring to search for in this string expression.
    * @param replace The expression representing the replacement for all occurrences of [find].
@@ -3566,6 +5161,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that replaces all occurrences of a substring within this string
    * expression.
    *
+   * ```kotlin
+   * // Replace all occurrences of " " with "_" in the 'tags' field.
+   * field("tags").replaceAll(" ", "_")
+   * ```
+   *
    * @param find The substring to search for in this string expression.
    * @param replace The replacement for all occurrences of [find] with.
    * @return A new [Expr] representing the string with all occurrences replaced.
@@ -3575,6 +5175,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that calculates the character length of this string expression in UTF8.
    *
+   * ```kotlin
+   * // Get the character length of the 'name' field in UTF-8.
+   * field("name").charLength()
+   * ```
+   *
    * @return A new [Expr] representing the charLength operation.
    */
   fun charLength(): Expr = Companion.charLength(this)
@@ -3583,12 +5188,22 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the length
    * of a Blob.
    *
+   * ```kotlin
+   * // Calculate the length of the 'myString' field in bytes.
+   * field("myString").byteLength()
+   * ```
+   *
    * @return A new [Expr] representing the length of the string in bytes.
    */
   fun byteLength(): Expr = Companion.byteLength(this)
 
   /**
    * Creates an expression that performs a case-sensitive wildcard string comparison.
+   *
+   * ```kotlin
+   * // Check if the 'title' field contains the string "guide"
+   * field("title").like("%guide%")
+   * ```
    *
    * @param pattern The pattern to search for. You can use "%" as a wildcard character.
    * @return A new [BooleanExpr] representing the like operation.
@@ -3597,6 +5212,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that performs a case-sensitive wildcard string comparison.
+   *
+   * ```kotlin
+   * // Check if the 'title' field contains the string "guide"
+   * field("title").like("%guide%")
+   * ```
    *
    * @param pattern The pattern to search for. You can use "%" as a wildcard character.
    * @return A new [BooleanExpr] representing the like operation.
@@ -3607,6 +5227,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this string expression contains a specified regular
    * expression as a substring.
    *
+   * ```kotlin
+   * // Check if the 'description' field contains "example" (case-insensitive)
+   * field("description").regexContains("(?i)example")
+   * ```
+   *
    * @param pattern The regular expression to use for the search.
    * @return A new [BooleanExpr] representing the contains regular expression comparison.
    */
@@ -3615,6 +5240,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this string expression contains a specified regular
    * expression as a substring.
+   *
+   * ```kotlin
+   * // Check if the 'description' field contains "example" (case-insensitive)
+   * field("description").regexContains("(?i)example")
+   * ```
    *
    * @param pattern The regular expression to use for the search.
    * @return A new [BooleanExpr] representing the contains regular expression comparison.
@@ -3625,6 +5255,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this string expression matches a specified regular
    * expression.
    *
+   * ```kotlin
+   * // Check if the 'email' field matches a valid email pattern
+   * field("email").regexMatch("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+   * ```
+   *
    * @param pattern The regular expression to use for the match.
    * @return A new [BooleanExpr] representing the regular expression match comparison.
    */
@@ -3633,6 +5268,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this string expression matches a specified regular
    * expression.
+   *
+   * ```kotlin
+   * // Check if the 'email' field matches a valid email pattern
+   * field("email").regexMatch("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+   * ```
    *
    * @param pattern The regular expression to use for the match.
    * @return A new [BooleanExpr] representing the regular expression match comparison.
@@ -3643,6 +5283,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the largest value between multiple input expressions or
    * literal values. Based on Firestore's value type ordering.
    *
+   * ```kotlin
+   * // Returns the larger value between the 'timestamp' field and the current timestamp.
+   * field("timestamp").logicalMaximum(currentTimestamp())
+   * ```
+   *
    * @param others Expressions or literals.
    * @return A new [Expr] representing the logical maximum operation.
    */
@@ -3651,6 +5296,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that returns the largest value between multiple input expressions or
    * literal values. Based on Firestore's value type ordering.
+   *
+   * ```kotlin
+   * // Returns the larger value between the 'timestamp' field and the current timestamp.
+   * field("timestamp").logicalMaximum(currentTimestamp())
+   * ```
    *
    * @param others Expressions or literals.
    * @return A new [Expr] representing the logical maximum operation.
@@ -3661,6 +5311,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the smallest value between multiple input expressions or
    * literal values. Based on Firestore's value type ordering.
    *
+   * ```kotlin
+   * // Returns the smaller value between the 'timestamp' field and the current timestamp.
+   * field("timestamp").logicalMinimum(currentTimestamp())
+   * ```
+   *
    * @param others Expressions or literals.
    * @return A new [Expr] representing the logical minimum operation.
    */
@@ -3670,6 +5325,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the smallest value between multiple input expressions or
    * literal values. Based on Firestore's value type ordering.
    *
+   * ```kotlin
+   * // Returns the smaller value between the 'timestamp' field and the current timestamp.
+   * field("timestamp").logicalMinimum(currentTimestamp())
+   * ```
+   *
    * @param others Expressions or literals.
    * @return A new [Expr] representing the logical minimum operation.
    */
@@ -3678,6 +5338,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that reverses this string expression.
    *
+   * ```kotlin
+   * // Reverse the value of the 'myString' field.
+   * field("myString").reverse()
+   * ```
+   *
    * @return A new [Expr] representing the reversed string.
    */
   fun reverse(): Expr = Companion.reverse(this)
@@ -3685,12 +5350,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that reverses this string expression.
    *
+   * ```kotlin
+   * // Reverse the value of the 'myString' field.
+   * field("myString").strReverse()
+   * ```
+   *
    * @return A new [Expr] representing the reversed string.
    */
   fun strReverse(): Expr = Companion.strReverse(this)
 
   /**
    * Creates an expression that checks if this string expression contains a specified substring.
+   *
+   * ```kotlin
+   * // Check if the 'description' field contains the value of the 'keyword' field.
+   * field("description").strContains(field("keyword"))
+   * ```
    *
    * @param substring The expression representing the substring to search for.
    * @return A new [BooleanExpr] representing the contains comparison.
@@ -3700,6 +5375,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this string expression contains a specified substring.
    *
+   * ```kotlin
+   * // Check if the 'description' field contains "example".
+   * field("description").strContains("example")
+   * ```
+   *
    * @param substring The substring to search for.
    * @return A new [BooleanExpr] representing the contains comparison.
    */
@@ -3707,6 +5387,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this string expression starts with a given [prefix].
+   *
+   * ```kotlin
+   * // Check if the 'fullName' field starts with the value of the 'firstName' field
+   * field("fullName").startsWith(field("firstName"))
+   * ```
    *
    * @param prefix The prefix string expression to check for.
    * @return A new [BooleanExpr] representing the 'starts with' comparison.
@@ -3716,6 +5401,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this string expression starts with a given [prefix].
    *
+   * ```kotlin
+   * // Check if the 'name' field starts with "Mr."
+   * field("name").startsWith("Mr.")
+   * ```
+   *
    * @param prefix The prefix string to check for.
    * @return A new [BooleanExpr] representing the 'starts with' comparison.
    */
@@ -3723,6 +5413,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this string expression ends with a given [suffix].
+   *
+   * ```kotlin
+   * // Check if the 'url' field ends with the value of the 'extension' field
+   * field("url").endsWith(field("extension"))
+   * ```
    *
    * @param suffix The suffix string expression to check for.
    * @return A new [BooleanExpr] representing the 'ends with' comparison.
@@ -3732,6 +5427,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this string expression ends with a given [suffix].
    *
+   * ```kotlin
+   * // Check if the 'filename' field ends with ".txt"
+   * field("filename").endsWith(".txt")
+   * ```
+   *
    * @param suffix The suffix string to check for.
    * @return A new [BooleanExpr] representing the 'ends with' comparison.
    */
@@ -3739,6 +5439,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that returns a substring of the given string.
+   *
+   * ```kotlin
+   * // Get a substring of the 'message' field starting at index 5 with length 10.
+   * field("message").substr(constant(5), constant(10))
+   * ```
    *
    * @param start The starting index of the substring.
    * @param length The length of the substring.
@@ -3748,6 +5453,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that returns a substring of the given string.
+   *
+   * ```kotlin
+   * // Get a substring of the 'message' field starting at index 5 with length 10.
+   * field("message").substr(5, 10)
+   * ```
    *
    * @param start The starting index of the substring.
    * @param length The length of the substring.
@@ -3759,12 +5469,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that converts this string expression to lowercase.
    *
+   * ```kotlin
+   * // Convert the 'name' field to lowercase
+   * field("name").toLower()
+   * ```
+   *
    * @return A new [Expr] representing the lowercase string.
    */
   fun toLower() = Companion.toLower(this)
 
   /**
    * Creates an expression that converts this string expression to uppercase.
+   *
+   * ```kotlin
+   * // Convert the 'title' field to uppercase
+   * field("title").toUpper()
+   * ```
    *
    * @return A new [Expr] representing the uppercase string.
    */
@@ -3773,12 +5493,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that removes leading and trailing whitespace from this string expression.
    *
+   * ```kotlin
+   * // Trim whitespace from the 'userInput' field
+   * field("userInput").trim()
+   * ```
+   *
    * @return A new [Expr] representing the trimmed string.
    */
   fun trim() = Companion.trim(this)
 
   /**
    * Creates an expression that concatenates string expressions together.
+   *
+   * ```kotlin
+   * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+   * field("firstName").strConcat(constant(" "), field("lastName"))
+   * ```
    *
    * @param stringExpressions The string expressions to concatenate.
    * @return A new [Expr] representing the concatenated string.
@@ -3789,6 +5519,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that concatenates this string expression with string constants.
    *
+   * ```kotlin
+   * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+   * field("firstName").strConcat(" ", "lastName")
+   * ```
+   *
    * @param strings The string constants to concatenate.
    * @return A new [Expr] representing the concatenated string.
    */
@@ -3796,6 +5531,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that concatenates string expressions and string constants together.
+   *
+   * ```kotlin
+   * // Combine the 'firstName', " ", and 'lastName' fields into a single string
+   * field("firstName").strConcat(" ", field("lastName"))
+   * ```
    *
    * @param strings The string expressions or string constants to concatenate.
    * @return A new [Expr] representing the concatenated string.
@@ -3805,6 +5545,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Accesses a map (object) value using the provided [keyExpression].
    *
+   * ```kotlin
+   * // Get the value from the 'address' map field, using the key from the 'keyField' field
+   * field("address").mapGet(field("keyField"))
+   * ```
+   *
    * @param keyExpression The name of the key to remove from this map expression.
    * @return A new [Expr] representing the value associated with the given key in the map.
    */
@@ -3812,6 +5557,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Accesses a map (object) value using the provided [key].
+   *
+   * ```kotlin
+   * // Get the 'city' value from the 'address' map field
+   * field("address").mapGet("city")
+   * ```
    *
    * @param key The key to access in the map.
    * @return A new [Expr] representing the value associated with the given key in the map.
@@ -3821,6 +5571,19 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that merges multiple maps into a single map. If multiple maps have the
    * same key, the later value is used.
+   *
+   * ```kotlin
+   * // Merges the map in the settings field with, a map literal, and a map in
+   * // that is conditionally returned by another expression
+   * field("settings").mapMerge(
+   *   map(mapOf("enabled" to true)),
+   *   cond(
+   *     field("isAdmin").eq(true),
+   *     map(mapOf("admin" to true)),
+   *     map(emptyMap<String, Any>())
+   *   )
+   * )
+   * ```
    *
    * @param mapExpr Map expression that will be merged.
    * @param otherMaps Additional maps to merge.
@@ -3832,6 +5595,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that removes a key from this map expression.
    *
+   * ```kotlin
+   * // Removes the key 'baz' from the input map.
+   * map(mapOf("foo" to "bar", "baz" to true)).mapRemove(constant("baz"))
+   * ```
+   *
    * @param keyExpression The name of the key to remove from this map expression.
    * @return A new [Expr] that evaluates to a modified map.
    */
@@ -3839,6 +5607,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that removes a key from this map expression.
+   *
+   * ```kotlin
+   * // Removes the key 'baz' from the input map.
+   * map(mapOf("foo" to "bar", "baz" to true)).mapRemove("baz")
+   * ```
    *
    * @param key The name of the key to remove from this map expression.
    * @return A new [Expr] that evaluates to a modified map.
@@ -3848,6 +5621,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Calculates the Cosine distance between this and another vector expressions.
    *
+   * ```kotlin
+   * // Calculate the cosine distance between the 'userVector' field and the 'itemVector' field
+   * field("userVector").cosineDistance(field("itemVector"))
+   * ```
+   *
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
    */
@@ -3855,6 +5633,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Calculates the Cosine distance between this vector expression and a vector literal.
+   *
+   * ```kotlin
+   * // Calculate the Cosine distance between the 'location' field and a target location
+   * field("location").cosineDistance(doubleArrayOf(37.7749, -122.4194))
+   * ```
    *
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
@@ -3864,6 +5647,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Calculates the Cosine distance between this vector expression and a vector literal.
    *
+   * ```kotlin
+   * // Calculate the Cosine distance between the 'location' field and a target location
+   * field("location").cosineDistance(VectorValue.from(listOf(37.7749, -122.4194)))
+   * ```
+   *
    * @param vector The other vector (represented as an [VectorValue]) to compare against.
    * @return A new [Expr] representing the cosine distance between the two vectors.
    */
@@ -3871,6 +5659,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Calculates the dot product distance between this and another vector expression.
+   *
+   * ```kotlin
+   * // Calculate the dot product between the 'userVector' field and the 'itemVector' field
+   * field("userVector").dotProduct(field("itemVector"))
+   * ```
    *
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
@@ -3880,6 +5673,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Calculates the dot product distance between this vector expression and a vector literal.
    *
+   * ```kotlin
+   * // Calculate the dot product between the 'vector' field and a constant vector
+   * field("vector").dotProduct(doubleArrayOf(1.0, 2.0, 3.0))
+   * ```
+   *
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
    */
@@ -3887,6 +5685,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Calculates the dot product distance between this vector expression and a vector literal.
+   *
+   * ```kotlin
+   * // Calculate the dot product between the 'vector' field and a constant vector
+   * field("vector").dotProduct(VectorValue.from(listOf(1.0, 2.0, 3.0)))
+   * ```
    *
    * @param vector The other vector (represented as an [VectorValue]) to compare against.
    * @return A new [Expr] representing the dot product distance between the two vectors.
@@ -3896,6 +5699,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Calculates the Euclidean distance between this and another vector expression.
    *
+   * ```kotlin
+   * // Calculate the Euclidean distance between the 'userVector' field and the 'itemVector' field
+   * field("userVector").euclideanDistance(field("itemVector"))
+   * ```
+   *
    * @param vector The other vector (represented as an Expr) to compare against.
    * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
@@ -3903,6 +5711,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Calculates the Euclidean distance between this vector expression and a vector literal.
+   *
+   * ```kotlin
+   * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+   * field("vector").euclideanDistance(doubleArrayOf(1.0, 2.0, 3.0))
+   * ```
    *
    * @param vector The other vector (as an array of doubles) to compare against.
    * @return A new [Expr] representing the Euclidean distance between the two vectors.
@@ -3912,6 +5725,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Calculates the Euclidean distance between this vector expression and a vector literal.
    *
+   * ```kotlin
+   * // Calculate the Euclidean distance between the 'vector' field and a constant vector
+   * field("vector").euclideanDistance(VectorValue.from(listOf(1.0, 2.0, 3.0)))
+   * ```
+   *
    * @param vector The other vector (represented as an [VectorValue]) to compare against.
    * @return A new [Expr] representing the Euclidean distance between the two vectors.
    */
@@ -3919,6 +5737,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that calculates the length (dimension) of a Firestore Vector.
+   *
+   * ```kotlin
+   * // Get the vector length (dimension) of the field 'embedding'.
+   * field("embedding").vectorLength()
+   * ```
    *
    * @return A new [Expr] representing the length (dimension) of the vector.
    */
@@ -3928,6 +5751,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that interprets this expression as the number of microseconds since the
    * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
    *
+   * ```kotlin
+   * // Interpret the 'microseconds' field as microseconds since epoch.
+   * field("microseconds").unixMicrosToTimestamp()
+   * ```
+   *
    * @return A new [Expr] representing the timestamp.
    */
   fun unixMicrosToTimestamp() = Companion.unixMicrosToTimestamp(this)
@@ -3935,6 +5763,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that converts this timestamp expression to the number of microseconds
    * since the Unix epoch (1970-01-01 00:00:00 UTC).
+   *
+   * ```kotlin
+   * // Convert the 'timestamp' field to microseconds since epoch.
+   * field("timestamp").timestampToUnixMicros()
+   * ```
    *
    * @return A new [Expr] representing the number of microseconds since epoch.
    */
@@ -3944,6 +5777,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that interprets this expression as the number of milliseconds since the
    * Unix epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
    *
+   * ```kotlin
+   * // Interpret the 'milliseconds' field as milliseconds since epoch.
+   * field("milliseconds").unixMillisToTimestamp()
+   * ```
+   *
    * @return A new [Expr] representing the timestamp.
    */
   fun unixMillisToTimestamp() = Companion.unixMillisToTimestamp(this)
@@ -3951,6 +5789,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that converts this timestamp expression to the number of milliseconds
    * since the Unix epoch (1970-01-01 00:00:00 UTC).
+   *
+   * ```kotlin
+   * // Convert the 'timestamp' field to milliseconds since epoch.
+   * field("timestamp").timestampToUnixMillis()
+   * ```
    *
    * @return A new [Expr] representing the number of milliseconds since epoch.
    */
@@ -3960,6 +5803,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that interprets this expression as the number of seconds since the Unix
    * epoch (1970-01-01 00:00:00 UTC) and returns a timestamp.
    *
+   * ```kotlin
+   * // Interpret the 'seconds' field as seconds since epoch.
+   * field("seconds").unixSecondsToTimestamp()
+   * ```
+   *
    * @return A new [Expr] representing the timestamp.
    */
   fun unixSecondsToTimestamp() = Companion.unixSecondsToTimestamp(this)
@@ -3968,12 +5816,22 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that converts this timestamp expression to the number of seconds since
    * the Unix epoch (1970-01-01 00:00:00 UTC).
    *
+   * ```kotlin
+   * // Convert the 'timestamp' field to seconds since epoch.
+   * field("timestamp").timestampToUnixSeconds()
+   * ```
+   *
    * @return A new [Expr] representing the number of seconds since epoch.
    */
   fun timestampToUnixSeconds() = Companion.timestampToUnixSeconds(this)
 
   /**
    * Creates an expression that adds a specified amount of time to this timestamp expression.
+   *
+   * ```kotlin
+   * // Add some duration determined by field 'unit' and 'amount' to the 'timestamp' field.
+   * field("timestamp").timestampAdd(field("unit"), field("amount"))
+   * ```
    *
    * @param unit The expression representing the unit of time to add. Valid units include
    * "microsecond", "millisecond", "second", "minute", "hour" and "day".
@@ -3985,6 +5843,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that adds a specified amount of time to this timestamp expression.
    *
+   * ```kotlin
+   * // Add 1 day to the 'timestamp' field.
+   * field("timestamp").timestampAdd("day", 1)
+   * ```
+   *
    * @param unit The unit of time to add. Valid units include "microsecond", "millisecond",
    * "second", "minute", "hour" and "day".
    * @param amount The amount of time to add.
@@ -3994,6 +5857,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
+   *
+   * ```kotlin
+   * // Subtract some duration determined by field 'unit' and 'amount' from the 'timestamp' field.
+   * field("timestamp").timestampSub(field("unit"), field("amount"))
+   * ```
    *
    * @param unit The expression representing the unit of time to subtract. Valid units include
    * "microsecond", "millisecond", "second", "minute", "hour" and "day".
@@ -4005,6 +5873,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
    *
+   * ```kotlin
+   * // Subtract 1 day from the 'timestamp' field.
+   * field("timestamp").timestampSub("day", 1)
+   * ```
+   *
    * @param unit The unit of time to subtract. Valid units include "microsecond", "millisecond",
    * "second", "minute", "hour" and "day".
    * @param amount The amount of time to subtract.
@@ -4014,6 +5887,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that concatenates a field's array value with other arrays.
+   *
+   * ```kotlin
+   * // Combine the 'items' array with another array field.
+   * field("items").arrayConcat(field("otherItems"))
+   * ```
    *
    * @param secondArray An expression that evaluates to array to concatenate.
    * @param otherArrays Optional additional array expressions or array literals to concatenate.
@@ -4025,6 +5903,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that concatenates a field's array value with other arrays.
    *
+   * ```kotlin
+   * // Combine the 'items' array with a literal array.
+   * field("items").arrayConcat(listOf("a", "b"))
+   * ```
+   *
    * @param secondArray An array expression or array literal to concatenate.
    * @param otherArrays Optional additional array expressions or array literals to concatenate.
    * @return A new [Expr] representing the arrayConcat operation.
@@ -4035,12 +5918,22 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Reverses the order of elements in the array.
    *
+   * ```kotlin
+   * // Reverse the value of the 'myArray' field.
+   * field("myArray").arrayReverse()
+   * ```
+   *
    * @return A new [Expr] representing the arrayReverse operation.
    */
   fun arrayReverse() = Companion.arrayReverse(this)
 
   /**
    * Creates an expression that checks if array contains a specific [element].
+   *
+   * ```kotlin
+   * // Check if the 'sizes' array contains the value from the 'selectedSize' field
+   * field("sizes").arrayContains(field("selectedSize"))
+   * ```
    *
    * @param element The element to search for in the array.
    * @return A new [BooleanExpr] representing the arrayContains operation.
@@ -4050,6 +5943,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if array contains a specific [element].
    *
+   * ```kotlin
+   * // Check if the 'colors' array contains "red"
+   * field("colors").arrayContains("red")
+   * ```
+   *
    * @param element The element to search for in the array.
    * @return A new [BooleanExpr] representing the arrayContains operation.
    */
@@ -4058,6 +5956,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if array contains all the specified [values].
    *
+   * ```kotlin
+   * // Check if the 'tags' array contains both the value in field "tag1" and the literal value "tag2"
+   * field("tags").arrayContainsAll(listOf(field("tag1"), "tag2"))
+   * ```
+   *
    * @param values The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAll operation.
    */
@@ -4065,6 +5968,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if array contains all elements of [arrayExpression].
+   *
+   * ```kotlin
+   * // Check if the 'tags' array contains both of the values from field "tag1" and the literal value "tag2"
+   * field("tags").arrayContainsAll(array(field("tag1"), "tag2"))
+   * ```
    *
    * @param arrayExpression The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAll operation.
@@ -4075,6 +5983,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if array contains any of the specified [values].
    *
+   * ```kotlin
+   * // Check if the 'categories' array contains either values from field "cate1" or "cate2"
+   * field("categories").arrayContainsAny(listOf(field("cate1"), field("cate2")))
+   * ```
+   *
    * @param values The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAny operation.
    */
@@ -4082,6 +5995,12 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if array contains any elements of [arrayExpression].
+   *
+   * ```kotlin
+   * // Check if the 'groups' array contains either the value from the 'userGroup' field
+   * // or the value "guest"
+   * field("groups").arrayContainsAny(array(field("userGroup"), "guest"))
+   * ```
    *
    * @param arrayExpression The elements to check for in the array.
    * @return A new [BooleanExpr] representing the arrayContainsAny operation.
@@ -4092,6 +6011,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that calculates the length of an array expression.
    *
+   * ```kotlin
+   * // Get the number of items in the 'cart' array
+   * field("cart").arrayLength()
+   * ```
+   *
    * @return A new [Expr] representing the length of the array.
    */
   fun arrayLength() = Companion.arrayLength(this)
@@ -4100,6 +6024,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that indexes into an array from the beginning or end and return the
    * element. If the offset exceeds the array length, an error is returned. A negative offset,
    * starts from the end.
+   *
+   * ```kotlin
+   * // Return the value in the tags field array at index specified by field 'favoriteTag'.
+   * field("tags").arrayGet(field("favoriteTag"))
+   * ```
    *
    * @param offset An Expr evaluating to the index of the element to return.
    * @return A new [Expr] representing the arrayOffset operation.
@@ -4110,6 +6039,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that indexes into an array from the beginning or end and return the
    * element. If the offset exceeds the array length, an error is returned. A negative offset,
    * starts from the end.
+   *
+   * ```kotlin
+   * // Return the value in the 'tags' field array at index `1`.
+   * field("tags").arrayGet(1)
+   * ```
    *
    * @param offset An Expr evaluating to the index of the element to return.
    * @return A new [Expr] representing the arrayOffset operation.
@@ -4173,6 +6107,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this and [other] expression are equal.
    *
+   * ```kotlin
+   * // Check if the 'age' field is equal to an expression
+   * field("age").eq(field("minAge").add(10))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the equality comparison.
    */
@@ -4180,6 +6119,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is equal to a [value].
+   *
+   * ```kotlin
+   * // Check if the 'age' field is equal to 21
+   * field("age").eq(21)
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the equality comparison.
@@ -4189,6 +6133,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expressions is not equal to the [other] expression.
    *
+   * ```kotlin
+   * // Check if the 'status' field is not equal to the value of the 'otherStatus' field
+   * field("status").neq(field("otherStatus"))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the inequality comparison.
    */
@@ -4196,6 +6145,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is not equal to a [value].
+   *
+   * ```kotlin
+   * // Check if the 'status' field is not equal to "completed"
+   * field("status").neq("completed")
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the inequality comparison.
@@ -4205,6 +6159,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expression is greater than the [other] expression.
    *
+   * ```kotlin
+   * // Check if the 'age' field is greater than the 'limit' field
+   * field("age").gt(field("limit"))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the greater than comparison.
    */
@@ -4212,6 +6171,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is greater than a [value].
+   *
+   * ```kotlin
+   * // Check if the 'price' field is greater than 100
+   * field("price").gt(100)
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the greater than comparison.
@@ -4222,6 +6186,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this expression is greater than or equal to the [other]
    * expression.
    *
+   * ```kotlin
+   * // Check if the 'quantity' field is greater than or equal to field 'requirement' plus 1
+   * field("quantity").gte(field("requirement").add(1))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the greater than or equal to comparison.
    */
@@ -4229,6 +6198,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is greater than or equal to a [value].
+   *
+   * ```kotlin
+   * // Check if the 'score' field is greater than or equal to 80
+   * field("score").gte(80)
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the greater than or equal to comparison.
@@ -4238,6 +6212,11 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that checks if this expression is less than the [other] expression.
    *
+   * ```kotlin
+   * // Check if the 'age' field is less than 'limit'
+   * field("age").lt(field("limit"))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the less than comparison.
    */
@@ -4245,6 +6224,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is less than a value.
+   *
+   * ```kotlin
+   * // Check if the 'price' field is less than 50
+   * field("price").lt(50)
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the less than comparison.
@@ -4255,6 +6239,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this expression is less than or equal to the [other]
    * expression.
    *
+   * ```kotlin
+   * // Check if the 'quantity' field is less than or equal to 20
+   * field("quantity").lte(constant(20))
+   * ```
+   *
    * @param other The expression to compare to.
    * @return A new [BooleanExpr] representing the less than or equal to comparison.
    */
@@ -4262,6 +6251,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression is less than or equal to a [value].
+   *
+   * ```kotlin
+   * // Check if the 'score' field is less than or equal to 70
+   * field("score").lte(70)
+   * ```
    *
    * @param value The value to compare to.
    * @return A new [BooleanExpr] representing the less than or equal to comparison.
@@ -4280,6 +6274,12 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the [catchExpr] argument if there is an error, else return
    * the result of this expression.
    *
+   * ```kotlin
+   * // Returns the first item in the title field arrays, or returns
+   * // the entire title field if the array is empty or the field is another type.
+   * arrayGet(field("title"), 0).ifError(field("title"))
+   * ```
+   *
    * @param catchExpr The catch expression that will be evaluated and returned if the this
    * expression produces an error.
    * @return A new [Expr] representing the ifError operation.
@@ -4290,6 +6290,11 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that returns the [catchValue] argument if there is an error, else return
    * the result of this expression.
    *
+   * ```kotlin
+   * // Returns the first item in the title field arrays, or returns "Default Title"
+   * arrayGet(field("title"), 0).ifError("Default Title")
+   * ```
+   *
    * @param catchValue The value that will be returned if this expression produces an error.
    * @return A new [Expr] representing the ifError operation.
    */
@@ -4297,6 +6302,11 @@ abstract class Expr internal constructor() : Canonicalizable {
 
   /**
    * Creates an expression that checks if this expression produces an error.
+   *
+   * ```kotlin
+   * // Check if the result of a calculation is an error
+   * arrayContains(field("title"), 1).isError()
+   * ```
    *
    * @return A new [BooleanExpr] representing the `isError` check.
    */
@@ -4565,6 +6575,11 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
     /**
      * Creates a generic boolean function expression that is not yet implemented.
      *
+     * ```kotlin
+     * // Create a generic boolean function call
+     * BooleanExpr.generic("my_boolean_function", field("arg1"), constant(true))
+     * ```
+     *
      * @param name The name of the generic function.
      * @param expr The expressions to be passed as arguments to the function.
      * @return A new [BooleanExpr] representing the generic function.
@@ -4703,6 +6718,12 @@ class Ordering internal constructor(val expr: Expr, internal val dir: Direction)
    *
    * If the previous [Ordering] was ascending, then the new [Ordering] will be descending. Likewise,
    * if the previous [Ordering] was descending, then the new [Ordering] will be ascending.
+   *
+   * ```kotlin
+   * // Create a descending ordering and then reverse it to ascending.
+   * val descending = descending("field")
+   * val ascending = descending.reverse()
+   * ```
    *
    * @return New [Ordering] object that is has order reversed.
    */
