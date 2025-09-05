@@ -81,11 +81,6 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
     logger.info("ktfmtJarFile={}", ktfmtJarFile?.absolutePath)
 
-    if (outputDirectory.exists()) {
-      logger.info("Deleting directory: $outputDirectory")
-      outputDirectory.deleteRecursively()
-    }
-
     if (configDirectory === null) {
       logger.info("No Data Connect config directories found; nothing to do")
       return

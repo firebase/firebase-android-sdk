@@ -63,7 +63,7 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
     logger.info("mergedDirectory: {}", mergedDirectory?.absolutePath)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    buildDirectory.deleteRecursively()
+    fileSystemOperations.delete { it.delete(buildDirectory) }
 
     val configDirectories =
       buildList {

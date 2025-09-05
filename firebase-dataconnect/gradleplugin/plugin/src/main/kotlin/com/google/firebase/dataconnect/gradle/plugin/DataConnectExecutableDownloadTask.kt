@@ -69,7 +69,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     logger.info("outputFile: {}", outputFile)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    buildDirectory.deleteRecursively()
+    fileSystemOperations.delete { it.delete(buildDirectory) }
 
     if (inputFile !== null && version !== null) {
       throw DataConnectGradleException(
