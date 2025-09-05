@@ -1,6 +1,6 @@
 # Unreleased
 
-- [fixed] Fixed the behavior of app start traces on API 34+ devices.
+- [fixed] Fixed the behavior of app start traces on API 34+ devices. [#5920]
 
 # 22.0.1
 
