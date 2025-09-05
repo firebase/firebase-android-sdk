@@ -94,7 +94,7 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   ) {
     internal fun toPublic(): Content {
       val returnedParts =
-        parts.map { it.toPublic() }.filterNot { it is TextPart && it.text.isEmpty() }
+        parts.filterNot { it is UnknownPart.Internal }.map { it.toPublic() }.filterNot { it is TextPart && it.text.isEmpty() }
       // If all returned parts were text and empty, we coalesce them into a single one-character
       // string
       // part so the backend doesn't fail if we send this back as part of a multi-turn interaction.

@@ -91,6 +91,19 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
+  fun `reply including an empty part`() =
+    goldenVertexUnaryFile("unary-success-empty-part.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.text.shouldNotBeEmpty()
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
   fun `response with detailed token-based usageMetadata`() =
     goldenVertexUnaryFile("unary-success-basic-response-long-usage-metadata.json") {
       withTimeout(testTimeout) {
