@@ -17,7 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -29,9 +29,9 @@ internal class CanonifyEqTest {
 
   @Test
   fun `canonify simple where`() {
-    val pipeline = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L))
+    val pipeline = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L))
     assertThat(pipeline.canonicalId())
-      .isEqualTo("collection(test)|where(fn(eq[fld(foo),cst(42)]))|sort(fld(__name__)asc)")
+      .isEqualTo("collection(test)|where(fn(equal[fld(foo),cst(42)]))|sort(fld(__name__)asc)")
   }
 
   @Test
@@ -39,12 +39,12 @@ internal class CanonifyEqTest {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("test")
-        .where(field("foo").eq("42L"))
+        .where(field("foo").equal("42L"))
         .limit(10)
         .sort(field("bar").descending())
     assertThat(pipeline.canonicalId())
       .isEqualTo(
-        "collection(test)|where(fn(eq[fld(foo),cst(42L)]))|sort(fld(__name__)asc)|limit(10)|sort(fld(bar)desc,fld(__name__)asc)"
+        "collection(test)|where(fn(equal[fld(foo),cst(42L)]))|sort(fld(__name__)asc)|limit(10)|sort(fld(bar)desc,fld(__name__)asc)"
       )
   }
 
@@ -56,36 +56,36 @@ internal class CanonifyEqTest {
 
   @Test
   fun `eq returns true for identical pipelines`() {
-    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L))
-    val p2 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L))
+    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L))
+    val p2 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L))
     assertThat(p1.equals(p2)).isTrue()
   }
 
   @Test
   fun `eq returns false for different stages`() {
-    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L))
+    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L))
     val p2 = RealtimePipelineSource(db).collection("test").limit(10)
     assertThat(p1.equals(p2)).isFalse()
   }
 
   @Test
   fun `eq returns false for different params in stage`() {
-    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L))
-    val p2 = RealtimePipelineSource(db).collection("test").where(field("bar").eq(42L))
+    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L))
+    val p2 = RealtimePipelineSource(db).collection("test").where(field("bar").equal(42L))
     assertThat(p1.equals(p2)).isFalse()
   }
 
   @Test
   fun `eq returns false for different stage order`() {
-    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42L)).limit(10)
-    val p2 = RealtimePipelineSource(db).collection("test").limit(10).where(field("foo").eq(42L))
+    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42L)).limit(10)
+    val p2 = RealtimePipelineSource(db).collection("test").limit(10).where(field("foo").equal(42L))
     assertThat(p1.equals(p2)).isFalse()
   }
 
   @Test
   fun `eq returns false for same canonicalId but different types`() {
-    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").eq("42"))
-    val p2 = RealtimePipelineSource(db).collection("test").where(field("foo").eq(42))
+    val p1 = RealtimePipelineSource(db).collection("test").where(field("foo").equal("42"))
+    val p2 = RealtimePipelineSource(db).collection("test").where(field("foo").equal(42))
     assertThat(p1.canonicalId()).isEqualTo(p2.canonicalId())
     assertThat(p1.equals(p2)).isFalse()
   }

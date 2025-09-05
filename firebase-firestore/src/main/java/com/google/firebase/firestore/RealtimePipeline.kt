@@ -15,7 +15,6 @@
 package com.google.firebase.firestore
 
 import com.google.firebase.firestore.core.AsyncEventListener
-import com.google.firebase.firestore.core.Canonicalizable
 import com.google.firebase.firestore.core.DocumentViewChange
 import com.google.firebase.firestore.core.EventManager
 import com.google.firebase.firestore.core.QueryListener
@@ -24,14 +23,14 @@ import com.google.firebase.firestore.core.ViewSnapshot
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
-import com.google.firebase.firestore.pipeline.BooleanExpr
+import com.google.firebase.firestore.pipeline.BooleanExpression
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.EvaluationContext
 import com.google.firebase.firestore.pipeline.Field
-import com.google.firebase.firestore.pipeline.FunctionExpr
+import com.google.firebase.firestore.pipeline.FunctionExpression
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
@@ -138,7 +137,7 @@ internal constructor(
   internal val userDataReader: UserDataReader,
   internal val stages: List<Stage<*>>,
   internal val internalOptions: EventManager.ListenOptions? = null
-) : Canonicalizable {
+) {
   internal constructor(
     firestore: FirebaseFirestore,
     serializer: RemoteSerializer,
@@ -202,12 +201,12 @@ internal constructor(
 
   /**
    * Filters the documents from previous stages to only include those matching the specified
-   * [BooleanExpr].
+   * [BooleanExpression].
    *
    * This stage allows you to apply conditions to the data, similar to a "WHERE" clause in SQL.
    *
-   * You can filter documents based on their field values, using implementations of [BooleanExpr],
-   * typically including but not limited to:
+   * You can filter documents based on their field values, using implementations of
+   * [BooleanExpression], typically including but not limited to:
    * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt] (greater than), etc.
    * - logical operators: [Expr.and], [Expr.or], [Expr.not], etc.
    * - advanced functions: [Expr.arrayContains], [Expr.eqAny]etc.
@@ -223,10 +222,10 @@ internal constructor(
    *   );
    * ```
    *
-   * @param condition The [BooleanExpr] to apply.
+   * @param condition The [BooleanExpression] to apply.
    * @return A new [RealtimePipeline] object with this stage appended to the stage list.
    */
-  fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
+  fun where(condition: BooleanExpression): RealtimePipeline = append(WhereStage(condition))
 
   /**
    * Starts listening to this pipeline and emits a [RealtimePipelineSnapshot] every time the results
@@ -352,8 +351,8 @@ internal constructor(
     }
   }
 
-  override fun canonicalId(): String {
-    return rewrittenStages.joinToString("|") { stage -> (stage as Canonicalizable).canonicalId() }
+  internal fun canonicalId(): String {
+    return rewrittenStages.joinToString("|") { stage -> stage.canonicalId() }
   }
 
   override fun toString(): String = canonicalId()
@@ -384,7 +383,7 @@ internal constructor(
       // Check for Where stage
       if (stage is WhereStage) {
         // Check if it's the special 'exists(__name__)' case
-        val funcExpr = stage.condition as? FunctionExpr
+        val funcExpr = stage.condition as? FunctionExpression
         if (funcExpr?.name == "exists" && funcExpr.params.size == 1) {
           val fieldExpr = funcExpr.params[0] as? Field
           if (fieldExpr?.fieldPath?.isKeyField == true) {

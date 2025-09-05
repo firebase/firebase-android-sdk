@@ -14,15 +14,15 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.exists
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.isError
-import com.google.firebase.firestore.pipeline.Expr.Companion.map
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.isError
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.testutil.TestUtil.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,7 +78,7 @@ class DebugTests {
 
   @Test
   fun `empty map returns true for exists`() {
-    // Expr.map() creates an empty map expression
+    // Expression.map() creates an empty map expression
     assertEvaluatesTo(evaluate(exists(map(emptyMap()))), true, "exists({})")
   }
 
