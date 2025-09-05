@@ -19,15 +19,14 @@ import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.gt
-import com.google.firebase.firestore.pipeline.Expr.Companion.neq
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqual
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -159,7 +158,7 @@ internal class CollectionGroupTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collectionGroup("users")
-        .where(eqAny(field("score"), array(90L, 97L)))
+        .where(equalAny(field("score"), array(90L, 97L)))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
@@ -182,7 +181,7 @@ internal class CollectionGroupTests {
   @Test
   fun `where inequality on values`(): Unit = runBlocking {
     val pipeline =
-      RealtimePipelineSource(db).collectionGroup("users").where(gt(field("score"), 80L))
+      RealtimePipelineSource(db).collectionGroup("users").where(greaterThan(field("score"), 80L))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
@@ -199,7 +198,7 @@ internal class CollectionGroupTests {
   @Test
   fun `where not equal on values`(): Unit = runBlocking {
     val pipeline =
-      RealtimePipelineSource(db).collectionGroup("users").where(neq(field("score"), 50L))
+      RealtimePipelineSource(db).collectionGroup("users").where(notEqual(field("score"), 50L))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L)) // This will be filtered out

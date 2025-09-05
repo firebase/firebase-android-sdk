@@ -17,16 +17,15 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.divide
-import com.google.firebase.firestore.pipeline.Expr.Companion.eq
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.or
-import com.google.firebase.firestore.pipeline.Expr.Companion.xor
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.Expression.Companion.equal
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
+import com.google.firebase.firestore.pipeline.Expression.Companion.xor
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,9 +51,9 @@ internal class ErrorHandlingTests {
         .collection("k")
         .where(
           or(
-            eq(field("a"), constant(true)),
-            eq(field("b"), constant(true)),
-            eq(field("c"), constant(true))
+            equal(field("a"), constant(true)),
+            equal(field("b"), constant(true)),
+            equal(field("c"), constant(true))
           )
         )
 
@@ -82,9 +81,9 @@ internal class ErrorHandlingTests {
         .collection("k")
         .where(
           and(
-            eq(field("a"), constant(true)),
-            eq(field("b"), constant(true)),
-            eq(field("c"), constant(true))
+            equal(field("a"), constant(true)),
+            equal(field("b"), constant(true)),
+            equal(field("c"), constant(true))
           )
         )
 
@@ -110,9 +109,9 @@ internal class ErrorHandlingTests {
         .collection("k")
         .where(
           xor(
-            eq(field("a"), constant(true)),
-            eq(field("b"), constant(true)),
-            eq(field("c"), constant(true))
+            equal(field("a"), constant(true)),
+            equal(field("b"), constant(true)),
+            equal(field("c"), constant(true))
           )
         )
 
@@ -138,7 +137,8 @@ internal class ErrorHandlingTests {
 
     // This test case in C++ was adjusted to match a TS behavior,
     // resulting in a condition `field("a") == false`.
-    val pipeline = RealtimePipelineSource(db).collection("k").where(eq(field("a"), constant(false)))
+    val pipeline =
+      RealtimePipelineSource(db).collection("k").where(equal(field("a"), constant(false)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // Only doc1 has a == false.
@@ -155,7 +155,7 @@ internal class ErrorHandlingTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(eq(divide(constant("100"), constant("50")), constant(2L)))
+        .where(equal(divide(constant("100"), constant("50")), constant(2L)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // Division of string constants should cause an evaluation error,

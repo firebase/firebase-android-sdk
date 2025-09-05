@@ -34,9 +34,9 @@ internal val EVALUATION_CONTEXT: EvaluationContext =
     RealtimePipeline(null, RemoteSerializer(FAKE_DATABASE_ID), FAKE_USER_DATA_READER, emptyList())
   )
 
-internal fun evaluate(expr: Expr): EvaluateResult = evaluate(expr, EMPTY_DOC)
+internal fun evaluate(expr: Expression): EvaluateResult = evaluate(expr, EMPTY_DOC)
 
-internal fun evaluate(expr: Expr, doc: MutableDocument): EvaluateResult {
+internal fun evaluate(expr: Expression, doc: MutableDocument): EvaluateResult {
   val function = expr.evaluateFunction(EVALUATION_CONTEXT)
   return function(doc)
 }

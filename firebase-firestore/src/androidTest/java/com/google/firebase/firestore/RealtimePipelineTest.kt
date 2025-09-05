@@ -17,58 +17,58 @@ package com.google.firebase.firestore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.abs
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.byteLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.ceil
-import com.google.firebase.firestore.pipeline.Expr.Companion.charLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.divide
-import com.google.firebase.firestore.pipeline.Expr.Companion.endsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.exists
-import com.google.firebase.firestore.pipeline.Expr.Companion.exp
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.floor
-import com.google.firebase.firestore.pipeline.Expr.Companion.isAbsent
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNull
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNull
-import com.google.firebase.firestore.pipeline.Expr.Companion.like
-import com.google.firebase.firestore.pipeline.Expr.Companion.ln
-import com.google.firebase.firestore.pipeline.Expr.Companion.log
-import com.google.firebase.firestore.pipeline.Expr.Companion.log10
-import com.google.firebase.firestore.pipeline.Expr.Companion.mod
-import com.google.firebase.firestore.pipeline.Expr.Companion.multiply
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
-import com.google.firebase.firestore.pipeline.Expr.Companion.notEqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.or
-import com.google.firebase.firestore.pipeline.Expr.Companion.pow
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexMatch
-import com.google.firebase.firestore.pipeline.Expr.Companion.reverse
-import com.google.firebase.firestore.pipeline.Expr.Companion.round
-import com.google.firebase.firestore.pipeline.Expr.Companion.sqrt
-import com.google.firebase.firestore.pipeline.Expr.Companion.startsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.strConcat
-import com.google.firebase.firestore.pipeline.Expr.Companion.strContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.subtract
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampAdd
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMicros
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMillis
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixSeconds
-import com.google.firebase.firestore.pipeline.Expr.Companion.toLower
-import com.google.firebase.firestore.pipeline.Expr.Companion.toUpper
-import com.google.firebase.firestore.pipeline.Expr.Companion.trim
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMicrosToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMillisToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixSecondsToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.xor
+import com.google.firebase.firestore.pipeline.Expression.Companion.abs
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.ceil
+import com.google.firebase.firestore.pipeline.Expression.Companion.charLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.Expression.Companion.endsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
+import com.google.firebase.firestore.pipeline.Expression.Companion.exp
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.floor
+import com.google.firebase.firestore.pipeline.Expression.Companion.isAbsent
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNull
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
+import com.google.firebase.firestore.pipeline.Expression.Companion.like
+import com.google.firebase.firestore.pipeline.Expression.Companion.ln
+import com.google.firebase.firestore.pipeline.Expression.Companion.log
+import com.google.firebase.firestore.pipeline.Expression.Companion.log10
+import com.google.firebase.firestore.pipeline.Expression.Companion.mod
+import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
+import com.google.firebase.firestore.pipeline.Expression.Companion.pow
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexMatch
+import com.google.firebase.firestore.pipeline.Expression.Companion.reverse
+import com.google.firebase.firestore.pipeline.Expression.Companion.round
+import com.google.firebase.firestore.pipeline.Expression.Companion.sqrt
+import com.google.firebase.firestore.pipeline.Expression.Companion.startsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringConcat
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.subtract
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampAdd
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMicros
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMillis
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixSeconds
+import com.google.firebase.firestore.pipeline.Expression.Companion.toLower
+import com.google.firebase.firestore.pipeline.Expression.Companion.toUpper
+import com.google.firebase.firestore.pipeline.Expression.Companion.trim
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMicrosToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMillisToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixSecondsToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.xor
 import com.google.firebase.firestore.pipeline.Ordering.Companion.ascending
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
@@ -225,7 +225,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testBasicAsyncStream() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(field("rating").gte(4.5))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
@@ -264,7 +265,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testResultChanges() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(field("rating").gte(4.5))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
@@ -311,7 +313,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testCanListenToCache() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(field("rating").gte(4.5))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
     val options =
       RealtimePipelineOptions()
         .withMetadataChanges(MetadataChanges.INCLUDE)
@@ -337,7 +340,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testCanListenToMetadataOnlyChanges() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(field("rating").gte(4.5))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -367,7 +371,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("title").eq("The Hitchhiker's Guide to the Galaxy"))
+        .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
       RealtimePipelineOptions()
@@ -413,7 +417,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("rating").timestampAdd(constant("second"), constant(1)).gt(now))
+        .where(field("rating").timestampAdd(constant("second"), constant(1)).greaterThan(now))
 
     val options =
       RealtimePipelineOptions()
@@ -442,7 +446,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("title").eq("The Hitchhiker's Guide to the Galaxy"))
+        .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
       RealtimePipelineOptions()
@@ -486,7 +490,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("title").eq("The Hitchhiker's Guide to the Galaxy"))
+        .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
       RealtimePipelineOptions()
@@ -513,7 +517,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("title").eq("The Hitchhiker's Guide to the Galaxy"))
+        .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
@@ -625,8 +629,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(
           and(
-            field("genre").eq("Science Fiction"),
-            field("rating").gt(4.5),
+            field("genre").equal("Science Fiction"),
+            field("rating").greaterThan(4.5),
           )
         )
         .sort(ascending("title"))
@@ -664,8 +668,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(
           or(
-            field("genre").eq("Dystopian"),
-            field("published").lt(1900),
+            field("genre").equal("Dystopian"),
+            field("published").lessThan(1900),
           )
         )
         .sort(ascending("published"))
@@ -706,8 +710,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(
           xor(
-            field("rating").gt(4.5),
-            field("genre").eq("Science Fiction"),
+            field("rating").greaterThan(4.5),
+            field("genre").equal("Science Fiction"),
           )
         )
         .sort(ascending("rating"))
@@ -747,7 +751,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(not(field("genre").eq("Science Fiction")))
+        .where(not(field("genre").equal("Science Fiction")))
         .sort(ascending("published"))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
@@ -781,7 +785,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(eqAny("genre", listOf("Dystopian", "Fantasy")))
+        .where(equalAny("genre", listOf("Dystopian", "Fantasy")))
         .sort(ascending("published"))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
@@ -819,7 +823,7 @@ class RealtimePipelineTest {
         .realtimePipeline()
         .collection(collRef.path)
         .where(
-          notEqAny(
+          notEqualAny(
             "genre",
             listOf(
               "Dystopian",
@@ -981,7 +985,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("author").eq(strConcat(constant("Douglas"), constant(" Adams"))))
+        .where(field("author").equal(stringConcat(constant("Douglas"), constant(" Adams"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1007,7 +1011,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("author").toLower().eq(toLower(constant("DOUGLAS ADAMS"))))
+        .where(field("author").toLower().equal(toLower(constant("DOUGLAS ADAMS"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1033,7 +1037,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("author").toUpper().eq(toUpper(constant("dOUglAs adaMs"))))
+        .where(field("author").toUpper().equal(toUpper(constant("dOUglAs adaMs"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1059,7 +1063,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("author").eq(trim(constant("  Douglas Adams  "))))
+        .where(field("author").equal(trim(constant("  Douglas Adams  "))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1081,7 +1085,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testCharLength() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(charLength("author").gt(20))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(charLength("author").greaterThan(20))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1102,7 +1107,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testByteLength() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(byteLength("author").gt(20))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(byteLength("author").greaterThan(20))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1127,7 +1133,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(field("author").eq(reverse(constant("smadA salguoD"))))
+        .where(field("author").equal(reverse(constant("smadA salguoD"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1150,7 +1156,7 @@ class RealtimePipelineTest {
   @Test
   fun testStrContains() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(strContains("author", "Adams"))
+      db.realtimePipeline().collection(collRef.path).where(stringContains("author", "Adams"))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1288,7 +1294,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testAdd() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(add("rating", 0.8).eq(5.0))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(add("rating", 0.8).equal(5.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1313,7 +1320,7 @@ class RealtimePipelineTest {
   @Test
   fun testSubtract() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(subtract("rating", 0.2).eq(4.0))
+      db.realtimePipeline().collection(collRef.path).where(subtract("rating", 0.2).equal(4.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1338,7 +1345,7 @@ class RealtimePipelineTest {
   @Test
   fun testMultiply() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(multiply("rating", 2.0).eq(8.4))
+      db.realtimePipeline().collection(collRef.path).where(multiply("rating", 2.0).equal(8.4))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1363,7 +1370,7 @@ class RealtimePipelineTest {
   @Test
   fun testDivide() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(divide("rating", 2.0).eq(2.1))
+      db.realtimePipeline().collection(collRef.path).where(divide("rating", 2.0).equal(2.1))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1388,7 +1395,7 @@ class RealtimePipelineTest {
   @Test
   fun testMod() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(mod("published", 100).eq(79))
+      db.realtimePipeline().collection(collRef.path).where(mod("published", 100).equal(79))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1410,7 +1417,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testPow() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(pow("rating", 2.0).gt(20.0))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(pow("rating", 2.0).greaterThan(20.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1431,7 +1439,7 @@ class RealtimePipelineTest {
   @Test
   fun testAbs() = runBlocking {
     collRef.document("book1").update("rating", -4.2).await()
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(abs("rating").eq(4.2))
+    val pipeline = db.realtimePipeline().collection(collRef.path).where(abs("rating").equal(4.2))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1458,7 +1466,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(and(exp("log_rating").gt(4.19), exp("log_rating").lt(4.21)))
+        .where(and(exp("log_rating").greaterThan(4.19), exp("log_rating").lessThan(4.21)))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1484,7 +1492,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(and(ln("rating").gt(1.43), ln("rating").lt(1.44)))
+        .where(and(ln("rating").greaterThan(1.43), ln("rating").lessThan(1.44)))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1510,7 +1518,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(log10("published").eq(kotlin.math.log10(1979.0)))
+        .where(log10("published").equal(kotlin.math.log10(1979.0)))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1536,7 +1544,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(log("published", constant(4.2)).eq(kotlin.math.log(1954.0, 4.2)))
+        .where(log("published", constant(4.2)).equal(kotlin.math.log(1954.0, 4.2)))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1559,7 +1567,7 @@ class RealtimePipelineTest {
   fun testSqrt() = runBlocking {
     val pipeline =
     // published since 1952
-    db.realtimePipeline().collection(collRef.path).where(sqrt("published").gt(44.18))
+    db.realtimePipeline().collection(collRef.path).where(sqrt("published").greaterThan(44.18))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1579,7 +1587,7 @@ class RealtimePipelineTest {
 
   @Test
   fun testRound() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(round("rating").eq(5.0))
+    val pipeline = db.realtimePipeline().collection(collRef.path).where(round("rating").equal(5.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1599,7 +1607,7 @@ class RealtimePipelineTest {
 
   @Test
   fun testCeil() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(ceil("rating").eq(5.0))
+    val pipeline = db.realtimePipeline().collection(collRef.path).where(ceil("rating").equal(5.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1628,7 +1636,7 @@ class RealtimePipelineTest {
 
   @Test
   fun testFloor() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(floor("rating").eq(4.0))
+    val pipeline = db.realtimePipeline().collection(collRef.path).where(floor("rating").equal(4.0))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1654,7 +1662,7 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(
           timestampAdd("timestamp", "day", 1)
-            .eq(unixSecondsToTimestamp(constant(1698228000 + 24 * 3600)))
+            .equal(unixSecondsToTimestamp(constant(1698228000 + 24 * 3600)))
         )
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
@@ -1682,8 +1690,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(
           field("timestamp")
-            .timestampSub("day", 1)
-            .eq(unixSecondsToTimestamp(constant(1698228000 - 24 * 3600)))
+            .timestampSubtract("day", 1)
+            .equal(unixSecondsToTimestamp(constant(1698228000 - 24 * 3600)))
         )
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
@@ -1709,7 +1717,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(field("timestamp").eq(unixSecondsToTimestamp(field("unix_seconds"))))
+        .where(field("timestamp").equal(unixSecondsToTimestamp(field("unix_seconds"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1734,7 +1742,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(field("timestamp").eq(unixMillisToTimestamp(constant(1698228000000L))))
+        .where(field("timestamp").equal(unixMillisToTimestamp(constant(1698228000000L))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1759,7 +1767,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(timestampToUnixSeconds("timestamp").eq(1698228000))
+        .where(timestampToUnixSeconds("timestamp").equal(1698228000))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1784,7 +1792,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(timestampToUnixMillis("timestamp").eq(field("unix_millis")))
+        .where(timestampToUnixMillis("timestamp").equal(field("unix_millis")))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1809,7 +1817,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(timestampToUnixMicros("timestamp").eq(field("unix_micros")))
+        .where(timestampToUnixMicros("timestamp").equal(field("unix_micros")))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1833,7 +1841,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(eventCollRef.path)
-        .where(field("timestamp").eq(unixMicrosToTimestamp(field("unix_micros"))))
+        .where(field("timestamp").equal(unixMicrosToTimestamp(field("unix_micros"))))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1904,7 +1912,8 @@ class RealtimePipelineTest {
 
   @Test
   fun testArrayLength() = runBlocking {
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(arrayLength("tags").eq(3))
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayLength("tags").equal(3))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
@@ -1925,7 +1934,10 @@ class RealtimePipelineTest {
   @Test
   fun testSubstring() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(field("title").substr(1, 3).eq("he "))
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(field("title").substring(1, 3).equal("he "))
 
     val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)

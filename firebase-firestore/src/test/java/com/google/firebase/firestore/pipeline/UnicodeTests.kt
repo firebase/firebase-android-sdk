@@ -17,12 +17,11 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,8 +58,8 @@ internal class UnicodeTests {
         .collection("users") // C++ uses DatabaseSource, "users" collection matches doc paths
         .where(
           and(
-            field("str").lte(constant("🄟")),
-            field("str").gte(constant("Ｐ")),
+            field("str").lessThanOrEqual(constant("🄟")),
+            field("str").greaterThanOrEqual(constant("Ｐ")),
           )
         )
         .sort(field("str").ascending())
