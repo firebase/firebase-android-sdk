@@ -32,7 +32,7 @@ public interface DataConnectOperationFailureResponse<Data> {
    * * [Boolean]
    * * [Double]
    * * [List] containing any of the types in this list of types
-   * * [Map] with [String] keys and values of of the types in this list of types
+   * * [Map] with [String] keys and values of the types in this list of types
    *
    * Consider using [toJson] to get a higher-level object.
    */

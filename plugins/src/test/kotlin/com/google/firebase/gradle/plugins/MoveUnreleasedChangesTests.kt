@@ -22,7 +22,6 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldMatch
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.BeforeClass
@@ -102,7 +101,7 @@ class MoveUnreleasedChangesTests : FunSpec() {
     val originalEntry = original.releases.first()
 
     releasedEntry.content.changes shouldContainExactly originalEntry.content.changes
-    releasedEntry.content.subtext shouldMatch originalEntry.content.subtext
+    releasedEntry.content.subtext shouldBe originalEntry.content.subtext
   }
 
   companion object {
