@@ -26,6 +26,7 @@ import kotlin.time.toDuration
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -34,6 +35,8 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
 abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
@@ -46,6 +49,10 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
+  @get:Inject abstract val execOperations: ExecOperations
 
   @TaskAction
   fun run() {
@@ -62,7 +69,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     logger.info("outputFile: {}", outputFile)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    project.delete(buildDirectory)
+    buildDirectory.deleteRecursively()
 
     if (inputFile !== null && version !== null) {
       throw DataConnectGradleException(
@@ -74,7 +81,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     } else if (inputFile !== null) {
       runWithFile(inputFile = inputFile, outputFile = outputFile)
     } else if (version !== null) {
-      downloadDataConnectExecutable(version, operatingSystem, outputFile)
+      downloadDataConnectExecutable(version, operatingSystem, outputFile, execOperations)
       verifyOutputFile(outputFile, operatingSystem, version)
     } else {
       throw DataConnectGradleException(
@@ -184,7 +191,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     }
 
     logger.info("Copying {} to {}", inputFile, outputFile)
-    project.copy {
+    fileSystemOperations.copy {
       it.from(inputFile)
       it.into(outputFile.parentFile)
       it.rename(Pattern.quote(inputFile.name), Pattern.quote(outputFile.name))
@@ -195,7 +202,8 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     fun Task.downloadDataConnectExecutable(
       version: String,
       operatingSystem: OperatingSystem,
-      outputFile: File
+      outputFile: File,
+      execOperations: ExecOperations
     ) {
       val osName =
         when (operatingSystem) {
@@ -208,7 +216,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
         URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$downloadFileName")
 
       logger.info("Downloading {} to {}", url, outputFile)
-      project.mkdir(outputFile.parentFile)
+      outputFile.parentFile.mkdirs()
 
       val connection = url.openConnection() as HttpURLConnection
       connection.requestMethod = "GET"
@@ -251,7 +259,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
       }
 
       if (operatingSystem != OperatingSystem.Windows) {
-        project.exec { execSpec ->
+        execOperations.exec { execSpec ->
           execSpec.run {
             executable = "chmod"
             args = listOf("a+x", outputFile.absolutePath)
