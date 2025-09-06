@@ -134,6 +134,7 @@ jobs:
 
           ./gradlew \
             --profile \
+            --warning-mode all \
             ${{ (inputs.gradleInfoLog && '--info') || '' }} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
@@ -222,7 +223,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -eux && ./gradlew ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+            set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload Log Files
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
