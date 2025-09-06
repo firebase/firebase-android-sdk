@@ -76,7 +76,7 @@ dependencies {
   testImplementation(libs.mockk)
   testImplementation(libs.junit)
   testImplementation(libs.truth)
-  testImplementation("commons-io:commons-io:2.15.1")
+  testImplementation("commons-io:commons-io:2.20.0")
   testImplementation(kotlin("test"))
 }
 
