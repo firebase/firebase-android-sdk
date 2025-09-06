@@ -16,9 +16,13 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
+import io.github.z4kn4fein.semver.Version
+import io.github.z4kn4fein.semver.toVersionOrNull
+import com.google.cloud.storage.Storage.BlobListOption
 import com.google.cloud.storage.StorageOptions
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.Companion.downloadDataConnectExecutable
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.FileInfo
+import io.github.z4kn4fein.semver.toVersion
 import java.io.File
 import javax.inject.Inject
 import kotlin.random.Random
@@ -38,35 +42,16 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
 
   @get:Inject abstract val execOperations: ExecOperations
 
-  private data class Version(val major: Int, val minor: Int, val patch: Int) : Comparable<Version> {
-    companion object {
-      fun fromString(versionString: String): Version {
-        val parts = versionString.split(".").map { it.toInt() }
-        return Version(parts[0], parts[1], parts[2])
-      }
-    }
-
-    override fun compareTo(other: Version): Int {
-      if (major != other.major) return major.compareTo(other.major)
-      if (minor != other.minor) return minor.compareTo(other.minor)
-      return patch.compareTo(other.patch)
-    }
-
-    override fun toString(): String {
-      return "$major.$minor.$patch"
-    }
-  }
-
   @TaskAction
   fun run() {
     val jsonFile: File = jsonFile.get().asFile
     val workDirectory: File = workDirectory.get().asFile
 
     logger.info("jsonFile={}", jsonFile.absolutePath)
-    logger.info("workDirectory={}", workDirectory)
+    logger.info("workDirectory={}", workDirectory.absolutePath)
 
     val allVersions = getAllPublishedVersions()
-    logger.info("Found ${allVersions.size} versions in GCS bucket.")
+    logger.debug("Found ${allVersions.size} versions in GCS bucket.")
 
     var json = DataConnectExecutableVersionsRegistry.load(jsonFile)
     val knownVersions = json.versions.map { it.version }.toSet()
@@ -94,28 +79,39 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
     logger.info("Updating default version to $latestVersion")
 
     logger.info(
-      "Writing information about versions ${missingVersions.joinToString(", ")} to file: {},
-      jsonFile.absolutePath
+      "Writing information about versions {} to file: {}",
+        missingVersions.joinToString(", "), jsonFile.absolutePath
     )
     DataConnectExecutableVersionsRegistry.save(json, jsonFile)
   }
 
-  private fun getAllPublishedVersions(): List<Version> {
+  private fun getAllPublishedVersions(): Set<Version> {
     val storage = StorageOptions.getDefaultInstance().service
     val bucketName = "firemat-preview-drop"
+    logger.info("Finding all Data Connect Emulator Binary versions in GCS bucket: {}", bucketName)
     val bucket = storage.get(bucketName)
-        ?: throw DataConnectGradleException("gcs_bucket_not_found", "Bucket $bucketName not found.")
+        ?: throw DataConnectGradleException("bvkxzp2esg", "GCS bucket not found: $bucketName")
 
-    val blobs = bucket.list(com.google.cloud.storage.Storage.BlobListOption.prefix("emulator/"))
-    val regex = ".*dataconnect-emulator-linux-v(\d+\.\d+\.\d+)".toRegex()
-    val versionsStrings = blobs.iterateAll().mapNotNull { regex.matchEntire(it.name)?.groups?.get(1)?.value }.toSet()
+    val invalidVersions = setOf("1.15.0".toVersion())
+    val minVersion = "1.3.4".toVersion()
 
-    val versions = versionsStrings.map { Version.fromString(it) }.toMutableSet()
-    // 1.15.0 is an invalid version that should be ignored.
-    versions.remove(Version.fromString("1.15.0"))
+    val blobs = bucket.list(BlobListOption.prefix("emulator/"))
+    val regex = ".*dataconnect-emulator-[^-]+-v(.*)".toRegex()
+    val versions = blobs
+      .iterateAll()
+      .mapNotNull { regex.matchEntire(it.name)?.groups?.get(1)?.value }
+      .distinct()
+      .mapNotNull { it.toVersionOrNull(strict = false) ?: run {
+        logger.warn("WARNING: unable to parse semantic version of " +
+            "Data Connect Emulator binary file found in GCS bucket {}: {}", bucketName, it)
+        null
+      } }
+      .filter { it >= minVersion }
+      .filterNot { invalidVersions.contains(it) }
+      .toSet()
+    logger.info("Found {} Data Connect Emulator Binary versions in GCS bucket {}: {}", versions.size, bucketName, versions.sorted().joinToString(", "))
 
-    val minVersion = Version.fromString("1.3.4")
-    return versions.filter { it >= minVersion }.sorted()
+    return versions
   }
 
   private fun DataConnectExecutableVersionsRegistry.Root.withVersion(
@@ -155,7 +151,7 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
       versions = 
         newVersions.sortedWith(
           compareBy<DataConnectExecutableVersionsRegistry.VersionInfo> {
-            Version.fromString(it.version)
+            it.version.toVersion()
           }.thenBy { it.os }
         )
     )

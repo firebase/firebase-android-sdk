@@ -28,7 +28,8 @@ dependencies {
   implementation(gradleKotlinDsl())
   implementation(firebaseLibs.kotlinx.serialization.core)
   implementation(firebaseLibs.kotlinx.serialization.json)
-  implementation("com.google.cloud:google-cloud-storage:2.38.0")
+  implementation("com.google.cloud:google-cloud-storage:2.56.0")
+  implementation("io.github.z4kn4fein:semver:3.0.0")
 }
 
 gradlePlugin {
@@ -47,10 +48,10 @@ spotless {
     ktfmt("0.41").googleStyle()
   }
 }
-
-tasks.register<com.google.firebase.dataconnect.gradle.plugin.DiscoverMissingDataConnectExecutableVersionsTask>("discoverMissingDataConnectExecutableVersions") {
-    description = "Discovers missing Data Connect executable versions from GCS and updates the versions JSON file."
-    group = "Data Connect"
-    jsonFile.set(layout.projectDirectory.file("src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"))
-    workDirectory.set(layout.buildDirectory.dir("discoverMissingDataConnectExecutableVersions"))
-}
+//
+//tasks.register<com.google.firebase.dataconnect.gradle.plugin.DiscoverMissingDataConnectExecutableVersionsTask>("discoverMissingDataConnectExecutableVersions") {
+//    description = "Discovers missing Data Connect executable versions from GCS and updates the versions JSON file."
+//    group = "Data Connect"
+//    jsonFile.set(layout.projectDirectory.file("src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"))
+//    workDirectory.set(layout.buildDirectory.dir("discoverMissingDataConnectExecutableVersions"))
+//}
