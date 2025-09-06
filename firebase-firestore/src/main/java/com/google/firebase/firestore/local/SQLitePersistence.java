@@ -616,7 +616,7 @@ public final class SQLitePersistence extends Persistence {
     // attempt to check for placeholders in the query {@link head}; if it only relied on the number
     // of placeholders it itself generates, in that situation it would still exceed the SQLite
     // limit.
-    private static final int LIMIT = 900;
+    static final int LIMIT = 900;
 
     /**
      * Creates a new {@code LongQuery} with parameters that describe a template for creating each

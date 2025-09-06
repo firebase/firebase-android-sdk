@@ -702,6 +702,27 @@ public class SQLiteSchemaTest {
     assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
   }
 
+  @Test
+  public void existingDocumentsMatchAfterRemoteDocumentsDocumentTypeColumnAdded() {
+    schema.runSchemaUpgrades(0, 1);
+    for (int i = 0; i < 3; i++) {
+      db.execSQL(
+          "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
+          new Object[] {encode(path("coll/doc" + i)), createDummyDocument("coll/doc" + i)});
+    }
+
+    // The migration of interest is 18, but go to the latest migration to ensure compatibility with
+    // the SQLiteRemoteDocumentCache implementation.
+    schema.runSchemaUpgrades(2, VERSION);
+
+    SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("coll"), IndexOffset.NONE, new HashSet<DocumentKey>());
+    assertResultsContain(results, "coll/doc0", "coll/doc1", "coll/doc2");
+  }
+
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     SQLitePersistence persistence =
         new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
