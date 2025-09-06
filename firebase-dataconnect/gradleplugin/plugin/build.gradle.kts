@@ -48,10 +48,3 @@ spotless {
     ktfmt("0.41").googleStyle()
   }
 }
-//
-//tasks.register<com.google.firebase.dataconnect.gradle.plugin.DiscoverMissingDataConnectExecutableVersionsTask>("discoverMissingDataConnectExecutableVersions") {
-//    description = "Discovers missing Data Connect executable versions from GCS and updates the versions JSON file."
-//    group = "Data Connect"
-//    jsonFile.set(layout.projectDirectory.file("src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"))
-//    workDirectory.set(layout.buildDirectory.dir("discoverMissingDataConnectExecutableVersions"))
-//}

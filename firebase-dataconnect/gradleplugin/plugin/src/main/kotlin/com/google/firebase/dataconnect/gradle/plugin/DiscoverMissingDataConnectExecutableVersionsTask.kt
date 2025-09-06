@@ -16,13 +16,13 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
-import io.github.z4kn4fein.semver.Version
-import io.github.z4kn4fein.semver.toVersionOrNull
 import com.google.cloud.storage.Storage.BlobListOption
 import com.google.cloud.storage.StorageOptions
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.Companion.downloadDataConnectExecutable
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.FileInfo
+import io.github.z4kn4fein.semver.Version
 import io.github.z4kn4fein.semver.toVersion
+import io.github.z4kn4fein.semver.toVersionOrNull
 import java.io.File
 import javax.inject.Inject
 import kotlin.random.Random
@@ -50,8 +50,10 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
     logger.info("jsonFile={}", jsonFile.absolutePath)
     logger.info("workDirectory={}", workDirectory.absolutePath)
 
-    val allVersions = getAllPublishedVersions()
-    logger.debug("Found ${allVersions.size} versions in GCS bucket.")
+    val allVersions = downloadPublishedDataConnectExecutableBinaryInfos().map { it.version }
+    if (true) {
+      return
+    }
 
     var json = DataConnectExecutableVersionsRegistry.load(jsonFile)
     val knownVersions = json.versions.map { it.version }.toSet()
@@ -80,38 +82,94 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
 
     logger.info(
       "Writing information about versions {} to file: {}",
-        missingVersions.joinToString(", "), jsonFile.absolutePath
+      missingVersions.joinToString(", "),
+      jsonFile.absolutePath
     )
     DataConnectExecutableVersionsRegistry.save(json, jsonFile)
   }
 
-  private fun getAllPublishedVersions(): Set<Version> {
+  data class DataConnectExecutableBinaryInfo(
+    val version: Version,
+    val operatingSystem: OperatingSystem,
+  )
+
+  private fun downloadPublishedDataConnectExecutableBinaryInfos():
+    Set<DataConnectExecutableBinaryInfo> {
     val storage = StorageOptions.getDefaultInstance().service
     val bucketName = "firemat-preview-drop"
     logger.info("Finding all Data Connect Emulator Binary versions in GCS bucket: {}", bucketName)
-    val bucket = storage.get(bucketName)
+    val bucket =
+      storage.get(bucketName)
         ?: throw DataConnectGradleException("bvkxzp2esg", "GCS bucket not found: $bucketName")
 
     val invalidVersions = setOf("1.15.0".toVersion())
     val minVersion = "1.3.4".toVersion()
 
     val blobs = bucket.list(BlobListOption.prefix("emulator/"))
-    val regex = ".*dataconnect-emulator-[^-]+-v(.*)".toRegex()
-    val versions = blobs
-      .iterateAll()
-      .mapNotNull { regex.matchEntire(it.name)?.groups?.get(1)?.value }
-      .distinct()
-      .mapNotNull { it.toVersionOrNull(strict = false) ?: run {
-        logger.warn("WARNING: unable to parse semantic version of " +
-            "Data Connect Emulator binary file found in GCS bucket {}: {}", bucketName, it)
-        null
-      } }
-      .filter { it >= minVersion }
-      .filterNot { invalidVersions.contains(it) }
-      .toSet()
-    logger.info("Found {} Data Connect Emulator Binary versions in GCS bucket {}: {}", versions.size, bucketName, versions.sorted().joinToString(", "))
+    val regex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
+    val dataConnectExecutableBinaries =
+      blobs
+        .iterateAll()
+        .mapNotNull {
+          logger.debug("[av7zhespw2] Found Data Connect Emulator binary file: {}", it.name)
+          val match =
+            regex.matchEntire(it.name)
+              ?: run {
+                logger.debug(
+                  "[p4vjjcp2kq] Ignoring Data Connect Emulator binary file: {} " +
+                    "(does not match regex: {})",
+                  it.name,
+                  regex
+                )
+                return@mapNotNull null
+              }
+          DataConnectExecutableBinaryInfo(
+            version =
+              run {
+                val versionString = match.groups[2]?.value
+                versionString?.toVersionOrNull(strict = false)
+                  ?: run {
+                    logger.info(
+                      "WARNING: Ignoring Data Connect Emulator binary file: {} " +
+                        "(invalid version: {} (in match for regex {}))",
+                      it.name,
+                      versionString,
+                      regex
+                    )
+                    return@mapNotNull null
+                  }
+              },
+            operatingSystem =
+              when (val operatingSystemString = match.groups[1]?.value) {
+                "linux" -> OperatingSystem.Linux
+                "macos" -> OperatingSystem.MacOS
+                "windows" -> OperatingSystem.Windows
+                else -> {
+                  logger.info(
+                    "WARNING: Ignoring Data Connect Emulator binary file: {} " +
+                      "(unknown operating system name: {} (in match for regex {}))",
+                    it.name,
+                    operatingSystemString,
+                    regex
+                  )
+                  return@mapNotNull null
+                }
+              },
+          )
+        }
+        .filter { it.version >= minVersion }
+        .filterNot { invalidVersions.contains(it.version) }
+        .toSet()
 
-    return versions
+    val versions = dataConnectExecutableBinaries.map { it.version }.distinct()
+    logger.info(
+      "Found {} Data Connect Emulator Binary versions in GCS bucket {}: {}",
+      versions.size,
+      bucketName,
+      versions.sorted().joinToString(", ")
+    )
+
+    return dataConnectExecutableBinaries
   }
 
   private fun DataConnectExecutableVersionsRegistry.Root.withVersion(
@@ -148,11 +206,10 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
     )
 
     return this.copy(
-      versions = 
+      versions =
         newVersions.sortedWith(
-          compareBy<DataConnectExecutableVersionsRegistry.VersionInfo> {
-            it.version.toVersion()
-          }.thenBy { it.os }
+          compareBy<DataConnectExecutableVersionsRegistry.VersionInfo> { it.version.toVersion() }
+            .thenBy { it.os }
         )
     )
   }
@@ -163,7 +220,7 @@ abstract class DiscoverMissingDataConnectExecutableVersionsTask : DefaultTask() 
     outputDirectory: File
   ): DownloadedFile {
     val randomId = Random.nextAlphanumericString(length = 20)
-    val outputFile = 
+    val outputFile =
       File(outputDirectory, "DataConnectToolkit_${version}_${operatingSystem}_$randomId")
 
     downloadDataConnectExecutable(version, operatingSystem, outputFile, execOperations)

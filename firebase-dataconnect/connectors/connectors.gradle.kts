@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.firebase.dataconnect.gradle.plugin.DiscoverMissingDataConnectExecutableVersionsTask
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -112,6 +113,19 @@ tasks.withType<KotlinJvmCompile>().configureEach {
   if (!name.contains("test", ignoreCase = true)) {
     compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
   }
+}
+
+tasks.register<DiscoverMissingDataConnectExecutableVersionsTask>("foo") {
+  outputs.upToDateWhen { false }
+
+  jsonFile.set(
+    project.layout.projectDirectory.file(
+      "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
+        "plugin/DataConnectExecutableVersions.json"
+    )
+  )
+
+  workDirectory.set(project.layout.buildDirectory.dir("foo"))
 }
 
 // Adds a Gradle task that updates the JSON file that stores the list of Data Connect
