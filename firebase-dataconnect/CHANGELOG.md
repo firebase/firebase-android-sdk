@@ -3,6 +3,8 @@
 - [changed] Ignore unknown fields in response data instead of throwing a
   `DataConnectOperationException` with message "decoding data from the server's response failed: An
   unknown field for index -3"
+- [changed] Internal code changes in preparation for user-defined enum support.
+  ([#7153](https://github.com/firebase/firebase-android-sdk/pull/7153))
 
 # 17.0.0
 
