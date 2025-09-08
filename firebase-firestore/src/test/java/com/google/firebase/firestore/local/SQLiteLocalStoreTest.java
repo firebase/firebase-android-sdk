@@ -850,13 +850,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   @Test
   public void testDocumentTypeIsUpdatedToNoDocumentWhenFoundDocumentDeleted() {
-    Mutation setMutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    Mutation mutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
     acknowledgeMutation(1);
-    Mutation deleteMutation = writeMutation(deleteMutation(setMutation.getKey()));
-    acknowledgeMutation(1);
+    writeMutation(deleteMutation(mutation.getKey()));
+    acknowledgeMutation(2);
 
     Map<ResourcePath, Integer> expected = new HashMap<>();
-    expected.put(deleteMutation.getKey().getPath(), 1); // 1 is a "no" document
+    expected.put(mutation.getKey().getPath(), 1); // 1 is a "no" document
     assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
   }
 
