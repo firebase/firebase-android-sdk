@@ -4,6 +4,7 @@
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
 androidGradlePlugin = "8.6.1"
+androidx-core = "1.13.1"
 androidx-test-core = "1.5.0"
 androidx-test-junit = "1.1.5"
 androidx-test-truth = "1.6.0"
@@ -16,10 +17,9 @@ browser = "1.3.0"
 cardview = "1.0.0"
 checkerQual = "2.5.2"
 constraintlayout = "2.1.4"
-coreKtx = "1.12.0"
 coroutines = "1.9.0"
 dagger = "2.51"                 # Don't bump above 2.51 as it causes a bug in AppDistro FeedbackSender JPEG code
-datastore = "1.1.3"
+datastore = "1.1.7"
 dexmaker = "2.28.1"
 dexmakerVersion = "1.2"
 espressoCore = "3.6.1"
@@ -71,7 +71,7 @@ rxjava = "2.1.14"
 serialization = "1.7.3"
 slf4jNop = "2.0.17"
 spotless = "7.0.4"
-testServices = "1.2.0"
+testServices = "1.6.0"
 truth = "1.4.4"
 truthProtoExtension = "1.0"
 wiremockStandalone = "2.26.3"
@@ -91,8 +91,8 @@ androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-mac
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-androidx-core = { module = "androidx.core:core", version = "1.13.1" }
-androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core = { module = "androidx.core:core", version.ref = "androidx-core" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }

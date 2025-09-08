@@ -75,7 +75,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
-  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(100);
+  // If the `mainThreadRunnableTime` was set within this duration, the assumption
+  // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
+  // See b/339891952.
+  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
 
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
@@ -114,6 +117,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final @Nullable Timer firebaseClassLoadTime;
   private Timer onCreateTime = null;
 
+  // TODO(b/339891952): Explore simplifying Timers in app start trace to use timestamps.
   private Timer mainThreadRunnableTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
@@ -323,6 +327,18 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     logExperimentTrace(this.experimentTtid);
   }
 
+  /**
+   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnableTime` was set
+   * from the `StartFromBackgroundRunnable`.
+   * <p>
+   * If it's prior to API 34, it's always set to true if `mainThreadRunnableTime` was set.
+   * <p>
+   * If it's on or after API 34, and it was called less than `MAX_BACKGROUND_RUNNABLE_DELAY`
+   * before `onActivityCreated`, the
+   * assumption is that it was called immediately before the activity lifecycle callbacks in a
+   * foreground start.
+   * See b/339891952.
+   */
   private void resolveIsStartedFromBackground() {
     // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
     // already been made.
@@ -330,12 +346,18 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
 
-    // Set it to true if the runnable ran more than 100ms prior to onActivityCreated()
-    if (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY) {
+    // If the `mainThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
+    // a background start.
+    // Otherwise it's assumed to be a background start if the runnable was set more than
+    // `MAX_BACKGROUND_RUNNABLE_DELAY`
+    // before the first `onActivityCreated` call.
+    // TODO(b/339891952): Investigate removing the API check.
+    if ((Build.VERSION.SDK_INT < 34)
+        || (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY)) {
       isStartedFromBackground = true;
     }
 
-    // Set this to null to prevent additional checks if `onActivityCreated()` is called again.
+    // Set this to null to prevent additional checks.
     mainThreadRunnableTime = null;
   }
 
@@ -581,8 +603,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   /**
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
-   * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
-   * be executed earlier than 100ms of any activity's onCreate() method.
+   * to main UI thread from FirebasePerfEarly. If `onActivityCreate` has never been called, we
+   * record the timestamp - which allows `onActivityCreate` to determine whether it was a background
+   * app start or not.
    */
   public static class StartFromBackgroundRunnable implements Runnable {
     private final AppStartTrace trace;
@@ -593,7 +616,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
-      trace.mainThreadRunnableTime = new Timer();
+      // Only set the `mainThreadRunnableTime` if `onActivityCreate` has never been called.
+      if (trace.onCreateTime == null) {
+        trace.mainThreadRunnableTime = new Timer();
+      }
     }
   }
 

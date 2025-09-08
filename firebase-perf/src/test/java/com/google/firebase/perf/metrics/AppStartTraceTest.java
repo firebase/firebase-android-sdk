@@ -239,7 +239,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testStartFromBackground_within100ms() {
+  public void testStartFromBackground_within50ms() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
@@ -247,7 +247,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.registerActivityLifecycleCallbacks(appContext);
     trace.setMainThreadRunnableTime(fakeTimer);
 
-    when(fakeTimer.getDurationMicros()).thenReturn(99L);
+    // See AppStartTrace.MAX_BACKGROUND_RUNNABLE_DELAY.
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(50) - 1);
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNotNull(trace.getOnCreateTime());
     ++currentTime;
@@ -266,7 +267,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testStartFromBackground_moreThan100ms() {
+  public void testStartFromBackground_moreThan50ms() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
@@ -274,7 +275,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.registerActivityLifecycleCallbacks(appContext);
     trace.setMainThreadRunnableTime(fakeTimer);
 
-    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(100) + 1);
+    // See AppStartTrace.MAX_BACKGROUND_RUNNABLE_DELAY.
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(50) + 1);
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());
     ++currentTime;
