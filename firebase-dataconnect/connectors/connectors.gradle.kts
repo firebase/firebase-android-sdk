@@ -15,7 +15,9 @@
  */
 
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
   id("com.android.library")
@@ -33,22 +35,23 @@ android {
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 
   @Suppress("UnstableApiUsage")
   testOptions {
+    targetSdk = targetSdkVersion
     unitTests {
       isIncludeAndroidResources = true
       isReturnDefaultValues = true
     }
   }
+
+  lint { targetSdk = targetSdkVersion }
 
   packaging {
     resources {
@@ -60,6 +63,13 @@ android {
   dataconnect {
     configDir = file("../emulator/dataconnect")
     codegen { connectors = listOf("demo", "keywords") }
+  }
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    optIn.add("kotlin.RequiresOptIn")
   }
 }
 
@@ -92,21 +102,15 @@ dependencies {
   androidTestImplementation(libs.turbine)
 }
 
-tasks.withType<KotlinCompile>().all {
-  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
-}
-
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
 // classes, methods, or properties have implicit `public` visibility. This check helps
 // avoid  accidentally leaking elements into the public API, requiring that any public
 // element be explicitly declared as `public`.
 // https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
 // https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
-tasks.withType<KotlinCompile>().all {
+tasks.withType<KotlinJvmCompile>().configureEach {
   if (!name.contains("test", ignoreCase = true)) {
-    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
-      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
-    }
+    compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
   }
 }
 

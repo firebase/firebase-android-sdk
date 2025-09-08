@@ -19,6 +19,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -120,7 +121,8 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
-
+    // A null path disables javadoc generation
+    val javadocPath: String? = "android".takeUnless { publishKotlindocOnly(project) }
     val jsonMap =
       mapOf(
         "moduleName" to "",
@@ -152,7 +154,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                 JSONObject(
                     mapOf(
                       "docRootPath" to "/docs/reference/",
-                      "javaDocsPath" to "android",
+                      "javaDocsPath" to javadocPath,
                       "kotlinDocsPath" to "kotlin",
                       "projectPath" to "client/${clientName.get()}",
                       "includedHeadTagsPathJava" to
@@ -170,6 +172,14 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
 
     return JSONObject(jsonMap)
   }
+
+  /**
+   * Checks if the [Project] should only release Kotlindocs
+   *
+   * This is done via the [FirebaseLibraryExtension.onlyPublishKotlindoc] property.
+   */
+  private fun publishKotlindocOnly(project: Project) =
+    project.firebaseLibrary.onlyPublishKotlindoc.get()
 
   private fun createExternalLinks(
     packageLists: ListProperty<File>
