@@ -214,12 +214,13 @@ package com.google.firebase.ai.type {
   }
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
-    ctor public CodeExecutionResultPart(com.google.firebase.ai.type.Outcome outcome, String output);
-    method public com.google.firebase.ai.type.Outcome getOutcome();
+    ctor public CodeExecutionResultPart(String outcome, String output);
+    method public boolean executionSucceeded();
+    method public String getOutcome();
     method public String getOutput();
     method public boolean isThought();
     property public boolean isThought;
-    property public final com.google.firebase.ai.type.Outcome outcome;
+    property public final String outcome;
     property public final String output;
   }
 
@@ -899,19 +900,6 @@ package com.google.firebase.ai.type {
     method public int getTokenCount();
     property public final com.google.firebase.ai.type.ContentModality modality;
     property public final int tokenCount;
-  }
-
-  public final class Outcome {
-    method public int getOrdinal();
-    property public final int ordinal;
-    field public static final com.google.firebase.ai.type.Outcome.Companion Companion;
-    field public static final com.google.firebase.ai.type.Outcome OUTCOME_DEADLINE_EXCEEDED;
-    field public static final com.google.firebase.ai.type.Outcome OUTCOME_FAILED;
-    field public static final com.google.firebase.ai.type.Outcome OUTCOME_OK;
-    field public static final com.google.firebase.ai.type.Outcome OUTCOME_UNSPECIFIED;
-  }
-
-  public static final class Outcome.Companion {
   }
 
   public interface Part {
