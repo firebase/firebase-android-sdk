@@ -27,8 +27,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.keyMap;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
-import static com.google.firebase.firestore.testutil.TestUtil.removedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -41,12 +41,12 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
@@ -830,65 +830,84 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   @Test
   public void testDocumentTypeIsSetToFoundWhenFoundDocumentAdded() {
-    Query query = query("coll");
-    int targetId = allocateQuery(query);
-    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
-
-    applyRemoteEvent(addedRemoteEvent(doc, targetId));
+    Mutation mutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
 
     Map<ResourcePath, Integer> expected = new HashMap<>();
-    expected.put(doc.getKey().getPath(), 2); // 2 is a "found" document
+    expected.put(mutation.getKey().getPath(), 2); // 2 is a "found" document
     assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
   }
 
   @Test
   public void testDocumentTypeIsSetToNoDocumentWhenUnknownDocumentDeleted() {
-    Query query = query("coll");
-    int targetId = allocateQuery(query);
-    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
-
-    applyRemoteEvent(removedRemoteEvent(doc.getKey(), 10, targetId));
+    Mutation mutation = writeMutation(deleteMutation("coll/a"));
+    acknowledgeMutation(1);
 
     Map<ResourcePath, Integer> expected = new HashMap<>();
-    expected.put(doc.getKey().getPath(), 1); // 1 is a "no" document
+    expected.put(mutation.getKey().getPath(), 1); // 1 is a "no" document
     assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
   }
 
   @Test
   public void testDocumentTypeIsUpdatedToNoDocumentWhenFoundDocumentDeleted() {
-    Query query = query("coll");
-    int targetId = allocateQuery(query);
-    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
-    applyRemoteEvent(addedRemoteEvent(doc, targetId));
-
-    applyRemoteEvent(removedRemoteEvent(doc.getKey(), 11, targetId));
+    Mutation setMutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    Mutation deleteMutation = writeMutation(deleteMutation(setMutation.getKey()));
+    acknowledgeMutation(1);
 
     Map<ResourcePath, Integer> expected = new HashMap<>();
-    expected.put(doc.getKey().getPath(), 1); // 1 is a "no" document
+    expected.put(deleteMutation.getKey().getPath(), 1); // 1 is a "no" document
     assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
   }
 
   @Test
-  public void testDocumentTypeColumnIsBackfilledByQuery() {
-    Query query = query("coll");
-    int targetId = allocateQuery(query);
-    MutableDocument existingDoc = doc("coll/a", 10, map("foo", 42));
-    applyRemoteEvent(addedRemoteEvent(existingDoc, targetId));
-    MutableDocument deletedDoc = doc("coll/b", 10, map("foo", 42));
-    applyRemoteEvent(addedRemoteEvent(deletedDoc, targetId));
-    applyRemoteEvent(removedRemoteEvent(deletedDoc.getKey(), 11, targetId));
-    SQLitePersistence persistence = this.sqlitePersistence.get();
-    persistence.execute("UPDATE remote_documents SET document_type = NULL");
-    assertWithMessage("precondition check: all rows have null document type")
-        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
-        .containsExactly(null, null);
-
-    executeQuery(query);
+  public void testDocumentTypeIsSetToUnknownWhenApplyingPatchMutationWithNoBaseDocument() {
+    Mutation mutation = writeMutation(patchMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
 
     Map<ResourcePath, Integer> expected = new HashMap<>();
-    expected.put(existingDoc.getKey().getPath(), 2); // 2 is a "found" document
-    expected.put(deletedDoc.getKey().getPath(), 1); // 1 is a "no" document
+    expected.put(mutation.getKey().getPath(), 3); // 3 is a "unknown" document
     assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testQueryBackfillsRowsWithNullDocumentType() {
+    Mutation foundDocMutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    Mutation noDocMutation = writeMutation(deleteMutation("coll/b"));
+    acknowledgeMutation(1);
+    Mutation unknownDocMutation = writeMutation(patchMutation("coll/c", map("foo", "bar")));
+    acknowledgeMutation(1);
+    sqlitePersistence.get().execute("UPDATE remote_documents SET document_type = NULL");
+    assertWithMessage("precondition check: all rows have null document type")
+        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
+        .containsExactly(null, null, null);
+
+    executeQuery(query("coll"));
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(foundDocMutation.getKey().getPath(), 2);
+    expected.put(noDocMutation.getKey().getPath(), 1);
+    expected.put(unknownDocMutation.getKey().getPath(), 3);
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testQueryResultsIncludeRowsWithNullDocumentType() {
+    writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    writeMutation(deleteMutation("coll/b"));
+    acknowledgeMutation(1);
+    writeMutation(patchMutation("coll/c", map("foo", "bar")));
+    acknowledgeMutation(1);
+    sqlitePersistence.get().execute("UPDATE remote_documents SET document_type = NULL");
+    assertWithMessage("precondition check: all rows have null document type")
+        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
+        .containsExactly(null, null, null);
+
+    executeQuery(query("coll"));
+
+    assertQueryReturned("coll/a");
   }
 
   /**
