@@ -931,7 +931,7 @@ public class FirebaseFirestore {
    * @return {@code RealtimePipelineSource} for this Firestore instance.
    */
   @NonNull
-  public RealtimePipelineSource realtimePipeline() {
+  RealtimePipelineSource realtimePipeline() {
     clientProvider.ensureConfigured();
     return new RealtimePipelineSource(this);
   }
