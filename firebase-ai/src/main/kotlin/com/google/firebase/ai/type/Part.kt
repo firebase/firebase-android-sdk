@@ -61,13 +61,13 @@ internal constructor(
  */
 public class CodeExecutionResultPart
 internal constructor(
-  public val outcome: Outcome,
+  public val outcome: String,
   public val output: String,
   public override val isThought: Boolean,
   internal val thoughtSignature: String?
 ) : Part {
 
-  public constructor(outcome: Outcome, output: String) : this(outcome, output, false, null)
+  public constructor(outcome: String, output: String) : this(outcome, output, false, null)
 
   @Serializable
   internal data class Internal(
@@ -78,7 +78,7 @@ internal constructor(
 
     @Serializable
     internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: Outcome.Internal,
+      val outcome: String,
       val output: String
     )
   }
