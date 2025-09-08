@@ -28,7 +28,6 @@ import kotlinx.serialization.Serializable
  * @property data The raw image bytes in JPEG or PNG format, as specified by [mimeType].
  * @property mimeType The IANA standard MIME type of the image data; either `"image/png"` or
  * `"image/jpeg"`; to request a different format, see [ImagenGenerationConfig.imageFormat].
- * @property safetyAttributes a set of safety attributes with their associated score.
  */
 @PublicPreviewAPI
 public class ImagenInlineImage
