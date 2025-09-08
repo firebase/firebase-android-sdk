@@ -245,7 +245,9 @@ public class View {
           candidates.add((MutableDocument) doc);
         }
         List<MutableDocument> results =
-            this.query.pipeline().evaluate$com_google_firebase_firebase_firestore(candidates);
+            this.query
+                .pipeline$com_google_firebase_firebase_firestore()
+                .evaluate$com_google_firebase_firebase_firestore(candidates);
         DocumentSet newResults = DocumentSet.emptySet(query.comparator());
         for (MutableDocument doc : results) {
           newResults = newResults.add(doc);
@@ -505,7 +507,8 @@ public class View {
   @Nullable
   private static Long getLimit(QueryOrPipeline query) {
     if (query.isPipeline()) {
-      Integer limit = getLastEffectiveLimit(query.pipeline());
+      Integer limit =
+          getLastEffectiveLimit(query.pipeline$com_google_firebase_firebase_firestore());
       if (limit == null) {
         return null;
       }
