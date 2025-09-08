@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -27,6 +28,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.removedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -39,7 +41,9 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
@@ -64,9 +68,16 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
+
+  private final AtomicReference<SQLitePersistence> sqlitePersistence = new AtomicReference<>();
+
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    SQLitePersistence sqlitePersistence = PersistenceTestHelpers.createSQLitePersistence();
+    if (!this.sqlitePersistence.compareAndSet(null, sqlitePersistence)) {
+      throw new RuntimeException("getPersistence() has already been called [error code qvw3g9kns]");
+    }
+    return sqlitePersistence;
   }
 
   @Override
@@ -815,5 +826,79 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
+  }
+
+  @Test
+  public void testDocumentTypeIsSetWhenDocumentedAdded() {
+    Query query = query("coll");
+    int targetId = allocateQuery(query);
+    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
+
+    applyRemoteEvent(addedRemoteEvent(doc, targetId));
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(doc.getKey().getPath(), 2); // 2 is a "found" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeIsUpdatedWhenDocumentedDeleted() {
+    Query query = query("coll");
+    int targetId = allocateQuery(query);
+    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
+    applyRemoteEvent(addedRemoteEvent(doc, targetId));
+
+    applyRemoteEvent(removedRemoteEvent(doc.getKey(), 11, targetId));
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(doc.getKey().getPath(), 1); // 1 is a "no" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeColumnIsBackfilledByQuery() {
+    Query query = query("coll");
+    int targetId = allocateQuery(query);
+    MutableDocument existingDoc = doc("coll/a", 10, map("foo", 42));
+    applyRemoteEvent(addedRemoteEvent(existingDoc, targetId));
+    MutableDocument deletedDoc = doc("coll/b", 10, map("foo", 42));
+    applyRemoteEvent(addedRemoteEvent(deletedDoc, targetId));
+    applyRemoteEvent(removedRemoteEvent(deletedDoc.getKey(), 11, targetId));
+    SQLitePersistence persistence = this.sqlitePersistence.get();
+    persistence.execute("UPDATE remote_documents SET document_type = NULL");
+    assertWithMessage("precondition check: all rows have null document type")
+        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
+        .containsExactly(null, null);
+
+    executeQuery(query);
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(existingDoc.getKey().getPath(), 2); // 2 is a "found" document
+    expected.put(deletedDoc.getKey().getPath(), 1); // 1 is a "no" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  /**
+   * Scans the entire "remote documents" sqlite table and returns the value of the "document type"
+   * column for each row, keyed by the value of the "path" column of the corresponding row. Note
+   * that the values of the returned map may be `null`, if the column value for that row is null.
+   */
+  private Map<ResourcePath, Integer> getDocumentTypeByPathFromRemoteDocumentsTable() {
+    HashMap<ResourcePath, Integer> documentTypeByPath = new HashMap<>();
+    sqlitePersistence
+        .get()
+        .query("SELECT path, document_type FROM remote_documents")
+        .forEach(
+            row -> {
+              String encodedPath = row.getString(0);
+              ResourcePath path = EncodedPath.decodeResourcePath(encodedPath);
+              Integer documentType = row.isNull(1) ? null : row.getInt(1);
+              synchronized (documentTypeByPath) {
+                documentTypeByPath.put(path, documentType);
+              }
+            });
+    synchronized (documentTypeByPath) {
+      return documentTypeByPath;
+    }
   }
 }
