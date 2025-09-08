@@ -17,10 +17,12 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import java.util.Locale
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -38,6 +40,8 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
 
   @get:OutputDirectory @get:Optional abstract val mergedDirectory: DirectoryProperty
 
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
   @TaskAction
   fun run() {
     val defaultConfigDirectories: List<File> =
@@ -52,14 +56,14 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
     logger.info(
       "defaultConfigDirectories ({}): {}",
       defaultConfigDirectories.size,
-      defaultConfigDirectories.map { it.absolutePath }.joinToString(", ")
+      defaultConfigDirectories.joinToString(", ") { it.absolutePath }
     )
     logger.info("customConfigDirectory: {}", customConfigDirectory?.absolutePath)
     logger.info("buildDirectory: {}", buildDirectory.absolutePath)
     logger.info("mergedDirectory: {}", mergedDirectory?.absolutePath)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    project.delete(buildDirectory)
+    fileSystemOperations.delete { it.delete(buildDirectory) }
 
     val configDirectories =
       buildList {
@@ -110,7 +114,7 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
       existingConfigDirectories.joinToString(", ") { it.absolutePath },
       mergedDirectory.absolutePath
     )
-    project.copy {
+    fileSystemOperations.copy {
       it.from(existingConfigDirectories)
       it.into(mergedDirectory)
       it.duplicatesStrategy = DuplicatesStrategy.FAIL
