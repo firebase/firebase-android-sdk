@@ -84,7 +84,7 @@ internal constructor(
 }
 
 /**
- * Represents the code that is executed by the model.
+ * Represents the code that was executed by the model.
  * @property language The programming language of the code.
  * @property code The source code to be executed.
  * @property isThought Indicates whether the response is a thought.
