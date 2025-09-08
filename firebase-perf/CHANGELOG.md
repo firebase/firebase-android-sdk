@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed the behavior of app start traces on API 34+ devices. [#5920]
+
+# 22.0.1
+
 - [fixed] Fixed an ANR on app launch. [#4831]
 
 # 22.0.0

@@ -1,19 +1,21 @@
-name: Firebase AI Nightlies
+name: Firebase AI Daily Tests
 
 on:
   schedule:
     - cron: 2 7 * * *  # Runs automatically once a day
   workflow_dispatch:   # Allow triggering the workflow manually
 
+permissions:
+  contents: read
+
 jobs:
-  nightlies:
-    name: "Nightlies"
+  dailies:
+    name: "Daily Tests"
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 2
           submodules: true
 
       - name: Enable KVM
@@ -48,7 +50,7 @@ jobs:
           FTL_RESULTS_DIR: ${{ format('logs/{0}/{1}_{2}/artifacts/', github.workflow, github.run_id, github.run_attempt) }}
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
-          api-level: 31
+          api-level: 34
           arch: x86_64
           ram-size: 4096M
           heap-size: 4096M

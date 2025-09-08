@@ -5,8 +5,7 @@ Note: We did some super cool stuff here!
 - [feature] Added support for disjunctions in queries (`OR` queries).
 
 - [feature] Firebase now supports Kotlin coroutines. With this release, we added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-firestore-ktx` as a transitive dependency, which exposes the
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:.external} to `firebase-firestore-ktx` as a transitive dependency, which exposes the
   `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin coroutine.
 
@@ -15,7 +14,7 @@ Note: We did some super cool stuff here!
 - [removed] Removed some old stuff (#562)
 
 - [feature] Added this thing we wanted
-  [#444](//github.com/firebase/firebase-android-sdk/issues/number){: .external}
+  [#444](//github.com/firebase/firebase-android-sdk/issues/number){:.external}
 
 - [feature] Added
   [`Query.snapshots()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#snapshots_1)
@@ -45,7 +44,7 @@ Note: We did some super cool stuff here!
 # 24.5.0
 
 - [fixed] Fixed stack overflow caused by deeply nested server timestamps. (GitHub
-  [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
+  [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){:.external})
 
 ## Kotlin
 
