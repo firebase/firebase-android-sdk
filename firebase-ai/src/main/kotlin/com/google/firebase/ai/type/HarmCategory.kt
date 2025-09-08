@@ -31,6 +31,10 @@ public class HarmCategory private constructor(public val ordinal: Int) {
       SEXUALLY_EXPLICIT -> Internal.SEXUALLY_EXPLICIT
       DANGEROUS_CONTENT -> Internal.DANGEROUS_CONTENT
       CIVIC_INTEGRITY -> Internal.CIVIC_INTEGRITY
+      IMAGE_HATE -> Internal.IMAGE_HATE
+      IMAGE_DANGEROUS_CONTENT -> Internal.IMAGE_DANGEROUS_CONTENT
+      IMAGE_HARASSMENT -> Internal.IMAGE_HARASSMENT
+      IMAGE_SEXUALLY_EXPLICIT -> Internal.IMAGE_SEXUALLY_EXPLICIT
       UNKNOWN -> Internal.UNKNOWN
       else -> throw makeMissingCaseException("HarmCategory", ordinal)
     }
@@ -41,7 +45,11 @@ public class HarmCategory private constructor(public val ordinal: Int) {
     @SerialName("HARM_CATEGORY_HATE_SPEECH") HATE_SPEECH,
     @SerialName("HARM_CATEGORY_SEXUALLY_EXPLICIT") SEXUALLY_EXPLICIT,
     @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT,
-    @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY;
+    @SerialName("HARM_CATEGORY_CIVIC_INTEGRITY") CIVIC_INTEGRITY,
+    @SerialName("HARM_CATEGORY_IMAGE_HATE") IMAGE_HATE,
+    @SerialName("HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT") IMAGE_DANGEROUS_CONTENT,
+    @SerialName("HARM_CATEGORY_IMAGE_HARASSMENT") IMAGE_HARASSMENT,
+    @SerialName("HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT") IMAGE_SEXUALLY_EXPLICIT;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
@@ -52,6 +60,10 @@ public class HarmCategory private constructor(public val ordinal: Int) {
         SEXUALLY_EXPLICIT -> HarmCategory.SEXUALLY_EXPLICIT
         DANGEROUS_CONTENT -> HarmCategory.DANGEROUS_CONTENT
         CIVIC_INTEGRITY -> HarmCategory.CIVIC_INTEGRITY
+        IMAGE_HATE -> HarmCategory.IMAGE_HATE
+        IMAGE_DANGEROUS_CONTENT -> HarmCategory.IMAGE_DANGEROUS_CONTENT
+        IMAGE_HARASSMENT -> HarmCategory.IMAGE_HARASSMENT
+        IMAGE_SEXUALLY_EXPLICIT -> HarmCategory.IMAGE_SEXUALLY_EXPLICIT
         else -> HarmCategory.UNKNOWN
       }
   }
@@ -73,5 +85,17 @@ public class HarmCategory private constructor(public val ordinal: Int) {
 
     /** Content that may be used to harm civic integrity. */
     @JvmField public val CIVIC_INTEGRITY: HarmCategory = HarmCategory(5)
+
+    /** Content that is image hate. */
+    @JvmField public val IMAGE_HATE: HarmCategory = HarmCategory(6)
+
+    /** Image dangerous content. */
+    @JvmField public val IMAGE_DANGEROUS_CONTENT: HarmCategory = HarmCategory(7)
+
+    /** Content is image harassment. */
+    @JvmField public val IMAGE_HARASSMENT: HarmCategory = HarmCategory(8)
+
+    /** Image sexually explicit content. */
+    @JvmField public val IMAGE_SEXUALLY_EXPLICIT: HarmCategory = HarmCategory(9)
   }
 }

@@ -90,6 +90,15 @@ internal class UnsupportedUserLocationException(cause: Throwable? = null) :
   FirebaseCommonAIException("User location is not supported for the API use.", cause)
 
 /**
+ * The Firebase project has not been configured and enabled for the selected API.
+ *
+ * For the Gemini Developer API, see
+ * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
+ */
+internal class APINotConfiguredException(message: String, cause: Throwable? = null) :
+  FirebaseCommonAIException(message, cause)
+
+/**
  * Some form of state occurred that shouldn't have.
  *
  * Usually indicative of consumer error.

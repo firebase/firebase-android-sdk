@@ -17,10 +17,13 @@
 package com.google.firebase.ai.type
 
 import android.Manifest.permission.RECORD_AUDIO
+import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import androidx.core.content.ContextCompat
+import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
@@ -58,7 +61,8 @@ public class LiveSession
 internal constructor(
   private val session: ClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
-  private var audioHelper: AudioHelper? = null
+  private var audioHelper: AudioHelper? = null,
+  private val firebaseApp: FirebaseApp,
 ) {
   /**
    * Coroutine scope that we batch data on for [startAudioConversation].
@@ -93,6 +97,14 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
+
+    val context = firebaseApp.applicationContext
+    if (
+      ContextCompat.checkSelfPermission(context, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+    ) {
+      throw PermissionMissingException("Audio access not provided by the user")
+    }
+
     FirebaseAIException.catchAsync {
       if (scope.isActive) {
         Log.w(
@@ -131,6 +143,12 @@ internal constructor(
     }
   }
 
+  /** Indicates whether the underlying websocket connection is active. */
+  public fun isClosed(): Boolean = !(session.isActive && !session.incoming.tryReceive().isClosed)
+
+  /** Indicates whether an audio conversation is being used for this session object. */
+  public fun isAudioConversationActive(): Boolean = (audioHelper != null)
+
   /**
    * Receives responses from the model for both streaming and standard requests.
    *
@@ -152,7 +170,6 @@ internal constructor(
           while (true) {
             val response = session.incoming.tryReceive()
             if (response.isClosed || !startedReceiving.get()) break
-
             response
               .getOrNull()
               ?.let {
@@ -161,7 +178,6 @@ internal constructor(
                 )
               }
               ?.let { emit(it.toPublic()) }
-
             yield()
           }
         }

@@ -21,10 +21,17 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
+import com.google.firebase.ai.type.Dimensions
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.ImagenEditMode
+import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenGenerationConfig
 import com.google.firebase.ai.type.ImagenGenerationResponse
+import com.google.firebase.ai.type.ImagenImagePlacement
 import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.ImagenMaskReference
+import com.google.firebase.ai.type.ImagenRawImage
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.ImagenSafetySettings
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -34,6 +41,9 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
+ *
+ * See the documentation for a list of
+ * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
 @PublicPreviewAPI
 public class ImagenModel
@@ -48,6 +58,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
+    useLimitedUseAppCheckTokens: Boolean,
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
@@ -63,7 +74,12 @@ internal constructor(
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
-      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      AppCheckHeaderProvider(
+        TAG,
+        useLimitedUseAppCheckTokens,
+        appCheckTokenProvider,
+        internalAuthProvider
+      ),
     ),
   )
 
@@ -75,30 +91,130 @@ internal constructor(
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
       controller
-        .generateImage(constructRequest(prompt, null, generationConfig))
+        .generateImage(constructGenerateImageRequest(prompt, generationConfig))
         .validate()
         .toPublicInline()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
 
-  private fun constructRequest(
+  /**
+   * Generates an image from a single or set of base images, returning the result directly to the
+   * caller.
+   *
+   * @param referenceImages the image inputs given to the model as a prompt
+   * @param prompt the text input given to the model as a prompt
+   * @param config the editing configuration settings
+   */
+  public suspend fun editImage(
+    referenceImages: List<ImagenReferenceImage>,
     prompt: String,
-    gcsUri: String?,
-    config: ImagenGenerationConfig?,
+    config: ImagenEditingConfig? = null,
+  ): ImagenGenerationResponse<ImagenInlineImage> =
+    try {
+      controller
+        .generateImage(constructEditRequest(referenceImages, prompt, config))
+        .validate()
+        .toPublicInline()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  /**
+   * Generates an image by inpainting a masked off part of a base image. Inpainting is the process
+   * of filling in missing or masked off parts of the image using context from the original image
+   * and prompt.
+   *
+   * @param image the base image
+   * @param prompt the text input given to the model as a prompt
+   * @param mask the mask which defines where in the image can be painted by Imagen.
+   * @param config the editing configuration settings, it should include an [ImagenEditMode]
+   */
+  public suspend fun inpaintImage(
+    image: ImagenInlineImage,
+    prompt: String,
+    mask: ImagenMaskReference,
+    config: ImagenEditingConfig,
+  ): ImagenGenerationResponse<ImagenInlineImage> {
+    return editImage(listOf(ImagenRawImage(image), mask), prompt, config)
+  }
+
+  /**
+   * Generates an image by outpainting the given image, extending its content beyond the original
+   * borders using context from the original image, and optionally, the prompt.
+   *
+   * @param image the base image
+   * @param newDimensions the new dimensions for the image, *must* be larger than the original
+   * image.
+   * @param newPosition the placement of the base image within the new image. This can either be
+   * coordinates (0,0 is the top left corner) or an alignment (ex:
+   * [ImagenImagePlacement.BOTTOM_CENTER])
+   * @param prompt optional, can be used to specify the background generated if context is
+   * insufficient
+   * @param config the editing configuration settings
+   * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
+   */
+  public suspend fun outpaintImage(
+    image: ImagenInlineImage,
+    newDimensions: Dimensions,
+    newPosition: ImagenImagePlacement = ImagenImagePlacement.CENTER,
+    prompt: String = "",
+    config: ImagenEditingConfig? = null,
+  ): ImagenGenerationResponse<ImagenInlineImage> {
+    return editImage(
+      ImagenMaskReference.generateMaskAndPadForOutpainting(image, newDimensions, newPosition),
+      prompt,
+      ImagenEditingConfig(ImagenEditMode.OUTPAINT, config?.editSteps)
+    )
+  }
+
+  private fun constructGenerateImageRequest(
+    prompt: String,
+    generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
     return GenerateImageRequest(
-      listOf(GenerateImageRequest.ImagenPrompt(prompt)),
+      listOf(GenerateImageRequest.ImagenPrompt(prompt, null)),
       GenerateImageRequest.ImagenParameters(
-        sampleCount = config?.numberOfImages ?: 1,
+        sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
         addWatermark = generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
-        negativePrompt = config?.negativePrompt,
+        negativePrompt = generationConfig?.negativePrompt,
         safetySetting = safetySettings?.safetyFilterLevel?.internalVal,
-        storageUri = gcsUri,
-        aspectRatio = config?.aspectRatio?.internalVal,
+        storageUri = null,
+        aspectRatio = generationConfig?.aspectRatio?.internalVal,
         imageOutputOptions = generationConfig?.imageFormat?.toInternal(),
+        editMode = null,
+        editConfig = null,
+      ),
+    )
+  }
+
+  private fun constructEditRequest(
+    referenceImages: List<ImagenReferenceImage>,
+    prompt: String,
+    editConfig: ImagenEditingConfig?,
+  ): GenerateImageRequest {
+    var maxRefId = referenceImages.mapNotNull { it.referenceId }.maxOrNull() ?: 1
+    return GenerateImageRequest(
+      listOf(
+        GenerateImageRequest.ImagenPrompt(
+          prompt = prompt,
+          referenceImages = referenceImages.map { it.toInternal(++maxRefId) },
+        )
+      ),
+      GenerateImageRequest.ImagenParameters(
+        sampleCount = generationConfig?.numberOfImages ?: 1,
+        includeRaiReason = true,
+        addWatermark = generationConfig?.addWatermark,
+        personGeneration = safetySettings?.personFilterLevel?.internalVal,
+        negativePrompt = generationConfig?.negativePrompt,
+        safetySetting = safetySettings?.safetyFilterLevel?.internalVal,
+        storageUri = null,
+        aspectRatio = generationConfig?.aspectRatio?.internalVal,
+        imageOutputOptions = generationConfig?.imageFormat?.toInternal(),
+        editMode = editConfig?.editMode?.value,
+        editConfig = editConfig?.toInternal(),
       ),
     )
   }

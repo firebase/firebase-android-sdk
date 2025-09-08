@@ -73,6 +73,7 @@ dependencies {
   testImplementation(libs.kotest.assertions)
   testImplementation(libs.kotest.property)
   testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
 

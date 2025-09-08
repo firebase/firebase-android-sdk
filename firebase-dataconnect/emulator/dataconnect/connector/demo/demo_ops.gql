@@ -1581,3 +1581,215 @@ query ExprValues_GetByKey($key: ExprValues_Key!) @auth(level: PUBLIC) {
     requestTimeAsDate
   }
 }
+
+###############################################################################
+# Operations for table: type EnumNonNullable
+###############################################################################
+
+mutation EnumNonNullable_Insert($value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key: enumNonNullable_insert(data: { value: $value })
+}
+
+mutation EnumNonNullable_Insert3($tag: String!, $value1: N5ekmae3jn!, $value2: N5ekmae3jn!, $value3: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key1: enumNonNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNonNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNonNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNonNullable_GetByKey($key: EnumNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullable(key: $key) { value }
+}
+
+query EnumNonNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn! = XGWGVMYTHJ) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNonNullable_update(key: $key, data: { value: $value })
+}
+
+###############################################################################
+# Operations for table: type EnumNullable
+###############################################################################
+
+mutation EnumNullable_Insert($value: N5ekmae3jn) @auth(level: PUBLIC) {
+  key: enumNullable_insert(data: { value: $value })
+}
+
+mutation EnumNullable_Insert3($tag: String!, $value1: N5ekmae3jn, $value2: N5ekmae3jn, $value3: N5ekmae3jn) @auth(level: PUBLIC) {
+  key1: enumNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNullable_GetByKey($key: EnumNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullable(key: $key) { value }
+}
+
+query EnumNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn = QJX7C7RD5T) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNullable_UpdateByKey($key: EnumNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  enumNullable_update(key: $key, data: { value: $value })
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableTableDefault
+###############################################################################
+
+mutation EnumNonNullableTableDefault_Insert @auth(level: PUBLIC) {
+  key: enumNonNullableTableDefault_insert(data: { })
+}
+
+query EnumNonNullableTableDefault_GetByKey($key: EnumNonNullableTableDefault_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableTableDefault(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableTableDefault
+###############################################################################
+
+mutation EnumNullableTableDefault_Insert @auth(level: PUBLIC) {
+  key: enumNullableTableDefault_insert(data: { })
+}
+
+query EnumNullableTableDefault_GetByKey($key: EnumNullableTableDefault_Key!) @auth(level: PUBLIC) {
+  item: enumNullableTableDefault(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNonNullable_GetByKey($key: EnumNonNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNonNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNullable_GetByKey($key: EnumNonNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNullableListOfNonNullable_GetByKey($key: EnumNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullableListOfNonNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableListOfNullable
+###############################################################################
+
+mutation EnumNullableListOfNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNullableListOfNullable_insert(data: { value: $value })
+}
+
+query EnumNullableListOfNullable_GetByKey($key: EnumNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullableListOfNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumKotlinKeywords
+###############################################################################
+
+mutation EnumKotlinKeywords_Insert($value: break!) @auth(level: PUBLIC) {
+  key: enumKotlinKeywords_insert(data: { value: $value })
+}
+
+query EnumKotlinKeywords_GetByKey($key: EnumKotlinKeywords_Key!) @auth(level: PUBLIC) {
+  item: enumKotlinKeywords(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumSubset
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubset_GetByKey($key: EnumSubset_Key!) @auth(level: PUBLIC) {
+  item: enumSubset(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumSubsetList
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubsetList_GetByKey($key: EnumSubsetList_Key!) @auth(level: PUBLIC) {
+  item: enumSubsetList(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumKey
+###############################################################################
+
+mutation EnumKey_Insert($enumValue: N5ekmae3jn!, $tag: String) @auth(level: PUBLIC) {
+  key: enumKey_insert(data: { enumValue: $enumValue, tag: $tag })
+}
+
+query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
+  item: enumKey(key: $key) { tag }
+}
+
+###############################################################################
+# Operations for table: type MultipleEnumColumns
+###############################################################################
+
+mutation MultipleEnumColumns_Insert($enum1: N5ekmae3jn!, $enum2: S7yayynb25!) @auth(level: PUBLIC) {
+  key: multipleEnumColumns_insert(data: { enum1: $enum1, enum2: $enum2 })
+}
+
+query MultipleEnumColumns_GetByKey($key: MultipleEnumColumns_Key!) @auth(level: PUBLIC) {
+  item: multipleEnumColumns(key: $key) { enum1 enum2 }
+}

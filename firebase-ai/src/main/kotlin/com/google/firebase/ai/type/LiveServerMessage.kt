@@ -135,7 +135,8 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
         toolCall.functionCalls.map { functionCall ->
           FunctionCallPart(
             name = functionCall.name,
-            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+            id = functionCall.id
           )
         }
       )
@@ -183,7 +184,7 @@ internal object LiveServerMessageSerializer :
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       else ->
         throw SerializationException(
-          "The given subclass of LiveServerMessage (${javaClass.simpleName}) is not supported in the serialization yet."
+          "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
     }
   }

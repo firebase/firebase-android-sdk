@@ -148,7 +148,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
       }
 
-    return "* {{${type.name.toLowerCase()}}} $fixedMessage"
+    return "* {{${type.name.lowercase()}}} $fixedMessage"
   }
 
   companion object {
@@ -191,7 +191,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private val LINK_REGEX =
       Regex(
-        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{: \\.external\\})?",
+        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
         RegexOption.MULTILINE,
       )
   }

@@ -166,11 +166,6 @@ class GenerateBomReleaseNotesTests : FunSpec() {
           artifactId = "firebase-analytics",
           version = "10.0.0",
         ),
-        ArtifactDependency(
-          groupId = "com.google.firebase",
-          artifactId = "firebase-vertexai",
-          version = "10.0.0",
-        ),
       )
     val newDependencies =
       listOf(
@@ -183,11 +178,6 @@ class GenerateBomReleaseNotesTests : FunSpec() {
           groupId = "com.google.firebase",
           artifactId = "firebase-firestore",
           version = "10.0.0",
-        ),
-        ArtifactDependency(
-          groupId = "com.google.firebase",
-          artifactId = "firebase-vertexai",
-          version = "11.0.0",
         ),
       )
     val oldBom = makeBom("1.0.0", oldDependencies)
@@ -227,11 +217,6 @@ class GenerateBomReleaseNotesTests : FunSpec() {
                   <td><b>com.google.firebase:firebase-firestore</b></td>
                   <td><b>N/A</b></td>
                   <td><b>10.0.0</b></td>
-                </tr>
-                <tr class="alt">
-                  <td><b>com.google.firebase:firebase-vertexai</b></td>
-                  <td><b>10.0.0</b></td>
-                  <td><b>11.0.0</b></td>
                 </tr>
               </tbody>
             </table>
