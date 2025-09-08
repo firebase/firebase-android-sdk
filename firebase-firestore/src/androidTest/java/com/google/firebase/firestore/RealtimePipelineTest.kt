@@ -339,6 +339,60 @@ class RealtimePipelineTest {
   }
 
   @Test
+  fun testExpressionEvaluateToErrorInWhere() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(field("published").add(Long.MAX_VALUE).lessThan(2000))
+    val options =
+      RealtimePipelineOptions()
+        .withMetadataChanges(MetadataChanges.INCLUDE)
+        .withSource(ListenSource.CACHE)
+    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(0)
+
+    waitFor(db.disableNetwork())
+    waitFor(db.enableNetwork())
+
+    val nextSnapshot = withTimeoutOrNull(500) { channel.receive() }
+    assertThat(nextSnapshot).isNull()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testExpressionEvaluateToErrorInSort() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .sort(field("published").add(Long.MAX_VALUE - 1950).descending())
+    val options =
+      RealtimePipelineOptions()
+        .withMetadataChanges(MetadataChanges.INCLUDE)
+        .withSource(ListenSource.CACHE)
+    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(0)
+
+    waitFor(db.disableNetwork())
+    waitFor(db.enableNetwork())
+
+    val nextSnapshot = withTimeoutOrNull(500) { channel.receive() }
+    assertThat(nextSnapshot).isNull()
+
+    job.cancel()
+  }
+
+  @Test
   fun testCanListenToMetadataOnlyChanges() = runBlocking {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))

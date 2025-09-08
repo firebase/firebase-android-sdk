@@ -32,6 +32,7 @@ import com.google.firebase.firestore.model.Values.isNanValue
 import com.google.firebase.firestore.model.Values.strictCompare
 import com.google.firebase.firestore.model.Values.strictEquals
 import com.google.firebase.firestore.util.Assert
+import com.google.firebase.firestore.util.Logger
 import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
@@ -762,6 +763,7 @@ private inline fun catch(f: () -> EvaluateResult): EvaluateResult =
   try {
     f()
   } catch (e: Exception) {
+    Logger.debug("catch()", "Returning evaluation error due to exception: %s", e)
     EvaluateResultError
   }
 
