@@ -545,19 +545,6 @@ public class TestUtil {
     return aggregator.createRemoteEvent(doc.getVersion());
   }
 
-  public static RemoteEvent removedRemoteEvent(DocumentKey key, int version, Integer targetId) {
-    return removedRemoteEvent(key, version(version), targetId);
-  }
-
-  public static RemoteEvent removedRemoteEvent(
-      DocumentKey key, SnapshotVersion version, Integer targetId) {
-    return removedRemoteEvent(MutableDocument.newNoDocument(key, version), targetId);
-  }
-
-  public static RemoteEvent removedRemoteEvent(MutableDocument doc, Integer targetId) {
-    return addedRemoteEvent(singletonList(doc), emptyList(), singletonList(targetId));
-  }
-
   public static SetMutation setMutation(String path, Map<String, Object> values) {
     UserDataReader dataReader = new UserDataReader(TEST_PROJECT);
     ParsedSetData parsed = dataReader.parseSetData(values);
