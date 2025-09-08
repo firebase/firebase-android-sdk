@@ -56,7 +56,9 @@ public class QueryListener {
     if (query.isPipeline()) {
       this.query =
           new QueryOrPipeline.PipelineWrapper(
-              query.pipeline().withListenOptions$com_google_firebase_firebase_firestore(options));
+              query
+                  .pipeline$com_google_firebase_firebase_firestore()
+                  .withListenOptions$com_google_firebase_firebase_firestore(options));
     } else {
       this.query = query;
     }

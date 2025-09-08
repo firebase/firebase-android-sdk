@@ -34,6 +34,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.RealtimePipelineSource;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
@@ -494,7 +495,7 @@ public final class LocalSerializerTest {
   public void encodesTargetDataWithPipeline() {
     FirebaseFirestore db = com.google.firebase.firestore.TestUtil.firestore();
     RealtimePipeline pipeline =
-        db.realtimePipeline()
+        new RealtimePipelineSource(db)
             .collection("rooms")
             .where(Expression.field("name").equal("test room"))
             .sort(Expression.field("age").descending())

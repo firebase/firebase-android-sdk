@@ -48,7 +48,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
-class RealtimePipelineSource internal constructor(private val firestore: FirebaseFirestore) {
+internal class RealtimePipelineSource
+internal constructor(private val firestore: FirebaseFirestore) {
   /**
    * Convert the given Query into an equivalent Pipeline.
    *
@@ -127,7 +128,7 @@ class RealtimePipelineSource internal constructor(private val firestore: Firebas
     )
 }
 
-class RealtimePipeline
+internal class RealtimePipeline
 internal constructor(
   // This is nullable because RealtimePipeline is also created from deserialization from persistent
   // cache. In that case, it is only used to facilitate remote store requests, and this field is

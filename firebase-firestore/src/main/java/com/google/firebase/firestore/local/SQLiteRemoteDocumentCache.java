@@ -270,7 +270,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (query.isQuery()) {
       path = query.query().getPath();
     } else {
-      String pathString = getPipelineCollection(query.pipeline());
+      String pathString =
+          getPipelineCollection(query.pipeline$com_google_firebase_firebase_firestore());
       hardAssert(
           pathString != null,
           "SQLiteRemoteDocumentCache.getDocumentsMatchingQuery receives pipeline without collection source.");

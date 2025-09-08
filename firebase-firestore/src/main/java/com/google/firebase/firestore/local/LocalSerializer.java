@@ -234,7 +234,7 @@ public final class LocalSerializer {
           com.google.firestore.v1.Target.PipelineQueryTarget.newBuilder()
               .setStructuredPipeline(
                   target
-                      .pipeline()
+                      .pipeline$com_google_firebase_firebase_firestore()
                       .toStructurePipelineProto$com_google_firebase_firebase_firestore()));
     }
 
