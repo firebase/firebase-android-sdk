@@ -69,6 +69,9 @@ internal constructor(
 
   public constructor(outcome: String, output: String) : this(outcome, output, false, null)
 
+  /** Indicates if the code execution was successful */
+  public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
+
   @Serializable
   internal data class Internal(
     @SerialName("codeExecutionResult") val codeExecutionResult: CodeExecutionResult,
@@ -76,11 +79,7 @@ internal constructor(
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class CodeExecutionResult(
-      val outcome: String,
-      val output: String
-    )
+    @Serializable internal data class CodeExecutionResult(val outcome: String, val output: String)
   }
 }
 
