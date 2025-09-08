@@ -365,7 +365,7 @@ internal fun Part.toInternal(): InternalPart {
       )
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
-        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome.toInternal(), output),
+        CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output),
         isThought,
         thoughtSignature
       )
@@ -421,7 +421,7 @@ internal fun InternalPart.toPublic(): Part {
       )
     is CodeExecutionResultPart.Internal ->
       CodeExecutionResultPart(
-        codeExecutionResult.outcome.toPublic(),
+        codeExecutionResult.outcome,
         codeExecutionResult.output,
         thought ?: false,
         thoughtSignature
