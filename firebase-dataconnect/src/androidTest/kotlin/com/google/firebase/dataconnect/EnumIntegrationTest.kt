@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalFirebaseDataConnect::class)
+
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.EnumValue.Known
+import com.google.firebase.dataconnect.EnumValue.Unknown
+import com.google.firebase.dataconnect.serializers.EnumValueSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.enumWithNull
@@ -94,9 +99,13 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNonNullableVariables(enumValue)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNonNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe enumValue }
+      val expectedValue = enumValue.toN5ekmae3jnSubsetEnumValue()
+      queryResult.asClue { it.data.item.value shouldBe expectedValue }
     }
   }
 
@@ -117,8 +126,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryNonNullableByUndefinedEnumValue() = runTest {
-    val tag = Arb.dataConnect.tag().next(rs)
-    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next(rs)
+    val tag = Arb.dataConnect.tag().next()
+    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next()
     val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
     dataConnect.mutation(insertVariables).execute().data
     val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
@@ -128,8 +137,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryNonNullableByNullEnumValue() = runTest {
-    val tag = Arb.dataConnect.tag().next(rs)
-    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next(rs)
+    val tag = Arb.dataConnect.tag().next()
+    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next()
     val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
     dataConnect.mutation(insertVariables).execute()
     val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Value(null))
@@ -183,6 +192,15 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     @Serializable data class Item(val value: N5ekmae3jn)
   }
 
+  @Serializable
+  private data class GetNonNullableByKeySubsetData(val item: Item) {
+    @Serializable
+    data class Item(
+      @Serializable(with = N5ekmae3jnSubset.Serializer::class)
+      val value: EnumValue<N5ekmae3jnSubset>
+    )
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for EnumNullable table.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,9 +245,13 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNullableVariables(enumValue)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe enumValue }
+      val expectedValue = enumValue?.toN5ekmae3jnSubsetEnumValue()
+      queryResult.asClue { it.data.item.value shouldBe expectedValue }
     }
   }
 
@@ -306,6 +328,15 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
     @Serializable data class Item(val value: N5ekmae3jn?)
   }
 
+  @Serializable
+  private data class GetNullableByKeySubsetData(val item: Item) {
+    @Serializable
+    data class Item(
+      @Serializable(with = N5ekmae3jnSubset.Serializer::class)
+      val value: EnumValue<N5ekmae3jnSubset>?
+    )
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for EnumNonNullableTableDefault table.
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -377,9 +408,14 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNonNullableListOfNonNullableVariables(values)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNonNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNonNullableListOfNonNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe values }
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>> =
+        values.map { it.toN5ekmae3jnSubsetEnumValue() }
+      queryResult.asClue { it.data.item.value shouldBe expectedEnumValues }
     }
   }
 
@@ -395,6 +431,15 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   @Serializable
   private data class GetNonNullableListOfNonNullableByKeyData(val item: Item) {
     @Serializable data class Item(val value: List<N5ekmae3jn?>)
+  }
+
+  @Serializable
+  private data class GetNonNullableListOfNonNullableByKeySubsetData(val item: Item) {
+    @Serializable
+    data class Item(
+      val value:
+        List<@Serializable(with = N5ekmae3jnSubset.Serializer::class) EnumValue<N5ekmae3jnSubset>?>?
+    )
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -437,9 +482,14 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNonNullableListOfNullableVariables(values)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNonNullableListOfNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNonNullableListOfNonNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe values }
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>?> =
+        values.map { it?.toN5ekmae3jnSubsetEnumValue() }
+      queryResult.asClue { it.data.item.value shouldBe expectedEnumValues }
     }
   }
 
@@ -499,9 +549,14 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNullableListOfNonNullableVariables(values)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNonNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNonNullableListOfNonNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe values }
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>?> =
+        values.map { it?.toN5ekmae3jnSubsetEnumValue() }
+      queryResult.asClue { it.data.item.value shouldBe expectedEnumValues }
     }
   }
 
@@ -561,9 +616,14 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
       val insertVariables = InsertNullableListOfNullableVariables(values)
       val key = dataConnect.mutation(insertVariables).execute().data.key
       val queryVariables = GetNullableListOfNullableByKeyVariables(key)
-      val queryRef = dataConnect.query(queryVariables)
+      val queryRef =
+        dataConnect
+          .query(queryVariables)
+          .withDataDeserializer(serializer<GetNonNullableListOfNonNullableByKeySubsetData>())
       val queryResult = queryRef.execute()
-      queryResult.asClue { it.data.item.value shouldBe values }
+      val expectedEnumValues: List<EnumValue<N5ekmae3jnSubset>?> =
+        values.map { it?.toN5ekmae3jnSubsetEnumValue() }
+      queryResult.asClue { it.data.item.value shouldBe expectedEnumValues }
     }
   }
 
@@ -702,6 +762,15 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Suppress("SpellCheckingInspection", "unused")
+  private enum class N5ekmae3jnSubset {
+    DPSKD6HR3A,
+    XGWGVMYTHJ,
+    QJX7C7RD5T;
+
+    object Serializer : EnumValueSerializer<N5ekmae3jnSubset>(N5ekmae3jnSubset.entries)
+  }
+
+  @Suppress("SpellCheckingInspection", "unused")
   private enum class S7yayynb25 {
     XJ27ZAXKD3,
     R36KQ8PT5K,
@@ -713,6 +782,20 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
     /** The default number of iterations to use in property-based tests. */
     const val NUM_ITERATIONS = 10
+
+    @Suppress("SpellCheckingInspection")
+    fun N5ekmae3jn.toN5ekmae3jnSubsetOrNull(): N5ekmae3jnSubset? =
+      when (this) {
+        N5ekmae3jn.DPSKD6HR3A -> N5ekmae3jnSubset.DPSKD6HR3A
+        N5ekmae3jn.XGWGVMYTHJ -> N5ekmae3jnSubset.XGWGVMYTHJ
+        N5ekmae3jn.QJX7C7RD5T -> N5ekmae3jnSubset.QJX7C7RD5T
+        else -> null
+      }
+
+    @Suppress("SpellCheckingInspection")
+    fun N5ekmae3jn.toN5ekmae3jnSubsetEnumValue(): EnumValue<N5ekmae3jnSubset> {
+      return Known(toN5ekmae3jnSubsetOrNull() ?: return Unknown(name))
+    }
 
     fun FirebaseDataConnect.mutation(
       variables: InsertNonNullableVariables

@@ -32,9 +32,7 @@ import kotlinx.serialization.encoding.Encoder
  * @param values The values of the enum to deserialize; for example, for an enum named `Foo` this
  * value should be `Foo.entries` or `Foo.values()`.
  */
-// TODO: Change the visibility of `EnumValueSerializer` to `public` once it gets approval
-//  by Firebase API Council.
-internal open class EnumValueSerializer<T : Enum<T>>(values: Iterable<T>) :
+public open class EnumValueSerializer<T : Enum<T>>(values: Iterable<T>) :
   KSerializer<EnumValue<T>> {
 
   override val descriptor: SerialDescriptor =

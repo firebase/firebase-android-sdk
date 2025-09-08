@@ -20,15 +20,16 @@ package com.google.firebase.dataconnect
  * Stores the value of an `enum` or a string if the string does not correspond to one of the enum's
  * values.
  */
-// TODO: Change the visibility of `EnumValue` to `public` once it gets approval
-//  by Firebase API Council.
-internal sealed interface EnumValue<out T : Enum<out T>> {
+public sealed interface EnumValue<out T : Enum<out T>> {
+
+  /** [Known.value] in the case of [Known], or `null` in the case of [Unknown]. */
+  public val value: T?
 
   /**
-   * The string value of the enum, either the [Enum.name] in the case of [Known] or the string whose
-   * corresponding enum value was _not_ known, as in the case of [Unknown].
+   * The string value of the enum, either the [Enum.name] of [Known.value] in the case of [Known] or
+   * the `stringValue` given to the constructor in the case of [Unknown].
    */
-  val stringValue: String
+  public val stringValue: String
 
   /**
    * Represents an unknown enum value.
@@ -37,7 +38,13 @@ internal sealed interface EnumValue<out T : Enum<out T>> {
    * the older version that lacked the new enum value. Instead of failing, the unknown enum value
    * will be gracefully mapped to [Unknown].
    */
-  class Unknown(override val stringValue: String) : EnumValue<Nothing> {
+  public class Unknown(
+    /** The unknown string value. */
+    public override val stringValue: String
+  ) : EnumValue<Nothing> {
+
+    /** Always `null`. */
+    override val value: Nothing? = null
 
     /**
      * Compares this object with another object for equality.
@@ -70,7 +77,7 @@ internal sealed interface EnumValue<out T : Enum<out T>> {
     override fun toString(): String = "Unknown($stringValue)"
 
     /** Creates and returns a new [Unknown] instance with the given property values. */
-    fun copy(stringValue: String = this.stringValue): Unknown = Unknown(stringValue)
+    public fun copy(stringValue: String = this.stringValue): Unknown = Unknown(stringValue)
   }
 
   /**
@@ -78,8 +85,12 @@ internal sealed interface EnumValue<out T : Enum<out T>> {
    *
    * @param value The enum value.
    */
-  class Known<T : Enum<T>>(val value: T) : EnumValue<T> {
+  public class Known<T : Enum<T>>(
+    /** The enum value wrapped by this object. */
+    override val value: T
+  ) : EnumValue<T> {
 
+    /** [Enum.name] of [value]. */
     override val stringValue: String
       get() = value.name
 
@@ -114,6 +125,6 @@ internal sealed interface EnumValue<out T : Enum<out T>> {
     override fun toString(): String = "Known(${value.name})"
 
     /** Creates and returns a new [Known] instance with the given property values. */
-    fun copy(value: T = this.value): Known<T> = Known(value)
+    public fun copy(value: T = this.value): Known<T> = Known(value)
   }
 }

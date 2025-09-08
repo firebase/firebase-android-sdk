@@ -3,7 +3,9 @@
 - [changed] Ignore unknown fields in response data instead of throwing a
   `DataConnectOperationException` with message "decoding data from the server's response failed: An
   unknown field for index -3"
-- [changed] Internal code changes in preparation for user-defined enum support.
+- [changed] Added classes `EnumValue` and `EnumValueSerializer`. These classes are identical to
+  those produced by the Data Connect code generator; however, a future version of the code generator
+  will start using these classes from the SDK rather than generating them.
   ([#7153](https://github.com/firebase/firebase-android-sdk/pull/7153))
 
 # 17.0.0

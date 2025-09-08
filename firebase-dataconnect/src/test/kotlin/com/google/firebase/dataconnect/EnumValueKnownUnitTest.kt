@@ -46,6 +46,14 @@ class EnumValueKnownUnitTest {
   }
 
   @Test
+  fun `stringValue property should be the name of the enum`() = runTest {
+    checkAll(propTestConfig, Arb.enum<Food>()) { enum ->
+      val enumValue = EnumValue.Known(enum)
+      enumValue.stringValue shouldBe enum.name
+    }
+  }
+
+  @Test
   fun `equals() should return true when invoked with itself`() = runTest {
     checkAll(propTestConfig, Arb.enum<Food>()) { enum ->
       val enumValue = EnumValue.Known(enum)
