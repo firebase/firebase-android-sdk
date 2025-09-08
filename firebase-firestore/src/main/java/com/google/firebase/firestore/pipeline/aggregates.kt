@@ -35,7 +35,7 @@ private constructor(
   companion object {
 
     /**
-     * Creates a generic aggregation function.
+     * Creates a raw aggregation function.
      *
      * This method provides a way to call aggregation functions that are supported by the Firestore
      * backend but that are not available as specific factory methods in this class.
@@ -44,7 +44,8 @@ private constructor(
      * @param expr The expressions to pass as arguments to the function.
      * @return A new [AggregateFunction] for the specified function.
      */
-    @JvmStatic fun generic(name: String, vararg expr: Expression) = AggregateFunction(name, expr)
+    @JvmStatic
+    fun rawAggregate(name: String, vararg expr: Expression) = AggregateFunction(name, expr)
 
     /**
      * Creates an aggregation that counts the total number of stage inputs.

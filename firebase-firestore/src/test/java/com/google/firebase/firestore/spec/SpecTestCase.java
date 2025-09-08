@@ -1020,7 +1020,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     if (usePipelineMode) {
       assertEquals(
           expectedQuery.toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId())),
-          actual.queryOrPipeline.pipeline());
+          actual.queryOrPipeline.pipeline$com_google_firebase_firebase_firestore());
     } else {
       assertEquals(expectedQuery, actual.queryOrPipeline.query());
     }

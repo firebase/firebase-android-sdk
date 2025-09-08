@@ -400,7 +400,7 @@ class LocalDocumentsView {
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingPipeline(
       QueryOrPipeline queryOrPipeline, IndexOffset offset, @Nullable QueryContext context) {
-    RealtimePipeline pipeline = queryOrPipeline.pipeline();
+    RealtimePipeline pipeline = queryOrPipeline.pipeline$com_google_firebase_firebase_firestore();
     if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION_GROUP) {
       String collectionGroup = getPipelineCollectionGroup(pipeline);
       hardAssert(
