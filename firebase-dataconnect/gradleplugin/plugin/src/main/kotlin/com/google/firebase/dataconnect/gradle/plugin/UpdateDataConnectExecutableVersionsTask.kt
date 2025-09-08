@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.Companion.downloadDataConnectExecutable
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.FileInfo
 import java.io.File
+import javax.inject.Inject
 import kotlin.random.Random
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -30,6 +31,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
 @Suppress("unused")
 abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
@@ -43,6 +45,8 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
   @get:Input @get:Optional abstract val updateMode: Property<UpdateMode>
 
   @get:Internal abstract val workDirectory: DirectoryProperty
+
+  @get:Inject abstract val execOperations: ExecOperations
 
   @TaskAction
   fun run() {
@@ -149,7 +153,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     val outputFile =
       File(outputDirectory, "DataConnectToolkit_${version}_${operatingSystem}_$randomId")
 
-    downloadDataConnectExecutable(version, operatingSystem, outputFile)
+    downloadDataConnectExecutable(version, operatingSystem, outputFile, execOperations)
 
     logger.info("Calculating SHA512 hash of file: {}", outputFile.absolutePath)
     val fileInfo = FileInfo.forFile(outputFile)
