@@ -580,7 +580,10 @@ public class SQLiteSchemaTest {
                 String expectedCanonicalId =
                     targetData.getTarget().isTarget()
                         ? targetData.getTarget().target().getCanonicalId()
-                        : targetData.getTarget().pipeline().canonicalId();
+                        : targetData
+                            .getTarget()
+                            .pipeline$com_google_firebase_firebase_firestore()
+                            .canonicalId();
                 assertEquals(expectedCanonicalId, actualCanonicalId);
               } catch (InvalidProtocolBufferException e) {
                 fail("Failed to decode Target data");
