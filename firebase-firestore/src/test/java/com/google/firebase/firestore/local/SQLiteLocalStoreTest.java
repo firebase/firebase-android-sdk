@@ -829,7 +829,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
-  public void testDocumentTypeIsSetWhenDocumentedAdded() {
+  public void testDocumentTypeIsSetToFoundWhenFoundDocumentAdded() {
     Query query = query("coll");
     int targetId = allocateQuery(query);
     MutableDocument doc = doc("coll/a", 10, map("foo", 42));
@@ -842,7 +842,20 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
-  public void testDocumentTypeIsUpdatedWhenDocumentedDeleted() {
+  public void testDocumentTypeIsSetToNoDocumentWhenUnknownDocumentDeleted() {
+    Query query = query("coll");
+    int targetId = allocateQuery(query);
+    MutableDocument doc = doc("coll/a", 10, map("foo", 42));
+
+    applyRemoteEvent(removedRemoteEvent(doc.getKey(), 10, targetId));
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(doc.getKey().getPath(), 1); // 1 is a "no" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeIsUpdatedToNoDocumentWhenFoundDocumentDeleted() {
     Query query = query("coll");
     int targetId = allocateQuery(query);
     MutableDocument doc = doc("coll/a", 10, map("foo", 42));
