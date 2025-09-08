@@ -1,4 +1,5 @@
 # Unreleased
+
 - [feature] Added support for code execution.
 - [feature] Introduced `MissingPermissionsException`, which is thrown when the necessary permissions
   have not been granted by the user.
@@ -12,9 +13,7 @@
   model's internal reasoning process.
 - [fixed] Fixed an issue causing the accessor methods in `GenerateContentResponse` to throw an
   exception when the response contained no candidates.
-- [changed] Added better description for requests which fail due to the Gemini API not being
->>>>>>> main
-  configured.
+- [changed] Added better description for requests which fail due to the Gemini API not being configured.
 
 * [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
   (#7260)
