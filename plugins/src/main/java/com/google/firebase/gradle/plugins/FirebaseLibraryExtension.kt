@@ -70,6 +70,22 @@ constructor(val project: Project, val type: LibraryType) {
   abstract val publishJavadoc: Property<Boolean>
 
   /**
+   * Only publish Kotlindocs instead of also publishing Javadocs for this library.
+   *
+   * This property is only effective when `publishJavadoc` is `true`.
+   *
+   * Defaults to `false`.
+   *
+   * ```sh
+   * ./gradlew :firebase-common:kotlindoc
+   * ```
+   *
+   * @see [FirebaseLibraryExtension]
+   * @see publishJavadoc
+   */
+  abstract val onlyPublishKotlindoc: Property<Boolean>
+
+  /**
    * Indicates the library is in a preview mode (such as `alpha` or `beta`).
    *
    * Setting a [previewMode] will cause a descriptive error to be thrown if you attempt to release
