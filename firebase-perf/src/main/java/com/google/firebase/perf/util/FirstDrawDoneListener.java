@@ -87,11 +87,6 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
    *     placeholder.
    */
   private static boolean isAliveAndAttached(View view) {
-    return view.getViewTreeObserver().isAlive() && isAttachedToWindow(view);
-  }
-
-  /** Backport {@link View#isAttachedToWindow()} which is API 19+ only. */
-  private static boolean isAttachedToWindow(View view) {
-    return view.isAttachedToWindow();
+    return view.getViewTreeObserver().isAlive() && view.isAttachedToWindow();
   }
 }
