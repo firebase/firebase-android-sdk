@@ -610,6 +610,15 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
+  fun `generateImages should contain safety data`() =
+    goldenVertexUnaryFile("unary-success-generate-images-safety_info.json") {
+      withTimeout(testTimeout) {
+        val response = imagenModel.generateImages("prompt")
+        // There is no public API, but if it parses then success
+      }
+    }
+
+  @Test
   fun `google search grounding metadata is parsed correctly`() =
     goldenVertexUnaryFile("unary-success-google-search-grounding.json") {
       withTimeout(testTimeout) {
