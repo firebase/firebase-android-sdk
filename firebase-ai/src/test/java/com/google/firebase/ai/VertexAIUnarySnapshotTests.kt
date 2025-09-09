@@ -38,6 +38,7 @@ import com.google.firebase.ai.util.goldenVertexUnaryFile
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -87,6 +88,19 @@ internal class VertexAIUnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
         response.candidates.first().safetyRatings.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `response including an empty part is handled gracefully`() =
+    goldenVertexUnaryFile("unary-success-empty-part.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.text.shouldNotBeEmpty()
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
       }
     }
 
@@ -246,7 +260,9 @@ internal class VertexAIUnarySnapshotTests {
   fun `empty content`() =
     goldenVertexUnaryFile("unary-failure-empty-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
@@ -389,10 +405,12 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
-  fun `malformed content`() =
+  fun `response including an unknown part is handled gracefully`() =
     goldenVertexUnaryFile("unary-failure-malformed-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
@@ -588,6 +606,15 @@ internal class VertexAIUnarySnapshotTests {
     ) {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
+      }
+    }
+
+  @Test
+  fun `generateImages should contain safety data`() =
+    goldenVertexUnaryFile("unary-success-generate-images-safety_info.json") {
+      withTimeout(testTimeout) {
+        val response = imagenModel.generateImages("prompt")
+        // There is no public API, but if it parses then success
       }
     }
 

@@ -27,6 +27,8 @@ import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.util.goldenVertexStreamingFile
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -155,7 +157,13 @@ internal class VertexAIStreamingSnapshotTests {
     goldenVertexStreamingFile("streaming-failure-empty-content.txt") {
       val responses = model.generateContentStream("prompt")
 
-      withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
+      withTimeout(testTimeout) {
+        withTimeout(testTimeout) {
+          val responseList = responses.toList()
+          responseList.shouldHaveSize(1)
+          responseList.first().candidates.first().content.parts.shouldBeEmpty()
+        }
+      }
     }
 
   @Test
@@ -241,6 +249,10 @@ internal class VertexAIStreamingSnapshotTests {
     goldenVertexStreamingFile("streaming-failure-malformed-content.txt") {
       val responses = model.generateContentStream("prompt")
 
-      withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
+      withTimeout(testTimeout) {
+        val responseList = responses.toList()
+        responseList.shouldHaveSize(1)
+        responseList.first().candidates.first().content.parts.shouldBeEmpty()
+      }
     }
 }
