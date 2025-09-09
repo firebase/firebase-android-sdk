@@ -52,7 +52,7 @@ android {
 
 dependencies {
     api libs.firebase.common
-    api 'com.google.firebase:firebase-components:19.0.0'
+    api libs.firebase.components
 
     implementation libs.playservices.basement
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {

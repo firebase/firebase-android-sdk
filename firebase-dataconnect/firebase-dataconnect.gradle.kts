@@ -102,10 +102,10 @@ protobuf {
 dependencies {
   api(libs.firebase.common)
 
-  implementation("com.google.firebase:firebase-annotations:17.0.0")
+  implementation(libs.firebase.annotations)
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.components)
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)

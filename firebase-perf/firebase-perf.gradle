@@ -109,12 +109,12 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation libs.dagger.dagger
-    api 'com.google.firebase:firebase-annotations:17.0.0'
+    api libs.firebase.annotations
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
     api project(":protolite-well-known-types")
     implementation libs.okhttp
     api(libs.firebase.common)
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.components)
     api("com.google.firebase:firebase-config:21.5.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }

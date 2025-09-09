@@ -54,7 +54,7 @@ android {
 dependencies {
     api libs.playservices.tasks
     api(libs.firebase.common)
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.components)
 
     implementation libs.androidx.annotation
     implementation libs.kotlin.stdlib

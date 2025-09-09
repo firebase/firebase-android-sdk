@@ -25,6 +25,7 @@ dexmakerVersion = "1.2"
 espressoCore = "3.6.1"
 featureDelivery = "2.1.0"
 firebaseAppdistributionGradle = "5.1.1"
+firebaseAnnotations = "17.0.0"
 firebaseCommon = "22.0.0"
 firebaseComponents = "19.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
@@ -116,6 +117,7 @@ errorprone-annotations = { module = "com.google.errorprone:error_prone_annotatio
 feature-delivery = { module = "com.google.android.play:feature-delivery", version.ref = "featureDelivery" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 firebase-appdistribution-gradle = { module = "com.google.firebase:firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
+firebase-annotations = { module = "com.google.firebase:firebase-annotations", version.ref = "firebaseAnnotations" }
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -222,13 +224,13 @@ wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", v
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 maven-resolver = [
-    "maven-resolver-api",
-    "maven-resolver-connector-basic",
-    "maven-resolver-impl",
-    "maven-resolver-provider",
-    "maven-resolver-transport-file",
-    "maven-resolver-transport-http",
-    "maven-resolver-util"
+	"maven-resolver-api",
+	"maven-resolver-connector-basic",
+	"maven-resolver-impl",
+	"maven-resolver-provider",
+	"maven-resolver-transport-file",
+	"maven-resolver-transport-http",
+	"maven-resolver-util"
 ]
 
 [plugins]

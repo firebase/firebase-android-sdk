@@ -50,7 +50,7 @@ dependencies {
 
     api project(':appcheck:firebase-appcheck')
     api libs.firebase.common
-    api 'com.google.firebase:firebase-components'
+    api libs.firebase.components
     api 'com.google.android.recaptcha:recaptcha:18.7.1'
 
     annotationProcessor(libs.dagger.compiler)

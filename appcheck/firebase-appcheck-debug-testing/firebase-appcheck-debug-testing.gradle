@@ -55,7 +55,7 @@ dependencies {
     api project(':appcheck:firebase-appcheck-debug')
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     api libs.firebase.common
-    api 'com.google.firebase:firebase-components:19.0.0'
+    api libs.firebase.components
 
     implementation libs.androidx.test.core
     implementation libs.playservices.base

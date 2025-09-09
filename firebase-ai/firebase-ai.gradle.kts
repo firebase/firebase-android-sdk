@@ -96,8 +96,8 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
-  implementation("com.google.firebase:firebase-components:19.0.0")
-  implementation("com.google.firebase:firebase-annotations:17.0.0")
+  implementation(libs.firebase.components)
+  implementation(libs.firebase.annotations)
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
