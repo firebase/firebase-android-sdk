@@ -373,7 +373,7 @@ jobs:
       - name: Gradle updateJson
         run: |
           set -euo pipefail
-          set -v
+          set -x
 
           # Speed up build times and also avoid configuring firebase-crashlytics-ndk
           # which is finicky integrating with the Android NDK.
