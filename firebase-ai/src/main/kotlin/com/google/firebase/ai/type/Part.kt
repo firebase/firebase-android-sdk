@@ -271,10 +271,8 @@ internal constructor(
   }
 }
 
-
-internal data class UnknownPart(public override val isThought: Boolean = false): Part {
-  @Serializable
-  internal data class Internal(val thought: Boolean? = null): InternalPart
+internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
+  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
 }
 
 /** Returns the part as a [String] if it represents text, and null otherwise */

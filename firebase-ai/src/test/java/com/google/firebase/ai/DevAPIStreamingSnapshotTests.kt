@@ -23,6 +23,7 @@ import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.util.goldenDevAPIStreamingFile
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
@@ -30,7 +31,10 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 internal class DevAPIStreamingSnapshotTests {
   private val testTimeout = 5.seconds
 
@@ -57,6 +61,23 @@ internal class DevAPIStreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
+        responseList.last().candidates.first().apply {
+          finishReason shouldBe FinishReason.STOP
+          content.parts.isEmpty() shouldBe false
+        }
+      }
+    }
+
+  @Test
+  fun `reply with a mostly empty part`() =
+    goldenDevAPIStreamingFile("streaming-success-empty-parts.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val responseList = responses.toList()
+        responseList.isEmpty() shouldBe false
+        // Second to last response has no parts
+        responseList[5].candidates.first().content.parts.shouldBeEmpty()
         responseList.last().candidates.first().apply {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
