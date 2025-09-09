@@ -126,8 +126,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryNonNullableByUndefinedEnumValue() = runTest {
-    val tag = Arb.dataConnect.tag().next()
-    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next()
+    val tag = Arb.dataConnect.tag().next(rs)
+    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next(rs)
     val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
     dataConnect.mutation(insertVariables).execute().data
     val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Undefined)
@@ -137,8 +137,8 @@ class EnumIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryNonNullableByNullEnumValue() = runTest {
-    val tag = Arb.dataConnect.tag().next()
-    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next()
+    val tag = Arb.dataConnect.tag().next(rs)
+    val (value1, value2, value3) = Arb.threeValues(Arb.enum<N5ekmae3jn>()).next(rs)
     val insertVariables = Insert3NonNullableVariables(tag, value1, value2, value3)
     dataConnect.mutation(insertVariables).execute()
     val queryVariables = GetNonNullableByTagAndValueVariables(tag, OptionalVariable.Value(null))
