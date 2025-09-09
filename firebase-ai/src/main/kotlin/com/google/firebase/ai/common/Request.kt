@@ -93,6 +93,7 @@ internal data class GenerateImageRequest(
   internal data class ImagenParameters(
     val sampleCount: Int,
     val includeRaiReason: Boolean,
+    val includeSafetyAttributes: Boolean,
     val storageUri: String?,
     val negativePrompt: String?,
     val aspectRatio: String?,
