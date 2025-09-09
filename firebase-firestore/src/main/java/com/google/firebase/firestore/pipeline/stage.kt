@@ -18,6 +18,8 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.core.Canonicalizable
+import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
@@ -28,14 +30,9 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.util.Preconditions
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
@@ -98,9 +95,9 @@ sealed class Stage<T : Stage<T>>(internal val name: String, internal val options
 
   internal open fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> {
-    throw NotImplementedError("Stage does not support offline evaluation")
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
+    throw NotImplementedError("Stage $name does not support offline evaluation")
   }
 }
 
@@ -186,15 +183,45 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   Stage<DatabaseSource>("database", options) {
   override fun self(options: InternalOptions) = DatabaseSource(options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DatabaseSource) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    return options.hashCode()
+  }
 }
 
 class CollectionSource
 internal constructor(
-  private val path: String,
+  val path: String,
   // We validate [firestore.databaseId] when adding to pipeline.
   internal val firestore: FirebaseFirestore?,
   options: InternalOptions
-) : Stage<CollectionSource>("collection", options) {
+) : Stage<CollectionSource>("collection", options), Canonicalizable {
+  override fun canonicalId(): String {
+    return "${name}(${path})"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is CollectionSource) return false
+    if (path != other.path) return false
+    if (firestore != other.firestore) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = path.hashCode()
+    result = 31 * result + (firestore?.hashCode() ?: 0)
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   override fun self(options: InternalOptions): CollectionSource =
     CollectionSource(path, firestore, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -231,8 +258,8 @@ internal constructor(
 
   override fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> {
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
     return inputs.filter { input ->
       input.isFoundDocument && input.key.collectionPath.canonicalString() == path
     }
@@ -240,15 +267,33 @@ internal constructor(
 }
 
 class CollectionGroupSource
-private constructor(private val collectionId: String, options: InternalOptions) :
-  Stage<CollectionGroupSource>("collection_group", options) {
+private constructor(val collectionId: String, options: InternalOptions) :
+  Stage<CollectionGroupSource>("collection_group", options), Canonicalizable {
+  override fun canonicalId(): String {
+    return "${name}(${collectionId})"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is CollectionGroupSource) return false
+    if (collectionId != other.collectionId) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = collectionId.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   override fun self(options: InternalOptions) = CollectionGroupSource(collectionId, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setReferenceValue("").build(), encodeValue(collectionId))
   override fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> {
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
     return inputs.filter { input ->
       input.isFoundDocument && input.key.collectionGroup == collectionId
     }
@@ -277,9 +322,28 @@ private constructor(private val collectionId: String, options: InternalOptions) 
 internal class DocumentsSource
 @JvmOverloads
 internal constructor(
-  private val documents: Array<out String>,
+  val documents: Array<out String>,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<DocumentsSource>("documents", options) {
+) : Stage<DocumentsSource>("documents", options), Canonicalizable {
+  override fun canonicalId(): String {
+    val sortedDocuments = documents.sorted()
+    return "${name}(${sortedDocuments.joinToString(",")})"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DocumentsSource) return false
+    if (!documents.contentEquals(other.documents)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = documents.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   internal constructor(document: String) : this(arrayOf(document))
   override fun self(options: InternalOptions) = DocumentsSource(documents, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
@@ -302,6 +366,20 @@ internal constructor(
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is AddFieldsStage) return false
+    if (!fields.contentEquals(other.fields)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = fields.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 /**
@@ -384,22 +462,56 @@ internal constructor(
       encodeValue(accumulators.mapValues { entry -> entry.value.toProto(userDataReader) }),
       encodeValue(groups.mapValues { entry -> entry.value.toProto(userDataReader) })
     )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is AggregateStage) return false
+    if (accumulators != other.accumulators) return false
+    if (groups != other.groups) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = accumulators.hashCode()
+    result = 31 * result + groups.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class WhereStage
 internal constructor(
-  private val condition: BooleanExpr,
+  internal val condition: BooleanExpr,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<WhereStage>("where", options) {
+) : Stage<WhereStage>("where", options), Canonicalizable {
+  override fun canonicalId(): String {
+    return "${name}(${condition.canonicalId()})"
+  }
+
   override fun self(options: InternalOptions) = WhereStage(condition, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(condition.toProto(userDataReader))
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is WhereStage) return false
+    if (condition != other.condition) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = condition.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   override fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> {
-    val conditionFunction = condition.evaluateContext(context)
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
+    val conditionFunction = condition.evaluateFunction(context)
     return inputs.filter { input -> conditionFunction(input).value?.booleanValue ?: false }
   }
 }
@@ -497,6 +609,24 @@ internal constructor(
       distanceMeasure.proto
     )
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is FindNearestStage) return false
+    if (property != other.property) return false
+    if (vector != other.vector) return false
+    if (distanceMeasure != other.distanceMeasure) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = property.hashCode()
+    result = 31 * result + vector.hashCode()
+    result = 31 * result + distanceMeasure.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   /**
    * Specifies the upper bound of documents to return.
    *
@@ -525,29 +655,38 @@ internal constructor(
 }
 
 internal class LimitStage
-internal constructor(private val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
-  Stage<LimitStage>("limit", options) {
+internal constructor(val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<LimitStage>("limit", options), Canonicalizable {
+  override fun canonicalId(): String {
+    return "${name}(${limit})"
+  }
+
   override fun self(options: InternalOptions) = LimitStage(limit, options)
   override fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> =
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> =
     when {
       limit > 0 -> inputs.take(limit)
-      limit < 0 ->
-        flow {
-          val limitLast = -limit
-          val buffer = ArrayDeque<MutableDocument>(limitLast)
-          inputs.collect { doc ->
-            if (buffer.size == limitLast) buffer.removeFirst()
-            buffer.add(doc)
-          }
-          buffer.forEach { emit(it) }
-        }
-      else -> emptyFlow()
+      limit < 0 -> inputs.takeLast(limit)
+      else -> listOf()
     }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(limit))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is LimitStage) return false
+    if (limit != other.limit) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = limit
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class OffsetStage
@@ -556,23 +695,20 @@ internal constructor(private val offset: Int, options: InternalOptions = Interna
   override fun self(options: InternalOptions) = OffsetStage(offset, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
-  override fun evaluate(
-    context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> =
-    when {
-      offset > 0 -> inputs.drop(offset)
-      offset < 0 ->
-        flow {
-          val offsetLast = -offset
-          val buffer = ArrayDeque<MutableDocument>(offsetLast)
-          inputs.collect { doc ->
-            if (buffer.size == offsetLast) emit(buffer.removeFirst())
-            buffer.add(doc)
-          }
-        }
-      else -> inputs
-    }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is OffsetStage) return false
+    if (offset != other.offset) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = offset
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class SelectStage
@@ -593,13 +729,61 @@ private constructor(internal val fields: Array<out Selectable>, options: Interna
   override fun self(options: InternalOptions) = SelectStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SelectStage) return false
+    if (!fields.contentEquals(other.fields)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = fields.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
+
+private fun comparatorFromOrderings(
+  context: EvaluationContext,
+  orderings: Array<out Ordering>
+): Comparator<Document> =
+  java.util.Comparator { d1, d2 ->
+    for (ordering in orderings) {
+      val expr = ordering.expr
+      // Evaluate expression for both documents using expr->Evaluate
+      // (assuming this method exists) Pass const references to documents.
+      val leftValue = expr.evaluateFunction(context)(d1 as MutableDocument)
+      val rightValue = expr.evaluateFunction(context)(d2 as MutableDocument)
+
+      // Compare results, using MinValue for error
+      val comparison =
+        Values.compare(
+          if (leftValue.isError || leftValue.isUnset) Values.NULL_VALUE else leftValue.value!!,
+          if (rightValue.isError || rightValue.isUnset) Values.NULL_VALUE else rightValue.value!!,
+        )
+
+      if (comparison != 0) {
+        return@Comparator if (ordering.dir == Ordering.Direction.ASCENDING) {
+          comparison
+        } else {
+          -comparison
+        }
+      }
+    }
+    return@Comparator 0
+  }
 
 internal class SortStage
 internal constructor(
-  private val orders: Array<out Ordering>,
+  val orders: Array<out Ordering>,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SortStage>("sort", options) {
+) : Stage<SortStage>("sort", options), Canonicalizable {
+  override fun canonicalId(): String {
+    return "${name}(${orders.joinToString(",") { it.canonicalId() }})"
+  }
+
   companion object {
     internal val BY_DOCUMENT_ID = SortStage(arrayOf(Field.DOCUMENT_ID.ascending()))
   }
@@ -608,42 +792,31 @@ internal constructor(
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     orders.asSequence().map { it.toProto(userDataReader) }
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SortStage) return false
+    if (!orders.contentEquals(other.orders)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = orders.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
   override fun evaluate(
     context: EvaluationContext,
-    inputs: Flow<MutableDocument>
-  ): Flow<MutableDocument> {
+    inputs: List<MutableDocument>
+  ): List<MutableDocument> {
     val evaluates: Array<EvaluateDocument> =
-      orders.map { it.expr.evaluateContext(context) }.toTypedArray()
-    val directions: Array<Ordering.Direction> = orders.map { it.dir }.toTypedArray()
-    return flow {
-      inputs
-        // For each document, lazily evaluate order expression values.
-        .map { doc ->
-          val orderValues =
-            evaluates
-              .map { lazy(LazyThreadSafetyMode.PUBLICATION) { it(doc).value ?: Values.MIN_VALUE } }
-              .toTypedArray<Lazy<Value>>()
-          Pair(doc, orderValues)
-        }
-        .toList()
-        .sortedWith(
-          Comparator { px, py ->
-            val x = px.second
-            val y = py.second
-            directions.forEachIndexed<Ordering.Direction> { i, dir ->
-              val r =
-                when (dir) {
-                  Ordering.Direction.ASCENDING -> Values.compare(x[i].value, y[i].value)
-                  Ordering.Direction.DESCENDING -> Values.compare(y[i].value, x[i].value)
-                }
-              if (r != 0) return@Comparator r
-            }
-            0
-          }
-        )
-        .forEach { p -> emit(p.first) }
-    }
+      orders.map { it.expr.evaluateFunction(context) }.toTypedArray()
+    return inputs.sortedWith(comparator(context))
   }
+
+  internal fun comparator(context: EvaluationContext): Comparator<Document> =
+    comparatorFromOrderings(context, orders)
 
   internal fun withStableOrdering(): SortStage {
     val position = orders.indexOfFirst { (it.expr as? Field)?.alias == KEY_FIELD_NAME }
@@ -664,6 +837,20 @@ internal constructor(
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(groups.associate { it.alias to it.toProto(userDataReader) }))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DistinctStage) return false
+    if (!groups.contentEquals(other.groups)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = groups.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class RemoveFieldsStage
@@ -682,6 +869,20 @@ internal constructor(
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     fields.asSequence().map(Field::toProto)
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is RemoveFieldsStage) return false
+    if (!fields.contentEquals(other.fields)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = fields.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class ReplaceStage
@@ -701,6 +902,22 @@ internal constructor(
   override fun self(options: InternalOptions) = ReplaceStage(mapValue, mode, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(mapValue.toProto(userDataReader), mode.proto)
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is ReplaceStage) return false
+    if (mapValue != other.mapValue) return false
+    if (mode != other.mode) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = mapValue.hashCode()
+    result = 31 * result + mode.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 /**
@@ -753,6 +970,22 @@ private constructor(
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SampleStage) return false
+    if (size != other.size) return false
+    if (mode != other.mode) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = size.hashCode()
+    result = 31 * result + mode.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 internal class UnionStage
@@ -763,6 +996,20 @@ internal constructor(
   override fun self(options: InternalOptions) = UnionStage(other, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is UnionStage) return false
+    if (this.other != other.other) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = other.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 }
 
 /**
@@ -810,6 +1057,20 @@ internal constructor(
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(selectable.alias), selectable.toProto(userDataReader))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is UnnestStage) return false
+    if (selectable != other.selectable) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = selectable.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
 
   /**
    * Adds index field to emitted documents

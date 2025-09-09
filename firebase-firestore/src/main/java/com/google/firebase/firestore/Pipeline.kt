@@ -17,7 +17,10 @@ package com.google.firebase.firestore
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.core.Canonicalizable
+import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
+import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
@@ -29,6 +32,7 @@ import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
+import com.google.firebase.firestore.pipeline.EvaluationContext
 import com.google.firebase.firestore.pipeline.Expr
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.ExprWithAlias
@@ -51,6 +55,7 @@ import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.util.Assert.fail
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
@@ -759,7 +764,7 @@ internal constructor(
   firestore: FirebaseFirestore,
   userDataReader: UserDataReader,
   stages: List<Stage<*>>
-) : AbstractPipeline(firestore, userDataReader, stages) {
+) : AbstractPipeline(firestore, userDataReader, stages), Canonicalizable {
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
@@ -786,31 +791,107 @@ internal constructor(
 
   fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
 
-  internal fun rewriteStages(): RealtimePipeline {
+  internal val rewrittenStages: List<Stage<*>> by lazy {
     var hasOrder = false
-    return with(
-      buildList {
-        for (stage in stages) when (stage) {
-          // Stages whose semantics depend on ordering
-          is LimitStage,
-          is OffsetStage -> {
-            if (!hasOrder) {
-              hasOrder = true
-              add(SortStage.BY_DOCUMENT_ID)
-            }
-            add(stage)
-          }
-          is SortStage -> {
+    buildList {
+      for (stage in stages) when (stage) {
+        // Stages whose semantics depend on ordering
+        is LimitStage,
+        is OffsetStage -> {
+          if (!hasOrder) {
             hasOrder = true
-            add(stage.withStableOrdering())
+            add(SortStage.BY_DOCUMENT_ID)
           }
-          else -> add(stage)
+          add(stage)
         }
-        if (!hasOrder) {
-          add(SortStage.BY_DOCUMENT_ID)
+        is SortStage -> {
+          hasOrder = true
+          add(stage.withStableOrdering())
         }
+        else -> add(stage)
       }
-    )
+      if (!hasOrder) {
+        add(SortStage.BY_DOCUMENT_ID)
+      }
+    }
+  }
+
+  override fun canonicalId(): String {
+    return rewrittenStages.joinToString("|") { stage -> (stage as Canonicalizable).canonicalId() }
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is RealtimePipeline) return false
+    return stages == other.stages
+  }
+
+  override fun hashCode(): Int {
+    return stages.hashCode()
+  }
+
+  internal fun evaluate(inputs: List<MutableDocument>): List<MutableDocument> {
+    val context = EvaluationContext(this)
+    return rewrittenStages.fold(inputs) { documents, stage -> stage.evaluate(context, documents) }
+  }
+
+  internal fun matchesAllDocuments(): Boolean {
+    for (stage in rewrittenStages) {
+      // Check for LimitStage
+      if (stage.name == "limit") {
+        return false
+      }
+
+      // Check for Where stage
+      if (stage is WhereStage) {
+        // Check if it's the special 'exists(__name__)' case
+        val funcExpr = stage.condition as? FunctionExpr
+        if (funcExpr?.name == "exists" && funcExpr.params.size == 1) {
+          val fieldExpr = funcExpr.params[0] as? Field
+          if (fieldExpr?.fieldPath?.isKeyField == true) {
+            continue // This specific 'exists(__name__)' filter doesn't count
+          }
+        }
+        return false
+      }
+      // TODO(pipeline) : Add checks for other filtering stages like Aggregate,
+      // Distinct, FindNearest once they are implemented.
+    }
+    return true
+  }
+
+  internal fun hasLimit(): Boolean {
+    for (stage in rewrittenStages) {
+      if (stage.name == "limit") {
+        return true
+      }
+      // TODO(pipeline): need to check for other stages that could have a limit,
+      // like findNearest
+    }
+    return false
+  }
+
+  internal fun matches(doc: Document): Boolean {
+    val result = evaluate(listOf(doc as MutableDocument))
+    return result.isNotEmpty()
+  }
+
+  private fun evaluateContext(): EvaluationContext {
+    return EvaluationContext(this)
+  }
+
+  internal fun comparator(): Comparator<Document> =
+    getLastEffectiveSortStage().comparator(evaluateContext())
+
+  private fun getLastEffectiveSortStage(): SortStage {
+    for (stage in rewrittenStages.asReversed()) {
+      if (stage is SortStage) {
+        return stage
+      }
+      // TODO(pipeline): Consider stages that might invalidate ordering later,
+      // like fineNearest
+    }
+    throw fail("RealtimePipeline must contain at least one Sort stage (ensured by RewriteStages).")
   }
 }
 

@@ -25,7 +25,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.Expr.Companion.notEqAny
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -48,7 +47,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("score").eq(constant(-0.0)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4))
   }
 
@@ -65,7 +64,7 @@ internal class NumberSemanticsTests {
         .collection("users")
         .where(field("score").eq(constant(0L))) // Firestore -0LL is 0L
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4))
   }
 
@@ -80,7 +79,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("score").eq(constant(0.0)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4))
   }
 
@@ -95,7 +94,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("score").eq(constant(0L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4))
   }
 
@@ -109,7 +108,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").eq(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -123,7 +122,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").lt(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -137,7 +136,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").lte(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -151,7 +150,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").gte(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -165,7 +164,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").gt(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -179,7 +178,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").neq(constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3))
   }
 
@@ -195,7 +194,7 @@ internal class NumberSemanticsTests {
         .collection("users")
         .where(field("name").eqAny(array(Double.NaN, "alice")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -209,7 +208,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("users").where(field("age").eqAny(array(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -230,7 +229,7 @@ internal class NumberSemanticsTests {
         .collection("users")
         .where(arrayContains(field("age"), constant(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -246,7 +245,7 @@ internal class NumberSemanticsTests {
         .collection("k")
         .where(arrayContainsAny(field("field"), array(Double.NaN, "foo")))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -262,7 +261,7 @@ internal class NumberSemanticsTests {
         .collection("users")
         .where(notEqAny(field("age"), array(Double.NaN, 42L)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -278,7 +277,7 @@ internal class NumberSemanticsTests {
         .collection("users")
         .where(notEqAny(field("age"), array(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3))
   }
 
@@ -291,7 +290,7 @@ internal class NumberSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db).collection("k").where(field("foo").eq(array(Double.NaN)))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 }

@@ -27,7 +27,6 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.not
 import com.google.firebase.firestore.pipeline.Expr.Companion.or
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -64,7 +63,7 @@ internal class DisjunctiveTests {
             )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc4, doc5))
   }
 
@@ -96,7 +95,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc4, doc5))
   }
 
@@ -126,7 +125,7 @@ internal class DisjunctiveTests {
         )
         .where(field("age").eqAny(array(constant(10.0), constant(25.0))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc4, doc5))
   }
 
@@ -149,7 +148,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc4, doc5))
   }
 
@@ -170,7 +169,7 @@ internal class DisjunctiveTests {
             .eqAny(array(constant("alice"), constant("bob"), constant("diane"), constant("eric")))
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
   }
 
@@ -192,7 +191,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5, doc2, doc1).inOrder()
   }
 
@@ -214,7 +213,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc4, doc5).inOrder()
   }
 
@@ -247,7 +246,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -270,7 +269,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5)
   }
 
@@ -291,7 +290,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
   }
 
@@ -318,7 +317,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
@@ -345,7 +344,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc4))
   }
 
@@ -373,7 +372,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1).inOrder()
   }
 
@@ -399,7 +398,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc4))
   }
 
@@ -423,7 +422,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc2, doc3, doc4).inOrder()
   }
 
@@ -440,7 +439,7 @@ internal class DisjunctiveTests {
         .where(field("age").eqAny(array(constant(10.0))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // Order of doc2 and doc3 is by key after sorting by constant age
     assertThat(result).containsExactly(doc2, doc3).inOrder()
   }
@@ -474,7 +473,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -507,7 +506,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder() // Sorted by key after age
   }
 
@@ -530,7 +529,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -557,7 +556,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending()) // C++ test sorts by age (inequality field)
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1, doc3).inOrder()
   }
 
@@ -573,7 +572,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("name").eqAny(array(Expr.nullValue(), constant("alice"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1) // Nulls are not matched by IN
   }
 
@@ -590,7 +589,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(Expr.arrayContains(field("field"), Expr.nullValue()))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty() // arrayContains does not match null
   }
 
@@ -607,7 +606,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("field").arrayContainsAny(array(Expr.nullValue(), constant("foo"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3) // arrayContainsAny does not match null
   }
 
@@ -623,7 +622,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("age").eqAny(array(Expr.nullValue())))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty() // Nulls are not matched by IN
   }
 
@@ -641,7 +640,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("groups").arrayContainsAny(array(constant(1L), constant(5L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc4, doc5))
   }
 
@@ -693,7 +692,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
   }
 
@@ -720,7 +719,7 @@ internal class DisjunctiveTests {
             field("groups").lt(array(constant(3L), constant(4L), constant(5L)))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc4))
   }
 
@@ -742,7 +741,7 @@ internal class DisjunctiveTests {
             field("name").eqAny(array(constant("alice"), constant("bob")))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
@@ -759,7 +758,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(field("name").eq(constant("bob")), field("age").eq(constant(10.0))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc4))
   }
 
@@ -782,7 +781,7 @@ internal class DisjunctiveTests {
             field("age").eq(constant(100.0))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4))
   }
 
@@ -800,7 +799,7 @@ internal class DisjunctiveTests {
         .where(or(field("name").eq(constant("bob")), field("age").eq(constant(10.0))))
         .where(or(field("name").eq(constant("diane")), field("age").eq(constant(100.0))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4) // (name=bob OR age=10) AND (name=diane OR age=100)
   }
 
@@ -821,7 +820,7 @@ internal class DisjunctiveTests {
             and(field("name").eq(constant("diane")), field("age").eq(constant(10.0)))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc4))
   }
 
@@ -842,7 +841,7 @@ internal class DisjunctiveTests {
             field("age").lt(constant(80.0))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc4))
   }
 
@@ -863,7 +862,7 @@ internal class DisjunctiveTests {
             or(field("name").eq(constant("diane")), field("age").eq(constant(100.0)))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
@@ -884,7 +883,7 @@ internal class DisjunctiveTests {
             or(field("name").eq(constant("diane")), field("age").eq(constant(100.0)))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4))
   }
 
@@ -905,7 +904,7 @@ internal class DisjunctiveTests {
             and(field("age").eq(constant(10.0)), field("age").gt(constant(20.0)))
           )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -923,7 +922,7 @@ internal class DisjunctiveTests {
         .where(or(field("name").eq(constant("diane")), field("age").gt(constant(20.0))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc2, doc1, doc3).inOrder()
   }
 
@@ -941,7 +940,7 @@ internal class DisjunctiveTests {
         .where(or(field("age").lt(constant(20.0)), field("age").gt(constant(50.0))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc1, doc3).inOrder()
   }
 
@@ -959,7 +958,7 @@ internal class DisjunctiveTests {
         .where(or(field("age").lt(constant(20.0)), field("age").gt(constant(50.0))))
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1, doc3, doc4).inOrder()
   }
 
@@ -983,7 +982,7 @@ internal class DisjunctiveTests {
         .where(or(field("age").lt(constant(80.0)), field("height").gt(constant(160.0))))
         .sort(field("age").ascending(), field("height").descending(), field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc2, doc1, doc5).inOrder()
   }
 
@@ -1001,7 +1000,7 @@ internal class DisjunctiveTests {
         .where(or(field("name").eq(constant("diane")), field("age").gt(constant(20.0))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4, doc2, doc1).inOrder()
   }
 
@@ -1020,7 +1019,7 @@ internal class DisjunctiveTests {
         .sort(field("age").ascending())
         .limit(2)
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc2).inOrder()
   }
 
@@ -1039,7 +1038,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(field("a").eq(constant(1L)), isNull(field("a"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // C++ test expects 1.0 to match 1L in this context.
     // isNull matches explicit nulls.
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc4))
@@ -1060,7 +1059,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(field("b").eq(constant(1L)), isNull(field("a"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4))
   }
 
@@ -1079,7 +1078,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(field("a").gt(constant(1L)), not(isNull(field("a")))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // a > 1L (none) OR a IS NOT NULL (doc1, doc2, doc3, doc5)
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc5))
   }
@@ -1099,7 +1098,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(field("b").eq(constant(1L)), not(isNull(field("a")))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // b == 1L (doc3) OR a IS NOT NULL (doc1, doc2, doc3, doc5)
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc5))
   }
@@ -1116,7 +1115,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(isNull(field("a")), isNan(field("a"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
@@ -1135,7 +1134,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(or(isNull(field("a")), isNan(field("b"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc5))
   }
 
@@ -1153,7 +1152,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("name").notEqAny(array(constant("alice"), constant("bob"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4, doc5))
   }
 
@@ -1176,7 +1175,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -1199,7 +1198,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4, doc5))
   }
 
@@ -1217,7 +1216,7 @@ internal class DisjunctiveTests {
         .collectionGroup("users")
         .where(field("name").notEqAny(array(constant("alice"), constant("bob"), constant("diane"))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
   }
 
@@ -1236,7 +1235,7 @@ internal class DisjunctiveTests {
         .where(field("name").notEqAny(array(constant("alice"), constant("diane"))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5, doc2, doc3).inOrder()
   }
 
@@ -1259,7 +1258,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc4, doc5))
   }
 
@@ -1282,7 +1281,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc5)
   }
 
@@ -1306,7 +1305,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
@@ -1330,7 +1329,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4))
   }
 
@@ -1355,7 +1354,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc3).inOrder()
   }
 
@@ -1378,7 +1377,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc4, doc5))
   }
 
@@ -1397,7 +1396,7 @@ internal class DisjunctiveTests {
         .where(field("name").notEqAny(array(constant("alice"), constant("bob"))))
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc4, doc5).inOrder()
   }
 
@@ -1414,7 +1413,7 @@ internal class DisjunctiveTests {
         .where(field("age").notEqAny(array(constant(100.0))))
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc3).inOrder() // Sorted by key after age
   }
 
@@ -1438,7 +1437,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("name").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder()
   }
 
@@ -1462,7 +1461,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4, doc5).inOrder() // Sorted by key after age
   }
 
@@ -1486,7 +1485,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending())
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc1).inOrder()
   }
 
@@ -1510,7 +1509,7 @@ internal class DisjunctiveTests {
         )
         .sort(field("age").ascending()) // C++ test sorts by age (inequality field)
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2, doc3).inOrder()
   }
 
@@ -1543,7 +1542,7 @@ internal class DisjunctiveTests {
           )
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3, doc4, doc5))
   }
 
@@ -1561,7 +1560,7 @@ internal class DisjunctiveTests {
           field("score").eqAny(array(constant(50L), constant(97L), constant(97L), constant(97L)))
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
   }
 
@@ -1577,7 +1576,7 @@ internal class DisjunctiveTests {
         .collection("/users")
         .where(field("score").notEqAny(array(constant(50L), constant(50L))))
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
   }
 
@@ -1596,7 +1595,7 @@ internal class DisjunctiveTests {
             .arrayContainsAny(array(constant(1L), constant(2L), constant(2L), constant(2L)))
         )
 
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
@@ -1615,7 +1614,7 @@ internal class DisjunctiveTests {
               array(constant(1L), constant(2L), constant(2L), constant(2L), constant(3L))
             )
         )
-    val result = runPipeline(pipeline, flowOf(*documents.toTypedArray())).toList()
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // The C++ test `EXPECT_THAT(RunPipeline(pipeline, documents), ElementsAre(doc1, doc2));`
     // indicates an ordered check. Aligning with this.
     assertThat(result).containsExactly(doc1, doc2).inOrder()

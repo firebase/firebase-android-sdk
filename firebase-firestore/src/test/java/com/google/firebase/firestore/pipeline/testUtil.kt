@@ -31,7 +31,7 @@ internal val EVALUATION_CONTEXT: EvaluationContext =
 internal fun evaluate(expr: Expr): EvaluateResult = evaluate(expr, EMPTY_DOC)
 
 internal fun evaluate(expr: Expr, doc: MutableDocument): EvaluateResult {
-  val function = expr.evaluateContext(EVALUATION_CONTEXT)
+  val function = expr.evaluateFunction(EVALUATION_CONTEXT)
   return function(doc)
 }
 

@@ -24,285 +24,109 @@ import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DocumentsSource
-import com.google.firebase.firestore.pipeline.Expr
-import com.google.firebase.firestore.pipeline.Field
-import com.google.firebase.firestore.pipeline.FunctionExpr
+import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
-import com.google.firebase.firestore.pipeline.Ordering
-import com.google.firebase.firestore.pipeline.SortStage
-import com.google.firebase.firestore.pipeline.Stage
-import com.google.firebase.firestore.pipeline.WhereStage
-import com.google.firebase.firestore.util.Assert.fail
-import com.google.firestore.v1.Value
-
-private fun runPipeline(pipeline: RealtimePipeline, input: List<Document>): List<Document> {
-  // This is a placeholder implementation. The actual pipeline execution logic is required.
-  // For now, returning an empty list to ensure compilation.
-  // A proper implementation would execute each stage of the pipeline on the input documents.
-  return emptyList()
-}
-
-// Anonymous namespace for canonicalization helpers
-private fun canonifyConstant(constant: Expr.Constant): String {
-  return Values.canonicalId(constant.value)
-}
-
-private fun canonifyExpr(expr: Expr): String {
-  return when (expr) {
-    is Field -> "fld(${expr.fieldPath.canonicalString()})"
-    is Expr.Constant -> "cst(${canonifyConstant(expr)})"
-    is FunctionExpr -> {
-      val paramStrings = expr.params.map { paramPtr -> canonifyExpr(paramPtr) }
-      "fn(${expr.name}[${paramStrings.joinToString(",")}])"
-    }
-    else -> throw fail("Canonify a unrecognized expr")
-  }
-}
-
-private fun canonifySortOrderings(orders: List<Ordering>): String {
-  return orders
-    .map { order ->
-      val direction = if (order.dir == Ordering.Direction.ASCENDING) "asc" else "desc"
-      "${canonifyExpr(order.expr)}$direction"
-    }
-    .joinToString(",")
-}
-
-private fun canonifyStage(stage: Stage<*>): String {
-  return when (stage) {
-    is CollectionSource -> "${stage.name}(${stage.path})"
-    is CollectionGroupSource -> "${stage.name}(${stage.collectionId})"
-    is DocumentsSource -> {
-      val sortedDocuments = stage.documents.sorted()
-      "${stage.name}(${sortedDocuments.joinToString(",")})"
-    }
-    is WhereStage -> "${stage.name}(${canonifyExpr(stage.expr)})"
-    is SortStage -> "${stage.name}(${canonifySortOrderings(stage.orders)})"
-    is LimitStage -> "${stage.name}(${stage.limit})"
-    else -> throw fail("Trying to canonify an unrecognized stage type ${stage.name}")
-  }
-}
-
-// Canonicalizes a RealtimePipeline by canonicalizing its stages.
-private fun canonifyPipeline(pipeline: RealtimePipeline): String {
-  return pipeline.rewriteStages().stages.map { stage -> canonifyStage(stage) }.joinToString("|")
-}
+import com.google.firebase.firestore.util.Assert.hardAssert
 
 /** A class that wraps either a Query or a RealtimePipeline. */
-class QueryOrPipeline
-private constructor(
-  private val query: Query?,
-  private val pipeline: RealtimePipeline?,
-) {
-  constructor(query: Query) : this(query, null)
-  constructor(pipeline: RealtimePipeline) : this(null, pipeline)
+sealed class QueryOrPipeline {
+  data class QueryWrapper(val query: Query) : QueryOrPipeline()
+  data class PipelineWrapper(val pipeline: RealtimePipeline) : QueryOrPipeline()
 
   val isQuery: Boolean
-    get() = query != null
+    get() = this is QueryWrapper
 
   val isPipeline: Boolean
-    get() = pipeline != null
+    get() = this is PipelineWrapper
 
   fun query(): Query {
-    return query!!
+    return (this as QueryWrapper).query
   }
 
   fun pipeline(): RealtimePipeline {
-    return pipeline!!
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is QueryOrPipeline) return false
-    if (isPipeline != other.isPipeline) return false
-
-    return if (isPipeline) {
-      canonifyPipeline(pipeline()) == canonifyPipeline(other.pipeline())
-    } else {
-      query() == other.query()
-    }
-  }
-
-  override fun hashCode(): Int {
-    return if (isPipeline) {
-      canonifyPipeline(pipeline()).hashCode()
-    } else {
-      query().hashCode()
-    }
+    return (this as PipelineWrapper).pipeline
   }
 
   fun canonicalId(): String {
-    return if (isPipeline) {
-      canonifyPipeline(pipeline())
-    } else {
-      query().canonicalId()
+    return when (this) {
+      is PipelineWrapper -> pipeline.canonicalId()
+      is QueryWrapper -> query.canonicalId
     }
   }
 
   override fun toString(): String {
-    return if (isPipeline) {
-      canonicalId()
-    } else {
-      query().toString()
+    return when (this) {
+      is PipelineWrapper -> pipeline.canonicalId()
+      is QueryWrapper -> query.toString()
     }
   }
 
   fun toTargetOrPipeline(): TargetOrPipeline {
-    return if (isPipeline) {
-      TargetOrPipeline(pipeline())
-    } else {
-      TargetOrPipeline(query().toTarget())
+    return when (this) {
+      is PipelineWrapper -> TargetOrPipeline.PipelineWrapper(pipeline)
+      is QueryWrapper -> TargetOrPipeline.TargetWrapper(query.toTarget())
     }
   }
 
   fun matchesAllDocuments(): Boolean {
-    if (isPipeline) {
-      for (stage in pipeline().rewrittenStages) {
-        // Check for LimitStage
-        if (stage.name == "limit") {
-          return false
-        }
-
-        // Check for Where stage
-        if (stage is Where) {
-          // Check if it's the special 'exists(__name__)' case
-          val funcExpr = stage.expr as? FunctionExpr
-          if (funcExpr?.name == "exists" && funcExpr.params.size == 1) {
-            val fieldExpr = funcExpr.params[0] as? Field
-            if (fieldExpr?.fieldPath?.isKeyFieldPath == true) {
-              continue // This specific 'exists(__name__)' filter doesn't count
-            }
-          }
-          return false // Any other Where stage means it filters documents
-        }
-        // TODO(pipeline) : Add checks for other filtering stages like Aggregate,
-        // Distinct, FindNearest once they are implemented.
-      }
-      return true // No filtering stages found (besides allowed ones)
+    return when (this) {
+      is PipelineWrapper -> pipeline.matchesAllDocuments()
+      is QueryWrapper -> query.matchesAllDocuments()
     }
-
-    return query().matchesAllDocuments()
   }
 
   fun hasLimit(): Boolean {
-    if (isPipeline) {
-      for (stage in pipeline().rewrittenStages) {
-        // Check for LimitStage
-        if (stage.name == "limit") {
-          return true
-        }
-        // TODO(pipeline): need to check for other stages that could have a limit,
-        // like findNearest
-      }
-      return false
+    return when (this) {
+      is PipelineWrapper -> pipeline.hasLimit()
+      is QueryWrapper -> query.hasLimit()
     }
-
-    return query().hasLimit()
   }
 
   fun matches(doc: Document): Boolean {
-    if (isPipeline) {
-      val result = runPipeline(pipeline(), listOf(doc))
-      return result.isNotEmpty()
+    return when (this) {
+      is PipelineWrapper -> pipeline.matches(doc)
+      is QueryWrapper -> query.matches(doc)
     }
-
-    return query().matches(doc)
   }
 
-  fun comparator(): DocumentComparator {
-    if (isPipeline) {
-      // Capture pipeline by reference. Orderings captured by value inside lambda.
-      val p = pipeline()
-      val orderings = getLastEffectiveSortOrderings(p)
-      return DocumentComparator { d1, d2 ->
-        val context = p.evaluateContext
-
-        for (ordering in orderings) {
-          val expr = ordering.expr
-          // Evaluate expression for both documents using expr->Evaluate
-          // (assuming this method exists) Pass const references to documents.
-          val leftValue = expr.toEvaluable().evaluate(context, d1)
-          val rightValue = expr.toEvaluable().evaluate(context, d2)
-
-          // Compare results, using MinValue for error
-          val comparison =
-            Values.compare(
-              if (leftValue.isErrorOrUnset) Value.getDefaultInstance() else leftValue.value!!,
-              if (rightValue.isErrorOrUnset) Value.getDefaultInstance() else rightValue.value!!,
-            )
-
-          if (comparison != 0) {
-            return@DocumentComparator if (ordering.direction == Ordering.Direction.ASCENDING) {
-              comparison
-            } else {
-              -comparison
-            }
-          }
-        }
-        0
-      }
+  fun comparator(): Comparator<Document> {
+    return when (this) {
+      is PipelineWrapper -> pipeline.comparator()
+      is QueryWrapper -> query.comparator()
     }
-
-    return query().comparator()
   }
 }
 
 /** A class that wraps either a Target or a RealtimePipeline. */
-class TargetOrPipeline
-private constructor(
-  private val target: Target?,
-  private val pipeline: RealtimePipeline?,
-) {
-  constructor(target: Target) : this(target, null)
-  constructor(pipeline: RealtimePipeline) : this(null, pipeline)
+sealed class TargetOrPipeline {
+  data class TargetWrapper(val target: Target) : TargetOrPipeline()
+  data class PipelineWrapper(val pipeline: RealtimePipeline) : TargetOrPipeline()
 
   val isTarget: Boolean
-    get() = target != null
+    get() = this is TargetWrapper
 
   val isPipeline: Boolean
-    get() = pipeline != null
+    get() = this is PipelineWrapper
 
   fun target(): Target {
-    return target!!
+    return (this as TargetWrapper).target
   }
 
   fun pipeline(): RealtimePipeline {
-    return pipeline!!
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is TargetOrPipeline) return false
-    if (isPipeline != other.isPipeline) return false
-
-    return if (isPipeline) {
-      canonifyPipeline(pipeline()) == canonifyPipeline(other.pipeline())
-    } else {
-      target() == other.target()
-    }
-  }
-
-  override fun hashCode(): Int {
-    return if (isPipeline) {
-      canonifyPipeline(pipeline()).hashCode()
-    } else {
-      target().hashCode()
-    }
+    return (this as PipelineWrapper).pipeline
   }
 
   fun canonicalId(): String {
-    return if (isPipeline) {
-      canonifyPipeline(pipeline())
-    } else {
-      target().canonicalId()
+    return when (this) {
+      is PipelineWrapper -> pipeline.canonicalId()
+      is TargetWrapper -> target.canonicalId
     }
   }
 
   override fun toString(): String {
-    return if (isPipeline) {
-      canonicalId()
-    } else {
-      target().toString()
+    return when (this) {
+      is PipelineWrapper -> pipeline.canonicalId()
+      is TargetWrapper -> target.toString()
     }
   }
 }
@@ -339,7 +163,7 @@ fun getPipelineFlavor(pipeline: RealtimePipeline): PipelineFlavor {
 
 // Determines the source type of the given pipeline based on its first stage.
 fun getPipelineSourceType(pipeline: RealtimePipeline): PipelineSourceType {
-  HardAssert.hardAssert(
+  hardAssert(
     !pipeline.stages.isEmpty(),
     "Pipeline must have at least one stage to determine its source.",
   )
@@ -356,7 +180,7 @@ fun getPipelineSourceType(pipeline: RealtimePipeline): PipelineSourceType {
 // group.
 fun getPipelineCollectionGroup(pipeline: RealtimePipeline): String? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION_GROUP) {
-    HardAssert.hardAssert(
+    hardAssert(
       !pipeline.stages.isEmpty(),
       "Pipeline source is CollectionGroup but stages are empty.",
     )
@@ -371,7 +195,7 @@ fun getPipelineCollectionGroup(pipeline: RealtimePipeline): String? {
 // Retrieves the collection path if the pipeline's source is a collection.
 fun getPipelineCollection(pipeline: RealtimePipeline): String? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION) {
-    HardAssert.hardAssert(
+    hardAssert(
       !pipeline.stages.isEmpty(),
       "Pipeline source is Collection but stages are empty.",
     )
@@ -384,9 +208,9 @@ fun getPipelineCollection(pipeline: RealtimePipeline): String? {
 }
 
 // Retrieves the document pathes if the pipeline's source is a document source.
-fun getPipelineDocuments(pipeline: RealtimePipeline): List<String>? {
+fun getPipelineDocuments(pipeline: RealtimePipeline): Array<out String>? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.DOCUMENTS) {
-    HardAssert.hardAssert(
+    hardAssert(
       !pipeline.stages.isEmpty(),
       "Pipeline source is Documents but stages are empty.",
     )
@@ -407,7 +231,7 @@ fun asCollectionPipelineAtPath(
   val newStages =
     pipeline.stages.map { stagePtr ->
       if (stagePtr is CollectionGroupSource) {
-        CollectionSource(path.canonicalString())
+        CollectionSource(path.canonicalString(), pipeline.firestore, InternalOptions.EMPTY)
       } else {
         stagePtr
       }
@@ -416,12 +240,13 @@ fun asCollectionPipelineAtPath(
   // Construct a new RealtimePipeline with the (potentially) modified stages
   // and the original user_data_reader.
   return RealtimePipeline(
+    pipeline.firestore,
+    pipeline.userDataReader,
     newStages,
-    Serializer(pipeline.evaluateContext.serializer.databaseId),
   )
 }
 
-fun getLastEffectiveLimit(pipeline: RealtimePipeline): Long? {
+fun getLastEffectiveLimit(pipeline: RealtimePipeline): Int? {
   for (stagePtr in pipeline.rewrittenStages.asReversed()) {
     // Check if the stage is a LimitStage
     if (stagePtr is LimitStage) {
