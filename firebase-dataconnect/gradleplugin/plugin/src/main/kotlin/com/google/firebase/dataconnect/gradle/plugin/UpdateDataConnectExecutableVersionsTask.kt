@@ -197,7 +197,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
     if (version in invalidVersions) {
       logger.info(
-        "Ignoring Data Connect executable file: {} " + "(version {} is a known invalid version)",
+        "Ignoring Data Connect executable file: {} (version {} is a known invalid version)",
         name,
         versionString
       )
@@ -271,8 +271,8 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     val fileNameRegex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
 
     /**
-     * Creates a returns a new list that contains all elements of the receiving [Iterable] that are
-     * not in the given registry.
+     * Creates and returns a new list that contains all elements of the receiving [Iterable] that
+     * are not in the given registry.
      */
     private fun Iterable<CloudStorageVersionInfo>.filterNotIn(
       registry: DataConnectExecutableVersionsRegistry.Root
