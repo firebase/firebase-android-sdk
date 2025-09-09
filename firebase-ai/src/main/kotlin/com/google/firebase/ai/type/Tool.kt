@@ -26,12 +26,14 @@ import kotlinx.serialization.json.JsonObject
 public class Tool
 internal constructor(
   internal val functionDeclarations: List<FunctionDeclaration>?,
-  internal val googleSearch: GoogleSearch?
+  internal val googleSearch: GoogleSearch?,
+  internal val codeExecution: JsonObject?,
 ) {
   internal fun toInternal() =
     Internal(
       functionDeclarations?.map { it.toInternal() } ?: emptyList(),
-      googleSearch = this.googleSearch?.toInternal()
+      googleSearch = this.googleSearch?.toInternal(),
+      codeExecution = this.codeExecution
     )
   @Serializable
   internal data class Internal(
@@ -42,6 +44,8 @@ internal constructor(
   )
   public companion object {
 
+    private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap())) }
+
     /**
      * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].
      *
@@ -49,7 +53,13 @@ internal constructor(
      */
     @JvmStatic
     public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
-      return Tool(functionDeclarations, null)
+      return Tool(functionDeclarations, null, null)
+    }
+
+    /** Creates a [Tool] instance that allows the model to use Code Execution. */
+    @JvmStatic
+    public fun codeExecution(): Tool {
+      return codeExecutionInstance
     }
 
     /**
@@ -70,7 +80,7 @@ internal constructor(
      */
     @JvmStatic
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
-      return Tool(null, googleSearch)
+      return Tool(null, googleSearch, null)
     }
   }
 }

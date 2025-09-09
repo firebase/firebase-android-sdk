@@ -54,6 +54,12 @@ internal constructor(
   ) : InternalPart
 }
 
+/**
+ * Represents the code execution result from the model.
+ * @property outcome The result of the execution.
+ * @property output The stdout from the code execution, or an error message if it failed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class CodeExecutionResultPart
 internal constructor(
   public val outcome: String,
@@ -62,7 +68,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(outcome: String, output: String) : this(outcome, output, false, null)
+
+  /** Indicates if the code execution was successful */
+  public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
 
   @Serializable
   internal data class Internal(
@@ -71,14 +81,16 @@ internal constructor(
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: String,
-      val output: String
-    )
+    @Serializable internal data class CodeExecutionResult(val outcome: String, val output: String)
   }
 }
 
+/**
+ * Represents the code that was executed by the model.
+ * @property language The programming language of the code.
+ * @property code The source code to be executed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class ExecutableCodePart
 internal constructor(
   public val language: String,
@@ -87,6 +99,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
 
   @Serializable
