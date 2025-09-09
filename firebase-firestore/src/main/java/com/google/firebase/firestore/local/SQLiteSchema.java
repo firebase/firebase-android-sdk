@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 17;
+  static final int VERSION = 18;
 
   /**
    * The batch size for data migrations.
@@ -181,6 +181,10 @@ class SQLiteSchema {
 
     if (fromVersion < 17 && toVersion >= 17) {
       createGlobalsTable();
+    }
+
+    if (fromVersion < 18 && toVersion >= 18) {
+      addDocumentType();
     }
 
     /*
@@ -445,6 +449,18 @@ class SQLiteSchema {
     if (!tableContainsColumn("remote_documents", "path_length")) {
       // The "path_length" column store the number of segments in the path.
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN path_length INTEGER");
+    }
+  }
+
+  private void addDocumentType() {
+    // The new "document_type" column is a copy of the document type encoded in the "contents" blob.
+    // Its range of values are defined in the `SQLiteRemoteDocumentCache.DocumentType` enum.
+    // The "document_type" value for a given row must be equal to the document type encoded in the
+    // "contents" column for that row. The purpose of the "document_type" column is to enable
+    // efficient filtering on document type. But when using it as a filter, a null value must also
+    // be considered as their document type must be determined by parsing the the "contents" column.
+    if (!tableContainsColumn("remote_documents", "document_type")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN document_type INTEGER");
     }
   }
 

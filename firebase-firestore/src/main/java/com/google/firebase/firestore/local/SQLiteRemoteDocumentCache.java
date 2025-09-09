@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -40,9 +41,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,6 +59,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   private final LocalSerializer serializer;
   private IndexManager indexManager;
 
+  private final DocumentTypeBackfiller documentTypeBackfiller = new DocumentTypeBackfiller();
+
   SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
     this.serializer = serializer;
@@ -63,6 +69,32 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public void setIndexManager(IndexManager indexManager) {
     this.indexManager = indexManager;
+  }
+
+  private enum DocumentType {
+    NO_DOCUMENT(1),
+    FOUND_DOCUMENT(2),
+    UNKNOWN_DOCUMENT(3),
+    INVALID_DOCUMENT(4);
+
+    final int dbValue;
+
+    DocumentType(int dbValue) {
+      this.dbValue = dbValue;
+    }
+
+    static DocumentType forMutableDocument(MutableDocument document) {
+      if (document.isNoDocument()) {
+        return NO_DOCUMENT;
+      } else if (document.isFoundDocument()) {
+        return FOUND_DOCUMENT;
+      } else if (document.isUnknownDocument()) {
+        return UNKNOWN_DOCUMENT;
+      } else {
+        hardAssert(!document.isValidDocument(), "MutableDocument has an unknown type");
+        return INVALID_DOCUMENT;
+      }
+    }
   }
 
   @Override
@@ -77,12 +109,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, path_length, read_time_seconds, read_time_nanos, contents) "
-            + "VALUES (?, ?, ?, ?, ?)",
+            + "(path, path_length, read_time_seconds, read_time_nanos, document_type, contents) "
+            + "VALUES (?, ?, ?, ?, ?, ?)",
         EncodedPath.encode(documentKey.getPath()),
         documentKey.getPath().length(),
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
+        DocumentType.forMutableDocument(document).dbValue,
         message.toByteArray());
 
     indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
@@ -131,7 +164,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
-            "SELECT contents, read_time_seconds, read_time_nanos FROM remote_documents "
+            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
+                + "FROM remote_documents "
                 + "WHERE path IN (",
             bindVars,
             ") ORDER BY path");
@@ -143,7 +177,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
     }
     backgroundQueue.drain();
-    return results;
+
+    // Backfill any rows with null "document_type" discovered by processRowInBackground().
+    documentTypeBackfiller.backfill(db);
+
+    // Synchronize on `results` to avoid a data race with the background queue.
+    synchronized (results) {
+      return results;
+    }
   }
 
   @Override
@@ -182,6 +223,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
+      @Nullable DocumentType tryFilterDocumentType,
       @Nullable Function<MutableDocument, Boolean> filter,
       @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
@@ -189,9 +231,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     StringBuilder sql =
         repeatSequence(
-            "SELECT contents, read_time_seconds, read_time_nanos, path "
+            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
+                + (tryFilterDocumentType == null
+                    ? ""
+                    : " AND (document_type IS NULL OR document_type = ?) ")
                 + "AND (read_time_seconds > ? OR ( "
                 + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
                 + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
@@ -199,13 +244,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             " UNION ");
     sql.append("ORDER BY read_time_seconds, read_time_nanos, path LIMIT ?");
 
-    Object[] bindVars = new Object[BINDS_PER_STATEMENT * collections.size() + 1];
+    Object[] bindVars =
+        new Object
+            [(BINDS_PER_STATEMENT + (tryFilterDocumentType != null ? 1 : 0)) * collections.size()
+                + 1];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
       bindVars[i++] = prefixPath;
       bindVars[i++] = EncodedPath.prefixSuccessor(prefixPath);
       bindVars[i++] = collection.length() + 1;
+      if (tryFilterDocumentType != null) {
+        bindVars[i++] = tryFilterDocumentType.dbValue;
+      }
       bindVars[i++] = readTime.getSeconds();
       bindVars[i++] = readTime.getSeconds();
       bindVars[i++] = readTime.getNanoseconds();
@@ -227,7 +278,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               }
             });
     backgroundQueue.drain();
-    return results;
+
+    // Backfill any null "document_type" columns discovered by processRowInBackground().
+    documentTypeBackfiller.backfill(db);
+
+    // Synchronize on `results` to avoid a data race with the background queue.
+    synchronized (results) {
+      return results;
+    }
   }
 
   private Map<DocumentKey, MutableDocument> getAll(
@@ -235,7 +293,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       IndexOffset offset,
       int count,
       @Nullable Function<MutableDocument, Boolean> filter) {
-    return getAll(collections, offset, count, filter, /*context*/ null);
+    return getAll(
+        collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
@@ -246,6 +305,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
+    boolean documentTypeIsNull = row.isNull(3);
+    String path = row.getString(4);
 
     // Since scheduling background tasks incurs overhead, we only dispatch to a
     // background thread if there are still some documents remaining.
@@ -254,6 +315,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+          if (documentTypeIsNull) {
+            documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+          }
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
               results.put(document.getKey(), document);
@@ -278,6 +342,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
+        // Specify tryFilterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because
+        // query.matches(doc) will return false for all non-"found" document types anyways.
+        // See https://github.com/firebase/firebase-android-sdk/issues/7295
+        DocumentType.FOUND_DOCUMENT,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
         context);
   }
@@ -290,6 +358,167 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
     } catch (InvalidProtocolBufferException e) {
       throw fail("MaybeDocument failed to parse: %s", e);
+    }
+  }
+
+  /**
+   * Helper class to backfill the `document_type` column in the `remote_documents` table.
+   * <p>
+   * The `document_type` column was added as an optimization to skip deleted document tombstones
+   * when running queries. Any time a new row is added to the `remote_documents` table it _should_
+   * have its `document_type` column set to the value that matches the `contents` field. However,
+   * when upgrading from an older schema version the column value for existing rows will be null
+   * and this backfiller is intended to replace those null values to improve the future performance
+   * of queries.
+   * <p>
+   * When traversing the `remote_documents` table call `add()` upon finding a row whose
+   * `document_type` is null. Then, call `backfill()` later on to efficiently update the added
+   * rows in batches.
+   * <p>
+   * This class is thread safe and all public methods may be safely called concurrently from
+   * multiple threads. This makes it safe to use instances of this class from BackgroundQueue.
+   *
+   * @see <a href="https://github.com/firebase/firebase-android-sdk/issues/7295">#7295</a>
+   */
+  private static class DocumentTypeBackfiller {
+
+    private final ConcurrentHashMap<BackfillKey, DocumentType> documentTypeByBackfillKey =
+        new ConcurrentHashMap<>();
+
+    void enqueue(String path, int readTimeSeconds, int readTimeNanos, MutableDocument document) {
+      BackfillKey backfillKey = new BackfillKey(path, readTimeSeconds, readTimeNanos);
+      DocumentType documentType = DocumentType.forMutableDocument(document);
+      documentTypeByBackfillKey.putIfAbsent(backfillKey, documentType);
+    }
+
+    void backfill(SQLitePersistence db) {
+      while (true) {
+        BackfillSqlInfo backfillSqlInfo = calculateBackfillSql();
+        if (backfillSqlInfo == null) {
+          break;
+        }
+        db.execute(backfillSqlInfo.sql, backfillSqlInfo.bindings);
+      }
+    }
+
+    private static class BackfillSqlInfo {
+      final String sql;
+      final Object[] bindings;
+      final int numDocumentsAffected;
+
+      BackfillSqlInfo(String sql, Object[] bindings, int numDocumentsAffected) {
+        this.sql = sql;
+        this.bindings = bindings;
+        this.numDocumentsAffected = numDocumentsAffected;
+      }
+    }
+
+    @Nullable
+    BackfillSqlInfo calculateBackfillSql() {
+      if (documentTypeByBackfillKey.isEmpty()) {
+        return null; // short circuit
+      }
+
+      ArrayList<Object> bindings = new ArrayList<>();
+      StringBuilder caseClauses = new StringBuilder();
+      StringBuilder whereClauses = new StringBuilder();
+
+      Iterator<BackfillKey> backfillKeys = documentTypeByBackfillKey.keySet().iterator();
+      int numDocumentsAffected = 0;
+      while (backfillKeys.hasNext() && bindings.size() < SQLitePersistence.LongQuery.LIMIT) {
+        BackfillKey backfillKey = backfillKeys.next();
+        DocumentType documentType = documentTypeByBackfillKey.remove(backfillKey);
+        if (documentType == null) {
+          continue;
+        }
+
+        numDocumentsAffected++;
+        bindings.add(backfillKey.path);
+        int pathBindingNumber = bindings.size();
+        bindings.add(backfillKey.readTimeSeconds);
+        int readTimeSecondsBindingNumber = bindings.size();
+        bindings.add(backfillKey.readTimeNanos);
+        int readTimeNanosBindingNumber = bindings.size();
+        bindings.add(documentType.dbValue);
+        int dbValueBindingNumber = bindings.size();
+
+        caseClauses
+            .append(" WHEN path=?")
+            .append(pathBindingNumber)
+            .append(" AND read_time_seconds=?")
+            .append(readTimeSecondsBindingNumber)
+            .append(" AND read_time_nanos=?")
+            .append(readTimeNanosBindingNumber)
+            .append(" THEN ?")
+            .append(dbValueBindingNumber);
+
+        if (whereClauses.length() > 0) {
+          whereClauses.append(" OR");
+        }
+        whereClauses
+            .append(" (path=?")
+            .append(pathBindingNumber)
+            .append(" AND read_time_seconds=?")
+            .append(readTimeSecondsBindingNumber)
+            .append(" AND read_time_nanos=?")
+            .append(readTimeNanosBindingNumber)
+            .append(')');
+      }
+
+      if (numDocumentsAffected == 0) {
+        return null;
+      }
+
+      String sql =
+          "UPDATE remote_documents SET document_type = CASE"
+              + caseClauses
+              + " ELSE NULL END WHERE"
+              + whereClauses;
+
+      return new BackfillSqlInfo(sql, bindings.toArray(), numDocumentsAffected);
+    }
+
+    private static class BackfillKey {
+      final String path;
+      final int readTimeSeconds;
+      final int readTimeNanos;
+
+      BackfillKey(String path, int readTimeSeconds, int readTimeNanos) {
+        this.path = path;
+        this.readTimeSeconds = readTimeSeconds;
+        this.readTimeNanos = readTimeNanos;
+      }
+
+      @Override
+      public boolean equals(Object object) {
+        if (object == this) {
+          return true;
+        }
+        if (!(object instanceof BackfillKey)) {
+          return false;
+        }
+        BackfillKey other = (BackfillKey) object;
+        return readTimeSeconds == other.readTimeSeconds
+            && readTimeNanos == other.readTimeNanos
+            && Objects.equals(path, other.path);
+      }
+
+      @Override
+      public int hashCode() {
+        return Objects.hash(path, readTimeSeconds, readTimeNanos);
+      }
+
+      @NonNull
+      @Override
+      public String toString() {
+        return "DocumentTypeBackfiller.BackfillKey(path="
+            + path
+            + ", readTimeSeconds="
+            + readTimeSeconds
+            + ", readTimeNanos="
+            + readTimeNanos
+            + ")";
+      }
     }
   }
 }
