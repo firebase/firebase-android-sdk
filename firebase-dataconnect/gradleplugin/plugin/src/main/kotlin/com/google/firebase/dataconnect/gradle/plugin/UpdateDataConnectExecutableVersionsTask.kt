@@ -97,11 +97,8 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
       cloudStorageVersionsMissingFromRegistry.size,
       cloudStorageVersionsMissingFromRegistry.toLogString()
     )
-
-    val updatedRegistry =
-      registry.updatedWith(
-        cloudStorageVersionsMissingFromRegistry.map { it.toRegistryVersionInfo(workDirectory) }
-      )
+    val missingRegistryVersionInfos =
+      cloudStorageVersionsMissingFromRegistry.map { it.toRegistryVersionInfo(workDirectory) }
 
     logger.lifecycle(
       "Updating {} with {} versions: {}",
@@ -109,6 +106,8 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
       cloudStorageVersionsMissingFromRegistry.size,
       cloudStorageVersionsMissingFromRegistry.toLogString()
     )
+
+    val updatedRegistry = registry.updatedWith(missingRegistryVersionInfos)
 
     if (updatedRegistry.defaultVersion == registry.defaultVersion) {
       logger.lifecycle(
