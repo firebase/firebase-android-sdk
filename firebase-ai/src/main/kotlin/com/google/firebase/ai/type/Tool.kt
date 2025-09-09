@@ -44,6 +44,8 @@ internal constructor(
   )
   public companion object {
 
+    private val codeExecutionInstance = Tool(null, null, JsonObject(emptyMap()))
+
     /**
      * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].
      *
@@ -57,7 +59,7 @@ internal constructor(
     /** Creates a [Tool] instance that allows the model to use Code Execution. */
     @JvmStatic
     public fun codeExecution(): Tool {
-      return Tool(null, null, JsonObject(emptyMap()))
+      return codeExecutionInstance
     }
 
     /**
