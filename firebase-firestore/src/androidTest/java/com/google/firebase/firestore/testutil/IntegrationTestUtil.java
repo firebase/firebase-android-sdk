@@ -599,7 +599,7 @@ public class IntegrationTestUtil {
     }
     PipelineSnapshot docsFromPipeline;
     try {
-      docsFromPipeline = waitFor(query.getFirestore().pipeline().convertFrom(query).execute());
+      docsFromPipeline = waitFor(query.getFirestore().pipeline().createFrom(query).execute());
     } catch (Exception e) {
       throw new RuntimeException("Pipeline FAILED", e);
     }
