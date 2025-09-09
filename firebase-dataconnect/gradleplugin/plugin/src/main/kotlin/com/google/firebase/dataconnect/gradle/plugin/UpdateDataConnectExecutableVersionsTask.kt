@@ -17,9 +17,12 @@
 package com.google.firebase.dataconnect.gradle.plugin
 
 import com.google.cloud.storage.Blob
+import com.google.cloud.storage.Bucket
+import com.google.cloud.storage.Storage
 import com.google.cloud.storage.Storage.BlobListOption
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry.VersionInfo
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry.serializedValue
 import io.github.z4kn4fein.semver.Version
 import io.github.z4kn4fein.semver.toVersion
@@ -67,21 +70,21 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
       registry.versions.size,
       jsonFile.absolutePath,
       registry.defaultVersion,
-      registry.versions.sortedWith(versionInfoComparator).joinToString {
-        "${it.version}-${it.os.serializedValue}"
-      }
+      registry.versions.sortedWith(versionInfoComparator).toLogString()
     )
 
-    val cloudStorageVersions = downloadVersionInfoFromCloudStorage()
+    val cloudStorageVersions: Set<CloudStorageVersionInfo> =
+      StorageOptions.getDefaultInstance()
+        .service
+        .getDataConnectExecutablesBucket()
+        .list(BlobListOption.prefix("emulator/"))
+        .iterateAll()
+        .mapNotNull { it.toCloudStorageVersionInfoOrNull() }
+        .toSet()
 
-    val unknownVersions =
-      cloudStorageVersions
-        .filterNotIn(registry)
-        .sortedWith(
-          compareBy<CloudStorageVersionInfo> { it.version }
-            .thenByDescending { it.operatingSystem.serializedValue }
-        )
-    if (unknownVersions.isEmpty()) {
+    val cloudStorageVersionsMissingFromRegistry: List<CloudStorageVersionInfo> =
+      cloudStorageVersions.filterNotIn(registry).sortedWith(cloudStorageVersionInfoComparator)
+    if (cloudStorageVersionsMissingFromRegistry.isEmpty()) {
       logger.lifecycle(
         "Not updating {} since it already contains all versions.",
         jsonFile.absolutePath
@@ -91,17 +94,20 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
     logger.lifecycle(
       "Downloading details for {} versions missing from registry file: {}",
-      unknownVersions.size,
-      unknownVersions.joinToString { "${it.version}-${it.operatingSystem.serializedValue}" }
+      cloudStorageVersionsMissingFromRegistry.size,
+      cloudStorageVersionsMissingFromRegistry.toLogString()
     )
-    val unknownVersionInfos = unknownVersions.map { it.toRegistryVersionInfo(workDirectory) }
-    val updatedRegistry = registry.updatedWith(unknownVersionInfos)
+
+    val updatedRegistry =
+      registry.updatedWith(
+        cloudStorageVersionsMissingFromRegistry.map { it.toRegistryVersionInfo(workDirectory) }
+      )
 
     logger.lifecycle(
       "Updating {} with {} versions: {}",
       jsonFile.absolutePath,
-      unknownVersions.size,
-      unknownVersions.joinToString { "${it.version}-${it.operatingSystem.serializedValue}" }
+      cloudStorageVersionsMissingFromRegistry.size,
+      cloudStorageVersionsMissingFromRegistry.toLogString()
     )
 
     if (updatedRegistry.defaultVersion == registry.defaultVersion) {
@@ -122,103 +128,104 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     DataConnectExecutableVersionsRegistry.save(updatedRegistry, jsonFile)
   }
 
-  private fun downloadVersionInfoFromCloudStorage(): Set<CloudStorageVersionInfo> {
-    val storage = StorageOptions.getDefaultInstance().service
-    val bucketName = "firemat-preview-drop"
-    logger.lifecycle("Finding all Data Connect executable versions in GCS bucket: {}", bucketName)
-    val bucket =
-      storage
-        .runCatching { get(bucketName) }
-        .onFailure { e ->
-          if (
-            e is StorageException &&
-              e.cause.let {
-                it is com.google.api.client.http.HttpResponseException &&
-                  (it.statusCode == 401 || it.statusCode == 403)
-              }
-          ) {
-            logger.error(
-              "ERROR: 401/403 error returned from Google Cloud Storage; " +
-                "try running \"gcloud auth application-default login\" and/or unsetting the " +
-                "GOOGLE_APPLICATION_CREDENTIALS environment variable to fix"
-            )
-          }
-        }
-        .getOrThrow()
-        ?: throw DataConnectGradleException("bvkxzp2esg", "GCS bucket not found: $bucketName")
-
-    val invalidVersions = setOf("1.15.0".toVersion())
-    val minVersion = "1.3.4".toVersion()
-
-    val blobs = bucket.list(BlobListOption.prefix("emulator/"))
-    val regex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
-    val dataConnectExecutableBinaries =
-      blobs
-        .iterateAll()
-        .mapNotNull {
-          logger.debug("[av7zhespw2] Found Data Connect executable file: {}", it.name)
-          val match =
-            regex.matchEntire(it.name)
-              ?: run {
-                logger.debug(
-                  "[p4vjjcp2kq] Ignoring Data Connect executable file: {} " +
-                    "(does not match regex: {})",
-                  it.name,
-                  regex
-                )
-                return@mapNotNull null
-              }
-          CloudStorageVersionInfo(
-            version =
-              run {
-                val versionString = match.groups[2]?.value
-                versionString?.toVersionOrNull(strict = false)
-                  ?: run {
-                    logger.info(
-                      "WARNING: Ignoring Data Connect executable file: {} " +
-                        "(invalid version: {} (in match for regex {}))",
-                      it.name,
-                      versionString,
-                      regex
-                    )
-                    return@mapNotNull null
-                  }
-              },
-            operatingSystem =
-              when (val operatingSystemString = match.groups[1]?.value) {
-                "linux" -> OperatingSystem.Linux
-                "macos" -> OperatingSystem.MacOS
-                "windows" -> OperatingSystem.Windows
-                else -> {
-                  logger.info(
-                    "WARNING: Ignoring Data Connect executable file: {} " +
-                      "(unknown operating system name: {} (in match for regex {}))",
-                    it.name,
-                    operatingSystemString,
-                    regex
-                  )
-                  return@mapNotNull null
-                }
-              },
-            blob = it,
-          )
-        }
-        .filter { it.version >= minVersion }
-        .filterNot { invalidVersions.contains(it.version) }
-        .toSet()
-
-    return dataConnectExecutableBinaries
-  }
-
   private data class CloudStorageVersionInfo(
     val version: Version,
     val operatingSystem: OperatingSystem,
     val blob: Blob,
   )
 
-  private fun CloudStorageVersionInfo.toRegistryVersionInfo(
-    workDirectory: File
-  ): DataConnectExecutableVersionsRegistry.VersionInfo {
+  private fun Storage.getDataConnectExecutablesBucket(): Bucket {
+    val bucketName = "firemat-preview-drop"
+    logger.lifecycle("Finding all Data Connect executable versions in GCS bucket: {}", bucketName)
+
+    return runCatching { get(bucketName) }
+      .onFailure { e ->
+        if (
+          e is StorageException &&
+            e.cause.let {
+              it is com.google.api.client.http.HttpResponseException &&
+                (it.statusCode == 401 || it.statusCode == 403)
+            }
+        ) {
+          logger.error(
+            "ERROR: 401/403 error returned from Google Cloud Storage; " +
+              "try running \"gcloud auth application-default login\" and/or unsetting the " +
+              "GOOGLE_APPLICATION_CREDENTIALS environment variable to fix"
+          )
+        }
+      }
+      .getOrThrow()
+      ?: throw DataConnectGradleException("bvkxzp2esg", "GCS bucket not found: $bucketName")
+  }
+
+  private fun Blob.toCloudStorageVersionInfoOrNull(): CloudStorageVersionInfo? {
+    logger.debug("[av7zhespw2] Found Data Connect executable file: {}", name)
+    val match =
+      fileNameRegex.matchEntire(name)
+        ?: run {
+          logger.debug(
+            "[p4vjjcp2kq] Ignoring Data Connect executable file: {} " +
+              "(does not match regex: {})",
+            name,
+            fileNameRegex
+          )
+          return null
+        }
+
+    val versionString = match.groups[2]?.value
+    val version = versionString?.toVersionOrNull(strict = false)
+    if (version === null) {
+      logger.info(
+        "Ignoring Data Connect executable file: {} " +
+          "(invalid version: {} (in match for regex {}))",
+        name,
+        versionString,
+        fileNameRegex
+      )
+      return null
+    }
+
+    if (version < minVersion) {
+      logger.info(
+        "Ignoring Data Connect executable file: {} " +
+          "(version {} is less than the minimum version: {})",
+        name,
+        versionString,
+        minVersion
+      )
+      return null
+    }
+
+    if (version in invalidVersions) {
+      logger.info(
+        "Ignoring Data Connect executable file: {} " + "(version {} is a known invalid version)",
+        name,
+        versionString
+      )
+      return null
+    }
+
+    val operatingSystem =
+      when (val operatingSystemString = match.groups[1]?.value) {
+        "linux" -> OperatingSystem.Linux
+        "macos" -> OperatingSystem.MacOS
+        "windows" -> OperatingSystem.Windows
+        else -> {
+          logger.info(
+            "WARNING: Ignoring Data Connect executable file: {} " +
+              "(unknown operating system name: {} (in match for regex {}))",
+            name,
+            operatingSystemString,
+            fileNameRegex
+          )
+          return null
+        }
+      }
+
+    return CloudStorageVersionInfo(version, operatingSystem, blob = this)
+  }
+
+  private fun CloudStorageVersionInfo.toRegistryVersionInfo(workDirectory: File): VersionInfo {
     val dateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
 
     logger.lifecycle(
@@ -238,19 +245,31 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
         "never happen; if it _does_ happen it _could_ indicate a compromised " +
         "downloaded binary [y5967yd2cf]"
     }
-    return DataConnectExecutableVersionsRegistry.VersionInfo(
-      version,
-      operatingSystem,
-      fileInfo.sizeInBytes,
-      fileInfo.sha512DigestHex
-    )
+    return VersionInfo(version, operatingSystem, fileInfo.sizeInBytes, fileInfo.sha512DigestHex)
   }
 
   private companion object {
 
     val versionInfoComparator =
-      compareBy<DataConnectExecutableVersionsRegistry.VersionInfo> { it.version }
-        .thenByDescending { it.os.serializedValue }
+      compareBy<VersionInfo> { it.version }.thenByDescending { it.os.serializedValue }
+
+    val cloudStorageVersionInfoComparator =
+      compareBy<CloudStorageVersionInfo> { it.version }
+        .thenByDescending { it.operatingSystem.serializedValue }
+
+    @JvmName("toLogStringCloudStorageVersionInfo")
+    fun Iterable<CloudStorageVersionInfo>.toLogString(): String = joinToString {
+      "${it.version}-${it.operatingSystem.serializedValue}"
+    }
+
+    @JvmName("toLogStringVersionInfo")
+    fun Iterable<VersionInfo>.toLogString(): String = joinToString {
+      "${it.version}-${it.os.serializedValue}"
+    }
+
+    val invalidVersions = setOf("1.15.0".toVersion())
+    val minVersion = "1.3.4".toVersion()
+    val fileNameRegex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
 
     /**
      * Creates a returns a new list that contains all elements of the receiving [Iterable] that are
@@ -265,16 +284,14 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     }
 
     private fun DataConnectExecutableVersionsRegistry.Root.updatedWith(
-      updatedVersions: Iterable<DataConnectExecutableVersionsRegistry.VersionInfo>
+      updatedVersions: Iterable<VersionInfo>
     ): DataConnectExecutableVersionsRegistry.Root {
-      val mergedVersions = buildList {
+      val allVersions = buildList {
         addAll(versions)
-        for (version in updatedVersions) {
-          val index = indexOfLast { versionInfoComparator.compare(it, version) < 0 }
-          add(index + 1, version)
-        }
+        addAll(updatedVersions)
+        sortWith(versionInfoComparator)
       }
-      return copy(defaultVersion = mergedVersions.maxOf { it.version }, versions = mergedVersions)
+      return copy(defaultVersion = allVersions.maxOf { it.version }, versions = allVersions)
     }
   }
 }
