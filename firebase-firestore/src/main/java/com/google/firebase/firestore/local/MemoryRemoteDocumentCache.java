@@ -14,17 +14,19 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollection;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.HashMap;
@@ -98,7 +100,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       IndexOffset offset,
       @NonNull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
@@ -106,7 +108,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
-    DocumentKey prefix = DocumentKey.fromPath(query.getPath().append(""));
+    ResourcePath path;
+    if (query.isQuery()) {
+      path = query.query().getPath();
+    } else {
+      path = ResourcePath.fromString(getPipelineCollection(query.pipeline()));
+    }
+    DocumentKey prefix = DocumentKey.fromPath(path.append(""));
     Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
@@ -114,12 +122,12 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       Document doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
-      if (!query.getPath().isPrefixOf(key.getPath())) {
+      if (!path.isPrefixOf(key.getPath())) {
         // We are now scanning the next collection. Abort.
         break;
       }
 
-      if (key.getPath().length() > query.getPath().length() + 1) {
+      if (key.getPath().length() > path.length() + 1) {
         // Exclude entries from subcollections.
         continue;
       }
@@ -141,7 +149,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
+      QueryOrPipeline query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 

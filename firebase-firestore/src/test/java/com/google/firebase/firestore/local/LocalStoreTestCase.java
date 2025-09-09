@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.TestUtil.DATABASE_ID;
+import static com.google.firebase.firestore.TestUtil.firestore;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
@@ -55,12 +57,16 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleMetadata;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -114,6 +120,10 @@ public abstract class LocalStoreTestCase {
   private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
+  // TODO(b/352982463): This flag should be `final` but we cannot do so due to the test structure.
+  protected boolean shouldUsePipeline;
+  private FirebaseFirestore db;
+
   abstract Persistence getPersistence();
 
   abstract boolean garbageCollectorIsEager();
@@ -124,6 +134,8 @@ public abstract class LocalStoreTestCase {
     lastChanges = null;
     lastQueryResult = null;
     lastTargetId = 0;
+    shouldUsePipeline = false;
+    db = firestore();
 
     localStorePersistence = getPersistence();
     queryEngine = new CountingQueryEngine(new QueryEngine());
@@ -206,15 +218,43 @@ public abstract class LocalStoreTestCase {
     localStore.configureFieldIndexes(fieldIndexes);
   }
 
+  // Helper to convert a Query to a RealtimePipeline.
+  // This is identical to the one in QueryEngineTestBase.
+  private RealtimePipeline convertQueryToPipeline(Query query) {
+    return query.toRealtimePipeline(db, new UserDataReader(DATABASE_ID));
+  }
+
   protected int allocateQuery(Query query) {
-    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper targetWrapper =
+        new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget());
+    TargetData targetData;
+    if (shouldUsePipeline) {
+      targetData =
+          localStore.allocateTarget(
+              new com.google.firebase.firestore.core.TargetOrPipeline.PipelineWrapper(
+                  convertQueryToPipeline(query)));
+    } else {
+      targetData = localStore.allocateTarget(targetWrapper);
+    }
+
     lastTargetId = targetData.getTargetId();
     return targetData.getTargetId();
   }
 
   protected void executeQuery(Query query) {
     resetPersistenceStats();
-    lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+    if (shouldUsePipeline) {
+      lastQueryResult =
+          localStore.executeQuery(
+              new com.google.firebase.firestore.core.QueryOrPipeline.PipelineWrapper(
+                  convertQueryToPipeline(query)),
+              /* usePreviousResults= */ true);
+    } else {
+      lastQueryResult =
+          localStore.executeQuery(
+              new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(query),
+              /* usePreviousResults= */ true);
+    }
   }
 
   protected void setIndexAutoCreationEnabled(boolean isEnabled) {
@@ -953,8 +993,8 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/baz", map("foo", "baz")),
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar"))));
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
-    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertThat(values(result.getDocuments()))
+    executeQuery(query);
+    assertThat(values(lastQueryResult.getDocuments()))
         .containsExactly(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
@@ -968,8 +1008,8 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar")),
             setMutation("fooo/blah", map("fooo", "blah"))));
     Query query = query("foo");
-    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertThat(values(result.getDocuments()))
+    executeQuery(query);
+    assertThat(values(lastQueryResult.getDocuments()))
         .containsExactly(
             doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(),
             doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
@@ -985,8 +1025,8 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
-    QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertThat(values(result.getDocuments()))
+    executeQuery(query);
+    assertThat(values(lastQueryResult.getDocuments()))
         .containsExactly(
             doc("foo/bar", 20, map("a", "b")),
             doc("foo/baz", 10, map("a", "b")),
@@ -1004,7 +1044,7 @@ public abstract class LocalStoreTestCase {
 
     resetPersistenceStats();
 
-    localStore.executeQuery(query, /* usePreviousResults= */ true);
+    executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
     assertOverlayTypes(keyMap("foo/bonk", CountingQueryEngine.OverlayType.Set));
@@ -1016,6 +1056,10 @@ public abstract class LocalStoreTestCase {
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
+    TargetOrPipeline targetOrPipeline =
+        shouldUsePipeline
+            ? new TargetOrPipeline.PipelineWrapper(convertQueryToPipeline(query))
+            : new TargetOrPipeline.TargetWrapper(query.toTarget());
 
     applyRemoteEvent(noChangeEvent(targetId, 1000));
 
@@ -1023,7 +1067,7 @@ public abstract class LocalStoreTestCase {
     localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    TargetData targetData2 = localStore.allocateTarget(query.toTarget());
+    TargetData targetData2 = localStore.allocateTarget(targetOrPipeline);
     assertEquals(resumeToken(1000), targetData2.getResumeToken());
   }
 
@@ -1033,6 +1077,10 @@ public abstract class LocalStoreTestCase {
 
     Query query = query("foo/bar");
     int targetId = allocateQuery(query);
+    TargetOrPipeline targetOrPipeline =
+        shouldUsePipeline
+            ? new TargetOrPipeline.PipelineWrapper(convertQueryToPipeline(query))
+            : new TargetOrPipeline.TargetWrapper(query.toTarget());
 
     applyRemoteEvent(noChangeEvent(targetId, 1000));
 
@@ -1043,7 +1091,7 @@ public abstract class LocalStoreTestCase {
     localStore.releaseTarget(targetId);
 
     // Should come back with the same resume token
-    TargetData targetData2 = localStore.allocateTarget(query.toTarget());
+    TargetData targetData2 = localStore.allocateTarget(targetOrPipeline);
     assertEquals(resumeToken(1000), targetData2.getResumeToken());
   }
 
@@ -1154,6 +1202,10 @@ public abstract class LocalStoreTestCase {
 
     Query query = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
+    TargetOrPipeline targetOrPipeline =
+        shouldUsePipeline
+            ? new TargetOrPipeline.PipelineWrapper(convertQueryToPipeline(query))
+            : new TargetOrPipeline.TargetWrapper(query.toTarget());
 
     executeQuery(query);
 
@@ -1164,13 +1216,13 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
 
-    TargetData cachedTargetData = localStore.getTargetData(query.toTarget());
+    TargetData cachedTargetData = localStore.getTargetData(targetOrPipeline);
     Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
     applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
-    cachedTargetData = localStore.getTargetData(query.toTarget());
+    cachedTargetData = localStore.getTargetData(targetOrPipeline);
     Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
     Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
 
@@ -1188,24 +1240,28 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     Target target = query.toTarget();
     int targetId = allocateQuery(query);
+    TargetOrPipeline targetOrPipeline =
+        shouldUsePipeline
+            ? new TargetOrPipeline.PipelineWrapper(convertQueryToPipeline(query))
+            : new TargetOrPipeline.TargetWrapper(target);
 
     // Advance the target snapshot.
     applyRemoteEvent(noChangeEvent(targetId, 10));
 
     // At this point, we have not yet confirmed that the target is limbo free.
-    TargetData cachedTargetData = localStore.getTargetData(target);
+    TargetData cachedTargetData = localStore.getTargetData(targetOrPipeline);
     Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
     updateViews(targetId, /* fromCache= */ false);
-    cachedTargetData = localStore.getTargetData(target);
+    cachedTargetData = localStore.getTargetData(targetOrPipeline);
     Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // The last limbo free snapshot version is persisted even if we release the target.
     releaseTarget(targetId);
 
     if (!garbageCollectorIsEager()) {
-      cachedTargetData = localStore.getTargetData(target);
+      cachedTargetData = localStore.getTargetData(targetOrPipeline);
       Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
     }
   }
@@ -1734,7 +1790,7 @@ public abstract class LocalStoreTestCase {
 
     resetPersistenceStats();
 
-    localStore.executeQuery(query, /* usePreviousResults= */ true);
+    executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
     assertOverlayTypes(keyMap("foo/baz", CountingQueryEngine.OverlayType.Patch));

@@ -16,17 +16,23 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.firestore.RealtimePipeline
-import com.google.firebase.firestore.TestUtil.FIRESTORE
-import com.google.firebase.firestore.TestUtil.USER_DATA_READER
+import com.google.firebase.firestore.UserDataReader
+import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import com.google.firestore.v1.Value
 
+private val FAKE_DATABASE_ID = DatabaseId.forProject("project")
+private val FAKE_USER_DATA_READER = UserDataReader(FAKE_DATABASE_ID)
+
 val EMPTY_DOC: MutableDocument = doc("foo/1", 0, mapOf())
 internal val EVALUATION_CONTEXT: EvaluationContext =
-  EvaluationContext(RealtimePipeline(FIRESTORE, USER_DATA_READER, emptyList()))
+  EvaluationContext(
+    RealtimePipeline(RemoteSerializer(FAKE_DATABASE_ID), FAKE_USER_DATA_READER, emptyList())
+  )
 
 internal fun evaluate(expr: Expr): EvaluateResult = evaluate(expr, EMPTY_DOC)
 

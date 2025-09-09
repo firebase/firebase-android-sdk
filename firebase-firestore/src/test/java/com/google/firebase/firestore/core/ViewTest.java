@@ -61,7 +61,7 @@ public class ViewTest {
   @Test
   public void testAddsDocumentsBasedOnQuery() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
@@ -71,7 +71,7 @@ public class ViewTest {
     View.DocumentChanges docViewChanges = view.computeDocChanges(updates);
     TargetChange targetChange = ackTarget(doc1, doc2, doc3);
     ViewSnapshot snapshot = view.applyChanges(docViewChanges, targetChange).getSnapshot();
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc2), snapshot.getDocuments().toList());
     assertEquals(
         asList(
@@ -86,7 +86,7 @@ public class ViewTest {
   @Test
   public void testRemovesDocument() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
@@ -102,7 +102,7 @@ public class ViewTest {
                 ackTarget(doc1, doc3))
             .getSnapshot();
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc3), snapshot.getDocuments().toList());
     assertEquals(
         asList(
@@ -116,7 +116,7 @@ public class ViewTest {
   @Test
   public void testReturnsNilIfNoChange() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
@@ -131,7 +131,7 @@ public class ViewTest {
   @Test
   public void testReturnsNotNilForFirstChanges() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // initial state
     assertNotNull(applyChanges(view).getSnapshot());
@@ -140,7 +140,7 @@ public class ViewTest {
   @Test
   public void testFiltersDocumentsBasedOnQueryWithFilters() {
     Query query = messageQuery().filter(filter("sort", "<=", 2));
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("sort", 1));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("sort", 2));
@@ -150,7 +150,7 @@ public class ViewTest {
 
     ViewSnapshot snapshot = applyChanges(view, doc1, doc2, doc3, doc4, doc5).getSnapshot();
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc5, doc2), snapshot.getDocuments().toList());
     assertEquals(
         asList(
@@ -165,7 +165,7 @@ public class ViewTest {
   @Test
   public void testUpdatesDocumentsBasedOnQueryWithFilters() {
     Query query = messageQuery().filter(filter("sort", "<=", 2));
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("sort", 1));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("sort", 3));
@@ -174,7 +174,7 @@ public class ViewTest {
 
     ViewSnapshot snapshot = applyChanges(view, doc1, doc2, doc3, doc4).getSnapshot();
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc3), snapshot.getDocuments().toList());
 
     MutableDocument newDoc2 = doc("rooms/eros/messages/2", 1, map("sort", 2));
@@ -183,7 +183,7 @@ public class ViewTest {
 
     snapshot = applyChanges(view, newDoc2, newDoc3, newDoc4).getSnapshot();
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(newDoc4, doc1, newDoc2), snapshot.getDocuments().toList());
 
     assertEquals(
@@ -199,7 +199,7 @@ public class ViewTest {
   @Test
   public void testRemovesDocumentsForQueryWithLimit() {
     Query query = messageQuery().limitToFirst(2);
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
@@ -211,7 +211,7 @@ public class ViewTest {
     ViewSnapshot snapshot =
         view.applyChanges(view.computeDocChanges(docUpdates(doc2)), ackTarget(doc1, doc2, doc3))
             .getSnapshot();
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc2), snapshot.getDocuments().toList());
 
     assertEquals(
@@ -226,7 +226,7 @@ public class ViewTest {
   @Test
   public void testDoesNotReportChangesForDocumentBeyondLimit() {
     Query query = messageQuery().orderBy(orderBy("num")).limitToFirst(2);
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("num", 1));
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("num", 2));
@@ -247,7 +247,7 @@ public class ViewTest {
     ViewSnapshot snapshot =
         view.applyChanges(viewDocChanges, ackTarget(doc1, doc2, doc3, doc4)).getSnapshot();
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(new QueryOrPipeline.QueryWrapper(query), snapshot.getQuery());
     assertEquals(asList(doc1, doc3), snapshot.getDocuments().toList());
 
     assertEquals(
@@ -262,7 +262,7 @@ public class ViewTest {
   @Test
   public void testKeepsTrackOfLimboDocuments() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
     MutableDocument doc3 = doc("rooms/eros/messages/2", 0, map());
@@ -304,7 +304,7 @@ public class ViewTest {
   @Test
   public void testViewsWithLimboDocumentsAreMarkedFromCache() {
     Query query = messageQuery();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
 
@@ -335,7 +335,8 @@ public class ViewTest {
 
     // Unlike other cases, here the view is initialized with a set of previously synced documents
     // which happens when listening to a previously listened-to query.
-    View view = new View(query, keySet(doc1.getKey(), doc2.getKey()));
+    View view =
+        new View(new QueryOrPipeline.QueryWrapper(query), keySet(doc1.getKey(), doc2.getKey()));
 
     TargetChange markCurrent = ackTarget();
     View.DocumentChanges changes = view.computeDocChanges(docUpdates());
@@ -348,7 +349,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -376,7 +377,7 @@ public class ViewTest {
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map("order", 1));
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map("order", 2));
     MutableDocument doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2, doc3));
@@ -407,7 +408,7 @@ public class ViewTest {
     MutableDocument doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
     MutableDocument doc4 = doc("rooms/eros/messages/3", 0, map("order", 4));
     MutableDocument doc5 = doc("rooms/eros/messages/4", 0, map("order", 5));
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2, doc3, doc4, doc5));
@@ -433,7 +434,7 @@ public class ViewTest {
     MutableDocument doc3 = doc("rooms/eros/messages/2", 0, map("order", 3));
     MutableDocument doc4 = doc("rooms/eros/messages/3", 0, map("order", 4));
     MutableDocument doc5 = doc("rooms/eros/messages/4", 0, map("order", 5));
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2, doc3, doc4, doc5));
@@ -456,7 +457,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -478,7 +479,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(20);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
     assertEquals(2, changes.documentSet.size());
@@ -499,7 +500,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -521,7 +522,7 @@ public class ViewTest {
     Query query = messageQuery();
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map());
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -539,7 +540,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map()).setHasLocalMutations();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -558,7 +559,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map()).setHasLocalMutations();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -575,7 +576,7 @@ public class ViewTest {
     Query query = messageQuery().limitToFirst(2);
     MutableDocument doc1 = doc("rooms/eros/messages/0", 0, map());
     MutableDocument doc2 = doc("rooms/eros/messages/1", 0, map()).setHasLocalMutations();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     // Start with a full view.
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
@@ -590,7 +591,7 @@ public class ViewTest {
   public void testRaisesHasPendingWritesForPendingMutationsInInitialSnapshot() {
     Query query = messageQuery();
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map()).setHasLocalMutations();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1));
     ViewChange viewChange = view.applyChanges(changes);
@@ -602,7 +603,7 @@ public class ViewTest {
   public void testDoesntRaiseHasPendingWritesForCommittedMutationsInInitialSnapshot() {
     Query query = messageQuery();
     MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map()).setHasCommittedMutations();
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1));
     ViewChange viewChange = view.applyChanges(changes);
@@ -626,7 +627,7 @@ public class ViewTest {
         doc("rooms/eros/messages/2", 2, map("time", 3)).setHasLocalMutations();
     MutableDocument doc2Acknowledged = doc("rooms/eros/messages/2", 2, map("time", 3));
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
 
     View.DocumentChanges changes = view.computeDocChanges(docUpdates(doc1, doc2));
     ViewChange snap = view.applyChanges(changes);

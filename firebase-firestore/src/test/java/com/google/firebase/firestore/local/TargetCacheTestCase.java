@@ -73,7 +73,10 @@ public abstract class TargetCacheTestCase {
 
   @Test
   public void testReadQueryNotInCache() {
-    assertNull(targetCache.getTargetData(query("rooms").toTarget()));
+    assertNull(
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("rooms").toTarget())));
   }
 
   @Test
@@ -81,7 +84,10 @@ public abstract class TargetCacheTestCase {
     TargetData targetData = newTargetData(query("rooms"), 1, 1);
     addTargetData(targetData);
 
-    TargetData result = targetCache.getTargetData(query("rooms").toTarget());
+    TargetData result =
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("rooms").toTarget()));
     assertNotNull(result);
     assertEquals(targetData.getTarget(), result.getTarget());
     assertEquals(targetData.getTargetId(), result.getTargetId());
@@ -100,24 +106,44 @@ public abstract class TargetCacheTestCase {
     addTargetData(data1);
 
     // Using the other query should not return the query cache entry despite equal canonicalIDs.
-    assertNull(targetCache.getTargetData(q2.toTarget()));
-    assertEquals(data1, targetCache.getTargetData(q1.toTarget()));
+    assertNull(
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q2.toTarget())));
+    assertEquals(
+        data1,
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q1.toTarget())));
 
     TargetData data2 = newTargetData(q2, 2, 1);
     addTargetData(data2);
     assertEquals(2, targetCache.getTargetCount());
 
-    assertEquals(data1, targetCache.getTargetData(q1.toTarget()));
-    assertEquals(data2, targetCache.getTargetData(q2.toTarget()));
+    assertEquals(
+        data1,
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q1.toTarget())));
+    assertEquals(
+        data2,
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q2.toTarget())));
 
     removeTargetData(data1);
-    assertNull(targetCache.getTargetData(q1.toTarget()));
-    assertEquals(data2, targetCache.getTargetData(q2.toTarget()));
+    assertNull(
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q1.toTarget())));
+    assertEquals(
+        data2,
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q2.toTarget())));
     assertEquals(1, targetCache.getTargetCount());
 
     removeTargetData(data2);
-    assertNull(targetCache.getTargetData(q1.toTarget()));
-    assertNull(targetCache.getTargetData(q2.toTarget()));
+    assertNull(
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q1.toTarget())));
+    assertNull(
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q2.toTarget())));
     assertEquals(0, targetCache.getTargetCount());
   }
 
@@ -129,7 +155,10 @@ public abstract class TargetCacheTestCase {
     TargetData targetData2 = newTargetData(query("rooms"), 1, 2);
     addTargetData(targetData2);
 
-    TargetData result = targetCache.getTargetData(query("rooms").toTarget());
+    TargetData result =
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("rooms").toTarget()));
 
     // There's no assertArrayNotEquals
     assertThat(targetData2.getResumeToken(), not(equalTo(targetData1.getResumeToken())));
@@ -146,14 +175,21 @@ public abstract class TargetCacheTestCase {
 
     removeTargetData(targetData1);
 
-    TargetData result = targetCache.getTargetData(query("rooms").toTarget());
+    TargetData result =
+        targetCache.getTargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("rooms").toTarget()));
     assertNull(result);
   }
 
   @Test
   public void testRemoveNonExistentQuery() {
     // no-op, but make sure it doesn't throw.
-    assertDoesNotThrow(() -> targetCache.getTargetData(query("rooms").toTarget()));
+    assertDoesNotThrow(
+        () ->
+            targetCache.getTargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                    query("rooms").toTarget())));
   }
 
   @Test
@@ -241,9 +277,19 @@ public abstract class TargetCacheTestCase {
     Query halls = query("halls");
     Query garages = query("garages");
 
-    TargetData query1 = new TargetData(rooms.toTarget(), 1, 10, QueryPurpose.LISTEN);
+    TargetData query1 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(rooms.toTarget()),
+            1,
+            10,
+            QueryPurpose.LISTEN);
     addTargetData(query1);
-    TargetData query2 = new TargetData(halls.toTarget(), 2, 20, QueryPurpose.LISTEN);
+    TargetData query2 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(halls.toTarget()),
+            2,
+            20,
+            QueryPurpose.LISTEN);
     addTargetData(query2);
     assertEquals(20, targetCache.getHighestListenSequenceNumber());
 
@@ -251,7 +297,13 @@ public abstract class TargetCacheTestCase {
     removeTargetData(query2);
     assertEquals(20, targetCache.getHighestListenSequenceNumber());
 
-    TargetData query3 = new TargetData(garages.toTarget(), 42, 100, QueryPurpose.LISTEN);
+    TargetData query3 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                garages.toTarget()),
+            42,
+            100,
+            QueryPurpose.LISTEN);
     addTargetData(query3);
     assertEquals(100, targetCache.getHighestListenSequenceNumber());
 
@@ -265,7 +317,13 @@ public abstract class TargetCacheTestCase {
   public void testHighestTargetId() {
     assertEquals(0, targetCache.getHighestTargetId());
 
-    TargetData query1 = new TargetData(query("rooms").toTarget(), 1, 10, QueryPurpose.LISTEN);
+    TargetData query1 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("rooms").toTarget()),
+            1,
+            10,
+            QueryPurpose.LISTEN);
     addTargetData(query1);
 
     DocumentKey key1 = key("rooms/bar");
@@ -273,7 +331,13 @@ public abstract class TargetCacheTestCase {
     addMatchingKey(key1, 1);
     addMatchingKey(key2, 1);
 
-    TargetData query2 = new TargetData(query("halls").toTarget(), 2, 20, QueryPurpose.LISTEN);
+    TargetData query2 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("halls").toTarget()),
+            2,
+            20,
+            QueryPurpose.LISTEN);
     addTargetData(query2);
     DocumentKey key3 = key("halls/foo");
     addMatchingKey(key3, 2);
@@ -284,7 +348,13 @@ public abstract class TargetCacheTestCase {
     assertEquals(2, targetCache.getHighestTargetId());
 
     // A query with an empty result set still counts.
-    TargetData query3 = new TargetData(query("garages").toTarget(), 42, 100, QueryPurpose.LISTEN);
+    TargetData query3 =
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                query("garages").toTarget()),
+            42,
+            100,
+            QueryPurpose.LISTEN);
     addTargetData(query3);
     assertEquals(42, targetCache.getHighestTargetId());
 
@@ -325,7 +395,7 @@ public abstract class TargetCacheTestCase {
   private TargetData newTargetData(Query query, int targetId, long version) {
     long sequenceNumber = ++previousSequenceNumber;
     return new TargetData(
-        query.toTarget(),
+        new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
         targetId,
         sequenceNumber,
         QueryPurpose.LISTEN,

@@ -21,12 +21,16 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.AggregateField;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -50,6 +54,18 @@ import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
+import com.google.firebase.firestore.pipeline.CollectionGroupSource;
+import com.google.firebase.firestore.pipeline.CollectionSource;
+import com.google.firebase.firestore.pipeline.DocumentsSource;
+import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Field;
+import com.google.firebase.firestore.pipeline.FunctionExpr;
+import com.google.firebase.firestore.pipeline.InternalOptions;
+import com.google.firebase.firestore.pipeline.LimitStage;
+import com.google.firebase.firestore.pipeline.Ordering;
+import com.google.firebase.firestore.pipeline.SortStage;
+import com.google.firebase.firestore.pipeline.Stage;
+import com.google.firebase.firestore.pipeline.WhereStage;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -72,8 +88,8 @@ import com.google.firestore.v1.StructuredQuery.CompositeFilter;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
 import com.google.firestore.v1.StructuredQuery.Order;
 import com.google.firestore.v1.StructuredQuery.UnaryFilter;
-import com.google.firestore.v1.Target;
 import com.google.firestore.v1.Target.DocumentsTarget;
+import com.google.firestore.v1.Target.PipelineQueryTarget;
 import com.google.firestore.v1.Target.QueryTarget;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.Int32Value;
@@ -217,6 +233,10 @@ public final class RemoteSerializer {
 
   public String databaseName() {
     return databaseName;
+  }
+
+  public DatabaseId databaseId() {
+    return databaseId;
   }
 
   // Documents
@@ -483,14 +503,19 @@ public final class RemoteSerializer {
     }
   }
 
-  public Target encodeTarget(TargetData targetData) {
-    Target.Builder builder = Target.newBuilder();
-    com.google.firebase.firestore.core.Target target = targetData.getTarget();
+  public com.google.firestore.v1.Target encodeTarget(TargetData targetData) {
+    com.google.firestore.v1.Target.Builder builder = com.google.firestore.v1.Target.newBuilder();
+    TargetOrPipeline target = targetData.getTarget();
 
-    if (target.isDocumentQuery()) {
-      builder.setDocuments(encodeDocumentsTarget(target));
+    if (target.isPipeline()) {
+      PipelineQueryTarget.Builder pipelineBuilder = PipelineQueryTarget.newBuilder();
+      builder.setPipelineQuery(
+          pipelineBuilder.setStructuredPipeline(
+              target.pipeline().toStructurePipelineProto$com_google_firebase_firebase_firestore()));
+    } else if (target.target().isDocumentQuery()) {
+      builder.setDocuments(encodeDocumentsTarget(target.target()));
     } else {
-      builder.setQuery(encodeQueryTarget(target));
+      builder.setQuery(encodeQueryTarget(target.target()));
     }
 
     builder.setTargetId(targetData.getTargetId());
@@ -513,13 +538,13 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public DocumentsTarget encodeDocumentsTarget(com.google.firebase.firestore.core.Target target) {
+  public DocumentsTarget encodeDocumentsTarget(Target target) {
     DocumentsTarget.Builder builder = DocumentsTarget.newBuilder();
     builder.addDocuments(encodeQueryPath(target.getPath()));
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Target decodeDocumentsTarget(DocumentsTarget target) {
+  public Target decodeDocumentsTarget(DocumentsTarget target) {
     int count = target.getDocumentsCount();
     hardAssert(count == 1, "DocumentsTarget contained other than 1 document %d", count);
 
@@ -527,7 +552,7 @@ public final class RemoteSerializer {
     return Query.atPath(decodeQueryPath(name)).toTarget();
   }
 
-  public QueryTarget encodeQueryTarget(com.google.firebase.firestore.core.Target target) {
+  public QueryTarget encodeQueryTarget(Target target) {
     // Dissect the path into parent, collectionId, and optional key filter.
     QueryTarget.Builder builder = QueryTarget.newBuilder();
     StructuredQuery.Builder structuredQueryBuilder = StructuredQuery.newBuilder();
@@ -582,8 +607,7 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Target decodeQueryTarget(
-      String parent, StructuredQuery query) {
+  public Target decodeQueryTarget(String parent, StructuredQuery query) {
     ResourcePath path = decodeQueryPath(parent);
 
     String collectionGroup = null;
@@ -618,7 +642,7 @@ public final class RemoteSerializer {
       orderBy = Collections.emptyList();
     }
 
-    long limit = com.google.firebase.firestore.core.Target.NO_LIMIT;
+    long limit = Target.NO_LIMIT;
     if (query.hasLimit()) {
       limit = query.getLimit().getValue();
     }
@@ -633,12 +657,131 @@ public final class RemoteSerializer {
       endAt = new Bound(query.getEndAt().getValuesList(), !query.getEndAt().getBefore());
     }
 
-    return new com.google.firebase.firestore.core.Target(
-        path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
+    return new Target(path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
   }
 
-  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
+  public Target decodeQueryTarget(QueryTarget target) {
     return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
+  }
+
+  public RealtimePipeline decodePipelineQueryTarget(PipelineQueryTarget proto) {
+    hardAssert(
+        proto.getPipelineTypeCase() == PipelineQueryTarget.PipelineTypeCase.STRUCTURED_PIPELINE,
+        "Unknown pipeline_type in PipelineQueryTarget: " + proto.getPipelineTypeCase());
+
+    com.google.firestore.v1.Pipeline pipelineProto = proto.getStructuredPipeline().getPipeline();
+    List<Stage<?>> decodedStages = new ArrayList<>();
+    for (com.google.firestore.v1.Pipeline.Stage stageProto : pipelineProto.getStagesList()) {
+      decodedStages.add(decodeStage(stageProto));
+    }
+
+    return new RealtimePipeline(this, new UserDataReader(this.databaseId()), decodedStages);
+  }
+
+  private Stage<?> decodeStage(com.google.firestore.v1.Pipeline.Stage protoStage) {
+    String stageName = protoStage.getName();
+    List<Value> args = protoStage.getArgsList();
+
+    switch (stageName) {
+      case "collection":
+        hardAssert(
+            args.size() >= 1
+                && args.get(0).getValueTypeCase() == Value.ValueTypeCase.REFERENCE_VALUE,
+            "Invalid 'collection' stage: missing or invalid arguments");
+        return new CollectionSource(
+            ResourcePath.fromString(args.get(0).getReferenceValue()), this, InternalOptions.EMPTY);
+      case "collection_group":
+        hardAssert(
+            args.size() >= 1 && args.get(0).getValueTypeCase() == Value.ValueTypeCase.STRING_VALUE,
+            "Invalid 'collection_group' stage: missing or invalid arguments");
+        return new CollectionGroupSource(args.get(0).getStringValue(), InternalOptions.EMPTY);
+      case "documents":
+        List<ResourcePath> documentPaths = new ArrayList<>();
+        for (Value arg : args) {
+          hardAssert(
+              arg.getValueTypeCase() == Value.ValueTypeCase.REFERENCE_VALUE,
+              "Invalid argument type for 'documents' stage: expected reference_value");
+          documentPaths.add(ResourcePath.fromString(arg.getReferenceValue()));
+        }
+        return new DocumentsSource(
+            documentPaths.toArray(new ResourcePath[0]), InternalOptions.EMPTY);
+      case "where":
+        hardAssert(args.size() >= 1, "Invalid 'where' stage: missing or invalid arguments");
+        return new WhereStage(decodeExpression(args.get(0)), InternalOptions.EMPTY);
+      case "limit":
+        hardAssert(
+            args.size() >= 1 && args.get(0).getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
+            "Invalid 'limit' stage: missing or invalid arguments");
+        return new LimitStage((int) args.get(0).getIntegerValue(), InternalOptions.EMPTY);
+      case "sort":
+        hardAssert(args.size() > 0, "Invalid 'sort' stage: missing arguments");
+        List<Ordering> orderings = new ArrayList<>();
+        for (Value arg : args) {
+          orderings.add(decodeOrdering(arg));
+        }
+        return new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY);
+      default:
+        throw new IllegalArgumentException("Unsupported stage type: " + stageName);
+    }
+  }
+
+  private Expr decodeExpression(Value protoValue) {
+    switch (protoValue.getValueTypeCase()) {
+      case FIELD_REFERENCE_VALUE:
+        return new Field(FieldPath.fromServerFormat(protoValue.getFieldReferenceValue()));
+      case FUNCTION_VALUE:
+        return decodeFunctionExpression(protoValue.getFunctionValue());
+      default:
+        return new Expr.Constant(protoValue);
+    }
+  }
+
+  private FunctionExpr decodeFunctionExpression(com.google.firestore.v1.Function protoFunction) {
+    String funcName = protoFunction.getName();
+    List<Expr> decodedArgs = new ArrayList<>();
+    for (Value arg : protoFunction.getArgsList()) {
+      decodedArgs.add(decodeExpression(arg));
+    }
+    return new FunctionExpr(funcName, decodedArgs, InternalOptions.EMPTY);
+  }
+
+  private Ordering decodeOrdering(Value protoValue) {
+    hardAssert(
+        protoValue.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
+        "Invalid proto_value type for Ordering, expected map_value.");
+
+    Expr decodedExpr = null;
+    Ordering.Direction decodedDirection = null;
+
+    for (Map.Entry<String, Value> entry : protoValue.getMapValue().getFieldsMap().entrySet()) {
+      String key = entry.getKey();
+      Value value = entry.getValue();
+      if (key.equals("expression")) {
+        hardAssert(decodedExpr == null, "Duplicate 'expression' field in Ordering proto.");
+        decodedExpr = decodeExpression(value);
+      } else if (key.equals("direction")) {
+        hardAssert(decodedDirection == null, "Duplicate 'direction' field in Ordering proto.");
+        hardAssert(
+            value.getValueTypeCase() == Value.ValueTypeCase.STRING_VALUE,
+            "Invalid type for 'direction' field in Ordering proto, expected string_value.");
+        String directionStr = value.getStringValue();
+        if (directionStr.equals("ascending")) {
+          decodedDirection = Ordering.Direction.ASCENDING;
+        } else if (directionStr.equals("descending")) {
+          decodedDirection = Ordering.Direction.DESCENDING;
+        } else {
+          throw new IllegalArgumentException(
+              "Invalid string value '"
+                  + directionStr
+                  + "' for 'direction' field in Ordering proto.");
+        }
+      }
+    }
+
+    hardAssert(decodedExpr != null, "Missing 'expression' field in Ordering proto.");
+    hardAssert(decodedDirection != null, "Missing 'direction' field in Ordering proto.");
+
+    return new Ordering(decodedExpr, decodedDirection);
   }
 
   StructuredAggregationQuery encodeStructuredAggregationQuery(

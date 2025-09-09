@@ -71,7 +71,7 @@ public final class EventManager implements SyncEngineCallback {
 
   private final SyncEngine syncEngine;
 
-  private final Map<Query, QueryListenersInfo> queries;
+  private final Map<QueryOrPipeline, QueryListenersInfo> queries;
 
   private final Set<EventListener<Void>> snapshotsInSyncListeners = new HashSet<>();
 
@@ -105,7 +105,7 @@ public final class EventManager implements SyncEngineCallback {
    * @return the targetId of the listen call in the SyncEngine.
    */
   public int addQueryListener(QueryListener queryListener) {
-    Query query = queryListener.getQuery();
+    QueryOrPipeline query = queryListener.getQuery();
     ListenerSetupAction listenerAction = ListenerSetupAction.NO_ACTION_REQUIRED;
 
     QueryListenersInfo queryInfo = queries.get(query);
@@ -163,7 +163,7 @@ public final class EventManager implements SyncEngineCallback {
 
   /** Removes a previously added listener. It's a no-op if the listener is not found. */
   public void removeQueryListener(QueryListener listener) {
-    Query query = listener.getQuery();
+    QueryOrPipeline query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
     ListenerRemovalAction listenerAction = ListenerRemovalAction.NO_ACTION_REQUIRED;
     if (queryInfo == null) return;
@@ -223,7 +223,7 @@ public final class EventManager implements SyncEngineCallback {
   public void onViewSnapshots(List<ViewSnapshot> snapshotList) {
     boolean raisedEvent = false;
     for (ViewSnapshot viewSnapshot : snapshotList) {
-      Query query = viewSnapshot.getQuery();
+      QueryOrPipeline query = viewSnapshot.getQuery();
       QueryListenersInfo info = queries.get(query);
       if (info != null) {
         for (QueryListener listener : info.listeners) {
@@ -240,7 +240,7 @@ public final class EventManager implements SyncEngineCallback {
   }
 
   @Override
-  public void onError(Query query, Status error) {
+  public void onError(QueryOrPipeline query, Status error) {
     QueryListenersInfo info = queries.get(query);
     if (info != null) {
       for (QueryListener listener : info.listeners) {

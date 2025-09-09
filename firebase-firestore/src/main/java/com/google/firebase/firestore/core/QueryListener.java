@@ -33,7 +33,7 @@ import java.util.List;
  * only from our worker thread.
  */
 public class QueryListener {
-  private final Query query;
+  private final QueryOrPipeline query;
 
   private final EventManager.ListenOptions options;
 
@@ -50,13 +50,15 @@ public class QueryListener {
   private @Nullable ViewSnapshot snapshot;
 
   public QueryListener(
-      Query query, EventManager.ListenOptions options, EventListener<ViewSnapshot> listener) {
+      QueryOrPipeline query,
+      EventManager.ListenOptions options,
+      EventListener<ViewSnapshot> listener) {
     this.query = query;
     this.listener = listener;
     this.options = options;
   }
 
-  public Query getQuery() {
+  public QueryOrPipeline getQuery() {
     return query;
   }
 
