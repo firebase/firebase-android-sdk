@@ -296,7 +296,7 @@ internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 internal object PartSerializer :
   JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
 
-    private val TAG = PartSerializer::javaClass.name
+  private val TAG = PartSerializer::javaClass.name
 
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
