@@ -16,163 +16,265 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
-import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.Companion.downloadDataConnectExecutable
-import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableDownloadTask.FileInfo
+import com.google.cloud.storage.Blob
+import com.google.cloud.storage.Storage.BlobListOption
+import com.google.cloud.storage.StorageException
+import com.google.cloud.storage.StorageOptions
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry.serializedValue
+import io.github.z4kn4fein.semver.Version
+import io.github.z4kn4fein.semver.toVersion
+import io.github.z4kn4fein.semver.toVersionOrNull
 import java.io.File
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.inject.Inject
 import kotlin.random.Random
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 
 @Suppress("unused")
 abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
-  @get:InputFile abstract val jsonFile: RegularFileProperty
-
-  @get:Input abstract val versions: ListProperty<String>
-
-  @get:Input @get:Optional abstract val defaultVersion: Property<String>
-
-  @get:Input @get:Optional abstract val updateMode: Property<UpdateMode>
+  @get:Input abstract val jsonFile: Property<File>
 
   @get:Internal abstract val workDirectory: DirectoryProperty
 
   @get:Inject abstract val execOperations: ExecOperations
 
+  init {
+    // Make sure the task ALWAYS runs and is never skipped because Gradle deems it "up to date".
+    outputs.upToDateWhen { false }
+  }
+
   @TaskAction
   fun run() {
-    val jsonFile: File = jsonFile.get().asFile
-    val versions: List<String> = versions.get()
-    val defaultVersion: String? = defaultVersion.orNull
-    val updateMode: UpdateMode? = updateMode.orNull
+    val jsonFile: File = jsonFile.get()
     val workDirectory: File = workDirectory.get().asFile
 
     logger.info("jsonFile={}", jsonFile.absolutePath)
-    logger.info("versions={}", versions)
-    logger.info("defaultVersion={}", defaultVersion)
-    logger.info("updateMode={}", updateMode)
-    logger.info("workDirectory={}", workDirectory)
+    logger.info("workDirectory={}", workDirectory.absolutePath)
 
-    var json: DataConnectExecutableVersionsRegistry.Root =
-      if (updateMode == UpdateMode.Overwrite) {
-        DataConnectExecutableVersionsRegistry.Root(
-          defaultVersion = "<unspecified>",
-          versions = emptyList()
-        )
-      } else {
-        logger.info("Loading JSON file {}", jsonFile.absolutePath)
-        DataConnectExecutableVersionsRegistry.load(jsonFile)
-      }
-
-    if (defaultVersion !== null) {
-      json = json.copy(defaultVersion = defaultVersion)
-    }
-
-    for (version in versions) {
-      val windowsExecutable = download(version, OperatingSystem.Windows, workDirectory)
-      val macosExecutable = download(version, OperatingSystem.MacOS, workDirectory)
-      val linuxExecutable = download(version, OperatingSystem.Linux, workDirectory)
-      json = json.withVersions(version, windowsExecutable, macosExecutable, linuxExecutable)
-    }
-
+    logger.lifecycle("Loading executable versions from registry file: {}", jsonFile.absolutePath)
+    val registry = DataConnectExecutableVersionsRegistry.load(jsonFile)
     logger.info(
-      "Writing information about versions {} to file with updateMode={}: {}",
-      versions.joinToString(", "),
-      updateMode,
-      jsonFile.absolutePath
-    )
-    DataConnectExecutableVersionsRegistry.save(json, jsonFile)
-  }
-
-  private fun DataConnectExecutableVersionsRegistry.Root.withVersions(
-    version: String,
-    windows: DownloadedFile,
-    macos: DownloadedFile,
-    linux: DownloadedFile
-  ): DataConnectExecutableVersionsRegistry.Root {
-    data class UpdatedVersion(
-      val operatingSystem: OperatingSystem,
-      val sizeInBytes: Long,
-      val sha512DigestHex: String,
-    ) {
-      constructor(
-        operatingSystem: OperatingSystem,
-        downloadedFile: DownloadedFile
-      ) : this(operatingSystem, downloadedFile.sizeInBytes, downloadedFile.sha512DigestHex)
-    }
-    val updatedVersions =
-      listOf(
-        UpdatedVersion(OperatingSystem.Windows, windows),
-        UpdatedVersion(OperatingSystem.MacOS, macos),
-        UpdatedVersion(OperatingSystem.Linux, linux),
-      )
-
-    val newVersions = versions.toMutableList()
-    for (updatedVersion in updatedVersions) {
-      val index =
-        newVersions.indexOfFirst {
-          it.version == version && it.os == updatedVersion.operatingSystem
-        }
-      if (index >= 0) {
-        val newVersion =
-          newVersions[index].copy(
-            size = updatedVersion.sizeInBytes,
-            sha512DigestHex = updatedVersion.sha512DigestHex,
-          )
-        newVersions[index] = newVersion
-      } else {
-        val newVersion =
-          DataConnectExecutableVersionsRegistry.VersionInfo(
-            version = version,
-            os = updatedVersion.operatingSystem,
-            size = updatedVersion.sizeInBytes,
-            sha512DigestHex = updatedVersion.sha512DigestHex,
-          )
-        newVersions.add(newVersion)
+      "Loaded {} executable versions from registry file {} (default={}): {}",
+      registry.versions.size,
+      jsonFile.absolutePath,
+      registry.defaultVersion,
+      registry.versions.sortedWith(versionInfoComparator).joinToString {
+        "${it.version}-${it.os.serializedValue}"
       }
+    )
+
+    val cloudStorageVersions = downloadVersionInfoFromCloudStorage()
+
+    val unknownVersions =
+      cloudStorageVersions
+        .filterNotIn(registry)
+        .sortedWith(
+          compareBy<CloudStorageVersionInfo> { it.version }
+            .thenByDescending { it.operatingSystem.serializedValue }
+        )
+    if (unknownVersions.isEmpty()) {
+      logger.lifecycle(
+        "Not updating {} since it already contains all versions.",
+        jsonFile.absolutePath
+      )
+      return
     }
 
-    return this.copy(versions = newVersions.toList())
-  }
-
-  private fun download(
-    version: String,
-    operatingSystem: OperatingSystem,
-    outputDirectory: File
-  ): DownloadedFile {
-    val randomId = Random.nextAlphanumericString(length = 20)
-    val outputFile =
-      File(outputDirectory, "DataConnectToolkit_${version}_${operatingSystem}_$randomId")
-
-    downloadDataConnectExecutable(version, operatingSystem, outputFile, execOperations)
-
-    logger.info("Calculating SHA512 hash of file: {}", outputFile.absolutePath)
-    val fileInfo = FileInfo.forFile(outputFile)
-
-    return DownloadedFile(
-      file = outputFile,
-      sizeInBytes = fileInfo.sizeInBytes,
-      sha512DigestHex = fileInfo.sha512DigestHex,
+    logger.lifecycle(
+      "Downloading details for {} versions missing from registry file: {}",
+      unknownVersions.size,
+      unknownVersions.joinToString { "${it.version}-${it.operatingSystem.serializedValue}" }
     )
+    val unknownVersionInfos = unknownVersions.map { it.toRegistryVersionInfo(workDirectory) }
+    val updatedRegistry = registry.updatedWith(unknownVersionInfos)
+
+    logger.lifecycle(
+      "Updating {} with {} versions: {}",
+      jsonFile.absolutePath,
+      unknownVersions.size,
+      unknownVersions.joinToString { "${it.version}-${it.operatingSystem.serializedValue}" }
+    )
+
+    if (updatedRegistry.defaultVersion == registry.defaultVersion) {
+      logger.lifecycle(
+        "Not updating default version in {} because it is already the latest version: {}",
+        jsonFile.absolutePath,
+        updatedRegistry.defaultVersion
+      )
+    } else {
+      logger.lifecycle(
+        "Updating default version in {} to the latest version: {} (was {})",
+        jsonFile.absolutePath,
+        updatedRegistry.defaultVersion,
+        registry.defaultVersion
+      )
+    }
+
+    DataConnectExecutableVersionsRegistry.save(updatedRegistry, jsonFile)
   }
 
-  private data class DownloadedFile(
-    val file: File,
-    val sizeInBytes: Long,
-    val sha512DigestHex: String,
+  private fun downloadVersionInfoFromCloudStorage(): Set<CloudStorageVersionInfo> {
+    val storage = StorageOptions.getDefaultInstance().service
+    val bucketName = "firemat-preview-drop"
+    logger.lifecycle("Finding all Data Connect executable versions in GCS bucket: {}", bucketName)
+    val bucket =
+      storage
+        .runCatching { get(bucketName) }
+        .onFailure { e ->
+          if (
+            e is StorageException &&
+              e.cause.let {
+                it is com.google.api.client.http.HttpResponseException &&
+                  (it.statusCode == 401 || it.statusCode == 403)
+              }
+          ) {
+            logger.error(
+              "ERROR: 401/403 error returned from Google Cloud Storage; " +
+                "try running \"gcloud auth application-default login\" and/or unsetting the " +
+                "GOOGLE_APPLICATION_CREDENTIALS environment variable to fix"
+            )
+          }
+        }
+        .getOrThrow()
+        ?: throw DataConnectGradleException("bvkxzp2esg", "GCS bucket not found: $bucketName")
+
+    val invalidVersions = setOf("1.15.0".toVersion())
+    val minVersion = "1.3.4".toVersion()
+
+    val blobs = bucket.list(BlobListOption.prefix("emulator/"))
+    val regex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
+    val dataConnectExecutableBinaries =
+      blobs
+        .iterateAll()
+        .mapNotNull {
+          logger.debug("[av7zhespw2] Found Data Connect executable file: {}", it.name)
+          val match =
+            regex.matchEntire(it.name)
+              ?: run {
+                logger.debug(
+                  "[p4vjjcp2kq] Ignoring Data Connect executable file: {} " +
+                    "(does not match regex: {})",
+                  it.name,
+                  regex
+                )
+                return@mapNotNull null
+              }
+          CloudStorageVersionInfo(
+            version =
+              run {
+                val versionString = match.groups[2]?.value
+                versionString?.toVersionOrNull(strict = false)
+                  ?: run {
+                    logger.info(
+                      "WARNING: Ignoring Data Connect executable file: {} " +
+                        "(invalid version: {} (in match for regex {}))",
+                      it.name,
+                      versionString,
+                      regex
+                    )
+                    return@mapNotNull null
+                  }
+              },
+            operatingSystem =
+              when (val operatingSystemString = match.groups[1]?.value) {
+                "linux" -> OperatingSystem.Linux
+                "macos" -> OperatingSystem.MacOS
+                "windows" -> OperatingSystem.Windows
+                else -> {
+                  logger.info(
+                    "WARNING: Ignoring Data Connect executable file: {} " +
+                      "(unknown operating system name: {} (in match for regex {}))",
+                    it.name,
+                    operatingSystemString,
+                    regex
+                  )
+                  return@mapNotNull null
+                }
+              },
+            blob = it,
+          )
+        }
+        .filter { it.version >= minVersion }
+        .filterNot { invalidVersions.contains(it.version) }
+        .toSet()
+
+    return dataConnectExecutableBinaries
+  }
+
+  private data class CloudStorageVersionInfo(
+    val version: Version,
+    val operatingSystem: OperatingSystem,
+    val blob: Blob,
   )
 
-  enum class UpdateMode {
-    Overwrite,
-    Update
+  private fun CloudStorageVersionInfo.toRegistryVersionInfo(
+    workDirectory: File
+  ): DataConnectExecutableVersionsRegistry.VersionInfo {
+    val dateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+
+    logger.lifecycle(
+      "Downloading version {} ({} bytes, created {})",
+      "$version-${operatingSystem.serializedValue}",
+      blob.size.toStringWithThousandsSeparator(),
+      dateFormatter.format(blob.createTimeOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()))
+    )
+    workDirectory.mkdirs()
+    val outputFile = File(workDirectory, Random.nextAlphanumericString(12))
+    outputFile.outputStream().use { dest -> blob.downloadTo(dest) }
+
+    val fileInfo = DataConnectExecutableDownloadTask.FileInfo.forFile(outputFile)
+    outputFile.delete()
+    check(fileInfo.sizeInBytes == blob.size) {
+      "fileInfo.sizeInBytes!=blob.size (${fileInfo.sizeInBytes}!=${blob.size}) and this should " +
+        "never happen; if it _does_ happen it _could_ indicate a compromised " +
+        "downloaded binary [y5967yd2cf]"
+    }
+    return DataConnectExecutableVersionsRegistry.VersionInfo(
+      version,
+      operatingSystem,
+      fileInfo.sizeInBytes,
+      fileInfo.sha512DigestHex
+    )
+  }
+
+  private companion object {
+
+    val versionInfoComparator =
+      compareBy<DataConnectExecutableVersionsRegistry.VersionInfo> { it.version }
+        .thenByDescending { it.os.serializedValue }
+
+    /**
+     * Creates a returns a new list that contains all elements of the receiving [Iterable] that are
+     * not in the given registry.
+     */
+    private fun Iterable<CloudStorageVersionInfo>.filterNotIn(
+      registry: DataConnectExecutableVersionsRegistry.Root
+    ): List<CloudStorageVersionInfo> = filterNot { cloudStorageVersion ->
+      registry.versions.any {
+        it.version == cloudStorageVersion.version && it.os == cloudStorageVersion.operatingSystem
+      }
+    }
+
+    private fun DataConnectExecutableVersionsRegistry.Root.updatedWith(
+      updatedVersions: Iterable<DataConnectExecutableVersionsRegistry.VersionInfo>
+    ): DataConnectExecutableVersionsRegistry.Root {
+      val mergedVersions = buildList {
+        addAll(versions)
+        for (version in updatedVersions) {
+          val index = indexOfLast { versionInfoComparator.compare(it, version) < 0 }
+          add(index + 1, version)
+        }
+      }
+      return copy(defaultVersion = mergedVersions.maxOf { it.version }, versions = mergedVersions)
+    }
   }
 }

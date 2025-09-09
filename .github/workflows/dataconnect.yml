@@ -347,6 +347,53 @@ jobs:
         working-directory: firebase-dataconnect/ci
         run: pyright --warnings --stats
 
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+
+  emulator-versions-outdated-check:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+      - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+      - name: Gradle updateJson
+        run: |
+          set -euo pipefail
+          set -v
+
+          # Speed up build times and also avoid configuring firebase-crashlytics-ndk
+          # which is finicky integrating with the Android NDK.
+          echo >> gradle.properties
+          echo "org.gradle.configureondemand=true" >> gradle.properties
+
+          readonly json_file='firebase-dataconnect/gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json'
+          cp "${json_file}" '${{ runner.temp }}/DataConnectExecutableVersions.before.json'
+
+          ./gradlew \
+            --warning-mode all \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:updateJson
+
+          cp "${json_file}" '${{ runner.temp }}/DataConnectExecutableVersions.after.json'
+
+          if diff DataConnectExecutableVersions.before.json DataConnectExecutableVersions.after.json ; then
+            echo "${json_file} is up-to-date"
+          else
+            echo "${json_file} is NOT up-to-date"
+            echo "To update it, run: ./gradlew :firebase-dataconnect:updateJson"
+            if [[ '${{ github.event_name }}' == 'schedule' ]] ; then
+              echo "FAILING STEP BECAUSE github.event_name==schedule and JSON file is not up-to-date" >&2
+              exit 1
+            fi
+          fi
+
   # The "send-notifications" job adds a comment to GitHub Issue
   # https://github.com/firebase/firebase-android-sdk/issues/6857 with the results of the scheduled
   # nightly runs. Interested parties can then subscribe to that issue to be aprised of the outcome
@@ -364,6 +411,7 @@ jobs:
       - 'python-ci-lint'
       - 'python-ci-format'
       - 'python-ci-type-check'
+      - 'emulator-versions-outdated-check'
     if: always()
     permissions:
       issues: write
@@ -389,6 +437,7 @@ jobs:
           python-ci-lint:${{ needs.python-ci-lint.result }}
           python-ci-format:${{ needs.python-ci-format.result }}
           python-ci-type-check:${{ needs.python-ci-type-check.result }}
+          emulator-versions-outdated-check:${{ needs.emulator-versions-outdated-check.result }}
           EOF
 
       - uses: ./.github/actions/dataconnect-send-notifications
