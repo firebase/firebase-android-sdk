@@ -5,6 +5,8 @@
 - [feature] Added helper functions to `LiveSession` to allow developers to track the status of the
   audio session and the underlying websocket connection.
 - [changed] Added new values to `HarmCategory` (#7324)
+- [fixed] Fixed an issue that caused unknown or empty `Part`s to throw an exception. Instead, we now
+  log them and filter them from the response (#7333)
 
 # 17.2.0
 
