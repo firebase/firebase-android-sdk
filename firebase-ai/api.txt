@@ -297,7 +297,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
-    ctor public ExecutableCodePart(String language, String code);
+    ctor @Deprecated public ExecutableCodePart(String language, String code);
     method public String getCode();
     method public String getLanguage();
     method public boolean isThought();

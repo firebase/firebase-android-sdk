@@ -44,7 +44,7 @@ internal constructor(
   )
   public companion object {
 
-    private val codeExecutionInstance = Tool(null, null, JsonObject(emptyMap()))
+    private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap())) }
 
     /**
      * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].

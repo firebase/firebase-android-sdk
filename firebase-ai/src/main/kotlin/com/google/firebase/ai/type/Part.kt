@@ -98,6 +98,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
 
   @Serializable
