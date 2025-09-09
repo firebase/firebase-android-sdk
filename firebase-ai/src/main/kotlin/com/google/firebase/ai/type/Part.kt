@@ -295,6 +295,9 @@ internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
 internal object PartSerializer :
   JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
+
+    private val TAG = PartSerializer::javaClass.name
+
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
     return when {
@@ -306,7 +309,7 @@ internal object PartSerializer :
       "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
       "fileData" in jsonObject -> FileDataPart.Internal.serializer()
       else -> {
-        Log.w("PartSerializer", "Unknown part type received, ignoring.")
+        Log.w(TAG, "Unknown part type received, ignoring.")
         UnknownPart.Internal.serializer()
       }
     }

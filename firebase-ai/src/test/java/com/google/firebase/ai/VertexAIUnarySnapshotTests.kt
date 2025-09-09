@@ -92,7 +92,7 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
-  fun `reply including an empty part`() =
+  fun `response including an empty part is handled gracefully`() =
     goldenVertexUnaryFile("unary-success-empty-part.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
@@ -405,7 +405,7 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
-  fun `malformed content`() =
+  fun `response including an unknown part is handled gracefully`() =
     goldenVertexUnaryFile("unary-failure-malformed-content.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
