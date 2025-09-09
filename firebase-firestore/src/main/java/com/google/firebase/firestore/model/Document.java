@@ -35,6 +35,8 @@ public interface Document {
    */
   SnapshotVersion getVersion();
 
+  SnapshotVersion getCreateTime();
+
   /**
    * Returns the timestamp at which this document was read from the remote server. Returns
    * `SnapshotVersion.NONE` for documents created by the user.

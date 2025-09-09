@@ -18,12 +18,14 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
@@ -38,7 +40,14 @@ import org.robolectric.Robolectric;
 
 public class TestUtil {
 
-  private static final FirebaseFirestore FIRESTORE = mock(FirebaseFirestore.class);
+  public static final FirebaseFirestore FIRESTORE = mock(FirebaseFirestore.class);
+  private static final DatabaseId DATABASE_ID = DatabaseId.forProject("project");
+  public static final UserDataReader USER_DATA_READER = new UserDataReader(DATABASE_ID);
+
+  static {
+    when(FIRESTORE.getDatabaseId()).thenReturn(DATABASE_ID);
+    when(FIRESTORE.getUserDataReader()).thenReturn(USER_DATA_READER);
+  }
 
   public static FirebaseFirestore firestore() {
     return FIRESTORE;

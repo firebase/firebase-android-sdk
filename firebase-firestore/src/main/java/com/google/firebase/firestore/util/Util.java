@@ -19,7 +19,6 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
-import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -55,34 +54,6 @@ public class Util {
       builder.append(AUTO_ID_ALPHABET.charAt(rand.nextInt(maxRandom)));
     }
     return builder.toString();
-  }
-
-  /**
-   * Utility function to compare booleans. Note that we can't use Boolean.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareBooleans(boolean b1, boolean b2) {
-    if (b1 == b2) {
-      return 0;
-    } else if (b1) {
-      return 1;
-    } else {
-      return -1;
-    }
-  }
-
-  /**
-   * Utility function to compare integers. Note that we can't use Integer.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareIntegers(int i1, int i2) {
-    if (i1 < i2) {
-      return -1;
-    } else if (i1 > i2) {
-      return 1;
-    } else {
-      return 0;
-    }
   }
 
   /** Compare strings in UTF-8 encoded byte order */
@@ -127,28 +98,6 @@ public class Util {
     return str.substring(index, index + Character.charCount(firstCodePoint));
   }
 
-  /**
-   * Utility function to compare longs. Note that we can't use Long.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareLongs(long i1, long i2) {
-    return NumberComparisonHelper.compareLongs(i1, i2);
-  }
-
-  /** Utility function to compare doubles (using Firestore semantics for NaN). */
-  public static int compareDoubles(double i1, double i2) {
-    return NumberComparisonHelper.firestoreCompareDoubles(i1, i2);
-  }
-
-  /** Compares a double and a long (using Firestore semantics for NaN). */
-  public static int compareMixed(double doubleValue, long longValue) {
-    return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
-  }
-
-  public static <T extends Comparable<T>> Comparator<T> comparator() {
-    return Comparable::compareTo;
-  }
-
   public static FirebaseFirestoreException exceptionFromStatus(Status error) {
     StatusException statusException = error.asException();
     return new FirebaseFirestoreException(
@@ -168,15 +117,6 @@ public class Util {
       return exceptionFromStatus(statusRuntimeException.getStatus());
     } else {
       return e;
-    }
-  }
-
-  /** Turns a Throwable into an exception, converting it from a StatusException if necessary. */
-  public static Exception convertThrowableToException(Throwable t) {
-    if (t instanceof Exception) {
-      return Util.convertStatusException((Exception) t);
-    } else {
-      return new Exception(t);
     }
   }
 
@@ -272,7 +212,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.length, right.length);
+    return Integer.compare(left.length, right.length);
   }
 
   public static int compareByteStrings(ByteString left, ByteString right) {
@@ -288,7 +228,8 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.size(), right.size());
+    int i1 = left.size();
+    return Integer.compare(i1, right.size());
   }
 
   public static StringBuilder repeatSequence(
