@@ -219,7 +219,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
-    ctor public CodeExecutionResultPart(String outcome, String output);
+    ctor @Deprecated public CodeExecutionResultPart(String outcome, String output);
     method public boolean executionSucceeded();
     method public String getOutcome();
     method public String getOutput();
