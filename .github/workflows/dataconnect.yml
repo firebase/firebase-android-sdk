@@ -364,6 +364,17 @@ jobs:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
 
+      - name: Restore Gradle Cache
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name != 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          restore-keys: |
+            gradle-cache-jqnvfzw6w7-
+
       - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -371,6 +382,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
 
       - name: Gradle updateJson
+        id: update-json
         run: |
           set -euo pipefail
           set -x
@@ -392,14 +404,18 @@ jobs:
 
           if diff DataConnectExecutableVersions.before.json DataConnectExecutableVersions.after.json ; then
             echo "${json_file} is up-to-date"
+            echo "diff_result=same" >> "$GITHUB_OUTPUT"
           else
             echo "${json_file} is NOT up-to-date"
             echo "To update it, run: ./gradlew :firebase-dataconnect:updateJson"
-            if [[ '${{ github.event_name }}' == 'schedule' ]] ; then
-              echo "FAILING STEP BECAUSE github.event_name==schedule and JSON file is not up-to-date" >&2
-              exit 1
-            fi
+            echo "diff_result=different" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: "Fail if DataConnectExecutableVersions.json is not up-to-date during scheduled runs"
+        if: github.event_name == 'schedule' && steps.update-json.outputs.diff_result != 'same'
+        run: |
+          echo "Force-failing because DataConnectExecutableVersions.json is NOT up-to-date" >&2
+          exit 1
 
   # The "send-notifications" job adds a comment to GitHub Issue
   # https://github.com/firebase/firebase-android-sdk/issues/6857 with the results of the scheduled
