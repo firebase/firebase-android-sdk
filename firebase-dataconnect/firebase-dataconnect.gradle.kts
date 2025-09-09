@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -171,10 +172,7 @@ tasks.withType<KotlinJvmCompile>().configureEach {
 // updates the JSON file with their sizes and hashes.
 tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   jsonFile.set(
-    file(
-      "gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
-        "plugin/DataConnectExecutableVersions.json"
-    )
+    file("gradleplugin/plugin/src/main/resources/${DataConnectExecutableVersionsRegistry.PATH}")
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 }
