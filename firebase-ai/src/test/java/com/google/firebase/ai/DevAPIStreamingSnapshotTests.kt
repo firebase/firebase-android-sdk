@@ -69,7 +69,7 @@ internal class DevAPIStreamingSnapshotTests {
     }
 
   @Test
-  fun `reply with a mostly empty part`() =
+  fun `reply with a single empty part`() =
     goldenDevAPIStreamingFile("streaming-success-empty-parts.txt") {
       val responses = model.generateContentStream("prompt")
 

@@ -38,6 +38,7 @@ import com.google.firebase.ai.util.goldenVertexUnaryFile
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -259,7 +260,9 @@ internal class VertexAIUnarySnapshotTests {
   fun `empty content`() =
     goldenVertexUnaryFile("unary-failure-empty-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
@@ -405,7 +408,9 @@ internal class VertexAIUnarySnapshotTests {
   fun `malformed content`() =
     goldenVertexUnaryFile("unary-failure-malformed-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
