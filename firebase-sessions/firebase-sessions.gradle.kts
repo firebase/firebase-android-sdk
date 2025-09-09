@@ -65,7 +65,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:22.0.0")
+  api(libs.firebase.common)
 
   api("com.google.firebase:firebase-components:19.0.0")
   api("com.google.firebase:firebase-installations-interop:17.2.0") {

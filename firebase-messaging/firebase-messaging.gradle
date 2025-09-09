@@ -89,7 +89,7 @@ android {
 dependencies {
         javadocClasspath libs.autovalue.annotations
 
-        api("com.google.firebase:firebase-common:22.0.0")
+        api(libs.firebase.common)
         api("com.google.firebase:firebase-components:19.0.0")
         api('com.google.firebase:firebase-datatransport:18.2.0') {
          exclude group: 'com.google.firebase', module: 'firebase-common'

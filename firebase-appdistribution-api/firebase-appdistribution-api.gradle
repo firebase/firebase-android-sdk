@@ -53,7 +53,7 @@ android {
 
 dependencies {
     api libs.playservices.tasks
-    api("com.google.firebase:firebase-common:22.0.0")
+    api(libs.firebase.common)
     api("com.google.firebase:firebase-components:19.0.0")
 
     implementation libs.androidx.annotation

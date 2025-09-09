@@ -77,7 +77,7 @@ dependencies {
   javadocClasspath(libs.findbugs.jsr305)
 
   api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  api("com.google.firebase:firebase-common:22.0.0")
+  api(libs.firebase.common)
   api("com.google.firebase:firebase-components:19.0.0")
   api("com.google.firebase:firebase-annotations:17.0.0")
   api("com.google.firebase:firebase-auth-interop:18.0.0") {

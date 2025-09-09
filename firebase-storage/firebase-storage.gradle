@@ -99,7 +99,7 @@ dependencies {
          exclude group: "com.google.firebase", module: "firebase-components"
          exclude group: "com.google.firebase", module: "firebase-annotations"
      }
-    api("com.google.firebase:firebase-common:22.0.0")
+    api(libs.firebase.common)
     api("com.google.firebase:firebase-components:19.0.0")
 
     implementation libs.androidx.annotation
