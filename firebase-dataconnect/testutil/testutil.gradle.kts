@@ -60,7 +60,7 @@ kotlin {
 dependencies {
   implementation(project(":firebase-dataconnect"))
 
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.components)
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
   compileOnly(libs.kotlinx.datetime)

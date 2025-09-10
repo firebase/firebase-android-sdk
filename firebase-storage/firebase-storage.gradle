@@ -86,7 +86,7 @@ dependencies {
     javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
 
-    api("com.google.firebase:firebase-annotations:17.0.0")
+    api(libs.firebase.annotations)
     api("com.google.firebase:firebase-appcheck:18.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-common-ktx"
@@ -99,8 +99,8 @@ dependencies {
          exclude group: "com.google.firebase", module: "firebase-components"
          exclude group: "com.google.firebase", module: "firebase-annotations"
      }
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
 
     implementation libs.androidx.annotation
     implementation libs.playservices.base

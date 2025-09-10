@@ -122,14 +122,14 @@ dependencies {
 
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
-    api 'com.google.firebase:firebase-annotations:17.0.0'
+    api libs.firebase.annotations
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
     api('com.google.firebase:firebase-database-collection:18.0.1')
 
     implementation libs.androidx.annotation

@@ -88,8 +88,8 @@ dependencies {
      }
 
     api(project(":firebase-inappmessaging"))
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
 
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
