@@ -16,16 +16,8 @@
 
 package com.google.firebase.dataconnect.gradle.ci
 
-import com.google.firebase.dataconnect.gradle.plugin.nextAlphanumericString
-import java.io.ByteArrayInputStream
 import java.io.File
-import kotlin.random.Random
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
 import org.gradle.api.logging.Logger
-import org.gradle.internal.impldep.org.apache.commons.io.output.ByteArrayOutputStream
 import org.gradle.process.ExecOperations
 
 class PostCommentForJobResults(
@@ -41,12 +33,16 @@ class PostCommentForJobResults(
   val githubRunNumber: String,
   val githubRunAttempt: String,
   val workDirectory: File,
-  val execOperations: ExecOperations,
+  execOperations: ExecOperations,
   val logger: Logger
 ) {
 
+  private val githubClient = GithubClient(execOperations, workDirectory, githubRepository, logger)
+
   fun run() {
-    logger.info("jobResults={}", jobResults)
+    logger.info("jobResults=[{}]{", jobResults.size)
+    jobResults.forEach { logger.info("  {}: {}", it.jobId, it.result) }
+    logger.info("}")
     logger.info("githubIssue={}", githubIssue)
     logger.info("githubRepository={}", githubRepository)
     logger.info("githubEventName={}", githubEventName)
@@ -64,32 +60,13 @@ class PostCommentForJobResults(
     val issueUrl = "$githubRepositoryHtmlUrl/issues/$githubIssue"
     logger.info("Posting the following comment to GitHub Issue {}:", issueUrl)
     messageLines.forEach { logger.info("> {}", it) }
-    postCommentToGithubIssue(messageLines)
-  }
-
-  private fun postCommentToGithubIssue(messageLines: List<String>) {
-    val tempFile = File(workDirectory, Random.nextAlphanumericString(30))
-    logger.info("Writing GitHub Issue comment into text file: {}", tempFile.absolutePath)
-    workDirectory.mkdirs()
-    tempFile.writeText(messageLines.joinToString("\n"))
-
-    execOperations.exec { execSpec ->
-      execSpec.executable("gh")
-      execSpec.args("issue")
-      execSpec.args("comment")
-      execSpec.args(githubIssue.toString())
-      execSpec.args("--body-file")
-      execSpec.args(tempFile.absolutePath)
-      execSpec.args("-R")
-      execSpec.args(githubRepository)
-      logger.info("Running command: {}", execSpec.commandLine.joinToString(" "))
-    }
+    val commentUrl = githubClient.postComment(githubIssue, messageLines)
+    logger.lifecycle("Comment posted successfully: {}", commentUrl)
   }
 
   private fun calculateMessageLines(): List<String> = buildList {
-    val prNumber: Int? = parseGithubPrNumberFromGithubRef()
-    val prInfo: GitHubPrInfo? = if (prNumber === null) null else fetchGithubPrInfo(prNumber)
-    if (prInfo !== null) {
+    parseGithubPrNumberFromGithubRef()?.let { prNumber ->
+      val prInfo = githubClient.fetchIssueInfo(prNumber)
       add("Posting from Pull Request $githubRepositoryHtmlUrl/pull/$prNumber (${prInfo.title})")
     }
 
@@ -120,38 +97,9 @@ class PostCommentForJobResults(
     logger.info("Extracting PR number from githubRef: {}", githubRef)
     val prNumber: Int? =
       Regex("refs/pull/([0-9]+)/merge").matchEntire(githubRef)?.groupValues?.get(1)?.toInt()
-    logger.info("Extracted PR number from githubRef: {}", githubRef)
+    logger.info("Extracted PR number from githubRef {}: {}", githubRef, prNumber)
     return prNumber
   }
 
-  private fun fetchGithubPrInfo(prNumber: Int): GitHubPrInfo {
-    logger.info("Fetching information from GitHub about PR #{}", prNumber)
-    val byteArrayOutputStream = ByteArrayOutputStream()
-    execOperations.exec { execSpec ->
-      execSpec.standardOutput = byteArrayOutputStream
-      execSpec.executable("gh")
-      execSpec.args("issue")
-      execSpec.args("view")
-      execSpec.args(prNumber.toString())
-      execSpec.args("--json")
-      execSpec.args("title,body")
-      execSpec.args("-R")
-      execSpec.args(githubRepository)
-      logger.info("Running command: {}", execSpec.commandLine.joinToString(" "))
-    }
-
-    val jsonParser = Json { ignoreUnknownKeys = true }
-    @OptIn(ExperimentalSerializationApi::class)
-    val githubPrInfo =
-      jsonParser.decodeFromStream<GitHubPrInfo>(
-        ByteArrayInputStream(byteArrayOutputStream.toByteArray())
-      )
-
-    logger.info("Fetched information from GitHub about PR #{}: {}", prNumber, githubPrInfo)
-    return githubPrInfo
-  }
-
   data class JobResult(val jobId: String, val result: String)
-
-  @Serializable private data class GitHubPrInfo(val title: String, val body: String)
 }
