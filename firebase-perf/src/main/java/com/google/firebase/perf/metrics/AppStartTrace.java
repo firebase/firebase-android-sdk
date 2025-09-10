@@ -22,7 +22,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.os.Process;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -564,40 +563,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
         }
         if (appProcess.processName.equals(appProcessName)
             || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
-          boolean isAppInForeground = true;
-
-          // For the case when the app is in foreground and the device transitions to sleep mode,
-          // the importance of the process is set to IMPORTANCE_TOP_SLEEPING. However, this
-          // importance level was introduced in M. Pre M, the process importance is not changed to
-          // IMPORTANCE_TOP_SLEEPING when the display turns off. So we need to rely also on the
-          // state of the display to decide if any app process is really visible.
-          if (Build.VERSION.SDK_INT < 23 /* M */) {
-            isAppInForeground = isScreenOn(appContext);
-          }
-
-          if (isAppInForeground) {
-            return true;
-          }
+          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current process.
+          return true;
         }
       }
     }
 
     return false;
-  }
-
-  /**
-   * Returns whether the device screen is on.
-   *
-   * @param appContext The application's context.
-   */
-  public static boolean isScreenOn(Context appContext) {
-    PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
-    if (powerManager == null) {
-      return true;
-    }
-    return (Build.VERSION.SDK_INT >= 20 /* KITKAT_WATCH */)
-        ? powerManager.isInteractive()
-        : powerManager.isScreenOn();
   }
 
   /**
