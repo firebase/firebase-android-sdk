@@ -1,0 +1,239 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "acaacbd029524842558c60d0999d74c39af923a7",
+                "prId": "7355",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Move all infra dependencies to the catalog (#7355)\n\nGiven that all SDKs have a dependency on the infra SDKs (i.e.\n`firebase-annotations`, `firebase-components`, and `firebase-common`),\nit's easier to manage, update, and audit them if they are in a\ncentralized place. Moving them all to the version catalog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/acaacbd029524842558c60d0999d74c39af923a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7355"
+            },
+            {
+                "commitId": "ff21170a42a41930d997995888e6442cedc3a29e",
+                "prId": "7354",
+                "author": "Vinay Guthal",
+                "message": "Update change log to include the deprecation of the public constructors  (#7354)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ff21170a42a41930d997995888e6442cedc3a29e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7354"
+            },
+            {
+                "commitId": "2f93baa70bf90848c4753c963d651c3c2bd1e053",
+                "prId": "7321",
+                "author": "Daymon",
+                "message": "chore(firebaseai): Update changelog per release  (#7321)\n\nRachel updated the changelog wording before shipping to firesite, and\nshe wanted the SDKs to update the wording in their SDK changelogs to\nmatch. This updates the relevant changelog entry (for limited-use\ntokens) to match.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f93baa70bf90848c4753c963d651c3c2bd1e053",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7321"
+            },
+            {
+                "commitId": "88f67741d7c783f527cbd9561ff0fbfb5a95d2eb",
+                "prId": "7265",
+                "author": "Vinay Guthal",
+                "message": "Add support for Code Execution (#7265)\n\nThis PR integrates code execution functionality into the Firebase AI\nLogic SDK. This enhancement enables developers to activate code\nexecution in their requests, providing visibility into the code snippets\nrun by the backend and their corresponding results.\n\nThis aligns with the functionality described in the official [Gemini API\ndocumentation on code\nexecution](https://ai.google.dev/gemini-api/docs/code-execution).\n\nChanges\nTool Class Enhancement: Implements a new function within the Tool class\nthat allows developers to enable the code execution feature in their\nrequests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/88f67741d7c783f527cbd9561ff0fbfb5a95d2eb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7265"
+            },
+            {
+                "commitId": "5822579b9357c85e3f779efa867c04df59e23411",
+                "prId": "7322",
+                "author": "David Motsonashvili",
+                "message": "add safety scores to image generation (#7322)\n\nhard coded to return image safety scores, as well as parse and provide\nthese to the developer.\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5822579b9357c85e3f779efa867c04df59e23411",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7322"
+            },
+            {
+                "commitId": "b986d2f411ac2a44861400da633fa96034397208",
+                "prId": "7333",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Ignore, and log, unknown parts. (#7333)\n\nThe previoius approach, throwing an exception, was based on the\nassumption that unknown parts would be important parts of the response.\nThat would mean that new parts would force devs to update to SDK\nversions supporting them before using them. Actually, some times the\nparts returned by the model can be safely ignored.\n\nThis change modifies the behaviour to Log, as a warning, and ignore,\nrather than fail, if an unknown part is found when parsing the response.\n\nInternal b/441783876",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b986d2f411ac2a44861400da633fa96034397208",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7333"
+            },
+            {
+                "commitId": "7b21bd6bc4746feb11c9cafac3f274942a9bee5b",
+                "prId": "7324",
+                "author": "David Motsonashvili",
+                "message": "Updated HarmCategory (#7324)\n\nThere are a number of new HarmCategory values, this patch adds support\nfor parsing them all.\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b21bd6bc4746feb11c9cafac3f274942a9bee5b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7324"
+            },
+            {
+                "commitId": "e35a424cf0183db83341c8b318fe45e19cd88bf9",
+                "prId": "7267",
+                "author": "Vinay Guthal",
+                "message": "BIDI mini refactoring and new additions (#7267)\n\nThe PR does the following:\n- Introduce a new MissingPermissionsException which would be thrown\nincase the audio permission is not given by the end user.\n- Add helper functions to LiveSession to help the developer track if the\naudio session is running or not and if the underlying websocket\nconnection is active or not..",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e35a424cf0183db83341c8b318fe45e19cd88bf9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7267"
+            },
+            {
+                "commitId": "f6feb928b00ed56e92bbea49a01f15405cfdfb7c",
+                "prId": "7307",
+                "author": "emilypgoogle",
+                "message": "m169 fix more documentation (#7307)\n\nI missed a constructor in the initial PR",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6feb928b00ed56e92bbea49a01f15405cfdfb7c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7307"
+            },
+            {
+                "commitId": "4f338f1d8a9efeaa85faf5580359a1f0025ce972",
+                "prId": "7304",
+                "author": "emilypgoogle",
+                "message": "m169 doc changes (#7304)\n\nWe changed public constructors to internal constructors without moving\nthe relevant docs, this fixes that.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4f338f1d8a9efeaa85faf5580359a1f0025ce972",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7304"
+            },
+            {
+                "commitId": "949ecd58394f333dcca7062cdbb9e6a4784cd4fe",
+                "prId": "7299",
+                "author": "Daymon",
+                "message": "[FAL] Update limited-use token docs (#7299)\n\nPer [b/440356335](https://b.corp.google.com/issues/440356335),\n\nThis updates the limited-use token related docs to point to the web page\nthat will go live with the release. Initially, it was planned for the\ndocs to go live when Unity released, but Rachel now intends to have them\nlive immediately -- with a note about Unity until they go live.\n\nThe updates are made per Rachel's recommendations and discussions in the\njavadoc CL/ALF doc.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/949ecd58394f333dcca7062cdbb9e6a4784cd4fe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7299"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "acaacbd029524842558c60d0999d74c39af923a7",
+                "prId": "7355",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Move all infra dependencies to the catalog (#7355)\n\nGiven that all SDKs have a dependency on the infra SDKs (i.e.\n`firebase-annotations`, `firebase-components`, and `firebase-common`),\nit's easier to manage, update, and audit them if they are in a\ncentralized place. Moving them all to the version catalog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/acaacbd029524842558c60d0999d74c39af923a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7355"
+            },
+            {
+                "commitId": "b5ad0db8e37fe3e97dc1b2c8a4d4dbf966cdce5f",
+                "prId": "7345",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: replace `missingversions.py` with the `:firebase-dataconnet:updateJson` gradle task (#7345)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5ad0db8e37fe3e97dc1b2c8a4d4dbf966cdce5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7345"
+            },
+            {
+                "commitId": "db3bd7a24f294ffd86a333d32a0674cb04b70d31",
+                "prId": "7332",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix some gradle configuration warnings, like targetSdk and kotlinOptions being deprecated (#7332)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/db3bd7a24f294ffd86a333d32a0674cb04b70d31",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7332"
+            },
+            {
+                "commitId": "c9657450c936506c01d90553c549f5083307b42d",
+                "prId": "7330",
+                "author": "emilypgoogle",
+                "message": "Add Kotlindoc-only publishing and enable for Dataconnect (#7330)\n\nAdds a new field for firebase libraries to enable kotlindoc-only\npublishing if they publish docs. This has been enabled for Dataconnect\nas well. When this is enabled, no `android` folder is generated by\nDackka.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9657450c936506c01d90553c549f5083307b42d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7330"
+            },
+            {
+                "commitId": "3735e28f00818b45da96c0c02752af4e5906aa71",
+                "prId": "7343",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: CHANGELOG.md: format via spotlessApply (#7343)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3735e28f00818b45da96c0c02752af4e5906aa71",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7343"
+            },
+            {
+                "commitId": "b5075a2aece8b362e27280a1076d02ecaf272bfb",
+                "prId": "7342",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: CHANGELOG.md: add PR link for \"Ignore unknown fields in response data\" entry (#7342)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5075a2aece8b362e27280a1076d02ecaf272bfb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7342"
+            },
+            {
+                "commitId": "88f4327fb40b828955a9187b6a1afebf45cf5bff",
+                "prId": "7331",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix typo 'of of' in kdoc comments (#7331)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/88f4327fb40b828955a9187b6a1afebf45cf5bff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7331"
+            },
+            {
+                "commitId": "9babb035534ad93c2b635880cc15badb99b6f63f",
+                "prId": "7311",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: upgrade data connect emulator to 2.12.0 (#7311)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9babb035534ad93c2b635880cc15badb99b6f63f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7311"
+            },
+            {
+                "commitId": "baa0456e4ecc9f839b805cd8292d309f9fdaaa82",
+                "prId": "7314",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ignore unknown keys in response data instead of throwing an exception (#7314)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/baa0456e4ecc9f839b805cd8292d309f9fdaaa82",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7314"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "acaacbd029524842558c60d0999d74c39af923a7",
+                "prId": "7355",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Move all infra dependencies to the catalog (#7355)\n\nGiven that all SDKs have a dependency on the infra SDKs (i.e.\n`firebase-annotations`, `firebase-components`, and `firebase-common`),\nit's easier to manage, update, and audit them if they are in a\ncentralized place. Moving them all to the version catalog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/acaacbd029524842558c60d0999d74c39af923a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7355"
+            },
+            {
+                "commitId": "5c7a9937cb4131c82f842f38947bf4a35e37f6d6",
+                "prId": "7301",
+                "author": "Denver Coneybeare",
+                "message": "firestore: fix slow queries when a collection has many NO_DOCUMENT tombstones (#7301)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c7a9937cb4131c82f842f38947bf4a35e37f6d6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7301"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "acaacbd029524842558c60d0999d74c39af923a7",
+                "prId": "7355",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Move all infra dependencies to the catalog (#7355)\n\nGiven that all SDKs have a dependency on the infra SDKs (i.e.\n`firebase-annotations`, `firebase-components`, and `firebase-common`),\nit's easier to manage, update, and audit them if they are in a\ncentralized place. Moving them all to the version catalog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/acaacbd029524842558c60d0999d74c39af923a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7355"
+            },
+            {
+                "commitId": "79324e18fdc2b06c63dd29cf5cda70fbd86da4d9",
+                "prId": "7356",
+                "author": "Tejas Deshpande",
+                "message": "Remove API checks that are always true/false. (#7356)\n\nAs part of the app start trace change, I noticed there were some API\nchecks which were always true/false.\n\n#nochangelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/79324e18fdc2b06c63dd29cf5cda70fbd86da4d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7356"
+            },
+            {
+                "commitId": "287d9623d3e470a6fc4330f2d18534b67eb81271",
+                "prId": "7281",
+                "author": "Tejas Deshpande",
+                "message": "Refactor background start detection in app start traces (#7281)\n\nThis is a follow up of:\n- https://github.com/firebase/firebase-android-sdk/pull/7274\n- https://github.com/firebase/firebase-android-sdk/pull/7278\n\nFixes - https://github.com/firebase/firebase-android-sdk/issues/5920\n\nUpdated with the following changes:\n- Reduced the delay from 100ms to 50ms\n- Retained the behaviour where the timer is set only if\n`onActivityCreated` is never called.\n- Updated documentation",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/287d9623d3e470a6fc4330f2d18534b67eb81271",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7281"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-abt",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-common",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-database",
+        ":firebase-datatransport",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-installations-interop",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-storage",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptchaenterprise"
+    ]
+}

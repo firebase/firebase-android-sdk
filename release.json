@@ -1,0 +1,9 @@
+{
+    "name": "m170_pre",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-perf"
+    ]
+}
