@@ -181,7 +181,7 @@ Kotlin extensions library has no additional updates.
 
 - [fixed] Fixed a bug that caused HTTP errors in some locales. For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/3757"
-	 class="external">GitHub Issue #3757</a>
+   class="external">GitHub Issue #3757</a>
 
 ## Kotlin
 

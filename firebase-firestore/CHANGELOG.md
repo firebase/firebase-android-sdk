@@ -584,9 +584,9 @@ Kotlin extensions library has no additional updates.
   query operators.
 
   - `Query.whereNotIn()` finds documents where a specified field's value is not in a specified
-	array.
+    array.
   - `Query.whereNotEqualTo()` finds documents where a specified field's value does not equal the
-	specified value.
+    specified value.
 
   Neither query operator finds documents where the specified field isn't present.
 

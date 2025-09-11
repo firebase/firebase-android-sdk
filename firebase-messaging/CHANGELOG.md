@@ -432,16 +432,16 @@ and should not be used. A fix for these issues was released on
   be aware of the following:
 
   - The [messaging] registration tokens of installed instances of your apps might change once after
-	updating dependencies to their latest versions. To learn if your apps are affected, review the
-	<a href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
-	   class="external">[firebase_installations] documentation</a>. Also, make sure to
-	<a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor [messaging]
-	registration token generation</a> using the <code>#onNewToken</code> implementation.
+    updating dependencies to their latest versions. To learn if your apps are affected, review the
+    <a href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
+       class="external">[firebase_installations] documentation</a>. Also, make sure to
+    <a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor [messaging]
+    registration token generation</a> using the <code>#onNewToken</code> implementation.
 
   - Apps that use the Firebase auto-initialization process and the Gradle plugin to convert
-	`google-services.json` into resources are unaffected. However, apps that create their own
-	`FirebaseOptions` instances must provide a valid API key, Firebase project ID, and application
-	ID.
+    `google-services.json` into resources are unaffected. However, apps that create their own
+    `FirebaseOptions` instances must provide a valid API key, Firebase project ID, and application
+    ID.
 
 # 20.1.0
 
