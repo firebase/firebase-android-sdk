@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] Bumped internal dependencies.
 - [feature] Added support for code execution.
 - [changed] Marked the public constructors for `ExecutableCodePart` and `CodeExecutionResultPart` as
   deprecated.
