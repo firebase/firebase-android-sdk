@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bump internal dependencies.
+
 - [changed] Ignore unknown fields in response data instead of throwing a
   `DataConnectOperationException` with message "decoding data from the server's response failed: An
   unknown field for index -3" ([#7314](https://github.com/firebase/firebase-android-sdk/pull/7314))

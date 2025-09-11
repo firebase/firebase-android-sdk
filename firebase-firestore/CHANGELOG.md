@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bump internal dependencies.
+
 - [changed] Improve the performance of queries in collections that contain many deleted documents.
   [#7295](//github.com/firebase/firebase-android-sdk/issues/7295)
 

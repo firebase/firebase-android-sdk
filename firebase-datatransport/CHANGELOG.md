@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bump internal dependencies.
+
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
