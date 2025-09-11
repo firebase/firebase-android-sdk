@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Bump internal dependencies.
+- [changed] Bumped internal dependencies.
 
 # 20.0.1
 
@@ -40,9 +40,9 @@ Kotlin extensions library has no additional updates.
 - [fixed] Fixed NoSuchMethodError when getting process info on Android 13 on some devices [#6720]
 - [changed] Updated `firebase-sessions` dependency to v2.1.0
   - [changed] Add warning for known issue [b/328687152](https://issuetracker.google.com/328687152)
-    [#6755]
+	[#6755]
   - [changed] Updated datastore dependency to v1.1.3 to fix
-    [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
+	[CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
 
 ## Kotlin
 
@@ -282,7 +282,7 @@ Kotlin extensions library has no additional updates.
   <code>firebase-crashlytics-ktx</code> can cause a nondeterministic crash on
   startup. For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/4683"
-     class="external">GitHub Issue #4683</a>. We recommend updating to the
+	 class="external">GitHub Issue #4683</a>. We recommend updating to the
   latest version (v18.3.5+) which contains a fix.
 </aside>
 
@@ -667,16 +667,16 @@ name change. The following release notes describe changes in the new SDK.
 <aside class="note"><p>The changes in these release notes are only relevant to
   [crashlytics] users who are upgrading from the legacy Fabric SDK.</p>
   <ul>
-    <li>If you're using [crashlytics] for NDK crash reporting in your app for
-      the first time, follow the
-      <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
+	<li>If you're using [crashlytics] for NDK crash reporting in your app for
+	  the first time, follow the
+	  <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
 	started instructions</a>.
-    </li>
-    <li>If you're upgrading from the legacy Fabric SDK to the
-      [firebase_crashlytics] SDK, follow the
-      <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
+	</li>
+	<li>If you're upgrading from the legacy Fabric SDK to the
+	  [firebase_crashlytics] SDK, follow the
+	  <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
 	instructions</a> to update your app with the following SDK changes.
-    </li>
+	</li>
   </ul>
 </aside>
 

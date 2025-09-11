@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Bump internal dependencies.
+- [changed] Bumped internal dependencies.
 
 # 3.0.1
 

@@ -1,7 +1,6 @@
 # Unreleased
 
-- [changed] Bump internal dependencies.
-
+- [changed] Bumped internal dependencies.
 - [feature] Added support for code execution.
 - [changed] Marked the public constructors for `ExecutableCodePart` and `CodeExecutionResultPart` as
   deprecated.
@@ -45,7 +44,7 @@
   (#6990)
 - [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
   - **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`,
-    `retrievalQueries` in `GroundingMetadata` to be non-optional.
+	`retrievalQueries` in `GroundingMetadata` to be non-optional.
 - [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
   `countTokens()`.
 - [feature] Added new overloads for `generateContent()`, `generateContentStream()` and
@@ -68,7 +67,7 @@
 - [changed] **Breaking Change**: Updated `SpeechConfig` to take in `Voice` class instead of `Voices`
   class.
   - **Action Required:** Update all references of `SpeechConfig` initialization to use `Voice`
-    class.
+	class.
 - [fixed] Fix incorrect model name in count token requests to the developer API backend
 
 # 16.0.0
@@ -77,7 +76,7 @@
   Vertex AI in Firebase SDK (`firebase-vertexai`) to accommodate the evolving set of supported
   features and services.
   - The new Firebase AI SDK provides **Preview** support for the Gemini Developer API, including its
-    free tier offering.
+	free tier offering.
   - Using the Firebase AI SDK with the Vertex AI Gemini API is still generally available (GA).
 
 If you're using the old `firebase-vertexai`, we recommend
