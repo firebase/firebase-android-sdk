@@ -29,6 +29,7 @@ import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -277,6 +278,29 @@ public class View {
     return applyChanges(docChanges, targetChange, false);
   }
 
+  private static final class DocumentViewChangeComparator
+      implements Comparator<DocumentViewChange> {
+
+    private final Comparator<Document> documentComparator;
+
+    DocumentViewChangeComparator(Comparator<Document> documentComparator) {
+      this.documentComparator = documentComparator;
+    }
+
+    @Override
+    public int compare(DocumentViewChange o1, DocumentViewChange o2) {
+      int typeComp = Integer.compare(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
+      if (typeComp != 0) {
+        return typeComp;
+      }
+      return documentComparator.compare(o1.getDocument(), o2.getDocument());
+    }
+  }
+
+  private static void sortViewChanges(List<DocumentViewChange> viewChanges, Query query) {
+    Collections.sort(viewChanges, new DocumentViewChangeComparator(query.comparator()));
+  }
+
   /**
    * Updates the view with the given ViewDocumentChanges and updates limbo docs and sync state from
    * the given (optional) target change.
@@ -297,15 +321,7 @@ public class View {
 
     // Sort changes based on type and query comparator.
     List<DocumentViewChange> viewChanges = docChanges.changeSet.getChanges();
-    Collections.sort(
-        viewChanges,
-        (DocumentViewChange o1, DocumentViewChange o2) -> {
-          int typeComp = Integer.compare(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
-          if (typeComp != 0) {
-            return typeComp;
-          }
-          return query.comparator().compare(o1.getDocument(), o2.getDocument());
-        });
+    sortViewChanges(viewChanges, query);
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges =
         targetIsPendingReset ? Collections.emptyList() : updateLimboDocuments();
