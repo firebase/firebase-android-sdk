@@ -33,8 +33,25 @@ public final class ObjectValue implements Cloneable {
   private final Object lock = new Object();
 
   /**
+   * The immutable Value proto for this object with all overlays applied.
+   * <p>
+   * The value for this member is calculated _lazily_ and is null if the overlays have not yet been
+   * applied.
+   * <p>
+   * This member MAY be READ concurrently from multiple threads without acquiring any particular
+   * locks; however, UPDATING it MUST have the `lock` lock held.
+   * <p>
+   * Internal Invariant: Exactly one of `mergedValue` and `partialValue` must be null, with the
+   * other being non-null.
+   */
+  @Nullable private volatile Value mergedValue;
+
+  /**
    * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and only
    * applied when {@link #buildProto()} is invoked.
+   * <p>
+   * Internal Invariant: Exactly one of `mergedValue` and `partialValue` must be null, with the
+   * other being non-null.
    */
   @GuardedBy("lock")
   private Value partialValue;
@@ -59,7 +76,7 @@ public final class ObjectValue implements Cloneable {
     hardAssert(
         !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
-    this.partialValue = value;
+    this.mergedValue = value;
   }
 
   public ObjectValue() {
@@ -130,20 +147,31 @@ public final class ObjectValue implements Cloneable {
    * invocations are based on this memoized result.
    */
   private Value buildProto() {
-    synchronized (lock) {
-      if (overlayMap.isEmpty()) {
-        return partialValue;
+    {
+      Value mergedValue = this.mergedValue;
+      if (mergedValue != null) {
+        return mergedValue;
       }
-
-      MapValue mergedResult = applyOverlay(partialValue, FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult == null) {
-        return partialValue;
-      }
-
-      overlayMap.clear();
-      partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-      return partialValue;
     }
+
+    synchronized (lock) {
+      if (mergedValue != null) {
+        return mergedValue;
+      }
+
+      Value baseValue = partialValue;
+      partialValue = null;
+      MapValue mergedResult = applyOverlay(baseValue, FieldPath.EMPTY_PATH, overlayMap);
+      overlayMap.clear();
+
+      if (mergedResult == null) {
+        mergedValue = baseValue;
+      } else {
+        mergedValue = Value.newBuilder().setMapValue(mergedResult).build();
+      }
+    }
+
+    return mergedValue;
   }
 
   /**
@@ -184,6 +212,10 @@ public final class ObjectValue implements Cloneable {
    */
   private void setOverlay(FieldPath path, @Nullable Value value) {
     synchronized (lock) {
+      if (mergedValue != null) {
+        partialValue = mergedValue;
+        mergedValue = null;
+      }
       setOverlay(overlayMap, path, value);
     }
   }
