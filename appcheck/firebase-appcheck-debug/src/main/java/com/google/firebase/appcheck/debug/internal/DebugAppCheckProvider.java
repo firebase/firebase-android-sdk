@@ -85,6 +85,16 @@ public class DebugAppCheckProvider implements AppCheckProvider {
 
   @VisibleForTesting
   @NonNull
+  void setDebugSecret(@NonNull String debugSecret) {
+
+    StorageHelper storageHelper =
+            new StorageHelper(
+                    firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
+    storageHelper.saveDebugSecret(debugSecret);
+  }
+
+  @VisibleForTesting
+  @NonNull
   static Task<String> determineDebugSecret(
       @NonNull FirebaseApp firebaseApp, @NonNull Executor executor) {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
