@@ -28,6 +28,8 @@ import java.util.Set;
 
 /** A structured object value stored in Firestore. */
 public final class ObjectValue implements Cloneable {
+  private final Object lock = new Object(); // Monitor object
+
   /**
    * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and only
    * applied when {@link #buildProto()} is invoked.
@@ -124,11 +126,13 @@ public final class ObjectValue implements Cloneable {
    * invocations are based on this memoized result.
    */
   private Value buildProto() {
-    synchronized (overlayMap) {
-      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult != null) {
-        partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-        overlayMap.clear();
+    synchronized (lock) {
+      if (!overlayMap.isEmpty()) {
+        MapValue mergedResult = applyOverlayLocked(FieldPath.EMPTY_PATH, overlayMap);
+        if (mergedResult != null) {
+          partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+          overlayMap.clear();
+        }
       }
     }
     return partialValue;
@@ -171,31 +175,33 @@ public final class ObjectValue implements Cloneable {
    * Adds {@code value} to the overlay map at {@code path}. Creates nested map entries if needed.
    */
   private void setOverlay(FieldPath path, @Nullable Value value) {
-    Map<String, Object> currentLevel = overlayMap;
+    synchronized (lock) {
+      Map<String, Object> currentLevel = overlayMap;
 
-    for (int i = 0; i < path.length() - 1; ++i) {
-      String currentSegment = path.getSegment(i);
-      Object currentValue = currentLevel.get(currentSegment);
+      for (int i = 0; i < path.length() - 1; ++i) {
+        String currentSegment = path.getSegment(i);
+        Object currentValue = currentLevel.get(currentSegment);
 
-      if (currentValue instanceof Map) {
-        // Re-use a previously created map
-        currentLevel = (Map<String, Object>) currentValue;
-      } else if (currentValue instanceof Value
-          && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
-        // Convert the existing Protobuf MapValue into a Java map
-        Map<String, Object> nextLevel =
-            new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
-        currentLevel.put(currentSegment, nextLevel);
-        currentLevel = nextLevel;
-      } else {
-        // Create an empty hash map to represent the current nesting level
-        Map<String, Object> nextLevel = new HashMap<>();
-        currentLevel.put(currentSegment, nextLevel);
-        currentLevel = nextLevel;
+        if (currentValue instanceof Map) {
+          // Re-use a previously created map
+          currentLevel = (Map<String, Object>) currentValue;
+        } else if (currentValue instanceof Value
+                && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+          // Convert the existing Protobuf MapValue into a Java map
+          Map<String, Object> nextLevel =
+                  new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
+        } else {
+          // Create an empty hash map to represent the current nesting level
+          Map<String, Object> nextLevel = new HashMap<>();
+          currentLevel.put(currentSegment, nextLevel);
+          currentLevel = nextLevel;
+        }
       }
-    }
 
-    currentLevel.put(path.getLastSegment(), value);
+      currentLevel.put(path.getLastSegment(), value);
+    }
   }
 
   /**
@@ -208,7 +214,7 @@ public final class ObjectValue implements Cloneable {
    *     overlayMap}.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
-  private @Nullable MapValue applyOverlay(
+  private @Nullable MapValue applyOverlayLocked(
       FieldPath currentPath, Map<String, Object> currentOverlays) {
     boolean modified = false;
 
@@ -227,7 +233,7 @@ public final class ObjectValue implements Cloneable {
       if (value instanceof Map) {
         @Nullable
         MapValue nested =
-            applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
+            applyOverlayLocked(currentPath.append(pathSegment), (Map<String, Object>) value);
         if (nested != null) {
           resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
           modified = true;
