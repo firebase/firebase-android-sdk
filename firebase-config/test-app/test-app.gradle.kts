@@ -1,7 +1,4 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -17,6 +14,9 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -47,8 +47,9 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   implementation(project(":firebase-crashlytics")) {

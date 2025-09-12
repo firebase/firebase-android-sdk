@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -49,14 +51,14 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
-  kotlinOptions { jvmTarget = "1.8" }
-
   testOptions {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
   }
   lint { targetSdk = targetSdkVersion }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   // Firebase

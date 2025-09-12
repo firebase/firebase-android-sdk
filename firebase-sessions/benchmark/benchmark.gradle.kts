@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("com.android.test")
   id("org.jetbrains.kotlin.android")
@@ -45,11 +47,12 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 
   targetProjectPath = ":firebase-sessions:test-app"
   experimentalProperties["android.experimental.self-instrumenting"] = true
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   implementation(libs.androidx.test.junit)
