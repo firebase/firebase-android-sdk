@@ -264,7 +264,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * @return {@link Timer} captured by static-initializer during class-loading of a Firebase class.
    */
   private @NonNull Timer getClassLoadTimeCompat() {
-    // Prefered: static-initializer time of the 1st Firebase class during init
+    // Preferred: static-initializer time of the 1st Firebase class during init
     if (firebaseClassLoadTime != null) {
       return firebaseClassLoadTime;
     }
