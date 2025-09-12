@@ -2,6 +2,19 @@
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
 
+## Project Structure
+
+The `subprojects.cfg` file lists all the subprojects in this repository. Each line in this file
+follows the format `<project-path> # <project-type>`, where `project-type` can be one of the
+following:
+
+- `sdk`: A public-facing SDK that is published.
+- `test`: A test application or a test-only module.
+- `util`: A utility module that is not part of the public API.
+- `directory`: A directory containing other subprojects.
+
+This file is useful for understanding the role of each subproject in the repository.
+
 ## Environment Setup
 
 To work with this repository, the Android SDK must be installed. Use the `sdkmanager` command-line
