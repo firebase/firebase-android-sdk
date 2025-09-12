@@ -131,8 +131,8 @@ public final class ObjectValue implements Cloneable {
         MapValue mergedResult = applyOverlayLocked(FieldPath.EMPTY_PATH, overlayMap);
         if (mergedResult != null) {
           partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-          overlayMap.clear();
         }
+        overlayMap.clear();
       }
     }
     return partialValue;
