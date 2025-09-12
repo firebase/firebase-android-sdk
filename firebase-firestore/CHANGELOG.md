@@ -3,7 +3,8 @@
 - [changed] Bumped internal dependencies.
 - [changed] Improve the performance of queries in collections that contain many deleted documents.
   [#7295](//github.com/firebase/firebase-android-sdk/issues/7295)
-- [changed] Improve the performance of queries against SDK cache through internal memoization of document data.
+- [changed] Improve the performance of queries against SDK cache through internal memoization of
+  document data.
 
 # 26.0.0
 

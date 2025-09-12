@@ -186,10 +186,10 @@ public final class ObjectValue implements Cloneable {
           // Re-use a previously created map
           currentLevel = (Map<String, Object>) currentValue;
         } else if (currentValue instanceof Value
-                && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+            && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
           // Convert the existing Protobuf MapValue into a Java map
           Map<String, Object> nextLevel =
-                  new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+              new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
           currentLevel.put(currentSegment, nextLevel);
           currentLevel = nextLevel;
         } else {
