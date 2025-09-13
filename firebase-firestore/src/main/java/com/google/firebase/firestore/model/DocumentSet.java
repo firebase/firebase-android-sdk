@@ -14,17 +14,16 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
@@ -48,7 +47,8 @@ public final class DocumentSet implements Iterable<Document> {
         };
 
     return new DocumentSet(
-        emptyDocumentMap(), new ImmutableSortedSet<>(Collections.emptyList(), adjustedComparator));
+        Collections.emptyMap(),
+        new ImmutableSortedSet<>(Collections.emptyList(), adjustedComparator));
   }
 
   /**
@@ -56,7 +56,7 @@ public final class DocumentSet implements Iterable<Document> {
    * guarantee the uniqueness of document keys in the set and to allow lookup and removal of
    * documents by key.
    */
-  private final ImmutableSortedMap<DocumentKey, Document> keyIndex;
+  private final Map<DocumentKey, Document> keyIndex;
 
   /**
    * The main collection of documents in the DocumentSet. The documents are ordered by the provided
@@ -65,8 +65,7 @@ public final class DocumentSet implements Iterable<Document> {
    */
   private final ImmutableSortedSet<Document> sortedSet;
 
-  private DocumentSet(
-      ImmutableSortedMap<DocumentKey, Document> keyIndex, ImmutableSortedSet<Document> sortedSet) {
+  private DocumentSet(Map<DocumentKey, Document> keyIndex, ImmutableSortedSet<Document> sortedSet) {
     this.keyIndex = keyIndex;
     this.sortedSet = sortedSet;
   }
@@ -146,8 +145,8 @@ public final class DocumentSet implements Iterable<Document> {
     // accumulating values that aren't in the index.
     DocumentSet removed = remove(document.getKey());
 
-    ImmutableSortedMap<DocumentKey, Document> newKeyIndex =
-        removed.keyIndex.insert(document.getKey(), document);
+    HashMap<DocumentKey, Document> newKeyIndex = new HashMap<>(removed.keyIndex);
+    newKeyIndex.put(document.getKey(), document);
     ImmutableSortedSet<Document> newSortedSet = removed.sortedSet.insert(document);
     return new DocumentSet(newKeyIndex, newSortedSet);
   }
@@ -159,7 +158,8 @@ public final class DocumentSet implements Iterable<Document> {
       return this;
     }
 
-    ImmutableSortedMap<DocumentKey, Document> newKeyIndex = keyIndex.remove(key);
+    HashMap<DocumentKey, Document> newKeyIndex = new HashMap<>(keyIndex);
+    newKeyIndex.remove(key);
     ImmutableSortedSet<Document> newSortedSet = sortedSet.remove(document);
     return new DocumentSet(newKeyIndex, newSortedSet);
   }
@@ -238,17 +238,17 @@ public final class DocumentSet implements Iterable<Document> {
 
   public static final class Builder {
 
-    private final ImmutableSortedMap.Builder<DocumentKey, Document> keyIndex;
+    private final HashMap<DocumentKey, Document> keyIndex;
 
     private final ImmutableSortedSet.Builder<Document> sortedSet;
 
     public Builder(DocumentSet documentSet) {
-      this.keyIndex = new ImmutableSortedMap.Builder<>(documentSet.keyIndex);
+      this.keyIndex = new HashMap<>(documentSet.keyIndex);
       this.sortedSet = new ImmutableSortedSet.Builder<>(documentSet.sortedSet);
     }
 
     public DocumentSet build() {
-      return new DocumentSet(keyIndex.build(), sortedSet.build());
+      return new DocumentSet(Collections.unmodifiableMap(keyIndex), sortedSet.build());
     }
 
     public void add(Document document) {
@@ -259,7 +259,7 @@ public final class DocumentSet implements Iterable<Document> {
         sortedSet.remove(oldDocument);
       }
 
-      keyIndex.add(key, document);
+      keyIndex.put(key, document);
       sortedSet.insert(document);
     }
 
