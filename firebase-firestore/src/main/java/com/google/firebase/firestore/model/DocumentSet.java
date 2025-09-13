@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 /**
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key
@@ -233,5 +234,52 @@ public final class DocumentSet implements Iterable<Document> {
     }
     builder.append("]");
     return builder.toString();
+  }
+
+  public static final class Builder {
+
+    private final ImmutableSortedMap.Builder<DocumentKey, Document> keyIndex;
+
+    private final ImmutableSortedSet.Builder<Document> sortedSet;
+
+    public Builder(DocumentSet documentSet) {
+      this.keyIndex = new ImmutableSortedMap.Builder<>(documentSet.keyIndex);
+      this.sortedSet = new ImmutableSortedSet.Builder<>(documentSet.sortedSet);
+    }
+
+    public DocumentSet build() {
+      return new DocumentSet(keyIndex.build(), sortedSet.build());
+    }
+
+    public void add(Document document) {
+      DocumentKey key = document.getKey();
+
+      Document oldDocument = keyIndex.remove(key);
+      if (oldDocument != null) {
+        sortedSet.remove(oldDocument);
+      }
+
+      keyIndex.add(key, document);
+      sortedSet.insert(document);
+    }
+
+    public void remove(DocumentKey key) {
+      Document oldDocument = keyIndex.remove(key);
+      if (oldDocument != null) {
+        sortedSet.remove(oldDocument);
+      }
+    }
+
+    public int size() {
+      return keyIndex.size();
+    }
+
+    public PriorityQueue<Document> toPriorityQueue() {
+      return this.sortedSet.toPriorityQueueAscending();
+    }
+
+    public PriorityQueue<Document> toReversePriorityQueue() {
+      return this.sortedSet.toPriorityQueueDescending();
+    }
   }
 }

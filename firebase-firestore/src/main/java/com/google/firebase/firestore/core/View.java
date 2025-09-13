@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 /**
  * View is responsible for computing the final merged truth of what docs are in a query. It gets
@@ -131,13 +132,14 @@ public class View {
   public DocumentChanges computeDocChanges(
       ImmutableSortedMap<DocumentKey, Document> docChanges,
       @Nullable DocumentChanges previousChanges) {
-    DocumentViewChangeSet changeSet =
+    final DocumentViewChangeSet changeSet =
         previousChanges != null ? previousChanges.changeSet : new DocumentViewChangeSet();
-    DocumentSet oldDocumentSet =
+    final DocumentSet oldDocumentSet =
         previousChanges != null ? previousChanges.documentSet : documentSet;
-    ImmutableSortedSet<DocumentKey> newMutatedKeys =
-        previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys;
-    DocumentSet newDocumentSet = oldDocumentSet;
+    final ImmutableSortedSet.Builder<DocumentKey> newMutatedKeys =
+        new ImmutableSortedSet.Builder<>(
+            previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys);
+    final DocumentSet.Builder newDocumentSet = new DocumentSet.Builder(oldDocumentSet);
     boolean needsRefill = false;
 
     // Track the last doc in a (full) limit. This is necessary, because some update (a delete, or an
@@ -210,28 +212,30 @@ public class View {
 
       if (changeApplied) {
         if (newDoc != null) {
-          newDocumentSet = newDocumentSet.add(newDoc);
+          newDocumentSet.add(newDoc);
           if (newDoc.hasLocalMutations()) {
-            newMutatedKeys = newMutatedKeys.insert(newDoc.getKey());
+            newMutatedKeys.insert(newDoc.getKey());
           } else {
-            newMutatedKeys = newMutatedKeys.remove(newDoc.getKey());
+            newMutatedKeys.remove(newDoc.getKey());
           }
         } else {
-          newDocumentSet = newDocumentSet.remove(key);
-          newMutatedKeys = newMutatedKeys.remove(key);
+          newDocumentSet.remove(key);
+          newMutatedKeys.remove(key);
         }
       }
     }
 
     // Drop documents out to meet limitToFirst/limitToLast requirement.
     if (query.hasLimit()) {
+      PriorityQueue<Document> orderedDocuments =
+          query.getLimitType().equals(LIMIT_TO_FIRST)
+              ? newDocumentSet.toReversePriorityQueue()
+              : newDocumentSet.toPriorityQueue();
       for (long i = newDocumentSet.size() - query.getLimit(); i > 0; --i) {
-        Document oldDoc =
-            query.getLimitType().equals(LIMIT_TO_FIRST)
-                ? newDocumentSet.getLastDocument()
-                : newDocumentSet.getFirstDocument();
-        newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
-        newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
+        Document oldDoc = orderedDocuments.poll();
+        assert oldDoc != null;
+        newDocumentSet.remove(oldDoc.getKey());
+        newMutatedKeys.remove(oldDoc.getKey());
         changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
       }
     }
@@ -240,7 +244,8 @@ public class View {
         !needsRefill || previousChanges == null,
         "View was refilled using docs that themselves needed refilling.");
 
-    return new DocumentChanges(newDocumentSet, changeSet, newMutatedKeys, needsRefill);
+    return new DocumentChanges(
+        newDocumentSet.build(), changeSet, newMutatedKeys.build(), needsRefill);
   }
 
   private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {

@@ -143,4 +143,59 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
   public int indexOf(T entry) {
     return this.map.indexOf(entry);
   }
+
+  public static class Builder<T> {
+
+    private final Comparator<T> comparator;
+    private final HashSet<T> set = new HashSet<>();
+
+    public Builder(Comparator<T> comparator) {
+      if (comparator == null) {
+        throw new NullPointerException("comparator==null");
+      }
+      this.comparator = comparator;
+    }
+
+    public Builder(ImmutableSortedSet<T> set) {
+      if (set == null) {
+        throw new NullPointerException("set==null");
+      }
+      this.comparator = set.map.getComparator();
+      for (T entry : set) {
+        this.set.add(entry);
+      }
+    }
+
+    public ImmutableSortedSet<T> build() {
+      return new ImmutableSortedSet<>(new ArrayList<>(set), this.comparator);
+    }
+
+    public void insert(T entry) {
+      set.add(entry);
+    }
+
+    public void remove(T entry) {
+      set.remove(entry);
+    }
+
+    public int size() {
+      return this.set.size();
+    }
+
+    public PriorityQueue<T> toPriorityQueueAscending() {
+      return toPriorityQueue(this.set, this.comparator);
+    }
+
+    public PriorityQueue<T> toPriorityQueueDescending() {
+      return toPriorityQueue(this.set, Collections.reverseOrder(this.comparator));
+    }
+
+    private static <T> PriorityQueue<T> toPriorityQueue(
+        Collection<T> entries, Comparator<T> comparator) {
+      int initialCapacity = Math.max(1, entries.size());
+      PriorityQueue<T> heap = new PriorityQueue<>(initialCapacity, comparator);
+      heap.addAll(entries);
+      return heap;
+    }
+  }
 }

@@ -130,7 +130,7 @@ dependencies {
 
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api('com.google.firebase:firebase-database-collection:18.0.1')
+    implementation(project(':firebase-database-collection'))
 
     implementation libs.androidx.annotation
     implementation libs.playservices.base

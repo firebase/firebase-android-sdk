@@ -14,7 +14,9 @@
 
 package com.google.firebase.database.collection;
 
+import androidx.annotation.Nullable;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +107,45 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
     return b.toString();
   }
 
-  public static class Builder {
+  public static class Builder<K, V> {
+
+    private final Comparator<K> comparator;
+    private final HashMap<K, V> map = new HashMap<>();
+
+    public Builder(Comparator<K> comparator) {
+      if (comparator == null) {
+        throw new NullPointerException("comparator==null");
+      }
+      this.comparator = comparator;
+    }
+
+    public Builder(ImmutableSortedMap<K, V> map) {
+      if (map == null) {
+        throw new NullPointerException("map==null");
+      }
+      this.comparator = map.getComparator();
+      for (Map.Entry<K, V> entry : map) {
+        this.map.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    public ImmutableSortedMap<K, V> build() {
+      return fromMap(map, comparator);
+    }
+
+    public void add(K key, V value) {
+      map.put(key, value);
+    }
+
+    @Nullable
+    public V remove(K key) {
+      return map.remove(key);
+    }
+
+    public int size() {
+      return this.map.size();
+    }
+
     /**
      * The size threshold where we use a tree backed sorted map instead of an array backed sorted
      * map. This is a more or less arbitrary chosen value, that was chosen to be large enough to fit
