@@ -153,7 +153,7 @@ public class DocumentChange {
     } else {
       // A DocumentSet that is updated incrementally as changes are applied to use to lookup the
       // index of a document.
-      DocumentSet indexTracker = snapshot.getOldDocuments();
+      DocumentSet.Builder indexTracker = snapshot.getOldDocuments().toBuilder();
       for (DocumentViewChange change : snapshot.getChanges()) {
         if (metadataChanges == MetadataChanges.EXCLUDE
             && change.getType() == DocumentViewChange.Type.METADATA) {
@@ -171,12 +171,12 @@ public class DocumentChange {
         if (type != Type.ADDED) {
           oldIndex = indexTracker.indexOf(document.getKey());
           hardAssert(oldIndex >= 0, "Index for document not found");
-          indexTracker = indexTracker.remove(document.getKey());
+          indexTracker.remove(document.getKey());
         } else {
           oldIndex = -1;
         }
         if (type != Type.REMOVED) {
-          indexTracker = indexTracker.add(document);
+          indexTracker.add(document);
           newIndex = indexTracker.indexOf(document.getKey());
           hardAssert(newIndex >= 0, "Index for document not found");
         } else {

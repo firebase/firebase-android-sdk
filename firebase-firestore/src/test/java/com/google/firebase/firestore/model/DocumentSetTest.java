@@ -103,14 +103,14 @@ public class DocumentSetTest {
   public void testDeletes() {
     DocumentSet set = docSet(TEST_COMPARATOR, DOC1, DOC2, DOC3);
 
-    DocumentSet withoutDoc1 = set.remove(DOC1.getKey());
+    DocumentSet withoutDoc1 = set.toBuilder().remove(DOC1.getKey()).build();
     assertEquals(Arrays.asList(DOC3, DOC2), withoutDoc1.toList());
     assertEquals(2, withoutDoc1.size());
 
     // Original remains unchanged
     assertEquals(Arrays.asList(DOC3, DOC1, DOC2), set.toList());
 
-    DocumentSet withoutDoc3 = withoutDoc1.remove(DOC3.getKey());
+    DocumentSet withoutDoc3 = withoutDoc1.toBuilder().remove(DOC3.getKey()).build();
     assertEquals(Collections.singletonList(DOC2), withoutDoc3.toList());
     assertEquals(1, withoutDoc3.size());
   }
@@ -120,7 +120,7 @@ public class DocumentSetTest {
     DocumentSet set = docSet(TEST_COMPARATOR, DOC1, DOC2, DOC3);
     MutableDocument doc2Prime = doc("docs/2", 0, map("sort", 9));
 
-    set = set.add(doc2Prime);
+    set = set.toBuilder().add(doc2Prime).build();
     assertEquals(3, set.size());
     assertEquals(doc2Prime, set.getDocument(doc2Prime.getKey()));
     assertEquals(Arrays.asList(DOC3, DOC1, doc2Prime), set.toList());

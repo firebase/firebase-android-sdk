@@ -85,37 +85,37 @@ public class TestUtil {
       boolean hasPendingWrites,
       boolean isFromCache,
       boolean hasCachedResults) {
-    DocumentSet oldDocuments = docSet(Document.KEY_COMPARATOR);
-    ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
+    DocumentSet.Builder oldDocuments = docSet(Document.KEY_COMPARATOR).toBuilder();
+    ImmutableSortedSet.Builder<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet().toBuilder();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         doc.setHasCommittedMutations();
-        mutatedKeys = mutatedKeys.insert(key(docKey));
+        mutatedKeys.insert(key(docKey));
       }
-      oldDocuments = oldDocuments.add(doc);
+      oldDocuments.add(doc);
     }
-    DocumentSet newDocuments = docSet(Document.KEY_COMPARATOR);
+    DocumentSet.Builder newDocuments = docSet(Document.KEY_COMPARATOR).toBuilder();
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         docToAdd.setHasCommittedMutations();
-        mutatedKeys = mutatedKeys.insert(key(docKey));
+        mutatedKeys.insert(key(docKey));
       }
-      newDocuments = newDocuments.add(docToAdd);
+      newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
             com.google.firebase.firestore.testutil.TestUtil.query(path),
-            newDocuments,
-            oldDocuments,
+            newDocuments.build(),
+            oldDocuments.build(),
             documentChanges,
             isFromCache,
-            mutatedKeys,
+            mutatedKeys.build(),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false,
             hasCachedResults);

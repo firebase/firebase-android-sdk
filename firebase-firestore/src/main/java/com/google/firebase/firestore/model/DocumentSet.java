@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.model;
 
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,7 +24,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.PriorityQueue;
+import java.util.TreeSet;
 
 /**
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key
@@ -46,9 +48,13 @@ public final class DocumentSet implements Iterable<Document> {
           }
         };
 
+    Map<DocumentKey, Document> keyIndex = Collections.emptyMap();
+    NavigableSet<Document> sortedSet = new TreeSet<>(adjustedComparator);
     return new DocumentSet(
         Collections.emptyMap(),
-        new ImmutableSortedSet<>(Collections.emptyList(), adjustedComparator));
+        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            ? Collections.unmodifiableNavigableSet(sortedSet)
+            : sortedSet);
   }
 
   /**
@@ -63,9 +69,15 @@ public final class DocumentSet implements Iterable<Document> {
    * comparator. The collection exists in addition to the index to allow ordered traversal of the
    * DocumentSet.
    */
-  private final ImmutableSortedSet<Document> sortedSet;
+  private final NavigableSet<Document> sortedSet;
 
-  private DocumentSet(Map<DocumentKey, Document> keyIndex, ImmutableSortedSet<Document> sortedSet) {
+  private DocumentSet(Map<DocumentKey, Document> keyIndex, NavigableSet<Document> sortedSet) {
+    if (keyIndex == null) {
+      throw new NullPointerException("keyIndex==null");
+    }
+    if (sortedSet == null) {
+      throw new NullPointerException("sortedSet==null");
+    }
     this.keyIndex = keyIndex;
     this.sortedSet = sortedSet;
   }
@@ -95,7 +107,7 @@ public final class DocumentSet implements Iterable<Document> {
    */
   @Nullable
   public Document getFirstDocument() {
-    return sortedSet.getMinEntry();
+    return sortedSet.isEmpty() ? null : sortedSet.first();
   }
 
   /**
@@ -104,7 +116,7 @@ public final class DocumentSet implements Iterable<Document> {
    */
   @Nullable
   public Document getLastDocument() {
-    return sortedSet.getMaxEntry();
+    return sortedSet.isEmpty() ? null : sortedSet.last();
   }
 
   /**
@@ -121,7 +133,7 @@ public final class DocumentSet implements Iterable<Document> {
     if (document == null) {
       throw new IllegalArgumentException("Key not contained in DocumentSet: " + key);
     }
-    return sortedSet.getPredecessorEntry(document);
+    return sortedSet.lower(document);
   }
 
   /**
@@ -133,35 +145,7 @@ public final class DocumentSet implements Iterable<Document> {
     if (document == null) {
       return -1;
     }
-    return sortedSet.indexOf(document);
-  }
-
-  /**
-   * Returns a new DocumentSet that contains the given document, replacing any old document with the
-   * same key.
-   */
-  public DocumentSet add(Document document) {
-    // Remove any prior mapping of the document's key before adding, preventing sortedSet from
-    // accumulating values that aren't in the index.
-    DocumentSet removed = remove(document.getKey());
-
-    HashMap<DocumentKey, Document> newKeyIndex = new HashMap<>(removed.keyIndex);
-    newKeyIndex.put(document.getKey(), document);
-    ImmutableSortedSet<Document> newSortedSet = removed.sortedSet.insert(document);
-    return new DocumentSet(newKeyIndex, newSortedSet);
-  }
-
-  /** Returns a new DocumentSet with the document for the provided key removed. */
-  public DocumentSet remove(DocumentKey key) {
-    Document document = keyIndex.get(key);
-    if (document == null) {
-      return this;
-    }
-
-    HashMap<DocumentKey, Document> newKeyIndex = new HashMap<>(keyIndex);
-    newKeyIndex.remove(key);
-    ImmutableSortedSet<Document> newSortedSet = sortedSet.remove(document);
-    return new DocumentSet(newKeyIndex, newSortedSet);
+    return sortedSet.headSet(document, false).size();
   }
 
   /**
@@ -236,22 +220,36 @@ public final class DocumentSet implements Iterable<Document> {
     return builder.toString();
   }
 
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
   public static final class Builder {
 
-    private final HashMap<DocumentKey, Document> keyIndex;
-
-    private final ImmutableSortedSet.Builder<Document> sortedSet;
+    private HashMap<DocumentKey, Document> keyIndex;
+    private TreeSet<Document> sortedSet;
 
     public Builder(DocumentSet documentSet) {
       this.keyIndex = new HashMap<>(documentSet.keyIndex);
-      this.sortedSet = new ImmutableSortedSet.Builder<>(documentSet.sortedSet);
+      this.sortedSet = new TreeSet<>(documentSet.sortedSet);
     }
 
     public DocumentSet build() {
-      return new DocumentSet(Collections.unmodifiableMap(keyIndex), sortedSet.build());
+      try {
+        return new DocumentSet(
+            Collections.unmodifiableMap(keyIndex),
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                ? Collections.unmodifiableNavigableSet(sortedSet)
+                : sortedSet);
+      } finally {
+        // Null out these references to prevent further usages of this builder which would be
+        // realized by the returned DocumentSet, which is supposed to be "immutable".
+        keyIndex = null;
+        sortedSet = null;
+      }
     }
 
-    public void add(Document document) {
+    public Builder add(Document document) {
       DocumentKey key = document.getKey();
 
       Document oldDocument = keyIndex.remove(key);
@@ -260,26 +258,44 @@ public final class DocumentSet implements Iterable<Document> {
       }
 
       keyIndex.put(key, document);
-      sortedSet.insert(document);
+      sortedSet.add(document);
+
+      return this;
     }
 
-    public void remove(DocumentKey key) {
+    public Builder remove(DocumentKey key) {
       Document oldDocument = keyIndex.remove(key);
       if (oldDocument != null) {
         sortedSet.remove(oldDocument);
       }
+      return this;
     }
 
     public int size() {
       return keyIndex.size();
     }
 
+    public int indexOf(DocumentKey key) {
+      Document document = keyIndex.get(key);
+      if (document == null) {
+        return -1;
+      }
+      return sortedSet.headSet(document, false).size();
+    }
+
     public PriorityQueue<Document> toPriorityQueue() {
-      return this.sortedSet.toPriorityQueueAscending();
+      return toPriorityQueue(this.sortedSet.comparator());
     }
 
     public PriorityQueue<Document> toReversePriorityQueue() {
-      return this.sortedSet.toPriorityQueueDescending();
+      return toPriorityQueue(Collections.reverseOrder(this.sortedSet.comparator()));
+    }
+
+    private PriorityQueue<Document> toPriorityQueue(Comparator<? super Document> comparator) {
+      int initialCapacity = Math.max(sortedSet.size(), 1);
+      PriorityQueue<Document> priorityQueue = new PriorityQueue<>(initialCapacity, comparator);
+      priorityQueue.addAll(sortedSet);
+      return priorityQueue;
     }
   }
 }

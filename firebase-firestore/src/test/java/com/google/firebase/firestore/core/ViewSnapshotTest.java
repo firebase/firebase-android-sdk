@@ -40,7 +40,7 @@ public class ViewSnapshotTest {
   @Test
   public void testConstructor() {
     Query query = Query.atPath(ResourcePath.fromString("a"));
-    DocumentSet docs = DocumentSet.emptySet(Document.KEY_COMPARATOR).add(doc("c/foo", 1, map()));
+    DocumentSet docs = DocumentSet.emptySet(Document.KEY_COMPARATOR).toBuilder().add(doc("c/foo", 1, map())).build();
     DocumentSet oldDocs = DocumentSet.emptySet(Document.KEY_COMPARATOR);
     List<DocumentViewChange> changes =
         Arrays.asList(DocumentViewChange.create(Type.ADDED, doc("c/foo", 1, map())));

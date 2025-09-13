@@ -72,38 +72,38 @@ public class TestUtilKtx {
       Map<String, ObjectValue> docsToAdd,
       boolean hasPendingWrites,
       boolean isFromCache) {
-    DocumentSet oldDocuments = docSet(Document.KEY_COMPARATOR);
-    ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
+    DocumentSet.Builder oldDocuments = docSet(Document.KEY_COMPARATOR).toBuilder();
+    ImmutableSortedSet.Builder<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet().toBuilder();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) doc.setHasLocalMutations();
-      oldDocuments = oldDocuments.add(doc);
+      oldDocuments.add(doc);
       if (hasPendingWrites) {
-        mutatedKeys = mutatedKeys.insert(key(docKey));
+        mutatedKeys.insert(key(docKey));
       }
     }
-    DocumentSet newDocuments = docSet(Document.KEY_COMPARATOR);
+    DocumentSet.Builder newDocuments = docSet(Document.KEY_COMPARATOR).toBuilder();
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) docToAdd.setHasLocalMutations();
-      newDocuments = newDocuments.add(docToAdd);
+      newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
 
       if (hasPendingWrites) {
-        mutatedKeys = mutatedKeys.insert(key(docKey));
+        mutatedKeys.insert(key(docKey));
       }
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
             com.google.firebase.firestore.testutil.TestUtil.query(path),
-            newDocuments,
-            oldDocuments,
+            newDocuments.build(),
+            oldDocuments.build(),
             documentChanges,
             isFromCache,
-            mutatedKeys,
+            mutatedKeys.build(),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false,
             /* hasCachedResults= */ false);

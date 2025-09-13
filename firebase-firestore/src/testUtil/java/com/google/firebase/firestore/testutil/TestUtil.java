@@ -240,11 +240,11 @@ public class TestUtil {
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {
-    DocumentSet set = DocumentSet.emptySet(comparator);
+    DocumentSet.Builder set = DocumentSet.emptySet(comparator).toBuilder();
     for (MutableDocument document : documents) {
-      set = set.add(document);
+      set.add(document);
     }
-    return set;
+    return set.build();
   }
 
   public static ImmutableSortedSet<DocumentKey> keySet(DocumentKey... keys) {

@@ -144,6 +144,10 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
     return this.map.indexOf(entry);
   }
 
+  public Builder<T> toBuilder() {
+    return new Builder<>(this);
+  }
+
   public static class Builder<T> {
 
     private final Comparator<T> comparator;
@@ -170,32 +174,18 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
       return new ImmutableSortedSet<>(new ArrayList<>(set), this.comparator);
     }
 
-    public void insert(T entry) {
+    public Builder<T> insert(T entry) {
       set.add(entry);
+      return this;
     }
 
-    public void remove(T entry) {
+    public Builder<T> remove(T entry) {
       set.remove(entry);
+      return this;
     }
 
     public int size() {
       return this.set.size();
-    }
-
-    public PriorityQueue<T> toPriorityQueueAscending() {
-      return toPriorityQueue(this.set, this.comparator);
-    }
-
-    public PriorityQueue<T> toPriorityQueueDescending() {
-      return toPriorityQueue(this.set, Collections.reverseOrder(this.comparator));
-    }
-
-    private static <T> PriorityQueue<T> toPriorityQueue(
-        Collection<T> entries, Comparator<T> comparator) {
-      int initialCapacity = Math.max(1, entries.size());
-      PriorityQueue<T> heap = new PriorityQueue<>(initialCapacity, comparator);
-      heap.addAll(entries);
-      return heap;
     }
   }
 }

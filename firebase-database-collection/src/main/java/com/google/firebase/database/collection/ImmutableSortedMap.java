@@ -107,6 +107,10 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
     return b.toString();
   }
 
+  public Builder<K, V> toBuilder() {
+    return new Builder<>(this);
+  }
+
   public static class Builder<K, V> {
 
     private final Comparator<K> comparator;
@@ -133,13 +137,15 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
       return fromMap(map, comparator);
     }
 
-    public void add(K key, V value) {
+    public Builder<K, V> add(K key, V value) {
       map.put(key, value);
+      return this;
     }
 
     @Nullable
-    public V remove(K key) {
-      return map.remove(key);
+    public Builder<K, V> remove(K key) {
+      map.remove(key);
+      return this;
     }
 
     public int size() {
