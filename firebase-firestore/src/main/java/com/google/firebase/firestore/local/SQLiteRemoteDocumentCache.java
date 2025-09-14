@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.firstNEntries;
-import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -234,46 +233,60 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
-    StringBuilder sql =
-        repeatSequence(
-            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
-                + "FROM remote_documents "
-                + "WHERE path >= ? AND path < ? AND path_length = ? "
-                + (tryFilterDocumentType == null
-                    ? ""
-                    : " AND (document_type IS NULL OR document_type = ?) ")
-                + "AND (read_time_seconds > ? OR ( "
-                + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
-                + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
-            collections.size(),
-            " UNION ");
-    sql.append("ORDER BY read_time_seconds, read_time_nanos, path LIMIT ?");
-
-    Object[] bindVars =
-        new Object
-            [(BINDS_PER_STATEMENT + (tryFilterDocumentType != null ? 1 : 0)) * collections.size()
-                + 1];
-    int i = 0;
-    for (ResourcePath collection : collections) {
-      String prefixPath = EncodedPath.encode(collection);
-      bindVars[i++] = prefixPath;
-      bindVars[i++] = EncodedPath.prefixSuccessor(prefixPath);
-      bindVars[i++] = collection.length() + 1;
-      if (tryFilterDocumentType != null) {
-        bindVars[i++] = tryFilterDocumentType.dbValue;
-      }
-      bindVars[i++] = readTime.getSeconds();
-      bindVars[i++] = readTime.getSeconds();
-      bindVars[i++] = readTime.getNanoseconds();
-      bindVars[i++] = readTime.getSeconds();
-      bindVars[i++] = readTime.getNanoseconds();
-      bindVars[i++] = EncodedPath.encode(documentKey.getPath());
+    ArrayList<Object> bindVars = new ArrayList<>();
+    if (tryFilterDocumentType != null) {
+      bindVars.add(tryFilterDocumentType.dbValue);
     }
-    bindVars[i] = count;
+    bindVars.add(readTime.getSeconds());
+    int readTimeSecondsBindingNum = bindVars.size();
+    bindVars.add(readTime.getNanoseconds());
+    int readTimeNanosBindingNum = bindVars.size();
+    bindVars.add(EncodedPath.encode(documentKey.getPath()));
+    int documentKeyBindingNum = bindVars.size();
+    bindVars.add(count);
+    int countBindingNum = bindVars.size();
+
+    StringBuilder sql = new StringBuilder();
+
+    boolean isFirstCollection = true;
+    for (ResourcePath collectionResourcePath : collections) {
+      if (isFirstCollection) {
+        isFirstCollection = false;
+      } else {
+        sql.append(" UNION ");
+      }
+
+      String prefixPath = EncodedPath.encode(collectionResourcePath);
+      bindVars.add(prefixPath);
+      int pathLowerBoundBindingNum = bindVars.size();
+      bindVars.add(EncodedPath.prefixSuccessor(prefixPath));
+      int pathUpperBoundBindingNum = bindVars.size();
+      bindVars.add(collectionResourcePath.length() + 1);
+      int pathLengthBindingNum = bindVars.size();
+
+      sql.append("SELECT contents, read_time_seconds, read_time_nanos, document_type, path");
+      sql.append(" FROM remote_documents");
+      sql.append(" WHERE path >= ?").append(pathLowerBoundBindingNum);
+      sql.append(" AND path < ?").append(pathUpperBoundBindingNum);
+      sql.append(" AND path_length = ?").append(pathLengthBindingNum);
+      if (tryFilterDocumentType != null) {
+        sql.append(" AND (document_type IS NULL OR document_type = ?1)");
+      }
+      sql.append(" AND (");
+      sql.append("read_time_seconds > ?").append(readTimeSecondsBindingNum);
+      sql.append(" OR (read_time_seconds = ?").append(readTimeSecondsBindingNum);
+      sql.append(" AND read_time_nanos > ?").append(readTimeNanosBindingNum);
+      sql.append(") OR (read_time_seconds = ?").append(readTimeSecondsBindingNum);
+      sql.append(" AND read_time_nanos = ?").append(readTimeNanosBindingNum);
+      sql.append(" AND path > ?").append(documentKeyBindingNum);
+      sql.append("))");
+    }
+    sql.append(" ORDER BY read_time_seconds, read_time_nanos, path");
+    sql.append(" LIMIT ?").append(countBindingNum);
 
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
-        .binding(bindVars)
+        .binding(bindVars.toArray())
         .forEach(
             row -> {
               if (context != null) {
