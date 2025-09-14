@@ -16,6 +16,7 @@
 
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
+import com.google.firebase.dataconnect.gradle.ci.PostCommentForJobResultsTask
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -175,4 +176,8 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
     file("gradleplugin/plugin/src/main/resources/${DataConnectExecutableVersionsRegistry.PATH}")
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
+}
+
+tasks.register<PostCommentForJobResultsTask>("postCommentForJobResults") {
+  workDirectory.set(project.layout.buildDirectory.dir("postCommentForJobResults"))
 }
