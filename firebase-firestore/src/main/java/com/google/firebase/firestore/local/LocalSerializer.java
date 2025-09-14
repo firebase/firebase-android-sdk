@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
@@ -30,9 +31,11 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.Value;
 import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
@@ -82,6 +85,278 @@ public final class LocalSerializer {
 
       default:
         throw fail("Unknown MaybeDocument %s", proto);
+    }
+  }
+
+  LazyMutableDocument lazyDecodeMaybeDocument(
+      com.google.firebase.firestore.proto.MaybeDocument proto,
+      int readTimeSeconds,
+      int readTimeNanos) {
+    return new LazyMutableDocument(rpcSerializer, proto, readTimeSeconds, readTimeNanos);
+  }
+
+  public static final class LazyMutableDocument {
+
+    private final RemoteSerializer rpcSerializer;
+    private final com.google.firebase.firestore.proto.MaybeDocument proto;
+    private final int readTimeSeconds;
+    private final int readTimeNanos;
+
+    private volatile LazyDocument memoizedLazyDocument;
+    private volatile LazyNoDocument memoizedLazyNoDocument;
+    private volatile LazyUnknownDocument memoizedLazyUnknownDocument;
+
+    private LazyMutableDocument(
+        RemoteSerializer rpcSerializer,
+        com.google.firebase.firestore.proto.MaybeDocument proto,
+        int readTimeSeconds,
+        int readTimeNanos) {
+      this.rpcSerializer = rpcSerializer;
+      this.proto = proto;
+      this.readTimeSeconds = readTimeSeconds;
+      this.readTimeNanos = readTimeNanos;
+    }
+
+    /** @noinspection DataFlowIssue*/
+    public DocumentKey getKey() {
+      switch (proto.getDocumentTypeCase()) {
+        case DOCUMENT:
+          return getLazyDocument().getKey();
+        case NO_DOCUMENT:
+          return getLazyNoDocument().getKey();
+        case UNKNOWN_DOCUMENT:
+          return getLazyUnknownDocument().getKey();
+        default:
+          throw fail("Unknown MaybeDocument %s", proto);
+      }
+    }
+
+    /** @noinspection DataFlowIssue*/
+    public MutableDocument toMutableDocument() {
+      switch (proto.getDocumentTypeCase()) {
+        case DOCUMENT:
+          return getLazyDocument().toMutableDocument();
+        case NO_DOCUMENT:
+          return getLazyNoDocument().toMutableDocument();
+        case UNKNOWN_DOCUMENT:
+          return getLazyUnknownDocument().toMutableDocument();
+        default:
+          throw fail("Unknown MaybeDocument %s", proto);
+      }
+    }
+
+    private void setReadTime(MutableDocument mutableDocument) {
+      mutableDocument.setReadTime(
+          new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
+    }
+
+    @Nullable
+    public LazyDocument getLazyDocument() {
+      if (memoizedLazyDocument != null) {
+        return memoizedLazyDocument;
+      }
+      if (proto.getDocumentTypeCase() != MaybeDocument.DocumentTypeCase.DOCUMENT) {
+        return null;
+      }
+      memoizedLazyDocument = new LazyDocument();
+      return memoizedLazyDocument;
+    }
+
+    @Nullable
+    public LazyNoDocument getLazyNoDocument() {
+      if (memoizedLazyNoDocument != null) {
+        return memoizedLazyNoDocument;
+      }
+      if (proto.getDocumentTypeCase() != MaybeDocument.DocumentTypeCase.NO_DOCUMENT) {
+        return null;
+      }
+      memoizedLazyNoDocument = new LazyNoDocument();
+      return memoizedLazyNoDocument;
+    }
+
+    @Nullable
+    public LazyUnknownDocument getLazyUnknownDocument() {
+      if (memoizedLazyUnknownDocument != null) {
+        return memoizedLazyUnknownDocument;
+      }
+      if (proto.getDocumentTypeCase() != MaybeDocument.DocumentTypeCase.UNKNOWN_DOCUMENT) {
+        return null;
+      }
+      memoizedLazyUnknownDocument = new LazyUnknownDocument();
+      return memoizedLazyUnknownDocument;
+    }
+
+    public final class LazyDocument implements Document {
+
+      private volatile DocumentKey memoizedDocumentKey;
+      private volatile SnapshotVersion memoizedVersion;
+      private volatile ObjectValue memoizedData;
+      private volatile MutableDocument memoizedMutableDocument;
+
+      @Override
+      public DocumentKey getKey() {
+        if (memoizedDocumentKey != null) {
+          return memoizedDocumentKey;
+        }
+        memoizedDocumentKey = rpcSerializer.decodeKey(proto.getDocument().getName());
+        return memoizedDocumentKey;
+      }
+
+      @Override
+      public SnapshotVersion getVersion() {
+        if (memoizedVersion != null) {
+          return memoizedVersion;
+        }
+        memoizedVersion = rpcSerializer.decodeVersion(proto.getDocument().getUpdateTime());
+        return memoizedVersion;
+      }
+
+      @Override
+      public SnapshotVersion getReadTime() {
+        throw new RuntimeException("not implemented (error code cw44hzpk5j)");
+      }
+
+      @Override
+      public boolean isValidDocument() {
+        return true;
+      }
+
+      @Override
+      public boolean isFoundDocument() {
+        return true;
+      }
+
+      @Override
+      public boolean isNoDocument() {
+        return false;
+      }
+
+      @Override
+      public boolean isUnknownDocument() {
+        return false;
+      }
+
+      @Override
+      public ObjectValue getData() {
+        if (memoizedData != null) {
+          return memoizedData;
+        }
+        memoizedData = ObjectValue.fromMap(proto.getDocument().getFieldsMap());
+        return memoizedData;
+      }
+
+      @Override
+      public Value getField(FieldPath field) {
+        return getData().get(field);
+      }
+
+      @Override
+      public boolean hasLocalMutations() {
+        return false;
+      }
+
+      @Override
+      public boolean hasCommittedMutations() {
+        return proto.getHasCommittedMutations();
+      }
+
+      @Override
+      public boolean hasPendingWrites() {
+        return hasCommittedMutations();
+      }
+
+      @Override
+      public MutableDocument mutableCopy() {
+        MutableDocument mutableDocument =
+            MutableDocument.newFoundDocument(getKey(), getVersion(), getData());
+        if (proto.getHasCommittedMutations()) {
+          mutableDocument.setHasCommittedMutations();
+        }
+        setReadTime(mutableDocument);
+        return mutableDocument;
+      }
+
+      public MutableDocument toMutableDocument() {
+        if (memoizedMutableDocument != null) {
+          return memoizedMutableDocument;
+        }
+        memoizedMutableDocument = mutableCopy();
+        return memoizedMutableDocument;
+      }
+    }
+
+    public final class LazyNoDocument {
+
+      private volatile DocumentKey memoizedDocumentKey;
+      private volatile SnapshotVersion memoizedVersion;
+      private volatile MutableDocument memoizedMutableDocument;
+
+      public DocumentKey getKey() {
+        if (memoizedDocumentKey != null) {
+          return memoizedDocumentKey;
+        }
+        memoizedDocumentKey = rpcSerializer.decodeKey(proto.getNoDocument().getName());
+        return memoizedDocumentKey;
+      }
+
+      public SnapshotVersion getVersion() {
+        if (memoizedVersion != null) {
+          return memoizedVersion;
+        }
+        memoizedVersion = rpcSerializer.decodeVersion(proto.getNoDocument().getReadTime());
+        return memoizedVersion;
+      }
+
+      public MutableDocument toMutableDocument() {
+        if (memoizedMutableDocument != null) {
+          return memoizedMutableDocument;
+        }
+
+        MutableDocument mutableDocument = MutableDocument.newNoDocument(getKey(), getVersion());
+        if (proto.getHasCommittedMutations()) {
+          mutableDocument.setHasCommittedMutations();
+        }
+        setReadTime(mutableDocument);
+
+        memoizedMutableDocument = mutableDocument;
+        return mutableDocument;
+      }
+    }
+
+    public final class LazyUnknownDocument {
+
+      private volatile DocumentKey memoizedDocumentKey;
+      private volatile SnapshotVersion memoizedVersion;
+      private volatile MutableDocument memoizedMutableDocument;
+
+      public DocumentKey getKey() {
+        if (memoizedDocumentKey != null) {
+          return memoizedDocumentKey;
+        }
+        memoizedDocumentKey = rpcSerializer.decodeKey(proto.getUnknownDocument().getName());
+        return memoizedDocumentKey;
+      }
+
+      public SnapshotVersion getVersion() {
+        if (memoizedVersion != null) {
+          return memoizedVersion;
+        }
+        memoizedVersion = rpcSerializer.decodeVersion(proto.getUnknownDocument().getVersion());
+        return memoizedVersion;
+      }
+
+      public MutableDocument toMutableDocument() {
+        if (memoizedMutableDocument != null) {
+          return memoizedMutableDocument;
+        }
+
+        MutableDocument mutableDocument =
+            MutableDocument.newUnknownDocument(getKey(), getVersion());
+        setReadTime(mutableDocument);
+
+        memoizedMutableDocument = mutableDocument;
+        return mutableDocument;
+      }
     }
   }
 

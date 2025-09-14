@@ -24,12 +24,14 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.local.LocalSerializer.LazyMutableDocument;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.util.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -88,6 +90,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       } else {
         hardAssert(!document.isValidDocument(), "MutableDocument has an unknown type");
         return INVALID_DOCUMENT;
+      }
+    }
+
+    static DocumentType forMaybeDocument(MaybeDocument document) {
+      MaybeDocument.DocumentTypeCase type = document.getDocumentTypeCase();
+      switch (type) {
+        case NO_DOCUMENT:
+          return NO_DOCUMENT;
+        case DOCUMENT:
+          return FOUND_DOCUMENT;
+        case UNKNOWN_DOCUMENT:
+          return UNKNOWN_DOCUMENT;
+        default:
+          hardAssert(false, "MaybeDocument has an unknown type: " + type);
+          return INVALID_DOCUMENT;
       }
     }
   }
@@ -176,12 +193,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 boolean documentTypeIsNull = row.isNull(3);
                 String path = row.getString(4);
 
-                MutableDocument document =
-                    decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+                MaybeDocument maybeDocument = decodeMaybeDocument(rawDocument);
                 if (documentTypeIsNull) {
-                  documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+                  documentTypeBackfiller.enqueue(
+                      path,
+                      readTimeSeconds,
+                      readTimeNanos,
+                      DocumentType.forMaybeDocument(maybeDocument));
                 }
-                results.put(document.getKey(), document);
+
+                LazyMutableDocument lazyDocument =
+                    lazyMutableDocumentFromMaybeDocument(
+                        maybeDocument, readTimeSeconds, readTimeNanos);
+                results.put(lazyDocument.getKey(), lazyDocument.toMutableDocument());
               });
     }
 
@@ -228,7 +252,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       IndexOffset offset,
       int count,
       @Nullable DocumentType tryFilterDocumentType,
-      @Nullable Function<MutableDocument, Boolean> filter,
+      @Nullable Function<Document, Boolean> filter,
       @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
@@ -298,13 +322,23 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               boolean documentTypeIsNull = row.isNull(3);
               String path = row.getString(4);
 
-              MutableDocument document =
-                  decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+              MaybeDocument maybeDocument = decodeMaybeDocument(rawDocument);
               if (documentTypeIsNull) {
-                documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+                documentTypeBackfiller.enqueue(
+                    path,
+                    readTimeSeconds,
+                    readTimeNanos,
+                    DocumentType.forMaybeDocument(maybeDocument));
               }
-              if (filter == null || filter.apply(document)) {
-                results.put(document.getKey(), document);
+
+              LazyMutableDocument lazyMutableDocument =
+                  lazyMutableDocumentFromMaybeDocument(
+                      maybeDocument, readTimeSeconds, readTimeNanos);
+              LazyMutableDocument.LazyDocument lazyDocument = lazyMutableDocument.getLazyDocument();
+              Document documentForFiltering =
+                  lazyDocument != null ? lazyDocument : lazyMutableDocument.toMutableDocument();
+              if (filter == null || filter.apply(documentForFiltering)) {
+                results.put(lazyMutableDocument.getKey(), lazyMutableDocument.toMutableDocument());
               }
             });
 
@@ -321,7 +355,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Function<Document, Boolean> filter) {
     return getAll(
         collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
   }
@@ -346,19 +380,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         // query.matches(doc) will return false for all non-"found" document types anyways.
         // See https://github.com/firebase/firebase-android-sdk/issues/7295
         DocumentType.FOUND_DOCUMENT,
-        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
+        (Document doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
         context);
   }
 
-  private MutableDocument decodeMaybeDocument(
-      byte[] bytes, int readTimeSeconds, int readTimeNanos) {
+  private MaybeDocument decodeMaybeDocument(byte[] bytes) {
     try {
-      return serializer
-          .decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes))
-          .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
+      return com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes);
     } catch (InvalidProtocolBufferException e) {
       throw fail("MaybeDocument failed to parse: %s", e);
     }
+  }
+
+  private LazyMutableDocument lazyMutableDocumentFromMaybeDocument(
+      MaybeDocument maybeDocument, int readTimeSeconds, int readTimeNanos) {
+    return serializer.lazyDecodeMaybeDocument(maybeDocument, readTimeSeconds, readTimeNanos);
   }
 
   /**
@@ -385,9 +421,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     private final ConcurrentHashMap<BackfillKey, DocumentType> documentTypeByBackfillKey =
         new ConcurrentHashMap<>();
 
-    void enqueue(String path, int readTimeSeconds, int readTimeNanos, MutableDocument document) {
+    void enqueue(String path, int readTimeSeconds, int readTimeNanos, DocumentType documentType) {
       BackfillKey backfillKey = new BackfillKey(path, readTimeSeconds, readTimeNanos);
-      DocumentType documentType = DocumentType.forMutableDocument(document);
       documentTypeByBackfillKey.putIfAbsent(backfillKey, documentType);
     }
 
