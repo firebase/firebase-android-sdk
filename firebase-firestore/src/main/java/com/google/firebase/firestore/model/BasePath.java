@@ -17,9 +17,12 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * BasePath represents a path sequence in the Firestore database. It is composed of an ordered
@@ -90,31 +93,84 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
    */
   @Override
   public int compareTo(@NonNull B o) {
-    int i = 0;
+    if (o == this) {
+      return 0;
+    }
+
+    NumericIdBySegmentIndexInfo myNumericIdBySegmentIndexInfo =
+        getOrCreateNumericIdBySegmentIndexInfo();
+    NumericIdBySegmentIndexInfo theirNumericIdBySegmentIndexInfo =
+        o.getOrCreateNumericIdBySegmentIndexInfo();
+
     int myLength = length();
     int theirLength = o.length();
-    while (i < myLength && i < theirLength) {
-      int localCompare = compareSegments(getSegment(i), o.getSegment(i));
-      if (localCompare != 0) {
-        return localCompare;
+    for (int i = 0; i < myLength && i < theirLength; i++) {
+      boolean myIsNumericId = myNumericIdBySegmentIndexInfo.isBySegmentIndex(i);
+      boolean theirIsNumericId = theirNumericIdBySegmentIndexInfo.isBySegmentIndex(i);
+      if (myIsNumericId != theirIsNumericId) {
+        return myIsNumericId ? -1 : 1;
       }
-      i++;
+
+      if (myIsNumericId) {
+        long myNumericId = myNumericIdBySegmentIndexInfo.valueBySegmentIndex(i);
+        long theirNumericId = theirNumericIdBySegmentIndexInfo.valueBySegmentIndex(i);
+        int numericIdCompareResult = Long.compare(myNumericId, theirNumericId);
+        if (numericIdCompareResult != 0) {
+          return numericIdCompareResult;
+        }
+      } else {
+        int utf8CompareResult = Util.compareUtf8Strings(getSegment(i), o.getSegment(i));
+        if (utf8CompareResult != 0) {
+          return utf8CompareResult;
+        }
+      }
     }
     return Integer.compare(myLength, theirLength);
   }
 
-  private static int compareSegments(String lhs, String rhs) {
-    boolean isLhsNumeric = isNumericId(lhs);
-    boolean isRhsNumeric = isNumericId(rhs);
+  @Nullable private volatile NumericIdBySegmentIndexInfo numericIdBySegmentIndexInfo;
 
-    if (isLhsNumeric && !isRhsNumeric) { // Only lhs is numeric
-      return -1;
-    } else if (!isLhsNumeric && isRhsNumeric) { // Only rhs is numeric
-      return 1;
-    } else if (isLhsNumeric && isRhsNumeric) { // both numeric
-      return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
-    } else { // both string
-      return Util.compareUtf8Strings(lhs, rhs);
+  NumericIdBySegmentIndexInfo getOrCreateNumericIdBySegmentIndexInfo() {
+    if (numericIdBySegmentIndexInfo != null) {
+      return numericIdBySegmentIndexInfo;
+    }
+
+    BitSet isBySegmentIndex = null;
+    long[] valueBySegmentIndex = null;
+
+    for (int i = segments.size() - 1; i >= 0; --i) {
+      String segment = segments.get(i);
+      if (!isNumericId(segment)) {
+        continue;
+      }
+      if (isBySegmentIndex == null) {
+        isBySegmentIndex = new BitSet(segments.size());
+        valueBySegmentIndex = new long[segments.size()];
+      }
+      isBySegmentIndex.set(i);
+      valueBySegmentIndex[i] = extractNumericId(segment);
+    }
+
+    numericIdBySegmentIndexInfo =
+        new NumericIdBySegmentIndexInfo(isBySegmentIndex, valueBySegmentIndex);
+    return numericIdBySegmentIndexInfo;
+  }
+
+  private static final class NumericIdBySegmentIndexInfo {
+    private final BitSet isBySegmentIndex;
+    private long[] valueBySegmentIndex;
+
+    NumericIdBySegmentIndexInfo(BitSet isBySegmentIndex, long[] valueBySegmentIndex) {
+      this.isBySegmentIndex = isBySegmentIndex;
+      this.valueBySegmentIndex = valueBySegmentIndex;
+    }
+
+    boolean isBySegmentIndex(int index) {
+      return isBySegmentIndex != null && isBySegmentIndex.get(index);
+    }
+
+    long valueBySegmentIndex(int index) {
+      return valueBySegmentIndex[index];
     }
   }
 
@@ -124,7 +180,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   }
 
   private static long extractNumericId(String segment) {
-    return Long.parseLong(segment.substring(4, segment.length() - 2));
+    return Long.parseLong(segment, 4, segment.length() - 2, 10);
   }
 
   /** @return Returns the last segment of the path */
@@ -197,12 +253,18 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return (o instanceof BasePath) && compareTo((B) o) == 0;
   }
 
+  private volatile boolean memoizedHashCodeValid;
+  private volatile int memoizedHashCode;
+
   @Override
   public int hashCode() {
-    int prime = 37;
-    int result = 1;
-    result = prime * result + getClass().hashCode();
-    result = prime * result + segments.hashCode();
-    return result;
+    if (memoizedHashCodeValid) {
+      return memoizedHashCode;
+    }
+
+    memoizedHashCode = Objects.hash(getClass(), segments);
+    memoizedHashCodeValid = true;
+
+    return memoizedHashCode;
   }
 }
