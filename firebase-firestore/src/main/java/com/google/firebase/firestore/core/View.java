@@ -19,8 +19,8 @@ import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashMap;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.model.Document;
@@ -30,6 +30,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -45,7 +46,7 @@ public class View {
     private DocumentChanges(
         DocumentSet newDocuments,
         DocumentViewChangeSet changes,
-        ImmutableSortedSet<DocumentKey> mutatedKeys,
+        ImmutableHashSet<DocumentKey> mutatedKeys,
         boolean needsRefill) {
       this.documentSet = newDocuments;
       this.changeSet = changes;
@@ -61,7 +62,7 @@ public class View {
 
     private final boolean needsRefill;
 
-    final ImmutableSortedSet<DocumentKey> mutatedKeys;
+    final ImmutableHashSet<DocumentKey> mutatedKeys;
 
     /**
      * Whether the set of documents passed in was not sufficient to calculate the new state of the
@@ -86,21 +87,21 @@ public class View {
   private DocumentSet documentSet;
 
   /** Documents included in the remote target */
-  private ImmutableSortedSet<DocumentKey> syncedDocuments;
+  private ImmutableHashSet<DocumentKey> syncedDocuments;
 
   /** Documents in the view but not in the remote target */
-  private ImmutableSortedSet<DocumentKey> limboDocuments;
+  private ImmutableHashSet<DocumentKey> limboDocuments;
 
   /** Documents that have local changes */
-  private ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private ImmutableHashSet<DocumentKey> mutatedKeys;
 
-  public View(Query query, ImmutableSortedSet<DocumentKey> remoteDocuments) {
+  public View(Query query, ImmutableHashSet<DocumentKey> remoteDocuments) {
     this.query = query;
     syncState = SyncState.NONE;
     documentSet = DocumentSet.emptySet(query.comparator());
     syncedDocuments = remoteDocuments;
-    limboDocuments = DocumentKey.emptyKeySet();
-    mutatedKeys = DocumentKey.emptyKeySet();
+    limboDocuments = ImmutableHashSet.emptySet();
+    mutatedKeys = ImmutableHashSet.emptySet();
   }
 
   public SyncState getSyncState() {
@@ -115,7 +116,7 @@ public class View {
    * @param docChanges The doc changes to apply to this view.
    * @return a new set of docs, changes, and refill flag.
    */
-  public DocumentChanges computeDocChanges(ImmutableSortedMap<DocumentKey, Document> docChanges) {
+  public DocumentChanges computeDocChanges(ImmutableHashMap<DocumentKey, Document> docChanges) {
     return computeDocChanges(docChanges, null);
   }
 
@@ -130,15 +131,14 @@ public class View {
    * @return a new set of docs, changes, and refill flag.
    */
   public DocumentChanges computeDocChanges(
-      ImmutableSortedMap<DocumentKey, Document> docChanges,
+      ImmutableHashMap<DocumentKey, Document> docChanges,
       @Nullable DocumentChanges previousChanges) {
     final DocumentViewChangeSet changeSet =
         previousChanges != null ? previousChanges.changeSet : new DocumentViewChangeSet();
     final DocumentSet oldDocumentSet =
         previousChanges != null ? previousChanges.documentSet : documentSet;
-    final ImmutableSortedSet.Builder<DocumentKey> newMutatedKeys =
-        new ImmutableSortedSet.Builder<>(
-            previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys);
+    final HashSet<DocumentKey> newMutatedKeys =
+        (previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys).toHashSet();
     final DocumentSet.Builder newDocumentSet = new DocumentSet.Builder(oldDocumentSet);
     boolean needsRefill = false;
 
@@ -159,7 +159,7 @@ public class View {
             ? oldDocumentSet.getFirstDocument()
             : null;
 
-    for (Map.Entry<DocumentKey, Document> entry : docChanges) {
+    for (Map.Entry<DocumentKey, Document> entry : docChanges.entrySet()) {
       DocumentKey key = entry.getKey();
       Document oldDoc = oldDocumentSet.getDocument(key);
       Document newDoc = query.matches(entry.getValue()) ? entry.getValue() : null;
@@ -214,7 +214,7 @@ public class View {
         if (newDoc != null) {
           newDocumentSet.add(newDoc);
           if (newDoc.hasLocalMutations()) {
-            newMutatedKeys.insert(newDoc.getKey());
+            newMutatedKeys.add(newDoc.getKey());
           } else {
             newMutatedKeys.remove(newDoc.getKey());
           }
@@ -245,7 +245,10 @@ public class View {
         "View was refilled using docs that themselves needed refilling.");
 
     return new DocumentChanges(
-        newDocumentSet.build(), changeSet, newMutatedKeys.build(), needsRefill);
+        newDocumentSet.build(),
+        changeSet,
+        ImmutableHashSet.withDelegateSet(newMutatedKeys),
+        needsRefill);
   }
 
   private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {
@@ -379,18 +382,20 @@ public class View {
 
   private void applyTargetChange(TargetChange targetChange) {
     if (targetChange != null) {
+      HashSet<DocumentKey> newSyncedDocuments = syncedDocuments.toHashSet();
       for (DocumentKey documentKey : targetChange.getAddedDocuments()) {
-        syncedDocuments = syncedDocuments.insert(documentKey);
+        newSyncedDocuments.add(documentKey);
       }
       for (DocumentKey documentKey : targetChange.getModifiedDocuments()) {
         hardAssert(
-            syncedDocuments.contains(documentKey),
+            newSyncedDocuments.contains(documentKey),
             "Modified document %s not found in view.",
             documentKey);
       }
       for (DocumentKey documentKey : targetChange.getRemovedDocuments()) {
-        syncedDocuments = syncedDocuments.remove(documentKey);
+        newSyncedDocuments.remove(documentKey);
       }
+      syncedDocuments = ImmutableHashSet.withDelegateSet(newSyncedDocuments);
       current = targetChange.isCurrent();
     }
   }
@@ -403,13 +408,14 @@ public class View {
 
     // TODO: Do this incrementally so that it's not quadratic when updating many
     // documents.
-    ImmutableSortedSet<DocumentKey> oldLimboDocs = limboDocuments;
-    limboDocuments = DocumentKey.emptyKeySet();
+    ImmutableHashSet<DocumentKey> oldLimboDocs = limboDocuments;
+    HashSet<DocumentKey> newLimboDocs = new HashSet<>();
     for (Document doc : documentSet) {
       if (shouldBeLimboDoc(doc.getKey())) {
-        limboDocuments = limboDocuments.insert(doc.getKey());
+        newLimboDocs.add(doc.getKey());
       }
     }
+    limboDocuments = ImmutableHashSet.withDelegateSet(newLimboDocs);
 
     // Diff the new limbo docs with the old limbo docs.
     List<LimboDocumentChange> changes =
@@ -451,7 +457,7 @@ public class View {
     return true;
   }
 
-  ImmutableSortedSet<DocumentKey> getLimboDocuments() {
+  ImmutableHashSet<DocumentKey> getLimboDocuments() {
     return limboDocuments;
   }
 
@@ -459,7 +465,7 @@ public class View {
    * @return The set of documents that the server has told us belongs to the target associated with
    *     this view.
    */
-  ImmutableSortedSet<DocumentKey> getSyncedDocuments() {
+  ImmutableHashSet<DocumentKey> getSyncedDocuments() {
     return syncedDocuments;
   }
 

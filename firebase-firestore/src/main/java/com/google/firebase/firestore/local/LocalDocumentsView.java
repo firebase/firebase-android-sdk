@@ -14,13 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -102,8 +100,8 @@ class LocalDocumentsView {
    * <p>If we don't have cached state for a document in {@code keys}, a NoDocument will be stored
    * for that key in the resulting set.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
+  HashMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
+    HashMap<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
     return getLocalViewOfDocuments(docs, new HashSet<>());
   }
 
@@ -115,14 +113,14 @@ class LocalDocumentsView {
    * @param existenceStateChanged The set of document keys whose existence state is changed. This is
    *     useful to determine if some documents overlay needs to be recalculated.
    */
-  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
+  HashMap<DocumentKey, Document> getLocalViewOfDocuments(
       Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
     Map<DocumentKey, Overlay> overlays = new HashMap<>();
     populateOverlays(overlays, docs.keySet());
-    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+    HashMap<DocumentKey, Document> result = new HashMap<>();
     for (Map.Entry<DocumentKey, OverlayedDocument> entry :
         computeViews(docs, overlays, existenceStateChanged).entrySet()) {
-      result = result.insert(entry.getKey(), entry.getValue().getDocument());
+      result.put(entry.getKey(), entry.getValue().getDocument());
     }
 
     return result;
@@ -261,7 +259,7 @@ class LocalDocumentsView {
    * @param context A optional tracker to keep a record of important details during database local
    *     query execution.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  HashMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
@@ -279,41 +277,35 @@ class LocalDocumentsView {
    * @param query The query to match documents against.
    * @param offset Read time and key to start scanning by (exclusive).
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
+  HashMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query, IndexOffset offset) {
     return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
 
   /** Performs a simple document lookup for the given path. */
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(
-      ResourcePath path) {
-    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+  private HashMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(ResourcePath path) {
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));
+    HashMap<DocumentKey, Document> results = new HashMap<>();
     if (doc.isFoundDocument()) {
-      result = result.insert(doc.getKey(), doc);
+      results.put(doc.getKey(), doc);
     }
-    return result;
+    return results;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
+  private HashMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
     String collectionId = query.getCollectionGroup();
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    HashMap<DocumentKey, Document> results = new HashMap<>();
     List<ResourcePath> parents = indexManager.getCollectionParents(collectionId);
 
     // Perform a collection query against each parent that contains the collectionId and
     // aggregate the results.
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
-      ImmutableSortedMap<DocumentKey, Document> collectionResults =
-          getDocumentsMatchingCollectionQuery(collectionQuery, offset, context);
-      for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
-      }
+      results.putAll(getDocumentsMatchingCollectionQuery(collectionQuery, offset, context));
     }
     return results;
   }
@@ -374,7 +366,7 @@ class LocalDocumentsView {
     overlays.putAll(documentOverlayCache.getOverlays(missingOverlays));
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
+  private HashMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
@@ -390,7 +382,7 @@ class LocalDocumentsView {
     }
 
     // Apply the overlays and match against the query.
-    ImmutableSortedMap.Builder<DocumentKey, Document> results = emptyDocumentMap().toBuilder();
+    HashMap<DocumentKey, Document> results = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
@@ -400,11 +392,11 @@ class LocalDocumentsView {
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
+        results.put(docEntry.getKey(), docEntry.getValue());
       }
     }
 
-    return results.build();
+    return results;
   }
 
   /** Returns a base document that can be used to apply `overlay`. */

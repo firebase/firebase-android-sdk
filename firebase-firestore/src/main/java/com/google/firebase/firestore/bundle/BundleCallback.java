@@ -14,11 +14,12 @@
 
 package com.google.firebase.firestore.bundle;
 
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashMap;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
+import java.util.HashMap;
 
 /** Interface implemented by components that can apply changes from a bundle to local storage. */
 public interface BundleCallback {
@@ -26,12 +27,14 @@ public interface BundleCallback {
    * Applies the documents from a bundle to the "ground-state" (remote) documents.
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
+   *
+   * @return a newly created {@link HashMap} with the applied documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> applyBundledDocuments(
-      ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId);
+  HashMap<DocumentKey, Document> applyBundledDocuments(
+      ImmutableHashMap<DocumentKey, MutableDocument> documents, String bundleId);
 
   /** Saves the given NamedQuery to local persistence. */
-  void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys);
+  void saveNamedQuery(NamedQuery namedQuery, ImmutableHashSet<DocumentKey> documentKeys);
 
   /** Saves the given BundleMetadata to local persistence. */
   void saveBundle(BundleMetadata bundleMetadata);

@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.firstNEntries;
@@ -22,7 +21,7 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.local.LocalSerializer.LazyMutableDocument;
 import com.google.firebase.firestore.model.Document;
@@ -41,7 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,12 +136,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (keys.isEmpty()) return;
 
     List<Object> encodedPaths = new ArrayList<>();
-    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    HashMap<DocumentKey, Document> deletedDocs = new HashMap<>();
 
     for (DocumentKey key : keys) {
       encodedPaths.add(EncodedPath.encode(key.getPath()));
-      deletedDocs =
-          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+      deletedDocs.put(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
     }
 
     SQLitePersistence.LongQuery longQuery =
@@ -153,7 +150,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       longQuery.executeNextSubquery();
     }
 
-    indexManager.updateIndexEntries(deletedDocs);
+    indexManager.updateIndexEntries(ImmutableHashMap.withDelegateMap(deletedDocs));
   }
 
   @Override
@@ -162,8 +159,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
-    Map<DocumentKey, MutableDocument> results = new HashMap<>();
+  public HashMap<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
+    HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
     List<Object> bindVars = new ArrayList<>();
     for (DocumentKey key : documentKeys) {
       bindVars.add(EncodedPath.encode(key.getPath()));
@@ -216,7 +213,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(
+  public HashMap<DocumentKey, MutableDocument> getAll(
       String collectionGroup, IndexOffset offset, int limit) {
     List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
     List<ResourcePath> collections = new ArrayList<>(collectionParents.size());
@@ -225,12 +222,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     if (collections.isEmpty()) {
-      return Collections.emptyMap();
+      return new HashMap<>();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
       return getAll(collections, offset, limit, /*filter*/ null);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
-      Map<DocumentKey, MutableDocument> results = new HashMap<>();
+      HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
       int pageSize = SQLitePersistence.MAX_ARGS / BINDS_PER_STATEMENT;
       for (int i = 0; i < collections.size(); i += pageSize) {
         results.putAll(
@@ -247,7 +244,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * Returns the next {@code count} documents from the provided collections, ordered by read time.
    */
-  private Map<DocumentKey, MutableDocument> getAll(
+  private HashMap<DocumentKey, MutableDocument> getAll(
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
@@ -308,7 +305,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     sql.append(" ORDER BY read_time_seconds, read_time_nanos, path");
     sql.append(" LIMIT ?").append(countBindingNum);
 
-    Map<DocumentKey, MutableDocument> results = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars.toArray())
         .forEach(
@@ -351,7 +348,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
   }
 
-  private Map<DocumentKey, MutableDocument> getAll(
+  private HashMap<DocumentKey, MutableDocument> getAll(
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
@@ -361,13 +358,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,

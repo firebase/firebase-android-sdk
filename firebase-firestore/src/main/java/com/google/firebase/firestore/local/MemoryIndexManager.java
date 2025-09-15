@@ -16,7 +16,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -115,7 +115,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
+  public void updateIndexEntries(ImmutableHashMap<DocumentKey, Document> documents) {
     // Field indices are not supported with memory persistence.
   }
 

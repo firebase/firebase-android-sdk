@@ -20,7 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static org.mockito.Mockito.mock;
 
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.Assert;
@@ -86,13 +87,13 @@ public class TestUtil {
       boolean isFromCache,
       boolean hasCachedResults) {
     DocumentSet.Builder oldDocuments = docSet(Document.KEY_COMPARATOR).toBuilder();
-    ImmutableSortedSet.Builder<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet().toBuilder();
+    HashSet<DocumentKey> mutatedKeys = new HashSet<>();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         doc.setHasCommittedMutations();
-        mutatedKeys.insert(key(docKey));
+        mutatedKeys.add(key(docKey));
       }
       oldDocuments.add(doc);
     }
@@ -103,7 +104,7 @@ public class TestUtil {
       MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         docToAdd.setHasCommittedMutations();
-        mutatedKeys.insert(key(docKey));
+        mutatedKeys.add(key(docKey));
       }
       newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
@@ -115,7 +116,7 @@ public class TestUtil {
             oldDocuments.build(),
             documentChanges,
             isFromCache,
-            mutatedKeys.build(),
+            ImmutableHashSet.withDelegateSet(mutatedKeys),
             /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false,
             hasCachedResults);

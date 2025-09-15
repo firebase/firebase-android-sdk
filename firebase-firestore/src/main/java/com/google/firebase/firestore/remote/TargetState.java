@@ -16,11 +16,12 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /** Tracks the internal state of a Watch target. */
@@ -88,22 +89,22 @@ final class TargetState {
    * <p>To reset the document changes after raising this snapshot, call `clearChanges()`.
    */
   TargetChange toTargetChange() {
-    ImmutableSortedSet<DocumentKey> addedDocuments = DocumentKey.emptyKeySet();
-    ImmutableSortedSet<DocumentKey> modifiedDocuments = DocumentKey.emptyKeySet();
-    ImmutableSortedSet<DocumentKey> removedDocuments = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> addedDocuments = new HashSet<>();
+    HashSet<DocumentKey> modifiedDocuments = new HashSet<>();
+    HashSet<DocumentKey> removedDocuments = new HashSet<>();
 
     for (Map.Entry<DocumentKey, DocumentViewChange.Type> entry : this.documentChanges.entrySet()) {
       DocumentKey key = entry.getKey();
       DocumentViewChange.Type changeType = entry.getValue();
       switch (changeType) {
         case ADDED:
-          addedDocuments = addedDocuments.insert(key);
+          addedDocuments.add(key);
           break;
         case MODIFIED:
-          modifiedDocuments = modifiedDocuments.insert(key);
+          modifiedDocuments.add(key);
           break;
         case REMOVED:
-          removedDocuments = removedDocuments.insert(key);
+          removedDocuments.add(key);
           break;
         default:
           throw fail("Encountered invalid change type: %s", changeType);
@@ -111,7 +112,11 @@ final class TargetState {
     }
 
     return new TargetChange(
-        resumeToken, current, addedDocuments, modifiedDocuments, removedDocuments);
+        resumeToken,
+        current,
+        ImmutableHashSet.withDelegateSet(addedDocuments),
+        ImmutableHashSet.withDelegateSet(modifiedDocuments),
+        ImmutableHashSet.withDelegateSet(removedDocuments));
   }
 
   /** Resets the document changes and sets `hasPendingChanges` to false. */

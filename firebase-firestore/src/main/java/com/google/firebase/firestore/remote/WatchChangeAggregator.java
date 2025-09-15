@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -51,7 +51,7 @@ public class WatchChangeAggregator {
      * Returns the set of remote document keys for the given target ID as of the last raised
      * snapshot or an empty set of document keys for unknown targets.
      */
-    ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
+    ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId);
 
     /**
      * Returns the TargetData for an active target ID or 'null' if this query is unknown or has
@@ -297,7 +297,7 @@ public class WatchChangeAggregator {
    * documents removed.
    */
   private int filterRemovedDocuments(BloomFilter bloomFilter, int targetId) {
-    ImmutableSortedSet<DocumentKey> existingKeys =
+    ImmutableHashSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
     String rootDocumentsPath =
@@ -523,7 +523,7 @@ public class WatchChangeAggregator {
 
     // Trigger removal for any documents currently mapped to this target. These removals will be
     // part of the initial snapshot if Watch does not resend these documents.
-    ImmutableSortedSet<DocumentKey> existingKeys =
+    ImmutableHashSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     for (DocumentKey key : existingKeys) {
       removeDocumentFromTarget(targetId, key, null);
@@ -532,7 +532,7 @@ public class WatchChangeAggregator {
 
   /** Returns whether the LocalStore considers the document to be part of the specified target. */
   private boolean targetContainsDocument(int targetId, DocumentKey key) {
-    ImmutableSortedSet<DocumentKey> existingKeys =
+    ImmutableHashSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     return existingKeys.contains(key);
   }

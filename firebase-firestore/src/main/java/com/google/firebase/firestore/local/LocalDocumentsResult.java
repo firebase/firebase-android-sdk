@@ -14,11 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
-
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -29,28 +28,28 @@ import java.util.Map;
  */
 public final class LocalDocumentsResult {
   private final int batchId;
-  private final ImmutableSortedMap<DocumentKey, Document> documents;
+  private final ImmutableHashMap<DocumentKey, Document> documents;
 
-  LocalDocumentsResult(int batchId, ImmutableSortedMap<DocumentKey, Document> documents) {
+  LocalDocumentsResult(int batchId, ImmutableHashMap<DocumentKey, Document> documents) {
     this.batchId = batchId;
     this.documents = documents;
   }
 
   public static LocalDocumentsResult fromOverlayedDocuments(
       int batchId, Map<DocumentKey, OverlayedDocument> overlays) {
-    ImmutableSortedMap<DocumentKey, Document> documents = emptyDocumentMap();
+    HashMap<DocumentKey, Document> documents = new HashMap<>();
     for (Map.Entry<DocumentKey, OverlayedDocument> entry : overlays.entrySet()) {
-      documents = documents.insert(entry.getKey(), entry.getValue().getDocument());
+      documents.put(entry.getKey(), entry.getValue().getDocument());
     }
 
-    return new LocalDocumentsResult(batchId, documents);
+    return new LocalDocumentsResult(batchId, ImmutableHashMap.withDelegateMap(documents));
   }
 
   public int getBatchId() {
     return batchId;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getDocuments() {
+  public ImmutableHashMap<DocumentKey, Document> getDocuments() {
     return documents;
   }
 }

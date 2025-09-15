@@ -20,7 +20,7 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -63,10 +63,10 @@ interface RemoteDocumentCache {
    * Looks up a set of entries in the cache.
    *
    * @param documentKeys The keys of the entries to look up.
-   * @return The cached document entries indexed by key. If an entry is not cached, the
-   *     corresponding key will be mapped to an invalid document
+   * @return A newly created map with the cached document entries indexed by key. If an entry is
+   *     not cached, the corresponding key will be mapped to an invalid document
    */
-  Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
+  HashMap<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Looks up the next {@code limit} documents for a collection group based on the provided offset.
@@ -77,7 +77,8 @@ interface RemoteDocumentCache {
    * @param limit The maximum number of results to return.
    * @return A newly created map with next set of documents.
    */
-  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
+  HashMap<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int limit);
 
   /**
    * Returns the documents that match the given query.
@@ -88,7 +89,7 @@ interface RemoteDocumentCache {
    *     regardless whether they match the given query.
    * @return A newly created map with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 
   /**
@@ -102,7 +103,7 @@ interface RemoteDocumentCache {
    *     query execution.
    * @return A newly created map with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,

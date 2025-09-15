@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashMap;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.LoadBundleTask;
@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -400,8 +401,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
     }
 
-    ImmutableSortedMap<DocumentKey, Document> changes = localStore.applyRemoteEvent(event);
-    emitNewSnapsAndNotifyLocalStore(changes, event);
+    HashMap<DocumentKey, Document> changes = localStore.applyRemoteEvent(event);
+    emitNewSnapsAndNotifyLocalStore(ImmutableHashMap.withDelegateMap(changes), event);
   }
 
   /** Applies an OnlineState change to the sync engine and notifies any views of the change. */
@@ -423,22 +424,21 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+  public ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
     LimboResolution limboResolution = activeLimboResolutionsByTarget.get(targetId);
+    HashSet<DocumentKey> remoteKeys = new HashSet<>();
     if (limboResolution != null && limboResolution.receivedDocument) {
-      return DocumentKey.emptyKeySet().insert(limboResolution.key);
+      return ImmutableHashSet.of(limboResolution.key);
     } else {
-      ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
       if (queriesByTarget.containsKey(targetId)) {
         for (Query query : queriesByTarget.get(targetId)) {
           if (queryViewsByQuery.containsKey(query)) {
-            remoteKeys =
-                remoteKeys.unionWith(queryViewsByQuery.get(query).getView().getSyncedDocuments());
+            remoteKeys.addAll(queryViewsByQuery.get(query).getView().getSyncedDocuments().asSet());
           }
         }
       }
 
-      return remoteKeys;
+      return ImmutableHashSet.withDelegateSet(remoteKeys);
     }
   }
 
@@ -490,19 +490,20 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
 
-    ImmutableSortedMap<DocumentKey, Document> changes =
-        localStore.acknowledgeBatch(mutationBatchResult);
+    HashMap<DocumentKey, Document> changes = localStore.acknowledgeBatch(mutationBatchResult);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
+    emitNewSnapsAndNotifyLocalStore(
+        ImmutableHashMap.withDelegateMap(changes), /* remoteEvent= */ null);
   }
 
   @Override
   public void handleRejectedWrite(int batchId, Status status) {
     assertCallback("handleRejectedWrite");
-    ImmutableSortedMap<DocumentKey, Document> changes = localStore.rejectBatch(batchId);
+    HashMap<DocumentKey, Document> changes = localStore.rejectBatch(batchId);
+    DocumentKey minKey = Collections.min(changes.keySet());
 
     if (!changes.isEmpty()) {
-      logErrorIfInteresting(status, "Write failed at %s", changes.getMinKey().getPath());
+      logErrorIfInteresting(status, "Write failed at %s", minKey.getPath());
     }
 
     // The local store may or may not be able to apply the write result and raise events immediately
@@ -512,7 +513,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     resolvePendingWriteTasks(batchId);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
+    emitNewSnapsAndNotifyLocalStore(
+        ImmutableHashMap.withDelegateMap(changes), /* remoteEvent= */ null);
   }
 
   /**
@@ -592,11 +594,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         }
       }
 
-      ImmutableSortedMap<DocumentKey, Document> changes = bundleLoader.applyChanges();
+      HashMap<DocumentKey, Document> changes = bundleLoader.applyChanges();
 
       // TODO(b/160876443): This currently raises snapshots with `fromCache=false` if users already
       // listen to some queries and bundles has newer version.
-      emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
+      emitNewSnapsAndNotifyLocalStore(
+          ImmutableHashMap.withDelegateMap(changes), /* remoteEvent= */ null);
 
       // Save metadata, so loading the same bundle will skip.
       localStore.saveBundle(bundleMetadata);
@@ -645,7 +648,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
     queriesByTarget.remove(targetId);
 
-    ImmutableSortedSet<DocumentKey> limboKeys = limboDocumentRefs.referencesForId(targetId);
+    HashSet<DocumentKey> limboKeys = limboDocumentRefs.referencesForId(targetId);
     limboDocumentRefs.removeReferencesForId(targetId);
     for (DocumentKey key : limboKeys) {
       if (!limboDocumentRefs.containsKey(key)) {
@@ -673,7 +676,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * snapshot.
    */
   private void emitNewSnapsAndNotifyLocalStore(
-      ImmutableSortedMap<DocumentKey, Document> changes, @Nullable RemoteEvent remoteEvent) {
+      ImmutableHashMap<DocumentKey, Document> changes, @Nullable RemoteEvent remoteEvent) {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 
@@ -789,8 +792,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // Fails tasks waiting for pending writes requested by previous user.
       failOutstandingPendingWritesAwaitingTasks();
       // Notify local store and emit any resulting events from swapping out the mutation queue.
-      ImmutableSortedMap<DocumentKey, Document> changes = localStore.handleUserChange(user);
-      emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
+      HashMap<DocumentKey, Document> changes = localStore.handleUserChange(user);
+      emitNewSnapsAndNotifyLocalStore(
+          ImmutableHashMap.withDelegateMap(changes), /* remoteEvent= */ null);
     }
 
     // Notify remote store so it can restart its streams.

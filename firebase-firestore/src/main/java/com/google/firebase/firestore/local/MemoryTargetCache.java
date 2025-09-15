@@ -16,12 +16,13 @@ package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -140,7 +141,7 @@ final class MemoryTargetCache implements TargetCache {
   // Reference tracking
 
   @Override
-  public void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
+  public void addMatchingKeys(ImmutableHashSet<DocumentKey> keys, int targetId) {
     references.addReferences(keys, targetId);
     ReferenceDelegate referenceDelegate = persistence.getReferenceDelegate();
     for (DocumentKey key : keys) {
@@ -149,7 +150,7 @@ final class MemoryTargetCache implements TargetCache {
   }
 
   @Override
-  public void removeMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
+  public void removeMatchingKeys(ImmutableHashSet<DocumentKey> keys, int targetId) {
     references.removeReferences(keys, targetId);
     ReferenceDelegate referenceDelegate = persistence.getReferenceDelegate();
     for (DocumentKey key : keys) {
@@ -163,7 +164,7 @@ final class MemoryTargetCache implements TargetCache {
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
+  public HashSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
     return references.referencesForId(targetId);
   }
 

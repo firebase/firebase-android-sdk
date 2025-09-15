@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -127,5 +127,5 @@ public interface IndexManager {
   void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset);
 
   /** Updates the index entries for the provided documents. */
-  void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents);
+  void updateIndexEntries(ImmutableHashMap<DocumentKey, Document> documents);
 }

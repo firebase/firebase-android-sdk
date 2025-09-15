@@ -30,6 +30,8 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableHashMap;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
@@ -355,12 +357,12 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
-    ImmutableSortedMap<DocumentKey, Document> res = emptyDocumentMap();
+  public static ImmutableHashMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
+    HashMap<DocumentKey, Document> res = new HashMap<>();
     for (MutableDocument doc : docs) {
-      res = res.insert(doc.getKey(), doc);
+      res.put(doc.getKey(), doc);
     }
-    return res;
+    return ImmutableHashMap.withDelegateMap(res);
   }
 
   public static TargetChange targetChange(
@@ -369,30 +371,34 @@ public class TestUtil {
       @Nullable Collection<MutableDocument> addedDocuments,
       @Nullable Collection<MutableDocument> modifiedDocuments,
       @Nullable Collection<? extends MutableDocument> removedDocuments) {
-    ImmutableSortedSet<DocumentKey> addedDocumentKeys = DocumentKey.emptyKeySet();
-    ImmutableSortedSet<DocumentKey> modifiedDocumentKeys = DocumentKey.emptyKeySet();
-    ImmutableSortedSet<DocumentKey> removedDocumentKeys = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> addedDocumentKeys = new HashSet<>();
+    HashSet<DocumentKey> modifiedDocumentKeys = new HashSet<>();
+    HashSet<DocumentKey> removedDocumentKeys = new HashSet<>();
 
     if (addedDocuments != null) {
       for (MutableDocument document : addedDocuments) {
-        addedDocumentKeys = addedDocumentKeys.insert(document.getKey());
+        addedDocumentKeys.add(document.getKey());
       }
     }
 
     if (modifiedDocuments != null) {
       for (MutableDocument document : modifiedDocuments) {
-        modifiedDocumentKeys = modifiedDocumentKeys.insert(document.getKey());
+        modifiedDocumentKeys.add(document.getKey());
       }
     }
 
     if (removedDocuments != null) {
       for (MutableDocument document : removedDocuments) {
-        removedDocumentKeys = removedDocumentKeys.insert(document.getKey());
+        removedDocumentKeys.add(document.getKey());
       }
     }
 
     return new TargetChange(
-        resumeToken, current, addedDocumentKeys, modifiedDocumentKeys, removedDocumentKeys);
+        resumeToken,
+        current,
+        ImmutableHashSet.withDelegateSet(addedDocumentKeys),
+        ImmutableHashSet.withDelegateSet(modifiedDocumentKeys),
+        ImmutableHashSet.withDelegateSet(removedDocumentKeys));
   }
 
   public static TargetChange ackTarget(MutableDocument... docs) {
@@ -483,8 +489,8 @@ public class TestUtil {
             TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
-              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-                return DocumentKey.emptyKeySet();
+              public ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+                return ImmutableHashSet.emptySet();
               }
 
               @Override
@@ -530,8 +536,8 @@ public class TestUtil {
             TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
-              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-                return DocumentKey.emptyKeySet().insert(doc.getKey());
+              public ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+                return ImmutableHashSet.of(doc.getKey());
               }
 
               @Override
@@ -623,15 +629,19 @@ public class TestUtil {
 
   public static LocalViewChanges viewChanges(
       int targetId, boolean fromCache, List<String> addedKeys, List<String> removedKeys) {
-    ImmutableSortedSet<DocumentKey> added = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> added = new HashSet<>();
     for (String keyPath : addedKeys) {
-      added = added.insert(key(keyPath));
+      added.add(key(keyPath));
     }
-    ImmutableSortedSet<DocumentKey> removed = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> removed = new HashSet<>();
     for (String keyPath : removedKeys) {
-      removed = removed.insert(key(keyPath));
+      removed.add(key(keyPath));
     }
-    return new LocalViewChanges(targetId, fromCache, added, removed);
+    return new LocalViewChanges(
+        targetId,
+        fromCache,
+        ImmutableHashSet.withDelegateSet(added),
+        ImmutableHashSet.withDelegateSet(removed));
   }
 
   /** Creates a resume token to match the given snapshot version. */

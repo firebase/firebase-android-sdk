@@ -422,13 +422,13 @@ public class Util {
   }
 
   /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
-  public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
+  public static <K, V> HashMap<K, V> firstNEntries(HashMap<K, V> data, int n, Comparator<V> comp) {
     if (data.size() <= n) {
       return data;
     } else {
       List<Map.Entry<K, V>> sortedValues = new ArrayList<>(data.entrySet());
       Collections.sort(sortedValues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
-      Map<K, V> result = new HashMap<>();
+      HashMap<K, V> result = new HashMap<>();
       for (int i = 0; i < n; ++i) {
         result.put(sortedValues.get(i).getKey(), sortedValues.get(i).getValue());
       }

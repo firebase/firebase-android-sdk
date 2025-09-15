@@ -16,11 +16,10 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
-import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -47,7 +46,7 @@ public class ViewSnapshotTest {
     DocumentSet oldDocs = DocumentSet.emptySet(Document.KEY_COMPARATOR);
     List<DocumentViewChange> changes =
         Arrays.asList(DocumentViewChange.create(Type.ADDED, doc("c/foo", 1, map())));
-    ImmutableSortedSet<DocumentKey> mutatedKeys = keySet(key("c/foo"));
+    ImmutableHashSet<DocumentKey> mutatedKeys = ImmutableHashSet.of(key("c/foo"));
     boolean fromCache = true;
     boolean hasPendingWrites = true;
     boolean syncStateChanges = true;

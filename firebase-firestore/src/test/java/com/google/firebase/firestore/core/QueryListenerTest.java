@@ -25,12 +25,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.View.DocumentChanges;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -82,7 +82,7 @@ public class QueryListenerTest {
     QueryListener listener = queryListener(query, accum);
     QueryListener otherListener = queryListener(query, otherAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc2prime);
 
@@ -140,7 +140,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, accum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view);
     TargetChange ackTarget = ackTarget();
     ViewSnapshot snap2 =
@@ -167,7 +167,7 @@ public class QueryListenerTest {
     QueryListener filteredListener = queryListener(query, options1, filteredAccum);
     QueryListener fullListener = queryListener(query, options2, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
 
     TargetChange ackTarget = ackTarget(doc1);
@@ -207,7 +207,7 @@ public class QueryListenerTest {
     QueryListener filteredListener = queryListener(query, options1, filteredAccum);
     QueryListener fullListener = queryListener(query, options2, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime);
     ViewSnapshot snap3 = applyChanges(view, doc3);
@@ -243,7 +243,7 @@ public class QueryListenerTest {
     options.includeQueryMetadataChanges = true;
     QueryListener fullListener = queryListener(query, options, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime);
     ViewSnapshot snap3 = applyChanges(view, doc3);
@@ -287,7 +287,7 @@ public class QueryListenerTest {
     options.includeDocumentMetadataChanges = false;
     QueryListener filteredListener = queryListener(query, options, filteredAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime, doc3);
 
@@ -324,7 +324,7 @@ public class QueryListenerTest {
     options.waitForSyncWhenOnline = true;
     QueryListener listener = queryListener(query, options, events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
     ViewSnapshot snap2 = applyChanges(view, doc2);
     DocumentChanges changes = view.computeDocChanges(docUpdates());
@@ -365,7 +365,7 @@ public class QueryListenerTest {
     options.waitForSyncWhenOnline = true;
     QueryListener listener = queryListener(query, options, events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
     ViewSnapshot snap2 = applyChanges(view, doc2);
 
@@ -411,7 +411,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, new ListenOptions(), events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view);
 
     listener.onOnlineStateChanged(OnlineState.ONLINE); // no event
@@ -439,7 +439,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, new ListenOptions(), events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(query, ImmutableHashSet.emptySet());
     ViewSnapshot snap1 = applyChanges(view);
 
     listener.onOnlineStateChanged(OnlineState.OFFLINE);

@@ -27,7 +27,7 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
@@ -267,10 +267,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
+  public void updateIndexEntries(ImmutableHashMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
 
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
+    for (Map.Entry<DocumentKey, Document> entry : documents.entrySet()) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
         SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(entry.getKey(), fieldIndex);

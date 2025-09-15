@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.protobuf.ByteString;
 
@@ -27,26 +27,26 @@ import com.google.protobuf.ByteString;
 public final class TargetChange {
   private final ByteString resumeToken;
   private final boolean current;
-  private final ImmutableSortedSet<DocumentKey> addedDocuments;
-  private final ImmutableSortedSet<DocumentKey> modifiedDocuments;
-  private final ImmutableSortedSet<DocumentKey> removedDocuments;
+  private final ImmutableHashSet<DocumentKey> addedDocuments;
+  private final ImmutableHashSet<DocumentKey> modifiedDocuments;
+  private final ImmutableHashSet<DocumentKey> removedDocuments;
 
   public static TargetChange createSynthesizedTargetChangeForCurrentChange(
       boolean isCurrent, ByteString resumeToken) {
     return new TargetChange(
         resumeToken,
         isCurrent,
-        DocumentKey.emptyKeySet(),
-        DocumentKey.emptyKeySet(),
-        DocumentKey.emptyKeySet());
+        ImmutableHashSet.emptySet(),
+        ImmutableHashSet.emptySet(),
+        ImmutableHashSet.emptySet());
   }
 
   public TargetChange(
       ByteString resumeToken,
       boolean current,
-      ImmutableSortedSet<DocumentKey> addedDocuments,
-      ImmutableSortedSet<DocumentKey> modifiedDocuments,
-      ImmutableSortedSet<DocumentKey> removedDocuments) {
+      ImmutableHashSet<DocumentKey> addedDocuments,
+      ImmutableHashSet<DocumentKey> modifiedDocuments,
+      ImmutableHashSet<DocumentKey> removedDocuments) {
     this.resumeToken = resumeToken;
     this.current = current;
     this.addedDocuments = addedDocuments;
@@ -76,7 +76,7 @@ public final class TargetChange {
    * Returns the set of documents that were newly assigned to this target as part of this remote
    * event.
    */
-  public ImmutableSortedSet<DocumentKey> getAddedDocuments() {
+  public ImmutableHashSet<DocumentKey> getAddedDocuments() {
     return addedDocuments;
   }
 
@@ -84,14 +84,14 @@ public final class TargetChange {
    * Returns the set of documents that were already assigned to this target but received an update
    * during this remote event.
    */
-  public ImmutableSortedSet<DocumentKey> getModifiedDocuments() {
+  public ImmutableHashSet<DocumentKey> getModifiedDocuments() {
     return modifiedDocuments;
   }
 
   /**
    * Returns the set of documents that were removed from this target as part of this remote event.
    */
-  public ImmutableSortedSet<DocumentKey> getRemovedDocuments() {
+  public ImmutableHashSet<DocumentKey> getRemovedDocuments() {
     return removedDocuments;
   }
 

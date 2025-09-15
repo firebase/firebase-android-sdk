@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.database.collection.ImmutableHashMap;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -65,13 +66,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   public void removeAll(Collection<DocumentKey> keys) {
     hardAssert(indexManager != null, "setIndexManager() not called");
 
-    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    HashMap<DocumentKey, Document> deletedDocs = new HashMap<>();
     for (DocumentKey key : keys) {
       docs = docs.remove(key);
-      deletedDocs =
-          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+
+      deletedDocs.put(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
     }
-    indexManager.updateIndexEntries(deletedDocs);
+    indexManager.updateIndexEntries(ImmutableHashMap.withDelegateMap(deletedDocs));
   }
 
   @Override
@@ -81,8 +82,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MutableDocument> result = new HashMap<>();
+  public HashMap<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
+    HashMap<DocumentKey, MutableDocument> result = new HashMap<>();
     for (DocumentKey key : keys) {
       result.put(key, get(key));
     }
@@ -90,19 +91,19 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(
+  public HashMap<DocumentKey, MutableDocument> getAll(
       String collectionGroup, IndexOffset offset, int limit) {
     // This method should only be called from the IndexBackfiller if SQLite is enabled.
     throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
       @NonNull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
-    Map<DocumentKey, MutableDocument> result = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
@@ -140,7 +141,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }

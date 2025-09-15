@@ -21,12 +21,13 @@ import android.database.sqlite.SQLiteStatement;
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.HashSet;
 
 /** Cached Queries backed by SQLite. */
 final class SQLiteTargetCache implements TargetCache {
@@ -245,7 +246,7 @@ final class SQLiteTargetCache implements TargetCache {
   // Matching key tracking
 
   @Override
-  public void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
+  public void addMatchingKeys(ImmutableHashSet<DocumentKey> keys, int targetId) {
     // PORTING NOTE: The reverse index (document_targets) is maintained by SQLite.
 
     // When updates come in we treat those as added keys, which means these inserts won't
@@ -265,7 +266,7 @@ final class SQLiteTargetCache implements TargetCache {
   }
 
   @Override
-  public void removeMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
+  public void removeMatchingKeys(ImmutableHashSet<DocumentKey> keys, int targetId) {
     // PORTING NOTE: The reverse index (document_targets) is maintained by SQLite.
     SQLiteStatement deleter =
         db.prepare("DELETE FROM target_documents WHERE target_id = ? AND path = ?");
@@ -284,22 +285,17 @@ final class SQLiteTargetCache implements TargetCache {
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
-    final DocumentKeysHolder holder = new DocumentKeysHolder();
+  public HashSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
+    HashSet<DocumentKey> keys = new HashSet<>();
     db.query("SELECT path FROM target_documents WHERE target_id = ?")
         .binding(targetId)
         .forEach(
             row -> {
               String path = row.getString(0);
               DocumentKey key = DocumentKey.fromPath(EncodedPath.decodeResourcePath(path));
-              holder.keys = holder.keys.insert(key);
+              keys.add(key);
             });
-    return holder.keys;
-  }
-
-  // A holder that can accumulate changes to the key set within the closure
-  private static class DocumentKeysHolder {
-    ImmutableSortedSet<DocumentKey> keys = DocumentKey.emptyKeySet();
+    return keys;
   }
 
   @Override

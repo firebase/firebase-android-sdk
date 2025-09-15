@@ -16,8 +16,10 @@ package com.google.firebase.firestore.local;
 
 import static java.util.Collections.emptyList;
 
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.model.DocumentKey;
+import java.util.HashSet;
 import java.util.Iterator;
 
 /**
@@ -59,7 +61,7 @@ public class ReferenceSet {
   }
 
   /** Add references to the given document keys for the given ID. */
-  public void addReferences(ImmutableSortedSet<DocumentKey> keys, int targetOrBatchId) {
+  public void addReferences(ImmutableHashSet<DocumentKey> keys, int targetOrBatchId) {
     for (DocumentKey key : keys) {
       addReference(key, targetOrBatchId);
     }
@@ -71,7 +73,7 @@ public class ReferenceSet {
   }
 
   /** Removes references to the given document keys for the given ID. */
-  public void removeReferences(ImmutableSortedSet<DocumentKey> keys, int targetOrBatchId) {
+  public void removeReferences(ImmutableHashSet<DocumentKey> keys, int targetOrBatchId) {
     for (DocumentKey key : keys) {
       removeReference(key, targetOrBatchId);
     }
@@ -113,16 +115,16 @@ public class ReferenceSet {
   }
 
   /** Returns all of the document keys that have had references added for the given ID. */
-  public ImmutableSortedSet<DocumentKey> referencesForId(int target) {
+  public HashSet<DocumentKey> referencesForId(int target) {
     DocumentKey emptyKey = DocumentKey.empty();
     DocumentReference startRef = new DocumentReference(emptyKey, target);
 
     Iterator<DocumentReference> iterator = referencesByTarget.iteratorFrom(startRef);
-    ImmutableSortedSet<DocumentKey> keys = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> keys = new HashSet<>();
     while (iterator.hasNext()) {
       DocumentReference reference = iterator.next();
       if (reference.getId() == target) {
-        keys = keys.insert(reference.getKey());
+        keys.add(reference.getKey());
       } else {
         break;
       }

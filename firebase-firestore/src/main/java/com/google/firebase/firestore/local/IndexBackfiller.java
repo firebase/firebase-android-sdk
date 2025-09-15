@@ -149,7 +149,7 @@ public class IndexBackfiller {
   /** Returns the next offset based on the provided documents. */
   private IndexOffset getNewOffset(IndexOffset existingOffset, LocalDocumentsResult lookupResult) {
     IndexOffset maxOffset = existingOffset;
-    for (Map.Entry<DocumentKey, Document> entry : lookupResult.getDocuments()) {
+    for (Map.Entry<DocumentKey, Document> entry : lookupResult.getDocuments().entrySet()) {
       IndexOffset newOffset = IndexOffset.fromDocument(entry.getValue());
       if (newOffset.compareTo(maxOffset) > 0) {
         maxOffset = newOffset;

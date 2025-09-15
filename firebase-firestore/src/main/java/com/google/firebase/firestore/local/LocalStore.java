@@ -23,7 +23,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableHashMap;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleCallback;
@@ -51,6 +52,7 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -206,7 +208,7 @@ public final class LocalStore implements BundleCallback {
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
 
-  public ImmutableSortedMap<DocumentKey, Document> handleUserChange(User user) {
+  public HashMap<DocumentKey, Document> handleUserChange(User user) {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
@@ -217,17 +219,17 @@ public final class LocalStore implements BundleCallback {
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Union the old/new changed keys.
-    ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
+    HashSet<DocumentKey> changedKeys = new HashSet<>();
     for (List<MutationBatch> batches : asList(oldBatches, newBatches)) {
       for (MutationBatch batch : batches) {
         for (Mutation mutation : batch.getMutations()) {
-          changedKeys = changedKeys.insert(mutation.getKey());
+          changedKeys.add(mutation.getKey());
         }
       }
     }
 
     // Return the set of all (potentially) changed documents as the result of the user change.
-    return localDocuments.getDocuments(changedKeys);
+    return localDocuments.getDocuments(Collections.unmodifiableSet(changedKeys));
   }
 
   /** Accepts locally generated Mutations and commits them to storage. */
@@ -305,10 +307,9 @@ public final class LocalStore implements BundleCallback {
    *   <li>give the changed documents back the sync engine
    * </ul>
    *
-   * @return The resulting (modified) documents.
+   * @return A newly created map containing the resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, Document> acknowledgeBatch(
-      MutationBatchResult batchResult) {
+  public HashMap<DocumentKey, Document> acknowledgeBatch(MutationBatchResult batchResult) {
     return persistence.runTransaction(
         "Acknowledge batch",
         () -> {
@@ -343,7 +344,7 @@ public final class LocalStore implements BundleCallback {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, Document> rejectBatch(int batchId) {
+  public HashMap<DocumentKey, Document> rejectBatch(int batchId) {
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
 
     return persistence.runTransaction(
@@ -411,7 +412,7 @@ public final class LocalStore implements BundleCallback {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
+  public HashMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -610,7 +611,7 @@ public final class LocalStore implements BundleCallback {
             int targetId = viewChange.getTargetId();
 
             localViewReferences.addReferences(viewChange.getAdded(), targetId);
-            ImmutableSortedSet<DocumentKey> removed = viewChange.getRemoved();
+            ImmutableHashSet<DocumentKey> removed = viewChange.getRemoved();
             for (DocumentKey key : removed) {
               persistence.getReferenceDelegate().removeReference(key);
             }
@@ -731,8 +732,8 @@ public final class LocalStore implements BundleCallback {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> applyBundledDocuments(
-      ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
+  public HashMap<DocumentKey, Document> applyBundledDocuments(
+      ImmutableHashMap<DocumentKey, MutableDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
     // they will not get garbage collected right away.
     TargetData umbrellaTargetData = allocateTarget(newUmbrellaTarget(bundleId));
@@ -740,21 +741,22 @@ public final class LocalStore implements BundleCallback {
     return persistence.runTransaction(
         "Apply bundle documents",
         () -> {
-          ImmutableSortedSet<DocumentKey> documentKeys = DocumentKey.emptyKeySet();
+          HashSet<DocumentKey> documentKeys = new HashSet<>();
           Map<DocumentKey, MutableDocument> documentMap = new HashMap<>();
 
-          for (Entry<DocumentKey, MutableDocument> entry : documents) {
+          for (Entry<DocumentKey, MutableDocument> entry : documents.entrySet()) {
             DocumentKey documentKey = entry.getKey();
             MutableDocument document = entry.getValue();
 
             if (document.isFoundDocument()) {
-              documentKeys = documentKeys.insert(documentKey);
+              documentKeys.add(documentKey);
             }
             documentMap.put(documentKey, document);
           }
 
           targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
-          targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
+          targetCache.addMatchingKeys(
+              ImmutableHashSet.withDelegateSet(documentKeys), umbrellaTargetData.getTargetId());
 
           DocumentChangeResult result = populateDocumentChanges(documentMap);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
@@ -763,7 +765,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   @Override
-  public void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys) {
+  public void saveNamedQuery(NamedQuery namedQuery, ImmutableHashSet<DocumentKey> documentKeys) {
     // Allocate a target for the named query such that it can be resumed from associated read time
     // if users use it to listen.
     // NOTE: this also means if no corresponding target exists, the new target will remain active
@@ -866,27 +868,32 @@ public final class LocalStore implements BundleCallback {
    */
   public QueryResult executeQuery(Query query, boolean usePreviousResults) {
     TargetData targetData = getTargetData(query.toTarget());
-    SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
-    ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
 
-    if (targetData != null) {
+    SnapshotVersion lastLimboFreeSnapshotVersion;
+    ImmutableHashSet<DocumentKey> remoteKeys;
+    if (targetData == null) {
+      lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
+      remoteKeys = ImmutableHashSet.emptySet();
+    } else {
       lastLimboFreeSnapshotVersion = targetData.getLastLimboFreeSnapshotVersion();
-      remoteKeys = this.targetCache.getMatchingKeysForTargetId(targetData.getTargetId());
+      remoteKeys =
+          ImmutableHashSet.withDelegateSet(
+              this.targetCache.getMatchingKeysForTargetId(targetData.getTargetId()));
     }
 
-    ImmutableSortedMap<DocumentKey, Document> documents =
+    HashMap<DocumentKey, Document> documents =
         queryEngine.getDocumentsMatchingQuery(
             query,
             usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
             remoteKeys);
-    return new QueryResult(documents, remoteKeys);
+    return new QueryResult(ImmutableHashMap.withDelegateMap(documents), remoteKeys);
   }
 
   /**
    * Returns the keys of the documents that are associated with the given target id in the remote
    * table.
    */
-  public ImmutableSortedSet<DocumentKey> getRemoteDocumentKeys(int targetId) {
+  public HashSet<DocumentKey> getRemoteDocumentKeys(int targetId) {
     return targetCache.getMatchingKeysForTargetId(targetId);
   }
 

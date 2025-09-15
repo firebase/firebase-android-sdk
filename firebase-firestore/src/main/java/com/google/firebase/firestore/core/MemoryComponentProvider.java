@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.MemoryCacheSettings;
 import com.google.firebase.firestore.MemoryLruGcSettings;
@@ -141,7 +141,7 @@ public class MemoryComponentProvider extends ComponentProvider {
     }
 
     @Override
-    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+    public ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
       return getSyncEngine().getRemoteKeysForTarget(targetId);
     }
   }

@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
@@ -36,7 +36,7 @@ public class ViewSnapshot {
   private final DocumentSet oldDocuments;
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
-  private final ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private final ImmutableHashSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
   private boolean hasCachedResults;
@@ -47,7 +47,7 @@ public class ViewSnapshot {
       DocumentSet oldDocuments,
       List<DocumentViewChange> changes,
       boolean isFromCache,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      ImmutableHashSet<DocumentKey> mutatedKeys,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
@@ -66,7 +66,7 @@ public class ViewSnapshot {
   public static ViewSnapshot fromInitialDocuments(
       Query query,
       DocumentSet documents,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      ImmutableHashSet<DocumentKey> mutatedKeys,
       boolean fromCache,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
@@ -110,7 +110,7 @@ public class ViewSnapshot {
     return !mutatedKeys.isEmpty();
   }
 
-  public ImmutableSortedSet<DocumentKey> getMutatedKeys() {
+  public ImmutableHashSet<DocumentKey> getMutatedKeys() {
     return mutatedKeys;
   }
 

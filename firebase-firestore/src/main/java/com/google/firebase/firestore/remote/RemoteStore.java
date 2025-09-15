@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.database.collection.ImmutableHashSet;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.OnlineState;
@@ -113,7 +113,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
      *
      * <p>Returns an empty set of document keys for unknown targets.
      */
-    ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
+    ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId);
   }
 
   private final RemoteStoreCallback remoteStoreCallback;
@@ -757,7 +757,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+  public ImmutableHashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
     return this.remoteStoreCallback.getRemoteKeysForTarget(targetId);
   }
 

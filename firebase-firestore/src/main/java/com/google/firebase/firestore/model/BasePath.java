@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,8 +29,7 @@ import java.util.Objects;
 public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   final List<String> segments;
 
-  @Nullable
-  private volatile String encodedCanonicalString;
+  @Nullable private volatile String encodedCanonicalString;
 
   BasePath(List<String> segments) {
     this.segments = segments;
