@@ -5,7 +5,7 @@
   [#7295](//github.com/firebase/firebase-android-sdk/issues/7295)
 - [changed] Improve query performance in large result sets by replacing the deprecated AsyncTask
   thread pool with a self-managed thread pool.
-  [#NNNN](//github.com/firebase/firebase-android-sdk/issues/NNNN)
+  [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
 
 # 26.0.0
 
