@@ -137,7 +137,7 @@ public abstract class ImmutableSortedMap<K, V> implements Iterable<Map.Entry<K, 
       return fromMap(map, comparator);
     }
 
-    public Builder<K, V> add(K key, V value) {
+    public Builder<K, V> insert(K key, V value) {
       map.put(key, value);
       return this;
     }

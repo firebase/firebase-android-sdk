@@ -390,7 +390,7 @@ class LocalDocumentsView {
     }
 
     // Apply the overlays and match against the query.
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    ImmutableSortedMap.Builder<DocumentKey, Document> results = emptyDocumentMap().toBuilder();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
@@ -404,7 +404,7 @@ class LocalDocumentsView {
       }
     }
 
-    return results;
+    return results.build();
   }
 
   /** Returns a base document that can be used to apply `overlay`. */
