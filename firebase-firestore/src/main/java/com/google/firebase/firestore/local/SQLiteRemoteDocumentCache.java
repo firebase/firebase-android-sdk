@@ -170,13 +170,15 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    // BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+          // .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/
+          // null));
+          .forEach(row -> processRow(results, row, /*filter*/ null));
     }
-    backgroundQueue.drain();
+    // backgroundQueue.drain();
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
@@ -266,18 +268,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    // BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
+              // processRowInBackground(backgroundQueue, results, row, filter);
+              processRow(results, row, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
-    backgroundQueue.drain();
+    // backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
@@ -324,6 +327,27 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             }
           }
         });
+  }
+
+  private void processRow(
+      Map<DocumentKey, MutableDocument> results,
+      Cursor row,
+      @Nullable Function<MutableDocument, Boolean> filter) {
+    byte[] rawDocument = row.getBlob(0);
+    int readTimeSeconds = row.getInt(1);
+    int readTimeNanos = row.getInt(2);
+    boolean documentTypeIsNull = row.isNull(3);
+    String path = row.getString(4);
+
+    MutableDocument document = decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+    if (documentTypeIsNull) {
+      documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+    }
+    if (filter == null || filter.apply(document)) {
+      synchronized (results) {
+        results.put(document.getKey(), document);
+      }
+    }
   }
 
   @Override
