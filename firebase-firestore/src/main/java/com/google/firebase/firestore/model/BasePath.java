@@ -18,9 +18,8 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.util.Util;
+
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +29,9 @@ import java.util.Objects;
  */
 public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   final List<String> segments;
+
+  @Nullable
+  private volatile String encodedCanonicalString;
 
   BasePath(List<String> segments) {
     this.segments = segments;
@@ -87,90 +89,69 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   }
 
   /**
-   * Compare the current path against another Path object. Paths are compared segment by segment,
-   * prioritizing numeric IDs (e.g., "__id123__") in numeric ascending order, followed by string
-   * segments in lexicographical order.
+   * Compare the current path against another Path object.
+   *
+   * <p>The comparison is performed by considering each path as a sequence of segments. Each
+   * segment is encoded into a string, and the resulting strings are concatenated. The paths are
+   * then compared by lexicographically comparing their encoded representations.
+   *
+   * <p>The encoding is designed to preserve the ordering of path segments. Numeric IDs are encoded
+   * in a way that they are sorted numerically. String segments are encoded lexicographically.
+   * Numeric IDs are sorted before string segments.
+   *
+   * <p>The encoded representation is cached in a volatile instance variable to avoid re-computing
+   * it on subsequent comparisons.
    */
   @Override
   public int compareTo(@NonNull B o) {
-    if (o == this) {
-      return 0;
+    return getEncodedCanonicalString().compareTo(o.getEncodedCanonicalString());
+  }
+
+  protected String getEncodedCanonicalString() {
+    String encodedCanonicalString = this.encodedCanonicalString;
+    if (encodedCanonicalString == null) {
+      encodedCanonicalString = computeEncodedCanonicalString();
+      this.encodedCanonicalString = encodedCanonicalString;
     }
+    return encodedCanonicalString;
+  }
 
-    NumericIdBySegmentIndexInfo myNumericIdBySegmentIndexInfo =
-        getOrCreateNumericIdBySegmentIndexInfo();
-    NumericIdBySegmentIndexInfo theirNumericIdBySegmentIndexInfo =
-        o.getOrCreateNumericIdBySegmentIndexInfo();
-
-    int myLength = length();
-    int theirLength = o.length();
-    for (int i = 0; i < myLength && i < theirLength; i++) {
-      boolean myIsNumericId = myNumericIdBySegmentIndexInfo.isBySegmentIndex(i);
-      boolean theirIsNumericId = theirNumericIdBySegmentIndexInfo.isBySegmentIndex(i);
-      if (myIsNumericId != theirIsNumericId) {
-        return myIsNumericId ? -1 : 1;
-      }
-
-      if (myIsNumericId) {
-        long myNumericId = myNumericIdBySegmentIndexInfo.valueBySegmentIndex(i);
-        long theirNumericId = theirNumericIdBySegmentIndexInfo.valueBySegmentIndex(i);
-        int numericIdCompareResult = Long.compare(myNumericId, theirNumericId);
-        if (numericIdCompareResult != 0) {
-          return numericIdCompareResult;
-        }
+  private String computeEncodedCanonicalString() {
+    StringBuilder builder = new StringBuilder();
+    for (String segment : segments) {
+      if (isNumericId(segment)) {
+        builder.append('\1'); // Type: numeric
+        long numericValue = extractNumericId(segment);
+        encodeSignedLong(numericValue, builder);
       } else {
-        int utf8CompareResult = Util.compareUtf8Strings(getSegment(i), o.getSegment(i));
-        if (utf8CompareResult != 0) {
-          return utf8CompareResult;
-        }
+        builder.append('\2'); // Type: string
+        encodeString(segment, builder);
       }
+      builder.append('\0').append('\0'); // Separator
     }
-    return Integer.compare(myLength, theirLength);
+    return builder.toString();
   }
 
-  @Nullable private volatile NumericIdBySegmentIndexInfo numericIdBySegmentIndexInfo;
-
-  NumericIdBySegmentIndexInfo getOrCreateNumericIdBySegmentIndexInfo() {
-    if (numericIdBySegmentIndexInfo != null) {
-      return numericIdBySegmentIndexInfo;
-    }
-
-    BitSet isBySegmentIndex = null;
-    long[] valueBySegmentIndex = null;
-
-    for (int i = segments.size() - 1; i >= 0; --i) {
-      String segment = segments.get(i);
-      if (!isNumericId(segment)) {
-        continue;
+  private static void encodeString(String s, StringBuilder builder) {
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '\0') {
+        builder.append('\0').append((char) 255);
+      } else {
+        builder.append(c);
       }
-      if (isBySegmentIndex == null) {
-        isBySegmentIndex = new BitSet(segments.size());
-        valueBySegmentIndex = new long[segments.size()];
-      }
-      isBySegmentIndex.set(i);
-      valueBySegmentIndex[i] = extractNumericId(segment);
     }
-
-    numericIdBySegmentIndexInfo =
-        new NumericIdBySegmentIndexInfo(isBySegmentIndex, valueBySegmentIndex);
-    return numericIdBySegmentIndexInfo;
   }
 
-  private static final class NumericIdBySegmentIndexInfo {
-    private final BitSet isBySegmentIndex;
-    private long[] valueBySegmentIndex;
+  private static void encodeSignedLong(long value, StringBuilder builder) {
+    // This mapping preserves the ordering of signed longs when compared as unsigned.
+    long u = value ^ 0x8000000000000000L;
 
-    NumericIdBySegmentIndexInfo(BitSet isBySegmentIndex, long[] valueBySegmentIndex) {
-      this.isBySegmentIndex = isBySegmentIndex;
-      this.valueBySegmentIndex = valueBySegmentIndex;
-    }
+    int numBytes = (Long.SIZE - Long.numberOfLeadingZeros(u) + 7) / 8;
+    builder.append((char) numBytes);
 
-    boolean isBySegmentIndex(int index) {
-      return isBySegmentIndex != null && isBySegmentIndex.get(index);
-    }
-
-    long valueBySegmentIndex(int index) {
-      return valueBySegmentIndex[index];
+    for (int i = numBytes - 1; i >= 0; i--) {
+      builder.append((char) ((u >> (i * 8)) & 0xFF));
     }
   }
 
