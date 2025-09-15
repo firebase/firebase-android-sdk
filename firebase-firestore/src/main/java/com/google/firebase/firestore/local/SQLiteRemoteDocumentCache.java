@@ -32,8 +32,6 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -47,7 +45,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -170,15 +167,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
-    // BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
-      longQuery
-          .performNextSubquery()
-          // .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/
-          // null));
-          .forEach(row -> processRow(results, row, /*filter*/ null));
+      longQuery.performNextSubquery().forEach(row -> processRow(results, row, /*filter*/ null));
     }
-    // backgroundQueue.drain();
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
@@ -268,19 +259,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
-    // BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              // processRowInBackground(backgroundQueue, results, row, filter);
               processRow(results, row, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
-    // backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
@@ -298,35 +286,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       @Nullable Function<MutableDocument, Boolean> filter) {
     return getAll(
         collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
-  }
-
-  private void processRowInBackground(
-      BackgroundQueue backgroundQueue,
-      Map<DocumentKey, MutableDocument> results,
-      Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
-    byte[] rawDocument = row.getBlob(0);
-    int readTimeSeconds = row.getInt(1);
-    int readTimeNanos = row.getInt(2);
-    boolean documentTypeIsNull = row.isNull(3);
-    String path = row.getString(4);
-
-    // Since scheduling background tasks incurs overhead, we only dispatch to a
-    // background thread if there are still some documents remaining.
-    Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-    executor.execute(
-        () -> {
-          MutableDocument document =
-              decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          if (documentTypeIsNull) {
-            documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
-          }
-          if (filter == null || filter.apply(document)) {
-            synchronized (results) {
-              results.put(document.getKey(), document);
-            }
-          }
-        });
   }
 
   private void processRow(
