@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Util;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import java.util.List;
  */
 public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
   final List<String> segments;
+  List<byte[]> utf8Segments = null;
 
   BasePath(List<String> segments) {
     this.segments = segments;
@@ -93,8 +95,12 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     int i = 0;
     int myLength = length();
     int theirLength = o.length();
+    List<byte[]> myUtf8Segments = ensureUtf8Segments();
+    List<byte[]> theirUtf8Segments = o.ensureUtf8Segments();
     while (i < myLength && i < theirLength) {
-      int localCompare = compareSegments(getSegment(i), o.getSegment(i));
+      int localCompare =
+          compareSegments(
+              myUtf8Segments.get(i), theirUtf8Segments.get(i), getSegment(i), o.getSegment(i));
       if (localCompare != 0) {
         return localCompare;
       }
@@ -103,19 +109,37 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return Integer.compare(myLength, theirLength);
   }
 
-  private static int compareSegments(String lhs, String rhs) {
-    boolean isLhsNumeric = isNumericId(lhs);
-    boolean isRhsNumeric = isNumericId(rhs);
+  private static int compareSegments(byte[] lhs, byte[] rhs, String lhsString, String rhsString) {
+    boolean isLhsNumeric = lhs == null;
+    boolean isRhsNumeric = rhs == null;
 
     if (isLhsNumeric && !isRhsNumeric) { // Only lhs is numeric
       return -1;
     } else if (!isLhsNumeric && isRhsNumeric) { // Only rhs is numeric
       return 1;
     } else if (isLhsNumeric && isRhsNumeric) { // both numeric
-      return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
+      return Long.compare(extractNumericId(lhsString), extractNumericId(rhsString));
     } else { // both string
-      return Util.compareUtf8Strings(lhs, rhs);
+      return Util.compareByteArrays(lhs, rhs);
     }
+  }
+
+  public List<byte[]> ensureUtf8Segments() {
+    if (this.utf8Segments == null) {
+      this.utf8Segments = new ArrayList<>(this.segments.size());
+      for (int i = 0; i < this.segments.size(); i++) {
+        String segment = this.segments.get(i);
+        boolean isNumeric = isNumericId(segment);
+        if (!isNumeric) {
+          byte[] utf8Bytes = segment.getBytes(StandardCharsets.UTF_8);
+          this.utf8Segments.add(utf8Bytes);
+        } else {
+          this.utf8Segments.add(null);
+        }
+      }
+    }
+
+    return this.utf8Segments;
   }
 
   /** Checks if a segment is a numeric ID (starts with "__id" and ends with "__"). */
