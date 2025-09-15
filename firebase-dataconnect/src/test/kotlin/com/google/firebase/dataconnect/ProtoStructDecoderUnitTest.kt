@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.SerializationTestData.serializationTestDataAllTypes
 import com.google.firebase.dataconnect.SerializationTestData.withEmptyListOfUnitRecursive
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -474,6 +476,21 @@ class ProtoStructDecoderUnitTest {
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
+    }
+  }
+
+  @Test
+  fun `decodeFromStruct() ignores unknown struct keys`() = runTest {
+    @Serializable data class TestData1(val value1: String, val value2: String)
+    @Serializable data class TestData2(val value1: String)
+
+    val testData1Arb: Arb<TestData1> =
+      Arb.twoValues(Arb.dataConnect.string()).map { (value1, value2) -> TestData1(value1, value2) }
+
+    checkAll(propTestConfig, testData1Arb) { testData1 ->
+      val struct = encodeToStruct(testData1)
+      val decodedTestData = decodeFromStruct<TestData2>(struct)
+      decodedTestData shouldBe TestData2(testData1.value1)
     }
   }
 

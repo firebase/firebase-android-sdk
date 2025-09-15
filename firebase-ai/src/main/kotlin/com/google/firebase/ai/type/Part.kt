@@ -18,6 +18,7 @@ package com.google.firebase.ai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -53,6 +54,12 @@ internal constructor(
   ) : InternalPart
 }
 
+/**
+ * Represents the code execution result from the model.
+ * @property outcome The result of the execution.
+ * @property output The stdout from the code execution, or an error message if it failed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class CodeExecutionResultPart
 internal constructor(
   public val outcome: String,
@@ -61,7 +68,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(outcome: String, output: String) : this(outcome, output, false, null)
+
+  /** Indicates if the code execution was successful */
+  public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
 
   @Serializable
   internal data class Internal(
@@ -70,14 +81,16 @@ internal constructor(
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: String,
-      val output: String
-    )
+    @Serializable internal data class CodeExecutionResult(val outcome: String, val output: String)
   }
 }
 
+/**
+ * Represents the code that was executed by the model.
+ * @property language The programming language of the code.
+ * @property code The source code to be executed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class ExecutableCodePart
 internal constructor(
   public val language: String,
@@ -86,6 +99,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
 
   @Serializable
@@ -106,8 +120,6 @@ internal constructor(
 /**
  * Represents image data sent to and received from requests. The image is converted client-side to
  * JPEG encoding at 80% quality before being sent to the server.
- *
- * @param image [Bitmap] to convert into a [Part]
  */
 public class ImagePart
 internal constructor(
@@ -116,6 +128,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /** @param image [Bitmap] to convert into a [Part] */
   public constructor(image: Bitmap) : this(image, false, null)
 
   internal fun toInlineDataPart() =
@@ -127,13 +140,7 @@ internal constructor(
     )
 }
 
-/**
- * Represents binary data with an associated MIME type sent to and received from requests.
- *
- * @param inlineData the binary data as a [ByteArray]
- * @param mimeType an IANA standard MIME type. For supported values, see the
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
- */
+/** Represents binary data with an associated MIME type sent to and received from requests. */
 public class InlineDataPart
 internal constructor(
   public val inlineData: ByteArray,
@@ -142,6 +149,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param inlineData the binary data as a [ByteArray]
+   * @param mimeType an IANA standard MIME type. For supported values, see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   */
   public constructor(
     inlineData: ByteArray,
     mimeType: String
@@ -159,14 +171,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents function call name and params received from requests.
- *
- * @param name the name of the function to call
- * @param args the function parameters and values as a [Map]
- * @param id Unique id of the function call. If present, the returned [FunctionResponsePart] should
- * have a matching `id` field.
- */
+/** Represents function call name and params received from requests. */
 public class FunctionCallPart
 internal constructor(
   public val name: String,
@@ -176,6 +181,12 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param name the name of the function to call
+   * @param args the function parameters and values as a [Map]
+   * @param id Unique id of the function call. If present, the returned [FunctionResponsePart]
+   * should have a matching `id` field.
+   */
   @JvmOverloads
   public constructor(
     name: String,
@@ -199,13 +210,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents function call output to be returned to the model when it requests a function call.
- *
- * @param name The name of the called function.
- * @param response The response produced by the function as a [JSONObject].
- * @param id Matching `id` for a [FunctionCallPart], if one was provided.
- */
+/** Represents function call output to be returned to the model when it requests a function call. */
 public class FunctionResponsePart
 internal constructor(
   public val name: String,
@@ -215,6 +220,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param name The name of the called function.
+   * @param response The response produced by the function as a [JSONObject].
+   * @param id Matching `id` for a [FunctionCallPart], if one was provided.
+   */
   @JvmOverloads
   public constructor(
     name: String,
@@ -242,14 +252,7 @@ internal constructor(
   }
 }
 
-/**
- * Represents file data stored in Cloud Storage for Firebase, referenced by URI.
- *
- * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
- * `"gs://bucket-name/path/image.jpg"`
- * @param mimeType an IANA standard MIME type. For supported MIME type values see the
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
- */
+/** Represents file data stored in Cloud Storage for Firebase, referenced by URI. */
 public class FileDataPart
 internal constructor(
   public val uri: String,
@@ -258,6 +261,12 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  /**
+   * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
+   * `"gs://bucket-name/path/image.jpg"`
+   * @param mimeType an IANA standard MIME type. For supported MIME type values see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 
   @Serializable
@@ -273,6 +282,10 @@ internal constructor(
       @SerialName("file_uri") val fileUri: String
     )
   }
+}
+
+internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
+  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
 }
 
 /** Returns the part as a [String] if it represents text, and null otherwise */
@@ -295,6 +308,9 @@ internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
 internal object PartSerializer :
   JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
+
+  private val TAG = PartSerializer::javaClass.name
+
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
     return when {
@@ -305,7 +321,10 @@ internal object PartSerializer :
       "functionResponse" in jsonObject -> FunctionResponsePart.Internal.serializer()
       "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
       "fileData" in jsonObject -> FileDataPart.Internal.serializer()
-      else -> throw SerializationException("Unknown Part type")
+      else -> {
+        Log.w(TAG, "Unknown part type received, ignoring.")
+        UnknownPart.Internal.serializer()
+      }
     }
   }
 }
@@ -415,6 +434,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
+    is UnknownPart.Internal -> UnknownPart()
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

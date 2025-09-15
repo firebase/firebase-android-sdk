@@ -177,6 +177,7 @@ internal constructor(
       GenerateImageRequest.ImagenParameters(
         sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
+        includeSafetyAttributes = true,
         addWatermark = generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
         negativePrompt = generationConfig?.negativePrompt,
@@ -206,6 +207,7 @@ internal constructor(
       GenerateImageRequest.ImagenParameters(
         sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
+        includeSafetyAttributes = true,
         addWatermark = generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
         negativePrompt = generationConfig?.negativePrompt,

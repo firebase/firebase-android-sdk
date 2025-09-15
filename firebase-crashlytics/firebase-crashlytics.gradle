@@ -70,9 +70,9 @@ dependencies {
 
     api(project(":firebase-sessions"))
     api(libs.playservices.tasks)
-    api("com.google.firebase:firebase-annotations:17.0.0")
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.annotations)
+    api(libs.firebase.common)
+    api(libs.firebase.components)
     api("com.google.firebase:firebase-config-interop:16.0.1")
     api("com.google.firebase:firebase-encoders:17.0.0")
     api("com.google.firebase:firebase-encoders-json:18.0.1")

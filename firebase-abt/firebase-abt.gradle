@@ -51,8 +51,8 @@ android {
 }
 
 dependencies {
-    api 'com.google.firebase:firebase-common:22.0.0'
-    api 'com.google.firebase:firebase-components:19.0.0'
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {

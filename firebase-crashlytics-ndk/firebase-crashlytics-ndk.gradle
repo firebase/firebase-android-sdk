@@ -110,8 +110,8 @@ thirdPartyLicenses {
 
 dependencies {
     api project(':firebase-crashlytics')
-    api "com.google.firebase:firebase-common:22.0.0"
-    api "com.google.firebase:firebase-components:19.0.0"
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
 

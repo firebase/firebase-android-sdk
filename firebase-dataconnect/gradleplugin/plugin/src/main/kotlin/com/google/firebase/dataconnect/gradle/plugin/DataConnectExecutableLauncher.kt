@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import org.gradle.api.Task
+import org.gradle.process.ExecOperations
 
 interface DataConnectExecutableConfig {
   var outputDirectory: File?
@@ -33,6 +34,7 @@ fun Task.runDataConnectExecutable(
   dataConnectExecutable: File,
   subCommand: List<String>,
   configDirectory: File,
+  execOperations: ExecOperations,
   configure: DataConnectExecutableConfig.() -> Unit,
 ) {
   val config =
@@ -48,11 +50,11 @@ fun Task.runDataConnectExecutable(
       }
       .apply(configure)
 
-  val logFile = config.logFile?.also { project.mkdir(it.parentFile) }
+  val logFile = config.logFile?.also { it.parentFile.mkdirs() }
   val logFileStream = logFile?.outputStream()
 
   try {
-    project.exec { execSpec ->
+    execOperations.exec { execSpec ->
       execSpec.run {
         executable(dataConnectExecutable)
         isIgnoreExitValue = false
