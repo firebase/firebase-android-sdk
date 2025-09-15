@@ -63,7 +63,6 @@ android {
 }
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
-}
 
 dependencies {
   api(libs.firebase.common)
