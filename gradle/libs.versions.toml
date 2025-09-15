@@ -15,7 +15,6 @@ awaitility = "3.1.0"
 benchmarkMacro = "1.3.4"
 browser = "1.3.0"
 cardview = "1.0.0"
-checkerQual = "2.5.2"
 constraintlayout = "2.1.4"
 coroutines = "1.9.0"
 dagger = "2.51"                 # Don't bump above 2.51 as it causes a bug in AppDistro FeedbackSender JPEG code
@@ -108,7 +107,6 @@ auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", ve
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
