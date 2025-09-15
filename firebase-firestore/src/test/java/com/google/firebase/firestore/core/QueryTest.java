@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -984,25 +983,19 @@ public class QueryTest {
     // SQLiteRemoteDocumentCache.getAll(...), where `query.matches(doc)` is performed
     // for many different docs concurrently on the BackgroundQueue.
     Iterator<MutableDocument> iterator = docs.iterator();
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
-    Map<DocumentKey, Boolean> results = new HashMap<>();
+    BackgroundQueue<DocumentKey, Boolean> backgroundQueue = new BackgroundQueue<>();
 
     while (iterator.hasNext()) {
       MutableDocument doc = iterator.next();
       backgroundQueue.submit(
-          () -> {
+          results -> {
             // We call query.matches() to indirectly test query.matchesOrderBy()
             boolean result = query.matches(doc);
-
-            // We will include a synchronized block in our command to simulate
-            // the implementation in SQLiteRemoteDocumentCache.getAll(...)
-            synchronized (results) {
-              results.put(doc.getKey(), result);
-            }
+            results.put(doc.getKey(), result);
           });
     }
 
-    backgroundQueue.drain();
+    HashMap<DocumentKey, Boolean> results = backgroundQueue.drain();
 
     Assert.assertEquals(101, results.keySet().size());
     for (DocumentKey key : results.keySet()) {

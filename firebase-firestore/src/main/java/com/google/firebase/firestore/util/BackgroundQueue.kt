@@ -27,24 +27,29 @@ import kotlinx.coroutines.asExecutor
  * called from the same thread. The behavior of an instance is undefined if any of the methods are
  * called from multiple threads.
  */
-internal class BackgroundQueue {
+internal class BackgroundQueue<K, V> {
 
-  private var state: State = State.Submitting()
+  private var state: State<K, V> = State.Submitting()
+
+  /** Overload for convenience of being called from Java code. */
+  fun submit(consumer: Consumer<HashMap<K, V>>) = this.submit { consumer.accept(it) }
 
   /**
    * Submit a task for asynchronous execution on the executor of the owning [BackgroundQueue].
    *
    * @throws IllegalStateException if [drain] has been called.
    */
-  fun submit(runnable: Runnable) {
+  fun submit(runnable: (results: HashMap<K, V>) -> Unit) {
     val submittingState = this.state
-    check(submittingState is State.Submitting) { "submit() may not be called after drain()" }
+    check(submittingState is State.Submitting) {
+      "submit() may not be called after drain() or drainInto()"
+    }
 
     submittingState.run {
       taskCount++
       executor.execute {
         try {
-          runnable.run()
+          runnable(threadLocalResults.get()!!)
         } finally {
           completedTasks.release()
         }
@@ -55,22 +60,53 @@ internal class BackgroundQueue {
   /**
    * Blocks until all tasks submitted via calls to [submit] have completed.
    *
-   * @throws IllegalStateException if called more than once.
+   * The results produced by each thread are merged into a new [HashMap] and returned.
+   *
+   * @throws IllegalStateException if [drain] or [drainInto] has already been called.
    */
-  fun drain() {
-    val submittingState = this.state
-    check(submittingState is State.Submitting) { "drain() may not be called more than once" }
-    this.state = State.Draining
+  fun drain(): HashMap<K, V> = HashMap<K, V>().also { drainInto(it) }
 
-    submittingState.run { completedTasks.acquire(taskCount) }
+  /**
+   * Blocks until all tasks submitted via calls to [submit] have completed.
+   *
+   * The results produced by each thread are merged into the given map.
+   *
+   * @throws IllegalStateException if [drain] or [drainInto] has already been called.
+   */
+  fun drainInto(results: MutableMap<K, V>) {
+    val submittingState = this.state
+    check(submittingState is State.Submitting) { "drain() or drainInto() has already been called" }
+    this.state = State.Draining()
+    return submittingState.run {
+      completedTasks.acquire(taskCount)
+      threadLocalResults.mergeResultsInto(results)
+    }
   }
 
-  private sealed interface State {
-    class Submitting : State {
+  private class ThreadLocalResults<K, V> : ThreadLocal<HashMap<K, V>>() {
+
+    private val results = mutableListOf<HashMap<K, V>>()
+
+    override fun initialValue(): HashMap<K, V> {
+      synchronized(results) {
+        val result = HashMap<K, V>()
+        results.add(result)
+        return result
+      }
+    }
+
+    fun mergeResultsInto(mergedResults: MutableMap<K, V>) {
+      synchronized(results) { results.forEach { mergedResults.putAll(it) } }
+    }
+  }
+
+  private sealed interface State<K, V> {
+    class Submitting<K, V> : State<K, V> {
       val completedTasks = Semaphore(0)
+      val threadLocalResults = ThreadLocalResults<K, V>()
       var taskCount: Int = 0
     }
-    object Draining : State
+    class Draining<K, V> : State<K, V>
   }
 
   companion object {
