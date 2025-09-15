@@ -63,11 +63,6 @@ android {
 }
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
-
-tasks.withType<KotlinJvmCompile>().configureEach {
-  if (!name.contains("test", ignoreCase = true)) {
-    compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
-  }
 }
 
 dependencies {
