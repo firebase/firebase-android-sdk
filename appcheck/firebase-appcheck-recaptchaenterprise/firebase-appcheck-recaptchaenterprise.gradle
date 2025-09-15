@@ -22,6 +22,7 @@ firebaseLibrary {
         name.set("{{app_check}} Recaptcha Enterprise")
         versionName.set("appcheck-recaptchaenterprise")
     }
+    previewMode = "norelease"
 }
 
 android {
