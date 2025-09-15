@@ -17,7 +17,6 @@
 @file:Suppress("UnstableApiUsage")
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
   id("firebase-library")
@@ -62,7 +61,10 @@ android {
   }
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+kotlin { 
+  explicitApi()
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } 
+}
 
 dependencies {
   api(libs.firebase.common)
