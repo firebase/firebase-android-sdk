@@ -16,7 +16,7 @@
 
 @file:Suppress("UnstableApiUsage")
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("firebase-library")
@@ -55,7 +55,6 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
   testOptions {
     targetSdk = targetSdkVersion
     unitTests {
@@ -73,18 +72,9 @@ android {
   }
 }
 
-// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
-// classes, methods, or properties have implicit `public` visibility. This check helps
-// avoid  accidentally leaking elements into the public API, requiring that any public
-// element be explicitly declared as `public`.
-// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
-// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
-tasks.withType<KotlinCompile>().all {
-  if (!name.contains("test", ignoreCase = true)) {
-    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
-      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
-    }
-  }
+kotlin {
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  explicitApi()
 }
 
 dependencies {
