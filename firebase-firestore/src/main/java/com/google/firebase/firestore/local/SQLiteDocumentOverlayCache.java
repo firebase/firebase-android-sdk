@@ -202,13 +202,21 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     byte[] rawMutation = row.getBlob(0);
     int largestBatchId = row.getInt(1);
 
-    backgroundQueue.submit(
+    Runnable runnable =
         () -> {
           Overlay overlay = decodeOverlay(rawMutation, largestBatchId);
           synchronized (results) {
             results.put(overlay.getKey(), overlay);
           }
-        });
+        };
+
+    // If the cursor has exactly one row then just process that row synchronously to avoid the
+    // unnecessary overhead of scheduling its processing to run asynchronously.
+    if (row.isFirst() && row.isLast()) {
+      runnable.run();
+    } else {
+      backgroundQueue.submit(runnable);
+    }
   }
 
   private Overlay decodeOverlay(byte[] rawMutation, int largestBatchId) {

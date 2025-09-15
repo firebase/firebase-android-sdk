@@ -306,7 +306,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     boolean documentTypeIsNull = row.isNull(3);
     String path = row.getString(4);
 
-    backgroundQueue.submit(
+    Runnable runnable =
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
@@ -318,7 +318,15 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               results.put(document.getKey(), document);
             }
           }
-        });
+        };
+
+    // If the cursor has exactly one row then just process that row synchronously to avoid the
+    // unnecessary overhead of scheduling its processing to run asynchronously.
+    if (row.isFirst() && row.isLast()) {
+      runnable.run();
+    } else {
+      backgroundQueue.submit(runnable);
+    }
   }
 
   @Override
