@@ -56,8 +56,10 @@ android {
   lint { targetSdk = targetSdkVersion }
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }   explicitApi()}
-
+kotlin {
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  explicitApi()
+}
 
 dependencies {
   javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
