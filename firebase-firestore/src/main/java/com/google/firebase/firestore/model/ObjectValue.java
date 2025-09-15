@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -28,12 +29,31 @@ import java.util.Set;
 
 /** A structured object value stored in Firestore. */
 public final class ObjectValue implements Cloneable {
-  private final Object lock = new Object(); // Monitor object
+
+  private final Object lock = new Object();
+
+  /**
+   * The immutable Value proto for this object with all overlays applied.
+   * <p>
+   * The value for this member is calculated _lazily_ and is null if the overlays have not yet been
+   * applied.
+   * <p>
+   * This member MAY be READ concurrently from multiple threads without acquiring any particular
+   * locks; however, UPDATING it MUST have the `lock` lock held.
+   * <p>
+   * Internal Invariant: Exactly one of `mergedValue` and `partialValue` must be null, with the
+   * other being non-null.
+   */
+  @Nullable private volatile Value mergedValue;
 
   /**
    * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and only
    * applied when {@link #buildProto()} is invoked.
+   * <p>
+   * Internal Invariant: Exactly one of `mergedValue` and `partialValue` must be null, with the
+   * other being non-null.
    */
+  @GuardedBy("lock")
   private Value partialValue;
 
   /**
@@ -41,6 +61,7 @@ public final class ObjectValue implements Cloneable {
    * #partialValue}. Values can either be {@link Value} protos, {@code Map<String, Object>} values
    * (to represent additional nesting) or {@code null} (to represent field deletes).
    */
+  @GuardedBy("lock")
   private final Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
@@ -55,7 +76,7 @@ public final class ObjectValue implements Cloneable {
     hardAssert(
         !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
-    this.partialValue = value;
+    this.mergedValue = value;
   }
 
   public ObjectValue() {
@@ -105,7 +126,7 @@ public final class ObjectValue implements Cloneable {
   }
 
   @Nullable
-  private Value extractNestedValue(Value value, FieldPath fieldPath) {
+  private static Value extractNestedValue(Value value, FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
       return value;
     } else {
@@ -123,19 +144,40 @@ public final class ObjectValue implements Cloneable {
    * Returns the Protobuf that backs this ObjectValue.
    *
    * <p>This method applies any outstanding modifications and memoizes the result. Further
-   * invocations are based on this memoized result.
+   * invocations are based on this memoized result until overlays are applied, at which point the
+   * memoized result is marked as "stale" and a new result is calculated and memoized upon the next
+   * invocation of this method.
    */
   private Value buildProto() {
-    synchronized (lock) {
-      if (!overlayMap.isEmpty()) {
-        MapValue mergedResult = applyOverlayLocked(FieldPath.EMPTY_PATH, overlayMap);
-        if (mergedResult != null) {
-          partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+    // Use double-checked locking to avoid acquiring a lock in the cases where the memoized result
+    // has already been calculated (https://en.wikipedia.org/wiki/Double-checked_locking).
+    Value value = this.mergedValue;
+
+    if (value == null) {
+      synchronized (lock) {
+        value = mergedValue;
+        if (value == null) {
+          assert (partialValue != null);
+          if (overlayMap.isEmpty()) {
+            value = partialValue;
+          } else {
+            MapValue mergedResult = applyOverlay(partialValue, FieldPath.EMPTY_PATH, overlayMap);
+            if (mergedResult == null) {
+              value = partialValue;
+            } else {
+              value = Value.newBuilder().setMapValue(mergedResult).build();
+            }
+          }
+
+          assert (value != null);
+          mergedValue = value;
+          partialValue = null;
+          overlayMap.clear();
         }
-        overlayMap.clear();
       }
     }
-    return partialValue;
+
+    return value;
   }
 
   /**
@@ -176,32 +218,41 @@ public final class ObjectValue implements Cloneable {
    */
   private void setOverlay(FieldPath path, @Nullable Value value) {
     synchronized (lock) {
-      Map<String, Object> currentLevel = overlayMap;
-
-      for (int i = 0; i < path.length() - 1; ++i) {
-        String currentSegment = path.getSegment(i);
-        Object currentValue = currentLevel.get(currentSegment);
-
-        if (currentValue instanceof Map) {
-          // Re-use a previously created map
-          currentLevel = (Map<String, Object>) currentValue;
-        } else if (currentValue instanceof Value
-            && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
-          // Convert the existing Protobuf MapValue into a Java map
-          Map<String, Object> nextLevel =
-              new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
-          currentLevel.put(currentSegment, nextLevel);
-          currentLevel = nextLevel;
-        } else {
-          // Create an empty hash map to represent the current nesting level
-          Map<String, Object> nextLevel = new HashMap<>();
-          currentLevel.put(currentSegment, nextLevel);
-          currentLevel = nextLevel;
-        }
+      if (mergedValue != null) {
+        partialValue = mergedValue;
+        mergedValue = null;
       }
-
-      currentLevel.put(path.getLastSegment(), value);
+      setOverlay(overlayMap, path, value);
     }
+  }
+
+  private static void setOverlay(
+      Map<String, Object> overlayMap, FieldPath path, @Nullable Value value) {
+    Map<String, Object> currentLevel = overlayMap;
+
+    for (int i = 0; i < path.length() - 1; ++i) {
+      String currentSegment = path.getSegment(i);
+      Object currentValue = currentLevel.get(currentSegment);
+
+      if (currentValue instanceof Map) {
+        // Re-use a previously created map
+        currentLevel = (Map<String, Object>) currentValue;
+      } else if (currentValue instanceof Value
+          && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+        // Convert the existing Protobuf MapValue into a Java map
+        Map<String, Object> nextLevel =
+            new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+        currentLevel.put(currentSegment, nextLevel);
+        currentLevel = nextLevel;
+      } else {
+        // Create an empty hash map to represent the current nesting level
+        Map<String, Object> nextLevel = new HashMap<>();
+        currentLevel.put(currentSegment, nextLevel);
+        currentLevel = nextLevel;
+      }
+    }
+
+    currentLevel.put(path.getLastSegment(), value);
   }
 
   /**
@@ -214,8 +265,8 @@ public final class ObjectValue implements Cloneable {
    *     overlayMap}.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
-  private @Nullable MapValue applyOverlayLocked(
-      FieldPath currentPath, Map<String, Object> currentOverlays) {
+  private static @Nullable MapValue applyOverlay(
+      Value partialValue, FieldPath currentPath, Map<String, Object> currentOverlays) {
     boolean modified = false;
 
     @Nullable Value existingValue = extractNestedValue(partialValue, currentPath);
@@ -233,7 +284,8 @@ public final class ObjectValue implements Cloneable {
       if (value instanceof Map) {
         @Nullable
         MapValue nested =
-            applyOverlayLocked(currentPath.append(pathSegment), (Map<String, Object>) value);
+            applyOverlay(
+                partialValue, currentPath.append(pathSegment), (Map<String, Object>) value);
         if (nested != null) {
           resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
           modified = true;
