@@ -168,19 +168,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
-    BackgroundQueue<DocumentKey, MutableDocument> backgroundQueue = new BackgroundQueue<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, row, /*filter*/ null));
+          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
     }
-
-    backgroundQueue.drainInto(results);
+    backgroundQueue.drain();
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
-    return results;
+    // Synchronize on `results` to avoid a data race with the background queue.
+    synchronized (results) {
+      return results;
+    }
   }
 
   @Override
@@ -262,23 +264,26 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
-    BackgroundQueue<DocumentKey, MutableDocument> backgroundQueue = new BackgroundQueue<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRowInBackground(backgroundQueue, row, filter);
+              processRowInBackground(backgroundQueue, results, row, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
-
-    HashMap<DocumentKey, MutableDocument> results = backgroundQueue.drain();
+    backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
-    return results;
+    // Synchronize on `results` to avoid a data race with the background queue.
+    synchronized (results) {
+      return results;
+    }
   }
 
   private Map<DocumentKey, MutableDocument> getAll(
@@ -291,7 +296,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   private void processRowInBackground(
-      BackgroundQueue<DocumentKey, MutableDocument> backgroundQueue,
+      BackgroundQueue backgroundQueue,
+      Map<DocumentKey, MutableDocument> results,
       Cursor row,
       @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
@@ -301,14 +307,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     String path = row.getString(4);
 
     backgroundQueue.submit(
-        results -> {
+        () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
           if (documentTypeIsNull) {
             documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
           }
           if (filter == null || filter.apply(document)) {
-            results.put(document.getKey(), document);
+            synchronized (results) {
+              results.put(document.getKey(), document);
+            }
           }
         });
   }

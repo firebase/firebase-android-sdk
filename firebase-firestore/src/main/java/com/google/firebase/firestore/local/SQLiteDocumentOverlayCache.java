@@ -61,26 +61,29 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
     hardAssert(keys.comparator() == null, "getOverlays() requires natural order");
+    Map<DocumentKey, Overlay> result = new HashMap<>();
 
-    BackgroundQueue<DocumentKey, Overlay> backgroundQueue = new BackgroundQueue<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     ResourcePath currentCollection = ResourcePath.EMPTY;
     List<Object> accumulatedDocumentIds = new ArrayList<>();
     for (DocumentKey key : keys) {
       if (!currentCollection.equals(key.getCollectionPath())) {
-        processSingleCollection(backgroundQueue, currentCollection, accumulatedDocumentIds);
+        processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
         currentCollection = key.getCollectionPath();
         accumulatedDocumentIds.clear();
       }
       accumulatedDocumentIds.add(key.getDocumentId());
     }
 
-    processSingleCollection(backgroundQueue, currentCollection, accumulatedDocumentIds);
-    return backgroundQueue.drain();
+    processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
+    backgroundQueue.drain();
+    return result;
   }
 
   /** Reads the overlays for the documents in a single collection. */
   private void processSingleCollection(
-      BackgroundQueue<DocumentKey, Overlay> backgroundQueue,
+      Map<DocumentKey, Overlay> result,
+      BackgroundQueue backgroundQueue,
       ResourcePath collectionPath,
       List<Object> documentIds) {
     if (documentIds.isEmpty()) {
@@ -98,7 +101,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processOverlaysInBackground(backgroundQueue, row));
+          .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
     }
   }
 
@@ -135,23 +138,26 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
   @Override
   public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
-    BackgroundQueue<DocumentKey, Overlay> backgroundQueue = new BackgroundQueue<>();
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
                 + "WHERE uid = ? AND collection_path = ? AND largest_batch_id > ?")
         .binding(uid, EncodedPath.encode(collection), sinceBatchId)
-        .forEach(row -> processOverlaysInBackground(backgroundQueue, row));
-    return backgroundQueue.drain();
+        .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
+    backgroundQueue.drain();
+    return result;
   }
 
   @Override
   public Map<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
     String[] lastCollectionPath = new String[1];
     String[] lastDocumentPath = new String[1];
     int[] lastLargestBatchId = new int[1];
 
-    BackgroundQueue<DocumentKey, Overlay> backgroundQueue1 = new BackgroundQueue<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
             "SELECT overlay_mutation, largest_batch_id, collection_path, document_id "
                 + " FROM document_overlays "
@@ -163,19 +169,17 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
               lastLargestBatchId[0] = row.getInt(1);
               lastCollectionPath[0] = row.getString(2);
               lastDocumentPath[0] = row.getString(3);
-              processOverlaysInBackground(backgroundQueue1, row);
+              processOverlaysInBackground(backgroundQueue, result, row);
             });
 
-    HashMap<DocumentKey, Overlay> results = backgroundQueue1.drain();
     if (lastCollectionPath[0] == null) {
-      return results;
+      return result;
     }
 
     // This function should not return partial batch overlays, even if the number of overlays in the
     // result set exceeds the given `count` argument. Since the `LIMIT` in the above query might
     // result in a partial batch, the following query appends any remaining overlays for the last
     // batch.
-    BackgroundQueue<DocumentKey, Overlay> backgroundQueue2 = new BackgroundQueue<>();
     db.query(
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
                 + "WHERE uid = ? AND collection_group = ? "
@@ -188,21 +192,22 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
             lastCollectionPath[0],
             lastDocumentPath[0],
             lastLargestBatchId[0])
-        .forEach(row -> processOverlaysInBackground(backgroundQueue2, row));
-
-    backgroundQueue2.drainInto(results);
-    return results;
+        .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
+    backgroundQueue.drain();
+    return result;
   }
 
   private void processOverlaysInBackground(
-      BackgroundQueue<DocumentKey, Overlay> backgroundQueue, Cursor row) {
+      BackgroundQueue backgroundQueue, Map<DocumentKey, Overlay> results, Cursor row) {
     byte[] rawMutation = row.getBlob(0);
     int largestBatchId = row.getInt(1);
 
     backgroundQueue.submit(
-        results -> {
+        () -> {
           Overlay overlay = decodeOverlay(rawMutation, largestBatchId);
-          results.put(overlay.getKey(), overlay);
+          synchronized (results) {
+            results.put(overlay.getKey(), overlay);
+          }
         });
   }
 
