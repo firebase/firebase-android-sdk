@@ -60,6 +60,10 @@ android {
   }
 }
 
+kotlin {
+  explicitApi()
+}
+
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
   kotlinOptions.jvmTarget = "1.8"
 }

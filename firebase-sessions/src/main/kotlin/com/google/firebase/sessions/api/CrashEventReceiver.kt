@@ -25,7 +25,7 @@ import com.google.firebase.sessions.SharedSessionRepository
  * This object provides a static-like entry point that Crashlytics calls to inform Sessions a fatal
  * crash has occurred.
  */
-object CrashEventReceiver {
+public object CrashEventReceiver {
   @VisibleForTesting internal lateinit var sharedSessionRepository: SharedSessionRepository
 
   /**
@@ -38,7 +38,7 @@ object CrashEventReceiver {
    * @see SharedSessionRepository.appBackground
    */
   @JvmStatic
-  fun notifyCrashOccurred() {
+  public fun notifyCrashOccurred() {
     try {
       if (!::sharedSessionRepository.isInitialized) {
         sharedSessionRepository = SharedSessionRepository.instance
