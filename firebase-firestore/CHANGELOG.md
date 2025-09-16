@@ -6,6 +6,8 @@
 - [changed] Improve query performance in large result sets by replacing the deprecated AsyncTask
   thread pool with a self-managed thread pool.
   [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
+- [changed] Improve query performance via internal memoization of calculated document data.
+  [#7370](//github.com/firebase/firebase-android-sdk/issues/7370)
 
 # 26.0.0
 
