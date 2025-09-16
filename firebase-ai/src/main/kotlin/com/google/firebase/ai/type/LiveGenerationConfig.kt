@@ -40,13 +40,6 @@ import kotlinx.serialization.Serializable
  * and the topP value is 0.5, then the model will select either A or B as the next token by using
  * the `temperature` and exclude C as a candidate. Defaults to 0.95 if unset.
  *
- * @property candidateCount The maximum number of generated response messages to return. This value
- * must be between [1, 8], inclusive. If unset, this will default to 1.
- *
- * - Note: Only unique candidates are returned. Higher temperatures are more likely to produce
- * unique candidates. Setting `temperature` to 0 will always produce exactly one candidate
- * regardless of the `candidateCount`.
- *
  * @property presencePenalty Positive penalties.
  *
  * @property frequencyPenalty Frequency penalties.
@@ -70,7 +63,6 @@ private constructor(
   internal val temperature: Float?,
   internal val topK: Int?,
   internal val topP: Float?,
-  internal val candidateCount: Int?,
   internal val maxOutputTokens: Int?,
   internal val presencePenalty: Float?,
   internal val frequencyPenalty: Float?,
@@ -94,8 +86,6 @@ private constructor(
    *
    * @property frequencyPenalty See [LiveGenerationConfig.frequencyPenalty]
    *
-   * @property candidateCount See [LiveGenerationConfig.candidateCount].
-   *
    * @property maxOutputTokens See [LiveGenerationConfig.maxOutputTokens].
    *
    * @property responseModality See [LiveGenerationConfig.responseModality]
@@ -106,7 +96,6 @@ private constructor(
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null
     @JvmField public var topP: Float? = null
-    @JvmField public var candidateCount: Int? = null
     @JvmField public var maxOutputTokens: Int? = null
     @JvmField public var presencePenalty: Float? = null
     @JvmField public var frequencyPenalty: Float? = null
@@ -118,9 +107,6 @@ private constructor(
     }
     public fun setTopK(topK: Int?): Builder = apply { this.topK = topK }
     public fun setTopP(topP: Float?): Builder = apply { this.topP = topP }
-    public fun setCandidateCount(candidateCount: Int?): Builder = apply {
-      this.candidateCount = candidateCount
-    }
     public fun setMaxOutputTokens(maxOutputTokens: Int?): Builder = apply {
       this.maxOutputTokens = maxOutputTokens
     }
@@ -143,7 +129,6 @@ private constructor(
         temperature = temperature,
         topK = topK,
         topP = topP,
-        candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         presencePenalty = presencePenalty,
         frequencyPenalty = frequencyPenalty,
@@ -157,7 +142,6 @@ private constructor(
       temperature = temperature,
       topP = topP,
       topK = topK,
-      candidateCount = candidateCount,
       maxOutputTokens = maxOutputTokens,
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
@@ -172,7 +156,6 @@ private constructor(
     val temperature: Float?,
     @SerialName("top_p") val topP: Float?,
     @SerialName("top_k") val topK: Int?,
-    @SerialName("candidate_count") val candidateCount: Int?,
     @SerialName("max_output_tokens") val maxOutputTokens: Int?,
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
@@ -201,7 +184,6 @@ private constructor(
  *   temperature = 0.75f
  *   topP = 0.5f
  *   topK = 30
- *   candidateCount = 4
  *   maxOutputTokens = 300
  *   ...
  * }

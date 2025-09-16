@@ -823,7 +823,6 @@ package com.google.firebase.ai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
-    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
@@ -832,7 +831,6 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
-    field public Integer? candidateCount;
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
