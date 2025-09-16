@@ -33,7 +33,6 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -47,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -308,10 +306,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     boolean documentTypeIsNull = row.isNull(3);
     String path = row.getString(4);
 
-    // Since scheduling background tasks incurs overhead, we only dispatch to a
-    // background thread if there are still some documents remaining.
-    Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-    executor.execute(
+    Runnable runnable =
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
@@ -323,7 +318,15 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
               results.put(document.getKey(), document);
             }
           }
-        });
+        };
+
+    // If the cursor has exactly one row then just process that row synchronously to avoid the
+    // unnecessary overhead of scheduling its processing to run asynchronously.
+    if (row.isFirst() && row.isLast()) {
+      runnable.run();
+    } else {
+      backgroundQueue.submit(runnable);
+    }
   }
 
   @Override
