@@ -16,9 +16,7 @@
 
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
-import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
   id("firebase-library")
@@ -81,6 +79,7 @@ kotlin {
     jvmTarget = JvmTarget.JVM_1_8
     optIn.add("kotlin.RequiresOptIn")
   }
+  explicitApi()
 }
 
 protobuf {
@@ -153,18 +152,6 @@ dependencies {
   androidTestImplementation(libs.mockk.android)
   androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.turbine)
-}
-
-// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
-// classes, methods, or properties have implicit `public` visibility. This check helps
-// avoid  accidentally leaking elements into the public API, requiring that any public
-// element be explicitly declared as `public`.
-// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
-// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
-tasks.withType<KotlinJvmCompile>().configureEach {
-  if (!name.contains("test", ignoreCase = true)) {
-    compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
-  }
 }
 
 // Registers a Gradle task that updates the JSON file that stores the list of Data Connect
