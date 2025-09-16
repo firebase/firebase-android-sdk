@@ -40,14 +40,12 @@ internal class BackgroundQueue {
     val submittingState = this.state
     check(submittingState is State.Submitting) { "submit() may not be called after drain()" }
 
-    submittingState.run {
-      taskCount++
-      executor.execute {
-        try {
-          runnable.run()
-        } finally {
-          completedTasks.release()
-        }
+    submittingState.taskCount++
+    executor.execute {
+      try {
+        runnable.run()
+      } finally {
+        submittingState.completedTasks.release()
       }
     }
   }
@@ -62,7 +60,7 @@ internal class BackgroundQueue {
     check(submittingState is State.Submitting) { "drain() may not be called more than once" }
     this.state = State.Draining
 
-    submittingState.run { completedTasks.acquire(taskCount) }
+    submittingState.completedTasks.acquire(submittingState.taskCount)
   }
 
   private sealed interface State {
