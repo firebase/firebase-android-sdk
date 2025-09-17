@@ -67,8 +67,7 @@ android {
     baseline = file("lint-baseline.xml")
   }
   sourceSets {
-    // getByName("test").java.srcDirs("src/testUtil")
-    getByName("androidTest") { kotlin.srcDirs("src/testUtil") }
+    getByName("test").java.srcDirs("src/testUtil")
   }
 }
 
