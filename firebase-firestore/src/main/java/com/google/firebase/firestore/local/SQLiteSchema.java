@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 18;
+  static final int VERSION = 19;
 
   /**
    * The batch size for data migrations.
@@ -185,6 +185,10 @@ class SQLiteSchema {
 
     if (fromVersion < 18 && toVersion >= 18) {
       addDocumentType();
+    }
+
+    if (fromVersion < 19 && toVersion >= 19) {
+      addRemoteDocumentsShard();
     }
 
     /*
@@ -461,6 +465,14 @@ class SQLiteSchema {
     // be considered as their document type must be determined by parsing the the "contents" column.
     if (!tableContainsColumn("remote_documents", "document_type")) {
       db.execSQL("ALTER TABLE remote_documents ADD COLUMN document_type INTEGER");
+    }
+  }
+
+  private void addRemoteDocumentsShard() {
+    if (!tableContainsColumn("remote_documents", "shard")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN shard INTEGER");
+      db.execSQL("UPDATE remote_documents set shard=(ABS(RANDOM())%100)");
+      db.execSQL("CREATE INDEX shard_idx ON remote_documents(shard)");
     }
   }
 

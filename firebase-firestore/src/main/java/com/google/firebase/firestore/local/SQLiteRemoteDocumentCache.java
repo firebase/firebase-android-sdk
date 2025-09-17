@@ -21,6 +21,8 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -51,7 +53,7 @@ import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /** The number of bind args per collection group in {@link #getAll(String, IndexOffset, int)} */
-  @VisibleForTesting static final int BINDS_PER_STATEMENT = 9;
+  @VisibleForTesting static final int BINDS_PER_STATEMENT = 11;
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
@@ -168,13 +170,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+          .forEach(row -> processRow(results, row, /*filter*/ null));
     }
-    backgroundQueue.drain();
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
@@ -214,44 +214,54 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
   }
 
-  /**
-   * Returns the next {@code count} documents from the provided collections, ordered by read time.
-   */
-  private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections,
-      IndexOffset offset,
-      int count,
-      @Nullable DocumentType tryFilterDocumentType,
-      @Nullable Function<MutableDocument, Boolean> filter,
-      @Nullable QueryContext context) {
+  private static final class ShardRange {
+    final int min;
+    final int max;
+
+    ShardRange(int min, int max) {
+      this.min = min;
+      this.max = max;
+    }
+  }
+
+  private static SQLitePersistence.ParallelQuery queryForGetAll(
+          SQLitePersistence db,
+          List<ResourcePath> collections,
+          IndexOffset offset,
+          int count,
+          @Nullable DocumentType tryFilterDocumentType,
+          ShardRange shardRange) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
     StringBuilder sql =
-        repeatSequence(
-            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
-                + "FROM remote_documents "
-                + "WHERE path >= ? AND path < ? AND path_length = ? "
-                + (tryFilterDocumentType == null
-                    ? ""
-                    : " AND (document_type IS NULL OR document_type = ?) ")
-                + "AND (read_time_seconds > ? OR ( "
-                + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
-                + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
-            collections.size(),
-            " UNION ");
+            repeatSequence(
+                    "SELECT contents, read_time_seconds, read_time_nanos, document_type, path, shard "
+                            + "FROM remote_documents "
+                            + "WHERE path >= ? AND path < ? AND path_length = ? "
+                            + "AND shard >= ? AND SHARD < ? "
+                            + (tryFilterDocumentType == null
+                            ? ""
+                            : " AND (document_type IS NULL OR document_type = ?) ")
+                            + "AND (read_time_seconds > ? OR ( "
+                            + "read_time_seconds = ? AND read_time_nanos > ?) OR ( "
+                            + "read_time_seconds = ? AND read_time_nanos = ? and path > ?)) ",
+                    collections.size(),
+                    " UNION ");
     sql.append("ORDER BY read_time_seconds, read_time_nanos, path LIMIT ?");
 
     Object[] bindVars =
-        new Object
-            [(BINDS_PER_STATEMENT + (tryFilterDocumentType != null ? 1 : 0)) * collections.size()
-                + 1];
+            new Object
+                    [(BINDS_PER_STATEMENT + (tryFilterDocumentType != null ? 1 : 0)) * collections.size()
+                    + 1];
     int i = 0;
     for (ResourcePath collection : collections) {
       String prefixPath = EncodedPath.encode(collection);
       bindVars[i++] = prefixPath;
       bindVars[i++] = EncodedPath.prefixSuccessor(prefixPath);
       bindVars[i++] = collection.length() + 1;
+      bindVars[i++] = shardRange.min;
+      bindVars[i++] = shardRange.max;
       if (tryFilterDocumentType != null) {
         bindVars[i++] = tryFilterDocumentType.dbValue;
       }
@@ -264,26 +274,70 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
+    SQLitePersistence.ParallelQuery parallelQuery = db.parallelQuery(sql.toString());
+    parallelQuery.query.binding(bindVars);
+    return parallelQuery;
+  }
+
+  /**
+   * Returns the next {@code count} documents from the provided collections, ordered by read time.
+   */
+  private Map<DocumentKey, MutableDocument> getAll(
+      List<ResourcePath> collections,
+      IndexOffset offset,
+      int count,
+      @Nullable DocumentType tryFilterDocumentType,
+      @Nullable Function<MutableDocument, Boolean> filter,
+      @Nullable QueryContext context) {
+
+    ShardRange shard1 = new ShardRange(0, 24);
+    ShardRange shard2 = new ShardRange(25, 49);
+    ShardRange shard3 = new ShardRange(50, 74);
+    ShardRange shard4 = new ShardRange(75, 99);
+
+    SQLitePersistence.ParallelQuery query1 = queryForGetAll(db, collections, offset, count, tryFilterDocumentType, shard1);
+    SQLitePersistence.ParallelQuery query2 = queryForGetAll(db, collections, offset, count, tryFilterDocumentType, shard2);
+    SQLitePersistence.ParallelQuery query3 = queryForGetAll(db, collections, offset, count, tryFilterDocumentType, shard3);
+    SQLitePersistence.ParallelQuery query4 = queryForGetAll(db, collections, offset, count, tryFilterDocumentType, shard4);
+
+    HashMap<DocumentKey, MutableDocument> results1 = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> results2 = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> results3 = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> results4 = new HashMap<>();
+
     BackgroundQueue backgroundQueue = new BackgroundQueue();
-    Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    db.query(sql.toString())
-        .binding(bindVars)
-        .forEach(
-            row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
-              if (context != null) {
-                context.incrementDocumentReadCount();
-              }
-            });
+    backgroundQueue.submit(() -> query1.query.forEach(row -> processRow(results1, row, filter)));
+    backgroundQueue.submit(() -> query2.query.forEach(row -> processRow(results2, row, filter)));
+    backgroundQueue.submit(() -> query3.query.forEach(row -> processRow(results3, row, filter)));
+    backgroundQueue.submit(() -> query4.query.forEach(row -> processRow(results4, row, filter)));
     backgroundQueue.drain();
+
+    query1.db.close();
+    query2.db.close();
+    query3.db.close();
+    query4.db.close();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
-    // Synchronize on `results` to avoid a data race with the background queue.
-    synchronized (results) {
-      return results;
+    HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
+    results.putAll(results1);
+    results.putAll(results2);
+    results.putAll(results3);
+    results.putAll(results4);
+
+    int expectedResultsSize = results1.size() + results2.size() + results3.size() + results4.size();
+    Log.i("zzyzx", "results.size()=" + results.size());
+    Log.i("zzyzx", "expectedResultsSize=" + expectedResultsSize);
+    Log.i("zzyzx", "results1.size()=" + results1.size());
+    Log.i("zzyzx", "results2.size()=" + results2.size());
+    Log.i("zzyzx", "results3.size()=" + results3.size());
+    Log.i("zzyzx", "results4.size()=" + results4.size());
+    if (results.size() != expectedResultsSize) {
+      throw fail("zzyzx results.size()=" + results.size() + ", expectedResultsSize=" + expectedResultsSize);
     }
+
+    return results;
   }
 
   private Map<DocumentKey, MutableDocument> getAll(
@@ -295,37 +349,22 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
   }
 
-  private void processRowInBackground(
-      BackgroundQueue backgroundQueue,
-      Map<DocumentKey, MutableDocument> results,
-      Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+  private void processRow(Map<DocumentKey, MutableDocument> results, Cursor row, @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
     boolean documentTypeIsNull = row.isNull(3);
     String path = row.getString(4);
 
-    Runnable runnable =
-        () -> {
-          MutableDocument document =
-              decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          if (documentTypeIsNull) {
-            documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
-          }
-          if (filter == null || filter.apply(document)) {
-            synchronized (results) {
-              results.put(document.getKey(), document);
-            }
-          }
-        };
-
-    // If the cursor has exactly one row then just process that row synchronously to avoid the
-    // unnecessary overhead of scheduling its processing to run asynchronously.
-    if (row.isFirst() && row.isLast()) {
-      runnable.run();
-    } else {
-      backgroundQueue.submit(runnable);
+    MutableDocument document =
+        decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+    if (documentTypeIsNull) {
+      documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+    }
+    if (filter == null || filter.apply(document)) {
+      synchronized (results) {
+        results.put(document.getKey(), document);
+      }
     }
   }
 

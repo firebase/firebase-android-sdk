@@ -304,6 +304,9 @@ public final class SQLitePersistence extends Persistence {
   @VisibleForTesting
   static class OpenHelper extends SQLiteOpenHelper {
 
+    public final Context context;
+    public final int schemaVersion;
+
     private final LocalSerializer serializer;
     private boolean configured;
 
@@ -315,6 +318,8 @@ public final class SQLitePersistence extends Persistence {
     OpenHelper(
         Context context, LocalSerializer serializer, String databaseName, int schemaVersion) {
       super(context, databaseName, null, schemaVersion);
+      this.context = context.getApplicationContext();
+      this.schemaVersion = schemaVersion;
       this.serializer = serializer;
     }
 
@@ -323,8 +328,8 @@ public final class SQLitePersistence extends Persistence {
       // Note that this is only called automatically by the SQLiteOpenHelper base class on Jelly
       // Bean and above.
       configured = true;
-      Cursor cursor = db.rawQuery("PRAGMA locking_mode = EXCLUSIVE", new String[0]);
-      cursor.close();
+      //Cursor cursor = db.rawQuery("PRAGMA locking_mode = EXCLUSIVE", new String[0]);
+      //cursor.close();
     }
 
     /**
@@ -398,6 +403,32 @@ public final class SQLitePersistence extends Persistence {
     statement.clearBindings();
     bind(statement, args);
     return statement.executeUpdateDelete();
+  }
+
+  static class ParallelQuery {
+    final Query query;
+    final SQLiteDatabase db;
+    ParallelQuery(Query query, SQLiteDatabase db) {
+      this.query = query;
+      this.db = db;
+    }
+  }
+
+  ParallelQuery parallelQuery(String sql) {
+    SQLiteOpenHelper openHelper = new SQLiteOpenHelper(opener.context, opener.getDatabaseName(), null, opener.schemaVersion) {
+      @Override
+      public void onCreate(SQLiteDatabase db) {
+
+      }
+
+      @Override
+      public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+      }
+    };
+
+    SQLiteDatabase db = openHelper.getReadableDatabase();
+    return new ParallelQuery(new Query(db, sql), db);
   }
 
   /**
