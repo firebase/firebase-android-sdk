@@ -30,10 +30,10 @@ import java.util.List;
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key
  * by default if no document is present.
  */
-public final class DocumentSet implements Iterable<Document> {
+final class DocumentSetZ implements Iterable<Document> {
 
-  /** Returns an empty DocumentSet sorted by the given comparator, then by keys. */
-  public static DocumentSet emptySet(final Comparator<Document> comparator) {
+  /** Returns an empty DocumentSetZ sorted by the given comparator, then by keys. */
+  public static DocumentSetZ emptySet(final Comparator<Document> comparator) {
     // We have to add the document key comparator to the passed in comparator, as it's the only
     // guaranteed unique property of a document.
     Comparator<Document> adjustedComparator =
@@ -46,25 +46,25 @@ public final class DocumentSet implements Iterable<Document> {
           }
         };
 
-    return new DocumentSet(
+    return new DocumentSetZ(
         emptyDocumentMap(), new ImmutableSortedSet<>(Collections.emptyList(), adjustedComparator));
   }
 
   /**
-   * An index of the documents in the DocumentSet, indexed by document key. The index exists to
+   * An index of the documents in the DocumentSetZ, indexed by document key. The index exists to
    * guarantee the uniqueness of document keys in the set and to allow lookup and removal of
    * documents by key.
    */
   private final ImmutableSortedMap<DocumentKey, Document> keyIndex;
 
   /**
-   * The main collection of documents in the DocumentSet. The documents are ordered by the provided
+   * The main collection of documents in the DocumentSetZ. The documents are ordered by the provided
    * comparator. The collection exists in addition to the index to allow ordered traversal of the
-   * DocumentSet.
+   * DocumentSetZ.
    */
   private final ImmutableSortedSet<Document> sortedSet;
 
-  private DocumentSet(
+  private DocumentSetZ(
       ImmutableSortedMap<DocumentKey, Document> keyIndex, ImmutableSortedSet<Document> sortedSet) {
     this.keyIndex = keyIndex;
     this.sortedSet = sortedSet;
@@ -119,7 +119,7 @@ public final class DocumentSet implements Iterable<Document> {
   public Document getPredecessor(DocumentKey key) {
     Document document = keyIndex.get(key);
     if (document == null) {
-      throw new IllegalArgumentException("Key not contained in DocumentSet: " + key);
+      throw new IllegalArgumentException("Key not contained in DocumentSetZ: " + key);
     }
     return sortedSet.getPredecessorEntry(document);
   }
@@ -137,22 +137,22 @@ public final class DocumentSet implements Iterable<Document> {
   }
 
   /**
-   * Returns a new DocumentSet that contains the given document, replacing any old document with the
+   * Returns a new DocumentSetZ that contains the given document, replacing any old document with the
    * same key.
    */
-  public DocumentSet add(Document document) {
+  public DocumentSetZ add(Document document) {
     // Remove any prior mapping of the document's key before adding, preventing sortedSet from
     // accumulating values that aren't in the index.
-    DocumentSet removed = remove(document.getKey());
+    DocumentSetZ removed = remove(document.getKey());
 
     ImmutableSortedMap<DocumentKey, Document> newKeyIndex =
         removed.keyIndex.insert(document.getKey(), document);
     ImmutableSortedSet<Document> newSortedSet = removed.sortedSet.insert(document);
-    return new DocumentSet(newKeyIndex, newSortedSet);
+    return new DocumentSetZ(newKeyIndex, newSortedSet);
   }
 
-  /** Returns a new DocumentSet with the document for the provided key removed. */
-  public DocumentSet remove(DocumentKey key) {
+  /** Returns a new DocumentSetZ with the document for the provided key removed. */
+  public DocumentSetZ remove(DocumentKey key) {
     Document document = keyIndex.get(key);
     if (document == null) {
       return this;
@@ -160,7 +160,7 @@ public final class DocumentSet implements Iterable<Document> {
 
     ImmutableSortedMap<DocumentKey, Document> newKeyIndex = keyIndex.remove(key);
     ImmutableSortedSet<Document> newSortedSet = sortedSet.remove(document);
-    return new DocumentSet(newKeyIndex, newSortedSet);
+    return new DocumentSetZ(newKeyIndex, newSortedSet);
   }
 
   /**
@@ -190,7 +190,7 @@ public final class DocumentSet implements Iterable<Document> {
       return false;
     }
 
-    DocumentSet documentSet = (DocumentSet) other;
+    DocumentSetZ documentSet = (DocumentSetZ) other;
 
     if (size() != documentSet.size()) {
       return false;

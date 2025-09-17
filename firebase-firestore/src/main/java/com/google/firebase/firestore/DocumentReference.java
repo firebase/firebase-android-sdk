@@ -513,7 +513,8 @@ public class DocumentReference {
           Document document = snapshot.getDocuments().getDocument(key);
           DocumentSnapshot documentSnapshot;
           if (document != null) {
-            boolean hasPendingWrites = snapshot.getMutatedKeys().contains(document.getKey());
+            boolean hasPendingWrites =
+                snapshot.getMutatedKeysTreatAsImmutable().contains(document.getKey());
             documentSnapshot =
                 DocumentSnapshot.fromDocument(
                     firestore, document, snapshot.isFromCache(), hasPendingWrites);

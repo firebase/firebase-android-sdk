@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.DocumentSet2;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /** A view snapshot is an immutable capture of the results of a query and the changes to them. */
@@ -32,22 +32,22 @@ public class ViewSnapshot {
   }
 
   private final Query query;
-  private final DocumentSet documents;
-  private final DocumentSet oldDocuments;
+  private final DocumentSet2 documents;
+  private final DocumentSet2 oldDocuments;
   private final List<DocumentViewChange> changes;
   private final boolean isFromCache;
-  private final ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private final HashSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
   private boolean hasCachedResults;
 
   public ViewSnapshot(
       Query query,
-      DocumentSet documents,
-      DocumentSet oldDocuments,
+      DocumentSet2 documents,
+      DocumentSet2 oldDocuments,
       List<DocumentViewChange> changes,
       boolean isFromCache,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      HashSet<DocumentKey> mutatedKeys,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
@@ -65,8 +65,8 @@ public class ViewSnapshot {
   /** Returns a view snapshot as if all documents in the snapshot were added. */
   public static ViewSnapshot fromInitialDocuments(
       Query query,
-      DocumentSet documents,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      DocumentSet2 documents,
+      HashSet<DocumentKey> mutatedKeys,
       boolean fromCache,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
@@ -77,7 +77,7 @@ public class ViewSnapshot {
     return new ViewSnapshot(
         query,
         documents,
-        DocumentSet.emptySet(query.comparator()),
+        DocumentSet2.emptySet(),
         viewChanges,
         fromCache,
         mutatedKeys,
@@ -90,11 +90,11 @@ public class ViewSnapshot {
     return query;
   }
 
-  public DocumentSet getDocuments() {
+  public DocumentSet2 getDocuments() {
     return documents;
   }
 
-  public DocumentSet getOldDocuments() {
+  public DocumentSet2 getOldDocuments() {
     return oldDocuments;
   }
 
@@ -110,7 +110,7 @@ public class ViewSnapshot {
     return !mutatedKeys.isEmpty();
   }
 
-  public ImmutableSortedSet<DocumentKey> getMutatedKeys() {
+  public HashSet<DocumentKey> getMutatedKeysTreatAsImmutable() {
     return mutatedKeys;
   }
 

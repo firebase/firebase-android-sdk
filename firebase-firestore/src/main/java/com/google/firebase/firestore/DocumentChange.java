@@ -22,9 +22,10 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.DocumentKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * A {@code DocumentChange} represents a change to the documents matching a query. It contains the
@@ -140,7 +141,7 @@ public class DocumentChange {
                 firestore,
                 document,
                 snapshot.isFromCache(),
-                snapshot.getMutatedKeys().contains(document.getKey()));
+                snapshot.getMutatedKeysTreatAsImmutable().contains(document.getKey()));
         hardAssert(
             change.getType() == DocumentViewChange.Type.ADDED,
             "Invalid added event for first snapshot");
@@ -153,7 +154,11 @@ public class DocumentChange {
     } else {
       // A DocumentSet that is updated incrementally as changes are applied to use to lookup the
       // index of a document.
-      DocumentSet indexTracker = snapshot.getOldDocuments();
+      // TODO: USE THE COMPARATOR FROM THE QUERY TO ORDER THE DOCUMENTS!
+      TreeSet<DocumentKey> indexTracker = new TreeSet<>();
+      for (Document document1 : snapshot.getOldDocuments()) {
+        indexTracker.add(document1.getKey());
+      }
       for (DocumentViewChange change : snapshot.getChanges()) {
         if (metadataChanges == MetadataChanges.EXCLUDE
             && change.getType() == DocumentViewChange.Type.METADATA) {
@@ -165,19 +170,19 @@ public class DocumentChange {
                 firestore,
                 document,
                 snapshot.isFromCache(),
-                snapshot.getMutatedKeys().contains(document.getKey()));
+                snapshot.getMutatedKeysTreatAsImmutable().contains(document.getKey()));
         int oldIndex, newIndex;
         Type type = getType(change);
         if (type != Type.ADDED) {
-          oldIndex = indexTracker.indexOf(document.getKey());
+          oldIndex = indexTracker.headSet(document.getKey()).size() - 1;
           hardAssert(oldIndex >= 0, "Index for document not found");
-          indexTracker = indexTracker.remove(document.getKey());
+          indexTracker.remove(document.getKey());
         } else {
           oldIndex = -1;
         }
         if (type != Type.REMOVED) {
-          indexTracker = indexTracker.add(document);
-          newIndex = indexTracker.indexOf(document.getKey());
+          indexTracker.add(document.getKey());
+          newIndex = indexTracker.headSet(document.getKey()).size() - 1;
           hardAssert(newIndex >= 0, "Index for document not found");
         } else {
           newIndex = -1;

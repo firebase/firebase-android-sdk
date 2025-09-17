@@ -25,11 +25,12 @@ import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.DocumentSet2;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +43,9 @@ public class View {
   /** The result of applying a set of doc changes to a view. */
   public static class DocumentChanges {
     private DocumentChanges(
-        DocumentSet newDocuments,
+        DocumentSet2 newDocuments,
         DocumentViewChangeSet changes,
-        ImmutableSortedSet<DocumentKey> mutatedKeys,
+        HashSet<DocumentKey> mutatedKeys,
         boolean needsRefill) {
       this.documentSet = newDocuments;
       this.changeSet = changes;
@@ -53,14 +54,14 @@ public class View {
     }
 
     /** The new set of docs that should be in the view. */
-    final DocumentSet documentSet;
+    final DocumentSet2 documentSet;
 
     /** The diff of these docs with the previous set of docs. */
     final DocumentViewChangeSet changeSet;
 
     private final boolean needsRefill;
 
-    final ImmutableSortedSet<DocumentKey> mutatedKeys;
+    final HashSet<DocumentKey> mutatedKeys;
 
     /**
      * Whether the set of documents passed in was not sufficient to calculate the new state of the
@@ -82,7 +83,7 @@ public class View {
    */
   private boolean current;
 
-  private DocumentSet documentSet;
+  private DocumentSet2 documentSet;
 
   /** Documents included in the remote target */
   private ImmutableSortedSet<DocumentKey> syncedDocuments;
@@ -91,15 +92,15 @@ public class View {
   private ImmutableSortedSet<DocumentKey> limboDocuments;
 
   /** Documents that have local changes */
-  private ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private HashSet<DocumentKey> mutatedKeys;
 
   public View(Query query, ImmutableSortedSet<DocumentKey> remoteDocuments) {
     this.query = query;
     syncState = SyncState.NONE;
-    documentSet = DocumentSet.emptySet(query.comparator());
+    documentSet = DocumentSet2.emptySet();
     syncedDocuments = remoteDocuments;
     limboDocuments = DocumentKey.emptyKeySet();
-    mutatedKeys = DocumentKey.emptyKeySet();
+    mutatedKeys = new HashSet<>();
   }
 
   public SyncState getSyncState() {
@@ -118,6 +119,14 @@ public class View {
     return computeDocChanges(docChanges, null);
   }
 
+  private static Document getLastDocument(DocumentSet2 documentSet) {
+    throw new RuntimeException("not implemented vazykdtth3");
+  }
+
+  private static Document getFirstDocument(DocumentSet2 documentSet) {
+    throw new RuntimeException("not implemented vazykdtth3");
+  }
+
   /**
    * Iterates over a set of doc changes, applies the query limit, and computes what the new results
    * should be, what the changes were, and whether we may need to go back to the local cache for
@@ -131,13 +140,13 @@ public class View {
   public DocumentChanges computeDocChanges(
       ImmutableSortedMap<DocumentKey, Document> docChanges,
       @Nullable DocumentChanges previousChanges) {
-    DocumentViewChangeSet changeSet =
+    final DocumentViewChangeSet changeSet =
         previousChanges != null ? previousChanges.changeSet : new DocumentViewChangeSet();
-    DocumentSet oldDocumentSet =
+    final DocumentSet2 oldDocumentSet =
         previousChanges != null ? previousChanges.documentSet : documentSet;
-    ImmutableSortedSet<DocumentKey> newMutatedKeys =
-        previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys;
-    DocumentSet newDocumentSet = oldDocumentSet;
+    final HashSet<DocumentKey> newMutatedKeys =
+        new HashSet<>(previousChanges != null ? previousChanges.mutatedKeys : mutatedKeys);
+    final DocumentSet2.Builder newDocumentSet = oldDocumentSet.toBuilder();
     boolean needsRefill = false;
 
     // Track the last doc in a (full) limit. This is necessary, because some update (a delete, or an
@@ -150,11 +159,11 @@ public class View {
     // will only be adds -- no deletes or updates.
     Document lastDocInLimit =
         (query.getLimitType().equals(LIMIT_TO_FIRST) && oldDocumentSet.size() == query.getLimit())
-            ? oldDocumentSet.getLastDocument()
+            ? getLastDocument(oldDocumentSet)
             : null;
     Document firstDocInLimit =
         (query.getLimitType().equals(LIMIT_TO_LAST) && oldDocumentSet.size() == query.getLimit())
-            ? oldDocumentSet.getFirstDocument()
+            ? getFirstDocument(oldDocumentSet)
             : null;
 
     Comparator<Document> queryComparator = query.comparator();
@@ -211,37 +220,29 @@ public class View {
 
       if (changeApplied) {
         if (newDoc != null) {
-          newDocumentSet = newDocumentSet.add(newDoc);
+          newDocumentSet.add(newDoc);
           if (newDoc.hasLocalMutations()) {
-            newMutatedKeys = newMutatedKeys.insert(newDoc.getKey());
+            newMutatedKeys.add(newDoc.getKey());
           } else {
-            newMutatedKeys = newMutatedKeys.remove(newDoc.getKey());
+            newMutatedKeys.remove(newDoc.getKey());
           }
         } else {
-          newDocumentSet = newDocumentSet.remove(key);
-          newMutatedKeys = newMutatedKeys.remove(key);
+          newDocumentSet.remove(key);
+          newMutatedKeys.remove(key);
         }
       }
     }
 
     // Drop documents out to meet limitToFirst/limitToLast requirement.
     if (query.hasLimit()) {
-      for (long i = newDocumentSet.size() - query.getLimit(); i > 0; --i) {
-        Document oldDoc =
-            query.getLimitType().equals(LIMIT_TO_FIRST)
-                ? newDocumentSet.getLastDocument()
-                : newDocumentSet.getFirstDocument();
-        newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
-        newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
-        changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
-      }
+      throw new RuntimeException("limits are not yet implemented hmmcxj3rte");
     }
 
     hardAssert(
         !needsRefill || previousChanges == null,
         "View was refilled using docs that themselves needed refilling.");
 
-    return new DocumentChanges(newDocumentSet, changeSet, newMutatedKeys, needsRefill);
+    return new DocumentChanges(newDocumentSet.build(), changeSet, newMutatedKeys, needsRefill);
   }
 
   private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {
@@ -293,7 +294,7 @@ public class View {
       DocumentChanges docChanges, TargetChange targetChange, boolean targetIsPendingReset) {
     hardAssert(!docChanges.needsRefill, "Cannot apply changes that need a refill");
 
-    DocumentSet oldDocumentSet = documentSet;
+    DocumentSet2 oldDocumentSet = documentSet;
     documentSet = docChanges.documentSet;
     mutatedKeys = docChanges.mutatedKeys;
 

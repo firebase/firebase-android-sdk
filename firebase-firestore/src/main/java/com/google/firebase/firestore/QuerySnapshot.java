@@ -191,7 +191,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
         firestore,
         document,
         snapshot.isFromCache(),
-        snapshot.getMutatedKeys().contains(document.getKey()));
+        snapshot.getMutatedKeysTreatAsImmutable().contains(document.getKey()));
   }
 
   @Override

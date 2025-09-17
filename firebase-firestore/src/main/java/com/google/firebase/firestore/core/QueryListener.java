@@ -95,7 +95,7 @@ public class QueryListener {
               newSnapshot.getOldDocuments(),
               documentChanges,
               newSnapshot.isFromCache(),
-              newSnapshot.getMutatedKeys(),
+              newSnapshot.getMutatedKeysTreatAsImmutable(),
               newSnapshot.didSyncStateChange(),
               /* excludesMetadataChanges= */ true,
               newSnapshot.hasCachedResults());
@@ -188,7 +188,7 @@ public class QueryListener {
         ViewSnapshot.fromInitialDocuments(
             snapshot.getQuery(),
             snapshot.getDocuments(),
-            snapshot.getMutatedKeys(),
+            snapshot.getMutatedKeysTreatAsImmutable(),
             snapshot.isFromCache(),
             snapshot.excludesMetadataChanges(),
             snapshot.hasCachedResults());
