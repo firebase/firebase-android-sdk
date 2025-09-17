@@ -32,7 +32,6 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -168,21 +167,15 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
-      longQuery
-          .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+      longQuery.performNextSubquery().forEach(row -> processRow(results, row, /*filter*/ null));
     }
-    backgroundQueue.drain();
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
-    synchronized (results) {
-      return results;
-    }
+    return results;
   }
 
   @Override
@@ -264,26 +257,22 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
+              processRow(results, row, filter);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
             });
-    backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
     // Synchronize on `results` to avoid a data race with the background queue.
-    synchronized (results) {
-      return results;
-    }
+    return results;
   }
 
   private Map<DocumentKey, MutableDocument> getAll(
@@ -295,8 +284,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         collections, offset, count, /*tryFilterDocumentType*/ null, filter, /*context*/ null);
   }
 
-  private void processRowInBackground(
-      BackgroundQueue backgroundQueue,
+  private void processRow(
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
       @Nullable Function<MutableDocument, Boolean> filter) {
@@ -306,26 +294,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     boolean documentTypeIsNull = row.isNull(3);
     String path = row.getString(4);
 
-    Runnable runnable =
-        () -> {
-          MutableDocument document =
-              decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          if (documentTypeIsNull) {
-            documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
-          }
-          if (filter == null || filter.apply(document)) {
-            synchronized (results) {
-              results.put(document.getKey(), document);
-            }
-          }
-        };
-
-    // If the cursor has exactly one row then just process that row synchronously to avoid the
-    // unnecessary overhead of scheduling its processing to run asynchronously.
-    if (row.isFirst() && row.isLast()) {
-      runnable.run();
-    } else {
-      backgroundQueue.submit(runnable);
+    MutableDocument document = decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+    if (documentTypeIsNull) {
+      documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
+    }
+    if (filter == null || filter.apply(document)) {
+      synchronized (results) {
+        results.put(document.getKey(), document);
+      }
     }
   }
 
