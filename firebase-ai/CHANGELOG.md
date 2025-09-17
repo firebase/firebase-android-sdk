@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+  (#7382)
 - [changed] Bumped internal dependencies.
 - [feature] Added support for code execution.
 - [changed] Marked the public constructors for `ExecutableCodePart` and `CodeExecutionResultPart` as
@@ -30,8 +32,6 @@
   your users will be on versions of your app that send limited-use tokens. (#7285)
 
 # 17.1.0
-
-=======
 
 - [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
   transfer, and subject references (#7075)
