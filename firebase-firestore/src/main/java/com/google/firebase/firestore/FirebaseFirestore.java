@@ -75,7 +75,7 @@ import org.json.JSONObject;
  */
 public class FirebaseFirestore {
 
-  public static final String BUILD_NAME = "shard-parallel";
+  public static final String BUILD_NAME = "shard-shard-notxnparallal";
 
   private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
 

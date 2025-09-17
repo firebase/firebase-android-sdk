@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 19;
+  static final int VERSION = 21;
 
   /**
    * The batch size for data migrations.
@@ -189,6 +189,14 @@ class SQLiteSchema {
 
     if (fromVersion < 19 && toVersion >= 19) {
       addRemoteDocumentsShard();
+    }
+
+    if (fromVersion < 20 && toVersion >= 20) {
+      addShardReadTimeIndex();
+    }
+
+    if (fromVersion < 21 && toVersion >= 21) {
+      addShardPathReadTimeIndex();
     }
 
     /*
@@ -474,6 +482,17 @@ class SQLiteSchema {
       db.execSQL("UPDATE remote_documents set shard=(ABS(RANDOM())%100)");
       db.execSQL("CREATE INDEX shard_idx ON remote_documents(shard)");
     }
+  }
+
+  private void addShardReadTimeIndex() {
+    db.execSQL("CREATE INDEX shard_read_time_idx ON remote_documents(shard, read_time_seconds, read_time_nanos)");
+
+  }
+
+  private void addShardPathReadTimeIndex() {
+    db.execSQL("DROP INDEX shard_read_time_idx");
+    db.execSQL("CREATE INDEX shard_path_read_time_idx ON remote_documents(shard, path, read_time_seconds, read_time_nanos)");
+
   }
 
   private boolean hasReadTime() {

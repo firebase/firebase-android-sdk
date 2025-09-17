@@ -213,14 +213,14 @@ public final class SQLitePersistence extends Persistence {
   @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
-    db.beginTransactionWithListener(transactionListener);
+    //db.beginTransactionWithListener(transactionListener);
     try {
       operation.run();
 
       // Note that an exception in operation.run() will prevent this code from running.
-      db.setTransactionSuccessful();
+      //db.setTransactionSuccessful();
     } finally {
-      db.endTransaction();
+      //db.endTransaction();
     }
   }
 
@@ -228,14 +228,14 @@ public final class SQLitePersistence extends Persistence {
   <T> T runTransaction(String action, Supplier<T> operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     T value = null;
-    db.beginTransactionWithListener(transactionListener);
+    //db.beginTransactionWithListener(transactionListener);
     try {
       value = operation.get();
 
       // Note that an exception in operation.run() will prevent this code from running.
-      db.setTransactionSuccessful();
+      //db.setTransactionSuccessful();
     } finally {
-      db.endTransaction();
+      //db.endTransaction();
     }
     return value;
   }
@@ -328,6 +328,7 @@ public final class SQLitePersistence extends Persistence {
       // Note that this is only called automatically by the SQLiteOpenHelper base class on Jelly
       // Bean and above.
       configured = true;
+      db.enableWriteAheadLogging();
       //Cursor cursor = db.rawQuery("PRAGMA locking_mode = EXCLUSIVE", new String[0]);
       //cursor.close();
     }
@@ -419,6 +420,11 @@ public final class SQLitePersistence extends Persistence {
       @Override
       public void onCreate(SQLiteDatabase db) {
 
+      }
+
+      @Override
+      public void onConfigure(SQLiteDatabase db) {
+        db.enableWriteAheadLogging();
       }
 
       @Override

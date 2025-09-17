@@ -274,9 +274,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
     bindVars[i] = count;
 
-    SQLitePersistence.ParallelQuery parallelQuery = db.parallelQuery(sql.toString());
-    parallelQuery.query.binding(bindVars);
-    return parallelQuery;
+    SQLitePersistence.ParallelQuery query = db.parallelQuery(sql.toString());
+    query.query.binding(bindVars);
+    return query;
   }
 
   /**
@@ -312,19 +312,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     backgroundQueue.submit(() -> query4.query.forEach(row -> processRow(results4, row, filter)));
     backgroundQueue.drain();
 
-    query1.db.close();
-    query2.db.close();
-    query3.db.close();
-    query4.db.close();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
     documentTypeBackfiller.backfill(db);
 
     HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
     results.putAll(results1);
+    query1.db.close();
     results.putAll(results2);
+    query2.db.close();
     results.putAll(results3);
+    query3.db.close();
     results.putAll(results4);
+    query4.db.close();
 
     int expectedResultsSize = results1.size() + results2.size() + results3.size() + results4.size();
     Log.i("zzyzx", "results.size()=" + results.size());
