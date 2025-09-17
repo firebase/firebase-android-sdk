@@ -66,9 +66,7 @@ android {
     targetSdk = targetSdkVersion
     baseline = file("lint-baseline.xml")
   }
-  sourceSets {
-    getByName("test").java.srcDirs("src/testUtil")
-  }
+  sourceSets { getByName("test").java.srcDirs("src/testUtil") }
 }
 
 kotlin {
