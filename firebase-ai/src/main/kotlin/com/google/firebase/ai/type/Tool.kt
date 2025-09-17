@@ -56,7 +56,7 @@ internal constructor(
       return Tool(functionDeclarations, null, null)
     }
 
-    /** Creates a [Tool] instance that allows the model to use Code Execution. */
+    /** Creates a [Tool] instance that allows the model to use code execution. */
     @JvmStatic
     public fun codeExecution(): Tool {
       return codeExecutionInstance
