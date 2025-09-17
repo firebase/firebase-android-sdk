@@ -18,8 +18,8 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import java.util.Map;
-import java.util.Set;
+import com.google.firebase.firestore.util.ImmutableMap;
+import com.google.firebase.firestore.util.ImmutableSet;
 
 /**
  * An event from the RemoteStore. It is split into targetChanges (changes to the state or the set of
@@ -27,17 +27,17 @@ import java.util.Set;
  */
 public final class RemoteEvent {
   private final SnapshotVersion snapshotVersion;
-  private final Map<Integer, TargetChange> targetChanges;
-  private final Map<Integer, QueryPurpose> targetMismatches;
-  private final Map<DocumentKey, MutableDocument> documentUpdates;
-  private final Set<DocumentKey> resolvedLimboDocuments;
+  private final ImmutableMap<Integer, TargetChange> targetChanges;
+  private final ImmutableMap<Integer, QueryPurpose> targetMismatches;
+  private final ImmutableMap<DocumentKey, MutableDocument> documentUpdates;
+  private final ImmutableSet<DocumentKey> resolvedLimboDocuments;
 
   public RemoteEvent(
       SnapshotVersion snapshotVersion,
-      Map<Integer, TargetChange> targetChanges,
-      Map<Integer, QueryPurpose> targetMismatches,
-      Map<DocumentKey, MutableDocument> documentUpdates,
-      Set<DocumentKey> resolvedLimboDocuments) {
+      ImmutableMap<Integer, TargetChange> targetChanges,
+      ImmutableMap<Integer, QueryPurpose> targetMismatches,
+      ImmutableMap<DocumentKey, MutableDocument> documentUpdates,
+      ImmutableSet<DocumentKey> resolvedLimboDocuments) {
     this.snapshotVersion = snapshotVersion;
     this.targetChanges = targetChanges;
     this.targetMismatches = targetMismatches;
@@ -51,7 +51,7 @@ public final class RemoteEvent {
   }
 
   /** Returns a map from target to changes to the target. */
-  public Map<Integer, TargetChange> getTargetChanges() {
+  public ImmutableMap<Integer, TargetChange> getTargetChanges() {
     return targetChanges;
   }
 
@@ -59,7 +59,7 @@ public final class RemoteEvent {
    * Returns a map of targets that is known to be inconsistent, and the purpose for re-listening.
    * Listens for these targets should be re-established without resume tokens.
    */
-  public Map<Integer, QueryPurpose> getTargetMismatches() {
+  public ImmutableMap<Integer, QueryPurpose> getTargetMismatches() {
     return targetMismatches;
   }
 
@@ -67,12 +67,12 @@ public final class RemoteEvent {
    * Returns a set of which documents have changed or been deleted, along with the doc's new values
    * (if not deleted).
    */
-  public Map<DocumentKey, MutableDocument> getDocumentUpdates() {
+  public ImmutableMap<DocumentKey, MutableDocument> getDocumentUpdates() {
     return documentUpdates;
   }
 
   /** Returns the set of document updates that are due only to limbo resolution targets. */
-  public Set<DocumentKey> getResolvedLimboDocuments() {
+  public ImmutableSet<DocumentKey> getResolvedLimboDocuments() {
     return resolvedLimboDocuments;
   }
 

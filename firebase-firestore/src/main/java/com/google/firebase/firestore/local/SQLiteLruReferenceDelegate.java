@@ -21,8 +21,8 @@ import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Consumer;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import java.util.Collection;
 
 /** Provides LRU functionality for SQLite persistence. */
 class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
@@ -38,7 +38,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private ListenSequence listenSequence;
   private long currentSequenceNumber;
   private final LruGarbageCollector garbageCollector;
-  private ReferenceSet inMemoryPins;
+  private Collection<DocumentKey> inMemoryPins;
 
   SQLiteLruReferenceDelegate(SQLitePersistence persistence, LruGarbageCollector.Params params) {
     this.currentSequenceNumber = ListenSequence.INVALID;
@@ -104,7 +104,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+  public void setInMemoryPins(Collection<DocumentKey> inMemoryPins) {
     this.inMemoryPins = inMemoryPins;
   }
 
@@ -142,7 +142,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
    * equal to the upper bound for the collection run.
    */
   private boolean isPinned(DocumentKey key) {
-    if (inMemoryPins.containsKey(key)) {
+    if (inMemoryPins.contains(key)) {
       return true;
     }
 
@@ -161,7 +161,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
     boolean resultsRemaining = true;
 
-    List<DocumentKey> docsToRemove = new ArrayList<>();
+    ImmutableArrayList.Builder<DocumentKey> docsToRemove = new ImmutableArrayList.Builder<>();
     final ResourcePath[] startPath = {ResourcePath.EMPTY};
     while (resultsRemaining) {
       int rowsProccessed =
@@ -190,7 +190,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
       resultsRemaining = (rowsProccessed == REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE);
     }
 
-    persistence.getRemoteDocumentCache().removeAll(docsToRemove);
+    persistence.getRemoteDocumentCache().removeAll(docsToRemove.build());
     return count[0];
   }
 

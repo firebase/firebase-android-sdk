@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
@@ -168,12 +169,14 @@ public final class LocalSerializer {
     Timestamp localWriteTime = rpcSerializer.decodeTimestamp(batch.getLocalWriteTime());
 
     int baseMutationsCount = batch.getBaseWritesCount();
-    List<Mutation> baseMutations = new ArrayList<>(baseMutationsCount);
+    ImmutableArrayList.Builder<Mutation> baseMutations =
+        new ImmutableArrayList.Builder<>(baseMutationsCount);
     for (int i = 0; i < baseMutationsCount; i++) {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
 
-    List<Mutation> mutations = new ArrayList<>(batch.getWritesCount());
+    ImmutableArrayList.Builder<Mutation> mutations =
+        new ImmutableArrayList.Builder<>(batch.getWritesCount());
 
     // Squash old transform mutations into existing patch or set mutations. The replacement of
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
@@ -200,7 +203,7 @@ public final class LocalSerializer {
       }
     }
 
-    return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
+    return new MutationBatch(batchId, localWriteTime, baseMutations.build(), mutations.build());
   }
 
   com.google.firebase.firestore.proto.Target encodeTargetData(TargetData targetData) {
@@ -314,8 +317,8 @@ public final class LocalSerializer {
     return index.build();
   }
 
-  public List<FieldIndex.Segment> decodeFieldIndexSegments(Index index) {
-    List<FieldIndex.Segment> result = new ArrayList<>();
+  public ArrayList<FieldIndex.Segment> decodeFieldIndexSegments(Index index) {
+    ArrayList<FieldIndex.Segment> result = new ArrayList<>();
     for (Index.IndexField field : index.getFieldsList()) {
       FieldPath fieldPath = FieldPath.fromServerFormat(field.getFieldPath());
       FieldIndex.Segment.Kind kind =

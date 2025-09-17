@@ -29,6 +29,8 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,8 +51,8 @@ public final class Target {
 
   private @Nullable String memoizedCanonicalId;
 
-  private final List<OrderBy> orderBys;
-  private final List<Filter> filters;
+  private final ImmutableList<OrderBy> orderBys;
+  private final ImmutableList<Filter> filters;
 
   private final ResourcePath path;
 
@@ -72,8 +74,8 @@ public final class Target {
   public Target(
       ResourcePath path,
       @Nullable String collectionGroup,
-      List<Filter> filters,
-      List<OrderBy> orderBys,
+      ImmutableList<Filter> filters,
+      ImmutableList<OrderBy> orderBys,
       long limit,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
@@ -102,7 +104,7 @@ public final class Target {
   }
 
   /** The filters on the documents returned by the query. */
-  public List<Filter> getFilters() {
+  public ImmutableList<Filter> getFilters() {
     return filters;
   }
 
@@ -126,8 +128,8 @@ public final class Target {
   }
 
   /** Returns the field filters that target the given field path. */
-  private List<FieldFilter> getFieldFiltersForPath(FieldPath path) {
-    List<FieldFilter> result = new ArrayList<>();
+  private ArrayList<FieldFilter> getFieldFiltersForPath(FieldPath path) {
+    ArrayList<FieldFilter> result = new ArrayList<>();
     for (Filter filter : filters) {
       if ((filter instanceof FieldFilter) && (((FieldFilter) filter).getField()).equals(path)) {
         result.add((FieldFilter) filter);
@@ -187,7 +189,7 @@ public final class Target {
    * defined by {@code fieldIndex}. Returns {@link Values#MIN_VALUE} if no lower bound exists.
    */
   public Bound getLowerBound(FieldIndex fieldIndex) {
-    List<Value> values = new ArrayList<>();
+    ImmutableArrayList.Builder<Value> values = new ImmutableArrayList.Builder<>();
     boolean inclusive = true;
 
     // For each segment, retrieve a lower bound if there is a suitable filter or startAt.
@@ -201,7 +203,7 @@ public final class Target {
       inclusive &= segmentBound.second;
     }
 
-    return new Bound(values, inclusive);
+    return new Bound(values.build(), inclusive);
   }
 
   /**
@@ -209,7 +211,7 @@ public final class Target {
    * index defined by {@code fieldIndex}. Returns {@link Values#MAX_VALUE} if no upper bound exists.
    */
   public Bound getUpperBound(FieldIndex fieldIndex) {
-    List<Value> values = new ArrayList<>();
+    ImmutableArrayList.Builder<Value> values = new ImmutableArrayList.Builder<>();
     boolean inclusive = true;
 
     // For each segment, retrieve an upper bound if there is a suitable filter or endAt.
@@ -223,7 +225,7 @@ public final class Target {
       inclusive &= segmentBound.second;
     }
 
-    return new Bound(values, inclusive);
+    return new Bound(values.build(), inclusive);
   }
 
   /**
@@ -357,7 +359,7 @@ public final class Target {
     return new Pair<>(segmentValue, segmentInclusive);
   }
 
-  public List<OrderBy> getOrderBy() {
+  public ImmutableList<OrderBy> getOrderBy() {
     return this.orderBys;
   }
 

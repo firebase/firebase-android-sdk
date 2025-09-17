@@ -17,7 +17,6 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Util.voidErrorTransformer;
-import static java.util.Collections.singletonList;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
@@ -41,8 +40,8 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 import com.google.firebase.firestore.util.Util;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -165,7 +164,8 @@ public class DocumentReference {
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
             : firestore.getUserDataReader().parseSetData(data);
-    List<Mutation> mutations = singletonList(parsed.toMutation(key, Precondition.NONE));
+    ImmutableArrayList<Mutation> mutations =
+        ImmutableArrayList.of(parsed.toMutation(key, Precondition.NONE));
     return firestore
         .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
@@ -229,7 +229,8 @@ public class DocumentReference {
   }
 
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
-    List<Mutation> mutations = singletonList(parsedData.toMutation(key, Precondition.exists(true)));
+    ImmutableArrayList<Mutation> mutations =
+        ImmutableArrayList.of(parsedData.toMutation(key, Precondition.exists(true)));
     return firestore
         .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
@@ -242,7 +243,8 @@ public class DocumentReference {
    */
   @NonNull
   public Task<Void> delete() {
-    List<Mutation> mutations = singletonList(new DeleteMutation(key, Precondition.NONE));
+    ImmutableArrayList<Mutation> mutations =
+        ImmutableArrayList.of(new DeleteMutation(key, Precondition.NONE));
     return firestore
         .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());

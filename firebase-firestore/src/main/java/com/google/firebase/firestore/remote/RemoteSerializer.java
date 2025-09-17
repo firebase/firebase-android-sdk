@@ -54,6 +54,9 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableLists;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.BatchGetDocumentsResponse.ResultCase;
@@ -600,22 +603,23 @@ public final class RemoteSerializer {
       }
     }
 
-    List<Filter> filterBy;
+    ImmutableList<Filter> filterBy;
     if (query.hasWhere()) {
       filterBy = decodeFilters(query.getWhere());
     } else {
-      filterBy = Collections.emptyList();
+      filterBy = ImmutableLists.empty();
     }
 
-    List<OrderBy> orderBy;
+    ImmutableList<OrderBy> orderBy;
     int orderByCount = query.getOrderByCount();
     if (orderByCount > 0) {
-      orderBy = new ArrayList<>(orderByCount);
+      ImmutableArrayList.Builder<OrderBy> orderByBuilder = new ImmutableArrayList.Builder<>();
       for (int i = 0; i < orderByCount; i++) {
-        orderBy.add(decodeOrderBy(query.getOrderBy(i)));
+        orderByBuilder.add(decodeOrderBy(query.getOrderBy(i)));
       }
+      orderBy = orderByBuilder.build();
     } else {
-      orderBy = Collections.emptyList();
+      orderBy = ImmutableLists.empty();
     }
 
     long limit = com.google.firebase.firestore.core.Target.NO_LIMIT;
@@ -625,12 +629,18 @@ public final class RemoteSerializer {
 
     Bound startAt = null;
     if (query.hasStartAt()) {
-      startAt = new Bound(query.getStartAt().getValuesList(), query.getStartAt().getBefore());
+      startAt =
+          new Bound(
+              ImmutableLists.adopt(query.getStartAt().getValuesList()),
+              query.getStartAt().getBefore());
     }
 
     Bound endAt = null;
     if (query.hasEndAt()) {
-      endAt = new Bound(query.getEndAt().getValuesList(), !query.getEndAt().getBefore());
+      endAt =
+          new Bound(
+              ImmutableLists.adopt(query.getEndAt().getValuesList()),
+              !query.getEndAt().getBefore());
     }
 
     return new com.google.firebase.firestore.core.Target(
@@ -691,14 +701,14 @@ public final class RemoteSerializer {
 
   // Filters
 
-  private StructuredQuery.Filter encodeFilters(List<Filter> filters) {
+  private StructuredQuery.Filter encodeFilters(ImmutableList<Filter> filters) {
     // A target's filter list is implicitly a composite AND filter.
     return encodeFilter(
         new com.google.firebase.firestore.core.CompositeFilter(
             filters, com.google.firebase.firestore.core.CompositeFilter.Operator.AND));
   }
 
-  private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
+  private ImmutableList<Filter> decodeFilters(StructuredQuery.Filter proto) {
     Filter result = decodeFilter(proto);
 
     // Instead of a singletonList containing AND(F1, F2, ...), we can return a list containing F1,
@@ -711,7 +721,7 @@ public final class RemoteSerializer {
       }
     }
 
-    return Collections.singletonList(result);
+    return ImmutableArrayList.of(result);
   }
 
   @VisibleForTesting
@@ -835,12 +845,12 @@ public final class RemoteSerializer {
   @VisibleForTesting
   com.google.firebase.firestore.core.CompositeFilter decodeCompositeFilter(
       StructuredQuery.CompositeFilter compositeFilter) {
-    List<Filter> filters = new ArrayList<>();
+    ImmutableArrayList.Builder<Filter> filters = new ImmutableArrayList.Builder<>();
     for (StructuredQuery.Filter filter : compositeFilter.getFiltersList()) {
       filters.add(decodeFilter(filter));
     }
     return new com.google.firebase.firestore.core.CompositeFilter(
-        filters, decodeCompositeFilterOperator(compositeFilter.getOp()));
+        filters.build(), decodeCompositeFilterOperator(compositeFilter.getOp()));
   }
 
   private FieldReference encodeFieldPath(FieldPath field) {

@@ -16,14 +16,14 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
-import java.util.ArrayList;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /** Provides eager garbage collection for MemoryPersistence. */
 class MemoryEagerReferenceDelegate implements ReferenceDelegate {
-  private ReferenceSet inMemoryPins;
+  private Collection<DocumentKey> inMemoryPins;
   private final MemoryPersistence persistence;
   private Set<DocumentKey> orphanedDocuments;
 
@@ -37,7 +37,7 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   }
 
   @Override
-  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+  public void setInMemoryPins(Collection<DocumentKey> inMemoryPins) {
     this.inMemoryPins = inMemoryPins;
   }
 
@@ -74,13 +74,13 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   @Override
   public void onTransactionCommitted() {
     MemoryRemoteDocumentCache remoteDocuments = persistence.getRemoteDocumentCache();
-    List<DocumentKey> docsToRemove = new ArrayList<>();
+    ImmutableArrayList.Builder<DocumentKey> docsToRemove = new ImmutableArrayList.Builder<>();
     for (DocumentKey key : orphanedDocuments) {
       if (!isReferenced(key)) {
         docsToRemove.add(key);
       }
     }
-    remoteDocuments.removeAll(docsToRemove);
+    remoteDocuments.removeAll(docsToRemove.build());
     orphanedDocuments = null;
   }
 
@@ -112,7 +112,7 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
       return true;
     }
 
-    if (inMemoryPins != null && inMemoryPins.containsKey(key)) {
+    if (inMemoryPins != null && inMemoryPins.contains(key)) {
       return true;
     }
 

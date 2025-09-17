@@ -22,11 +22,12 @@ import com.google.firebase.firestore.local.OverlayedDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A batch of mutations that will be sent as one unit to the backend. Batches can be marked as a
@@ -54,19 +55,19 @@ public final class MutationBatch {
    * can be used to locally overwrite values that are persisted in the remote document cache. Base
    * mutations are never sent to the backend.
    */
-  private final List<Mutation> baseMutations;
+  private final ImmutableList<Mutation> baseMutations;
 
   /**
    * The user-provided mutations in this mutation batch. User-provided mutations are applied both
    * locally and remotely on the backend.
    */
-  private final List<Mutation> mutations;
+  private final ImmutableList<Mutation> mutations;
 
   public MutationBatch(
       int batchId,
       Timestamp localWriteTime,
-      List<Mutation> baseMutations,
-      List<Mutation> mutations) {
+      ImmutableList<Mutation> baseMutations,
+      ImmutableList<Mutation> mutations) {
     hardAssert(!mutations.isEmpty(), "Cannot create an empty mutation batch");
     this.batchId = batchId;
     this.localWriteTime = localWriteTime;
@@ -102,7 +103,6 @@ public final class MutationBatch {
   /**
    * Computes the local view of a document given all the mutations in this batch.
    *
-   * @param mutatedFields The document to be mutated.
    * @param mutatedFields Fields that are already mutated before applying the current one.
    * @return An {@link FieldMask} representing all the fields that are mutated.
    */
@@ -131,14 +131,16 @@ public final class MutationBatch {
    * Computes the local view for all provided documents given the mutations in this batch. Returns a
    * {@code DocumentKey} to {@code Mutation} map which can be used to replace all the mutation
    * applications.
+   *
+   * @return a newly created {@link HashMap} with the results.
    */
-  public Map<DocumentKey, Mutation> applyToLocalDocumentSet(
-      Map<DocumentKey, OverlayedDocument> documentMap,
-      Set<DocumentKey> documentsWithoutRemoteVersion) {
+  public HashMap<DocumentKey, Mutation> applyToLocalDocumentSet(
+      ImmutableMap<DocumentKey, OverlayedDocument> documentMap,
+      ImmutableCollection<DocumentKey> documentsWithoutRemoteVersion) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
-    Map<DocumentKey, Mutation> overlays = new HashMap<>();
+    HashMap<DocumentKey, Mutation> overlays = new HashMap<>();
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
       // remove this cast.
@@ -199,8 +201,12 @@ public final class MutationBatch {
         + ')';
   }
 
-  /** Returns the set of unique keys referenced by all mutations in the batch. */
-  public Set<DocumentKey> getKeys() {
+  /**
+   * Returns the set of unique keys referenced by all mutations in the batch.
+   *
+   * @return a newly created {@link HashSet} with the results.
+   */
+  public HashSet<DocumentKey> getKeys() {
     HashSet<DocumentKey> set = new HashSet<>();
     for (Mutation mutation : mutations) {
       set.add(mutation.getKey());
@@ -221,7 +227,7 @@ public final class MutationBatch {
   }
 
   /** @return The user-provided mutations in this mutation batch. */
-  public List<Mutation> getMutations() {
+  public ImmutableList<Mutation> getMutations() {
     return mutations;
   }
 
@@ -229,7 +235,7 @@ public final class MutationBatch {
    * @return The mutations that are used to populate the base values when this mutation batch is
    *     applied locally.
    */
-  public List<Mutation> getBaseMutations() {
+  public ImmutableList<Mutation> getBaseMutations() {
     return baseMutations;
   }
 }

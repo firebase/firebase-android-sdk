@@ -14,12 +14,12 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableSet;
 
 /** A view snapshot is an immutable capture of the results of a query and the changes to them. */
 public class ViewSnapshot {
@@ -34,9 +34,9 @@ public class ViewSnapshot {
   private final Query query;
   private final DocumentSet documents;
   private final DocumentSet oldDocuments;
-  private final List<DocumentViewChange> changes;
+  private final ImmutableList<DocumentViewChange> changes;
   private final boolean isFromCache;
-  private final ImmutableSortedSet<DocumentKey> mutatedKeys;
+  private final ImmutableSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
   private boolean hasCachedResults;
@@ -45,9 +45,9 @@ public class ViewSnapshot {
       Query query,
       DocumentSet documents,
       DocumentSet oldDocuments,
-      List<DocumentViewChange> changes,
+      ImmutableList<DocumentViewChange> changes,
       boolean isFromCache,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      ImmutableSet<DocumentKey> mutatedKeys,
       boolean didSyncStateChange,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
@@ -66,11 +66,11 @@ public class ViewSnapshot {
   public static ViewSnapshot fromInitialDocuments(
       Query query,
       DocumentSet documents,
-      ImmutableSortedSet<DocumentKey> mutatedKeys,
+      ImmutableSet<DocumentKey> mutatedKeys,
       boolean fromCache,
       boolean excludesMetadataChanges,
       boolean hasCachedResults) {
-    List<DocumentViewChange> viewChanges = new ArrayList<>();
+    ImmutableArrayList.Builder<DocumentViewChange> viewChanges = new ImmutableArrayList.Builder<>();
     for (Document doc : documents) {
       viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
     }
@@ -78,7 +78,7 @@ public class ViewSnapshot {
         query,
         documents,
         DocumentSet.emptySet(query.comparator()),
-        viewChanges,
+        viewChanges.build(),
         fromCache,
         mutatedKeys,
         /* didSyncStateChange= */ true,
@@ -98,7 +98,7 @@ public class ViewSnapshot {
     return oldDocuments;
   }
 
-  public List<DocumentViewChange> getChanges() {
+  public ImmutableList<DocumentViewChange> getChanges() {
     return changes;
   }
 
@@ -110,7 +110,7 @@ public class ViewSnapshot {
     return !mutatedKeys.isEmpty();
   }
 
-  public ImmutableSortedSet<DocumentKey> getMutatedKeys() {
+  public ImmutableSet<DocumentKey> getMutatedKeys() {
     return mutatedKeys;
   }
 

@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
@@ -143,8 +144,10 @@ public class BundleSerializer {
       parent = parent.append(collectionSelector.getString("collectionId"));
     }
 
-    List<Filter> filters = decodeWhere(structuredQuery.optJSONObject("where"));
-    List<OrderBy> orderBys = decodeOrderBy(structuredQuery.optJSONArray("orderBy"));
+    ImmutableArrayList<Filter> filters =
+        ImmutableArrayList.adopt(decodeWhere(structuredQuery.optJSONObject("where")));
+    ImmutableArrayList<OrderBy> orderBys =
+        ImmutableArrayList.adopt(decodeOrderBy(structuredQuery.optJSONArray("orderBy")));
     @Nullable Bound startAt = decodeStartAtBound(structuredQuery.optJSONObject("startAt"));
     @Nullable Bound endAt = decodeEndAtBound(structuredQuery.optJSONObject("endAt"));
 
@@ -182,7 +185,7 @@ public class BundleSerializer {
   private Bound decodeStartAtBound(@Nullable JSONObject bound) throws JSONException {
     if (bound != null) {
       boolean before = bound.optBoolean("before", false);
-      List<Value> position = decodePosition(bound);
+      ImmutableArrayList<Value> position = ImmutableArrayList.adopt(decodePosition(bound));
       return new Bound(position, before);
     }
     return null;
@@ -191,14 +194,14 @@ public class BundleSerializer {
   private Bound decodeEndAtBound(@Nullable JSONObject bound) throws JSONException {
     if (bound != null) {
       boolean before = bound.optBoolean("before", false);
-      List<Value> position = decodePosition(bound);
+      ImmutableArrayList<Value> position = ImmutableArrayList.adopt(decodePosition(bound));
       return new Bound(position, !before);
     }
     return null;
   }
 
-  private List<Value> decodePosition(JSONObject bound) throws JSONException {
-    List<Value> cursor = new ArrayList<>();
+  private ArrayList<Value> decodePosition(JSONObject bound) throws JSONException {
+    ArrayList<Value> cursor = new ArrayList<>();
     JSONArray values = bound.optJSONArray("values");
     if (values != null) {
       for (int i = 0; i < values.length(); ++i) {
@@ -208,8 +211,8 @@ public class BundleSerializer {
     return cursor;
   }
 
-  private List<OrderBy> decodeOrderBy(@Nullable JSONArray orderBys) throws JSONException {
-    List<OrderBy> result = new ArrayList<>();
+  private ArrayList<OrderBy> decodeOrderBy(@Nullable JSONArray orderBys) throws JSONException {
+    ArrayList<OrderBy> result = new ArrayList<>();
 
     if (orderBys != null) {
       for (int i = 0; i < orderBys.length(); ++i) {
@@ -227,15 +230,16 @@ public class BundleSerializer {
     return result;
   }
 
-  private List<Filter> decodeWhere(@Nullable JSONObject where) throws JSONException {
-    List<Filter> result = new ArrayList<>();
+  private ArrayList<Filter> decodeWhere(@Nullable JSONObject where) throws JSONException {
+    ArrayList<Filter> result = new ArrayList<>();
     if (where != null) {
       decodeFilter(result, where);
     }
     return result;
   }
 
-  private void decodeFilter(List<Filter> result, JSONObject structuredQuery) throws JSONException {
+  private void decodeFilter(ArrayList<Filter> result, JSONObject structuredQuery)
+      throws JSONException {
     if (structuredQuery.has("compositeFilter")) {
       decodeCompositeFilter(result, structuredQuery.getJSONObject("compositeFilter"));
     } else if (structuredQuery.has("fieldFilter")) {
@@ -245,7 +249,7 @@ public class BundleSerializer {
     }
   }
 
-  private void decodeCompositeFilter(List<Filter> result, JSONObject compositeFilter)
+  private void decodeCompositeFilter(ArrayList<Filter> result, JSONObject compositeFilter)
       throws JSONException {
     if (!compositeFilter.getString("op").equals("AND")) {
       throw new IllegalArgumentException(
@@ -260,7 +264,8 @@ public class BundleSerializer {
     }
   }
 
-  private void decodeFieldFilter(List<Filter> result, JSONObject fieldFilter) throws JSONException {
+  private void decodeFieldFilter(ArrayList<Filter> result, JSONObject fieldFilter)
+      throws JSONException {
     FieldPath fieldPath = decodeFieldReference(fieldFilter.getJSONObject("field"));
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(fieldFilter.getString("op"));
     result.add(

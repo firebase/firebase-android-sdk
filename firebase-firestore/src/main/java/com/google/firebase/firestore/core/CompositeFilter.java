@@ -18,9 +18,8 @@ import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.util.Function;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
 
 /** Represents a filter that is the conjunction or disjunction of other filters. */
 public class CompositeFilter extends Filter {
@@ -40,21 +39,21 @@ public class CompositeFilter extends Filter {
     }
   }
 
-  private final List<Filter> filters;
+  private final ImmutableList<Filter> filters;
   private final Operator operator;
 
   // Memoized list of all field filters that can be found by traversing the tree of filters
   // contained in this composite filter.
-  private List<FieldFilter> memoizedFlattenedFilters;
+  private ImmutableList<FieldFilter> memoizedFlattenedFilters;
 
-  public CompositeFilter(List<Filter> filters, Operator operator) {
-    this.filters = new ArrayList<>(filters);
+  public CompositeFilter(ImmutableList<Filter> filters, Operator operator) {
+    this.filters = filters;
     this.operator = operator;
   }
 
   @Override
-  public List<Filter> getFilters() {
-    return Collections.unmodifiableList(filters);
+  public ImmutableList<Filter> getFilters() {
+    return filters;
   }
 
   public Operator getOperator() {
@@ -62,15 +61,17 @@ public class CompositeFilter extends Filter {
   }
 
   @Override
-  public List<FieldFilter> getFlattenedFilters() {
+  public ImmutableList<FieldFilter> getFlattenedFilters() {
     if (memoizedFlattenedFilters != null) {
-      return Collections.unmodifiableList(memoizedFlattenedFilters);
+      return memoizedFlattenedFilters;
     }
-    memoizedFlattenedFilters = new ArrayList<>();
+    ImmutableArrayList.Builder<FieldFilter> newMemoizedFlattenedFilters =
+        new ImmutableArrayList.Builder<>();
     for (Filter subfilter : filters) {
-      memoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
+      newMemoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
     }
-    return Collections.unmodifiableList(memoizedFlattenedFilters);
+    memoizedFlattenedFilters = newMemoizedFlattenedFilters.build();
+    return memoizedFlattenedFilters;
   }
 
   public boolean isConjunction() {
@@ -103,10 +104,10 @@ public class CompositeFilter extends Filter {
   /**
    * Returns a new composite filter that contains all filter from `this` plus all the given filters.
    */
-  public CompositeFilter withAddedFilters(List<Filter> otherFilters) {
-    List<Filter> mergedFilters = new ArrayList<>(filters);
+  public CompositeFilter withAddedFilters(ImmutableList<Filter> otherFilters) {
+    ImmutableArrayList.Builder<Filter> mergedFilters = new ImmutableArrayList.Builder<>(filters);
     mergedFilters.addAll(otherFilters);
-    return new CompositeFilter(mergedFilters, operator);
+    return new CompositeFilter(mergedFilters.build(), operator);
   }
 
   /**

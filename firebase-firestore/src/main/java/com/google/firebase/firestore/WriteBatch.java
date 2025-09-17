@@ -25,8 +25,8 @@ import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 import com.google.firebase.firestore.util.Util;
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public class WriteBatch {
   private final FirebaseFirestore firestore;
-  private final ArrayList<Mutation> mutations = new ArrayList<>();
+  private final ImmutableArrayList.Builder<Mutation> mutations = new ImmutableArrayList.Builder<>();
   private boolean committed = false;
 
   WriteBatch(FirebaseFirestore firestore) {
@@ -190,6 +190,7 @@ public class WriteBatch {
   public Task<Void> commit() {
     verifyNotCommitted();
     committed = true;
+    ImmutableArrayList<Mutation> mutations = this.mutations.build();
     if (!mutations.isEmpty()) {
       return firestore.callClient(client -> client.write(mutations));
     } else {

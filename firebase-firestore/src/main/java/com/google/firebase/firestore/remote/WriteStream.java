@@ -22,12 +22,13 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableCollections;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -91,7 +92,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
     if (handshakeComplete) {
       // Send an empty write request to the backend to indicate imminent stream closure. This allows
       // the backend to clean up resources.
-      writeMutations(Collections.emptyList());
+      writeMutations(ImmutableCollections.empty());
     }
   }
 
@@ -146,7 +147,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
    *
    * @param mutations The mutations
    */
-  void writeMutations(List<Mutation> mutations) {
+  void writeMutations(ImmutableCollection<Mutation> mutations) {
     hardAssert(isOpen(), "Writing mutations requires an opened stream");
     hardAssert(handshakeComplete, "Handshake must be complete before writing mutations");
     WriteRequest.Builder request = WriteRequest.newBuilder();

@@ -17,7 +17,6 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
@@ -27,9 +26,14 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableHashMap;
+import com.google.firebase.firestore.util.ImmutableMap;
 import com.google.firebase.firestore.util.Logger;
-import java.util.Collections;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -92,13 +96,13 @@ public class QueryEngine {
     this.indexAutoCreationEnabled = isEnabled;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
-      ImmutableSortedSet<DocumentKey> remoteKeys) {
+      ImmutableCollection<DocumentKey> remoteKeys) {
     hardAssert(initialized, "initialize() not called");
 
-    ImmutableSortedMap<DocumentKey, Document> result = performQueryUsingIndex(query);
+    HashMap<DocumentKey, Document> result = performQueryUsingIndex(query);
     if (result != null) {
       return result;
     }
@@ -152,7 +156,7 @@ public class QueryEngine {
    * Performs an indexed query that evaluates the query based on a collection's persisted index
    * values. Returns {@code null} if an index is not available.
    */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(Query query) {
+  private @Nullable HashMap<DocumentKey, Document> performQueryUsingIndex(Query query) {
     if (query.matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
@@ -176,11 +180,16 @@ public class QueryEngine {
       return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 
-    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
-    hardAssert(keys != null, "index manager must return results for partial and full indexes.");
+    ImmutableArrayList<DocumentKey> keys;
+    {
+      ArrayList<DocumentKey> keysArrayList = indexManager.getDocumentsMatchingTarget(target);
+      hardAssert(
+          keysArrayList != null, "index manager must return results for partial and full indexes.");
+      keys = ImmutableArrayList.adopt(keysArrayList);
+    }
 
-    ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
-        localDocumentsView.getDocuments(keys);
+    ImmutableHashMap<DocumentKey, Document> indexedDocuments =
+        ImmutableHashMap.adopt(localDocumentsView.getDocuments(keys));
     IndexOffset offset = indexManager.getMinOffset(target);
 
     ImmutableSortedSet<Document> previousResults = applyQuery(query, indexedDocuments);
@@ -192,16 +201,16 @@ public class QueryEngine {
       return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 
-    return appendRemainingResults(previousResults, query, offset);
+    return appendRemainingResults(previousResults.iterator(), query, offset);
   }
 
   /**
    * Performs a query based on the target's persisted query mapping. Returns {@code null} if the
    * mapping is not available or cannot be used.
    */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingRemoteKeys(
+  private @Nullable HashMap<DocumentKey, Document> performQueryUsingRemoteKeys(
       Query query,
-      ImmutableSortedSet<DocumentKey> remoteKeys,
+      ImmutableCollection<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
     if (query.matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
@@ -214,8 +223,8 @@ public class QueryEngine {
       return null;
     }
 
-    ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocuments(remoteKeys);
+    ImmutableHashMap<DocumentKey, Document> documents =
+        ImmutableHashMap.adopt(localDocumentsView.getDocuments(remoteKeys));
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
     if (needsRefill(query, remoteKeys.size(), previousResults, lastLimboFreeSnapshotVersion)) {
@@ -231,7 +240,7 @@ public class QueryEngine {
     }
 
     return appendRemainingResults(
-        previousResults,
+        previousResults.iterator(),
         query,
         IndexOffset.createSuccessor(
             lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID));
@@ -239,18 +248,18 @@ public class QueryEngine {
 
   /** Applies the query filter and sorting to the provided documents. */
   private ImmutableSortedSet<Document> applyQuery(
-      Query query, ImmutableSortedMap<DocumentKey, Document> documents) {
+      Query query, ImmutableMap<DocumentKey, Document> documents) {
     // Sort the documents and re-apply the query filter since previously matching documents do not
     // necessarily still match the query.
-    ImmutableSortedSet<Document> queryResults =
-        new ImmutableSortedSet<>(Collections.emptyList(), query.comparator());
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
+    ImmutableSortedSet.Builder<Document> queryResults =
+        new ImmutableSortedSet.Builder<>(query.comparator());
+    for (Map.Entry<DocumentKey, Document> entry : documents.entrySet()) {
       Document document = entry.getValue();
       if (query.matches(document)) {
-        queryResults = queryResults.insert(document);
+        queryResults.insert(document);
       }
     }
-    return queryResults;
+    return queryResults.build();
   }
 
   /**
@@ -299,7 +308,7 @@ public class QueryEngine {
         || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
+  private HashMap<DocumentKey, Document> executeFullCollectionScan(
       Query query, QueryContext context) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
@@ -311,13 +320,14 @@ public class QueryEngine {
    * Combines the results from an indexed execution with the remaining documents that have not yet
    * been indexed.
    */
-  private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
+  private HashMap<DocumentKey, Document> appendRemainingResults(
+      Iterator<Document> indexedResults, Query query, IndexOffset offset) {
     // Retrieve all results for documents that were updated since the offset.
-    ImmutableSortedMap<DocumentKey, Document> remainingResults =
+    HashMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
-    for (Document entry : indexedResults) {
-      remainingResults = remainingResults.insert(entry.getKey(), entry);
+    while (indexedResults.hasNext()) {
+      Document entry = indexedResults.next();
+      remainingResults.put(entry.getKey(), entry);
     }
     return remainingResults;
   }

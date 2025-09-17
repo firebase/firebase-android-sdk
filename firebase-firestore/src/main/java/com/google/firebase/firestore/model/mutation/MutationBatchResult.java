@@ -19,6 +19,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.protobuf.ByteString;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public final class MutationBatchResult {
         mutationResults.size());
     ImmutableSortedMap<DocumentKey, SnapshotVersion> docVersions =
         DocumentCollections.emptyVersionMap();
-    List<Mutation> mutations = batch.getMutations();
+    ImmutableList<Mutation> mutations = batch.getMutations();
     for (int i = 0; i < mutations.size(); i++) {
       SnapshotVersion version = mutationResults.get(i).getVersion();
       docVersions = docVersions.insert(mutations.get(i).getKey(), version);

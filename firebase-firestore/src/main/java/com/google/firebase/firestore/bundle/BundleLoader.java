@@ -14,18 +14,17 @@
 
 package com.google.firebase.firestore.bundle;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
-
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.util.ImmutableHashMap;
+import com.google.firebase.firestore.util.ImmutableHashSet;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +38,7 @@ public class BundleLoader {
   private final List<NamedQuery> queries;
   private final Map<DocumentKey, BundledDocumentMetadata> documentsMetadata;
 
-  private ImmutableSortedMap<DocumentKey, MutableDocument> documents;
+  private HashMap<DocumentKey, MutableDocument> documents;
   private long bytesLoaded;
   @Nullable private BundledDocumentMetadata currentMetadata;
 
@@ -47,7 +46,7 @@ public class BundleLoader {
     this.bundleCallback = bundleCallback;
     this.bundleMetadata = bundleMetadata;
     this.queries = new ArrayList<>();
-    this.documents = emptyMutableDocumentMap();
+    this.documents = new HashMap<>();
     this.documentsMetadata = new HashMap<>();
   }
 
@@ -70,12 +69,11 @@ public class BundleLoader {
       documentsMetadata.put(bundledDocumentMetadata.getKey(), bundledDocumentMetadata);
       currentMetadata = bundledDocumentMetadata;
       if (!((BundledDocumentMetadata) bundleElement).exists()) {
-        documents =
-            documents.insert(
-                bundledDocumentMetadata.getKey(),
-                MutableDocument.newNoDocument(
-                        bundledDocumentMetadata.getKey(), bundledDocumentMetadata.getReadTime())
-                    .setReadTime(bundledDocumentMetadata.getReadTime()));
+        documents.put(
+            bundledDocumentMetadata.getKey(),
+            MutableDocument.newNoDocument(
+                    bundledDocumentMetadata.getKey(), bundledDocumentMetadata.getReadTime())
+                .setReadTime(bundledDocumentMetadata.getReadTime()));
         currentMetadata = null;
       }
     } else if (bundleElement instanceof BundleDocument) {
@@ -84,10 +82,9 @@ public class BundleLoader {
         throw new IllegalArgumentException(
             "The document being added does not match the stored metadata.");
       }
-      documents =
-          documents.insert(
-              bundleDocument.getKey(),
-              bundleDocument.getDocument().setReadTime(currentMetadata.getReadTime()));
+      documents.put(
+          bundleDocument.getKey(),
+          bundleDocument.getDocument().setReadTime(currentMetadata.getReadTime()));
       currentMetadata = null;
     }
 
@@ -105,7 +102,7 @@ public class BundleLoader {
   }
 
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
-  public ImmutableSortedMap<DocumentKey, Document> applyChanges() {
+  public HashMap<DocumentKey, Document> applyChanges() {
     Preconditions.checkArgument(
         currentMetadata == null,
         "Bundled documents end with a document metadata element instead of a document.");
@@ -116,12 +113,14 @@ public class BundleLoader {
         bundleMetadata.getTotalDocuments(),
         documents.size());
 
-    ImmutableSortedMap<DocumentKey, Document> changes =
-        bundleCallback.applyBundledDocuments(documents, bundleMetadata.getBundleId());
+    HashMap<DocumentKey, Document> changes =
+        bundleCallback.applyBundledDocuments(
+            ImmutableHashMap.copyOf(documents), bundleMetadata.getBundleId());
 
-    Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();
+    HashMap<String, HashSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();
     for (NamedQuery namedQuery : queries) {
-      bundleCallback.saveNamedQuery(namedQuery, queryDocumentMap.get(namedQuery.getName()));
+      HashSet<DocumentKey> documentKeys = queryDocumentMap.get(namedQuery.getName());
+      bundleCallback.saveNamedQuery(namedQuery, ImmutableHashSet.adopt(documentKeys));
     }
 
     bundleCallback.saveBundle(bundleMetadata);
@@ -129,15 +128,15 @@ public class BundleLoader {
     return changes;
   }
 
-  private Map<String, ImmutableSortedSet<DocumentKey>> getQueryDocumentMapping() {
-    Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = new HashMap<>();
+  private HashMap<String, HashSet<DocumentKey>> getQueryDocumentMapping() {
+    HashMap<String, HashSet<DocumentKey>> queryDocumentMap = new HashMap<>();
     for (NamedQuery namedQuery : queries) {
-      queryDocumentMap.put(namedQuery.getName(), DocumentKey.emptyKeySet());
+      queryDocumentMap.put(namedQuery.getName(), new HashSet<>());
     }
     for (BundledDocumentMetadata metadata : documentsMetadata.values()) {
       for (String query : metadata.getQueries()) {
-        ImmutableSortedSet<DocumentKey> matchingKeys = queryDocumentMap.get(query);
-        queryDocumentMap.put(query, matchingKeys.insert(metadata.getKey()));
+        HashSet<DocumentKey> matchingKeys = queryDocumentMap.get(query);
+        matchingKeys.add(metadata.getKey());
       }
     }
 

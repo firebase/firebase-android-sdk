@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import com.google.firebase.firestore.model.DocumentKey;
+import java.util.Collection;
 
 /**
  * A ReferenceDelegate instance handles all of the hooks into the document-reference lifecycle. This
@@ -29,10 +30,10 @@ import com.google.firebase.firestore.model.DocumentKey;
  */
 interface ReferenceDelegate {
   /**
-   * Registers a ReferenceSet of documents that should be considered 'referenced' and not eligible
-   * for removal during garbage collection.
+   * Registers a set of documents that should be considered 'referenced' and not eligible for
+   * removal during garbage collection.
    */
-  void setInMemoryPins(ReferenceSet inMemoryPins);
+  void setInMemoryPins(Collection<DocumentKey> inMemoryPins);
 
   /** Notify the delegate that the given document was added to a target. */
   void addReference(DocumentKey key);

@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.DocumentKey;
-import java.util.ArrayList;
+import com.google.firebase.firestore.util.ImmutableHashSet;
+import com.google.firebase.firestore.util.ImmutableSet;
 
 /**
  * A set of changes to what documents are currently in view and out of view for a given query. These
@@ -28,19 +28,17 @@ import java.util.ArrayList;
 public final class LocalViewChanges {
 
   public static LocalViewChanges fromViewSnapshot(int targetId, ViewSnapshot snapshot) {
-    ImmutableSortedSet<DocumentKey> addedKeys =
-        new ImmutableSortedSet<DocumentKey>(new ArrayList<>(), DocumentKey.comparator());
-    ImmutableSortedSet<DocumentKey> removedKeys =
-        new ImmutableSortedSet<DocumentKey>(new ArrayList<>(), DocumentKey.comparator());
+    ImmutableHashSet.Builder<DocumentKey> addedKeys = new ImmutableHashSet.Builder<>();
+    ImmutableHashSet.Builder<DocumentKey> removedKeys = new ImmutableHashSet.Builder<>();
 
     for (DocumentViewChange docChange : snapshot.getChanges()) {
       switch (docChange.getType()) {
         case ADDED:
-          addedKeys = addedKeys.insert(docChange.getDocument().getKey());
+          addedKeys.add(docChange.getDocument().getKey());
           break;
 
         case REMOVED:
-          removedKeys = removedKeys.insert(docChange.getDocument().getKey());
+          removedKeys.add(docChange.getDocument().getKey());
           break;
 
         default:
@@ -49,20 +47,21 @@ public final class LocalViewChanges {
       }
     }
 
-    return new LocalViewChanges(targetId, snapshot.isFromCache(), addedKeys, removedKeys);
+    return new LocalViewChanges(
+        targetId, snapshot.isFromCache(), addedKeys.build(), removedKeys.build());
   }
 
   private final int targetId;
   private final boolean fromCache;
 
-  private final ImmutableSortedSet<DocumentKey> added;
-  private final ImmutableSortedSet<DocumentKey> removed;
+  private final ImmutableSet<DocumentKey> added;
+  private final ImmutableSet<DocumentKey> removed;
 
   public LocalViewChanges(
       int targetId,
       boolean fromCache,
-      ImmutableSortedSet<DocumentKey> added,
-      ImmutableSortedSet<DocumentKey> removed) {
+      ImmutableSet<DocumentKey> added,
+      ImmutableSet<DocumentKey> removed) {
     this.targetId = targetId;
     this.fromCache = fromCache;
     this.added = added;
@@ -77,11 +76,11 @@ public final class LocalViewChanges {
     return fromCache;
   }
 
-  public ImmutableSortedSet<DocumentKey> getAdded() {
+  public ImmutableSet<DocumentKey> getAdded() {
     return added;
   }
 
-  public ImmutableSortedSet<DocumentKey> getRemoved() {
+  public ImmutableSet<DocumentKey> getRemoved() {
     return removed;
   }
 }

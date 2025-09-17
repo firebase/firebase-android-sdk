@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.database.Cursor;
@@ -26,6 +25,8 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.util.BackgroundQueue;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableMap;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
+import java.util.PriorityQueue;
 
 public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   private final SQLitePersistence db;
@@ -59,14 +60,20 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
-    hardAssert(keys.comparator() == null, "getOverlays() requires natural order");
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+  public HashMap<DocumentKey, Overlay> getOverlays(ImmutableCollection<DocumentKey> unsortedKeys) {
+    PriorityQueue<DocumentKey> keyQueue = new PriorityQueue<>(unsortedKeys.size());
+    keyQueue.addAll(unsortedKeys.asUnmodifiableCollection());
+
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     ResourcePath currentCollection = ResourcePath.EMPTY;
     List<Object> accumulatedDocumentIds = new ArrayList<>();
-    for (DocumentKey key : keys) {
+    while (true) {
+      DocumentKey key = keyQueue.poll();
+      if (key == null) {
+        break;
+      }
       if (!currentCollection.equals(key.getCollectionPath())) {
         processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
         currentCollection = key.getCollectionPath();
@@ -122,7 +129,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
+  public void saveOverlays(int largestBatchId, ImmutableMap<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       DocumentKey key = entry.getKey();
       Mutation overlay = checkNotNull(entry.getValue(), "null value for key: %s", key);
@@ -137,8 +144,8 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+  public HashMap<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
@@ -150,9 +157,9 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Overlay> getOverlays(
+  public HashMap<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
     String[] lastCollectionPath = new String[1];
     String[] lastDocumentPath = new String[1];
     int[] lastLargestBatchId = new int[1];
@@ -194,7 +201,10 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
             lastLargestBatchId[0])
         .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
     backgroundQueue.drain();
-    return result;
+
+    synchronized (result) {
+      return result;
+    }
   }
 
   private void processOverlaysInBackground(

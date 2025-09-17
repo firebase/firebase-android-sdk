@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.util.ImmutableHashSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,7 +58,8 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
             MutationQueue mutationQueue = db.getMutationQueue(user, db.getIndexManager(user));
 
             // Get all document keys that have local mutations
-            Set<DocumentKey> allDocumentKeys = new HashSet<>();
+            ImmutableHashSet.Builder<DocumentKey> allDocumentKeys =
+                new ImmutableHashSet.Builder<>();
             List<MutationBatch> batches = mutationQueue.getAllMutationBatches();
             for (MutationBatch batch : batches) {
               allDocumentKeys.addAll(batch.getKeys());
@@ -71,7 +73,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
                     mutationQueue,
                     documentOverlayCache,
                     db.getIndexManager(user));
-            localView.recalculateAndSaveOverlays(allDocumentKeys);
+            localView.recalculateAndSaveOverlays(allDocumentKeys.build());
           }
 
           removePendingOverlayMigrations();

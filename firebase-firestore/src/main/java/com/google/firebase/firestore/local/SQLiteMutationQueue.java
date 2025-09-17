@@ -30,6 +30,8 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -37,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /** A mutation queue for a specific user, backed by SQLite. */
 final class SQLiteMutationQueue implements MutationQueue {
@@ -138,7 +138,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     // naive_scan:  0.1041
     // dependent:   0.0002
 
-    List<String> uids = new ArrayList<>();
+    ArrayList<String> uids = new ArrayList<>();
     db.query("SELECT uid FROM mutation_queues").forEach(row -> uids.add(row.getString(0)));
 
     nextBatchId = 0;
@@ -185,7 +185,9 @@ final class SQLiteMutationQueue implements MutationQueue {
 
   @Override
   public MutationBatch addMutationBatch(
-      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
+      Timestamp localWriteTime,
+      ImmutableList<Mutation> baseMutations,
+      ImmutableList<Mutation> mutations) {
     int batchId = nextBatchId;
     nextBatchId += 1;
 
@@ -201,7 +203,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     // PORTING NOTE: Unlike LevelDB, these entries must be unique.
     // Since user and batchId are fixed within this function body, it's enough to track unique keys
     // added in this batch.
-    Set<DocumentKey> inserted = new HashSet<>();
+    HashSet<DocumentKey> inserted = new HashSet<>();
 
     SQLiteStatement indexInserter =
         db.prepare("INSERT INTO document_mutations (uid, path, batch_id) VALUES (?, ?, ?)");
@@ -249,8 +251,8 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatches() {
-    List<MutationBatch> result = new ArrayList<>();
+  public ArrayList<MutationBatch> getAllMutationBatches() {
+    ArrayList<MutationBatch> result = new ArrayList<>();
     db.query(
             "SELECT batch_id, SUBSTR(mutations, 1, ?) "
                 + "FROM mutations "
@@ -261,10 +263,11 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey) {
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKey(
+      DocumentKey documentKey) {
     String path = EncodedPath.encode(documentKey.getPath());
 
-    List<MutationBatch> result = new ArrayList<>();
+    ArrayList<MutationBatch> result = new ArrayList<>();
     db.query(
             "SELECT m.batch_id, SUBSTR(m.mutations, 1, ?) "
                 + "FROM document_mutations dm, mutations m "
@@ -280,9 +283,9 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
-      Iterable<DocumentKey> documentKeys) {
-    List<Object> args = new ArrayList<>();
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
+      ImmutableCollection<DocumentKey> documentKeys) {
+    ArrayList<Object> args = new ArrayList<>();
     for (DocumentKey key : documentKeys) {
       args.add(EncodedPath.encode(key.getPath()));
     }
@@ -301,8 +304,8 @@ final class SQLiteMutationQueue implements MutationQueue {
                 + "AND dm.batch_id = m.batch_id "
                 + "ORDER BY dm.batch_id");
 
-    List<MutationBatch> result = new ArrayList<>();
-    Set<Integer> uniqueBatchIds = new HashSet<>();
+    ArrayList<MutationBatch> result = new ArrayList<>();
+    HashSet<Integer> uniqueBatchIds = new HashSet<>();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
@@ -329,7 +332,7 @@ final class SQLiteMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -354,7 +357,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
-    List<MutationBatch> result = new ArrayList<>();
+    ArrayList<MutationBatch> result = new ArrayList<>();
 
     db.query(
             "SELECT dm.batch_id, dm.path, SUBSTR(m.mutations, 1, ?) "
@@ -420,7 +423,7 @@ final class SQLiteMutationQueue implements MutationQueue {
     }
 
     // Verify that there are no entries in the document_mutations index if the queue is empty.
-    List<ResourcePath> danglingMutationReferences = new ArrayList<>();
+    ArrayList<ResourcePath> danglingMutationReferences = new ArrayList<>();
     db.query("SELECT path FROM document_mutations WHERE uid = ?")
         .binding(uid)
         .forEach(

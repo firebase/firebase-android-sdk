@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.core;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.MemoryCacheSettings;
 import com.google.firebase.firestore.MemoryLruGcSettings;
@@ -32,6 +31,7 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import io.grpc.Status;
+import java.util.HashSet;
 
 /**
  * Provides all components needed for Firestore with in-memory persistence. Uses EagerGC garbage
@@ -141,7 +141,7 @@ public class MemoryComponentProvider extends ComponentProvider {
     }
 
     @Override
-    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+    public HashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
       return getSyncEngine().getRemoteKeysForTarget(targetId);
     }
   }

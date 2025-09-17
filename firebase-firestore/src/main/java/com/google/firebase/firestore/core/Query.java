@@ -22,11 +22,12 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableLists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -56,9 +57,9 @@ public final class Query {
   private static final OrderBy KEY_ORDERING_DESC =
       OrderBy.getInstance(Direction.DESCENDING, FieldPath.KEY_PATH);
 
-  private final List<OrderBy> explicitSortOrder;
+  private final ImmutableList<OrderBy> explicitSortOrder;
 
-  private List<OrderBy> memoizedNormalizedOrderBys;
+  private ImmutableList<OrderBy> memoizedNormalizedOrderBys;
 
   /** The corresponding `Target` of this `Query` instance, for use with non-aggregate queries. */
   private @Nullable Target memoizedTarget;
@@ -70,7 +71,7 @@ public final class Query {
    */
   private @Nullable Target memoizedAggregateTarget;
 
-  private final List<Filter> filters;
+  private final ImmutableList<Filter> filters;
 
   private final ResourcePath path;
 
@@ -86,8 +87,8 @@ public final class Query {
   public Query(
       ResourcePath path,
       @Nullable String collectionGroup,
-      List<Filter> filters,
-      List<OrderBy> explicitSortOrder,
+      ImmutableList<Filter> filters,
+      ImmutableList<OrderBy> explicitSortOrder,
       long limit,
       LimitType limitType,
       @Nullable Bound startAt,
@@ -110,8 +111,8 @@ public final class Query {
     this(
         path,
         collectionGroup,
-        Collections.emptyList(),
-        Collections.emptyList(),
+        ImmutableLists.empty(),
+        ImmutableLists.empty(),
         Target.NO_LIMIT,
         LimitType.LIMIT_TO_FIRST,
         null,
@@ -152,7 +153,7 @@ public final class Query {
   }
 
   /** The filters on the documents returned by the query. */
-  public List<Filter> getFilters() {
+  public ImmutableList<Filter> getFilters() {
     return filters;
   }
 
@@ -203,10 +204,20 @@ public final class Query {
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
 
-    List<Filter> updatedFilter = new ArrayList<>(filters);
+    ImmutableArrayList.Builder<Filter> updatedFilter =
+        new ImmutableArrayList.Builder<>(filters.size() + 1);
+    updatedFilter.addAll(filters);
     updatedFilter.add(filter);
+
     return new Query(
-        path, collectionGroup, updatedFilter, explicitSortOrder, limit, limitType, startAt, endAt);
+        path,
+        collectionGroup,
+        updatedFilter.build(),
+        explicitSortOrder,
+        limit,
+        limitType,
+        startAt,
+        endAt);
   }
 
   /**
@@ -218,10 +229,12 @@ public final class Query {
   public Query orderBy(OrderBy order) {
     hardAssert(!isDocumentQuery(), "No ordering is allowed for document query");
 
-    List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
+    ImmutableArrayList.Builder<OrderBy> updatedSortOrder =
+        new ImmutableArrayList.Builder<>(explicitSortOrder.size() + 1);
+    updatedSortOrder.addAll(explicitSortOrder);
     updatedSortOrder.add(order);
     return new Query(
-        path, collectionGroup, filters, updatedSortOrder, limit, limitType, startAt, endAt);
+        path, collectionGroup, filters, updatedSortOrder.build(), limit, limitType, startAt, endAt);
   }
 
   /**
@@ -306,7 +319,7 @@ public final class Query {
    * <p>Note that the actual query performed might add additional sort orders to match the behavior
    * of the backend.
    */
-  public List<OrderBy> getExplicitOrderBy() {
+  public ImmutableList<OrderBy> getExplicitOrderBy() {
     return explicitSortOrder;
   }
 
@@ -318,10 +331,12 @@ public final class Query {
    *
    * <p>The returned list is unmodifiable, to prevent ConcurrentModificationExceptions, if one
    * thread is iterating the list and one thread is modifying the list.
+   *
+   * @return a newly created {@link ArrayList} containing the result.
    */
-  public synchronized List<OrderBy> getNormalizedOrderBy() {
+  public synchronized ImmutableList<OrderBy> getNormalizedOrderBy() {
     if (memoizedNormalizedOrderBys == null) {
-      List<OrderBy> res = new ArrayList<>();
+      ArrayList<OrderBy> res = new ArrayList<>();
       HashSet<String> fieldsNormalized = new HashSet<String>();
 
       /** Any explicit order by fields should be added as is. */
@@ -354,7 +369,7 @@ public final class Query {
         res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
       }
 
-      memoizedNormalizedOrderBys = Collections.unmodifiableList(res);
+      memoizedNormalizedOrderBys = ImmutableArrayList.copyOf(res);
     }
     return memoizedNormalizedOrderBys;
   }
@@ -425,9 +440,9 @@ public final class Query {
   }
 
   private static class QueryComparator implements Comparator<Document> {
-    private final List<OrderBy> sortOrder;
+    private final ImmutableList<OrderBy> sortOrder;
 
-    QueryComparator(List<OrderBy> order) {
+    QueryComparator(ImmutableList<OrderBy> order) {
       boolean hasKeyOrdering = false;
       for (OrderBy orderBy : order) {
         hasKeyOrdering = hasKeyOrdering || orderBy.getField().equals(FieldPath.KEY_PATH);
@@ -462,7 +477,7 @@ public final class Query {
     return this.memoizedTarget;
   }
 
-  private synchronized Target toTarget(List<OrderBy> orderBys) {
+  private synchronized Target toTarget(ImmutableList<OrderBy> orderBys) {
     if (this.limitType == LimitType.LIMIT_TO_FIRST) {
       return new Target(
           this.getPath(),
@@ -474,7 +489,8 @@ public final class Query {
           this.getEndAt());
     } else {
       // Flip the orderBy directions since we want the last results
-      ArrayList<OrderBy> newOrderBy = new ArrayList<>();
+      ImmutableArrayList.Builder<OrderBy> newOrderBy =
+          new ImmutableArrayList.Builder<>(orderBys.size());
       for (OrderBy orderBy : orderBys) {
         Direction dir =
             orderBy.getDirection() == Direction.DESCENDING
@@ -495,7 +511,7 @@ public final class Query {
           this.getPath(),
           this.getCollectionGroup(),
           this.getFilters(),
-          newOrderBy,
+          newOrderBy.build(),
           this.limit,
           newStartAt,
           newEndAt);

@@ -31,7 +31,6 @@ import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -316,14 +315,14 @@ public class Util {
    *     `after`.
    */
   public static <T> void diffCollections(
-      Collection<T> before,
-      Collection<T> after,
+      ImmutableCollection<T> before,
+      ImmutableCollection<T> after,
       Comparator<T> comparator,
       Consumer<T> onAdd,
       Consumer<T> onRemove) {
-    List<T> beforeEntries = new ArrayList<>(before);
+    ArrayList<T> beforeEntries = before.toArrayList();
     Collections.sort(beforeEntries, comparator);
-    List<T> afterEntries = new ArrayList<>(after);
+    ArrayList<T> afterEntries = after.toArrayList();
     Collections.sort(afterEntries, comparator);
 
     diffCollections(beforeEntries.iterator(), afterEntries.iterator(), comparator, onAdd, onRemove);
@@ -422,13 +421,13 @@ public class Util {
   }
 
   /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
-  public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
+  public static <K, V> HashMap<K, V> firstNEntries(HashMap<K, V> data, int n, Comparator<V> comp) {
     if (data.size() <= n) {
       return data;
     } else {
       List<Map.Entry<K, V>> sortedValues = new ArrayList<>(data.entrySet());
       Collections.sort(sortedValues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
-      Map<K, V> result = new HashMap<>();
+      HashMap<K, V> result = new HashMap<>();
       for (int i = 0; i < n; ++i) {
         result.put(sortedValues.get(i).getKey(), sortedValues.get(i).getValue());
       }

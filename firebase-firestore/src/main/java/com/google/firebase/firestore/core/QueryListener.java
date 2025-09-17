@@ -21,8 +21,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 
 /**
  * QueryListener takes a series of internal view snapshots and determines when to raise events.
@@ -82,7 +81,8 @@ public class QueryListener {
     boolean raisedEvent = false;
     if (!options.includeDocumentMetadataChanges) {
       // Remove the metadata only changes
-      List<DocumentViewChange> documentChanges = new ArrayList<>();
+      ImmutableArrayList.Builder<DocumentViewChange> documentChanges =
+          new ImmutableArrayList.Builder<>();
       for (DocumentViewChange change : newSnapshot.getChanges()) {
         if (change.getType() != Type.METADATA) {
           documentChanges.add(change);
@@ -93,7 +93,7 @@ public class QueryListener {
               newSnapshot.getQuery(),
               newSnapshot.getDocuments(),
               newSnapshot.getOldDocuments(),
-              documentChanges,
+              documentChanges.build(),
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
               newSnapshot.didSyncStateChange(),

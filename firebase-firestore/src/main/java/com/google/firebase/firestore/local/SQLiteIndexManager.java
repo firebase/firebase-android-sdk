@@ -27,7 +27,6 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
@@ -47,6 +46,11 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableCollections;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableMap;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
@@ -54,13 +58,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -78,7 +80,7 @@ final class SQLiteIndexManager implements IndexManager {
    * term from the target's disjunctive normal form (DNF).
    */
   // TODO(orquery): Find a way for the GC algorithm to remove the mapping once we remove a target.
-  private final Map<Target, List<Target>> targetToDnfSubTargets = new HashMap<>();
+  private final HashMap<Target, ImmutableArrayList<Target>> targetToDnfSubTargets = new HashMap<>();
 
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
@@ -90,8 +92,8 @@ final class SQLiteIndexManager implements IndexManager {
   private final MemoryIndexManager.MemoryCollectionParentIndex collectionParentsCache =
       new MemoryIndexManager.MemoryCollectionParentIndex();
 
-  private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes = new HashMap<>();
-  private final Queue<FieldIndex> nextIndexToUpdate =
+  private final HashMap<String, HashMap<Integer, FieldIndex>> memoizedIndexes = new HashMap<>();
+  private final PriorityQueue<FieldIndex> nextIndexToUpdate =
       new PriorityQueue<>(
           10,
           (l, r) -> {
@@ -116,7 +118,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void start() {
-    Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
+    HashMap<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
 
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
@@ -146,7 +148,7 @@ final class SQLiteIndexManager implements IndexManager {
               try {
                 int indexId = row.getInt(0);
                 String collectionGroup = row.getString(1);
-                List<FieldIndex.Segment> segments =
+                ArrayList<FieldIndex.Segment> segments =
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
 
                 // If we fetched an index state for the user above, combine it with this index.
@@ -187,7 +189,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public List<ResourcePath> getCollectionParents(String collectionId) {
+  public ArrayList<ResourcePath> getCollectionParents(String collectionId) {
     hardAssert(started, "IndexManager not started");
 
     ArrayList<ResourcePath> parentPaths = new ArrayList<>();
@@ -227,7 +229,8 @@ final class SQLiteIndexManager implements IndexManager {
     db.execute("DELETE FROM index_state WHERE index_id = ?", index.getIndexId());
 
     nextIndexToUpdate.remove(index);
-    Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
+    HashMap<Integer, FieldIndex> collectionIndices =
+        memoizedIndexes.get(index.getCollectionGroup());
     if (collectionIndices != null) {
       collectionIndices.remove(index.getIndexId());
     }
@@ -267,10 +270,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
+  public void updateIndexEntries(ImmutableMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
 
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
+    for (Map.Entry<DocumentKey, Document> entry : documents.entrySet()) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
         SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(entry.getKey(), fieldIndex);
@@ -297,22 +300,22 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
+  public ArrayList<FieldIndex> getFieldIndexes(String collectionGroup) {
     hardAssert(started, "IndexManager not started");
     Map<Integer, FieldIndex> indexes = memoizedIndexes.get(collectionGroup);
-    return indexes == null ? Collections.emptyList() : indexes.values();
+    return indexes == null ? new ArrayList<>() : new ArrayList<>(indexes.values());
   }
 
   @Override
-  public Collection<FieldIndex> getFieldIndexes() {
-    List<FieldIndex> allIndices = new ArrayList<>();
+  public ArrayList<FieldIndex> getFieldIndexes() {
+    ArrayList<FieldIndex> allIndices = new ArrayList<>();
     for (Map<Integer, FieldIndex> indices : memoizedIndexes.values()) {
       allIndices.addAll(indices.values());
     }
     return allIndices;
   }
 
-  private IndexOffset getMinOffset(Collection<FieldIndex> fieldIndexes) {
+  private IndexOffset getMinOffset(ImmutableCollection<FieldIndex> fieldIndexes) {
     hardAssert(
         !fieldIndexes.isEmpty(),
         "Found empty index group when looking for least recent index offset.");
@@ -333,15 +336,15 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public IndexOffset getMinOffset(String collectionGroup) {
-    Collection<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
+    ArrayList<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
     hardAssert(!fieldIndexes.isEmpty(), "minOffset was called for collection without indexes");
-    return getMinOffset(fieldIndexes);
+    return getMinOffset(ImmutableCollections.adopt(fieldIndexes));
   }
 
   @Override
   public IndexType getIndexType(Target target) {
     IndexType result = IndexType.FULL;
-    List<Target> subTargets = getSubTargets(target);
+    ImmutableArrayList<Target> subTargets = getSubTargets(target);
 
     for (Target subTarget : subTargets) {
       FieldIndex index = getFieldIndex(subTarget);
@@ -370,26 +373,26 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public IndexOffset getMinOffset(Target target) {
-    List<FieldIndex> fieldIndexes = new ArrayList<>();
+    ArrayList<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
       FieldIndex index = getFieldIndex(subTarget);
       if (index != null) {
         fieldIndexes.add(index);
       }
     }
-    return getMinOffset(fieldIndexes);
+    return getMinOffset(ImmutableCollections.adopt(fieldIndexes));
   }
 
-  private List<Target> getSubTargets(Target target) {
+  private ImmutableArrayList<Target> getSubTargets(Target target) {
     if (targetToDnfSubTargets.containsKey(target)) {
       return targetToDnfSubTargets.get(target);
     }
-    List<Target> subTargets = new ArrayList<>();
+    ImmutableArrayList.Builder<Target> subTargets = new ImmutableArrayList.Builder<>();
     if (target.getFilters().isEmpty()) {
       subTargets.add(target);
     } else {
       // There is an implicit AND operation between all the filters stored in the target.
-      List<Filter> dnf =
+      ImmutableList<Filter> dnf =
           getDnfTerms(new CompositeFilter(target.getFilters(), CompositeFilter.Operator.AND));
       for (Filter term : dnf) {
         subTargets.add(
@@ -403,8 +406,8 @@ final class SQLiteIndexManager implements IndexManager {
                 target.getEndAt()));
       }
     }
-    targetToDnfSubTargets.put(target, subTargets);
-    return subTargets;
+    targetToDnfSubTargets.put(target, subTargets.build());
+    return subTargets.build();
   }
 
   /**
@@ -412,7 +415,8 @@ final class SQLiteIndexManager implements IndexManager {
    * #memoizedMaxIndexId} and {@link #memoizedMaxSequenceNumber}.
    */
   private void memoizeIndex(FieldIndex fieldIndex) {
-    Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
+    HashMap<Integer, FieldIndex> existingIndexes =
+        memoizedIndexes.get(fieldIndex.getCollectionGroup());
     if (existingIndexes == null) {
       existingIndexes = new HashMap<>();
       memoizedIndexes.put(fieldIndex.getCollectionGroup(), existingIndexes);
@@ -499,12 +503,12 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public ArrayList<DocumentKey> getDocumentsMatchingTarget(Target target) {
     hardAssert(started, "IndexManager not started");
 
-    List<String> subQueries = new ArrayList<>();
-    List<Object> bindings = new ArrayList<>();
-    List<Pair<Target, FieldIndex>> indexes = new ArrayList<>();
+    ArrayList<String> subQueries = new ArrayList<>();
+    ArrayList<Object> bindings = new ArrayList<>();
+    ArrayList<Pair<Target, FieldIndex>> indexes = new ArrayList<>();
 
     for (Target subTarget : getSubTargets(target)) {
       FieldIndex fieldIndex = getFieldIndex(subTarget);
@@ -578,7 +582,7 @@ final class SQLiteIndexManager implements IndexManager {
 
     SQLitePersistence.Query query = db.query(queryString).binding(bindings.toArray());
 
-    List<DocumentKey> result = new ArrayList<>();
+    ArrayList<DocumentKey> result = new ArrayList<>();
     query.forEach(
         row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
 
@@ -630,7 +634,7 @@ final class SQLiteIndexManager implements IndexManager {
     Object[] bindArgs =
         fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notIn);
 
-    List<Object> result = new ArrayList<>();
+    ArrayList<Object> result = new ArrayList<>();
     result.add(sql.toString());
     result.addAll(Arrays.asList(bindArgs));
     return result.toArray();
@@ -685,7 +689,7 @@ final class SQLiteIndexManager implements IndexManager {
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
 
-    Collection<FieldIndex> collectionIndexes = getFieldIndexes(collectionGroup);
+    ArrayList<FieldIndex> collectionIndexes = getFieldIndexes(collectionGroup);
     if (collectionIndexes.isEmpty()) {
       return null;
     }
@@ -736,7 +740,7 @@ final class SQLiteIndexManager implements IndexManager {
       FieldIndex fieldIndex, Target target, @Nullable Collection<Value> values) {
     if (values == null) return null;
 
-    List<IndexByteEncoder> encoders = new ArrayList<>();
+    ArrayList<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
 
     Iterator<Value> position = values.iterator();
@@ -759,11 +763,11 @@ final class SQLiteIndexManager implements IndexManager {
    * list of possible values is returned.
    */
   private Object[] encodeBound(FieldIndex fieldIndex, Target target, Bound bound) {
-    return encodeValues(fieldIndex, target, bound.getPosition());
+    return encodeValues(fieldIndex, target, bound.getPosition().asUnmodifiableList());
   }
 
   /** Returns the byte representation for all encoders. */
-  private Object[] getEncodedBytes(List<IndexByteEncoder> encoders) {
+  private Object[] getEncodedBytes(ArrayList<IndexByteEncoder> encoders) {
     Object[] result = new Object[encoders.size()];
     for (int i = 0; i < encoders.size(); ++i) {
       result[i] = encoders.get(i).getEncodedBytes();
@@ -778,10 +782,10 @@ final class SQLiteIndexManager implements IndexManager {
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */
-  private List<IndexByteEncoder> expandIndexValues(
-      List<IndexByteEncoder> encoders, FieldIndex.Segment segment, Value value) {
-    List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
-    List<IndexByteEncoder> results = new ArrayList<>();
+  private ArrayList<IndexByteEncoder> expandIndexValues(
+      ArrayList<IndexByteEncoder> encoders, FieldIndex.Segment segment, Value value) {
+    ArrayList<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
+    ArrayList<IndexByteEncoder> results = new ArrayList<>();
     for (Value arrayElement : value.getArrayValue().getValuesList()) {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();

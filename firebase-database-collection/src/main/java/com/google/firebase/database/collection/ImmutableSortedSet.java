@@ -143,4 +143,49 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
   public int indexOf(T entry) {
     return this.map.indexOf(entry);
   }
+
+  public Builder<T> toBuilder() {
+    return new Builder<>(this);
+  }
+
+  public static class Builder<T> {
+
+    private final Comparator<T> comparator;
+    private final HashSet<T> set = new HashSet<>();
+
+    public Builder(Comparator<T> comparator) {
+      if (comparator == null) {
+        throw new NullPointerException("comparator==null");
+      }
+      this.comparator = comparator;
+    }
+
+    public Builder(ImmutableSortedSet<T> set) {
+      if (set == null) {
+        throw new NullPointerException("set==null");
+      }
+      this.comparator = set.map.getComparator();
+      for (T entry : set) {
+        this.set.add(entry);
+      }
+    }
+
+    public ImmutableSortedSet<T> build() {
+      return new ImmutableSortedSet<>(new ArrayList<>(set), this.comparator);
+    }
+
+    public Builder<T> insert(T entry) {
+      set.add(entry);
+      return this;
+    }
+
+    public Builder<T> remove(T entry) {
+      set.remove(entry);
+      return this;
+    }
+
+    public int size() {
+      return this.set.size();
+    }
+  }
 }

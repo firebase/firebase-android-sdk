@@ -16,19 +16,16 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.ImmutableMap;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 /** An in-memory implementation of IndexManager. */
 class MemoryIndexManager implements IndexManager {
@@ -46,7 +43,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public List<ResourcePath> getCollectionParents(String collectionId) {
+  public ArrayList<ResourcePath> getCollectionParents(String collectionId) {
     return collectionParentsIndex.getEntries(collectionId);
   }
 
@@ -70,7 +67,7 @@ class MemoryIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public ArrayList<DocumentKey> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.
     return null;
   }
@@ -88,15 +85,15 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
+  public ArrayList<FieldIndex> getFieldIndexes(String collectionGroup) {
     // Field indices are not supported with memory persistence.
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @Override
-  public Collection<FieldIndex> getFieldIndexes() {
+  public ArrayList<FieldIndex> getFieldIndexes() {
     // Field indices are not supported with memory persistence.
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @Override
@@ -115,7 +112,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
+  public void updateIndexEntries(ImmutableMap<DocumentKey, Document> documents) {
     // Field indices are not supported with memory persistence.
   }
 
@@ -140,9 +137,9 @@ class MemoryIndexManager implements IndexManager {
       return existingParents.add(parentPath);
     }
 
-    List<ResourcePath> getEntries(String collectionId) {
+    ArrayList<ResourcePath> getEntries(String collectionId) {
       HashSet<ResourcePath> existingParents = index.get(collectionId);
-      return existingParents != null ? new ArrayList<>(existingParents) : Collections.emptyList();
+      return existingParents != null ? new ArrayList<>(existingParents) : new ArrayList<>();
     }
   }
 }

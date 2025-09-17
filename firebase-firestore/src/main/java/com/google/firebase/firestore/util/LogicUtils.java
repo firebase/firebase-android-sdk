@@ -22,8 +22,6 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.InFilter;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -109,7 +107,7 @@ public class LogicUtils {
     CompositeFilter compositeFilter = (CompositeFilter) filter;
 
     // Example: (A | (((B)) | (C | D) | (E & F & (G | H)) --> (A | B | C | D | (E & F & (G | H))
-    List<Filter> filters = compositeFilter.getFilters();
+    ImmutableList<Filter> filters = compositeFilter.getFilters();
 
     // If the composite filter only contains 1 filter, apply associativity to it.
     if (filters.size() == 1) {
@@ -135,7 +133,7 @@ public class LogicUtils {
     // Result: (A | B | C | D)
     // Note that the `compositeSubfilter` has been eliminated, and its filters (B, C, D) have been
     // added to the top-level "compositeFilter".
-    List<Filter> newSubfilters = new ArrayList<>();
+    ImmutableArrayList.Builder<Filter> newSubfilters = new ImmutableArrayList.Builder<>();
     for (Filter subfilter : updatedFilters) {
       if (subfilter instanceof FieldFilter) {
         newSubfilters.add(subfilter);
@@ -157,7 +155,7 @@ public class LogicUtils {
     if (newSubfilters.size() == 1) {
       return newSubfilters.get(0);
     }
-    return new CompositeFilter(newSubfilters, compositeFilter.getOperator());
+    return new CompositeFilter(newSubfilters.build(), compositeFilter.getOperator());
   }
 
   /**
@@ -199,7 +197,7 @@ public class LogicUtils {
 
   private static Filter applyDistribution(FieldFilter lhs, FieldFilter rhs) {
     // Conjunction distribution for two field filters is the conjunction of them.
-    return new CompositeFilter(Arrays.asList(lhs, rhs), CompositeFilter.Operator.AND);
+    return new CompositeFilter(ImmutableLists.of(lhs, rhs), CompositeFilter.Operator.AND);
   }
 
   private static Filter applyDistribution(
@@ -209,14 +207,14 @@ public class LogicUtils {
     // A & (B | C) --> (A & B) | (A & C)
     if (compositeFilter.isConjunction()) {
       // Case 1
-      return compositeFilter.withAddedFilters(Collections.singletonList(fieldFilter));
+      return compositeFilter.withAddedFilters(ImmutableLists.of(fieldFilter));
     } else {
       // Case 2
-      List<Filter> newFilters = new ArrayList<>();
+      ImmutableArrayList.Builder<Filter> newFilters = new ImmutableArrayList.Builder<>();
       for (Filter subfilter : compositeFilter.getFilters()) {
         newFilters.add(applyDistribution(fieldFilter, subfilter));
       }
-      return new CompositeFilter(newFilters, CompositeFilter.Operator.OR);
+      return new CompositeFilter(newFilters.build(), CompositeFilter.Operator.OR);
     }
   }
 
@@ -241,11 +239,11 @@ public class LogicUtils {
     // return the disjunction of the distribution results.
     CompositeFilter disjunctionSide = lhs.isDisjunction() ? lhs : rhs;
     CompositeFilter otherSide = lhs.isDisjunction() ? rhs : lhs;
-    List<Filter> results = new ArrayList<>();
+    ImmutableArrayList.Builder<Filter> results = new ImmutableArrayList.Builder<>();
     for (Filter subfilter : disjunctionSide.getFilters()) {
       results.add(applyDistribution(subfilter, otherSide));
     }
-    return new CompositeFilter(results, CompositeFilter.Operator.OR);
+    return new CompositeFilter(results.build(), CompositeFilter.Operator.OR);
   }
 
   protected static Filter computeDistributedNormalForm(Filter filter) {
@@ -262,11 +260,11 @@ public class LogicUtils {
     }
 
     // Compute the DNF for each of the subfilters first.
-    List<Filter> result = new ArrayList<>();
+    ImmutableArrayList.Builder<Filter> result = new ImmutableArrayList.Builder<>();
     for (Filter subfilter : compositeFilter.getFilters()) {
       result.add(computeDistributedNormalForm(subfilter));
     }
-    Filter newFilter = new CompositeFilter(result, compositeFilter.getOperator());
+    Filter newFilter = new CompositeFilter(result.build(), compositeFilter.getOperator());
     newFilter = applyAssociation(newFilter);
 
     if (isDisjunctiveNormalForm(newFilter)) {
@@ -296,7 +294,7 @@ public class LogicUtils {
   protected static Filter computeInExpansion(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
-    List<Filter> expandedFilters = new ArrayList<>();
+    ImmutableArrayList.Builder<Filter> expandedFilters = new ImmutableArrayList.Builder<>();
 
     if (filter instanceof FieldFilter) {
       if (filter instanceof InFilter) {
@@ -306,7 +304,7 @@ public class LogicUtils {
               FieldFilter.create(
                   ((InFilter) filter).getField(), FieldFilter.Operator.EQUAL, value));
         }
-        return new CompositeFilter(expandedFilters, CompositeFilter.Operator.OR);
+        return new CompositeFilter(expandedFilters.build(), CompositeFilter.Operator.OR);
       } else {
         // We have reached other kinds of field filters.
         return filter;
@@ -318,7 +316,7 @@ public class LogicUtils {
     for (Filter subfilter : compositeFilter.getFilters()) {
       expandedFilters.add(computeInExpansion(subfilter));
     }
-    return new CompositeFilter(expandedFilters, compositeFilter.getOperator());
+    return new CompositeFilter(expandedFilters.build(), compositeFilter.getOperator());
   }
 
   /**
@@ -332,9 +330,9 @@ public class LogicUtils {
    * @param filter the composite filter to calculate DNF transform for.
    * @return the terms in the DNF transform.
    */
-  public static List<Filter> getDnfTerms(CompositeFilter filter) {
+  public static ImmutableList<Filter> getDnfTerms(CompositeFilter filter) {
     if (filter.getFilters().isEmpty()) {
-      return Collections.emptyList();
+      return ImmutableLists.empty();
     }
 
     // The `in` operator is a syntactic sugar over a disjunction of equalities. We should first
@@ -346,7 +344,7 @@ public class LogicUtils {
         "computeDistributedNormalForm did not result in disjunctive normal form");
 
     if (isSingleFieldFilter(result) || isFlatConjunction(result)) {
-      return Collections.singletonList(result);
+      return ImmutableLists.of(result);
     }
 
     return result.getFilters();

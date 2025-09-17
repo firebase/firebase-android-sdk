@@ -20,8 +20,10 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.protobuf.ByteString;
-import java.util.List;
+import java.util.ArrayList;
 
 /** A queue of mutations to apply to the remote store. */
 interface MutationQueue {
@@ -53,7 +55,9 @@ interface MutationQueue {
    * @param mutations The user-provided mutations in this mutation batch.
    */
   MutationBatch addMutationBatch(
-      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations);
+      Timestamp localWriteTime,
+      ImmutableList<Mutation> baseMutations,
+      ImmutableList<Mutation> mutations);
 
   /** Loads the mutation batch with the given batchId. */
   @Nullable
@@ -76,10 +80,13 @@ interface MutationQueue {
    */
   int getHighestUnacknowledgedBatchId();
 
-  /** Returns all mutation batches in the mutation queue. */
+  /**
+   * Returns all mutation batches in the mutation queue.
+   * @return a newly created {@link ArrayList} containing the result.
+   */
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that
   // cheaply, we should replace this.
-  List<MutationBatch> getAllMutationBatches();
+  ArrayList<MutationBatch> getAllMutationBatches();
 
   /**
    * Finds all mutation batches that could @em possibly affect the given document key. Not all
@@ -90,8 +97,10 @@ interface MutationQueue {
    * that don't contain the document key at all if it's convenient.
    *
    * <p>Batches are guaranteed to be sorted by batch ID.
+   *
+   * @return a newly created {@link ArrayList} containing the result.
    */
-  List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey);
+  ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey);
 
   /**
    * Finds all mutation batches that could @em possibly affect the given set of document keys. Not
@@ -102,9 +111,11 @@ interface MutationQueue {
    * that don't contain any of the document keys at all if it's convenient.
    *
    * <p>Batches are guaranteed to be sorted by batch ID.
+   *
+   * @return a newly created {@link ArrayList} containing the result.
    */
-  List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
-      Iterable<DocumentKey> documentKeys);
+  ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
+      ImmutableCollection<DocumentKey> documentKeys);
 
   /**
    * Finds all mutation batches that could affect the results for the given query. Not all mutations
@@ -118,8 +129,10 @@ interface MutationQueue {
    *
    * <p>NOTE: A PatchMutation does not need to include all fields in the query filter criteria in
    * order to be a match (but any fields it does contain do need to match).
+   *
+   * @return a newly created {@link ArrayList} containing the result.
    */
-  List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query);
+  ArrayList<MutationBatch> getAllMutationBatchesAffectingQuery(Query query);
 
   /**
    * Removes the given mutation batch from the queue. This is useful in two circumstances:

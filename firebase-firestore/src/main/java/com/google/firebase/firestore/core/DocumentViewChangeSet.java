@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.model.DocumentKey;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.TreeMap;
 
 /** A set of changes to documents with respect to a view. This set is mutable. */
@@ -72,7 +71,7 @@ public class DocumentViewChangeSet {
     }
   }
 
-  List<DocumentViewChange> getChanges() {
+  ArrayList<DocumentViewChange> getChanges() {
     return new ArrayList<>(changes.values());
   }
 }

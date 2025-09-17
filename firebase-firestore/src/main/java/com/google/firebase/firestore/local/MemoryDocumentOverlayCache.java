@@ -21,12 +21,13 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
 
 public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
@@ -41,8 +42,9 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
     return overlays.get(key);
   }
 
-  public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+  @Override
+  public HashMap<DocumentKey, Overlay> getOverlays(ImmutableCollection<DocumentKey> keys) {
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
     for (DocumentKey key : keys) {
       Overlay overlay = overlays.get(key);
       if (overlay != null) {
@@ -69,7 +71,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
+  public void saveOverlays(int largestBatchId, ImmutableMap<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       Mutation overlay = checkNotNull(entry.getValue(), "null value for key: %s", entry.getKey());
       saveOverlay(largestBatchId, overlay);
@@ -88,8 +90,8 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+  public HashMap<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
 
     int immediateChildrenPathLength = collection.length() + 1;
     DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
@@ -114,7 +116,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Overlay> getOverlays(
+  public HashMap<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
     // NOTE: This method is only used by the backfiller, which will not run for memory persistence;
     // therefore, this method is being implemented only so that the test suite for
@@ -136,7 +138,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
       }
     }
 
-    Map<DocumentKey, Overlay> result = new HashMap<>();
+    HashMap<DocumentKey, Overlay> result = new HashMap<>();
     for (Map<DocumentKey, Overlay> overlays : batchIdToOverlays.values()) {
       result.putAll(overlays);
       if (result.size() >= count) {

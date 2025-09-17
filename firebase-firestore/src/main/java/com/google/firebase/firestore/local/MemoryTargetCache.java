@@ -16,12 +16,14 @@ package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ManyToManyHashMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -35,7 +37,7 @@ final class MemoryTargetCache implements TargetCache {
   private final Map<Target, TargetData> targets = new HashMap<>();
 
   /** A ordered bidirectional mapping between documents and the remote target IDs. */
-  private final ReferenceSet references = new ReferenceSet();
+  private final ManyToManyHashMap<DocumentKey, Integer> references = new ManyToManyHashMap<>();
 
   /** The highest numbered target ID encountered. */
   private int highestTargetId;
@@ -106,7 +108,7 @@ final class MemoryTargetCache implements TargetCache {
   @Override
   public void removeTargetData(TargetData targetData) {
     targets.remove(targetData.getTarget());
-    references.removeReferencesForId(targetData.getTargetId());
+    references.removeValue(targetData.getTargetId());
   }
 
   /**
@@ -140,8 +142,8 @@ final class MemoryTargetCache implements TargetCache {
   // Reference tracking
 
   @Override
-  public void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
-    references.addReferences(keys, targetId);
+  public void addMatchingKeys(ImmutableCollection<DocumentKey> keys, int targetId) {
+    references.putKeysWithValue(keys, targetId);
     ReferenceDelegate referenceDelegate = persistence.getReferenceDelegate();
     for (DocumentKey key : keys) {
       referenceDelegate.addReference(key);
@@ -149,8 +151,8 @@ final class MemoryTargetCache implements TargetCache {
   }
 
   @Override
-  public void removeMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId) {
-    references.removeReferences(keys, targetId);
+  public void removeMatchingKeys(ImmutableCollection<DocumentKey> keys, int targetId) {
+    references.removeKeysWithValue(keys, targetId);
     ReferenceDelegate referenceDelegate = persistence.getReferenceDelegate();
     for (DocumentKey key : keys) {
       referenceDelegate.removeReference(key);
@@ -159,12 +161,12 @@ final class MemoryTargetCache implements TargetCache {
 
   @Override
   public void removeMatchingKeysForTargetId(int targetId) {
-    references.removeReferencesForId(targetId);
+    references.removeValue(targetId);
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
-    return references.referencesForId(targetId);
+  public HashSet<DocumentKey> getMatchingKeysForTargetId(int targetId) {
+    return references.getKeysForValue(targetId);
   }
 
   @Override

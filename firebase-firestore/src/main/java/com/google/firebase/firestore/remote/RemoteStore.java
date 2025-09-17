@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.OnlineState;
@@ -49,6 +48,7 @@ import io.grpc.Status;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -112,8 +112,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
      * documents that were assigned to the target when we received the last snapshot.
      *
      * <p>Returns an empty set of document keys for unknown targets.
+     *
+     * @return a newly created {@link HashSet} with the results.
      */
-    ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
+    HashSet<DocumentKey> getRemoteKeysForTarget(int targetId);
   }
 
   private final RemoteStoreCallback remoteStoreCallback;
@@ -757,7 +759,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+  public HashSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
     return this.remoteStoreCallback.getRemoteKeysForTarget(targetId);
   }
 

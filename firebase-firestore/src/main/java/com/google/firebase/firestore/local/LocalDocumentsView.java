@@ -14,13 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -33,15 +31,19 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
-import java.util.Collections;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableCollections;
+import com.google.firebase.firestore.util.ImmutableHashMap;
+import com.google.firebase.firestore.util.ImmutableMap;
+import com.google.firebase.firestore.util.ImmutableMaps;
+import com.google.firebase.firestore.util.ImmutableSets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * A readonly view of the local state of all documents we're tracking (specifically, we have a
@@ -101,10 +103,12 @@ class LocalDocumentsView {
    *
    * <p>If we don't have cached state for a document in {@code keys}, a NoDocument will be stored
    * for that key in the resulting set.
+   *
+   * @return a newly created {@link HashMap} containing the results.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
-    return getLocalViewOfDocuments(docs, new HashSet<>());
+  HashMap<DocumentKey, Document> getDocuments(ImmutableCollection<DocumentKey> keys) {
+    HashMap<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
+    return getLocalViewOfDocuments(ImmutableMaps.adopt(docs), ImmutableCollections.empty());
   }
 
   /**
@@ -114,17 +118,18 @@ class LocalDocumentsView {
    * @param docs The documents to apply local mutations to get the local views.
    * @param existenceStateChanged The set of document keys whose existence state is changed. This is
    *     useful to determine if some documents overlay needs to be recalculated.
+   * @return a newly created {@link HashMap} containing the results.
    */
-  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
-      Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
-    Map<DocumentKey, Overlay> overlays = new HashMap<>();
+  HashMap<DocumentKey, Document> getLocalViewOfDocuments(
+      ImmutableMap<DocumentKey, MutableDocument> docs,
+      ImmutableCollection<DocumentKey> existenceStateChanged) {
+    ImmutableHashMap.Builder<DocumentKey, Overlay> overlays = new ImmutableHashMap.Builder<>();
     populateOverlays(overlays, docs.keySet());
-    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+    HashMap<DocumentKey, Document> result = new HashMap<>();
     for (Map.Entry<DocumentKey, OverlayedDocument> entry :
-        computeViews(docs, overlays, existenceStateChanged).entrySet()) {
-      result = result.insert(entry.getKey(), entry.getValue().getDocument());
+        computeViews(docs, overlays.build(), existenceStateChanged).entrySet()) {
+      result.put(entry.getKey(), entry.getValue().getDocument());
     }
-
     return result;
   }
 
@@ -134,12 +139,13 @@ class LocalDocumentsView {
    * overlay is a Set or Delete mutation.
    *
    * @param docs The documents to apply local mutations to get the local views.
+   * @return a newly created {@link HashMap} containing the results.
    */
-  Map<DocumentKey, OverlayedDocument> getOverlayedDocuments(
-      Map<DocumentKey, MutableDocument> docs) {
-    Map<DocumentKey, Overlay> overlays = new HashMap<>();
+  HashMap<DocumentKey, OverlayedDocument> getOverlayedDocuments(
+      ImmutableMap<DocumentKey, MutableDocument> docs) {
+    ImmutableHashMap.Builder<DocumentKey, Overlay> overlays = new ImmutableHashMap.Builder<>();
     populateOverlays(overlays, docs.keySet());
-    return computeViews(docs, overlays, new HashSet<>());
+    return computeViews(docs, overlays.build(), ImmutableSets.empty());
   }
 
   /**
@@ -150,14 +156,15 @@ class LocalDocumentsView {
    *     documents.
    * @param existenceStateChanged A set of documents whose existence states might have changed. This
    *     is used to determine if we need to re-calculate overlays from mutation queues.
-   * @return A map represents the local documents view.
+   * @return A newly-created {@link HashMap} that represents the local documents view.
    */
-  private Map<DocumentKey, OverlayedDocument> computeViews(
-      Map<DocumentKey, MutableDocument> docs,
-      Map<DocumentKey, Overlay> overlays,
-      Set<DocumentKey> existenceStateChanged) {
-    Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
-    Map<DocumentKey, FieldMask> mutatedFields = new HashMap<>();
+  private HashMap<DocumentKey, OverlayedDocument> computeViews(
+      ImmutableMap<DocumentKey, MutableDocument> docs,
+      ImmutableMap<DocumentKey, Overlay> overlays,
+      ImmutableCollection<DocumentKey> existenceStateChanged) {
+    ImmutableHashMap.Builder<DocumentKey, MutableDocument> recalculateDocuments =
+        new ImmutableHashMap.Builder<>();
+    HashMap<DocumentKey, FieldMask> mutatedFields = new HashMap<>();
     for (MutableDocument doc : docs.values()) {
       Overlay overlay = overlays.get(doc.getKey());
 
@@ -181,11 +188,11 @@ class LocalDocumentsView {
       }
     }
 
-    Map<DocumentKey, FieldMask> recalculatedFields =
-        recalculateAndSaveOverlays(recalculateDocuments);
+    HashMap<DocumentKey, FieldMask> recalculatedFields =
+        recalculateAndSaveOverlays(recalculateDocuments.build());
     mutatedFields.putAll(recalculatedFields);
 
-    Map<DocumentKey, OverlayedDocument> result = new HashMap<>();
+    HashMap<DocumentKey, OverlayedDocument> result = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
       result.put(
           entry.getKey(),
@@ -194,12 +201,12 @@ class LocalDocumentsView {
     return result;
   }
 
-  private Map<DocumentKey, FieldMask> recalculateAndSaveOverlays(
-      Map<DocumentKey, MutableDocument> docs) {
+  private HashMap<DocumentKey, FieldMask> recalculateAndSaveOverlays(
+      ImmutableMap<DocumentKey, MutableDocument> docs) {
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
 
-    Map<DocumentKey, FieldMask> masks = new HashMap<>();
+    HashMap<DocumentKey, FieldMask> masks = new HashMap<>();
     // A reverse lookup map from batch id to the documents within that batch.
     TreeMap<Integer, Set<DocumentKey>> documentsByBatchId = new TreeMap<>();
 
@@ -228,7 +235,7 @@ class LocalDocumentsView {
     // Iterate in descending order of batch ids, skip documents that are already saved.
     for (Map.Entry<Integer, Set<DocumentKey>> entry :
         documentsByBatchId.descendingMap().entrySet()) {
-      Map<DocumentKey, Mutation> overlays = new HashMap<>();
+      ImmutableHashMap.Builder<DocumentKey, Mutation> overlays = new ImmutableHashMap.Builder<>();
       for (DocumentKey key : entry.getValue()) {
         if (!processed.contains(key)) {
           Mutation mutation = Mutation.calculateOverlayMutation(docs.get(key), masks.get(key));
@@ -238,7 +245,7 @@ class LocalDocumentsView {
           processed.add(key);
         }
       }
-      documentOverlayCache.saveOverlays(entry.getKey(), overlays);
+      documentOverlayCache.saveOverlays(entry.getKey(), overlays.build());
     }
 
     return masks;
@@ -248,9 +255,9 @@ class LocalDocumentsView {
    * Recalculates overlays by reading the documents from remote document cache first, and save them
    * after they are calculated.
    */
-  void recalculateAndSaveOverlays(Set<DocumentKey> documentKeys) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(documentKeys);
-    recalculateAndSaveOverlays(docs);
+  void recalculateAndSaveOverlays(ImmutableCollection<DocumentKey> documentKeys) {
+    HashMap<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(documentKeys);
+    recalculateAndSaveOverlays(ImmutableHashMap.adopt(docs));
   }
 
   /**
@@ -260,8 +267,9 @@ class LocalDocumentsView {
    * @param offset Read time and key to start scanning by (exclusive).
    * @param context A optional tracker to keep a record of important details during database local
    *     query execution.
+   * @return a newly created {@link HashMap} containing the results.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  HashMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
@@ -278,41 +286,43 @@ class LocalDocumentsView {
    *
    * @param query The query to match documents against.
    * @param offset Read time and key to start scanning by (exclusive).
+   * @return a newly created {@link HashMap} containing the results.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
+  HashMap<DocumentKey, Document> getDocumentsMatchingQuery(Query query, IndexOffset offset) {
     return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
 
-  /** Performs a simple document lookup for the given path. */
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(
-      ResourcePath path) {
-    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+  /**
+   * Performs a simple document lookup for the given path.
+   * @return a newly created {@link HashMap} containing the results.
+   */
+  private HashMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(ResourcePath path) {
+    HashMap<DocumentKey, Document> result = new HashMap<>();
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));
     if (doc.isFoundDocument()) {
-      result = result.insert(doc.getKey(), doc);
+      result.put(doc.getKey(), doc);
     }
     return result;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
+  private HashMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
     String collectionId = query.getCollectionGroup();
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    HashMap<DocumentKey, Document> results = new HashMap<>();
     List<ResourcePath> parents = indexManager.getCollectionParents(collectionId);
 
     // Perform a collection query against each parent that contains the collectionId and
     // aggregate the results.
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
-      ImmutableSortedMap<DocumentKey, Document> collectionResults =
+      HashMap<DocumentKey, Document> collectionResults =
           getDocumentsMatchingCollectionQuery(collectionQuery, offset, context);
-      for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
+      for (Map.Entry<DocumentKey, Document> docEntry : collectionResults.entrySet()) {
+        results.put(docEntry.getKey(), docEntry.getValue());
       }
     }
     return results;
@@ -334,13 +344,14 @@ class LocalDocumentsView {
    *     processed batch id.
    */
   LocalDocumentsResult getNextDocuments(String collectionGroup, IndexOffset offset, int count) {
-    Map<DocumentKey, MutableDocument> docs =
-        remoteDocumentCache.getAll(collectionGroup, offset, count);
-    Map<DocumentKey, Overlay> overlays =
+    ImmutableHashMap.Builder<DocumentKey, MutableDocument> docs =
+        ImmutableHashMap.Builder.adopt(remoteDocumentCache.getAll(collectionGroup, offset, count));
+    ImmutableHashMap.Builder<DocumentKey, Overlay> overlays =
         count - docs.size() > 0
-            ? documentOverlayCache.getOverlays(
-                collectionGroup, offset.getLargestBatchId(), count - docs.size())
-            : new HashMap<>();
+            ? ImmutableHashMap.Builder.adopt(
+                documentOverlayCache.getOverlays(
+                    collectionGroup, offset.getLargestBatchId(), count - docs.size()))
+            : new ImmutableHashMap.Builder<>();
 
     int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
     for (Overlay overlay : overlays.values()) {
@@ -354,32 +365,36 @@ class LocalDocumentsView {
       largestBatchId = Math.max(largestBatchId, overlay.getLargestBatchId());
     }
 
-    populateOverlays(overlays, docs.keySet());
-    Map<DocumentKey, OverlayedDocument> localDocs =
-        computeViews(docs, overlays, Collections.emptySet());
-    return LocalDocumentsResult.fromOverlayedDocuments(largestBatchId, localDocs);
+    populateOverlays(overlays, docs.build().keySet());
+    HashMap<DocumentKey, OverlayedDocument> localDocs =
+        computeViews(docs.build(), overlays.build(), ImmutableCollections.empty());
+    return LocalDocumentsResult.fromOverlayedDocuments(
+        largestBatchId, ImmutableHashMap.adopt(localDocs));
   }
 
   /**
    * Fetches the overlays for {@code keys} and adds them to provided overlay map if the map does not
    * already contain an entry for the given key.
    */
-  private void populateOverlays(Map<DocumentKey, Overlay> overlays, Set<DocumentKey> keys) {
-    SortedSet<DocumentKey> missingOverlays = new TreeSet<>();
+  private void populateOverlays(
+      ImmutableHashMap.Builder<DocumentKey, Overlay> overlays,
+      ImmutableCollection<DocumentKey> keys) {
+    ImmutableArrayList.Builder<DocumentKey> missingOverlays = new ImmutableArrayList.Builder<>();
     for (DocumentKey key : keys) {
       if (!overlays.containsKey(key)) {
         missingOverlays.add(key);
       }
     }
-    overlays.putAll(documentOverlayCache.getOverlays(missingOverlays));
+    overlays.putAll(documentOverlayCache.getOverlays(missingOverlays.build()));
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
+  private HashMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
-    Map<DocumentKey, Overlay> overlays =
+    HashMap<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
-    Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet(), context);
+    HashMap<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query, offset, ImmutableCollections.adopt(overlays.keySet()), context);
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.
@@ -390,7 +405,7 @@ class LocalDocumentsView {
     }
 
     // Apply the overlays and match against the query.
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    HashMap<DocumentKey, Document> results = new HashMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
@@ -400,7 +415,7 @@ class LocalDocumentsView {
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
+        results.put(docEntry.getKey(), docEntry.getValue());
       }
     }
 

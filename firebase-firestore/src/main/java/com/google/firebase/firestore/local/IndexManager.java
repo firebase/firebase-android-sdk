@@ -15,15 +15,14 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
-import java.util.Collection;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableMap;
+import java.util.ArrayList;
 
 /**
  * Represents a set of indexes that are used to execute queries efficiently.
@@ -64,8 +63,10 @@ public interface IndexManager {
   /**
    * Retrieves all parent locations containing the given collectionId, as a set of paths (each path
    * being either a document location or the empty path for a root-level collection).
+   *
+   * @return a newly created {@link ArrayList} containing the results.
    */
-  List<ResourcePath> getCollectionParents(String collectionId);
+  ArrayList<ResourcePath> getCollectionParents(String collectionId);
 
   /**
    * Adds a field path index.
@@ -88,12 +89,15 @@ public interface IndexManager {
    * Returns a list of field indexes that correspond to the specified collection group.
    *
    * @param collectionGroup The collection group to get matching field indexes for.
-   * @return A collection of field indexes for the specified collection group.
+   * @return A newly-created {@link ArrayList} of field indexes for the specified collection group.
    */
-  Collection<FieldIndex> getFieldIndexes(String collectionGroup);
+  ArrayList<FieldIndex> getFieldIndexes(String collectionGroup);
 
-  /** Returns all configured field indexes. */
-  Collection<FieldIndex> getFieldIndexes();
+  /**
+   * Returns all configured field indexes.
+   * @return a newly created {@link ArrayList} containing the results.
+   */
+  ArrayList<FieldIndex> getFieldIndexes();
 
   /**
    * Iterates over all field indexes that are used to serve the given target, and returns the
@@ -110,8 +114,9 @@ public interface IndexManager {
   /**
    * Returns the documents that match the given target based on the provided index or {@code null}
    * if the query cannot be served from an index.
+   * @return a newly created {@link ArrayList} containing the results.
    */
-  List<DocumentKey> getDocumentsMatchingTarget(Target target);
+  ArrayList<DocumentKey> getDocumentsMatchingTarget(Target target);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable
@@ -127,5 +132,5 @@ public interface IndexManager {
   void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset);
 
   /** Updates the index entries for the provided documents. */
-  void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents);
+  void updateIndexEntries(ImmutableMap<DocumentKey, Document> documents);
 }

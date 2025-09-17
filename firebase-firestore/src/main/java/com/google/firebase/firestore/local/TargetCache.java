@@ -15,11 +15,12 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import java.util.HashSet;
 
 /**
  * Represents cached targets received from the remote backend. This contains both a mapping between
@@ -103,15 +104,16 @@ interface TargetCache {
   TargetData getTargetData(Target target);
 
   /** Adds the given document keys to cached query results of the given target ID. */
-  void addMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);
+  void addMatchingKeys(ImmutableCollection<DocumentKey> keys, int targetId);
 
   /** Removes the given document keys from the cached query results of the given target ID. */
-  void removeMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);
+  void removeMatchingKeys(ImmutableCollection<DocumentKey> keys, int targetId);
 
   /** Removes all the keys in the query results of the given target ID. */
   void removeMatchingKeysForTargetId(int targetId);
 
-  ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId);
+  /** Returns a newly created {@link HashSet} with the results. */
+  HashSet<DocumentKey> getMatchingKeysForTargetId(int targetId);
 
   /** @return True if the document is part of any target */
   boolean containsKey(DocumentKey key);

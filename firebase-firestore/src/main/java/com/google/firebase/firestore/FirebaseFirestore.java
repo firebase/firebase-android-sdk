@@ -52,6 +52,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.ByteBufferInputStream;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.ImmutableArrayList;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import com.google.firebase.firestore.util.Preconditions;
@@ -358,7 +359,7 @@ public class FirebaseFirestore {
     Preconditions.checkState(
         settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
 
-    List<FieldIndex> parsedIndexes = new ArrayList<>();
+    ImmutableArrayList.Builder<FieldIndex> parsedIndexes = new ImmutableArrayList.Builder<>();
 
     // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
     // format of the index definition. Unlike the backend, the SDK does not distinguish between
@@ -397,7 +398,7 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return clientProvider.call(client -> client.configureFieldIndexes(parsedIndexes));
+    return clientProvider.call(client -> client.configureFieldIndexes(parsedIndexes.build()));
   }
 
   /**

@@ -20,10 +20,10 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableLists;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /** Represents a filter to be applied to query. */
 public class FieldFilter extends Filter {
@@ -163,15 +163,15 @@ public class FieldFilter extends Filter {
   }
 
   @Override
-  public List<FieldFilter> getFlattenedFilters() {
+  public ImmutableList<FieldFilter> getFlattenedFilters() {
     // This is already a field filter, so we return a list of size one.
-    return Collections.singletonList(this);
+    return ImmutableLists.of(this);
   }
 
   @Override
-  public List<Filter> getFilters() {
+  public ImmutableList<Filter> getFilters() {
     // This is the only filter within this object, so we return a list of size one.
-    return Collections.singletonList(this);
+    return ImmutableLists.of(this);
   }
 
   @Override

@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -30,11 +29,12 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
+import com.google.firebase.firestore.util.ImmutableHashMap;
+import com.google.firebase.firestore.util.ImmutableHashSet;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,8 +50,10 @@ public class WatchChangeAggregator {
     /**
      * Returns the set of remote document keys for the given target ID as of the last raised
      * snapshot or an empty set of document keys for unknown targets.
+     *
+     * @return a newly created {@link HashSet} object with the result.
      */
-    ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
+    HashSet<DocumentKey> getRemoteKeysForTarget(int targetId);
 
     /**
      * Returns the TargetData for an active target ID or 'null' if this query is unknown or has
@@ -67,16 +69,16 @@ public class WatchChangeAggregator {
   private final Map<Integer, TargetState> targetStates = new HashMap<>();
 
   /** Keeps track of the documents to update since the last raised snapshot. */
-  private Map<DocumentKey, MutableDocument> pendingDocumentUpdates = new HashMap<>();
+  private HashMap<DocumentKey, MutableDocument> pendingDocumentUpdates = new HashMap<>();
 
   /** A mapping of document keys to their set of target IDs. */
-  private Map<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
+  private HashMap<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
 
   /**
    * A map of targets with existence filter mismatches. These targets are known to be inconsistent
    * and their listens needs to be re-established by RemoteStore.
    */
-  private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
+  private HashMap<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
 
   private final DatabaseId databaseId;
 
@@ -297,8 +299,8 @@ public class WatchChangeAggregator {
    * documents removed.
    */
   private int filterRemovedDocuments(BloomFilter bloomFilter, int targetId) {
-    ImmutableSortedSet<DocumentKey> existingKeys =
-        targetMetadataProvider.getRemoteKeysForTarget(targetId);
+    ImmutableHashSet<DocumentKey> existingKeys =
+        ImmutableHashSet.adopt(targetMetadataProvider.getRemoteKeysForTarget(targetId));
     int removalCount = 0;
     String rootDocumentsPath =
         "projects/"
@@ -321,7 +323,8 @@ public class WatchChangeAggregator {
    * Resets the accumulated changes before returning.
    */
   public RemoteEvent createRemoteEvent(SnapshotVersion snapshotVersion) {
-    Map<Integer, TargetChange> targetChanges = new HashMap<>();
+    ImmutableHashMap.Builder<Integer, TargetChange> targetChanges =
+        new ImmutableHashMap.Builder<>();
 
     for (Map.Entry<Integer, TargetState> entry : targetStates.entrySet()) {
       int targetId = entry.getKey();
@@ -348,7 +351,7 @@ public class WatchChangeAggregator {
       }
     }
 
-    Set<DocumentKey> resolvedLimboDocuments = new HashSet<>();
+    ImmutableHashSet.Builder<DocumentKey> resolvedLimboDocuments = new ImmutableHashSet.Builder<>();
 
     // We extract the set of limbo-only document updates as the GC logic special-cases documents
     // that do not appear in the query cache.
@@ -380,10 +383,10 @@ public class WatchChangeAggregator {
     RemoteEvent remoteEvent =
         new RemoteEvent(
             snapshotVersion,
-            Collections.unmodifiableMap(targetChanges),
-            Collections.unmodifiableMap(pendingTargetResets),
-            Collections.unmodifiableMap(pendingDocumentUpdates),
-            Collections.unmodifiableSet(resolvedLimboDocuments));
+            targetChanges.build(),
+            ImmutableHashMap.adopt(pendingTargetResets),
+            ImmutableHashMap.adopt(pendingDocumentUpdates),
+            resolvedLimboDocuments.build());
 
     // Re-initialize the current state to ensure that we do not modify the generated RemoteEvent.
     pendingDocumentUpdates = new HashMap<>();
@@ -523,8 +526,7 @@ public class WatchChangeAggregator {
 
     // Trigger removal for any documents currently mapped to this target. These removals will be
     // part of the initial snapshot if Watch does not resend these documents.
-    ImmutableSortedSet<DocumentKey> existingKeys =
-        targetMetadataProvider.getRemoteKeysForTarget(targetId);
+    HashSet<DocumentKey> existingKeys = targetMetadataProvider.getRemoteKeysForTarget(targetId);
     for (DocumentKey key : existingKeys) {
       removeDocumentFromTarget(targetId, key, null);
     }
@@ -532,8 +534,7 @@ public class WatchChangeAggregator {
 
   /** Returns whether the LocalStore considers the document to be part of the specified target. */
   private boolean targetContainsDocument(int targetId, DocumentKey key) {
-    ImmutableSortedSet<DocumentKey> existingKeys =
-        targetMetadataProvider.getRemoteKeysForTarget(targetId);
+    HashSet<DocumentKey> existingKeys = targetMetadataProvider.getRemoteKeysForTarget(targetId);
     return existingKeys.contains(key);
   }
 }

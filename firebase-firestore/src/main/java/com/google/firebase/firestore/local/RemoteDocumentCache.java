@@ -19,9 +19,8 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import java.util.HashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -49,7 +48,7 @@ interface RemoteDocumentCache {
   void add(MutableDocument document, SnapshotVersion readTime);
 
   /** Removes the cached entries for the given keys (no-op if no entry exists). */
-  void removeAll(Collection<DocumentKey> keys);
+  void removeAll(ImmutableCollection<DocumentKey> keys);
 
   /**
    * Looks up an entry in the cache.
@@ -63,10 +62,10 @@ interface RemoteDocumentCache {
    * Looks up a set of entries in the cache.
    *
    * @param documentKeys The keys of the entries to look up.
-   * @return The cached document entries indexed by key. If an entry is not cached, the
-   *     corresponding key will be mapped to an invalid document
+   * @return A newly created {@link HashMap} containing the cached document entries indexed by key.
+   *     If an entry is not cached, the corresponding key will be mapped to an invalid document.
    */
-  Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
+  HashMap<DocumentKey, MutableDocument> getAll(ImmutableCollection<DocumentKey> documentKeys);
 
   /**
    * Looks up the next {@code limit} documents for a collection group based on the provided offset.
@@ -75,9 +74,10 @@ interface RemoteDocumentCache {
    * @param collectionGroup The collection group to scan.
    * @param offset The offset to start the scan at.
    * @param limit The maximum number of results to return.
-   * @return A newly created map with next set of documents.
+   * @return A newly created {@link HashMap} with next set of documents.
    */
-  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
+  HashMap<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int limit);
 
   /**
    * Returns the documents that match the given query.
@@ -86,10 +86,10 @@ interface RemoteDocumentCache {
    * @param offset The read time and document key to start scanning at (exclusive).
    * @param mutatedKeys The keys of documents who have mutations attached, they should be read
    *     regardless whether they match the given query.
-   * @return A newly created map with the set of documents in the collection.
+   * @return A newly created {@link HashMap} with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
+  HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, @Nonnull ImmutableCollection<DocumentKey> mutatedKeys);
 
   /**
    * Returns the documents that match the given query.
@@ -100,11 +100,11 @@ interface RemoteDocumentCache {
    *     regardless whether they match the given query.
    * @param context A optional tracker to keep a record of important details during database local
    *     query execution.
-   * @return A newly created map with the set of documents in the collection.
+   * @return A newly created {@link HashMap} with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
-      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nonnull ImmutableCollection<DocumentKey> mutatedKeys,
       @Nullable QueryContext context);
 }

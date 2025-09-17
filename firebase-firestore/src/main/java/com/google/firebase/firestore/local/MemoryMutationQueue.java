@@ -16,11 +16,9 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
-import static java.util.Collections.emptyList;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -28,12 +26,14 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
-import com.google.firebase.firestore.util.Util;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableHashSet;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableSet;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 final class MemoryMutationQueue implements MutationQueue {
 
@@ -54,10 +54,9 @@ final class MemoryMutationQueue implements MutationQueue {
    * <p>Once the held write acknowledgements become visible they are removed from the head of the
    * queue along with any tombstones that follow.
    */
-  private final List<MutationBatch> queue;
+  private final ArrayList<MutationBatch> queue = new ArrayList<>();
 
-  /** An ordered mapping between documents and the mutation batch IDs. */
-  private ImmutableSortedSet<DocumentReference> batchesByDocumentKey;
+  private final TreeMap<DocumentKey, ArrayList<Integer>> batchIdsByDocumentKey = new TreeMap<>();
 
   /** The next value to use when assigning sequential IDs to each mutation batch. */
   private int nextBatchId;
@@ -74,9 +73,6 @@ final class MemoryMutationQueue implements MutationQueue {
 
   MemoryMutationQueue(MemoryPersistence persistence, User user) {
     this.persistence = persistence;
-    queue = new ArrayList<>();
-
-    batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
     lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
     indexManager = persistence.getIndexManager(user);
@@ -131,7 +127,9 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public MutationBatch addMutationBatch(
-      Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
+      Timestamp localWriteTime,
+      ImmutableList<Mutation> baseMutations,
+      ImmutableList<Mutation> mutations) {
     hardAssert(!mutations.isEmpty(), "Mutation batches should not be empty");
 
     int batchId = nextBatchId;
@@ -149,8 +147,12 @@ final class MemoryMutationQueue implements MutationQueue {
 
     // Track references by document key and index collection parents.
     for (Mutation mutation : mutations) {
-      batchesByDocumentKey =
-          batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
+      ArrayList<Integer> batchIdsForKey = batchIdsByDocumentKey.get(mutation.getKey());
+      if (batchIdsForKey == null) {
+        batchIdsForKey = new ArrayList<>();
+        batchIdsByDocumentKey.put(mutation.getKey(), batchIdsForKey);
+      }
+      batchIdsForKey.add(batchId);
 
       indexManager.addToCollectionParentIndex(mutation.getKey().getCollectionPath());
     }
@@ -188,23 +190,21 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatches() {
-    return Collections.unmodifiableList(queue);
+  public ArrayList<MutationBatch> getAllMutationBatches() {
+    return new ArrayList<>(queue);
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(DocumentKey documentKey) {
-    DocumentReference start = new DocumentReference(documentKey, 0);
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKey(
+      DocumentKey documentKey) {
+    ArrayList<Integer> batchIdsForKey = batchIdsByDocumentKey.get(documentKey);
+    if (batchIdsForKey == null) {
+      return new ArrayList<>(0);
+    }
 
-    List<MutationBatch> result = new ArrayList<>();
-    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(start);
-    while (iterator.hasNext()) {
-      DocumentReference reference = iterator.next();
-      if (!documentKey.equals(reference.getKey())) {
-        break;
-      }
-
-      MutationBatch batch = lookupMutationBatch(reference.getId());
+    ArrayList<MutationBatch> result = new ArrayList<>();
+    for (Integer batchId : batchIdsForKey) {
+      MutationBatch batch = lookupMutationBatch(batchId);
       hardAssert(batch != null, "Batches in the index must exist in the main table");
       result.add(batch);
     }
@@ -213,28 +213,23 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
-      Iterable<DocumentKey> documentKeys) {
-    ImmutableSortedSet<Integer> uniqueBatchIDs =
-        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
+      ImmutableCollection<DocumentKey> documentKeys) {
+    ImmutableHashSet.Builder<Integer> uniqueBatchIDs = new ImmutableHashSet.Builder<>();
 
     for (DocumentKey key : documentKeys) {
-      DocumentReference start = new DocumentReference(key, 0);
-      Iterator<DocumentReference> batchesIter = batchesByDocumentKey.iteratorFrom(start);
-      while (batchesIter.hasNext()) {
-        DocumentReference reference = batchesIter.next();
-        if (!key.equals(reference.getKey())) {
-          break;
-        }
-        uniqueBatchIDs = uniqueBatchIDs.insert(reference.getId());
+      ArrayList<Integer> batchIdsForKey = batchIdsByDocumentKey.get(key);
+      if (batchIdsForKey == null) {
+        continue;
       }
+      uniqueBatchIDs.addAll(batchIdsForKey);
     }
 
-    return lookupMutationBatches(uniqueBatchIDs);
+    return lookupMutationBatches(uniqueBatchIDs.build());
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
+  public ArrayList<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -251,16 +246,13 @@ final class MemoryMutationQueue implements MutationQueue {
     if (!DocumentKey.isDocumentKey(startPath)) {
       startPath = startPath.append("");
     }
-    DocumentReference start = new DocumentReference(DocumentKey.fromPath(startPath), 0);
-
     // Find unique batchIDs referenced by all documents potentially matching the query.
-    ImmutableSortedSet<Integer> uniqueBatchIDs =
-        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+    ImmutableHashSet.Builder<Integer> uniqueBatchIDs = new ImmutableHashSet.Builder();
 
-    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(start);
-    while (iterator.hasNext()) {
-      DocumentReference reference = iterator.next();
-      ResourcePath rowKeyPath = reference.getKey().getPath();
+    for (Map.Entry<DocumentKey, ArrayList<Integer>> entry :
+        batchIdsByDocumentKey.tailMap(DocumentKey.fromPath(startPath)).entrySet()) {
+      ResourcePath rowKeyPath = entry.getKey().getPath();
+      ArrayList<Integer> batchIdsForKey = entry.getValue();
       if (!prefix.isPrefixOf(rowKeyPath)) {
         break;
       }
@@ -269,17 +261,17 @@ final class MemoryMutationQueue implements MutationQueue {
       // For example, a query on 'rooms' can't match the document /rooms/abc/messages/xyx.
       // TODO: we'll need a different scanner when we implement ancestor queries.
       if (rowKeyPath.length() == immediateChildrenPathLength) {
-        uniqueBatchIDs = uniqueBatchIDs.insert(reference.getId());
+        uniqueBatchIDs.addAll(batchIdsForKey);
       }
     }
 
-    return lookupMutationBatches(uniqueBatchIDs);
+    return lookupMutationBatches(uniqueBatchIDs.build());
   }
 
-  private List<MutationBatch> lookupMutationBatches(ImmutableSortedSet<Integer> batchIds) {
+  private ArrayList<MutationBatch> lookupMutationBatches(ImmutableSet<Integer> batchIds) {
     // Construct an array of matching batches, sorted by batchID to ensure that multiple mutations
     // affecting the same document key are applied in order.
-    List<MutationBatch> result = new ArrayList<>();
+    ArrayList<MutationBatch> result = new ArrayList<>();
     for (Integer batchId : batchIds) {
       MutationBatch batch = lookupMutationBatch(batchId);
       if (batch != null) {
@@ -300,38 +292,33 @@ final class MemoryMutationQueue implements MutationQueue {
     queue.remove(0);
 
     // Remove entries from the index too.
-    ImmutableSortedSet<DocumentReference> references = batchesByDocumentKey;
     for (Mutation mutation : batch.getMutations()) {
       DocumentKey key = mutation.getKey();
       persistence.getReferenceDelegate().removeMutationReference(key);
+      ArrayList<Integer> batchIdsForKey = batchIdsByDocumentKey.get(key);
+      hardAssert(batchIdsForKey != null, "Unable to find batch IDs for key");
 
-      DocumentReference reference = new DocumentReference(key, batch.getBatchId());
-      references = references.remove(reference);
+      int batchIdIndex = batchIdsForKey.indexOf(batch.getBatchId());
+      hardAssert(batchIdIndex >= 0, "Batch ID not found: " + batch.getBatchId());
+      if (batchIdsForKey.size() == 1) {
+        batchIdsByDocumentKey.remove(key);
+      } else {
+        batchIdsForKey.remove(batchIdIndex);
+      }
     }
-    batchesByDocumentKey = references;
   }
 
   @Override
   public void performConsistencyCheck() {
     if (queue.isEmpty()) {
       hardAssert(
-          batchesByDocumentKey.isEmpty(),
+          batchIdsByDocumentKey.isEmpty(),
           "Document leak -- detected dangling mutation references when queue is empty.");
     }
   }
 
   boolean containsKey(DocumentKey key) {
-    // Create a reference with a zero ID as the start position to find any document reference with
-    // this key.
-    DocumentReference reference = new DocumentReference(key, 0);
-
-    Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(reference);
-    if (!iterator.hasNext()) {
-      return false;
-    }
-
-    DocumentKey firstKey = iterator.next().getKey();
-    return firstKey.equals(key);
+    return batchIdsByDocumentKey.containsKey(key);
   }
 
   // Helpers

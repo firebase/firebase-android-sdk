@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
-import java.util.List;
+import com.google.firebase.firestore.util.ImmutableList;
 
 public abstract class Filter {
   /** Returns true if a document matches the filter. */
@@ -25,8 +25,8 @@ public abstract class Filter {
   public abstract String getCanonicalId();
 
   /** Returns a list of all field filters that are contained within this filter */
-  public abstract List<FieldFilter> getFlattenedFilters();
+  public abstract ImmutableList<FieldFilter> getFlattenedFilters();
 
   /** Returns a list of all filters that are contained within this filter */
-  public abstract List<Filter> getFilters();
+  public abstract ImmutableList<Filter> getFilters();
 }

@@ -19,8 +19,9 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
-import java.util.Map;
-import java.util.SortedSet;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableMap;
+import java.util.HashMap;
 
 /**
  * Provides methods to read and write document overlays.
@@ -42,14 +43,16 @@ public interface DocumentOverlayCache {
   /**
    * Gets the saved overlay mutation for the given document keys. Skips keys for which there are no
    * overlays.
+   *
+   * @return A newly-created {@link HashMap} with the results.
    */
-  Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys);
+  HashMap<DocumentKey, Overlay> getOverlays(ImmutableCollection<DocumentKey> keys);
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
    * their largest batch id set to {@code largestBatchId}.
    */
-  void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays);
+  void saveOverlays(int largestBatchId, ImmutableMap<DocumentKey, Mutation> overlays);
 
   /** Removes the overlay whose largest-batch-id equals to the given Id. */
   void removeOverlaysForBatchId(int batchId);
@@ -60,9 +63,9 @@ public interface DocumentOverlayCache {
    * @param collection The collection path to get the overlays for.
    * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
    *     change past `sinceBatchId` are returned.
-   * @return Mapping of each document key in the collection to its overlay.
+   * @return A newly created {@link HashMap} of each document key in the collection to its overlay.
    */
-  Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
+  HashMap<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
 
   /**
    * Returns {@code count} overlays with a batch ID higher than {@code sinceBatchId} for the
@@ -74,7 +77,7 @@ public interface DocumentOverlayCache {
    *     change past `sinceBatchId` are returned.
    * @param count The number of overlays to return. Can be exceeded if the last batch contains more
    *     entries.
-   * @return Mapping of each document key in the collection group to its overlay.
+   * @return A newly created {@link HashMap} of each document key in the collection group to its overlay.
    */
-  Map<DocumentKey, Overlay> getOverlays(String collectionGroup, int sinceBatchId, int count);
+  HashMap<DocumentKey, Overlay> getOverlays(String collectionGroup, int sinceBatchId, int count);
 }

@@ -21,9 +21,9 @@ import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Consumer;
-import java.util.ArrayList;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /** Provides LRU garbage collection functionality for MemoryPersistence. */
@@ -31,7 +31,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final MemoryPersistence persistence;
   private final LocalSerializer serializer;
   private final Map<DocumentKey, Long> orphanedSequenceNumbers;
-  private ReferenceSet inMemoryPins;
+  private Collection<DocumentKey> inMemoryPins;
   private final LruGarbageCollector garbageCollector;
   private final ListenSequence listenSequence;
   private long currentSequenceNumber;
@@ -106,7 +106,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void setInMemoryPins(ReferenceSet inMemoryPins) {
+  public void setInMemoryPins(Collection<DocumentKey> inMemoryPins) {
     this.inMemoryPins = inMemoryPins;
   }
 
@@ -118,7 +118,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   @Override
   public int removeOrphanedDocuments(long upperBound) {
     MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
-    List<DocumentKey> docsToRemove = new ArrayList<>();
+    ImmutableArrayList.Builder<DocumentKey> docsToRemove = new ImmutableArrayList.Builder<>();
     for (Document doc : cache.getDocuments()) {
       DocumentKey key = doc.getKey();
       if (!isPinned(key, upperBound)) {
@@ -126,7 +126,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
         orphanedSequenceNumbers.remove(key);
       }
     }
-    cache.removeAll(docsToRemove);
+    cache.removeAll(docsToRemove.build());
     return docsToRemove.size();
   }
 
@@ -174,7 +174,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
       return true;
     }
 
-    if (inMemoryPins.containsKey(key)) {
+    if (inMemoryPins.contains(key)) {
       return true;
     }
 

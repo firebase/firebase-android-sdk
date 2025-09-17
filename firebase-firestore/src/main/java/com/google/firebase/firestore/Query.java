@@ -42,6 +42,9 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.ImmutableArrayList;
+import com.google.firebase.firestore.util.ImmutableList;
+import com.google.firebase.firestore.util.ImmutableLists;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
@@ -456,7 +459,8 @@ public class Query {
    */
   private com.google.firebase.firestore.core.Filter parseCompositeFilter(
       Filter.CompositeFilter compositeFilterData) {
-    List<com.google.firebase.firestore.core.Filter> parsedFilters = new ArrayList<>();
+    ImmutableArrayList.Builder<com.google.firebase.firestore.core.Filter> parsedFilters =
+        new ImmutableArrayList.Builder<>();
     for (Filter filter : compositeFilterData.getFilters()) {
       com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
       if (!parsedFilter.getFilters().isEmpty()) {
@@ -469,7 +473,7 @@ public class Query {
     if (parsedFilters.size() == 1) {
       return parsedFilters.get(0);
     }
-    return new CompositeFilter(parsedFilters, compositeFilterData.getOperator());
+    return new CompositeFilter(parsedFilters.build(), compositeFilterData.getOperator());
   }
 
   /**
@@ -548,18 +552,18 @@ public class Query {
    *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
    * </ol>
    */
-  private List<Operator> conflictingOps(Operator op) {
+  private ImmutableList<Operator> conflictingOps(Operator op) {
     switch (op) {
       case NOT_EQUAL:
-        return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
+        return ImmutableArrayList.of(Operator.NOT_EQUAL, Operator.NOT_IN);
       case ARRAY_CONTAINS_ANY:
       case IN:
-        return Arrays.asList(Operator.NOT_IN);
+        return ImmutableArrayList.of(Operator.NOT_IN);
       case NOT_IN:
-        return Arrays.asList(
+        return ImmutableArrayList.of(
             Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN, Operator.NOT_EQUAL);
       default:
-        return new ArrayList<>();
+        return ImmutableLists.empty();
     }
   }
 
@@ -601,7 +605,8 @@ public class Query {
    */
   @Nullable
   private Operator findOpInsideFilters(
-      List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
+      ImmutableList<com.google.firebase.firestore.core.Filter> filters,
+      ImmutableList<Operator> operators) {
     for (com.google.firebase.firestore.core.Filter filter : filters) {
       for (FieldFilter fieldFilter : filter.getFlattenedFilters()) {
         if (operators.contains(fieldFilter.getOperator())) {
@@ -850,7 +855,7 @@ public class Query {
               + "().");
     }
     Document document = snapshot.getDocument();
-    List<Value> components = new ArrayList<>();
+    ImmutableArrayList.Builder<Value> components = new ImmutableArrayList.Builder<>();
 
     // Because people expect to continue/end a query at the exact document provided, we need to
     // use the implicit sort order rather than the explicit sort order, because it's guaranteed to
@@ -880,13 +885,13 @@ public class Query {
         }
       }
     }
-    return new Bound(components, inclusive);
+    return new Bound(components.build(), inclusive);
   }
 
   /** Converts a list of field values to Bound. */
   private Bound boundFromFields(String methodName, Object[] values, boolean inclusive) {
     // Use explicit order by's because it has to match the query the user made
-    List<OrderBy> explicitOrderBy = query.getExplicitOrderBy();
+    ImmutableList<OrderBy> explicitOrderBy = query.getExplicitOrderBy();
     if (values.length > explicitOrderBy.size()) {
       throw new IllegalArgumentException(
           "Too many arguments provided to "
@@ -895,7 +900,7 @@ public class Query {
               + "than or equal to the number of orderBy() clauses.");
     }
 
-    List<Value> components = new ArrayList<>();
+    ImmutableArrayList.Builder<Value> components = new ImmutableArrayList.Builder<>();
     for (int i = 0; i < values.length; i++) {
       Object rawValue = values[i];
       OrderBy orderBy = explicitOrderBy.get(i);
@@ -936,7 +941,7 @@ public class Query {
       }
     }
 
-    return new Bound(components, inclusive);
+    return new Bound(components.build(), inclusive);
   }
 
   /**

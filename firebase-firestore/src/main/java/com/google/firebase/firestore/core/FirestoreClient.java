@@ -48,6 +48,7 @@ import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.Value;
 import java.io.InputStream;
@@ -218,7 +219,7 @@ public final class FirestoreClient {
   }
 
   /** Writes mutations. The returned task will be notified when it's written to the backend. */
-  public Task<Void> write(final List<Mutation> mutations) {
+  public Task<Void> write(final ImmutableList<Mutation> mutations) {
     this.verifyNotTerminated();
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(() -> syncEngine.writeMutations(mutations, source));
@@ -336,7 +337,7 @@ public final class FirestoreClient {
     return completionSource.getTask();
   }
 
-  public Task<Void> configureFieldIndexes(List<FieldIndex> fieldIndices) {
+  public Task<Void> configureFieldIndexes(ImmutableList<FieldIndex> fieldIndices) {
     verifyNotTerminated();
     return asyncQueue.enqueue(() -> localStore.configureFieldIndexes(fieldIndices));
   }

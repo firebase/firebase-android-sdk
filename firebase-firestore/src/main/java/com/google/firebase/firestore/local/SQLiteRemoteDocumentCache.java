@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.firstNEntries;
@@ -24,7 +23,6 @@ import android.database.Cursor;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -34,17 +32,16 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.ImmutableCollection;
+import com.google.firebase.firestore.util.ImmutableCollections;
+import com.google.firebase.firestore.util.ImmutableHashMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -120,16 +117,18 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void removeAll(Collection<DocumentKey> keys) {
+  public void removeAll(ImmutableCollection<DocumentKey> keys) {
     if (keys.isEmpty()) return;
 
     List<Object> encodedPaths = new ArrayList<>();
-    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    ImmutableHashMap.Builder<DocumentKey, Document> deletedDocs = new ImmutableHashMap.Builder<>();
 
     for (DocumentKey key : keys) {
+      if (deletedDocs.containsKey(key)) {
+        continue;
+      }
       encodedPaths.add(EncodedPath.encode(key.getPath()));
-      deletedDocs =
-          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+      deletedDocs.put(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
     }
 
     SQLitePersistence.LongQuery longQuery =
@@ -139,18 +138,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       longQuery.executeNextSubquery();
     }
 
-    indexManager.updateIndexEntries(deletedDocs);
+    indexManager.updateIndexEntries(deletedDocs.build());
   }
 
   @Override
   public MutableDocument get(DocumentKey documentKey) {
-    return getAll(Collections.singletonList(documentKey)).get(documentKey);
+    return getAll(ImmutableCollections.of(documentKey)).get(documentKey);
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
-    Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    List<Object> bindVars = new ArrayList<>();
+  public HashMap<DocumentKey, MutableDocument> getAll(
+      ImmutableCollection<DocumentKey> documentKeys) {
+    HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
+    ArrayList<Object> bindVars = new ArrayList<>();
     for (DocumentKey key : documentKeys) {
       bindVars.add(EncodedPath.encode(key.getPath()));
 
@@ -186,29 +186,26 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(
+  public HashMap<DocumentKey, MutableDocument> getAll(
       String collectionGroup, IndexOffset offset, int limit) {
-    List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
-    List<ResourcePath> collections = new ArrayList<>(collectionParents.size());
+    ArrayList<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
+    ArrayList<ResourcePath> collections = new ArrayList<>(collectionParents.size());
     for (ResourcePath collectionParent : collectionParents) {
       collections.add(collectionParent.append(collectionGroup));
     }
 
     if (collections.isEmpty()) {
-      return Collections.emptyMap();
+      return new HashMap<>();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit, /*filter*/ null);
+      return getAll(ImmutableCollections.adopt(collections), offset, limit, /*filter*/ null);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
-      Map<DocumentKey, MutableDocument> results = new HashMap<>();
+      HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
       int pageSize = SQLitePersistence.MAX_ARGS / BINDS_PER_STATEMENT;
       for (int i = 0; i < collections.size(); i += pageSize) {
-        results.putAll(
-            getAll(
-                collections.subList(i, Math.min(collections.size(), i + pageSize)),
-                offset,
-                limit,
-                /*filter*/ null));
+        List<ResourcePath> subList =
+            collections.subList(i, Math.min(collections.size(), i + pageSize));
+        results.putAll(getAll(ImmutableCollections.adopt(subList), offset, limit, /*filter*/ null));
       }
       return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
@@ -217,8 +214,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * Returns the next {@code count} documents from the provided collections, ordered by read time.
    */
-  private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections,
+  private HashMap<DocumentKey, MutableDocument> getAll(
+      ImmutableCollection<ResourcePath> collections,
       IndexOffset offset,
       int count,
       @Nullable DocumentType tryFilterDocumentType,
@@ -265,7 +262,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     bindVars[i] = count;
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
-    Map<DocumentKey, MutableDocument> results = new HashMap<>();
+    HashMap<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
@@ -286,8 +283,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
   }
 
-  private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections,
+  private HashMap<DocumentKey, MutableDocument> getAll(
+      ImmutableCollection<ResourcePath> collections,
       IndexOffset offset,
       int count,
       @Nullable Function<MutableDocument, Boolean> filter) {
@@ -297,7 +294,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   private void processRowInBackground(
       BackgroundQueue backgroundQueue,
-      Map<DocumentKey, MutableDocument> results,
+      HashMap<DocumentKey, MutableDocument> results,
       Cursor row,
       @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
@@ -330,19 +327,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, @Nonnull ImmutableCollection<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public HashMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
-      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nonnull ImmutableCollection<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
     return getAll(
-        Collections.singletonList(query.getPath()),
+        ImmutableCollections.of(query.getPath()),
         offset,
         Integer.MAX_VALUE,
         // Specify tryFilterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because

@@ -21,8 +21,8 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firebase.firestore.util.ImmutableList;
 import com.google.firestore.v1.Value;
-import java.util.List;
 
 /**
  * Represents a bound of a query.
@@ -45,14 +45,14 @@ public final class Bound {
   private final boolean inclusive;
 
   /** The index position of this bound */
-  private final List<Value> position;
+  private final ImmutableList<Value> position;
 
-  public Bound(List<Value> position, boolean inclusive) {
+  public Bound(ImmutableList<Value> position, boolean inclusive) {
     this.position = position;
     this.inclusive = inclusive;
   }
 
-  public List<Value> getPosition() {
+  public ImmutableList<Value> getPosition() {
     return position;
   }
 
@@ -80,18 +80,18 @@ public final class Bound {
   }
 
   /** Returns true if a document sorts before a bound using the provided sort order. */
-  public boolean sortsBeforeDocument(List<OrderBy> orderBy, Document document) {
+  public boolean sortsBeforeDocument(ImmutableList<OrderBy> orderBy, Document document) {
     int comparison = compareToDocument(orderBy, document);
     return inclusive ? comparison <= 0 : comparison < 0;
   }
 
   /** Returns true if a document sorts after a bound using the provided sort order. */
-  public boolean sortsAfterDocument(List<OrderBy> orderBy, Document document) {
+  public boolean sortsAfterDocument(ImmutableList<OrderBy> orderBy, Document document) {
     int comparison = compareToDocument(orderBy, document);
     return inclusive ? comparison >= 0 : comparison > 0;
   }
 
-  private int compareToDocument(List<OrderBy> orderBy, Document document) {
+  private int compareToDocument(ImmutableList<OrderBy> orderBy, Document document) {
     hardAssert(position.size() <= orderBy.size(), "Bound has more components than query's orderBy");
     int comparison = 0;
     for (int i = 0; i < position.size(); i++) {
