@@ -15,10 +15,7 @@
  */
 package com.google.firebase.firestore.util
 
-import java.util.concurrent.Executor
 import java.util.concurrent.Semaphore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 
 /**
  * Manages CPU-bound work on background threads to enable parallel processing.
@@ -41,7 +38,7 @@ internal class BackgroundQueue {
     check(submittingState is State.Submitting) { "submit() may not be called after drain()" }
 
     submittingState.taskCount++
-    executor.execute {
+    Executors.CPU_WORKLOAD_EXECUTOR.execute {
       try {
         runnable.run()
       } finally {
@@ -69,18 +66,5 @@ internal class BackgroundQueue {
       var taskCount: Int = 0
     }
     object Draining : State
-  }
-
-  companion object {
-
-    /**
-     * The maximum amount of parallelism shared by all instances of this class.
-     *
-     * This is equal to the number of processor cores available, or 2, whichever is larger.
-     */
-    val maxParallelism = Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
-
-    private val executor: Executor =
-      Dispatchers.IO.limitedParallelism(maxParallelism, "firestore.BackgroundQueue").asExecutor()
   }
 }

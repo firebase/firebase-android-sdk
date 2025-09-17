@@ -21,8 +21,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.*
-import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
+import com.google.firebase.firestore.util.Executors.newSequentialExecutor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
@@ -233,7 +232,9 @@ fun DocumentReference.snapshots(
 ): Flow<DocumentSnapshot> {
   return callbackFlow {
     val registration =
-      addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+      addSnapshotListener(newSequentialExecutor("DocRef.snapshots"), metadataChanges) {
+        snapshot,
+        exception ->
         if (exception != null) {
           cancel(message = "Error getting DocumentReference snapshot", cause = exception)
         } else if (snapshot != null) {
@@ -257,7 +258,9 @@ fun Query.snapshots(
 ): Flow<QuerySnapshot> {
   return callbackFlow {
     val registration =
-      addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+      addSnapshotListener(newSequentialExecutor("Query.snapshots"), metadataChanges) {
+        snapshot,
+        exception ->
         if (exception != null) {
           cancel(message = "Error getting Query snapshot", cause = exception)
         } else if (snapshot != null) {

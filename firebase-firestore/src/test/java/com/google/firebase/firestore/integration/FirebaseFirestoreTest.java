@@ -16,7 +16,7 @@ package com.google.firebase.firestore.integration;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR;
+import static com.google.firebase.firestore.util.Executors.SHORT_WORKLOAD_EXECUTOR;
 import static org.mockito.Mockito.verify;
 
 import androidx.annotation.NonNull;
@@ -78,9 +78,9 @@ public class FirebaseFirestoreTest {
 
   private static <T> Task<T> waitFor(Task<T> task) throws InterruptedException {
     CountDownLatch countDownLatch = new CountDownLatch(1);
-    task.addOnSuccessListener(BACKGROUND_EXECUTOR, t -> countDownLatch.countDown());
-    task.addOnFailureListener(BACKGROUND_EXECUTOR, e -> countDownLatch.countDown());
-    task.addOnCanceledListener(BACKGROUND_EXECUTOR, () -> countDownLatch.countDown());
+    task.addOnSuccessListener(SHORT_WORKLOAD_EXECUTOR, t -> countDownLatch.countDown());
+    task.addOnFailureListener(SHORT_WORKLOAD_EXECUTOR, e -> countDownLatch.countDown());
+    task.addOnCanceledListener(SHORT_WORKLOAD_EXECUTOR, () -> countDownLatch.countDown());
     countDownLatch.await(15, TimeUnit.SECONDS);
     return task;
   }

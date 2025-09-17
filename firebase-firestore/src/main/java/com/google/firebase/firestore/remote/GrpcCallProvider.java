@@ -237,7 +237,7 @@ public class GrpcCallProvider {
     // the AsyncQueue.
     this.channelTask =
         Tasks.call(
-            Executors.BACKGROUND_EXECUTOR,
+            Executors.SHORT_WORKLOAD_EXECUTOR,
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
               asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel));

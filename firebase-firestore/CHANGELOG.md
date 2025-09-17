@@ -8,6 +8,8 @@
   [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
 - [changed] Improve query performance via internal memoization of calculated document data.
   [#7370](//github.com/firebase/firebase-android-sdk/issues/7370)
+- [changed] Replace deprecated AsyncTask-based executor with mordern Kotlin dispatchers.
+  [#NNNN](//github.com/firebase/firebase-android-sdk/issues/NNNN)
 
 # 26.0.0
 
