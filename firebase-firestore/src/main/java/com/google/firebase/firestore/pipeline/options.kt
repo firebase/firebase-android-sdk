@@ -161,25 +161,3 @@ class RawOptions private constructor(options: InternalOptions) :
     @JvmField val DEFAULT: RawOptions = RawOptions(InternalOptions.EMPTY)
   }
 }
-
-class PipelineOptions private constructor(options: InternalOptions) :
-  AbstractOptions<PipelineOptions>(options) {
-
-  constructor() : this(InternalOptions.EMPTY)
-
-  override fun self(options: InternalOptions) = PipelineOptions(options)
-
-  class IndexMode private constructor(internal val value: String) {
-    companion object {
-      @JvmField val RECOMMENDED = IndexMode("recommended")
-    }
-  }
-
-  fun withIndexMode(indexMode: IndexMode): PipelineOptions = with("index_mode", indexMode.value)
-}
-
-class RealtimePipelineOptions private constructor(options: InternalOptions) :
-  AbstractOptions<RealtimePipelineOptions>(options) {
-
-  override fun self(options: InternalOptions) = RealtimePipelineOptions(options)
-}
