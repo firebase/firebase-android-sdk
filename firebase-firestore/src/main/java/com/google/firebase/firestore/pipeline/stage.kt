@@ -23,8 +23,8 @@ import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
@@ -145,7 +145,7 @@ internal sealed class GenericArg {
         is Map<*, *> ->
           MapArg(arg.asIterable().associate { (key, value) -> key as String to from(value) })
         is List<*> -> ListArg(arg.map(::from))
-        else -> ExprArg(Expr.toExprOrConstant(arg))
+        else -> ExprArg(Expression.toExprOrConstant(arg))
       }
   }
   abstract fun toProto(userDataReader: UserDataReader): Value
@@ -154,7 +154,7 @@ internal sealed class GenericArg {
     override fun toProto(userDataReader: UserDataReader) = aggregate.toProto(userDataReader)
   }
 
-  data class ExprArg(val expr: Expr) : GenericArg() {
+  data class ExprArg(val expr: Expression) : GenericArg() {
     override fun toProto(userDataReader: UserDataReader) = expr.toProto(userDataReader)
   }
 
@@ -438,7 +438,7 @@ internal constructor(
 class AggregateStage
 private constructor(
   private val accumulators: Map<String, AggregateFunction>,
-  private val groups: Map<String, Expr>,
+  private val groups: Map<String, Expression>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AggregateStage>("aggregate", options) {
   private constructor(accumulators: Map<String, AggregateFunction>) : this(accumulators, emptyMap())
@@ -476,7 +476,7 @@ private constructor(
    * @return [AggregateStage] with specified groups.
    */
   fun withGroups(groupField: String, vararg additionalGroups: Any) =
-    withGroups(Expr.field(groupField), *additionalGroups)
+    withGroups(Expression.field(groupField), *additionalGroups)
 
   /**
    * Add one or more groups to [AggregateStage]
@@ -554,7 +554,7 @@ class AggregateOptions internal constructor(options: InternalOptions) :
 
 internal class WhereStage
 internal constructor(
-  internal val condition: Expr,
+  internal val condition: Expression,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<WhereStage>("where", options), Canonicalizable {
   override fun canonicalId(): String {
@@ -594,15 +594,15 @@ internal constructor(
  */
 class FindNearestStage
 internal constructor(
-  private val property: Expr,
-  private val vector: Expr,
+  private val property: Expression,
+  private val vector: Expression,
   private val distanceMeasure: DistanceMeasure,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<FindNearestStage>("find_nearest", options) {
 
   private constructor(
-    property: Expr,
-    vector: Expr,
+    property: Expression,
+    vector: Expression,
     distanceMeasure: DistanceMeasure,
     options: FindNearestOptions
   ) : this(property, vector, distanceMeasure, options.options)
@@ -643,7 +643,7 @@ internal constructor(
       vectorValue: DoubleArray,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
-    ) = FindNearestStage(vectorField, Expr.vector(vectorValue), distanceMeasure, options)
+    ) = FindNearestStage(vectorField, Expression.vector(vectorValue), distanceMeasure, options)
 
     /**
      * Create [FindNearestStage].
@@ -679,11 +679,12 @@ internal constructor(
       vectorValue: DoubleArray,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
-    ) = FindNearestStage(field(vectorField), Expr.vector(vectorValue), distanceMeasure, options)
+    ) =
+      FindNearestStage(field(vectorField), Expression.vector(vectorValue), distanceMeasure, options)
 
     internal fun of(
       vectorField: String,
-      vectorValue: Expr,
+      vectorValue: Expression,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
     ) = FindNearestStage(field(vectorField), vectorValue, distanceMeasure, options)
@@ -1004,7 +1005,7 @@ internal constructor(
 
 internal class ReplaceStage
 internal constructor(
-  private val mapValue: Expr,
+  private val mapValue: Expression,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<ReplaceStage>("replace_with", options) {
@@ -1146,10 +1147,10 @@ internal constructor(
      * Creates [UnnestStage] with input array and alias specified.
      *
      * For each document emitted by the prior stage, this stage will emit zero or more augmented
-     * documents. The input array is found in parameter [arrayWithAlias], which can be an [Expr]
-     * with an alias specified via [Expr.alias], or a [Field] that can also have alias specified.
-     * For each element of the input array, an augmented document will be produced. The element of
-     * input array will be stored in a field with name specified by the alias of the
+     * documents. The input array is found in parameter [arrayWithAlias], which can be an
+     * [Expression] with an alias specified via [Expression.alias], or a [Field] that can also have
+     * alias specified. For each element of the input array, an augmented document will be produced.
+     * The element of input array will be stored in a field with name specified by the alias of the
      * [arrayWithAlias] parameter. If the [arrayWithAlias] is a [Field] with no alias, then the
      * original array field will be replaced with the individual element.
      *
@@ -1171,7 +1172,7 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Expr.Companion.field(arrayField).alias(alias))
+      UnnestStage(Expression.Companion.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =

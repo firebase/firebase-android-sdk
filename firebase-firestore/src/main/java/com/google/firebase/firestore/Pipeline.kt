@@ -21,13 +21,14 @@ import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateOptions
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AliasedAggregate
-import com.google.firebase.firestore.pipeline.AliasedExpr
-import com.google.firebase.firestore.pipeline.BooleanExpr
+import com.google.firebase.firestore.pipeline.AliasedExpression
+import com.google.firebase.firestore.pipeline.BooleanExpression
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
@@ -35,17 +36,16 @@ import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
-import com.google.firebase.firestore.pipeline.Expr
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestOptions
 import com.google.firebase.firestore.pipeline.FindNearestStage
-import com.google.firebase.firestore.pipeline.FunctionExpr
+import com.google.firebase.firestore.pipeline.FunctionExpression
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
-import com.google.firebase.firestore.pipeline.PipelineOptions
 import com.google.firebase.firestore.pipeline.RawStage
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
@@ -70,6 +70,50 @@ internal constructor(
   private val userDataReader: UserDataReader,
   private val stages: List<Stage<*>>
 ) {
+  class ExecuteOptions private constructor(options: InternalOptions) :
+    AbstractOptions<ExecuteOptions>(options) {
+
+    constructor() : this(InternalOptions.EMPTY)
+
+    override fun self(options: InternalOptions) = ExecuteOptions(options)
+
+    class IndexMode private constructor(internal val value: String) {
+      companion object {
+        @JvmField val RECOMMENDED = IndexMode("recommended")
+      }
+    }
+
+    fun withIndexMode(indexMode: IndexMode): ExecuteOptions = with("index_mode", indexMode.value)
+  }
+
+  /**
+   * A `Snapshot` contains the results of a pipeline execution. It can be iterated to retrieve the
+   * individual `PipelineResult` objects.
+   */
+  class Snapshot internal constructor(executionTime: Timestamp, results: List<PipelineResult>) :
+    Iterable<PipelineResult> {
+
+    /** The time at which the pipeline producing this result is executed. */
+    val executionTime: Timestamp = executionTime
+
+    /** List of all the results */
+    val results: List<PipelineResult> = results
+
+    override fun iterator() = results.iterator()
+
+    override fun toString() = "Snapshot{executionTime=$executionTime, results=$results}"
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
+      other as Snapshot
+      if (results != other.results) return false
+      return true
+    }
+    override fun hashCode(): Int {
+      return results.hashCode()
+    }
+  }
+
   internal constructor(
     firestore: FirebaseFirestore,
     userDataReader: UserDataReader,
@@ -101,24 +145,24 @@ internal constructor(
   }
 
   /**
-   * Executes this pipeline and returns the results as a [Task] of [PipelineSnapshot].
+   * Executes this pipeline and returns the results as a [Task] of [Snapshot].
    *
    * @return A [Task] that will be resolved with the results of the pipeline.
    */
-  fun execute(): Task<PipelineSnapshot> = execute(null)
+  fun execute(): Task<Snapshot> = execute(null)
 
   /**
-   * Executes this pipeline and returns the results as a [Task] of [PipelineSnapshot].
+   * Executes this pipeline and returns the results as a [Task] of [Snapshot].
    *
-   * @param options The [PipelineOptions] to use to instruct Firestore backend execution.
+   * @param options The [ExecuteOptions] to use to instruct Firestore backend execution.
    * @return A [Task] that will be resolved with the results of the pipeline.
    */
-  fun execute(options: PipelineOptions): Task<PipelineSnapshot> = execute(options.options)
+  fun execute(options: ExecuteOptions): Task<Snapshot> = execute(options.options)
 
-  internal fun execute(options: InternalOptions?): Task<PipelineSnapshot> {
+  internal fun execute(options: InternalOptions?): Task<Snapshot> {
     val request = toExecutePipelineRequest(options)
     val observerTask = ObserverSnapshotTask()
-    Logger.warn("Pipeline", "Executing pipeline: $request")
+    Logger.debug("Pipeline", "Executing pipeline: $request")
     firestore?.callClient { call -> call!!.executePipeline(request, observerTask) }
     return observerTask.task
   }
@@ -126,7 +170,7 @@ internal constructor(
   private inner class ObserverSnapshotTask : PipelineResultObserver {
     private val userDataWriter =
       UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT)
-    private val taskCompletionSource = TaskCompletionSource<PipelineSnapshot>()
+    private val taskCompletionSource = TaskCompletionSource<Snapshot>()
     private val results: MutableList<PipelineResult> = mutableListOf()
     override fun onDocument(
       key: DocumentKey?,
@@ -146,14 +190,14 @@ internal constructor(
     }
 
     override fun onComplete(executionTime: Timestamp) {
-      taskCompletionSource.setResult(PipelineSnapshot(executionTime, results))
+      taskCompletionSource.setResult(Snapshot(executionTime, results))
     }
 
     override fun onError(exception: FirebaseFirestoreException) {
       taskCompletionSource.setException(exception)
     }
 
-    val task: Task<PipelineSnapshot>
+    val task: Task<Snapshot>
       get() = taskCompletionSource.task
   }
 
@@ -183,7 +227,7 @@ internal constructor(
    * The added fields are defined using [Selectable]s, which can be:
    *
    * - [Field]: References an existing document field.
-   * - [AliasedExpr]: Represents the result of a expression with an assigned alias name using
+   * - [AliasedExpression]: Represents the result of a expression with an assigned alias name using
    * [Expr.alias]
    *
    * Example:
@@ -237,7 +281,9 @@ internal constructor(
    */
   fun removeFields(field: String, vararg additionalFields: String): Pipeline =
     append(
-      RemoveFieldsStage(arrayOf(field(field), *additionalFields.map(Expr::field).toTypedArray()))
+      RemoveFieldsStage(
+        arrayOf(field(field), *additionalFields.map(Expression::field).toTypedArray())
+      )
     )
 
   /**
@@ -247,7 +293,7 @@ internal constructor(
    *
    * - [String]: Name of an existing field
    * - [Field]: Reference to an existing field.
-   * - [AliasedExpr]: Represents the result of a expression with an assigned alias name using
+   * - [AliasedExpression]: Represents the result of a expression with an assigned alias name using
    * [Expr.alias]
    *
    * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
@@ -278,7 +324,7 @@ internal constructor(
    *
    * - [String]: Name of an existing field
    * - [Field]: Reference to an existing field.
-   * - [AliasedExpr]: Represents the result of a expression with an assigned alias name using
+   * - [AliasedExpression]: Represents the result of a expression with an assigned alias name using
    * [Expr.alias]
    *
    * If no selections are provided, the output of this stage is empty. Use [Pipeline.addFields]
@@ -332,14 +378,14 @@ internal constructor(
 
   /**
    * Filters the documents from previous stages to only include those matching the specified
-   * [BooleanExpr].
+   * [BooleanExpression].
    *
    * This stage allows you to apply conditions to the data, similar to a "WHERE" clause in SQL.
    *
-   * You can filter documents based on their field values, using implementations of [BooleanExpr],
-   * typically including but not limited to:
+   * You can filter documents based on their field values, using implementations of
+   * [BooleanExpression], typically including but not limited to:
    *
-   * - field comparators: [Expr.eq], [Expr.lt] (less than), [Expr.gt] (greater than), etc.
+   * - field comparators: [Expr.equal], [Expr.lessThan], [Expr.greaterThan], etc.
    * - logical operators: [Expr.and], [Expr.or], [Expr.not], etc.
    * - advanced functions: [Expr.regexMatch], [Expr.arrayContains], etc.
    *
@@ -349,15 +395,15 @@ internal constructor(
    *   .where(
    *     and(
    *         gt("rating", 4.0),   // Filter for ratings greater than 4.0
-   *         field("genre").eq("Science Fiction") // Equivalent to eq("genre", "Science Fiction")
+   *         field("genre").equal("Science Fiction") // Equivalent to equal("genre", "Science Fiction")
    *     )
    *   );
    * ```
    *
-   * @param condition The [BooleanExpr] to apply.
+   * @param condition The [BooleanExpression] to apply.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun where(condition: BooleanExpr): Pipeline = append(WhereStage(condition))
+  fun where(condition: BooleanExpression): Pipeline = append(WhereStage(condition))
 
   /**
    * Skips the first `offset` number of documents from the results of previous stages.
@@ -407,13 +453,13 @@ internal constructor(
    * Returns a set of distinct values from the inputs to this stage.
    *
    * This stage runs through the results from previous stages to include only results with unique
-   * combinations of [Expr] values [Field], [FunctionExpr], etc).
+   * combinations of [Expr] values [Field], [FunctionExpression], etc).
    *
    * The parameters to this stage are defined using [Selectable] expressions or strings:
    *
    * - [String]: Name of an existing field
    * - [Field]: References an existing document field.
-   * - [AliasedExpr]: Represents the result of a function with an assigned alias name using
+   * - [AliasedExpression]: Represents the result of a function with an assigned alias name using
    * [Expr.alias]
    *
    * Example:
@@ -439,13 +485,13 @@ internal constructor(
    * Returns a set of distinct values from the inputs to this stage.
    *
    * This stage runs through the results from previous stages to include only results with unique
-   * combinations of [Expr] values ([Field], [FunctionExpr], etc).
+   * combinations of [Expr] values ([Field], [FunctionExpression], etc).
    *
    * The parameters to this stage are defined using [Selectable] expressions or strings:
    *
    * - [String]: Name of an existing field
    * - [Field]: References an existing document field.
-   * - [AliasedExpr]: Represents the result of a function with an assigned alias name using
+   * - [AliasedExpression]: Represents the result of a function with an assigned alias name using
    * [Expr.alias]
    *
    * Example:
@@ -479,7 +525,7 @@ internal constructor(
    * // Calculate the average rating and the total number of books
    * firestore.pipeline().collection("books")
    *     .aggregate(
-   *         field("rating").avg().as("averageRating"),
+   *         field("rating").average().as("averageRating"),
    *         countAll().as("totalBooks")
    *     );
    * ```
@@ -517,7 +563,7 @@ internal constructor(
    * firestore.pipeline().collection("books")
    *   .aggregate(
    *     Aggregate
-   *       .withAccumulators(avg("rating").as("avg_rating"))
+   *       .withAccumulators(average("rating").as("avg_rating"))
    *       .withGroups("genre"));
    * ```
    *
@@ -625,7 +671,7 @@ internal constructor(
    * and returning the first N documents in the result set.
    *
    * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [Expr] that should evaluate to a [VectorValue] used to measure the
+   * @param vectorValue The [Expression] that should evaluate to a [VectorValue] used to measure the
    * distance from [vectorField] values in the documents.
    * @param distanceMeasure specifies what type of distance is calculated when performing the
    * search.
@@ -633,7 +679,7 @@ internal constructor(
    */
   fun findNearest(
     vectorField: String,
-    vectorValue: Expr,
+    vectorValue: Expression,
     distanceMeasure: FindNearestStage.DistanceMeasure
   ): Pipeline = findNearest(vectorField, vectorValue, distanceMeasure, FindNearestOptions())
 
@@ -652,7 +698,7 @@ internal constructor(
    * ```
    *
    * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [Expr] that should evaluate to a [VectorValue] used to measure the
+   * @param vectorValue The [Expression] that should evaluate to a [VectorValue] used to measure the
    * distance from [vectorField] values in the documents.
    * @param distanceMeasure specifies what type of distance is calculated when performing the
    * search.
@@ -661,7 +707,7 @@ internal constructor(
    */
   fun findNearest(
     vectorField: String,
-    vectorValue: Expr,
+    vectorValue: Expression,
     distanceMeasure: FindNearestStage.DistanceMeasure,
     options: FindNearestOptions
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure, options))
@@ -723,10 +769,10 @@ internal constructor(
    * // }
    * ```
    *
-   * @param mapValue The [Expr] or [Field] containing the nested map.
+   * @param mapValue The [Expression] or [Field] containing the nested map.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun replaceWith(mapValue: Expr): Pipeline =
+  fun replaceWith(mapValue: Expression): Pipeline =
     append(ReplaceStage(mapValue, ReplaceStage.Mode.FULL_REPLACE))
 
   /**
@@ -1031,35 +1077,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       firestore.userDataReader,
       DocumentsSource(documents.map { ResourcePath.fromString(it.path) }.toTypedArray())
     )
-  }
-}
-
-/**
- * A `PipelineSnapshot` contains the results of a pipeline execution. It can be iterated to retrieve
- * the individual `PipelineResult` objects.
- */
-class PipelineSnapshot
-internal constructor(executionTime: Timestamp, results: List<PipelineResult>) :
-  Iterable<PipelineResult> {
-
-  /** The time at which the pipeline producing this result is executed. */
-  val executionTime: Timestamp = executionTime
-
-  /** List of all the results */
-  val results: List<PipelineResult> = results
-
-  override fun iterator() = results.iterator()
-
-  override fun toString() = "PipelineSnapshot{executionTime=$executionTime, results=$results}"
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-    other as PipelineSnapshot
-    if (results != other.results) return false
-    return true
-  }
-  override fun hashCode(): Int {
-    return results.hashCode()
   }
 }
 

@@ -20,14 +20,13 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.or
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +64,7 @@ internal class ComplexTests {
 
     var pipeline = RealtimePipelineSource(db).collection(collectionId)
     for (i in 1..numOfFields) {
-      pipeline = pipeline.where(field("field_$i").gt(0L))
+      pipeline = pipeline.where(field("field_$i").greaterThan(0L))
     }
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
@@ -84,7 +83,7 @@ internal class ComplexTests {
     val values = List(maxElements) { i -> i + 1 }
 
     val pipeline =
-      RealtimePipelineSource(db).collection(collectionId).where(field("field_1").eqAny(values))
+      RealtimePipelineSource(db).collection(collectionId).where(field("field_1").equalAny(values))
 
     val result = runPipeline(pipeline, listOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documentsSource)
@@ -101,7 +100,7 @@ internal class ComplexTests {
     val allDocuments = documentsSource + nonMatchingDoc
 
     val values = List(maxElements) { i -> i + 1 }
-    val conditions = (1..numOfFields).map { i -> field("field_$i").eqAny(values) }
+    val conditions = (1..numOfFields).map { i -> field("field_$i").equalAny(values) }
 
     val pipeline =
       RealtimePipelineSource(db)
@@ -124,7 +123,9 @@ internal class ComplexTests {
     val values = List(maxElements) { i -> i + 1 }
 
     val pipeline =
-      RealtimePipelineSource(db).collection(collectionId).where(field("field_1").notEqAny(values))
+      RealtimePipelineSource(db)
+        .collection(collectionId)
+        .where(field("field_1").notEqualAny(values))
 
     val result = runPipeline(pipeline, listOf(*allDocuments.toTypedArray())).toList()
     assertThat(result).containsExactly(matchingDoc)
@@ -161,7 +162,7 @@ internal class ComplexTests {
 
     val values = List(maxElements) { i -> (i + 1) } // 1 to 3000
 
-    val conditions = (1..numOfFields).map { i -> field("field_$i").notEqAny(values) }
+    val conditions = (1..numOfFields).map { i -> field("field_$i").notEqualAny(values) }
 
     val pipeline =
       RealtimePipelineSource(db)
@@ -267,14 +268,16 @@ internal class ComplexTests {
     // All docs have field_1 = 0L
     val documents = seedDatabase(numOfDocuments, numOfFields) { _, _ -> 0L }
 
-    var addExpr: Expr = field("field_1")
+    var addExpr: Expression = field("field_1")
     for (i in 1..depth) {
       addExpr = add(addExpr, constant(1L))
     }
     // addExpr is field_1 + 1 (depth times) = field_1 + depth = 0 + 31 = 31
 
     val pipeline =
-      RealtimePipelineSource(db).collection(collectionId).where(addExpr.gt(0L)) // 31 > 0L is true
+      RealtimePipelineSource(db)
+        .collection(collectionId)
+        .where(addExpr.greaterThan(0L)) // 31 > 0L is true
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(documents)
@@ -297,7 +300,7 @@ internal class ComplexTests {
       }
     val maxValueInDb = (numOfDocuments - 1) * numOfFields + numOfFields // 5000L
 
-    val orConditions = (1..numOfFields).map { i -> field("field_$i").lte(maxValueInDb) }
+    val orConditions = (1..numOfFields).map { i -> field("field_$i").lessThanOrEqual(maxValueInDb) }
 
     val pipeline =
       RealtimePipelineSource(db)
@@ -320,8 +323,10 @@ internal class ComplexTests {
       }
 
     val andConditions1 =
-      (1..numOfFields).map { i -> field("field_$i").gt(0L) } // Use 0L for clarity with Long types
-    val andConditions2 = (1..numOfFields).map { i -> field("field_$i").lt(Long.MAX_VALUE) }
+      (1..numOfFields).map { i ->
+        field("field_$i").greaterThan(0L)
+      } // Use 0L for clarity with Long types
+    val andConditions2 = (1..numOfFields).map { i -> field("field_$i").lessThan(Long.MAX_VALUE) }
 
     val pipeline =
       RealtimePipelineSource(db)
