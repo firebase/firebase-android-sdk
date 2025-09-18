@@ -673,7 +673,7 @@ object Values {
 
   @JvmStatic
   fun encodeValue(value: ResourcePath): Value =
-    Value.newBuilder().setReferenceValue(value.canonicalString()).build()
+    Value.newBuilder().setReferenceValue("/${value.canonicalString()}").build()
 
   @JvmStatic fun encodeValue(date: Date): Value = encodeValue(com.google.firebase.Timestamp((date)))
 

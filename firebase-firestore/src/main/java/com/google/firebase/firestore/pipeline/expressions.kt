@@ -264,7 +264,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     /**
      * Create a vector constant for a [DoubleArray] value.
      *
-     * @param vector The [VectorValue] value.
+     * @param vector The [DoubleArray] value.
      * @return A [Expr] constant instance.
      */
     @JvmStatic fun vector(vector: DoubleArray): Expr = Constant(Values.encodeVectorValue(vector))
@@ -682,7 +682,7 @@ abstract class Expr internal constructor() : Canonicalizable {
       FunctionExpr("round", evaluateRoundToPrecision, numericField, decimalPlace)
 
     /**
-     * Creates an expression that returns the smalled integer that isn't less than [numericExpr].
+     * Creates an expression that returns the smallest integer that isn't less than [numericExpr].
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
@@ -690,7 +690,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     @JvmStatic fun ceil(numericExpr: Expr): Expr = FunctionExpr("ceil", evaluateCeil, numericExpr)
 
     /**
-     * Creates an expression that returns the smalled integer that isn't less than [numericField].
+     * Creates an expression that returns the smallest integer that isn't less than [numericField].
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the ceil operation.
@@ -699,7 +699,8 @@ abstract class Expr internal constructor() : Canonicalizable {
     fun ceil(numericField: String): Expr = FunctionExpr("ceil", evaluateCeil, numericField)
 
     /**
-     * Creates an expression that returns the largest integer that isn't less than [numericExpr].
+     * Creates an expression that returns the largest integer that is not greater than [numericExpr]
+     * .
      *
      * @param numericExpr An expression that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
@@ -708,7 +709,8 @@ abstract class Expr internal constructor() : Canonicalizable {
     fun floor(numericExpr: Expr): Expr = FunctionExpr("floor", evaluateFloor, numericExpr)
 
     /**
-     * Creates an expression that returns the largest integer that isn't less than [numericField].
+     * Creates an expression that returns the largest integer that is not greater than
+     * [numericField].
      *
      * @param numericField Name of field that returns number when evaluated.
      * @return A new [Expr] representing an integer result from the floor operation.
@@ -1249,7 +1251,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     @JvmStatic fun isNan(expr: Expr): BooleanExpr = BooleanExpr("is_nan", evaluateIsNaN, expr)
 
     /**
-     * Creates an expression that checks if [expr] evaluates to 'NaN' (Not a Number).
+     * Creates an expression that checks if the field's value evaluates to 'NaN' (Not a Number).
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNan operation.
@@ -1267,8 +1269,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     fun isNotNan(expr: Expr): BooleanExpr = BooleanExpr("is_not_nan", evaluateIsNotNaN, expr)
 
     /**
-     * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
-     * Number).
+     * Creates an expression that checks if the field's value is NOT 'NaN' (Not a Number).
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNan operation.
@@ -1278,7 +1279,7 @@ abstract class Expr internal constructor() : Canonicalizable {
       BooleanExpr("is_not_nan", evaluateIsNotNaN, fieldName)
 
     /**
-     * Creates an expression that checks if tbe result of [expr] is null.
+     * Creates an expression that checks if the result of [expr] is null.
      *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNull operation.
@@ -1286,7 +1287,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     @JvmStatic fun isNull(expr: Expr): BooleanExpr = BooleanExpr("is_null", evaluateIsNull, expr)
 
     /**
-     * Creates an expression that checks if tbe value of a field is null.
+     * Creates an expression that checks if the value of a field is null.
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNull operation.
@@ -1295,7 +1296,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     fun isNull(fieldName: String): BooleanExpr = BooleanExpr("is_null", evaluateIsNull, fieldName)
 
     /**
-     * Creates an expression that checks if tbe result of [expr] is not null.
+     * Creates an expression that checks if the result of [expr] is not null.
      *
      * @param expr The expression to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
@@ -1304,7 +1305,7 @@ abstract class Expr internal constructor() : Canonicalizable {
     fun isNotNull(expr: Expr): BooleanExpr = BooleanExpr("is_not_null", evaluateIsNotNull, expr)
 
     /**
-     * Creates an expression that checks if tbe value of a field is not null.
+     * Creates an expression that checks if the value of a field is not null.
      *
      * @param fieldName The field to check.
      * @return A new [BooleanExpr] representing the isNotNull operation.
@@ -1509,7 +1510,7 @@ abstract class Expr internal constructor() : Canonicalizable {
       BooleanExpr("like", evaluateLike, fieldName, pattern)
 
     /**
-     * Creates an expression that return a pseudo-random number of type double in the range of [0,
+     * Creates an expression that returns a pseudo-random number of type double in the range of [0,
      * 1), inclusive of 0 and exclusive of 1.
      *
      * @return A new [Expr] representing the random number operation.
@@ -1618,7 +1619,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun logicalMaximum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_max", evaluateLogicalMaximum, expr, *others)
+      FunctionExpr("max", evaluateLogicalMaximum, expr, *others)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -1630,7 +1631,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun logicalMaximum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_max", evaluateLogicalMaximum, fieldName, *others)
+      FunctionExpr("max", evaluateLogicalMaximum, fieldName, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1642,7 +1643,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun logicalMinimum(expr: Expr, vararg others: Any): Expr =
-      FunctionExpr("logical_min", evaluateLogicalMinimum, expr, *others)
+      FunctionExpr("min", evaluateLogicalMinimum, expr, *others)
 
     /**
      * Creates an expression that returns the smallest value between multiple input expressions or
@@ -1654,7 +1655,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun logicalMinimum(fieldName: String, vararg others: Any): Expr =
-      FunctionExpr("logical_min", evaluateLogicalMinimum, fieldName, *others)
+      FunctionExpr("min", evaluateLogicalMinimum, fieldName, *others)
 
     /**
      * Creates an expression that reverses a string.
@@ -1674,6 +1675,26 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun reverse(fieldName: String): Expr = FunctionExpr("reverse", evaluateReverse, fieldName)
+
+    /**
+     * Creates an expression that reverses a string.
+     *
+     * @param stringExpression An expression evaluating to a string value, which will be reversed.
+     * @return A new [Expr] representing the reversed string.
+     */
+    @JvmStatic
+    fun strReverse(stringExpression: Expr): Expr =
+      FunctionExpr("str_reverse", evaluateReverse, stringExpression)
+
+    /**
+     * Creates an expression that reverses a string value from the specified field.
+     *
+     * @param fieldName The name of the field that contains the string to reverse.
+     * @return A new [Expr] representing the reversed string.
+     */
+    @JvmStatic
+    fun strReverse(fieldName: String): Expr =
+      FunctionExpr("str_reverse", evaluateReverse, fieldName)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -1854,7 +1875,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a string expression to uppercase.
      *
      * @param stringExpression The expression representing the string to convert to uppercase.
-     * @return A new [Expr] representing the lowercase string.
+     * @return A new [Expr] representing the uppercase string.
      */
     @JvmStatic
     fun toUpper(stringExpression: Expr): Expr =
@@ -1864,7 +1885,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * Creates an expression that converts a string field to uppercase.
      *
      * @param fieldName The name of the field containing the string to convert to uppercase.
-     * @return A new [Expr] representing the lowercase string.
+     * @return A new [Expr] representing the uppercase string.
      */
     @JvmStatic
     fun toUpper(fieldName: String): Expr = FunctionExpr("to_upper", evaluateToUppercase, fieldName)
@@ -3016,8 +3037,8 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the arrayOffset operation.
      */
     @JvmStatic
-    fun arrayOffset(array: Expr, offset: Expr): Expr =
-      FunctionExpr("array_offset", notImplemented, array, offset)
+    fun arrayGet(array: Expr, offset: Expr): Expr =
+      FunctionExpr("array_get", notImplemented, array, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -3029,8 +3050,8 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the arrayOffset operation.
      */
     @JvmStatic
-    fun arrayOffset(array: Expr, offset: Int): Expr =
-      FunctionExpr("array_offset", notImplemented, array, constant(offset))
+    fun arrayGet(array: Expr, offset: Int): Expr =
+      FunctionExpr("array_get", notImplemented, array, constant(offset))
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -3042,8 +3063,8 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the arrayOffset operation.
      */
     @JvmStatic
-    fun arrayOffset(arrayFieldName: String, offset: Expr): Expr =
-      FunctionExpr("array_offset", notImplemented, arrayFieldName, offset)
+    fun arrayGet(arrayFieldName: String, offset: Expr): Expr =
+      FunctionExpr("array_get", notImplemented, arrayFieldName, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -3055,8 +3076,8 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the arrayOffset operation.
      */
     @JvmStatic
-    fun arrayOffset(arrayFieldName: String, offset: Int): Expr =
-      FunctionExpr("array_offset", notImplemented, arrayFieldName, constant(offset))
+    fun arrayGet(arrayFieldName: String, offset: Int): Expr =
+      FunctionExpr("array_get", notImplemented, arrayFieldName, constant(offset))
 
     /**
      * Creates a conditional expression that evaluates to a [thenExpr] expression if a condition is
@@ -3270,10 +3291,10 @@ abstract class Expr internal constructor() : Canonicalizable {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [ExprWithAlias]) that wraps this expression and
+   * @return A new [Selectable] (typically an [AliasedExpr]) that wraps this expression and
    * associates it with the provided alias.
    */
-  open fun alias(alias: String): Selectable = ExprWithAlias(alias, this)
+  open fun alias(alias: String): Selectable = AliasedExpr(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -3394,7 +3415,7 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun roundToPrecision(decimalPlace: Expr): Expr = Companion.roundToPrecision(this, decimalPlace)
 
   /**
-   * Creates an expression that returns the smalled integer that isn't less than this numeric
+   * Creates an expression that returns the smallest integer that isn't less than this numeric
    * expression.
    *
    * @return A new [Expr] representing an integer result from the ceil operation.
@@ -3402,7 +3423,7 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun ceil(): Expr = Companion.ceil(this)
 
   /**
-   * Creates an expression that returns the largest integer that isn't less than this numeric
+   * Creates an expression that returns the largest integer that is not greater than this numeric
    * expression.
    *
    * @return A new [Expr] representing an integer result from the floor operation.
@@ -3475,7 +3496,7 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun notEqAny(arrayExpression: Expr): BooleanExpr = Companion.notEqAny(this, arrayExpression)
 
   /**
-   * Creates an expression that returns true if yhe result of this expression is absent. Otherwise,
+   * Creates an expression that returns true if the result of this expression is absent. Otherwise,
    * returns false even if the value is null.
    *
    * @return A new [BooleanExpr] representing the isAbsent operation.
@@ -3498,14 +3519,14 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun isNotNan(): BooleanExpr = Companion.isNotNan(this)
 
   /**
-   * Creates an expression that checks if tbe result of this expression is null.
+   * Creates an expression that checks if the result of this expression is null.
    *
    * @return A new [BooleanExpr] representing the isNull operation.
    */
   fun isNull(): BooleanExpr = Companion.isNull(this)
 
   /**
-   * Creates an expression that checks if tbe result of this expression is not null.
+   * Creates an expression that checks if the result of this expression is not null.
    *
    * @return A new [BooleanExpr] representing the isNotNull operation.
    */
@@ -3662,6 +3683,13 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun reverse(): Expr = Companion.reverse(this)
 
   /**
+   * Creates an expression that reverses this string expression.
+   *
+   * @return A new [Expr] representing the reversed string.
+   */
+  fun strReverse(): Expr = Companion.strReverse(this)
+
+  /**
    * Creates an expression that checks if this string expression contains a specified substring.
    *
    * @param substring The expression representing the substring to search for.
@@ -3681,15 +3709,15 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this string expression starts with a given [prefix].
    *
    * @param prefix The prefix string expression to check for.
-   * @return A new [Expr] representing the the 'starts with' comparison.
+   * @return A new [BooleanExpr] representing the 'starts with' comparison.
    */
   fun startsWith(prefix: Expr): BooleanExpr = Companion.startsWith(this, prefix)
 
   /**
    * Creates an expression that checks if this string expression starts with a given [prefix].
    *
-   * @param prefix The prefix string expression to check for.
-   * @return A new [Expr] representing the 'starts with' comparison.
+   * @param prefix The prefix string to check for.
+   * @return A new [BooleanExpr] representing the 'starts with' comparison.
    */
   fun startsWith(prefix: String): BooleanExpr = Companion.startsWith(this, prefix)
 
@@ -3697,7 +3725,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this string expression ends with a given [suffix].
    *
    * @param suffix The suffix string expression to check for.
-   * @return A new [Expr] representing the 'ends with' comparison.
+   * @return A new [BooleanExpr] representing the 'ends with' comparison.
    */
   fun endsWith(suffix: Expr): BooleanExpr = Companion.endsWith(this, suffix)
 
@@ -3705,7 +3733,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * Creates an expression that checks if this string expression ends with a given [suffix].
    *
    * @param suffix The suffix string to check for.
-   * @return A new [Expr] representing the the 'ends with' comparison.
+   * @return A new [BooleanExpr] representing the 'ends with' comparison.
    */
   fun endsWith(suffix: String) = Companion.endsWith(this, suffix)
 
@@ -3738,7 +3766,7 @@ abstract class Expr internal constructor() : Canonicalizable {
   /**
    * Creates an expression that converts this string expression to uppercase.
    *
-   * @return A new [Expr] representing the lowercase string.
+   * @return A new [Expr] representing the uppercase string.
    */
   fun toUpper() = Companion.toUpper(this)
 
@@ -4076,7 +4104,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * @param offset An Expr evaluating to the index of the element to return.
    * @return A new [Expr] representing the arrayOffset operation.
    */
-  fun arrayOffset(offset: Expr) = Companion.arrayOffset(this, offset)
+  fun arrayGet(offset: Expr) = Companion.arrayGet(this, offset)
 
   /**
    * Creates an expression that indexes into an array from the beginning or end and return the
@@ -4086,7 +4114,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * @param offset An Expr evaluating to the index of the element to return.
    * @return A new [Expr] representing the arrayOffset operation.
    */
-  fun arrayOffset(offset: Int) = Companion.arrayOffset(this, offset)
+  fun arrayGet(offset: Int) = Companion.arrayGet(this, offset)
 
   /**
    * Creates an aggregation that counts the number of stage inputs with valid evaluations of the
@@ -4297,7 +4325,7 @@ abstract class Selectable : Expr() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-class ExprWithAlias internal constructor(override val alias: String, override val expr: Expr) :
+class AliasedExpr internal constructor(override val alias: String, override val expr: Expr) :
   Selectable() {
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
   override fun evaluateFunction(context: EvaluationContext) = expr.evaluateFunction(context)
@@ -4305,7 +4333,7 @@ class ExprWithAlias internal constructor(override val alias: String, override va
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
-    if (other !is ExprWithAlias) return false
+    if (other !is AliasedExpr) return false
     if (alias != other.alias) return false
     if (expr != other.expr) return false
     return true
