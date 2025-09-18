@@ -17,10 +17,8 @@ package com.google.firebase.firestore
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.core.Canonicalizable
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
-import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AddFieldsStage
@@ -33,7 +31,6 @@ import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
-import com.google.firebase.firestore.pipeline.EvaluationContext
 import com.google.firebase.firestore.pipeline.Expr
 import com.google.firebase.firestore.pipeline.Expr.Companion.field
 import com.google.firebase.firestore.pipeline.ExprWithAlias
@@ -55,8 +52,6 @@ import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
-import com.google.firebase.firestore.remote.RemoteSerializer
-import com.google.firebase.firestore.util.Assert.fail
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
@@ -117,7 +112,6 @@ internal constructor(
     ) {
       results.add(
         PipelineResult(
-          firestore!!,
           userDataWriter,
           if (key == null) null else DocumentReference(key, firestore),
           data,
@@ -704,217 +698,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
   }
 }
 
-class RealtimePipelineSource internal constructor(private val firestore: FirebaseFirestore) {
-  /**
-   * Convert the given Query into an equivalent Pipeline.
-   *
-   * @param query A Query to be converted into a Pipeline.
-   * @return A new [Pipeline] object that is equivalent to [query]
-   * @throws [IllegalArgumentException] Thrown if the [query] provided targets a different project
-   * or database than the pipeline.
-   */
-  fun convertFrom(query: Query): RealtimePipeline {
-    if (query.firestore.databaseId != firestore.databaseId) {
-      throw IllegalArgumentException("Provided query is from a different Firestore instance.")
-    }
-    return query.query.toRealtimePipeline(firestore, firestore.userDataReader)
-  }
-
-  /**
-   * Set the pipeline's source to the collection specified by the given path.
-   *
-   * @param path A path to a collection that will be the source of this pipeline.
-   * @return A new [RealtimePipeline] object with documents from target collection.
-   */
-  fun collection(path: String): RealtimePipeline = collection(firestore.collection(path))
-
-  /**
-   * Set the pipeline's source to the collection specified by the given [CollectionReference].
-   *
-   * @param ref A [CollectionReference] for a collection that will be the source of this pipeline.
-   * @return A new [RealtimePipeline] object with documents from target collection.
-   * @throws [IllegalArgumentException] Thrown if the [ref] provided targets a different project or
-   * database than the pipeline.
-   */
-  fun collection(ref: CollectionReference): RealtimePipeline =
-    collection(CollectionSource.of(ref, firestore.databaseId))
-
-  /**
-   * Set the pipeline's source to the collection specified by CollectionSource.
-   *
-   * @param stage A [CollectionSource] that will be the source of this pipeline.
-   * @return A new [RealtimePipeline] object with documents from target collection.
-   * @throws [IllegalArgumentException] Thrown if the [stage] provided targets a different project
-   * or database than the pipeline.
-   */
-  fun collection(stage: CollectionSource): RealtimePipeline {
-    if (stage.serializer.databaseId() != firestore.databaseId) {
-      throw IllegalArgumentException("Provided collection is from a different Firestore instance.")
-    }
-    return RealtimePipeline(RemoteSerializer(firestore.databaseId), firestore.userDataReader, stage)
-  }
-
-  /**
-   * Set the pipeline's source to the collection group with the given id.
-   *
-   * @param collectionId The id of a collection group that will be the source of this pipeline.
-   * @return A new [RealtimePipeline] object with documents from target collection group.
-   */
-  fun collectionGroup(collectionId: String): RealtimePipeline =
-    collectionGroup(CollectionGroupSource.of((collectionId)))
-
-  fun collectionGroup(stage: CollectionGroupSource): RealtimePipeline =
-    RealtimePipeline(RemoteSerializer(firestore.databaseId), firestore.userDataReader, stage)
-}
-
-class RealtimePipeline
-internal constructor(
-  internal val serializer: RemoteSerializer,
-  internal val userDataReader: UserDataReader,
-  internal val stages: List<Stage<*>>
-) : Canonicalizable {
-  internal constructor(
-    serializer: RemoteSerializer,
-    userDataReader: UserDataReader,
-    stage: Stage<*>
-  ) : this(serializer, userDataReader, listOf(stage))
-
-  private fun with(stages: List<Stage<*>>): RealtimePipeline =
-    RealtimePipeline(serializer, userDataReader, stages)
-
-  private fun append(stage: Stage<*>): RealtimePipeline = with(stages.plus(stage))
-
-  fun limit(limit: Int): RealtimePipeline = append(LimitStage(limit))
-
-  fun offset(offset: Int): RealtimePipeline = append(OffsetStage(offset))
-
-  fun select(selection: Selectable, vararg additionalSelections: Any): RealtimePipeline =
-    append(SelectStage.of(selection, *additionalSelections))
-
-  fun select(fieldName: String, vararg additionalSelections: Any): RealtimePipeline =
-    append(SelectStage.of(fieldName, *additionalSelections))
-
-  fun sort(order: Ordering, vararg additionalOrders: Ordering): RealtimePipeline =
-    append(SortStage(arrayOf(order, *additionalOrders)))
-
-  fun where(condition: BooleanExpr): RealtimePipeline = append(WhereStage(condition))
-
-  internal val rewrittenStages: List<Stage<*>> by lazy {
-    var hasOrder = false
-    buildList {
-      for (stage in stages) when (stage) {
-        // Stages whose semantics depend on ordering
-        is LimitStage,
-        is OffsetStage -> {
-          if (!hasOrder) {
-            hasOrder = true
-            add(SortStage.BY_DOCUMENT_ID)
-          }
-          add(stage)
-        }
-        is SortStage -> {
-          hasOrder = true
-          add(stage.withStableOrdering())
-        }
-        else -> add(stage)
-      }
-      if (!hasOrder) {
-        add(SortStage.BY_DOCUMENT_ID)
-      }
-    }
-  }
-
-  override fun canonicalId(): String {
-    return rewrittenStages.joinToString("|") { stage -> (stage as Canonicalizable).canonicalId() }
-  }
-
-  override fun toString(): String = canonicalId()
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is RealtimePipeline) return false
-    if (serializer.databaseId() != other.serializer.databaseId()) return false
-    return rewrittenStages == other.rewrittenStages
-  }
-
-  override fun hashCode(): Int {
-    return serializer.databaseId().hashCode() * 31 + stages.hashCode()
-  }
-
-  internal fun evaluate(inputs: List<MutableDocument>): List<MutableDocument> {
-    val context = EvaluationContext(this)
-    return rewrittenStages.fold(inputs) { documents, stage -> stage.evaluate(context, documents) }
-  }
-
-  internal fun matchesAllDocuments(): Boolean {
-    for (stage in rewrittenStages) {
-      // Check for LimitStage
-      if (stage.name == "limit") {
-        return false
-      }
-
-      // Check for Where stage
-      if (stage is WhereStage) {
-        // Check if it's the special 'exists(__name__)' case
-        val funcExpr = stage.condition as? FunctionExpr
-        if (funcExpr?.name == "exists" && funcExpr.params.size == 1) {
-          val fieldExpr = funcExpr.params[0] as? Field
-          if (fieldExpr?.fieldPath?.isKeyField == true) {
-            continue // This specific 'exists(__name__)' filter doesn't count
-          }
-        }
-        return false
-      }
-      // TODO(pipeline) : Add checks for other filtering stages like Aggregate,
-      // Distinct, FindNearest once they are implemented.
-    }
-    return true
-  }
-
-  internal fun hasLimit(): Boolean {
-    for (stage in rewrittenStages) {
-      if (stage.name == "limit") {
-        return true
-      }
-      // TODO(pipeline): need to check for other stages that could have a limit,
-      // like findNearest
-    }
-    return false
-  }
-
-  internal fun matches(doc: Document): Boolean {
-    val result = evaluate(listOf(doc as MutableDocument))
-    return result.isNotEmpty()
-  }
-
-  private fun evaluateContext(): EvaluationContext {
-    return EvaluationContext(this)
-  }
-
-  internal fun comparator(): Comparator<Document> =
-    getLastEffectiveSortStage().comparator(evaluateContext())
-
-  internal fun toStructurePipelineProto(): StructuredPipeline {
-    val builder = StructuredPipeline.newBuilder()
-    builder.pipeline =
-      com.google.firestore.v1.Pipeline.newBuilder()
-        .addAllStages(rewrittenStages.map { it.toProtoStage(userDataReader) })
-        .build()
-    return builder.build()
-  }
-
-  private fun getLastEffectiveSortStage(): SortStage {
-    for (stage in rewrittenStages.asReversed()) {
-      if (stage is SortStage) {
-        return stage
-      }
-      // TODO(pipeline): Consider stages that might invalidate ordering later,
-      // like fineNearest
-    }
-    throw fail("RealtimePipeline must contain at least one Sort stage (ensured by RewriteStages).")
-  }
-}
-
 /**
  */
 class PipelineSnapshot
@@ -932,13 +715,24 @@ internal constructor(executionTime: Timestamp, results: List<PipelineResult>) :
 
 class PipelineResult
 internal constructor(
-  private val firestore: FirebaseFirestore,
   private val userDataWriter: UserDataWriter,
   ref: DocumentReference?,
   private val fields: Map<String, Value>,
   createTime: Timestamp?,
   updateTime: Timestamp?,
 ) {
+
+  internal constructor(
+    document: Document,
+    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
+    firestore: FirebaseFirestore
+  ) : this(
+    UserDataWriter(firestore, serverTimestampBehavior),
+    DocumentReference(document.key, firestore),
+    document.data.fieldsMap,
+    document.createTime?.timestamp,
+    document.version.timestamp
+  )
 
   /** The time the document was created. Null if this result is not a document. */
   val createTime: Timestamp? = createTime

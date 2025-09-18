@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.RealtimePipelineKt.changesFromSnapshot;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
@@ -119,7 +120,18 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
     if (cachedChanges == null || cachedChangesMetadataState != metadataChanges) {
       cachedChanges =
           Collections.unmodifiableList(
-              DocumentChange.changesFromSnapshot(firestore, metadataChanges, snapshot));
+              changesFromSnapshot(
+                  metadataChanges,
+                  snapshot,
+                  (doc, type, oldIndex, newIndex) -> {
+                    QueryDocumentSnapshot documentSnapshot =
+                        QueryDocumentSnapshot.fromDocument(
+                            firestore,
+                            doc,
+                            snapshot.isFromCache(),
+                            snapshot.getMutatedKeys().contains(doc.getKey()));
+                    return new DocumentChange(documentSnapshot, type, oldIndex, newIndex);
+                  }));
       cachedChangesMetadataState = metadataChanges;
     }
     return cachedChanges;
