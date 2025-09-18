@@ -17,6 +17,7 @@ package com.google.firebase.firestore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.RealtimePipeline.ListenOptions
 import com.google.firebase.firestore.pipeline.Expression.Companion.abs
 import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
@@ -228,7 +229,7 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -268,17 +269,20 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
     assertThat(firstSnapshot.getChanges()).hasSize(3)
     assertThat(firstSnapshot.getChanges()[0].result.get("title")).isEqualTo("Dune")
-    assertThat(firstSnapshot.getChanges()[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstSnapshot.getChanges()[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(firstSnapshot.getChanges()[1].result.get("title")).isEqualTo("Pride and Prejudice")
-    assertThat(firstSnapshot.getChanges()[1].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstSnapshot.getChanges()[1].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(firstSnapshot.getChanges()[2].result.get("title")).isEqualTo("The Lord of the Rings")
-    assertThat(firstSnapshot.getChanges()[2].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstSnapshot.getChanges()[2].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
 
     // dropping Dune out of the result set
     collRef.document("book10").update("rating", 4.4).await()
@@ -286,7 +290,7 @@ class RealtimePipelineTest {
     assertThat(secondSnapshot.getChanges()).hasSize(1)
     assertThat(secondSnapshot.getChanges()[0].result.get("title")).isEqualTo("Dune")
     assertThat(secondSnapshot.getChanges()[0].type)
-      .isEqualTo(PipelineResultChange.ChangeType.REMOVED)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.REMOVED)
     assertThat(secondSnapshot.getChanges()[0].oldIndex).isEqualTo(0)
     assertThat(secondSnapshot.getChanges()[0].newIndex).isEqualTo(-1)
 
@@ -296,7 +300,8 @@ class RealtimePipelineTest {
     assertThat(thirdSnapshot.getChanges()).hasSize(1)
     assertThat(thirdSnapshot.getChanges()[0].result.get("title"))
       .isEqualTo("The Hitchhiker's Guide to the Galaxy")
-    assertThat(thirdSnapshot.getChanges()[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(thirdSnapshot.getChanges()[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(thirdSnapshot.getChanges()[0].oldIndex).isEqualTo(-1)
     assertThat(thirdSnapshot.getChanges()[0].newIndex).isEqualTo(0)
 
@@ -316,10 +321,10 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
     val options =
-      RealtimePipelineOptions()
+      RealtimePipeline.ListenOptions()
         .withMetadataChanges(MetadataChanges.INCLUDE)
         .withSource(ListenSource.CACHE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -343,8 +348,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("rating").greaterThanOrEqual(4.5))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -374,10 +379,9 @@ class RealtimePipelineTest {
         .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
-      RealtimePipelineOptions()
-        .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+      ListenOptions().withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -387,7 +391,8 @@ class RealtimePipelineTest {
     assertThat(result.get("rating")).isEqualTo(result.getData()["rating"])
     val firstChanges = firstSnapshot.getChanges()
     assertThat(firstChanges).hasSize(1)
-    assertThat(firstChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(firstChanges[0].result.get("rating")).isInstanceOf(Timestamp::class.java)
     assertThat(firstChanges[0].result.get("rating")).isEqualTo(result.get("rating"))
 
@@ -398,7 +403,8 @@ class RealtimePipelineTest {
     assertThat(secondSnapshot.results[0].get("rating")).isNotEqualTo(result.getData()["rating"])
     val secondChanges = secondSnapshot.getChanges()
     assertThat(secondChanges).hasSize(1)
-    assertThat(secondChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.MODIFIED)
+    assertThat(secondChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.MODIFIED)
     assertThat(secondChanges[0].result.get("rating")).isInstanceOf(Timestamp::class.java)
     assertThat(secondChanges[0].result.get("rating"))
       .isEqualTo(secondSnapshot.results[0].get("rating"))
@@ -420,11 +426,11 @@ class RealtimePipelineTest {
         .where(field("rating").timestampAdd(constant("second"), constant(1)).greaterThan(now))
 
     val options =
-      RealtimePipelineOptions()
+      ListenOptions()
         .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
         .withMetadataChanges(MetadataChanges.INCLUDE)
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -449,10 +455,9 @@ class RealtimePipelineTest {
         .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
-      RealtimePipelineOptions()
-        .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.PREVIOUS)
+      ListenOptions().withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.PREVIOUS)
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -462,7 +467,8 @@ class RealtimePipelineTest {
     assertThat(result.get("rating")).isEqualTo(result.getData()["rating"])
     val firstChanges = firstSnapshot.getChanges()
     assertThat(firstChanges).hasSize(1)
-    assertThat(firstChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(firstChanges[0].result.get("rating")).isEqualTo(4.2)
 
     waitFor(db.enableNetwork())
@@ -472,7 +478,8 @@ class RealtimePipelineTest {
     assertThat(secondSnapshot.results[0].get("rating")).isInstanceOf(Timestamp::class.java)
     val secondChanges = secondSnapshot.getChanges()
     assertThat(secondChanges).hasSize(1)
-    assertThat(secondChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.MODIFIED)
+    assertThat(secondChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.MODIFIED)
     assertThat(secondChanges[0].result.get("rating")).isInstanceOf(Timestamp::class.java)
     assertThat(secondChanges[0].result.get("rating"))
       .isEqualTo(secondSnapshot.results[0].get("rating"))
@@ -493,10 +500,9 @@ class RealtimePipelineTest {
         .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
     val options =
-      RealtimePipelineOptions()
-        .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.PREVIOUS)
+      ListenOptions().withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.PREVIOUS)
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -519,7 +525,7 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("title").equal("The Hitchhiker's Guide to the Galaxy"))
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -529,7 +535,8 @@ class RealtimePipelineTest {
     assertThat(result.get("rating")).isEqualTo(result.getData()["rating"])
     val firstChanges = firstSnapshot.getChanges()
     assertThat(firstChanges).hasSize(1)
-    assertThat(firstChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(firstChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(firstChanges[0].result.get("rating")).isNull()
 
     waitFor(db.enableNetwork())
@@ -539,7 +546,8 @@ class RealtimePipelineTest {
     assertThat(secondSnapshot.results[0].get("rating")).isInstanceOf(Timestamp::class.java)
     val secondChanges = secondSnapshot.getChanges()
     assertThat(secondChanges).hasSize(1)
-    assertThat(secondChanges[0].type).isEqualTo(PipelineResultChange.ChangeType.MODIFIED)
+    assertThat(secondChanges[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.MODIFIED)
     assertThat(secondChanges[0].result.get("rating")).isInstanceOf(Timestamp::class.java)
     assertThat(secondChanges[0].result.get("rating"))
       .isEqualTo(secondSnapshot.results[0].get("rating"))
@@ -555,7 +563,7 @@ class RealtimePipelineTest {
 
     val pipeline = db.realtimePipeline().collection(collRef.path).where(field("title").isNull())
 
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -575,21 +583,21 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(field("title").isNotNull()).limit(1)
 
-    val channel1 = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel1 = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job1 = launch {
       pipeline
         .snapshots(
-          RealtimePipelineOptions()
+          ListenOptions()
             .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.PREVIOUS)
         )
         .collect { channel1.send(it) }
     }
 
-    val channel2 = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channel2 = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job2 = launch {
       pipeline
         .snapshots(
-          RealtimePipelineOptions()
+          ListenOptions()
             .withServerTimestampBehavior(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
         )
         .collect { channel2.send(it) }
@@ -635,8 +643,8 @@ class RealtimePipelineTest {
         )
         .sort(ascending("title"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -674,8 +682,8 @@ class RealtimePipelineTest {
         )
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -716,8 +724,8 @@ class RealtimePipelineTest {
         )
         .sort(ascending("rating"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -754,8 +762,8 @@ class RealtimePipelineTest {
         .where(not(field("genre").equal("Science Fiction")))
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -788,8 +796,8 @@ class RealtimePipelineTest {
         .where(equalAny("genre", listOf("Dystopian", "Fantasy")))
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -809,7 +817,8 @@ class RealtimePipelineTest {
     val thirdSnapshot = channel.receive()
     assertThat(thirdSnapshot.results).hasSize(4)
     assertThat(thirdSnapshot.results[0].get("title")).isEqualTo("The Great Gatsby")
-    assertThat(thirdSnapshot.getChanges()[0].type).isEqualTo(PipelineResultChange.ChangeType.ADDED)
+    assertThat(thirdSnapshot.getChanges()[0].type)
+      .isEqualTo(RealtimePipeline.Snapshot.ResultChange.ChangeType.ADDED)
     assertThat(thirdSnapshot.getChanges()[0].result.get("title")).isEqualTo("The Great Gatsby")
     assertThat(thirdSnapshot.getChanges()[0].newIndex).isEqualTo(0)
 
@@ -838,8 +847,8 @@ class RealtimePipelineTest {
         )
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -870,8 +879,8 @@ class RealtimePipelineTest {
         .where(isAbsent("rating"))
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -898,8 +907,8 @@ class RealtimePipelineTest {
         .where(not(exists("rating")))
         .sort(ascending("published"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -923,7 +932,7 @@ class RealtimePipelineTest {
     // Test isNan
     val pipelineIsNan = db.realtimePipeline().collection(collRef.path).where(isNan("rating"))
 
-    val channelIsNan = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channelIsNan = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNan = launch {
       pipelineIsNan.snapshots().collect { snapshot -> channelIsNan.send(snapshot) }
     }
@@ -937,7 +946,7 @@ class RealtimePipelineTest {
     // Test isNotNan
     val pipelineIsNotNan = db.realtimePipeline().collection(collRef.path).where(isNotNan("rating"))
 
-    val channelIsNotNan = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channelIsNotNan = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNan = launch {
       pipelineIsNotNan.snapshots().collect { snapshot -> channelIsNotNan.send(snapshot) }
     }
@@ -954,7 +963,7 @@ class RealtimePipelineTest {
     // Test isNull
     val pipelineIsNull = db.realtimePipeline().collection(collRef.path).where(isNull("rating"))
 
-    val channelIsNull = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channelIsNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNull = launch {
       pipelineIsNull.snapshots().collect { snapshot -> channelIsNull.send(snapshot) }
     }
@@ -969,7 +978,7 @@ class RealtimePipelineTest {
     val pipelineIsNotNull =
       db.realtimePipeline().collection(collRef.path).where(isNotNull("rating"))
 
-    val channelIsNotNull = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val channelIsNotNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNull = launch {
       pipelineIsNotNull.snapshots().collect { snapshot -> channelIsNotNull.send(snapshot) }
     }
@@ -987,8 +996,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("author").equal(stringConcat(constant("Douglas"), constant(" Adams"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1013,8 +1022,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("author").toLower().equal(toLower(constant("DOUGLAS ADAMS"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1039,8 +1048,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("author").toUpper().equal(toUpper(constant("dOUglAs adaMs"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1065,8 +1074,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("author").equal(trim(constant("  Douglas Adams  "))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1088,8 +1097,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(charLength("author").greaterThan(20))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1110,8 +1119,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(byteLength("author").greaterThan(20))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1135,8 +1144,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("author").equal(reverse(constant("smadA salguoD"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1158,8 +1167,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(stringContains("author", "Adams"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1181,8 +1190,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(startsWith("author", "Douglas"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1203,8 +1212,8 @@ class RealtimePipelineTest {
   fun testEndsWith() = runBlocking {
     val pipeline = db.realtimePipeline().collection(collRef.path).where(endsWith("author", "Adams"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1226,8 +1235,8 @@ class RealtimePipelineTest {
   fun testLike() = runBlocking {
     val pipeline = db.realtimePipeline().collection(collRef.path).where(like("author", "Douglas%"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1250,8 +1259,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(regexContains("author", "Douglas.*"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1274,8 +1283,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(regexMatch("author", "Douglas Adams"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1297,8 +1306,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(add("rating", 0.8).equal(5.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1322,8 +1331,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(subtract("rating", 0.2).equal(4.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1347,8 +1356,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(multiply("rating", 2.0).equal(8.4))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1372,8 +1381,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(divide("rating", 2.0).equal(2.1))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1397,8 +1406,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(mod("published", 100).equal(79))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1420,8 +1429,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(pow("rating", 2.0).greaterThan(20.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1441,8 +1450,8 @@ class RealtimePipelineTest {
     collRef.document("book1").update("rating", -4.2).await()
     val pipeline = db.realtimePipeline().collection(collRef.path).where(abs("rating").equal(4.2))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1468,8 +1477,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(and(exp("log_rating").greaterThan(4.19), exp("log_rating").lessThan(4.21)))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1494,8 +1503,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(and(ln("rating").greaterThan(1.43), ln("rating").lessThan(1.44)))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1520,8 +1529,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(log10("published").equal(kotlin.math.log10(1979.0)))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1546,8 +1555,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(log("published", constant(4.2)).equal(kotlin.math.log(1954.0, 4.2)))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1569,8 +1578,8 @@ class RealtimePipelineTest {
     // published since 1952
     db.realtimePipeline().collection(collRef.path).where(sqrt("published").greaterThan(44.18))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1589,8 +1598,8 @@ class RealtimePipelineTest {
   fun testRound() = runBlocking {
     val pipeline = db.realtimePipeline().collection(collRef.path).where(round("rating").equal(5.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1609,8 +1618,8 @@ class RealtimePipelineTest {
   fun testCeil() = runBlocking {
     val pipeline = db.realtimePipeline().collection(collRef.path).where(ceil("rating").equal(5.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1638,8 +1647,8 @@ class RealtimePipelineTest {
   fun testFloor() = runBlocking {
     val pipeline = db.realtimePipeline().collection(collRef.path).where(floor("rating").equal(4.0))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1665,8 +1674,8 @@ class RealtimePipelineTest {
             .equal(unixSecondsToTimestamp(constant(1698228000 + 24 * 3600)))
         )
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1694,8 +1703,8 @@ class RealtimePipelineTest {
             .equal(unixSecondsToTimestamp(constant(1698228000 - 24 * 3600)))
         )
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1719,8 +1728,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(field("timestamp").equal(unixSecondsToTimestamp(field("unix_seconds"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1744,8 +1753,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(field("timestamp").equal(unixMillisToTimestamp(constant(1698228000000L))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1769,8 +1778,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(timestampToUnixSeconds("timestamp").equal(1698228000))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1794,8 +1803,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(timestampToUnixMillis("timestamp").equal(field("unix_millis")))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1819,8 +1828,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(timestampToUnixMicros("timestamp").equal(field("unix_micros")))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1843,8 +1852,8 @@ class RealtimePipelineTest {
         .collection(eventCollRef.path)
         .where(field("timestamp").equal(unixMicrosToTimestamp(field("unix_micros"))))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1864,8 +1873,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(arrayContains("tags", "politics"))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1889,8 +1898,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(arrayContainsAny("tags", listOf("politics", "love", "racism")))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1915,8 +1924,8 @@ class RealtimePipelineTest {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(arrayLength("tags").equal(3))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()
@@ -1939,8 +1948,8 @@ class RealtimePipelineTest {
         .collection(collRef.path)
         .where(field("title").substring(1, 3).equal("he "))
 
-    val options = RealtimePipelineOptions().withMetadataChanges(MetadataChanges.INCLUDE)
-    val channel = Channel<RealtimePipelineSnapshot>(Channel.UNLIMITED)
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     val firstSnapshot = channel.receive()

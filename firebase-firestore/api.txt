@@ -489,42 +489,6 @@ package com.google.firebase.firestore {
     property public final com.google.firebase.Timestamp? updateTime;
   }
 
-  public final class PipelineResultChange {
-    method public com.google.firebase.firestore.PipelineResult component1();
-    method public com.google.firebase.firestore.PipelineResultChange.ChangeType component2();
-    method public Integer? component3();
-    method public Integer? component4();
-    method public com.google.firebase.firestore.PipelineResultChange copy(com.google.firebase.firestore.PipelineResult result, com.google.firebase.firestore.PipelineResultChange.ChangeType type, Integer? oldIndex, Integer? newIndex);
-    method public Integer? getNewIndex();
-    method public Integer? getOldIndex();
-    method public com.google.firebase.firestore.PipelineResult getResult();
-    method public com.google.firebase.firestore.PipelineResultChange.ChangeType getType();
-    property public final Integer? newIndex;
-    property public final Integer? oldIndex;
-    property public final com.google.firebase.firestore.PipelineResult result;
-    property public final com.google.firebase.firestore.PipelineResultChange.ChangeType type;
-    field public static final com.google.firebase.firestore.PipelineResultChange.Companion Companion;
-  }
-
-  public enum PipelineResultChange.ChangeType {
-    enum_constant public static final com.google.firebase.firestore.PipelineResultChange.ChangeType ADDED;
-    enum_constant public static final com.google.firebase.firestore.PipelineResultChange.ChangeType MODIFIED;
-    enum_constant public static final com.google.firebase.firestore.PipelineResultChange.ChangeType REMOVED;
-  }
-
-  public static final class PipelineResultChange.Companion {
-  }
-
-  public final class PipelineSnapshotMetadata {
-    method public boolean component1();
-    method public boolean component2();
-    method public com.google.firebase.firestore.PipelineSnapshotMetadata copy(boolean hasPendingWrites, boolean isConsistentBetweenListeners);
-    method public boolean getHasPendingWrites();
-    method public boolean isConsistentBetweenListeners();
-    property public final boolean hasPendingWrites;
-    property public final boolean isConsistentBetweenListeners;
-  }
-
   public final class PipelineSource {
     method public com.google.firebase.firestore.Pipeline collection(com.google.firebase.firestore.CollectionReference ref);
     method public com.google.firebase.firestore.Pipeline collection(com.google.firebase.firestore.CollectionReference ref, com.google.firebase.firestore.pipeline.CollectionSourceOptions options);
@@ -614,35 +578,71 @@ package com.google.firebase.firestore {
   }
 
   public final class RealtimePipeline {
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.RealtimePipelineOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.RealtimePipelineOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipeline.Snapshot> listener);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.RealtimePipeline.ListenOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipeline.Snapshot> listener);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipeline.Snapshot> listener);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.RealtimePipeline.ListenOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipeline.Snapshot> listener);
     method public com.google.firebase.firestore.RealtimePipeline limit(int limit);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipelineSnapshot> snapshots();
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipelineSnapshot> snapshots(com.google.firebase.firestore.RealtimePipelineOptions options);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipeline.Snapshot> snapshots();
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipeline.Snapshot> snapshots(com.google.firebase.firestore.RealtimePipeline.ListenOptions options);
     method public com.google.firebase.firestore.RealtimePipeline sort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrders);
     method public com.google.firebase.firestore.RealtimePipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
   }
 
-  public final class RealtimePipelineOptions {
-    ctor public RealtimePipelineOptions();
-    method public com.google.firebase.firestore.RealtimePipelineOptions withMetadataChanges(com.google.firebase.firestore.MetadataChanges metadataChanges);
-    method public com.google.firebase.firestore.RealtimePipelineOptions withServerTimestampBehavior(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method public com.google.firebase.firestore.RealtimePipelineOptions withSource(com.google.firebase.firestore.ListenSource source);
-    field public static final com.google.firebase.firestore.RealtimePipelineOptions.Companion Companion;
-    field public static final com.google.firebase.firestore.RealtimePipelineOptions DEFAULT;
+  public static final class RealtimePipeline.ListenOptions {
+    ctor public RealtimePipeline.ListenOptions();
+    method public com.google.firebase.firestore.RealtimePipeline.ListenOptions withMetadataChanges(com.google.firebase.firestore.MetadataChanges metadataChanges);
+    method public com.google.firebase.firestore.RealtimePipeline.ListenOptions withServerTimestampBehavior(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method public com.google.firebase.firestore.RealtimePipeline.ListenOptions withSource(com.google.firebase.firestore.ListenSource source);
+    field public static final com.google.firebase.firestore.RealtimePipeline.ListenOptions.Companion Companion;
+    field public static final com.google.firebase.firestore.RealtimePipeline.ListenOptions DEFAULT;
   }
 
-  public static final class RealtimePipelineOptions.Companion {
+  public static final class RealtimePipeline.ListenOptions.Companion {
   }
 
-  public final class RealtimePipelineSnapshot {
-    method public java.util.List<com.google.firebase.firestore.PipelineResultChange> getChanges(com.google.firebase.firestore.MetadataChanges? metadataChanges = null);
-    method public com.google.firebase.firestore.PipelineSnapshotMetadata getMetadata();
+  public static final class RealtimePipeline.Snapshot {
+    method public java.util.List<com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange> getChanges(com.google.firebase.firestore.MetadataChanges? metadataChanges = null);
+    method public com.google.firebase.firestore.RealtimePipeline.Snapshot.SnapshotMetadata getMetadata();
     method public java.util.List<com.google.firebase.firestore.PipelineResult> getResults();
-    property public final com.google.firebase.firestore.PipelineSnapshotMetadata metadata;
+    property public final com.google.firebase.firestore.RealtimePipeline.Snapshot.SnapshotMetadata metadata;
     property public final java.util.List<com.google.firebase.firestore.PipelineResult> results;
+  }
+
+  public static final class RealtimePipeline.Snapshot.ResultChange {
+    method public com.google.firebase.firestore.PipelineResult component1();
+    method public com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType component2();
+    method public Integer? component3();
+    method public Integer? component4();
+    method public com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange copy(com.google.firebase.firestore.PipelineResult result, com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType type, Integer? oldIndex, Integer? newIndex);
+    method public Integer? getNewIndex();
+    method public Integer? getOldIndex();
+    method public com.google.firebase.firestore.PipelineResult getResult();
+    method public com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType getType();
+    property public final Integer? newIndex;
+    property public final Integer? oldIndex;
+    property public final com.google.firebase.firestore.PipelineResult result;
+    property public final com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType type;
+    field public static final com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.Companion Companion;
+  }
+
+  public enum RealtimePipeline.Snapshot.ResultChange.ChangeType {
+    enum_constant public static final com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType ADDED;
+    enum_constant public static final com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType MODIFIED;
+    enum_constant public static final com.google.firebase.firestore.RealtimePipeline.Snapshot.ResultChange.ChangeType REMOVED;
+  }
+
+  public static final class RealtimePipeline.Snapshot.ResultChange.Companion {
+  }
+
+  public static final class RealtimePipeline.Snapshot.SnapshotMetadata {
+    method public boolean component1();
+    method public boolean component2();
+    method public com.google.firebase.firestore.RealtimePipeline.Snapshot.SnapshotMetadata copy(boolean hasPendingWrites, boolean isConsistentBetweenListeners);
+    method public boolean getHasPendingWrites();
+    method public boolean isConsistentBetweenListeners();
+    property public final boolean hasPendingWrites;
+    property public final boolean isConsistentBetweenListeners;
   }
 
   public final class RealtimePipelineSource {
@@ -1681,19 +1681,6 @@ package com.google.firebase.firestore.pipeline {
     enum_constant public static final com.google.firebase.firestore.pipeline.Ordering.Direction DESCENDING;
   }
 
-  public final class PipelineOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.PipelineOptions> {
-    ctor public PipelineOptions();
-    method public com.google.firebase.firestore.pipeline.PipelineOptions withIndexMode(com.google.firebase.firestore.pipeline.PipelineOptions.IndexMode indexMode);
-  }
-
-  public static final class PipelineOptions.IndexMode {
-    field public static final com.google.firebase.firestore.pipeline.PipelineOptions.IndexMode.Companion Companion;
-    field public static final com.google.firebase.firestore.pipeline.PipelineOptions.IndexMode RECOMMENDED;
-  }
-
-  public static final class PipelineOptions.IndexMode.Companion {
-  }
-
   public final class RawOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.RawOptions> {
     field public static final com.google.firebase.firestore.pipeline.RawOptions.Companion Companion;
     field public static final com.google.firebase.firestore.pipeline.RawOptions DEFAULT;
@@ -1710,9 +1697,6 @@ package com.google.firebase.firestore.pipeline {
 
   public static final class RawStage.Companion {
     method public com.google.firebase.firestore.pipeline.RawStage ofName(String name);
-  }
-
-  public final class RealtimePipelineOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.RealtimePipelineOptions> {
   }
 
   public final class SampleStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SampleStage> {
