@@ -511,7 +511,9 @@ public final class RemoteSerializer {
       PipelineQueryTarget.Builder pipelineBuilder = PipelineQueryTarget.newBuilder();
       builder.setPipelineQuery(
           pipelineBuilder.setStructuredPipeline(
-              target.pipeline().toStructurePipelineProto$com_google_firebase_firebase_firestore()));
+              target
+                  .pipeline$com_google_firebase_firebase_firestore()
+                  .toStructurePipelineProto$com_google_firebase_firebase_firestore()));
     } else if (target.target().isDocumentQuery()) {
       builder.setDocuments(encodeDocumentsTarget(target.target()));
     } else {
