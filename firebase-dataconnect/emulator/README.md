@@ -17,7 +17,7 @@ Here is a summary of the detailed steps from below:
 5. Start the Postgresql container: `./start_postgres_pod.sh`
 6. Start the emulator: `./cli -alsologtostderr=1 -stderrthreshold=0 dev`
 
-## Step 1: Compile Firebase Data Connect Emulator
+## Step 1: Compile Firebase Data Connect emulator
 
 Compile the Firebase Data Connect Emulator in google3 using `blaze`. The build must be done in a
 gLinux workstation or go/cloudtop instance; namely, building on a macOS host is not supported, even
@@ -65,7 +65,7 @@ If successful, the emulator binary will be located at
 blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli_macos
 ```
 
-#### Copy Emulator Binary to Target Machine
+#### Copy emulator binary to target machine
 
 If the machine used to build the emulator binary is the same as the target machine, then you are
 done. Otherwise, you need to copy the binary to the target machine. There are two easy ways to do
@@ -105,7 +105,7 @@ or
 chmod a+x cli_macos
 ```
 
-#### Precompiled Emulator Binaries
+#### Precompiled emulator binaries
 
 dconeybe maintains a directory with precompiled emulator binaries:
 
@@ -114,7 +114,7 @@ http://x20/teams/firestore-clients/DataConnectEmulator
 At the time of writing, these builds incorporate the patch to remove vector support, as mentioned in
 the "Troubleshooting" section below.
 
-## Step 2: Start Postgresql Server
+## Step 2: Start Postgresql server
 
 The Firebase Data Connect emulator requires a real Postgresql server to talk to. Installing and
 configuring a Postgresql server on a given platform is a tedious and non-standard process. Moreover,
@@ -151,7 +151,7 @@ To install Podman, run these commands:
 
 The "machine" commands create and start the Linux virtual machine, respectively.
 
-#### Launch the Postgresql Containers
+#### Launch the Postgresql containers
 
 A handy helper script is all that is needed to start the Postgresql server:
 
@@ -168,7 +168,7 @@ the Postgresql server and delete the Postgresql server's database.
 There is also a Web UI called "pgadmin4" that can be used to visually interact with the database.
 The URL and login credentials are included in the final lines of output from the script.
 
-#### Launch the Data Connect Emulator
+#### Launch the Data Connect emulator
 
 With the Postgresql containers running, launch the Data Connect emulator with this command:
 

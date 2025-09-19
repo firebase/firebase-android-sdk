@@ -66,7 +66,7 @@ cat <<EOF
 PostegreSQL server running on port 5432
 The pgAdmin web UI can be viewed at http://localhost:8888
 The pgAdmin login credentails are: username "${PGADMIN_EMAIL}" and password "${PGADMIN_PASSWORD}"
-If prompted later on for a Postgresql database password, any value should be accepted (e.g. "password").
+If prompted later on for a Postgresql database password, any value should be accepted (for example, "password").
 
 To shut everything down, run
   podman pod stop dataconnect_postgres
