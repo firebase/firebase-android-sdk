@@ -105,8 +105,9 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
    * of valid values.
    *
-   * This class makes a _copy_ of the given map; therefore, any modifications to the map after this
-   * object is created will have no effect on this [AnyValue] object.
+   * This class makes a _deep copy_ of the given map; therefore, any modifications to the map or its
+   * constituent lists or maps after this object is created will have no effect on this [AnyValue]
+   * object.
    */
   public constructor(value: Map<String, Any?>) : this(value.toValueProto())
 
@@ -117,8 +118,9 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
    * of valid values.
    *
-   * This class makes a _copy_ of the given list; therefore, any modifications to the list after
-   * this object is created will have no effect on this [AnyValue] object.
+   * This class makes a _deep copy_ of the given list; therefore, any modifications to the list or
+   * its constituent lists or maps after this object is created will have no effect on this
+   * [AnyValue] object.
    */
   public constructor(value: List<Any?>) : this(value.toValueProto())
 
