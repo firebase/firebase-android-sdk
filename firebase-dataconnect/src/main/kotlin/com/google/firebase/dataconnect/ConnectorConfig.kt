@@ -22,7 +22,7 @@ import java.util.Objects
  * Information about a Firebase Data Connect "connector" that is used by [FirebaseDataConnect] to
  * connect to the correct Google Cloud resources.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [ConnectorConfig] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.

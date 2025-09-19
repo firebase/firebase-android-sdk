@@ -34,7 +34,7 @@ import kotlinx.serialization.serializer
 /**
  * Represents a variable or field of the Data Connect custom scalar type `Any`.
  *
- * ### Valid Values for `AnyValue`
+ * ### Valid values for `AnyValue`
  *
  * `AnyValue` can encapsulate [String], [Boolean], [Double], a [List] of one of these types, or a
  * [Map] whose values are one of these types. The values can be arbitrarily nested (e.g. a list that

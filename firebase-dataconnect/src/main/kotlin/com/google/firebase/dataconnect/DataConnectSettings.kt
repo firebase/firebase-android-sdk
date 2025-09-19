@@ -21,7 +21,7 @@ import java.util.Objects
 /**
  * Settings that control the behavior of [FirebaseDataConnect] instances.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [DataConnectSettings] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.

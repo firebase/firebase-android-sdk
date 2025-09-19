@@ -66,7 +66,7 @@ import kotlinx.serialization.Serializable
  *     dateClass: java.time.LocalDate # or kotlinx.datetime.LocalDate
  * ```
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [FirebaseDataConnect] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
