@@ -51,7 +51,7 @@ import kotlinx.serialization.serializer
  * ### Storing `Long` in an `AnyValue`
  *
  * To store a [Long] value, converting it to a [Double] can be lossy if the value is sufficiently
- * large (or small) to not be exactly represented by [Double]. The _largest_ [Long] value that can
+ * large (or small) to not be exactly representable by [Double]. The _largest_ [Long] value that can
  * be stored in a [Double] with its exact value is `2^53 – 1` (`9007199254740991`). The _smallest_
  * [Long] value that can be stored in a [Double] with its exact value is `-(2^53 – 1)`
  * (`-9007199254740991`). This limitation is exactly the same in JavaScript, which does not have a
