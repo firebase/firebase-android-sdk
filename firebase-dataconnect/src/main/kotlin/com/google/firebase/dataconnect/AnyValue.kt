@@ -103,7 +103,7 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    *
    * An exception is thrown if any of the values of the map, or its sub-values, are invalid for
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
-   * of value values.
+   * of valid values.
    *
    * This class makes a _copy_ of the given map; therefore, any modifications to the map after this
    * object is created will have no effect on this [AnyValue] object.
@@ -115,7 +115,7 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    *
    * An exception is thrown if any of the values of the list, or its sub-values, are invalid for
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
-   * of value values.
+   * of valid values.
    *
    * This class makes a _copy_ of the given list; therefore, any modifications to the list after
    * this object is created will have no effect on this [AnyValue] object.
