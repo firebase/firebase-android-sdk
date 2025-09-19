@@ -1,5 +1,9 @@
 # Unreleased
 
+# 22.0.1
+
+- [changed] Improve datastore support (#7277)
+
 # 22.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
