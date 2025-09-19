@@ -76,9 +76,9 @@ import kotlinx.serialization.Serializable
  * [https://en.wikipedia.org/wiki/ISO_8601#Years](https://en.wikipedia.org/wiki/ISO_8601#Years) for
  * more details.
  * @property month The month. The valid range is between 1 and 12, inclusive; however, this is _not_
- * checked or prevented by this class.
+ * checked or enforced by this class.
  * @property day The day of the month. The valid range is between 1 and 31, inclusive; however, this
- * is _not_ checked or prevented by this class.
+ * is _not_ checked or enforced by this class.
  */
 @Serializable(with = LocalDateSerializer::class)
 public class LocalDate(public val year: Int, public val month: Int, public val day: Int) {
