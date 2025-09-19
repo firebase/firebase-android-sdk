@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+
 # 17.3.0
 
 - [changed] Bumped internal dependencies.
