@@ -820,7 +820,12 @@ public class ConfigResolver {
     return config.getDefault();
   }
 
-  /** Returns if _experiment_app_start_ttid should be captured. */
+  /**
+   * Returns if _experiment_app_start_ttid should be captured. This experiment is disabled.
+   * Therefore, interactions with Remote Config and the cached layer are no longer necessary,
+   * preventing unnecessary StrictMode DiskReadViolation penalties.
+   * {@see https://github.com/firebase/firebase-android-sdk/issues/7340}
+   */
   public boolean getIsExperimentTTIDEnabled() {
     ExperimentTTID config = ExperimentTTID.getInstance();
 
