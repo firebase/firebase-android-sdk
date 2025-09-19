@@ -127,11 +127,12 @@ public interface FirebaseDataConnect : AutoCloseable {
    * called after a query or mutation has been executed. Calling this method causes the values in
    * [DataConnectSettings.host] and [DataConnectSettings.sslEnabled] to be ignored.
    *
-   * To start the Data Connect emulator from the command line, first install the Firebase CLI as
-   * documented at https://firebase.google.com/docs/emulator-suite/install_and_configure then run
-   * `firebase emulators:start --only auth,dataconnect`. Enabling the "auth" emulator is only needed
-   * if using [com.google.firebase.auth.FirebaseAuth] to authenticate users. You may also need to
-   * specify `--project <projectId>` if the Firebase CLI is unable to auto-detect the project ID.
+   * To start the Data Connect emulator from the command line, first
+   * [install the Firebase CLI](https://firebase.google.com/docs/emulator-suite/install_and_configure)
+   * then run `firebase emulators:start --only auth,dataconnect`. Enabling the "auth" emulator is
+   * only needed if using [com.google.firebase.auth.FirebaseAuth] to authenticate users. You may
+   * also need to specify `--project <projectId>` if the Firebase CLI is unable to auto-detect the
+   * project ID.
    *
    * @param host The host name or IP address of the Data Connect emulator to which to connect. The
    * default value, 10.0.2.2, is a magic IP address that the Android Emulator aliases to the host
