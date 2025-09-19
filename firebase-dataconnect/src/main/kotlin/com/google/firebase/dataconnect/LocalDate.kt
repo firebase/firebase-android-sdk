@@ -67,8 +67,8 @@ import kotlinx.serialization.Serializable
  *
  * ### Safe for concurrent use
  *
- * All methods and properties of [FirebaseDataConnect] are thread-safe and may be safely called
- * and/or accessed concurrently from multiple threads and/or coroutines.
+ * All methods and properties of [LocalDate] are thread-safe and may be safely called and/or
+ * accessed concurrently from multiple threads and/or coroutines.
  *
  * @property year The year. The valid range is between 1583 and 9999, inclusive; however, this is
  * _not_ checked or enforced by this class. Values less than 1583 are not strictly forbidden;
