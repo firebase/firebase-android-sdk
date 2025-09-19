@@ -145,8 +145,8 @@ public sealed interface OptionalVariable<out T> {
   /**
    * The [KSerializer] implementation for [OptionalVariable].
    *
-   * Note that this serializer _only_ supports [serialize], and [deserialize] unconditionally throws
-   * an exception.
+   * Note that this serializer _only_ supports [serialize]; [deserialize] unconditionally throws an
+   * exception.
    *
    * @param elementSerializer The [KSerializer] to use to serialize the encapsulated value.
    */
