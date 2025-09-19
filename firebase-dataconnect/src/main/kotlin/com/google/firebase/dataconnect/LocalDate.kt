@@ -22,9 +22,8 @@ import java.util.Objects
 import kotlinx.serialization.Serializable
 
 /**
- * A date without a time-zone in the ISO-8601 calendar system, such as {@code 2007-12-03}. This is
- * the default Kotlin type used to represent a `Date` GraphQL custom scalar in Firebase Data
- * Connect.
+ * A date without a time-zone in the ISO-8601 calendar system, such as `2007-12-03`. This is the
+ * default Kotlin type used to represent a `Date` GraphQL custom scalar in Firebase Data Connect.
  *
  * ### Description (adapted from [java.time.LocalDate])
  *
