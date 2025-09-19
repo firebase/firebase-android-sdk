@@ -98,7 +98,7 @@ public interface OperationRef<Data, Variables> {
    * query GetPersonById($id: UUID!) { person(id: $id) { name age } }
    * ```
    *
-   * could define its data class could as follows:
+   * could define its data class as follows:
    *
    * ```
    * @Serializable
@@ -129,7 +129,7 @@ public interface OperationRef<Data, Variables> {
    * mutation InsertPerson($name: String!, $age: Int) {...}
    * ```
    *
-   * could define its variables class could as follows:
+   * could define its variables class as follows:
    *
    * ```
    * @Serializable
