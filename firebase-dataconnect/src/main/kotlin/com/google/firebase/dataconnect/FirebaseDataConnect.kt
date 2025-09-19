@@ -300,7 +300,8 @@ public interface FirebaseDataConnect : AutoCloseable {
   override fun toString(): String
 
   /**
-   * Indicates where the usages of this object are coming from.
+   * A tag used for analytics purposes to track the source of usages of the Firebase Data Connect
+   * product.
    *
    * This information is merely used for analytics and has no effects on the product's
    * functionality.
