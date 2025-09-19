@@ -37,7 +37,7 @@ By default, integration tests run against the Firebase Data Connect emulator.
 ### Setting up the Firebase Data Connect emulator
 
 The integration tests require that the Firebase Data Connect emulator is running on port 9399, which
-is default when running it via the Data Connect Toolkit.
+is default when running it via the Firebase CLI.
 
 - [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
   ```
