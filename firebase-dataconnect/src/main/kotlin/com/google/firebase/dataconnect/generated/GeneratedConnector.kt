@@ -53,10 +53,10 @@ public interface GeneratedConnector<T : GeneratedConnector<T>> {
 
   /**
    * Returns a list containing all [GeneratedQuery] and [GeneratedMutation] objects defined as
-   * properties in this object.
+   * properties in this object, in an unspecified order..
    *
    * Namely, the returned list will contain exactly the elements returned from [queries] and
-   * [mutations], in an unspecified order.
+   * [mutations].
    *
    * @see queries
    * @see mutations
