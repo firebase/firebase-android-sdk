@@ -81,7 +81,7 @@ public interface OperationRef<Data, Variables> {
    * mutation InsertPerson($name: String!, $age: Int) {...}
    * ```
    *
-   * would have two variables named `"name"` and `"age"` whose values are [String] and [Int?]
+   * would have two variables named `"name"` and `"age"` whose values are [String] and `Int?`
    * values, respectively.
    */
   public val variables: Variables
