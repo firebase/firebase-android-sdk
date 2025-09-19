@@ -33,9 +33,9 @@ public interface DataConnectOperationFailureResponse<Data> {
    * * [Double]
    * * [List] containing any of the types in this list of types
    * * [Map] with [String] keys and values of the types in this list of types
-   *
-   * Consider using [toJson] to get a higher-level object.
    */
+  // TODO(b/446167496) Add a link to [toJson] in the kdoc comments above when the toJson extension
+  //  function is implemented.
   public val rawData: Map<String, Any?>?
 
   /**
