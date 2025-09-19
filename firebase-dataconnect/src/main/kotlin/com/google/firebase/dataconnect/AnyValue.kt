@@ -57,9 +57,9 @@ import kotlinx.serialization.serializer
  * (`-9007199254740991`). This limitation is exactly the same in JavaScript, which does not have a
  * native "int" or "long" type, but rather stores all numeric values in a 64-bit floating point
  * value. See
- * [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER])
+ * [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)
  * and
- * [MIN_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER])
+ * [MIN_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER)
  * for more details.
  *
  * ### Integration with `kotlinx.serialization`
