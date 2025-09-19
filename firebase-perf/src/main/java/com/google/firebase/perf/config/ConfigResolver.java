@@ -835,7 +835,6 @@ public class ConfigResolver {
       return metadataValue.get();
     }
 
-
     // Returns default value if there is no valid value.
     return config.getDefault();
   }
