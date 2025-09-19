@@ -72,6 +72,7 @@ import kotlinx.serialization.serializer
  *
  * ```
  * type Foo @table { value: Any }
+ *
  * mutation FooInsert($value: Any) {
  *   key: foo_insert(data: { value: $value })
  * }
@@ -133,7 +134,7 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
   /**
    * The native Kotlin type of the value encapsulated in this object.
    *
-   * Although this type is `Any` it will be one of `String, `Boolean`, `Double`, `List<Any?>` or
+   * Although this type is `Any` it will be one of `String`, `Boolean`, `Double`, `List<Any?>` or
    * `Map<String, Any?>`. See the [AnyValue] class documentation for a detailed description of the
    * types of values that are supported.
    */
