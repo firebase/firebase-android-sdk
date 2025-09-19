@@ -836,7 +836,7 @@ public class ConfigResolver {
     }
 
 
-    // Returns default value if there is no valid value from above approaches.
+    // Returns default value if there is no valid value.
     return config.getDefault();
   }
 
