@@ -37,12 +37,12 @@ import kotlinx.serialization.serializer
  * ### Valid values for `AnyValue`
  *
  * `AnyValue` can encapsulate [String], [Boolean], [Double], a [List] of one of these types, or a
- * [Map] whose values are one of these types. The values can be arbitrarily nested (e.g. a list that
- * contains a map that contains other maps, and so on. The lists and maps can contain heterogeneous
- * values; for example, a single [List] can contain a [String] value, some [Boolean] values, and
- * some [List] values. The values of a [List] or a [Map] may be `null`. The only exception is that a
- * variable or field declared as `[Any]` in GraphQL may _not_ have `null` values in the top-level
- * list; however, nested lists or maps _may_ contain null values.
+ * [Map] whose values are one of these types. The values can be arbitrarily nested (for example, a
+ * list that contains a map that contains other maps, and so on. The lists and maps can contain
+ * heterogeneous values; for example, a single [List] can contain a [String] value, some [Boolean]
+ * values, and some [List] values. The values of a [List] or a [Map] may be `null`. The only
+ * exception is that a variable or field declared as `[Any]` in GraphQL may _not_ have `null` values
+ * in the top-level list; however, nested lists or maps _may_ contain null values.
  *
  * ### Storing `Int` in an `AnyValue`
  *

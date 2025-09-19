@@ -28,7 +28,7 @@ import java.util.Objects
  * accessed concurrently from multiple threads and/or coroutines.
  *
  * @property connector The ID of the Firebase Data Connect "connector".
- * @property location The location where the connector is located (e.g. `"us-central1"`).
+ * @property location The location where the connector is located (for example, `"us-central1"`).
  * @property serviceId The ID of the Firebase Data Connect service.
  */
 public class ConnectorConfig(

@@ -21,7 +21,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 /**
- * Information about a Firebase Data Connect "operation" (i.e. a query or mutation).
+ * Information about a Firebase Data Connect "operation" (a query or a mutation).
  *
  * [OperationRef] has two inheritors: [QueryRef] for queries and [MutationRef] for mutations.
  * [OperationRef] merely serves to provide a common interface for the parts of queries and mutations
