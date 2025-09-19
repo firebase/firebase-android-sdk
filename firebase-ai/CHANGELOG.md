@@ -1,6 +1,7 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+- [changed] Added support for URL context.
 
 # 17.3.0
 

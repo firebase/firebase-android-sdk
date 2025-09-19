@@ -20,10 +20,13 @@ import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.InvalidAPIKeyException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
+import com.google.firebase.ai.type.UrlRetrievalStatus
 import com.google.firebase.ai.util.goldenDevAPIUnaryFile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -129,6 +132,74 @@ internal class DevAPIUnarySnapshotTests {
 
         groundingMetadata.groundingChunks.shouldNotBeEmpty()
         groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
+      }
+    }
+
+  @Test
+  fun `url context`() =
+    goldenDevAPIUnaryFile("unary-success-url-context.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(1)
+        urlContextMetadata.urlMetadata[0].retrievedUrl.shouldBe("https://berkshirehathaway.com")
+        urlContextMetadata.urlMetadata[0].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(4)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails.shouldHaveSize(1)
+      }
+    }
+
+  @Test
+  fun `url context mixed validity`() =
+    goldenDevAPIUnaryFile("unary-success-url-context-mixed-validity.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(3)
+        urlContextMetadata.urlMetadata[0]
+          .retrievedUrl
+          .shouldBe("https://a-completely-non-existent-url-for-testing.org")
+        urlContextMetadata.urlMetadata[0].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.ERROR)
+        urlContextMetadata.urlMetadata[1].retrievedUrl.shouldBe("https://ai.google.dev")
+        urlContextMetadata.urlMetadata[1].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(3)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails.shouldHaveSize(1)
       }
     }
 

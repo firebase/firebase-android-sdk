@@ -30,6 +30,7 @@ import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
+import com.google.firebase.ai.type.UrlContext
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -298,6 +299,44 @@ internal class RequestFormatTests {
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
     requestBodyAsText shouldContainJsonKey "tools[0].googleSearch"
+  }
+
+  @Test
+  fun `url context tool serialization contains correct keys`() = doBlocking {
+    val channel = ByteChannel(autoFlush = true)
+    val mockEngine = MockEngine {
+      respond(channel, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    prepareStreamingResponse(createResponses("Random")).forEach { channel.writeFully(it) }
+
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-2.5",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    withTimeout(5.seconds) {
+      controller
+        .generateContentStream(
+          GenerateContentRequest(
+            model = "unused",
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
+            tools = listOf(Tool.Internal(urlContext = UrlContext.Internal())),
+          )
+        )
+        .collect { channel.close() }
+    }
+
+    val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
+
+    requestBodyAsText shouldContainJsonKey "tools[0].urlContext"
   }
 
   @Test

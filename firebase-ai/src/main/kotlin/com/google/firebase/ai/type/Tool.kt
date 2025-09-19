@@ -28,12 +28,14 @@ internal constructor(
   internal val functionDeclarations: List<FunctionDeclaration>?,
   internal val googleSearch: GoogleSearch?,
   internal val codeExecution: JsonObject?,
+  internal val urlContext: UrlContext?,
 ) {
   internal fun toInternal() =
     Internal(
       functionDeclarations?.map { it.toInternal() } ?: emptyList(),
       googleSearch = this.googleSearch?.toInternal(),
-      codeExecution = this.codeExecution
+      codeExecution = this.codeExecution,
+      urlContext = this.urlContext?.toInternal()
     )
   @Serializable
   internal data class Internal(
@@ -41,10 +43,11 @@ internal constructor(
     val googleSearch: GoogleSearch.Internal? = null,
     // This is a json object because it is not possible to make a data class with no parameters.
     val codeExecution: JsonObject? = null,
+    val urlContext: UrlContext.Internal? = null,
   )
   public companion object {
 
-    private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap())) }
+    private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap()), null) }
 
     /**
      * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].
@@ -53,13 +56,26 @@ internal constructor(
      */
     @JvmStatic
     public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
-      return Tool(functionDeclarations, null, null)
+      return Tool(functionDeclarations, null, null, null)
     }
 
     /** Creates a [Tool] instance that allows the model to use Code Execution. */
     @JvmStatic
     public fun codeExecution(): Tool {
       return codeExecutionInstance
+    }
+
+    /**
+     * Creates a [Tool] instance that allows you to provide additional context to the models in the
+     * form of public web URLs. By including URLs in your request, the Gemini model will access the
+     * content from those pages to inform and enhance its response.
+     *
+     * @param urlContext Specifies the URL context configuration.
+     * @return A [Tool] configured for URL context
+     */
+    @JvmStatic
+    public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
+      return Tool(null, null, null, urlContext)
     }
 
     /**
@@ -80,7 +96,7 @@ internal constructor(
      */
     @JvmStatic
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
-      return Tool(null, googleSearch, null)
+      return Tool(null, googleSearch, null, null)
     }
   }
 }
