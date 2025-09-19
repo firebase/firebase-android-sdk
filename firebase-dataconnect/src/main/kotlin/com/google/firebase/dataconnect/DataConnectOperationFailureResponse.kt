@@ -41,7 +41,8 @@ public interface DataConnectOperationFailureResponse<Data> {
   /**
    * The list of errors provided by the backend in the response message; may be empty.
    *
-   * See https://spec.graphql.org/draft/#sec-Errors for details.
+   * See [https://spec.graphql.org/draft/#sec-Errors](https://spec.graphql.org/draft/#sec-Errors)
+   * for details.
    */
   public val errors: List<ErrorInfo>
 
@@ -69,7 +70,8 @@ public interface DataConnectOperationFailureResponse<Data> {
   /**
    * Information about the error, as provided in the response payload from the backend.
    *
-   * See https://spec.graphql.org/draft/#sec-Errors for details.
+   * See [https://spec.graphql.org/draft/#sec-Errors](https://spec.graphql.org/draft/#sec-Errors)
+   * for details.
    */
   public interface ErrorInfo {
     /** The error's message. */
