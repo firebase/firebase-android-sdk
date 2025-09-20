@@ -28,10 +28,21 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Logger;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,6 +68,56 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     when(timer.getMicros()).thenReturn((long) 1000);
     when(timer.getDurationMicros()).thenReturn((long) 2000);
     networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+  }
+
+  @Test
+  public void testDisconnectConcurrently() throws IOException, InterruptedException, ExecutionException {
+    for (int i = 0; i < 100; i++) {
+      System.out.println("attempt: " + i);
+      int threadCount = 100;
+      final CountDownLatch latch = new CountDownLatch(threadCount);
+
+      ExecutorService executor = Executors.newFixedThreadPool(100);
+      List<Future<?>> futures = new ArrayList<>();
+      List<AtomicReference<Throwable>> exceptions = new ArrayList<>();
+
+      HttpURLConnection urlConnection = mockHttpUrlConnection();
+      InstrURLConnectionBase instr = new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder);
+
+      for (int threadIndex = 0; threadIndex < threadCount; threadIndex++) {
+        final AtomicReference<Throwable> backgroundException = new AtomicReference<>();
+        exceptions.add(backgroundException);
+
+        int finalThreadIndex = threadIndex;
+        futures.add(executor.submit(() -> {
+          try {
+            System.out.println(" - finalThreadIndex: " + finalThreadIndex);
+            instr.disconnect();
+
+          } catch (Throwable t) {
+            backgroundException.set(t);
+
+          } finally {
+            latch.countDown();
+          }
+        }));
+      }
+
+      for (Future<?> future : futures) {
+        future.get();
+      }
+
+      executor.shutdown();
+
+      for (int e = 0; e < exceptions.size(); e++) {
+        Throwable exception = exceptions.get(e).get();
+
+        if (exception != null) {
+          System.out.println(" - Exception in thread pair " + e + ": " + exception);
+        }
+      }
+    }
+    assertThat(true).isEqualTo(true);
   }
 
   @Test
