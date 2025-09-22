@@ -50,7 +50,7 @@ public final class NumberComparisonHelper {
     }
 
     long doubleAsLong = (long) doubleValue;
-    int cmp = compareLongs(doubleAsLong, longValue);
+    int cmp = Long.compare(doubleAsLong, longValue);
     if (cmp != 0) {
       return cmp;
     }
@@ -58,11 +58,6 @@ public final class NumberComparisonHelper {
     // At this point the long representations are equal but this could be due to rounding.
     double longAsDouble = (double) longValue;
     return firestoreCompareDoubles(doubleValue, longAsDouble);
-  }
-
-  /** Compares longs. */
-  public static int compareLongs(long leftLong, long rightLong) {
-    return Long.compare(leftLong, rightLong);
   }
 
   /**

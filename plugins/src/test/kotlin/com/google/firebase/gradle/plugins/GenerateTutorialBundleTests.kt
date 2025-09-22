@@ -54,7 +54,7 @@ class GenerateTutorialBundleTests : FunSpec() {
             "com.google.firebase:firebase-analytics:1.2.4",
             "com.google.firebase:firebase-crashlytics:12.0.0",
             "com.google.firebase:firebase-perf:10.2.3",
-            "com.google.firebase:firebase-vertexai:9.2.3",
+            "com.google.firebase:firebase-ai:9.2.3",
           ),
         gradlePlugins =
           listOf(
@@ -82,8 +82,8 @@ class GenerateTutorialBundleTests : FunSpec() {
           <!ENTITY crashlytics-dependency "com.google.firebase:firebase-crashlytics:12.0.0">
           <!-- Performance Monitoring -->
           <!ENTITY perf-dependency "com.google.firebase:firebase-perf:10.2.3">
-          <!-- Vertex AI in Firebase -->
-          <!ENTITY vertex-dependency "com.google.firebase:firebase-vertexai:9.2.3">
+          <!-- Firebase AI Logic -->
+          <!ENTITY firebase-ai-dependency "com.google.firebase:firebase-ai:9.2.3">
 
           <!-- Firebase Gradle plugins -->
           <!-- App Distribution -->
@@ -242,7 +242,7 @@ class GenerateTutorialBundleTests : FunSpec() {
   @Test
   fun `throws an error if an unreleased artifact is used`() {
     shouldThrowSubstring("missing from gmaven", "com.google.firebase:firebase-auth") {
-      every { service.latestVersionOrNull(any()) } answers { null }
+      every { service.latestNonAlphaVersionOrNull(any()) } answers { null }
 
       val task = makeTask { firebaseArtifacts.set(listOf("com.google.firebase:firebase-auth")) }
 
@@ -293,7 +293,9 @@ class GenerateTutorialBundleTests : FunSpec() {
         val (groupId, artifactId, version) = it.split(":")
         "$groupId:$artifactId" to version
       }
-      .onEach { entry -> every { service.latestVersionOrNull(entry.key) } answers { entry.value } }
+      .onEach { entry ->
+        every { service.latestNonAlphaVersionOrNull(entry.key) } answers { entry.value }
+      }
   }
 
   private fun makeTutorial(

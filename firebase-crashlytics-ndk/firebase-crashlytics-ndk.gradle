@@ -26,7 +26,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{crashlytics}} NDK")
         versionName.set("crashlytics-ndk")
-        hasKTX.set(false)
     }
     testLab.enabled = true
     publishJavadoc = false
@@ -37,7 +36,7 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.crashlytics.ndk"
-    ndkVersion "25.1.8937393"
+    ndkVersion "27.2.12479018"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -111,9 +110,8 @@ thirdPartyLicenses {
 
 dependencies {
     api project(':firebase-crashlytics')
-    api "com.google.firebase:firebase-common:21.0.0"
-    api "com.google.firebase:firebase-common-ktx:21.0.0"
-    api "com.google.firebase:firebase-components:18.0.0"
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
 

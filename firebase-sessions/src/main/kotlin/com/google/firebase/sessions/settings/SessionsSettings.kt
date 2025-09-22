@@ -16,71 +16,24 @@
 
 package com.google.firebase.sessions.settings
 
-import android.content.Context
-import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
-import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.app
-import com.google.firebase.installations.FirebaseInstallationsApi
-import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.FirebaseSessionsComponent
-import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
-import com.google.firebase.sessions.SessionDataStoreConfigs
-import com.google.firebase.sessions.SessionEvents
+import com.google.firebase.sessions.LocalOverrideSettingsProvider
+import com.google.firebase.sessions.RemoteSettingsProvider
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /** [SessionsSettings] manages all the configs that are relevant to the sessions library. */
 @Singleton
-internal class SessionsSettings(
-  private val localOverrideSettings: SettingsProvider,
-  private val remoteSettings: SettingsProvider,
+internal class SessionsSettings
+@Inject
+constructor(
+  @LocalOverrideSettingsProvider private val localOverrideSettings: SettingsProvider,
+  @RemoteSettingsProvider private val remoteSettings: SettingsProvider,
 ) {
-  private constructor(
-    context: Context,
-    blockingDispatcher: CoroutineContext,
-    backgroundDispatcher: CoroutineContext,
-    firebaseInstallationsApi: FirebaseInstallationsApi,
-    appInfo: ApplicationInfo,
-  ) : this(
-    localOverrideSettings = LocalOverrideSettings(context),
-    remoteSettings =
-      RemoteSettings(
-        backgroundDispatcher,
-        firebaseInstallationsApi,
-        appInfo,
-        configsFetcher =
-          RemoteSettingsFetcher(
-            appInfo,
-            blockingDispatcher,
-          ),
-        dataStore = context.dataStore,
-      ),
-  )
-
-  @Inject
-  constructor(
-    firebaseApp: FirebaseApp,
-    @Blocking blockingDispatcher: CoroutineContext,
-    @Background backgroundDispatcher: CoroutineContext,
-    firebaseInstallationsApi: FirebaseInstallationsApi,
-  ) : this(
-    firebaseApp.applicationContext,
-    blockingDispatcher,
-    backgroundDispatcher,
-    firebaseInstallationsApi,
-    SessionEvents.getApplicationInfo(firebaseApp),
-  )
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides
@@ -147,19 +100,7 @@ internal class SessionsSettings(
   }
 
   internal companion object {
-    private const val TAG = "SessionsSettings"
-
     val instance: SessionsSettings
       get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionsSettings
-
-    private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(
-        name = SessionDataStoreConfigs.SETTINGS_CONFIG_NAME,
-        corruptionHandler =
-          ReplaceFileCorruptionHandler { ex ->
-            Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)
-            emptyPreferences()
-          },
-      )
   }
 }

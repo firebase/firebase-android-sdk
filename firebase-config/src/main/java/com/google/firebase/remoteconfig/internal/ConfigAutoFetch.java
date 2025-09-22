@@ -19,6 +19,8 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdate;
@@ -31,9 +33,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,6 +47,7 @@ public class ConfigAutoFetch {
   private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
+  private static final String REALTIME_RETRY_INTERVAL = "retryIntervalSeconds";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -54,6 +59,9 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private final Clock clock;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
+  private boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -61,7 +69,8 @@ public class ConfigAutoFetch {
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      ScheduledExecutorService scheduledExecutorService) {
+      ScheduledExecutorService scheduledExecutorService,
+      ConfigSharedPrefsClient sharedPrefsClient) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
@@ -69,6 +78,20 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
+    this.isInBackground = false;
+    this.sharedPrefsClient = sharedPrefsClient;
+    this.clock = DefaultClock.getInstance();
+  }
+
+  // Increase the backoff duration with a new end time based on Retry Interval
+  private synchronized void updateBackoffMetadataWithRetryInterval(
+      int realtimeRetryIntervalInSeconds) {
+    Date currentTime = new Date(clock.currentTimeMillis());
+    long backoffDurationInMillis = realtimeRetryIntervalInSeconds * 1000L;
+    Date backoffEndTime = new Date(currentTime.getTime() + backoffDurationInMillis);
+
+    // Persist the new values to disk-backed metadata.
+    sharedPrefsClient.setRealtimeBackoffEndTime(backoffEndTime);
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -85,6 +108,10 @@ public class ConfigAutoFetch {
 
   private synchronized boolean isEventListenersEmpty() {
     return this.eventListeners.isEmpty();
+  }
+
+  public void setIsInBackground(boolean isInBackground) {
+    this.isInBackground = isInBackground;
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
@@ -105,15 +132,29 @@ public class ConfigAutoFetch {
       return;
     }
 
+    // Maintain a reference to the InputStream to guarantee its closure upon completion or in case
+    // of an exception.
+    InputStream inputStream = null;
     try {
-      InputStream inputStream = httpURLConnection.getInputStream();
+      inputStream = httpURLConnection.getInputStream();
       handleNotifications(inputStream);
-      inputStream.close();
     } catch (IOException ex) {
-      // Stream was interrupted due to a transient issue and the system will retry the connection.
-      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      // If the real-time connection is at an unexpected lifecycle state when the app is
+      // backgrounded, it's expected closing the httpURLConnection will throw an exception.
+      if (!isInBackground) {
+        // Otherwise, the real-time server connection was closed due to a transient issue.
+        Log.d(TAG, "Real-time connection was closed due to an exception.", ex);
+      }
     } finally {
-      httpURLConnection.disconnect();
+      if (inputStream != null) {
+        try {
+          // Only need to close the InputStream, ConfigRealtimeHttpClient will disconnect
+          // HttpUrlConnection
+          inputStream.close();
+        } catch (IOException ex) {
+          Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
+        }
+      }
     }
   }
 
@@ -170,6 +211,15 @@ public class ConfigAutoFetch {
               autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
             }
           }
+
+          // This field in the response indicates that the realtime request should retry after the
+          // specified interval to establish a long-lived connection. This interval extends the
+          // backoff duration without affecting the number of retries, so it will not enter an
+          // exponential backoff state.
+          if (jsonObject.has(REALTIME_RETRY_INTERVAL)) {
+            int realtimeRetryIntervalInSeconds = jsonObject.getInt(REALTIME_RETRY_INTERVAL);
+            updateBackoffMetadataWithRetryInterval(realtimeRetryIntervalInSeconds);
+          }
         } catch (JSONException ex) {
           // Message was mangled up and so it was unable to be parsed. User is notified of this
           // because it there could be a new configuration that needs to be fetched.
@@ -186,7 +236,6 @@ public class ConfigAutoFetch {
     }
 
     reader.close();
-    inputStream.close();
   }
 
   private void autoFetch(int remainingAttempts, long targetVersion) {
@@ -200,15 +249,16 @@ public class ConfigAutoFetch {
 
     // Randomize fetch to occur between 0 - 4 seconds.
     int timeTillFetch = random.nextInt(4);
-    scheduledExecutorService.schedule(
-        new Runnable() {
-          @Override
-          public void run() {
-            fetchLatestConfig(remainingAttempts, targetVersion);
-          }
-        },
-        timeTillFetch,
-        TimeUnit.SECONDS);
+    ScheduledFuture<?> unused =
+        scheduledExecutorService.schedule(
+            new Runnable() {
+              @Override
+              public void run() {
+                Task<Void> unused = fetchLatestConfig(remainingAttempts, targetVersion);
+              }
+            },
+            timeTillFetch,
+            TimeUnit.SECONDS);
   }
 
   @VisibleForTesting

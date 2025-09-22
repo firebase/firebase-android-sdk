@@ -22,7 +22,6 @@ firebaseLibrary {
   releaseNotes {
     name.set("Dynamic feature modules support")
     versionName.set("dynamic-feature-modules-support")
-    hasKTX.set(false)
   }
 }
 

@@ -2,6 +2,8 @@ name: Metalava SemVer Check
 
 on:
   pull_request:
+    branches:
+      - main
 
 jobs:
   semver-check:
@@ -10,24 +12,24 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.base_ref }}
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
           cache: gradle
 
-      - name: Copy previous api.txt files
+      - name: Copy existing api.txt files
         run: ./gradlew copyApiTxtFile
 
       - name: Checkout PR
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           clean: false
 
       - name: Run Metalava SemVer check

@@ -136,12 +136,20 @@ internal class PublisherStream(
           MediaType.parse("application/json"),
           JSONObject(mapOf("data" to serializer.encode(data))).toString()
         )
-      val requestBuilder =
-        Request.Builder().url(url).post(requestBody).header("Accept", "text/event-stream")
-      context?.authToken?.let { requestBuilder.header("Authorization", "Bearer $it") }
-      context?.instanceIdToken?.let { requestBuilder.header("Firebase-Instance-ID-Token", it) }
-      context?.appCheckToken?.let { requestBuilder.header("X-Firebase-AppCheck", it) }
-      val request = requestBuilder.build()
+      val request =
+        Request.Builder()
+          .url(url)
+          .post(requestBody)
+          .apply {
+            header("Accept", "text/event-stream")
+            header("Content-Type", "application/json")
+            context?.apply {
+              authToken?.let { header("Authorization", "Bearer $it") }
+              instanceIdToken?.let { header("Firebase-Instance-ID-Token", it) }
+              appCheckToken?.let { header("X-Firebase-AppCheck", it) }
+            }
+          }
+          .build()
       val call = configuredClient.newCall(request)
       activeCall = call
 
@@ -205,6 +213,9 @@ internal class PublisherStream(
               }
             eventBuffer.append(dataChunk.trim()).append("\n")
           }
+        }
+        if (eventBuffer.isNotEmpty()) {
+          processEvent(eventBuffer.toString())
         }
       } catch (e: Exception) {
         notifyError(
@@ -296,9 +307,11 @@ internal class PublisherStream(
   private fun validateResponse(response: Response) {
     if (response.isSuccessful) return
 
-    val htmlContentType = "text/html; charset=utf-8"
     val errorMessage: String
-    if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
+    if (
+      response.code() == 404 &&
+        MediaType.parse(response.header("Content-Type") ?: "")?.subtype() == "html"
+    ) {
       errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
       notifyError(
         FirebaseFunctionsException(
@@ -307,6 +320,7 @@ internal class PublisherStream(
           null
         )
       )
+      return
     }
 
     val text = response.body()?.string() ?: ""

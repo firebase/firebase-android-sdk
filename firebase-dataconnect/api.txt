@@ -42,6 +42,47 @@ package com.google.firebase.dataconnect {
     ctor public DataConnectException(String message, Throwable? cause = null);
   }
 
+  public class DataConnectOperationException extends com.google.firebase.dataconnect.DataConnectException {
+    ctor public DataConnectOperationException(String message, Throwable? cause = null, com.google.firebase.dataconnect.DataConnectOperationFailureResponse<? extends java.lang.Object?> response);
+    method public final com.google.firebase.dataconnect.DataConnectOperationFailureResponse<? extends java.lang.Object?> getResponse();
+    property public final com.google.firebase.dataconnect.DataConnectOperationFailureResponse<? extends java.lang.Object?> response;
+  }
+
+  public interface DataConnectOperationFailureResponse<Data> {
+    method public Data? getData();
+    method public java.util.List<com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo> getErrors();
+    method public java.util.Map<java.lang.String,java.lang.Object?>? getRawData();
+    method public String toString();
+    property public abstract Data? data;
+    property public abstract java.util.List<com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo> errors;
+    property public abstract java.util.Map<java.lang.String,java.lang.Object?>? rawData;
+  }
+
+  public static interface DataConnectOperationFailureResponse.ErrorInfo {
+    method public boolean equals(Object? other);
+    method public String getMessage();
+    method public java.util.List<com.google.firebase.dataconnect.DataConnectPathSegment> getPath();
+    method public int hashCode();
+    method public String toString();
+    property public abstract String message;
+    property public abstract java.util.List<com.google.firebase.dataconnect.DataConnectPathSegment> path;
+  }
+
+  public sealed interface DataConnectPathSegment {
+  }
+
+  @kotlin.jvm.JvmInline public static final value class DataConnectPathSegment.Field implements com.google.firebase.dataconnect.DataConnectPathSegment {
+    ctor public DataConnectPathSegment.Field(String field);
+    method public String getField();
+    property public final String field;
+  }
+
+  @kotlin.jvm.JvmInline public static final value class DataConnectPathSegment.ListIndex implements com.google.firebase.dataconnect.DataConnectPathSegment {
+    ctor public DataConnectPathSegment.ListIndex(int index);
+    method public int getIndex();
+    property public final int index;
+  }
+
   public final class DataConnectSettings {
     ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
     method public String getHost();
@@ -52,6 +93,31 @@ package com.google.firebase.dataconnect {
 
   public final class DataConnectSettingsKt {
     method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled);
+  }
+
+  public sealed interface EnumValue<T extends java.lang.Enum<? extends T>> {
+    method public String getStringValue();
+    method public T? getValue();
+    property public abstract String stringValue;
+    property public abstract T? value;
+  }
+
+  public static final class EnumValue.Known<T extends java.lang.Enum<T>> implements com.google.firebase.dataconnect.EnumValue<T> {
+    ctor public EnumValue.Known(T value);
+    method public com.google.firebase.dataconnect.EnumValue.Known<T> copy(T value = value);
+    method public String getStringValue();
+    method public T getValue();
+    property public String stringValue;
+    property public T value;
+  }
+
+  public static final class EnumValue.Unknown implements com.google.firebase.dataconnect.EnumValue {
+    ctor public EnumValue.Unknown(String stringValue);
+    method public com.google.firebase.dataconnect.EnumValue.Unknown copy(String stringValue = stringValue);
+    method public String getStringValue();
+    method public Void? getValue();
+    property public String stringValue;
+    property public Void? value;
   }
 
   @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING, message="This declaration is \"experimental\": its signature and/or semantics " + "may change in backwards-incompatible ways at any time without notice, " + "up to and including complete removal. " + "If you have a use case that relies on this declaration please open a " + "\"feature request\" issue at https://github.com/firebase/firebase-android-sdk " + "requesting this declaration\'s promotion from \"experimental\" to \"fully-supported\".") @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFirebaseDataConnect {
@@ -303,6 +369,14 @@ package com.google.firebase.dataconnect.serializers {
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, com.google.firebase.dataconnect.AnyValue value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field public static final com.google.firebase.dataconnect.serializers.AnyValueSerializer INSTANCE;
+  }
+
+  public class EnumValueSerializer<T extends java.lang.Enum<T>> implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.EnumValue<? extends T>> {
+    ctor public EnumValueSerializer(Iterable<? extends T> values);
+    method public com.google.firebase.dataconnect.EnumValue<T> deserialize(kotlinx.serialization.encoding.Decoder decoder);
+    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method public void serialize(kotlinx.serialization.encoding.Encoder encoder, com.google.firebase.dataconnect.EnumValue<? extends T> value);
+    property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }
 
   public final class JavaTimeLocalDateSerializer implements kotlinx.serialization.KSerializer<java.time.LocalDate> {

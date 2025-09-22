@@ -9,65 +9,21 @@ on:
       - main
 
 jobs:
-  determine_changed:
-    name: "Determine changed modules"
-    runs-on: ubuntu-22.04
-    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || github.event_name == 'pull_request'
-    outputs:
-      modules: ${{ steps.changed-modules.outputs.modules }}
-    steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 2
-          submodules: true
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
-        with:
-          java-version: 17
-          distribution: temurin
-          cache: gradle
-
-      - id: changed-modules
-        run: |
-          git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
-          echo modules=$(cat modules.json) >> $GITHUB_OUTPUT
-
   check_format:
     name: "Check Format"
     runs-on: ubuntu-22.04
-    needs:
-      - determine_changed
-    strategy:
-      fail-fast: false
-      matrix:
-        module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 2
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           java-version: 17
           distribution: temurin
           cache: gradle
 
-      - name: ${{ matrix.module }} Check Format
-        run: |
-          ./gradlew ${{matrix.module}}:spotlessCheck
-
-  # A job that fails if any job in the check_format matrix fails,
-  # to be used as a required check for merging.
-  check_all:
-    runs-on: ubuntu-22.04
-    if: always()
-    name: Check Format (matrix)
-    needs: check_format
-    steps:
-      - name: Check matrix
-        if: needs.check_format.result != 'success'
-        run: exit 1
+      - name: Run Spotless
+        run: ./gradlew ${{matrix.module}}:spotlessCheck

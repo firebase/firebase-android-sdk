@@ -17,12 +17,3 @@ package com.google.firebase.installations {
 
 }
 
-package com.google.firebase.installations.ktx {
-
-  public final class InstallationsKt {
-    method @Deprecated public static com.google.firebase.installations.FirebaseInstallations getInstallations(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static com.google.firebase.installations.FirebaseInstallations installations(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
-  }
-
-}
-

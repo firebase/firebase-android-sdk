@@ -44,12 +44,12 @@ enum class DeltaType {
   REMOVED_METHOD {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
       val beforeMethods =
-        getAllMethods(before).filter { (key, value) ->
+        getAllMethods(before).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
       val afterMethods =
-        getAllMethods(after).filter { (key, value) ->
+        getAllMethods(after).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
@@ -72,12 +72,12 @@ enum class DeltaType {
   REMOVED_FIELD {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
       val beforeFields =
-        getAllFields(before).filter { (key, value) ->
+        getAllFields(before).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicFieldSignature(value) && !accessDescriptor.isPrivate()
         }
       val afterFields =
-        getAllFields(after).filter { (key, value) ->
+        getAllFields(after).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicFieldSignature(value) && !accessDescriptor.isPrivate()
         }
@@ -101,57 +101,59 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val publicBeforeFields =
-        allBeforeFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) && allAfterFields.containsKey(key) && access.isPublic()
+        allBeforeFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allAfterFields.containsKey(it.key) &&
+            access.isPublic()
         }
       val protectedBeforeFields =
-        allBeforeFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allAfterFields.containsKey(key) &&
+        allBeforeFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allAfterFields.containsKey(it.key) &&
             access.isProtected()
         }
       val nonPublicFields =
-        allAfterFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allBeforeFields.containsKey(key) &&
+        allAfterFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allBeforeFields.containsKey(it.key) &&
             !access.isPublic()
         }
       val privateFields =
-        allAfterFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allBeforeFields.containsKey(key) &&
+        allAfterFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allBeforeFields.containsKey(it.key) &&
             access.isPrivate()
         }
       val publicBeforeMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allAfterMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allAfterMethods.containsKey(it.key) &&
             access.isPublic()
         }
       val protectedBeforeMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allAfterMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allAfterMethods.containsKey(it.key) &&
             access.isProtected()
         }
       val nonPublicMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             !access.isPublic()
         }
       val privateMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isPrivate()
         }
       val apiDeltas = mutableListOf<Delta>()
@@ -220,17 +222,17 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val afterStaticMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isStatic()
         }
       val beforeStaticMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isStatic()
         }
       return (afterStaticMethods.keys subtract beforeStaticMethods.keys).map {
@@ -253,11 +255,15 @@ enum class DeltaType {
       (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
-        if (!beforeMethod!!.exceptions.containsAll(afterMethod!!.exceptions)) {
+        if (
+          beforeMethod != null &&
+            afterMethod != null &&
+            !beforeMethod.exceptions.containsAll(afterMethod.exceptions)
+        ) {
           apiDeltas.add(
             Delta(
               after!!.name,
-              afterMethod!!.name,
+              afterMethod.name,
               String.format(
                 "Method %s on class %s throws new exceptions.",
                 getMethodSignature(afterMethod),
@@ -280,11 +286,15 @@ enum class DeltaType {
       (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
-        if (!afterMethod!!.exceptions.containsAll(beforeMethod!!.exceptions)) {
+        if (
+          afterMethod != null &&
+            beforeMethod != null &&
+            !afterMethod.exceptions.containsAll(beforeMethod.exceptions)
+        ) {
           apiDeltas.add(
             Delta(
               after!!.name,
-              afterMethod!!.name,
+              afterMethod.name,
               String.format(
                 "Method %s on class %s throws fewer exceptions.",
                 getMethodSignature(afterMethod),
@@ -330,13 +340,15 @@ enum class DeltaType {
         val beforeMethod = allBeforeMethods.get(it)
 
         if (
-          AccessDescriptor(afterMethod!!.access).isAbstract() &&
-            !AccessDescriptor(beforeMethod!!.access).isAbstract()
+          afterMethod != null &&
+            beforeMethod != null &&
+            AccessDescriptor(afterMethod.access).isAbstract() &&
+            !AccessDescriptor(beforeMethod.access).isAbstract()
         ) {
           apiDeltas.add(
             Delta(
               after!!.name,
-              afterMethod!!.name,
+              afterMethod.name,
               String.format(
                 "Method %s on class %s became abstract.",
                 getMethodSignature(afterMethod),
@@ -361,13 +373,15 @@ enum class DeltaType {
         val beforeMethod = allBeforeMethods.get(it)
 
         if (
-          AccessDescriptor(afterMethod!!.access).isFinal() &&
-            !AccessDescriptor(beforeMethod!!.access).isFinal()
+          afterMethod != null &&
+            beforeMethod != null &&
+            AccessDescriptor(afterMethod.access).isFinal() &&
+            !AccessDescriptor(beforeMethod.access).isFinal()
         ) {
           apiDeltas.add(
             Delta(
               after!!.name,
-              afterMethod!!.name,
+              afterMethod.name,
               String.format(
                 "Method %s on class %s became final.",
                 getMethodSignature(afterMethod),
@@ -425,20 +439,20 @@ enum class DeltaType {
   ADDED_METHOD {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
       val beforeMethods =
-        getAllMethods(before).filter { (key, value) ->
+        getAllMethods(before).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
       val afterMethods =
-        getAllMethods(after).filter { (key, value) ->
+        getAllMethods(after).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
       return (afterMethods.keys subtract beforeMethods.keys).map {
-        val method = afterMethods.get(it)
+        val method = afterMethods.get(it)!!
         Delta(
           after!!.name,
-          method!!.name,
+          method.name,
           String.format("Method %s on class %s was added.", getMethodSignature(method), after.name),
           ADDED_METHOD,
           VersionDelta.MINOR,
@@ -449,21 +463,21 @@ enum class DeltaType {
   ADDED_FIELD {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
       val beforeFields =
-        getAllFields(before).filter { (key, value) ->
+        getAllFields(before).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicFieldSignature(value) && !accessDescriptor.isPrivate()
         }
       val afterFields =
-        getAllFields(after).filter { (key, value) ->
+        getAllFields(after).filter { (_, value) ->
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicFieldSignature(value) && !accessDescriptor.isPrivate()
         }
 
       return (afterFields.keys subtract beforeFields.keys).map {
-        val field = afterFields[it]
+        val field = afterFields[it]!!
         Delta(
           after!!.name,
-          field!!.name,
+          field.name,
           String.format("Field %s on class %s was added.", field.name, after.name),
           ADDED_FIELD,
           VersionDelta.MINOR,
@@ -479,59 +493,59 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val publicAfterFields =
-        allAfterFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allBeforeFields.containsKey(key) &&
+        allAfterFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allBeforeFields.containsKey(it.key) &&
             access.isPublic()
         }
       val protectedAfterFields =
-        allAfterFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allBeforeFields.containsKey(key) &&
+        allAfterFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allBeforeFields.containsKey(it.key) &&
             access.isProtected()
         }
       val nonPublicFields =
-        allBeforeFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allAfterFields.containsKey(key) &&
+        allBeforeFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allAfterFields.containsKey(it.key) &&
             !access.isPublic()
         }
       val privateFields =
-        allBeforeFields.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicFieldSignature(value) &&
-            allAfterFields.containsKey(key) &&
+        allBeforeFields.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicFieldSignature(it.value) &&
+            allAfterFields.containsKey(it.key) &&
             access.isPrivate()
         }
       val publicAfterMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isPublic()
         }
       val protectedAfterMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isProtected()
         }
       val nonPublicMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allAfterMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allAfterMethods.containsKey(it.key) &&
             !access.isPublic()
         }
       val privateMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allAfterMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allAfterMethods.containsKey(it.key) &&
             access.isPrivate()
         }
       val apiDeltas = mutableListOf<Delta>()
@@ -555,11 +569,11 @@ enum class DeltaType {
       ((publicAfterMethods.keys intersect nonPublicMethods.keys) union
           ((protectedAfterMethods.keys) intersect privateMethods.keys))
         .forEach {
-          val method = allAfterMethods.get(it)
+          val method = allAfterMethods.get(it)!!
           apiDeltas.add(
             Delta(
               after.name,
-              method!!.name,
+              method.name,
               String.format(
                 "Method %s on class %s has increased its visiblity.",
                 getMethodSignature(method),
@@ -574,11 +588,11 @@ enum class DeltaType {
       ((publicAfterFields.keys intersect nonPublicFields.keys) union
           (protectedAfterFields.keys intersect privateFields.keys))
         .forEach {
-          val field = allAfterFields.get(it)
+          val field = allAfterFields.get(it)!!
           apiDeltas.add(
             Delta(
               after.name,
-              field!!.name,
+              field.name,
               String.format(
                 "Field %s on class %s has reduced its visiblity.",
                 field.name,
@@ -601,25 +615,25 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val afterStaticMethods =
-        allAfterMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allAfterMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isStatic()
         }
       val beforeStaticMethods =
-        allBeforeMethods.filter { (key, value) ->
-          val access = AccessDescriptor(value.access)
-          !hasNonPublicMethodSignature(value) &&
-            allBeforeMethods.containsKey(key) &&
+        allBeforeMethods.filter {
+          val access = AccessDescriptor(it.value.access)
+          !hasNonPublicMethodSignature(it.value) &&
+            allBeforeMethods.containsKey(it.key) &&
             access.isStatic()
         }
 
       return (beforeStaticMethods.keys subtract afterStaticMethods.keys).map {
-        val method = beforeStaticMethods.get(it)
+        val method = beforeStaticMethods.get(it)!!
         Delta(
-          after!!.name,
-          method!!.name,
+          after.name,
+          method.name,
           String.format("Method %s on class %s removed static.", getMethodSignature(method), after),
           CHANGED_FROM_STATIC,
           VersionDelta.MINOR,

@@ -154,6 +154,9 @@ exports.genStream = functionsV2.https.onCall(async (request, response) => {
       response.sendChunk(chunk);
     }
   }
+  else {
+      console.log("CLIENT DOES NOT SUPPORT STEAMING");
+  }
   return streamData.join(' ');
 });
 
@@ -225,6 +228,8 @@ exports.genStreamLargeData = functionsV2.https.onCall(
         response.sendChunk(chunk);
         await sleep(100);
       }
+    } else {
+      console.log("CLIENT DOES NOT SUPPORT STEAMING")
     }
     return "Stream Completed";
   }

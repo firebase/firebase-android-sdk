@@ -1,3 +1,44 @@
 [build-system]
-requires = ["setuptools ~= 58.0"]
+requires = ["setuptools ~= 70.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "fireci"
+version = "0.1"
+dependencies = [
+  "protobuf==4.25.8",
+  "click==8.1.7",
+  "google-cloud-storage==2.18.2",
+  "mypy==1.6.0",
+  "numpy==1.24.4",
+  "pandas==1.5.3",
+  "PyGithub==1.58.2",
+  "pystache==0.6.0",
+  "requests==2.32.4",
+  "seaborn==0.12.2",
+  "PyYAML==6.0.1",
+  "termcolor==2.4.0",
+  "pytest"
+]
+
+[project.scripts]
+fireci = "fireci.main:cli"
+
+[tool.setuptools]
+packages = ["fireci", "fireciplugins"]
+
+[tool.mypy]
+strict_optional = false
+
+[[tool.mypy.overrides]]
+  module = [
+	"google.cloud",
+	"matplotlib",
+	"matplotlib.pyplot",
+	"pandas",
+	"pystache",
+	"requests",
+	"seaborn",
+	"yaml"
+  ]
+  ignore_missing_imports = true

@@ -24,6 +24,6 @@ firebaseLibrary {
 }
 
 android{
-    namespace 'com.example.firebase-storage'
+    namespace 'com.example.firebase.storage'
     compileSdkVersion 26
 }
