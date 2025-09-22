@@ -71,7 +71,7 @@ internal constructor(
      * content from those pages to inform and enhance its response.
      *
      * @param urlContext Specifies the URL context configuration.
-     * @return A [Tool] configured for URL context
+     * @return A [Tool] configured for URL context.
      */
     @JvmStatic
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
