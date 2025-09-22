@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,7 +111,6 @@ class QueueFileLogStore implements FileLogStore {
 
   @Override
   public void closeLogFile() {
-    CommonUtils.closeOrLog(logFile, "There was a problem closing the Crashlytics log file.");
     logFile = null;
   }
 
