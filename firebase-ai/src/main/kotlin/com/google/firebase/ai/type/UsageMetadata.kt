@@ -39,9 +39,9 @@ public class UsageMetadata(
   public val totalTokenCount: Int,
   public val promptTokensDetails: List<ModalityTokenCount>,
   public val candidatesTokensDetails: List<ModalityTokenCount>,
-  public val toolUsePromptTokensDetails: List<ModalityTokenCount>,
   public val thoughtsTokenCount: Int,
   public val toolUsePromptTokenCount: Int,
+  public val toolUsePromptTokensDetails: List<ModalityTokenCount>,
 ) {
 
   @Serializable
@@ -51,9 +51,9 @@ public class UsageMetadata(
     val totalTokenCount: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
     val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
-    val toolUsePromptTokensDetails: List<ModalityTokenCount.Internal>? = null,
     val thoughtsTokenCount: Int? = null,
     val toolUsePromptTokenCount: Int? = null,
+    val toolUsePromptTokensDetails: List<ModalityTokenCount.Internal>? = null,
   ) {
 
     internal fun toPublic(): UsageMetadata =
@@ -63,10 +63,10 @@ public class UsageMetadata(
         totalTokenCount ?: 0,
         promptTokensDetails = promptTokensDetails?.map { it.toPublic() } ?: emptyList(),
         candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList(),
-        toolUsePromptTokensDetails = toolUsePromptTokensDetails?.map { it.toPublic() }
-            ?: emptyList(),
         thoughtsTokenCount ?: 0,
         toolUsePromptTokenCount ?: 0,
+        toolUsePromptTokensDetails = toolUsePromptTokensDetails?.map { it.toPublic() }
+            ?: emptyList(),
       )
   }
 }

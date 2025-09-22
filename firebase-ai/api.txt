@@ -1259,7 +1259,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> toolUsePromptTokensDetails, int thoughtsTokenCount, int toolUsePromptTokenCount);
+    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount, int toolUsePromptTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> toolUsePromptTokensDetails);
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
