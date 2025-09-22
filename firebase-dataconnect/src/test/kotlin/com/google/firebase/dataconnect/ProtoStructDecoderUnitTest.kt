@@ -662,8 +662,8 @@ class ProtoStructDecoderUnitTest {
     }
   }
 
-  // TODO: Add tests for decoding to objects with unsupported field types (e.g. Byte, Char) and
-  // list elements of unsupported field types (e.g. Byte, Char).
+  // TODO: Add tests for decoding to objects with unsupported field types (such as Byte or Char) and
+  // list elements of unsupported field types (such as Byte or Char).
 
 }
 
