@@ -124,16 +124,90 @@ Run below to format Java code:
 See [here](../README.md#code-formatting) if you want to be able to format code from within Android
 Studio.
 
-## Build Local Jar of Firestore SDK
+## Using a custom build in your application
 
-```bash
-./gradlew -PprojectsToPublish="firebase-firestore" publishReleasingLibrariesToMavenLocal
+To build `firebase-firestore` from source and use the resulting artifact in your
+Android application, follow these steps.
+
+### 1. Set a custom version
+
+In `firebase-firestore/gradle.properties`, change the `version` to a unique
+value. Appending a suffix makes it easy to identify your custom build.
+
+For example, change:
+```
+version=26.0.2
+latestReleasedVersion=26.0.1
 ```
 
-Developers may then take a dependency on these locally published versions by adding the
-`mavenLocal()` repository to your
-[repositories block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in your
-app module's build.gradle.
+To:
+```
+version=99.99.99-MyFix1
+latestReleasedVersion=26.0.1
+```
+
+### 2. Build the artifact
+
+Build and publish the artifact to your local Maven repository:
+```bash
+./gradlew :firebase-firestore:publishToMavenLocal
+```
+
+### 3. Update your app's repositories
+
+In your application's `settings.gradle` or `settings.gradle.kts` file, add
+`mavenLocal()` to the `repositories` block within
+`dependencyResolutionManagement`.
+
+```kotlin
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    google()
+    mavenCentral()
+    mavenLocal() // Add this line
+  }
+}
+```
+
+### 4. Update your app's dependencies
+
+In your application's `build.gradle` or `build.gradle.kts` file, update the
+`firebase-firestore` dependency to use the custom version you set in step 1.
+
+```kotlin
+dependencies {
+  implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+  // Use the custom version from gradle.properties
+  implementation("com.google.firebase:firebase-firestore:99.99.99-MyFix1")
+  // ... other dependencies
+}
+```
+
+### Optional: Verify the version at runtime
+
+To confirm that your application is using the custom artifact, you can log its
+version. Add the following code to your application:
+
+```kotlin
+android.util.Log.i("FirestoreVersion", com.google.firebase.firestore.BuildConfig.VERSION_NAME)
+```
+
+### Building with local module dependencies
+
+If your changes require building other modules in this repository (like
+`firebase-common`), you must build and publish them locally as well.
+
+1.  In the dependency's directory (e.g., `firebase-common/`), edit
+    `gradle.properties` to set a unique version.
+2.  Publish the dependency to Maven Local:
+    ```bash
+    ./gradlew :firebase-common:publishToMavenLocal
+    ```
+3.  In `firebase-firestore/firebase-firestore.gradle`, ensure the dependency is a
+    project dependency. For example, change `api(libs.firebase.common)` to
+    `api(project(":firebase-common"))`.
+4.  Build and publish the `firebase-firestore` artifact as described in step 2.
 
 ## Misc
 
