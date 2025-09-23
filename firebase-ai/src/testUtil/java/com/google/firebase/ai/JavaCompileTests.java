@@ -141,7 +141,6 @@ public class JavaCompileTests {
         .setTopK(10)
         .setTopP(11.0F)
         .setTemperature(32.0F)
-        .setCandidateCount(1)
         .setMaxOutputTokens(0xCAFEBABE)
         .setFrequencyPenalty(1.0F)
         .setPresencePenalty(2.0F)

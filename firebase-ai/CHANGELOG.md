@@ -1,5 +1,9 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+
+# 17.3.0
+
 - [changed] Bumped internal dependencies.
 - [feature] Added support for code execution.
 - [changed] Marked the public constructors for `ExecutableCodePart` and `CodeExecutionResultPart` as
@@ -20,10 +24,9 @@
   exception when the response contained no candidates.
 - [changed] Added better description for requests which fail due to the Gemini API not being
   configured.
-
-* [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
+- [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
   (#7260)
-* [feature] Added support for limited-use tokens with Firebase App Check. These limited-use tokens
+- [feature] Added support for limited-use tokens with Firebase App Check. These limited-use tokens
   are required for an upcoming optional feature called _replay protection_. We recommend
   [enabling the usage of limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check)
   now so that when replay protection becomes available, you can enable it sooner because more of
@@ -35,8 +38,7 @@
 
 - [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
   transfer, and subject references (#7075)
-
-* [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
+- [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
 
 # 17.0.0
 

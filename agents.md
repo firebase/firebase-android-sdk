@@ -2,6 +2,27 @@
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
 
+## Project Overview
+
+This repository contains the source code for the Firebase Android SDKs. It is a large, multi-module
+Gradle project. The project is written in a mix of Java and Kotlin.
+
+The project is structured as a collection of libraries, each representing a Firebase product or a
+shared component. These libraries are published as Maven artifacts to Google's Maven Repository.
+
+## Project Structure
+
+The `subprojects.cfg` file lists all the subprojects in this repository. Each line in this file
+follows the format `<project-path> # <project-type>`, where `project-type` can be one of the
+following:
+
+- `sdk`: A public-facing SDK that is published.
+- `test`: A test application or a test-only module.
+- `util`: A utility module that is not part of the public API.
+- `directory`: A directory containing other subprojects.
+
+This file is useful for understanding the role of each subproject in the repository.
+
 ## Environment Setup
 
 To work with this repository, the Android SDK must be installed. Use the `sdkmanager` command-line
@@ -45,31 +66,78 @@ tool for this purpose.
       would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
       exact version required.
 
----
+## Building and Running
 
-## Testing
+The project is built using Gradle. The `gradlew` script is provided in the root directory.
 
-This repository uses two main types of tests:
+### Building
 
-1.  **Unit Tests**:
+To build the entire project, you can run the following command:
 
-    - These tests run on the local JVM.
-    - To execute unit tests for a specific project, run:
-      ```bash
-      ./gradlew :<firebase-project>:check
-      ```
+```bash
+./gradlew build
+```
 
-2.  **Integration Tests**:
-    - These tests run on a hardware device or emulator.
-    - Ensure a `google-services.json` file is present in the repository root.
-    - To execute integration tests for a specific project, run:
-      ```bash
-      ./gradlew :<firebase-project>:connectedCheck
-      ```
+To build a specific project, you can run:
 
----
+```bash
+./gradlew :<firebase-project>:build
+```
 
-## API Surface
+### Running Tests
+
+The project has three types of tests: unit tests, integration tests, and smoke tests.
+
+#### Unit Tests
+
+Unit tests run on the local JVM. They can be executed with the following command:
+
+```bash
+./gradlew :<firebase-project>:check
+```
+
+#### Integration Tests
+
+Integration tests run on a hardware device or emulator. Before running integration tests, you need
+to add a `google-services.json` file to the root of the project.
+
+To run integration tests on a local emulator, use the following command:
+
+```bash
+./gradlew :<firebase-project>:connectedCheck
+```
+
+To run integration tests on Firebase Test Lab, use the following command:
+
+```bash
+./gradlew :<firebase-project>:deviceCheck
+```
+
+### Publishing
+
+To publish a project locally, you can use the following command:
+
+```bash
+./gradlew -PprojectsToPublish="<firebase-project>" publishReleasingLibrariesToMavenLocal
+```
+
+## Development Conventions
+
+### Code Formatting
+
+The project uses Spotless for code formatting. To format the code, run the following command:
+
+```bash
+./gradlew spotlessApply
+```
+
+To format a specific project, run:
+
+```bash
+./gradlew :<firebase-project>:spotlessApply
+```
+
+### API Surface
 
 The public API of the Firebase SDKs is managed using a set of annotations:
 
@@ -79,9 +147,7 @@ The public API of the Firebase SDKs is managed using a set of annotations:
 - `@Keep`: Marks APIs that need to be preserved at runtime, usually due to reflection. This
   annotation should be used sparingly as it prevents Proguard from removing or renaming the code.
 
----
-
-## Common Patterns
+### Common Patterns
 
 This repository uses a combination of dependency injection frameworks:
 
@@ -94,7 +160,22 @@ This repository uses a combination of dependency injection frameworks:
   the `ComponentRegistrar` of an SDK, which allows for the injection of dependencies from
   `firebase-components` into the Dagger graph.
 
----
+### Proguarding
+
+The project supports Proguarding. Proguard rules are defined in `proguard.txt` files within each
+project.
+
+## External Dependencies
+
+Do not add, under any circunstance, any new dependency to a SDK that does not already exists in the
+`gradle/libs.versions.toml`, and even then, only do it if cxexplicitly asked to do so. The Firebase
+SDKs are designed to be lightweight, and adding new dependencies can increase the size of the final
+artifacts.
+
+## Contributing
+
+Contributions are welcome. Please read the [contribution guidelines](/CONTRIBUTING.md) to get
+started.
 
 ## Iteration Loop
 
@@ -109,19 +190,6 @@ After you make a change, here's the flow you should follow:
   ./gradlew :<firebase-project>:check
   ```
 - If necessary, run integration tests based on the instructions above.
-
----
-
-## External Dependencies
-
----
-
-Do not add, under any circunstance, any new dependency to a SDK that does not already exists in the
-`gradle/libs.versions.toml`, and even then, only do it if cxexplicitly asked to do so. The Firebase
-SDKs are designed to be lightweight, and adding new dependencies can increase the size of the final
-artifacts.
-
----
 
 ## Updating this Guide
 

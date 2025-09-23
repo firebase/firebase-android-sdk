@@ -34,15 +34,15 @@ import kotlinx.serialization.serializer
 /**
  * Represents a variable or field of the Data Connect custom scalar type `Any`.
  *
- * ### Valid Values for `AnyValue`
+ * ### Valid values for `AnyValue`
  *
  * `AnyValue` can encapsulate [String], [Boolean], [Double], a [List] of one of these types, or a
- * [Map] whose values are one of these types. The values can be arbitrarily nested (e.g. a list that
- * contains a map that contains other maps, and so on. The lists and maps can contain heterogeneous
- * values; for example, a single [List] can contain a [String] value, some [Boolean] values, and
- * some [List] values. The values of a [List] or a [Map] may be `null`. The only exception is that a
- * variable or field declared as `[Any]` in GraphQL may _not_ have `null` values in the top-level
- * list; however, nested lists or maps _may_ contain null values.
+ * [Map] whose values are one of these types. The values can be arbitrarily nested (for example, a
+ * list that contains a map that contains other maps, and so on). The lists and maps can contain
+ * heterogeneous values; for example, a single [List] can contain a [String] value, some [Boolean]
+ * values, and some [List] values. The values of a [List] or a [Map] may be `null`. The only
+ * exception is that a variable or field declared as `[Any]` in GraphQL may _not_ have `null` values
+ * in the top-level list; however, nested lists or maps _may_ contain null values.
  *
  * ### Storing `Int` in an `AnyValue`
  *
@@ -51,15 +51,15 @@ import kotlinx.serialization.serializer
  * ### Storing `Long` in an `AnyValue`
  *
  * To store a [Long] value, converting it to a [Double] can be lossy if the value is sufficiently
- * large (or small) to not be exactly represented by [Double]. The _largest_ [Long] value that can
+ * large (or small) to not be exactly representable by [Double]. The _largest_ [Long] value that can
  * be stored in a [Double] with its exact value is `2^53 – 1` (`9007199254740991`). The _smallest_
  * [Long] value that can be stored in a [Double] with its exact value is `-(2^53 – 1)`
  * (`-9007199254740991`). This limitation is exactly the same in JavaScript, which does not have a
  * native "int" or "long" type, but rather stores all numeric values in a 64-bit floating point
  * value. See
- * [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER])
+ * [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)
  * and
- * [MIN_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER])
+ * [MIN_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER)
  * for more details.
  *
  * ### Integration with `kotlinx.serialization`
@@ -72,6 +72,7 @@ import kotlinx.serialization.serializer
  *
  * ```
  * type Foo @table { value: Any }
+ *
  * mutation FooInsert($value: Any) {
  *   key: foo_insert(data: { value: $value })
  * }
@@ -102,10 +103,11 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    *
    * An exception is thrown if any of the values of the map, or its sub-values, are invalid for
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
-   * of value values.
+   * of valid values.
    *
-   * This class makes a _copy_ of the given map; therefore, any modifications to the map after this
-   * object is created will have no effect on this [AnyValue] object.
+   * This class makes a _deep copy_ of the given map; therefore, any modifications to the map or its
+   * constituent lists or maps after this object is created will have no effect on this [AnyValue]
+   * object.
    */
   public constructor(value: Map<String, Any?>) : this(value.toValueProto())
 
@@ -114,10 +116,11 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    *
    * An exception is thrown if any of the values of the list, or its sub-values, are invalid for
    * being stored in [AnyValue]; see the [AnyValue] class documentation for a detailed description
-   * of value values.
+   * of valid values.
    *
-   * This class makes a _copy_ of the given list; therefore, any modifications to the list after
-   * this object is created will have no effect on this [AnyValue] object.
+   * This class makes a _deep copy_ of the given list; therefore, any modifications to the list or
+   * its constituent lists or maps after this object is created will have no effect on this
+   * [AnyValue] object.
    */
   public constructor(value: List<Any?>) : this(value.toValueProto())
 
@@ -133,7 +136,7 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
   /**
    * The native Kotlin type of the value encapsulated in this object.
    *
-   * Although this type is `Any` it will be one of `String, `Boolean`, `Double`, `List<Any?>` or
+   * Although this type is `Any` it will be one of `String`, `Boolean`, `Double`, `List<Any?>` or
    * `Map<String, Any?>`. See the [AnyValue] class documentation for a detailed description of the
    * types of values that are supported.
    */

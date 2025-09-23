@@ -59,7 +59,7 @@ dependencies {
   implementation(libs.org.json)
   implementation(libs.bundles.maven.resolver)
 
-  implementation("com.google.guava:guava:31.1-jre")
+  implementation("com.google.guava:guava:33.4.8-jre")
   implementation("org.ow2.asm:asm-tree:9.8")
   implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
   implementation(libs.kotlinx.serialization.json)
