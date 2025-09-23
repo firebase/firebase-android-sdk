@@ -10,6 +10,8 @@
   [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
 - [changed] Improve query performance via internal memoization of calculated document data.
   [#7370](//github.com/firebase/firebase-android-sdk/issues/7370)
+- [changed] Improve query performance by avoiding excessive Comparator instance creation.
+  [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
 
 # 26.0.0
 
