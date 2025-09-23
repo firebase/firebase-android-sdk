@@ -503,10 +503,10 @@ public class Segment(
  *
  * @property urlMetadata List of [UrlMetadata] used to provide context to the Gemini model.
  */
-public class UrlContextMetadata(public val urlMetadata: List<UrlMetadata>) {
+public class UrlContextMetadata internal constructor(public val urlMetadata: List<UrlMetadata>) {
   @Serializable
-  internal data class Internal(val urlMetadata: List<UrlMetadata.Internal>) {
-    internal fun toPublic() = UrlContextMetadata(urlMetadata.map { it.toPublic() })
+  internal data class Internal(val urlMetadata: List<UrlMetadata.Internal>?) {
+    internal fun toPublic() = UrlContextMetadata(urlMetadata?.map { it.toPublic() } ?: emptyList())
   }
 }
 
@@ -516,7 +516,8 @@ public class UrlContextMetadata(public val urlMetadata: List<UrlMetadata>) {
  * @property retrievedUrl The retrieved URL.
  * @property urlRetrievalStatus The status of the URL retrieval.
  */
-public class UrlMetadata(
+public class UrlMetadata
+internal constructor(
   public val retrievedUrl: String?,
   public val urlRetrievalStatus: UrlRetrievalStatus
 ) {
