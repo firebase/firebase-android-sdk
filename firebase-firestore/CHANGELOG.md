@@ -1,5 +1,7 @@
 # Unreleased
 
+# 26.0.1
+
 - [changed] Bumped internal dependencies.
 - [changed] Improve the performance of queries in collections that contain many deleted documents.
   [#7295](//github.com/firebase/firebase-android-sdk/issues/7295)
@@ -8,6 +10,8 @@
   [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
 - [changed] Improve query performance via internal memoization of calculated document data.
   [#7370](//github.com/firebase/firebase-android-sdk/issues/7370)
+- [changed] Improve query performance by avoiding excessive Comparator instance creation.
+  [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
 - [changed] Improve query performance by using an unsorted HashMap instead of a sorted TreeMap.
   [#7389](//github.com/firebase/firebase-android-sdk/pull/7389)
 

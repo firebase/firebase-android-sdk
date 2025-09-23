@@ -33,15 +33,16 @@ public interface DataConnectOperationFailureResponse<Data> {
    * * [Double]
    * * [List] containing any of the types in this list of types
    * * [Map] with [String] keys and values of the types in this list of types
-   *
-   * Consider using [toJson] to get a higher-level object.
    */
+  // TODO(b/446167496) Add a link to [toJson] in the kdoc comments above when the toJson extension
+  //  function is implemented.
   public val rawData: Map<String, Any?>?
 
   /**
    * The list of errors provided by the backend in the response message; may be empty.
    *
-   * See https://spec.graphql.org/draft/#sec-Errors for details.
+   * See [https://spec.graphql.org/draft/#sec-Errors](https://spec.graphql.org/draft/#sec-Errors)
+   * for details.
    */
   public val errors: List<ErrorInfo>
 
@@ -69,7 +70,8 @@ public interface DataConnectOperationFailureResponse<Data> {
   /**
    * Information about the error, as provided in the response payload from the backend.
    *
-   * See https://spec.graphql.org/draft/#sec-Errors for details.
+   * See [https://spec.graphql.org/draft/#sec-Errors](https://spec.graphql.org/draft/#sec-Errors)
+   * for details.
    */
   public interface ErrorInfo {
     /** The error's message. */
