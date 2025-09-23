@@ -308,56 +308,24 @@ public final class LocalSerializerTest {
   @Test
   public void testEncodesFoundDocument() {
     MutableDocument document = doc("some/path", 42, map("foo", "bar"));
-
-    com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
-        com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
-            .setDocument(
-                com.google.firestore.v1.Document.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
-                    .putFields("foo", Value.newBuilder().setStringValue("bar").build())
-                    .setUpdateTime(
-                        com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
-            .build();
-
-    assertEquals(maybeDocProto, serializer.encodeMaybeDocument(document));
-    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(document);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
     assertEquals(document, decoded);
   }
 
   @Test
   public void testEncodesDeletedDocument() {
     MutableDocument deletedDoc = deletedDoc("some/path", 42);
-
-    com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
-        com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
-            .setNoDocument(
-                com.google.firebase.firestore.proto.NoDocument.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
-                    .setReadTime(
-                        com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
-            .build();
-
-    assertEquals(maybeDocProto, serializer.encodeMaybeDocument(deletedDoc));
-    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(deletedDoc);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
     assertEquals(deletedDoc, decoded);
   }
 
   @Test
   public void testEncodesUnknownDocument() {
     MutableDocument unknownDoc = unknownDoc("some/path", 42);
-
-    com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
-        com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
-            .setUnknownDocument(
-                com.google.firebase.firestore.proto.UnknownDocument.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
-                    .setVersion(
-                        com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
-            .setHasCommittedMutations(true)
-            .build();
-
-    assertEquals(maybeDocProto, serializer.encodeMaybeDocument(unknownDoc));
-    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(unknownDoc);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
     assertEquals(unknownDoc, decoded);
   }
 

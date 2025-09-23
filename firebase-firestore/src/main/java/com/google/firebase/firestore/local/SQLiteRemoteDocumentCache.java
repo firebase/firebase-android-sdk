@@ -34,8 +34,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Function;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -103,7 +101,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     DocumentKey documentKey = document.getKey();
     Timestamp timestamp = readTime.getTimestamp();
-    MessageLite message = serializer.encodeMaybeDocument(document);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(document);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
@@ -114,7 +112,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
         DocumentType.forMutableDocument(document).dbValue,
-        message.toByteArray());
+        encodedDocument);
 
     indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
@@ -357,9 +355,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       byte[] bytes, int readTimeSeconds, int readTimeNanos) {
     try {
       return serializer
-          .decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes))
+          .decodeMaybeDocument(bytes)
           .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
-    } catch (InvalidProtocolBufferException e) {
+    } catch (Exception e) {
       throw fail("MaybeDocument failed to parse: %s", e);
     }
   }

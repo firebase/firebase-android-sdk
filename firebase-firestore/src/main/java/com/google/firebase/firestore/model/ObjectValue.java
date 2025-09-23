@@ -65,8 +65,11 @@ public final class ObjectValue implements Cloneable {
   private final Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
-    return new ObjectValue(
-        Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(value)).build());
+    return fromMapValue(MapValue.newBuilder().putAllFields(value).build());
+  }
+
+  public static ObjectValue fromMapValue(MapValue mapValue) {
+    return new ObjectValue(Value.newBuilder().setMapValue(mapValue).build());
   }
 
   public ObjectValue(Value value) {

@@ -152,7 +152,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
     for (Document doc : new DocumentIterable()) {
-      count += serializer.encodeMaybeDocument(doc).getSerializedSize();
+      count += serializer.encodeMaybeDocument(doc).length;
     }
     return count;
   }

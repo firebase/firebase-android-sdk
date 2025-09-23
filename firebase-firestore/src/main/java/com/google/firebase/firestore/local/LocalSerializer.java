@@ -22,11 +22,11 @@ import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.DocumentDecoder;
+import com.google.firebase.firestore.model.DocumentEncoder;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
-import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -48,102 +48,14 @@ public final class LocalSerializer {
     this.rpcSerializer = rpcSerializer;
   }
 
-  /** Encodes a MaybeDocument model to the equivalent protocol buffer for local storage. */
-  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(Document document) {
-    com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
-        com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
-
-    if (document.isNoDocument()) {
-      builder.setNoDocument(encodeNoDocument(document));
-    } else if (document.isFoundDocument()) {
-      builder.setDocument(encodeDocument(document));
-    } else if (document.isUnknownDocument()) {
-      builder.setUnknownDocument(encodeUnknownDocument(document));
-    } else {
-      throw fail("Cannot encode invalid document %s", document);
-    }
-
-    builder.setHasCommittedMutations(document.hasCommittedMutations());
-
-    return builder.build();
+  /** Encodes a Document model into a byte array for local storage. */
+  byte[] encodeMaybeDocument(Document document) {
+    return DocumentEncoder.INSTANCE.encode(document);
   }
 
-  /** Decodes a MaybeDocument proto to the equivalent model. */
-  MutableDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument proto) {
-    switch (proto.getDocumentTypeCase()) {
-      case DOCUMENT:
-        return decodeDocument(proto.getDocument(), proto.getHasCommittedMutations());
-
-      case NO_DOCUMENT:
-        return decodeNoDocument(proto.getNoDocument(), proto.getHasCommittedMutations());
-
-      case UNKNOWN_DOCUMENT:
-        return decodeUnknownDocument(proto.getUnknownDocument());
-
-      default:
-        throw fail("Unknown MaybeDocument %s", proto);
-    }
-  }
-
-  /**
-   * Encodes a Document for local storage. This differs from the v1 RPC serializer for Documents in
-   * that it preserves the updateTime, which is considered an output only value by the server.
-   */
-  private com.google.firestore.v1.Document encodeDocument(Document document) {
-    com.google.firestore.v1.Document.Builder builder =
-        com.google.firestore.v1.Document.newBuilder();
-    builder.setName(rpcSerializer.encodeKey(document.getKey()));
-    builder.putAllFields(document.getData().getFieldsMap());
-    Timestamp updateTime = document.getVersion().getTimestamp();
-    builder.setUpdateTime(rpcSerializer.encodeTimestamp(updateTime));
-    return builder.build();
-  }
-
-  /** Decodes a Document proto to the equivalent model. */
-  private MutableDocument decodeDocument(
-      com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
-    DocumentKey key = rpcSerializer.decodeKey(document.getName());
-    SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
-    MutableDocument result =
-        MutableDocument.newFoundDocument(
-            key, version, ObjectValue.fromMap(document.getFieldsMap()));
-    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
-  }
-
-  /** Encodes a NoDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(Document document) {
-    com.google.firebase.firestore.proto.NoDocument.Builder builder =
-        com.google.firebase.firestore.proto.NoDocument.newBuilder();
-    builder.setName(rpcSerializer.encodeKey(document.getKey()));
-    builder.setReadTime(rpcSerializer.encodeTimestamp(document.getVersion().getTimestamp()));
-    return builder.build();
-  }
-
-  /** Decodes a NoDocument proto to the equivalent model. */
-  private MutableDocument decodeNoDocument(
-      com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
-    DocumentKey key = rpcSerializer.decodeKey(proto.getName());
-    SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    MutableDocument result = MutableDocument.newNoDocument(key, version);
-    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
-  }
-
-  /** Encodes a UnknownDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.UnknownDocument encodeUnknownDocument(
-      Document document) {
-    com.google.firebase.firestore.proto.UnknownDocument.Builder builder =
-        com.google.firebase.firestore.proto.UnknownDocument.newBuilder();
-    builder.setName(rpcSerializer.encodeKey(document.getKey()));
-    builder.setVersion(rpcSerializer.encodeTimestamp(document.getVersion().getTimestamp()));
-    return builder.build();
-  }
-
-  /** Decodes a UnknownDocument proto to the equivalent model. */
-  private MutableDocument decodeUnknownDocument(
-      com.google.firebase.firestore.proto.UnknownDocument proto) {
-    DocumentKey key = rpcSerializer.decodeKey(proto.getName());
-    SnapshotVersion version = rpcSerializer.decodeVersion(proto.getVersion());
-    return MutableDocument.newUnknownDocument(key, version);
+  /** Decodes a MutableDocument from a byte array returned from {@link #encodeMaybeDocument}. */
+  MutableDocument decodeMaybeDocument(byte[] bytes) {
+    return DocumentDecoder.INSTANCE.decode(bytes);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */

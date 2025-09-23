@@ -36,16 +36,20 @@ import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.DocumentEncoder;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.proto.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Document;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Value;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
@@ -731,13 +735,15 @@ public class SQLiteSchemaTest {
   }
 
   private byte[] createDummyDocument(String name) {
-    return MaybeDocument.newBuilder()
-        .setDocument(
-            Document.newBuilder()
-                .setName("projects/foo/databases/(default)/documents/" + name)
-                .build())
-        .build()
-        .toByteArray();
+    MutableDocument document =
+        MutableDocument.newFoundDocument(
+            DocumentKey.fromPathString("projects/foo/databases/(default)/documents/" + name),
+            SnapshotVersion.NONE,
+            ObjectValue.fromMapValue(
+                MapValue.newBuilder()
+                    .putFields("foo", Value.newBuilder().setIntegerValue(42).build())
+                    .build()));
+    return DocumentEncoder.INSTANCE.encode(document);
   }
 
   private Target createDummyQueryTargetWithLimboFreeVersion(int targetId) {
