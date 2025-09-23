@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.EMPTY_MAP;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static org.junit.Assert.assertEquals;
@@ -71,20 +72,14 @@ public class DocumentViewChangeSetTest {
 
     List<DocumentViewChange> changes = set.getChanges();
 
-    assertEquals(7, changes.size());
-    assertEquals(added, changes.get(0).getDocument());
-    assertEquals(Type.ADDED, changes.get(0).getType());
-    assertEquals(removed, changes.get(1).getDocument());
-    assertEquals(Type.REMOVED, changes.get(1).getType());
-    assertEquals(modified, changes.get(2).getDocument());
-    assertEquals(Type.MODIFIED, changes.get(2).getType());
-    assertEquals(addedThenModified, changes.get(3).getDocument());
-    assertEquals(Type.ADDED, changes.get(3).getType());
-    assertEquals(removedThenAdded, changes.get(4).getDocument());
-    assertEquals(Type.MODIFIED, changes.get(4).getType());
-    assertEquals(modifiedThenRemoved, changes.get(5).getDocument());
-    assertEquals(Type.REMOVED, changes.get(5).getType());
-    assertEquals(modifiedThenModified, changes.get(6).getDocument());
-    assertEquals(Type.MODIFIED, changes.get(6).getType());
+    assertThat(changes)
+        .containsExactly(
+            DocumentViewChange.create(Type.ADDED, added),
+            DocumentViewChange.create(Type.REMOVED, removed),
+            DocumentViewChange.create(Type.MODIFIED, modified),
+            DocumentViewChange.create(Type.ADDED, addedThenModified),
+            DocumentViewChange.create(Type.MODIFIED, removedThenAdded),
+            DocumentViewChange.create(Type.REMOVED, modifiedThenRemoved),
+            DocumentViewChange.create(Type.MODIFIED, modifiedThenModified));
   }
 }
