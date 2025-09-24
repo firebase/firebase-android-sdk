@@ -21,18 +21,18 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 /**
- * Information about a Firebase Data Connect "operation" (i.e. a query or mutation).
+ * Information about a Firebase Data Connect "operation" (a query or a mutation).
  *
  * [OperationRef] has two inheritors: [QueryRef] for queries and [MutationRef] for mutations.
  * [OperationRef] merely serves to provide a common interface for the parts of queries and mutations
  * that are shared.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [OperationRef] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  *
- * ### Not Stable for Inheritance
+ * ### Not stable for inheritance
  *
  * The [OperationRef] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.
@@ -81,7 +81,7 @@ public interface OperationRef<Data, Variables> {
    * mutation InsertPerson($name: String!, $age: Int) {...}
    * ```
    *
-   * would have two variables named `"name"` and `"age"` whose values are [String] and [Int?]
+   * would have two variables named `"name"` and `"age"` whose values are [String] and `Int?`
    * values, respectively.
    */
   public val variables: Variables
@@ -98,7 +98,7 @@ public interface OperationRef<Data, Variables> {
    * query GetPersonById($id: UUID!) { person(id: $id) { name age } }
    * ```
    *
-   * could define its data class could as follows:
+   * could define its data class as follows:
    *
    * ```
    * @Serializable
@@ -129,7 +129,7 @@ public interface OperationRef<Data, Variables> {
    * mutation InsertPerson($name: String!, $age: Int) {...}
    * ```
    *
-   * could define its variables class could as follows:
+   * could define its variables class as follows:
    *
    * ```
    * @Serializable
@@ -263,12 +263,12 @@ public interface OperationRef<Data, Variables> {
  * Typically, one of the inheritors of [OperationResult] is used, namely [QueryResult] for queries
  * and [MutationResult] for mutations.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [OperationResult] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  *
- * ### Not Stable for Inheritance
+ * ### Not stable for inheritance
  *
  * The [OperationResult] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.
