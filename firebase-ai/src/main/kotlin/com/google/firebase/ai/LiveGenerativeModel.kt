@@ -116,22 +116,29 @@ internal constructor(
     val data: String = Json.encodeToString(clientMessage)
     try {
       val webSession = controller.getWebSocketSession(location)
-      webSession.send(Frame.Text(data))
-      val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-      val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+      try {
+        webSession.send(Frame.Text(data))
+        val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+        val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
-      return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(
-          session = webSession,
-          blockingDispatcher = blockingDispatcher,
-          firebaseApp = firebaseApp
-        )
-      } else {
-        webSession.close()
-        throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+        return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+          LiveSession(
+            session = webSession,
+            blockingDispatcher = blockingDispatcher,
+            firebaseApp = firebaseApp
+          )
+        } else {
+          webSession.close()
+          throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+        }
+      } catch (e: ClosedReceiveChannelException) {
+        val reason = webSession.closeReason.await()
+        val message =
+          "Channel was closed by the server.${if(reason!=null) " Details: ${reason.message}" else "" }"
+        throw ServiceConnectionHandshakeFailedException(message, e)
       }
     } catch (e: ClosedReceiveChannelException) {
-      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server", e)
+      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server.", e)
     }
   }
 
