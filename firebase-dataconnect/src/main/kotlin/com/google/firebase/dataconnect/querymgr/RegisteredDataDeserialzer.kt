@@ -61,8 +61,8 @@ internal class RegisteredDataDeserializer<T>(
       onBufferOverflow = BufferOverflow.SUSPEND,
     )
 
-  // The latest update (i.e. the update with the highest sequence number) that has ever been emitted
-  // to `updates`. The `ref` of the value will be null if, and only if, no updates have ever
+  // The latest update (that is, the update with the highest sequence number) that has ever been
+  // emitted to `updates`. The `ref` of the value will be null if, and only if, no updates have ever
   // occurred.
   private val latestUpdate =
     MutableStateFlow<NullableReference<SequencedReference<SuspendingLazy<Result<T>>>>>(

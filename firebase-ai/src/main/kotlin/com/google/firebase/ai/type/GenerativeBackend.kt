@@ -27,7 +27,7 @@ internal constructor(internal val location: String, internal val backend: Genera
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)
 
     /**
-     * References the VertexAI Enterprise backend.
+     * References the VertexAI Gemini API backend.
      *
      * @param location passes a valid cloud server location, defaults to "us-central1"
      */
