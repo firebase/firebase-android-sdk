@@ -17,13 +17,14 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentDecoder;
-import com.google.firebase.firestore.model.DocumentEncoder;
+import com.google.firebase.firestore.model.DocumentInputStream;
+import com.google.firebase.firestore.model.DocumentOutputStream;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -49,13 +50,13 @@ public final class LocalSerializer {
   }
 
   /** Encodes a Document model into a byte array for local storage. */
-  byte[] encodeMaybeDocument(Document document) {
-    return DocumentEncoder.INSTANCE.encode(document);
+  byte[] encodeMaybeDocument(Document document, @Nullable byte[] buffer) {
+    return DocumentOutputStream.Companion.encode(document, buffer);
   }
 
   /** Decodes a MutableDocument from a byte array returned from {@link #encodeMaybeDocument}. */
-  MutableDocument decodeMaybeDocument(byte[] bytes) {
-    return DocumentDecoder.INSTANCE.decode(bytes);
+  MutableDocument decodeMaybeDocument(byte[] bytes, @Nullable byte[] buffer) {
+    return DocumentInputStream.Companion.decode(bytes, buffer);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */

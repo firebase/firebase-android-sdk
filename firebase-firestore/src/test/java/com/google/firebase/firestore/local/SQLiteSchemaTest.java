@@ -36,8 +36,8 @@ import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.DocumentEncoder;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.DocumentOutputStream;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -743,7 +743,7 @@ public class SQLiteSchemaTest {
                 MapValue.newBuilder()
                     .putFields("foo", Value.newBuilder().setIntegerValue(42).build())
                     .build()));
-    return DocumentEncoder.INSTANCE.encode(document);
+    return DocumentOutputStream.Companion.encode(document, null);
   }
 
   private Target createDummyQueryTargetWithLimboFreeVersion(int targetId) {

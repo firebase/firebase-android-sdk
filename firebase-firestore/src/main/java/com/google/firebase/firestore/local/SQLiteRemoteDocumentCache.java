@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.database.Cursor;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -100,7 +101,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     DocumentKey documentKey = document.getKey();
     Timestamp timestamp = readTime.getTimestamp();
-    byte[] encodedDocument = serializer.encodeMaybeDocument(document);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(document, null);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
@@ -165,8 +166,11 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
+    byte[] buffer = new byte[1024];
     while (longQuery.hasMoreSubqueries()) {
-      longQuery.performNextSubquery().forEach(row -> processRow(results, row, /*filter*/ null));
+      longQuery
+          .performNextSubquery()
+          .forEach(row -> processRow(results, row, /*filter*/ null, buffer));
     }
 
     // Backfill any rows with null "document_type" discovered by processRowInBackground().
@@ -255,11 +259,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     bindVars[i] = count;
 
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
+    byte[] buffer = new byte[1024];
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              processRow(results, row, filter);
+              processRow(results, row, filter, buffer);
               if (context != null) {
                 context.incrementDocumentReadCount();
               }
@@ -283,14 +288,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   private void processRow(
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Function<MutableDocument, Boolean> filter,
+      byte[] buffer) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
     boolean documentTypeIsNull = row.isNull(3);
     String path = row.getString(4);
 
-    MutableDocument document = decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+    MutableDocument document =
+        decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos, buffer);
     if (documentTypeIsNull) {
       documentTypeBackfiller.enqueue(path, readTimeSeconds, readTimeNanos, document);
     }
@@ -326,10 +333,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   private MutableDocument decodeMaybeDocument(
-      byte[] bytes, int readTimeSeconds, int readTimeNanos) {
+      byte[] bytes, int readTimeSeconds, int readTimeNanos, byte[] buffer) {
     try {
       return serializer
-          .decodeMaybeDocument(bytes)
+          .decodeMaybeDocument(bytes, buffer)
           .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
     } catch (Exception e) {
       throw fail("MaybeDocument failed to parse: %s", e);

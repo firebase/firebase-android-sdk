@@ -308,24 +308,24 @@ public final class LocalSerializerTest {
   @Test
   public void testEncodesFoundDocument() {
     MutableDocument document = doc("some/path", 42, map("foo", "bar"));
-    byte[] encodedDocument = serializer.encodeMaybeDocument(document);
-    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(document, null);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument, null);
     assertEquals(document, decoded);
   }
 
   @Test
   public void testEncodesDeletedDocument() {
     MutableDocument deletedDoc = deletedDoc("some/path", 42);
-    byte[] encodedDocument = serializer.encodeMaybeDocument(deletedDoc);
-    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(deletedDoc, null);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument, null);
     assertEquals(deletedDoc, decoded);
   }
 
   @Test
   public void testEncodesUnknownDocument() {
     MutableDocument unknownDoc = unknownDoc("some/path", 42);
-    byte[] encodedDocument = serializer.encodeMaybeDocument(unknownDoc);
-    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument);
+    byte[] encodedDocument = serializer.encodeMaybeDocument(unknownDoc, null);
+    MutableDocument decoded = serializer.decodeMaybeDocument(encodedDocument, null);
     assertEquals(unknownDoc, decoded);
   }
 
