@@ -1203,7 +1203,7 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
-    method public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
@@ -1211,7 +1211,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
-    method public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }
 
   public final class ToolConfig {
@@ -1224,25 +1224,23 @@ package com.google.firebase.ai.type {
   public final class UnsupportedUserLocationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
-  public final class UrlContext {
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContext {
     ctor public UrlContext();
   }
 
-  public final class UrlContextMetadata {
-    ctor public UrlContextMetadata(java.util.List<com.google.firebase.ai.type.UrlMetadata> urlMetadata);
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContextMetadata {
     method public java.util.List<com.google.firebase.ai.type.UrlMetadata> getUrlMetadata();
     property public final java.util.List<com.google.firebase.ai.type.UrlMetadata> urlMetadata;
   }
 
-  public final class UrlMetadata {
-    ctor public UrlMetadata(String? retrievedUrl, com.google.firebase.ai.type.UrlRetrievalStatus urlRetrievalStatus);
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlMetadata {
     method public String? getRetrievedUrl();
     method public com.google.firebase.ai.type.UrlRetrievalStatus getUrlRetrievalStatus();
     property public final String? retrievedUrl;
     property public final com.google.firebase.ai.type.UrlRetrievalStatus urlRetrievalStatus;
   }
 
-  public final class UrlRetrievalStatus {
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlRetrievalStatus {
     method public String getName();
     method public int getOrdinal();
     property public final String name;

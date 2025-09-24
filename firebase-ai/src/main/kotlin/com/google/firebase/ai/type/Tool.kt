@@ -73,6 +73,7 @@ internal constructor(
      * @param urlContext Specifies the URL context configuration.
      * @return A [Tool] configured for URL context.
      */
+    @PublicPreviewAPI
     @JvmStatic
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
       return Tool(null, null, null, urlContext)
