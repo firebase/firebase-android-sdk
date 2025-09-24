@@ -95,7 +95,7 @@ class QueueFile {
    *     Data   (Length bytes)
    * </pre>
    */
-  private File rafFile;
+  private final File rafFile;
 
   /**
    * Cached file length. Always a power of 2.
@@ -127,6 +127,7 @@ class QueueFile {
    * access a given file at a time.
    */
   public QueueFile(File file) throws IOException {
+    this.rafFile = file;
     if (!file.exists()) {
       initialize(file);
     }
@@ -221,19 +222,18 @@ class QueueFile {
   private void initialize(File file) throws IOException {
     // Use a temp file so we don't leave a partially-initialized file.
     File tempFile = new File(file.getPath() + ".tmp");
-    openAndExecute(raf -> {
+    try (RandomAccessFile raf = open(tempFile)) {
       raf.setLength(INITIAL_LENGTH);
       raf.seek(0);
       byte[] headerBuffer = new byte[16];
       writeInts(headerBuffer, INITIAL_LENGTH, 0, 0, 0);
       raf.write(headerBuffer);
-    });
+    }
 
     // A rename is atomic.
     if (!tempFile.renameTo(file)) {
       throw new IOException("Rename failed!");
     }
-    this.rafFile = tempFile;
   }
 
   /**
