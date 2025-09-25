@@ -183,8 +183,8 @@ class QueueFile {
       elementCount = readInt(buffer, 4);
       int firstOffset = readInt(buffer, 8);
       int lastOffset = readInt(buffer, 12);
-      first = readElement(firstOffset);
-      last = readElement(lastOffset);
+      first = readElement(firstOffset, raf);
+      last = readElement(lastOffset, raf);
     });
   }
 
@@ -194,26 +194,23 @@ class QueueFile {
    * update the class member variables *after* this call succeeds. Assumes segment writes are atomic
    * in the underlying file system.
    */
-  private void writeHeader(int fileLength, int elementCount, int firstPosition, int lastPosition)
+  private void writeHeader(int fileLength, int elementCount, int firstPosition, int lastPosition,
+      RandomAccessFile raf)
       throws IOException {
     writeInts(buffer, fileLength, elementCount, firstPosition, lastPosition);
-    openAndExecute(raf -> {
-      raf.seek(0);
-      raf.write(buffer);
-    });
+    raf.seek(0);
+    raf.write(buffer);
   }
 
   /**
    * Returns the Element for the given offset.
    */
-  private Element readElement(int position) throws IOException {
+  private Element readElement(int position, RandomAccessFile raf) throws IOException {
     if (position == 0) {
       return Element.NULL;
     }
-    try (RandomAccessFile raf = open(rafFile)) {
-      raf.seek(position);
-      return new Element(position, raf.readInt());
-    }
+    raf.seek(position);
+    return new Element(position, raf.readInt());
   }
 
   /**
@@ -266,23 +263,23 @@ class QueueFile {
    * @param position in file to write to
    * @param buffer to write from
    * @param count # of bytes to write
+   * @param raf scoped underlying file
    */
-  private void ringWrite(int position, byte[] buffer, int offset, int count) throws IOException {
-    final int wrappedPosition = wrapPosition(position);
-    openAndExecute(raf -> {
-      if (wrappedPosition + count <= fileLength) {
-        raf.seek(wrappedPosition);
-        raf.write(buffer, offset, count);
-      } else {
-        // The write overlaps the EOF.
-        // # of bytes to write before the EOF.
-        int beforeEof = fileLength - wrappedPosition;
-        raf.seek(wrappedPosition);
-        raf.write(buffer, offset, beforeEof);
-        raf.seek(HEADER_LENGTH);
-        raf.write(buffer, offset + beforeEof, count - beforeEof);
-      }
-    });
+  private void ringWrite(int position, byte[] buffer, int offset, int count, RandomAccessFile raf)
+      throws IOException {
+    position = wrapPosition(position);
+    if (position + count <= fileLength) {
+      raf.seek(position);
+      raf.write(buffer, offset, count);
+    } else {
+      // The write overlaps the EOF.
+      // # of bytes to write before the EOF.
+      int beforeEof = fileLength - position;
+      raf.seek(position);
+      raf.write(buffer, offset, beforeEof);
+      raf.seek(HEADER_LENGTH);
+      raf.write(buffer, offset + beforeEof, count - beforeEof);
+    }
   }
 
   /**
@@ -291,23 +288,23 @@ class QueueFile {
    * @param position in file to read from
    * @param buffer to read into
    * @param count # of bytes to read
+   * @param raf scoped underlying file
    */
-  private void ringRead(int position, byte[] buffer, int offset, int count) throws IOException {
-    final int wrappedPosition = wrapPosition(position);
-    openAndExecute(raf -> {
-      if (wrappedPosition + count <= fileLength) {
-        raf.seek(wrappedPosition);
-        raf.readFully(buffer, offset, count);
-      } else {
-        // The read overlaps the EOF.
-        // # of bytes to read before the EOF.
-        int beforeEof = fileLength - wrappedPosition;
-        raf.seek(wrappedPosition);
-        raf.readFully(buffer, offset, beforeEof);
-        raf.seek(HEADER_LENGTH);
-        raf.readFully(buffer, offset + beforeEof, count - beforeEof);
-      }
-    });
+  private void ringRead(int position, byte[] buffer, int offset, int count, RandomAccessFile raf)
+      throws IOException {
+    position = wrapPosition(position);
+    if (position + count <= fileLength) {
+      raf.seek(position);
+      raf.readFully(buffer, offset, count);
+    } else {
+      // The read overlaps the EOF.
+      // # of bytes to read before the EOF.
+      int beforeEof = fileLength - position;
+      raf.seek(position);
+      raf.readFully(buffer, offset, beforeEof);
+      raf.seek(HEADER_LENGTH);
+      raf.readFully(buffer, offset + beforeEof, count - beforeEof);
+    }
   }
 
   /**
@@ -334,31 +331,32 @@ class QueueFile {
       throw new IndexOutOfBoundsException();
     }
 
-    expandIfNecessary(count);
+    openAndExecute(raf -> {
+      expandIfNecessary(count, raf);
 
-    // Insert a new element after the current last element.
-    boolean wasEmpty = isEmpty();
-    int position =
-        wasEmpty
-            ? HEADER_LENGTH
-            : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
-    Element newLast = new Element(position, count);
+      // Insert a new element after the current last element.
+      boolean wasEmpty = isEmpty();
+      int position =
+          wasEmpty
+              ? HEADER_LENGTH
+              : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
+      Element newLast = new Element(position, count);
 
-    // Write length.
-    writeInt(buffer, 0, count);
-    ringWrite(newLast.position, buffer, 0, Element.HEADER_LENGTH);
+      // Write length.
+      writeInt(buffer, 0, count);
+      ringWrite(newLast.position, buffer, 0, Element.HEADER_LENGTH, raf);
 
-    // Write data.
-    ringWrite(newLast.position + Element.HEADER_LENGTH, data, offset, count);
-
-    // Commit the addition. If wasEmpty, first == last.
-    int firstPosition = wasEmpty ? newLast.position : first.position;
-    writeHeader(fileLength, elementCount + 1, firstPosition, newLast.position);
-    last = newLast;
-    elementCount++;
-    if (wasEmpty) {
-      first = last; // first element
-    }
+      // Write data.
+      ringWrite(newLast.position + Element.HEADER_LENGTH, data, offset, count, raf);
+      // Commit the addition. If wasEmpty, first == last.
+      int firstPosition = wasEmpty ? newLast.position : first.position;
+      writeHeader(fileLength, elementCount + 1, firstPosition, newLast.position, raf);
+      last = newLast;
+      elementCount++;
+      if (wasEmpty) {
+        first = last; // first element
+      }
+    });
   }
 
   /**
@@ -404,7 +402,7 @@ class QueueFile {
    *
    * @param dataLength length of data being added
    */
-  private void expandIfNecessary(int dataLength) throws IOException {
+  private void expandIfNecessary(int dataLength, RandomAccessFile raf) throws IOException {
     int elementLength = Element.HEADER_LENGTH + dataLength;
     int remainingBytes = remainingBytes();
     if (remainingBytes >= elementLength) {
@@ -428,23 +426,21 @@ class QueueFile {
 
     // If the buffer is split, we need to make it contiguous
     if (endOfLastElement < first.position) {
-      openAndExecute(raf -> {
-        FileChannel channel = raf.getChannel();
-        channel.position(fileLength); // destination position
-        int count = endOfLastElement - Element.HEADER_LENGTH;
-        if (channel.transferTo(HEADER_LENGTH, count, channel) != count) {
-          throw new AssertionError("Copied insufficient number of bytes!");
-        }
-      });
+      FileChannel channel = raf.getChannel();
+      channel.position(fileLength); // destination position
+      int count = endOfLastElement - Element.HEADER_LENGTH;
+      if (channel.transferTo(HEADER_LENGTH, count, channel) != count) {
+        throw new AssertionError("Copied insufficient number of bytes!");
+      }
     }
 
     // Commit the expansion.
     if (last.position < first.position) {
       int newLastPosition = fileLength + last.position - HEADER_LENGTH;
-      writeHeader(newLength, elementCount, first.position, newLastPosition);
+      writeHeader(newLength, elementCount, first.position, newLastPosition, raf);
       last = new Element(newLastPosition, last.length);
     } else {
-      writeHeader(newLength, elementCount, first.position, last.position);
+      writeHeader(newLength, elementCount, first.position, last.position, raf);
     }
 
     fileLength = newLength;
@@ -470,7 +466,7 @@ class QueueFile {
     }
     int length = first.length;
     byte[] data = new byte[length];
-    ringRead(first.position + Element.HEADER_LENGTH, data, 0, length);
+    openAndExecute(raf -> ringRead(first.position + Element.HEADER_LENGTH, data, 0, length, raf));
     return data;
   }
 
@@ -479,7 +475,7 @@ class QueueFile {
    */
   public synchronized void peek(ElementReader reader) throws IOException {
     if (elementCount > 0) {
-      reader.read(new ElementInputStream(first), first.length);
+      openAndExecute(raf -> reader.read(new ElementInputStream(first, raf), first.length));
     }
   }
 
@@ -488,12 +484,14 @@ class QueueFile {
    * added.
    */
   public synchronized void forEach(ElementReader reader) throws IOException {
-    int position = first.position;
-    for (int i = 0; i < elementCount; i++) {
-      Element current = readElement(position);
-      reader.read(new ElementInputStream(current), current.length);
-      position = wrapPosition(current.position + Element.HEADER_LENGTH + current.length);
-    }
+    openAndExecute(raf -> {
+      int position = first.position;
+      for (int i = 0; i < elementCount; i++) {
+        Element current = readElement(position, raf);
+        reader.read(new ElementInputStream(current, raf), current.length);
+        position = wrapPosition(current.position + Element.HEADER_LENGTH + current.length);
+      }
+    });
   }
 
   /**
@@ -515,10 +513,12 @@ class QueueFile {
 
     private int position;
     private int remaining;
+    private final RandomAccessFile raf;
 
-    private ElementInputStream(Element element) {
+    private ElementInputStream(Element element, RandomAccessFile raf) {
       position = wrapPosition(element.position + Element.HEADER_LENGTH);
       remaining = element.length;
+      this.raf = raf;
     }
 
     @Override
@@ -531,7 +531,7 @@ class QueueFile {
         if (length > remaining) {
           length = remaining;
         }
-        ringRead(position, buffer, offset, length);
+        ringRead(position, buffer, offset, length, raf);
         position = wrapPosition(position + length);
         remaining -= length;
         return length;
@@ -546,10 +546,8 @@ class QueueFile {
         return -1;
       }
       int readByte;
-      try (RandomAccessFile raf = open(rafFile)) {
-        raf.seek(position);
-        readByte = raf.read();
-      }
+      raf.seek(position);
+      readByte = raf.read();
       position = wrapPosition(position + 1);
       remaining--;
       return readByte;
@@ -572,24 +570,26 @@ class QueueFile {
     if (isEmpty()) {
       throw new NoSuchElementException();
     }
-    if (elementCount == 1) {
-      clear();
-    } else {
-      // assert elementCount > 1
-      int newFirstPosition = wrapPosition(first.position + Element.HEADER_LENGTH + first.length);
-      ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH);
-      int length = readInt(buffer, 0);
-      writeHeader(fileLength, elementCount - 1, newFirstPosition, last.position);
-      elementCount--;
-      first = new Element(newFirstPosition, length);
-    }
+    openAndExecute(raf -> {
+      if (elementCount == 1) {
+        clear(raf);
+      } else {
+        // assert elementCount > 1
+        int newFirstPosition = wrapPosition(first.position + Element.HEADER_LENGTH + first.length);
+        ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH, raf);
+        int length = readInt(buffer, 0);
+        writeHeader(fileLength, elementCount - 1, newFirstPosition, last.position, raf);
+        elementCount--;
+        first = new Element(newFirstPosition, length);
+      }
+    });
   }
 
   /**
    * Clears this queue. Truncates the file to the initial size.
    */
-  public synchronized void clear() throws IOException {
-    writeHeader(INITIAL_LENGTH, 0, 0, 0);
+  public synchronized void clear(RandomAccessFile raf) throws IOException {
+    writeHeader(INITIAL_LENGTH, 0, 0, 0, raf);
     elementCount = 0;
     first = Element.NULL;
     last = Element.NULL;
