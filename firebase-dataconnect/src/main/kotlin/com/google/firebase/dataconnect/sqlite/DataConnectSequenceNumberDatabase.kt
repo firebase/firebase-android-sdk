@@ -16,23 +16,23 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 
 internal class DataConnectSequenceNumberDatabase(
   dbFile: File?,
+  parentCoroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
   DataConnectSqliteDatabase(
     dbFile = dbFile,
+    parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
 
-  override fun onOpen(db: SQLiteDatabase) {
-    TODO("Not yet implemented")
-  }
+  override suspend fun onOpen(db: KSQLiteDatabase) {}
 }

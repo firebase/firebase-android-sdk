@@ -21,139 +21,166 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import java.io.File
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.withContext
 
 internal abstract class DataConnectSqliteDatabase(
   private val dbFile: File?,
+  parentCoroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
 
-  private val state = MutableStateFlow<State>(State.New)
+  private val coroutineScope =
+    CoroutineScope(
+      parentCoroutineScope.coroutineContext +
+        SupervisorJob(parentCoroutineScope.coroutineContext[Job]) +
+        blockingDispatcher +
+        CoroutineName(logger.nameWithId) +
+        CoroutineExceptionHandler { context, throwable ->
+          logger.warn(throwable) {
+            "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
+          }
+        }
+    )
 
-  protected val db: KSQLiteDatabase
-    get() =
+  private val state: MutableStateFlow<State> =
+    MutableStateFlow(
+      State.Open(
+        coroutineScope.async(CoroutineName("${logger.nameWithId} open"), CoroutineStart.LAZY) {
+          open()
+        }
+      )
+    )
+
+  /**
+   * Closes the underlying sqlite database, if it has been opened, and cancels an in-progress
+   * database operations. This method suspends until the database is closed.
+   */
+  suspend fun close() {
+    coroutineScope.cancel("${logger.nameWithId} close() called")
+
+    val oldState = state.getAndUpdate { State.Closed }
+
+    if (oldState !is State.Open) {
+      return
+    }
+
+    val db = oldState.job.runCatching { await() }.getOrNull()?.db
+    if (db === null) {
+      return
+    }
+
+    logger.debug { "closing sqlite database connection due to close() invocation" }
+    withContext(NonCancellable + blockingDispatcher) { db.runCatching { close() } }
+      .onFailure { logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" } }
+  }
+
+  /**
+   * Runs a block with this object's sqlite database connection.
+   *
+   * This method call will open the database, if it has not yet been opened, and will throw any
+   * exception resulting from such opening. This method will, therefore, suspend, until the database
+   * is opened and [onOpen] has returned.
+   *
+   * This method throws an exception if [close] has been called.
+   */
+  protected suspend fun <T> withDb(
+    operationName: String? = null,
+    block: suspend CoroutineScope.(KSQLiteDatabase) -> T
+  ): T {
+    val db =
       when (val currentState = state.value) {
-        State.New -> throw IllegalStateException("database has not yet been opened [xc8vfe7gy2]")
-        State.Opening ->
-          throw IllegalStateException("database is in the process of opening [afebac2837]")
-        is State.Opened -> currentState.kdb
-        State.Closing -> throw IllegalStateException("database is closing [hj8ndj2g2v]")
-        State.Closed -> throw IllegalStateException("database has been closed [zgexv4ss46]")
+        is State.Open -> currentState.job.await().kdb
+        State.Closing,
+        State.Closed ->
+          throw IllegalStateException("${logger.nameWithId} has been closed [zgexv4ss46]")
       }
 
-  suspend fun open() {
-    state.update { currentState ->
-      when (currentState) {
-        State.New -> State.Opening
-        State.Opening -> throw IllegalStateException("open() has already been called [yq67wee272]")
-        is State.Opened ->
-          throw IllegalStateException("open() has already been called [qgf3wzacqq]")
-        State.Closing ->
-          throw IllegalStateException("open() cannot be called after close() [eh2ny3b83k]")
-        State.Closed ->
-          throw IllegalStateException("open() cannot be called after close() [qzzdc646y7]")
+    val job =
+      coroutineScope.async(CoroutineName("${logger.nameWithId} withDb $operationName")) {
+        block(db)
       }
+
+    return job.await()
+  }
+
+  /**
+   * Called immediately after opening the sqlite database and running some basic PRAGMA statements
+   * to set up the connection (e.g. enabling foreign keys).
+   *
+   * The implementation is expected to do one-time setup for the database connection, mainly
+   * creating and/or migrating the database schema.
+   *
+   * The method will be called from a coroutine whose dispatcher is appropriate for performing
+   * blocking I/O operations; therefore, it is not necessary (or advisable, for performance reasons)
+   * to offload blocking I/O operations to a separate dispatcher.
+   */
+  protected abstract suspend fun onOpen(db: KSQLiteDatabase)
+
+  private suspend fun open(): SqliteDbHandles {
+    check(coroutineContext[CoroutineDispatcher] === blockingDispatcher) {
+      "internal error: open() is expected to be called by a coroutine that uses the " +
+        "blocking dispatcher so that blocking database operations don't need to be " +
+        "explicitly run on a separate dispatcher"
     }
 
     val dbPath = dbFile?.absolutePath ?: ":memory:"
-    val openResult = runCatching {
-      withContext(blockingDispatcher) {
-        logger.debug { "opening sqlite database: $dbPath" }
-        val db = SQLiteDatabase.openOrCreateDatabase(dbPath, null)
-        var initializeSuccess = false
-        try {
-          logger.debug { "initializing sqlite database connection" }
-          initializeSqliteDatabase(db)
-          onOpen(db)
-          initializeSuccess = true
-        } finally {
-          if (!initializeSuccess) {
-            logger.debug { "closing sqlite database connection due to initialization error" }
-            db.close()
-          }
-        }
-        db
-      }
+
+    logger.debug { "opening sqlite database: $dbPath" }
+    val db = SQLiteDatabase.openOrCreateDatabase(dbPath, null)
+
+    val initializeResult = runCatching {
+      val kdb = KSQLiteDatabase(db)
+      coroutineContext.ensureActive()
+      logger.debug { "initializing sqlite database" }
+      initializeSqliteDatabase(db)
+      coroutineContext.ensureActive()
+      logger.debug { "performing database-specific initializations" }
+      onOpen(kdb)
+      SqliteDbHandles(db, kdb)
     }
 
-    val dbOpenedState =
-      openResult.fold(
-        onSuccess = {
-          logger.debug { "opening sqlite database completed successfully: $dbPath" }
-          State.Opened(it)
-        },
-        onFailure = {
-          logger.warn(it) { "opening sqlite database failed: $dbPath; call open() to try again" }
-          State.New
+    initializeResult.onFailure { initializeException ->
+      logger.warn(initializeException) { "closing sqlite database due to initialization failure" }
+      db
+        .runCatching { close() }
+        .onFailure { closeException ->
+          logger.warn(closeException) { "closing sqlite database failed (ignoring) [m5trnpwqvw]" }
         }
-      )
-
-    val finalState =
-      state.updateAndGet { currentState ->
-        when (currentState) {
-          State.New -> throw IllegalStateException("unexpected state: $currentState [r2t2h8akbk]")
-          State.Opening -> dbOpenedState
-          is State.Opened ->
-            throw IllegalStateException("unexpected state: $currentState [nywgp9899t]")
-          State.Closing -> State.Closing
-          State.Closed ->
-            throw IllegalStateException("unexpected state: $currentState [gchkhg8xq7]")
-        }
-      }
-
-    if (finalState is State.Closing && dbOpenedState is State.Opened) {
-      val db = dbOpenedState.db
-      val closeResult = withContext(blockingDispatcher) { runCatching { db.close() } }
-      state.value = State.Closed
-      closeResult.onFailure { logger.warn(it) { "closing sqlite database failed: $dbPath" } }
     }
+
+    return initializeResult.getOrThrow()
   }
 
-  suspend fun close() {
-    val oldState =
-      state.getAndUpdate { currentState ->
-        when (currentState) {
-          State.New -> State.Closed
-          State.Opening -> State.Closing
-          is State.Opened -> State.Closing
-          State.Closing -> State.Closing
-          State.Closed -> State.Closed
-        }
-      }
-
-    if (oldState is State.Opened) {
-      val db = oldState.db
-      val closeResult = withContext(blockingDispatcher) { runCatching { db.close() } }
-      state.value = State.Closed
-      closeResult.onFailure { logger.warn(it) { "closing sqlite database failed: ${db.path}" } }
-    }
-
-    state.takeWhile { it != State.Closed }.collect()
-  }
-
-  protected abstract fun onOpen(db: SQLiteDatabase)
+  private data class SqliteDbHandles(
+    val db: SQLiteDatabase,
+    val kdb: KSQLiteDatabase,
+  )
 
   private sealed interface State {
-    object New : State
-    object Opening : State
-    data class Opened(val db: SQLiteDatabase) : State {
-      val kdb = KSQLiteDatabase(db)
-    }
+    data class Open(val job: Deferred<SqliteDbHandles>) : State
     object Closing : State
     object Closed : State
   }
 
   private companion object {
 
-    fun initializeSqliteDatabase(db: SQLiteDatabase): SQLiteDatabase {
+    fun initializeSqliteDatabase(db: SQLiteDatabase) {
       db.enableWriteAheadLogging()
       db.setForeignKeyConstraintsEnabled(true)
 
@@ -176,8 +203,6 @@ internal abstract class DataConnectSqliteDatabase(
       // db.enableWriteAheadLogging() above.
       // https://www.sqlite.org/pragma.html#pragma_synchronous
       db.execSQL("PRAGMA synchronous = FULL")
-
-      return db
     }
   }
 }
