@@ -428,15 +428,14 @@ class QueueFile {
 
     // If the buffer is split, we need to make it contiguous
     if (endOfLastElement < first.position) {
-      FileChannel channel;
-      try (RandomAccessFile raf = open(rafFile)) {
-        channel = raf.getChannel();
-      }
-      channel.position(fileLength); // destination position
-      int count = endOfLastElement - Element.HEADER_LENGTH;
-      if (channel.transferTo(HEADER_LENGTH, count, channel) != count) {
-        throw new AssertionError("Copied insufficient number of bytes!");
-      }
+      openAndExecute(raf -> {
+        FileChannel channel = raf.getChannel();
+        channel.position(fileLength); // destination position
+        int count = endOfLastElement - Element.HEADER_LENGTH;
+        if (channel.transferTo(HEADER_LENGTH, count, channel) != count) {
+          throw new AssertionError("Copied insufficient number of bytes!");
+        }
+      });
     }
 
     // Commit the expansion.
