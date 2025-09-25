@@ -33,11 +33,7 @@ internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
    *
    * Use [setUserVersion] to set the value.
    */
-  fun getUserVersion(): Long =
-    db.rawQuery("PRAGMA user_version", null).use { cursor ->
-      cursor.moveToNext()
-      cursor.getLong(0)
-    }
+  fun getUserVersion(): Int = getIntPragmaValue("user_version")
 
   /**
    * Sets the value of the user-version integer at offset 60 in the database header.
@@ -47,7 +43,44 @@ internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
    *
    * See [getUserVersion] for details.
    */
-  fun setUserVersion(newUserVersion: Long) {
-    db.execSQL("PRAGMA user_version = $newUserVersion")
+  fun setUserVersion(newUserVersion: Int) {
+    setIntPragmaValue("user_version", newUserVersion)
+  }
+
+  /**
+   * Retrieves the value of the "Application ID" integer at offset 68 in the database header.
+   *
+   * According to the
+   * [PRAGMA schema.application_id](https://www.sqlite.org/pragma.html#pragma_application_id)
+   * documentation, applications that use SQLite as their application file-format should set the
+   * Application ID integer to a unique integer so that utilities such as `file` can determine the
+   * specific file type rather than just reporting "SQLite3 Database".
+   *
+   * If the value has never been explicitly set then this method returns `0` (zero).
+   *
+   * Use [setApplicationId] to set the value.
+   */
+  fun getApplicationId(): Int = getIntPragmaValue("application_id")
+
+  /**
+   * Sets the value of the "Application ID" integer at offset 68 in the database header.
+   *
+   * Although not strictly required, it is recommended to set a value that is not equal to zero to
+   * avoid confusing an explicit value of zero with the value having never been set.
+   *
+   * See [getApplicationId] for details.
+   */
+  fun setApplicationId(newApplicationId: Int) {
+    setIntPragmaValue("application_id", newApplicationId)
+  }
+
+  private fun getIntPragmaValue(pragma: String): Int =
+    db.rawQuery("PRAGMA $pragma", null).use { cursor ->
+      cursor.moveToNext()
+      cursor.getInt(0)
+    }
+
+  private fun setIntPragmaValue(pragma: String, newValue: Int) {
+    db.execSQL("PRAGMA $pragma = $newValue")
   }
 }
