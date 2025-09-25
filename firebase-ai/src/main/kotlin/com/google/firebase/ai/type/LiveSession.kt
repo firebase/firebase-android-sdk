@@ -95,7 +95,8 @@ internal constructor(
    */
   @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    enableInterruptions: Boolean? = null,
   ) {
 
     val context = firebaseApp.applicationContext
@@ -120,7 +121,7 @@ internal constructor(
 
       recordUserAudio()
       processModelResponses(functionCallHandler)
-      listenForModelPlayback()
+      listenForModelPlayback(enableInterruptions)
     }
   }
 
@@ -375,14 +376,16 @@ internal constructor(
    *
    * Launched asynchronously on [scope].
    */
-  private fun listenForModelPlayback() {
+  private fun listenForModelPlayback(enableInterruptions: Boolean? = null) {
     scope.launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
           // The model playback queue is complete, so we can continue recording
           // TODO(b/408223520): Conditionally resume when param is added
-          audioHelper?.resumeRecording()
+          if (enableInterruptions != true) {
+            audioHelper?.resumeRecording()
+          }
           yield()
         } else {
           /**
@@ -390,7 +393,9 @@ internal constructor(
            * no echo cancellation
            */
           // TODO(b/408223520): Conditionally pause when param is added
-          audioHelper?.pauseRecording()
+          if (enableInterruptions != true) {
+            audioHelper?.pauseRecording()
+          }
 
           audioHelper?.playAudio(playbackData)
         }
