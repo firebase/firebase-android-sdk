@@ -29,7 +29,7 @@ import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
 import com.google.firebase.annotations.concurrent.Blocking
-import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
@@ -59,7 +59,7 @@ import kotlinx.serialization.json.Json
 @OptIn(ExperimentalSerializationApi::class)
 public class LiveSession
 internal constructor(
-  private val session: ClientWebSocketSession,
+  private val session: DefaultClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null,
   private val firebaseApp: FirebaseApp,
