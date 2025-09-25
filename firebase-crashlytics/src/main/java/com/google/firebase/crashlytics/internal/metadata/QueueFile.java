@@ -419,7 +419,7 @@ class QueueFile {
       previousLength = newLength;
     } while (remainingBytes < elementLength);
 
-    setLength(newLength);
+    setLength(newLength, raf);
 
     // Calculate the position of the tail end of the data in the ring buffer
     int endOfLastElement = wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
@@ -449,12 +449,10 @@ class QueueFile {
   /**
    * Sets the length of the file.
    */
-  private void setLength(int newLength) throws IOException {
-    openAndExecute(raf -> {
-      // Set new file length (considered metadata) and sync it to storage.
-      raf.setLength(newLength);
-      raf.getChannel().force(true);
-    });
+  private void setLength(int newLength, RandomAccessFile raf) throws IOException {
+    // Set new file length (considered metadata) and sync it to storage.
+    raf.setLength(newLength);
+    raf.getChannel().force(true);
   }
 
   /**
@@ -588,13 +586,13 @@ class QueueFile {
   /**
    * Clears this queue. Truncates the file to the initial size.
    */
-  public synchronized void clear(RandomAccessFile raf) throws IOException {
+  private synchronized void clear(RandomAccessFile raf) throws IOException {
     writeHeader(INITIAL_LENGTH, 0, 0, 0, raf);
     elementCount = 0;
     first = Element.NULL;
     last = Element.NULL;
     if (fileLength > INITIAL_LENGTH) {
-      setLength(INITIAL_LENGTH);
+      setLength(INITIAL_LENGTH, raf);
     }
     fileLength = INITIAL_LENGTH;
   }
