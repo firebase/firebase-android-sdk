@@ -18,6 +18,9 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteDatabase.CREATE_IF_NECESSARY
+import android.database.sqlite.SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING
+import android.database.sqlite.SQLiteDatabase.NO_LOCALIZED_COLLATORS
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -81,20 +84,18 @@ internal abstract class DataConnectSqliteDatabase(
       return
     }
 
-    val db = oldState.job.runCatching { await() }.getOrNull()?.db
+    oldState.job.cancel("${logger.nameWithId} close() called")
+    val db = oldState.job.runCatching { await() }.getOrNull()
     if (db === null) {
       return
     }
 
     logger.debug { "closing sqlite database connection due to close() invocation" }
-    withContext(NonCancellable + blockingDispatcher) {
-        db.runCatching {
-          println("zzyzx calling close()")
-          close()
-          println("zzyzx calling close() DONE")
-        }
-      }
-      .onFailure { logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" } }
+    val closeResult =
+      withContext(NonCancellable + blockingDispatcher) { db.runCatching { close() } }
+    closeResult.onFailure {
+      logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" }
+    }
   }
 
   /**
@@ -112,7 +113,7 @@ internal abstract class DataConnectSqliteDatabase(
   ): T {
     val db =
       when (val currentState = state.value) {
-        is State.Open -> currentState.job.await().kdb
+        is State.Open -> currentState.job.await()
         State.Closing,
         State.Closed ->
           throw IllegalStateException("${logger.nameWithId} has been closed [zgexv4ss46]")
@@ -120,7 +121,7 @@ internal abstract class DataConnectSqliteDatabase(
 
     val job =
       coroutineScope.async(CoroutineName("${logger.nameWithId} withDb $operationName")) {
-        block(db)
+        KSQLiteDatabase(db).use { kdb -> block(kdb) }
       }
 
     return job.await()
@@ -139,7 +140,7 @@ internal abstract class DataConnectSqliteDatabase(
    */
   protected abstract suspend fun onOpen(db: KSQLiteDatabase)
 
-  private suspend fun open(): SqliteDbHandles {
+  private suspend fun open(): SQLiteDatabase {
     check(coroutineContext[CoroutineDispatcher] === blockingDispatcher) {
       "internal error: open() is expected to be called by a coroutine that uses the " +
         "blocking dispatcher so that blocking database operations don't need to be " +
@@ -148,8 +149,12 @@ internal abstract class DataConnectSqliteDatabase(
 
     val dbPath = file?.absolutePath ?: ":memory:"
 
+    // Specify NO_LOCALIZED_COLLATORS to gain the performance benefits of bitwise collation instead
+    // of locale-aware collation. This means that sorting by TEXT fields must be done at the
+    // application level.
+    val openFlags = ENABLE_WRITE_AHEAD_LOGGING or CREATE_IF_NECESSARY or NO_LOCALIZED_COLLATORS
     logger.debug { "opening sqlite database: $dbPath" }
-    val db = SQLiteDatabase.openOrCreateDatabase(dbPath, null)
+    val db = SQLiteDatabase.openDatabase(dbPath, null, openFlags)
 
     val initializeResult = runCatching {
       coroutineContext.ensureActive()
@@ -157,9 +162,7 @@ internal abstract class DataConnectSqliteDatabase(
       initializeSqliteDatabase(db)
       coroutineContext.ensureActive()
       logger.debug { "performing database-specific initializations" }
-      val kdb = KSQLiteDatabase(db)
-      onOpen(kdb)
-      SqliteDbHandles(db, kdb)
+      KSQLiteDatabase(db).use { kdb -> onOpen(kdb) }
     }
 
     initializeResult.onFailure { initializeException ->
@@ -171,16 +174,14 @@ internal abstract class DataConnectSqliteDatabase(
         }
     }
 
-    return initializeResult.getOrThrow()
+    // Re-throw any exception from the database initialization.
+    initializeResult.getOrThrow()
+
+    return db
   }
 
-  private data class SqliteDbHandles(
-    val db: SQLiteDatabase,
-    val kdb: KSQLiteDatabase,
-  )
-
   private sealed interface State {
-    data class Open(val job: Deferred<SqliteDbHandles>) : State
+    data class Open(val job: Deferred<SQLiteDatabase>) : State
     object Closing : State
     object Closed : State
   }
@@ -188,7 +189,6 @@ internal abstract class DataConnectSqliteDatabase(
   private companion object {
 
     fun initializeSqliteDatabase(db: SQLiteDatabase) {
-      db.enableWriteAheadLogging()
       db.setForeignKeyConstraintsEnabled(true)
 
       // Enable "full" synchronous mode to get atomic, consistent, isolated, and durable (ACID)
@@ -199,12 +199,6 @@ internal abstract class DataConnectSqliteDatabase(
 
       @SuppressLint("UseKtx") db.beginTransaction()
       try {
-        // Prevent anyone else from connecting to the database. This is done mostly to prevent
-        // unintentional corruption which could occur if accessing the database outside of the main
-        // Android process for an application.
-        // https://www.sqlite.org/pragma.html#pragma_locking_mode
-        db.rawQuery("PRAGMA locking_mode = EXCLUSIVE", null).close()
-
         // Incur a slight performance penalty to eagerly report and isolate database corruption.
         // https://www.sqlite.org/pragma.html#pragma_cell_size_check
         db.execSQL("PRAGMA cell_size_check = true")

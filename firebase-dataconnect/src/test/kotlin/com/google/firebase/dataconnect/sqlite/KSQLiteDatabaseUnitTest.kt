@@ -46,55 +46,87 @@ class KSQLiteDatabaseUnitTest {
 
   @Test
   fun `getUserVersion should return 0 on a new database`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
-    val userVersion = db.runTransaction { it.getUserVersion() }
-
+    val userVersion =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadOnlyTransaction { it.getUserVersion() }
+      }
     userVersion shouldBe 0
   }
 
   @Test
-  fun `setUserVersion should set the user version`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
+  fun `setUserVersion should set the user version, different transactions`() = runTest {
     checkAll(propTestConfig, Arb.int()) { userVersion ->
-      db.runTransaction { it.setUserVersion(userVersion) }
-      db.runTransaction { it.getUserVersion() shouldBe userVersion }
+      val actualUserVersion =
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadWriteTransaction { it.setUserVersion(userVersion) }
+          kdb.runReadOnlyTransaction { it.getUserVersion() }
+        }
+      actualUserVersion shouldBe userVersion
     }
   }
 
   @Test
-  fun `getApplicationId should return 0 on a new database`() {
-    val db = KSQLiteDatabase(sqliteDatabase)
+  fun `setUserVersion should set the user version, same transaction`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { userVersion ->
+      val actualUserVersion =
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadWriteTransaction {
+            it.setUserVersion(userVersion)
+            it.getUserVersion()
+          }
+        }
+      actualUserVersion shouldBe userVersion
+    }
+  }
 
-    val applicationId = db.runTransaction { it.getApplicationId() }
-
+  @Test
+  fun `getApplicationId should return 0 on a new database`() = runTest {
+    val applicationId =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadOnlyTransaction { it.getApplicationId() }
+      }
     applicationId shouldBe 0
   }
 
   @Test
-  fun `setApplicationId should set the user version`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
+  fun `setApplicationId should set the application ID, different transactions`() = runTest {
     checkAll(propTestConfig, Arb.int()) { applicationId ->
-      db.runTransaction { it.setApplicationId(applicationId) }
-      db.runTransaction { it.getApplicationId() shouldBe applicationId }
+      val actualApplicationId =
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadWriteTransaction { it.setApplicationId(applicationId) }
+          kdb.runReadOnlyTransaction { it.getApplicationId() }
+        }
+      actualApplicationId shouldBe applicationId
+    }
+  }
+
+  @Test
+  fun `setApplicationId should set the application ID, same transaction`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { applicationId ->
+      val actualApplicationId =
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadWriteTransaction {
+            it.setApplicationId(applicationId)
+            it.getApplicationId()
+          }
+        }
+      actualApplicationId shouldBe applicationId
     }
   }
 
   @Test
   fun `verify that setUserVersion and setApplicationId are distinct`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
     checkAll(propTestConfig, Arb.int(), Arb.int()) { userVersion, applicationId ->
-      db.runTransaction {
-        it.setUserVersion(userVersion)
-        it.setApplicationId(applicationId)
-      }
-      assertSoftly {
-        db.runTransaction { transaction ->
-          withClue("getUserVersion()") { transaction.getUserVersion() shouldBe userVersion }
-          withClue("getApplicationId()") { transaction.getApplicationId() shouldBe applicationId }
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction {
+          it.setUserVersion(userVersion)
+          it.setApplicationId(applicationId)
+        }
+        kdb.runReadOnlyTransaction {
+          assertSoftly {
+            withClue("getUserVersion()") { it.getUserVersion() shouldBe userVersion }
+            withClue("getApplicationId()") { it.getApplicationId() shouldBe applicationId }
+          }
         }
       }
     }
@@ -106,17 +138,21 @@ class KSQLiteDatabaseUnitTest {
       val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
 
       SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        KSQLiteDatabase(sqliteDatabase).runTransaction {
-          it.setUserVersion(userVersion)
-          it.setApplicationId(applicationId)
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadWriteTransaction {
+            it.setUserVersion(userVersion)
+            it.setApplicationId(applicationId)
+          }
         }
       }
 
       SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        KSQLiteDatabase(sqliteDatabase).runTransaction {
-          assertSoftly {
-            withClue("getUserVersion()") { it.getUserVersion() shouldBe userVersion }
-            withClue("getApplicationId()") { it.getApplicationId() shouldBe applicationId }
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadOnlyTransaction {
+            assertSoftly {
+              withClue("getUserVersion()") { it.getUserVersion() shouldBe userVersion }
+              withClue("getApplicationId()") { it.getApplicationId() shouldBe applicationId }
+            }
           }
         }
       }

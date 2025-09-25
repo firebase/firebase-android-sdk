@@ -18,43 +18,81 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
-import java.lang.IllegalStateException
-import java.lang.ref.WeakReference
+import java.util.WeakHashMap
+import java.util.concurrent.atomic.AtomicReference
 
-/** A thin wrapper around [SQLiteDatabase] that provides a more Kotlin-friendly API. */
-internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
+/**
+ * A thin wrapper around [SQLiteDatabase] that provides a more Kotlin-friendly API and also allows
+ * it to be "closed", preventing further operations, without closing the underlying database.
+ *
+ * Although not fool-proof, this helps well-intentioned code from using the database outside of its
+ * explicit uses, making reasoning about the code easier.
+ */
+internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
 
-  fun <T> runTransaction(block: (Transaction) -> T): T {
-    val db = this.db
-    val weakDb = WeakReference(db)
+  private val transactions = WeakHashMap<Transaction, Void>()
+  private val dbRef = AtomicReference(db)
+
+  private val db: SQLiteDatabase
+    get() = dbRef.get() ?: throw IllegalStateException("KSQLiteDatabase has been closed")
+
+  /**
+   * Close this object and call [Transaction.close] on any in-flight transactions.
+   *
+   * This function can be safely called concurrently from any thread, and can be called many times,
+   * where subsequent invocations are effectively no-ops.
+   */
+  override fun close() {
+    dbRef.set(null)
+    synchronized(transactions) {
+      transactions.keys.forEach { it.close() }
+      transactions.clear()
+    }
+  }
+
+  suspend fun <T> runReadOnlyTransaction(block: suspend (ReadOnlyTransaction) -> T): T {
+    val transaction = ReadOnlyTransactionImpl(db)
+    // TODO(API35) Use SQLiteDatabase.beginTransactionReadOnly to begin read-only transactions once
+    //  compileSdkVersion is set to 35 (VANILLA_ICE_CREAM) or greater; at the time of writing
+    //  compileSdkVersion 34 is in use, so this function is not available at compile time.
     @SuppressLint("UseKtx") db.beginTransaction()
+    return runTransaction(transaction, block)
+  }
+
+  suspend fun <T> runReadWriteTransaction(block: suspend (ReadWriteTransaction) -> T): T {
+    val transaction = ReadWriteTransactionImpl(db)
+    @SuppressLint("UseKtx") db.beginTransaction()
+    return runTransaction(transaction, block)
+  }
+
+  private suspend inline fun <T : Transaction, R> runTransaction(
+    transaction: T,
+    block: suspend (T) -> R
+  ): R {
     try {
-      val result = block(TransactionImpl(weakDb))
-      weakDb.clear()
+      synchronized(transactions) { transactions.put(transaction, null) }
+      val result = block(transaction)
       db.setTransactionSuccessful()
       return result
     } finally {
-      weakDb.clear()
+      transaction.close()
+      synchronized(transactions) { transactions.remove(transaction) }
       db.endTransaction()
     }
   }
 
-  suspend fun <T> runSuspendingTransaction(block: suspend (Transaction) -> T): T {
-    val db = this.db
-    val weakDb = WeakReference(db)
-    @SuppressLint("UseKtx") db.beginTransaction()
-    try {
-      val result = block(TransactionImpl(weakDb))
-      weakDb.clear()
-      db.setTransactionSuccessful()
-      return result
-    } finally {
-      weakDb.clear()
-      db.endTransaction()
-    }
+  interface Transaction : AutoCloseable {
+
+    /**
+     * Closes this transaction and prevents any further use.
+     *
+     * This function does not block and may be safely called concurrently from any thread. This
+     * function also never throws an exception.
+     */
+    override fun close()
   }
 
-  interface Transaction {
+  interface ReadOnlyTransaction : Transaction {
 
     /**
      * Retrieves the value of the user-version integer at offset 60 in the database header.
@@ -66,19 +104,9 @@ internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
      *
      * If the value has never been explicitly set then this method returns `0` (zero).
      *
-     * Use [setUserVersion] to set the value.
+     * Use [ReadWriteTransaction.setUserVersion] to set the value.
      */
     fun getUserVersion(): Int
-
-    /**
-     * Sets the value of the user-version integer at offset 60 in the database header.
-     *
-     * Although not strictly required, it is recommended to set a value that is strictly greater
-     * than zero to avoid confusing an explicit value of zero with the value having never been set.
-     *
-     * See [getUserVersion] for details.
-     */
-    fun setUserVersion(newUserVersion: Int)
 
     /**
      * Retrieves the value of the "Application ID" integer at offset 68 in the database header.
@@ -91,9 +119,22 @@ internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
      *
      * If the value has never been explicitly set then this method returns `0` (zero).
      *
-     * Use [setApplicationId] to set the value.
+     * Use [ReadWriteTransaction.setApplicationId] to set the value.
      */
     fun getApplicationId(): Int
+  }
+
+  interface ReadWriteTransaction : ReadOnlyTransaction {
+
+    /**
+     * Sets the value of the user-version integer at offset 60 in the database header.
+     *
+     * Although not strictly required, it is recommended to set a value that is strictly greater
+     * than zero to avoid confusing an explicit value of zero with the value having never been set.
+     *
+     * See [getUserVersion] for details.
+     */
+    fun setUserVersion(newUserVersion: Int)
 
     /**
      * Sets the value of the "Application ID" integer at offset 68 in the database header.
@@ -106,30 +147,44 @@ internal class KSQLiteDatabase(private val db: SQLiteDatabase) {
     fun setApplicationId(newApplicationId: Int)
   }
 
-  private class TransactionImpl(db: WeakReference<SQLiteDatabase>) : Transaction {
+  private open class BaseTransactionImpl(db: SQLiteDatabase) : AutoCloseable {
 
-    private val _db: WeakReference<SQLiteDatabase> = db
+    private val dbAtomicReference = AtomicReference(db)
 
-    private val db: SQLiteDatabase
-      get() = _db.get() ?: throw IllegalStateException("transaction has finished [vvgvmkaedw]")
+    protected val db: SQLiteDatabase
+      get() =
+        dbAtomicReference.get()
+          ?: throw IllegalStateException("transaction has been closed [vvgvmkaedw]")
 
-    override fun getUserVersion(): Int = getIntPragmaValue("user_version")
-
-    override fun setUserVersion(newUserVersion: Int) {
-      setIntPragmaValue("user_version", newUserVersion)
+    override fun close() {
+      dbAtomicReference.set(null)
     }
+  }
 
-    override fun getApplicationId(): Int = getIntPragmaValue("application_id")
+  private open class ReadOnlyTransactionImpl(db: SQLiteDatabase) :
+    BaseTransactionImpl(db), ReadOnlyTransaction {
 
-    override fun setApplicationId(newApplicationId: Int) {
-      setIntPragmaValue("application_id", newApplicationId)
-    }
+    final override fun getUserVersion(): Int = getIntPragmaValue("user_version")
+
+    final override fun getApplicationId(): Int = getIntPragmaValue("application_id")
 
     private fun getIntPragmaValue(pragma: String): Int =
       db.rawQuery("PRAGMA $pragma", null).use { cursor ->
         cursor.moveToNext()
         cursor.getInt(0)
       }
+  }
+
+  private class ReadWriteTransactionImpl(db: SQLiteDatabase) :
+    ReadOnlyTransactionImpl(db), ReadWriteTransaction {
+
+    override fun setUserVersion(newUserVersion: Int) {
+      setIntPragmaValue("user_version", newUserVersion)
+    }
+
+    override fun setApplicationId(newApplicationId: Int) {
+      setIntPragmaValue("application_id", newApplicationId)
+    }
 
     private fun setIntPragmaValue(pragma: String, newValue: Int) {
       db.execSQL("PRAGMA $pragma = $newValue")

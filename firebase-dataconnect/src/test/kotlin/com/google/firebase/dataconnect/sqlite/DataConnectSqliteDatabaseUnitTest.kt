@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteDatabase.NO_LOCALIZED_COLLATORS
+import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -28,8 +30,10 @@ import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -45,18 +49,28 @@ class DataConnectSqliteDatabaseUnitTest {
   private val rs: RandomSource by randomSeedTestRule.rs
 
   @Test
-  fun `onOpen should be called upon first database access`() = runTest {
+  fun `constructor file argument should be used as the database file`() = runTest {
+    val dbFile = File(temporaryFolder.newFolder(), "fqsywf8bdd.sqlite")
     val userVersion = Arb.int().next(rs)
     val db =
-      TestDataConnectSqliteDatabase(
-        this@runTest,
-        onOpen = { db -> db.runTransaction { it.setUserVersion(userVersion) } }
-      )
+      object :
+        DataConnectSqliteDatabase(dbFile, backgroundScope, Dispatchers.IO, mockk(relaxed = true)) {
+        override suspend fun onOpen(db: KSQLiteDatabase) {
+          db.runReadWriteTransaction { it.setUserVersion(userVersion) }
+        }
 
-    db.ensureOpen()
+        suspend fun ensureOnOpenCalled() =
+          withDb {
+            // do nothing; the first call to withDb() should call onOpen()
+          }
+      }
 
-    db.close()
-    withClue("onOpenInvocationCount") { db.onOpenInvocationCount shouldBe 1 }
+    try {
+      db.ensureOnOpenCalled()
+    } finally {
+      withContext(NonCancellable) { db.close() }
+    }
+
     withClue("userVersion") { db.file!!.getSqliteUserVersion() shouldBe userVersion }
   }
 
@@ -88,9 +102,11 @@ class DataConnectSqliteDatabaseUnitTest {
 
   private companion object {
 
-    suspend fun File.getSqliteUserVersion(): Int =
-      SQLiteDatabase.openOrCreateDatabase(this, null).use { sqliteDatabase ->
-        KSQLiteDatabase(sqliteDatabase).runTransaction { it.getUserVersion() }
+    suspend fun File.getSqliteUserVersion(): Int {
+      val openFlags = OPEN_READONLY or NO_LOCALIZED_COLLATORS
+      return SQLiteDatabase.openDatabase(this.absolutePath, null, openFlags).use { sqliteDatabase ->
+        sqliteDatabase.version
       }
+    }
   }
 }
