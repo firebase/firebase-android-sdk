@@ -17,19 +17,19 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
-import io.kotest.assertions.assertSoftly
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import io.kotest.assertions.withClue
-import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.PropTestConfig
-import io.kotest.property.ShrinkingMode
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
-import io.kotest.property.checkAll
+import io.kotest.property.arbitrary.next
+import io.mockk.mockk
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -39,95 +39,58 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class DataConnectSqliteDatabaseUnitTest {
 
-  private lateinit var sqliteDatabase: SQLiteDatabase
-
   @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
 
-  @Before
-  fun initializeDb() {
-    sqliteDatabase = SQLiteDatabase.create(null)
-  }
-
-  @After
-  fun closeDb() {
-    sqliteDatabase.close()
-  }
+  private val rs: RandomSource by randomSeedTestRule.rs
 
   @Test
-  fun `getUserVersion should return 0 on a new database`() {
-    val db = KSQLiteDatabase(sqliteDatabase)
+  fun `onOpen should be called upon first database access`() = runTest {
+    val userVersion = Arb.int().next(rs)
+    val db =
+      TestDataConnectSqliteDatabase(
+        this@runTest,
+        onOpen = { db -> db.runTransaction { it.setUserVersion(userVersion) } }
+      )
 
-    val userVersion = db.getUserVersion()
+    db.ensureOpen()
 
-    userVersion shouldBe 0
+    db.close()
+    withClue("onOpenInvocationCount") { db.onOpenInvocationCount shouldBe 1 }
+    withClue("userVersion") { db.file!!.getSqliteUserVersion() shouldBe userVersion }
   }
 
-  @Test
-  fun `setUserVersion should set the user version`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
+  private inner class TestDataConnectSqliteDatabase(
+    testScope: TestScope,
+    onOpen: (suspend (KSQLiteDatabase) -> Unit) = {},
+  ) :
+    DataConnectSqliteDatabase(
+      file = File(temporaryFolder.newFolder(), "db.sqlite"),
+      parentCoroutineScope = testScope.backgroundScope,
+      blockingDispatcher = Dispatchers.IO,
+      logger = mockk(relaxed = true),
+    ) {
+    private val _onOpen = onOpen
+    private val _onOpenInvocationCount = AtomicInteger(0)
+    val onOpenInvocationCount: Int
+      get() = _onOpenInvocationCount.get()
 
-    checkAll(propTestConfig, Arb.int()) { userVersion ->
-      db.setUserVersion(userVersion)
-      db.getUserVersion() shouldBe userVersion
+    override suspend fun onOpen(db: KSQLiteDatabase) {
+      _onOpenInvocationCount.incrementAndGet()
+      _onOpen(db)
     }
-  }
 
-  @Test
-  fun `getApplicationId should return 0 on a new database`() {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
-    val applicationId = db.getApplicationId()
-
-    applicationId shouldBe 0
-  }
-
-  @Test
-  fun `setApplicationId should set the user version`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
-    checkAll(propTestConfig, Arb.int()) { applicationId ->
-      db.setApplicationId(applicationId)
-      db.getApplicationId() shouldBe applicationId
-    }
-  }
-
-  @Test
-  fun `verify that setUserVersion and setApplicationId are distinct`() = runTest {
-    val db = KSQLiteDatabase(sqliteDatabase)
-
-    checkAll(propTestConfig, Arb.int(), Arb.int()) { userVersion, applicationId ->
-      db.setUserVersion(userVersion)
-      db.setApplicationId(applicationId)
-      assertSoftly {
-        withClue("getUserVersion()") { db.getUserVersion() shouldBe userVersion }
-        withClue("getApplicationId()") { db.getApplicationId() shouldBe applicationId }
+    suspend fun ensureOpen() =
+      withDb {
+        // do nothing
       }
-    }
-  }
-
-  @Test
-  fun `verify that setUserVersion and setApplicationId persist`() = runTest {
-    checkAll(propTestConfig, Arb.int(), Arb.int()) { userVersion, applicationId ->
-      val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
-
-      SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        val db = KSQLiteDatabase(sqliteDatabase)
-        db.setUserVersion(userVersion)
-        db.setApplicationId(applicationId)
-      }
-
-      SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        val db = KSQLiteDatabase(sqliteDatabase)
-        assertSoftly {
-          withClue("getUserVersion()") { db.getUserVersion() shouldBe userVersion }
-          withClue("getApplicationId()") { db.getApplicationId() shouldBe applicationId }
-        }
-      }
-    }
   }
 
   private companion object {
-    @OptIn(ExperimentalKotest::class)
-    val propTestConfig = PropTestConfig(iterations = 100, shrinkingMode = ShrinkingMode.Off)
+
+    suspend fun File.getSqliteUserVersion(): Int =
+      SQLiteDatabase.openOrCreateDatabase(this, null).use { sqliteDatabase ->
+        KSQLiteDatabase(sqliteDatabase).runTransaction { it.getUserVersion() }
+      }
   }
 }

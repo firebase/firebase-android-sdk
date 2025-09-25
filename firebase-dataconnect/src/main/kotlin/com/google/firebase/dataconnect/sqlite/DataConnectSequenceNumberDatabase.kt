@@ -28,7 +28,7 @@ internal class DataConnectSequenceNumberDatabase(
   logger: Logger,
 ) :
   DataConnectSqliteDatabase(
-    dbFile = dbFile,
+    file = dbFile,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,

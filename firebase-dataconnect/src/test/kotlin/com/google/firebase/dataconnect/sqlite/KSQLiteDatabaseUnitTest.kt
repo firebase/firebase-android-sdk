@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -28,8 +29,6 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
 import java.io.File
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -39,25 +38,17 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class KSQLiteDatabaseUnitTest {
 
-  private lateinit var sqliteDatabase: SQLiteDatabase
-
   @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val sqliteDatabaseRule = SQLiteDatabaseRule.inDirectory(temporaryFolder)
 
-  @Before
-  fun initializeDb() {
-    sqliteDatabase = SQLiteDatabase.create(null)
-  }
-
-  @After
-  fun closeDb() {
-    sqliteDatabase.close()
-  }
+  private val sqliteDatabase: SQLiteDatabase
+    get() = sqliteDatabaseRule.db
 
   @Test
-  fun `getUserVersion should return 0 on a new database`() {
+  fun `getUserVersion should return 0 on a new database`() = runTest {
     val db = KSQLiteDatabase(sqliteDatabase)
 
-    val userVersion = db.getUserVersion()
+    val userVersion = db.runTransaction { it.getUserVersion() }
 
     userVersion shouldBe 0
   }
@@ -67,8 +58,8 @@ class KSQLiteDatabaseUnitTest {
     val db = KSQLiteDatabase(sqliteDatabase)
 
     checkAll(propTestConfig, Arb.int()) { userVersion ->
-      db.setUserVersion(userVersion)
-      db.getUserVersion() shouldBe userVersion
+      db.runTransaction { it.setUserVersion(userVersion) }
+      db.runTransaction { it.getUserVersion() shouldBe userVersion }
     }
   }
 
@@ -76,7 +67,7 @@ class KSQLiteDatabaseUnitTest {
   fun `getApplicationId should return 0 on a new database`() {
     val db = KSQLiteDatabase(sqliteDatabase)
 
-    val applicationId = db.getApplicationId()
+    val applicationId = db.runTransaction { it.getApplicationId() }
 
     applicationId shouldBe 0
   }
@@ -86,8 +77,8 @@ class KSQLiteDatabaseUnitTest {
     val db = KSQLiteDatabase(sqliteDatabase)
 
     checkAll(propTestConfig, Arb.int()) { applicationId ->
-      db.setApplicationId(applicationId)
-      db.getApplicationId() shouldBe applicationId
+      db.runTransaction { it.setApplicationId(applicationId) }
+      db.runTransaction { it.getApplicationId() shouldBe applicationId }
     }
   }
 
@@ -96,11 +87,15 @@ class KSQLiteDatabaseUnitTest {
     val db = KSQLiteDatabase(sqliteDatabase)
 
     checkAll(propTestConfig, Arb.int(), Arb.int()) { userVersion, applicationId ->
-      db.setUserVersion(userVersion)
-      db.setApplicationId(applicationId)
+      db.runTransaction {
+        it.setUserVersion(userVersion)
+        it.setApplicationId(applicationId)
+      }
       assertSoftly {
-        withClue("getUserVersion()") { db.getUserVersion() shouldBe userVersion }
-        withClue("getApplicationId()") { db.getApplicationId() shouldBe applicationId }
+        db.runTransaction { transaction ->
+          withClue("getUserVersion()") { transaction.getUserVersion() shouldBe userVersion }
+          withClue("getApplicationId()") { transaction.getApplicationId() shouldBe applicationId }
+        }
       }
     }
   }
@@ -111,16 +106,18 @@ class KSQLiteDatabaseUnitTest {
       val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
 
       SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        val db = KSQLiteDatabase(sqliteDatabase)
-        db.setUserVersion(userVersion)
-        db.setApplicationId(applicationId)
+        KSQLiteDatabase(sqliteDatabase).runTransaction {
+          it.setUserVersion(userVersion)
+          it.setApplicationId(applicationId)
+        }
       }
 
       SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
-        val db = KSQLiteDatabase(sqliteDatabase)
-        assertSoftly {
-          withClue("getUserVersion()") { db.getUserVersion() shouldBe userVersion }
-          withClue("getApplicationId()") { db.getApplicationId() shouldBe applicationId }
+        KSQLiteDatabase(sqliteDatabase).runTransaction {
+          assertSoftly {
+            withClue("getUserVersion()") { it.getUserVersion() shouldBe userVersion }
+            withClue("getApplicationId()") { it.getApplicationId() shouldBe applicationId }
+          }
         }
       }
     }

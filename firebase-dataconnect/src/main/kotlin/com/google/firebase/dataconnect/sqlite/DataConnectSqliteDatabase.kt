@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -39,7 +40,7 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.withContext
 
 internal abstract class DataConnectSqliteDatabase(
-  private val dbFile: File?,
+  val file: File?,
   parentCoroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
   private val logger: Logger,
@@ -86,7 +87,13 @@ internal abstract class DataConnectSqliteDatabase(
     }
 
     logger.debug { "closing sqlite database connection due to close() invocation" }
-    withContext(NonCancellable + blockingDispatcher) { db.runCatching { close() } }
+    withContext(NonCancellable + blockingDispatcher) {
+        db.runCatching {
+          println("zzyzx calling close()")
+          close()
+          println("zzyzx calling close() DONE")
+        }
+      }
       .onFailure { logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" } }
   }
 
@@ -139,18 +146,18 @@ internal abstract class DataConnectSqliteDatabase(
         "explicitly run on a separate dispatcher"
     }
 
-    val dbPath = dbFile?.absolutePath ?: ":memory:"
+    val dbPath = file?.absolutePath ?: ":memory:"
 
     logger.debug { "opening sqlite database: $dbPath" }
     val db = SQLiteDatabase.openOrCreateDatabase(dbPath, null)
 
     val initializeResult = runCatching {
-      val kdb = KSQLiteDatabase(db)
       coroutineContext.ensureActive()
       logger.debug { "initializing sqlite database" }
       initializeSqliteDatabase(db)
       coroutineContext.ensureActive()
       logger.debug { "performing database-specific initializations" }
+      val kdb = KSQLiteDatabase(db)
       onOpen(kdb)
       SqliteDbHandles(db, kdb)
     }
@@ -184,25 +191,32 @@ internal abstract class DataConnectSqliteDatabase(
       db.enableWriteAheadLogging()
       db.setForeignKeyConstraintsEnabled(true)
 
-      // Prevent anyone else from connecting to the database. This is done mostly to prevent
-      // unintentional corruption which could occur if accessing the database outside of the main
-      // Android process for an application.
-      // https://www.sqlite.org/pragma.html#pragma_locking_mode
-      db.execSQL("PRAGMA locking_mode = EXCLUSIVE")
-
-      // Incur a slight performance penalty to eagerly report and isolate database corruption.
-      // https://www.sqlite.org/pragma.html#pragma_cell_size_check
-      db.execSQL("PRAGMA cell_size_check = true")
-
-      // Explicitly specify UTF-8 as the text encoding in the database.
-      // https://www.sqlite.org/pragma.html#pragma_encoding
-      db.execSQL("PRAGMA encoding = 'UTF-8'")
-
       // Enable "full" synchronous mode to get atomic, consistent, isolated, and durable (ACID)
       // properties. Note that ACID is only guaranteed because WAL mode is enabled by calling
       // db.enableWriteAheadLogging() above.
       // https://www.sqlite.org/pragma.html#pragma_synchronous
       db.execSQL("PRAGMA synchronous = FULL")
+
+      @SuppressLint("UseKtx") db.beginTransaction()
+      try {
+        // Prevent anyone else from connecting to the database. This is done mostly to prevent
+        // unintentional corruption which could occur if accessing the database outside of the main
+        // Android process for an application.
+        // https://www.sqlite.org/pragma.html#pragma_locking_mode
+        db.rawQuery("PRAGMA locking_mode = EXCLUSIVE", null).close()
+
+        // Incur a slight performance penalty to eagerly report and isolate database corruption.
+        // https://www.sqlite.org/pragma.html#pragma_cell_size_check
+        db.execSQL("PRAGMA cell_size_check = true")
+
+        // Explicitly specify UTF-8 as the text encoding in the database.
+        // https://www.sqlite.org/pragma.html#pragma_encoding
+        db.execSQL("PRAGMA encoding = 'UTF-8'")
+
+        db.setTransactionSuccessful()
+      } finally {
+        db.endTransaction()
+      }
     }
   }
 }
