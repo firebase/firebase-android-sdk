@@ -944,7 +944,7 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
   }
 
-  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface PublicPreviewAPI {
   }
 
   public final class QuotaExceededException extends com.google.firebase.ai.type.FirebaseAIException {

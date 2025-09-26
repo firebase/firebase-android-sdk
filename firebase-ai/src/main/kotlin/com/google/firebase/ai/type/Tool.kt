@@ -62,8 +62,7 @@ internal constructor(
      */
     @JvmStatic
     public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
-      @OptIn(PublicPreviewAPI::class)
-      return Tool(functionDeclarations, null, null, null)
+      @OptIn(PublicPreviewAPI::class) return Tool(functionDeclarations, null, null, null)
     }
 
     /** Creates a [Tool] instance that allows the model to use Code Execution. */
@@ -104,8 +103,7 @@ internal constructor(
      */
     @JvmStatic
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
-      @OptIn(PublicPreviewAPI::class)
-      return Tool(null, googleSearch, null, null)
+      @OptIn(PublicPreviewAPI::class) return Tool(null, googleSearch, null, null)
     }
   }
 }
