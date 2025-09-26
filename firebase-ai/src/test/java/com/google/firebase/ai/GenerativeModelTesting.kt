@@ -23,6 +23,7 @@ import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
@@ -41,7 +42,6 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import org.junit.Before
 import org.junit.Test
@@ -146,7 +146,7 @@ internal class GenerativeModelTesting {
     exception.message shouldContain "location"
   }
 
-  @OptIn(ExperimentalSerializationApi::class)
+  @OptIn(PublicPreviewAPI::class)
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
       GenerateContentResponse.Internal(
