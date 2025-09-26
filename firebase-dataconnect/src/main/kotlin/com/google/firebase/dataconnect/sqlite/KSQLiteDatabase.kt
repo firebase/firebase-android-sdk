@@ -23,7 +23,6 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteQuery
 import android.os.CancellationSignal
 import androidx.annotation.VisibleForTesting
-import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.coroutineContext
@@ -153,6 +152,17 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      * need to look after closing the cursor, as that will be done by the implementation of this
      * method.
      *
+     * @param sqlStatement The SQL query statement (usually a "SELECT" statement) to execute.
+     * @param bindings Binding to replace the "?" values in the given [sqlStatement]. A null value
+     * (the default) is the same as an empty list. Supported values are: `null`, [CharSequence],
+     * [ByteArray], [Int], [Long], [Float], and [Double]. If the list contains values of any other
+     * type then an exception will be thrown. See [bindTo] for the authoritative list of supported
+     * binding types.
+     * @param block The block that will be called with a cursor over the results. The block will be
+     * called synchronously and will be called at most once. The block does _not_ need to close the
+     * cursor, as that will be done by the implementation of this method upon completion (or
+     * throwing an exception) of the block.
+     *
      * @return whatever the given block returns.
      */
     suspend fun <T> executeQuery(
@@ -187,8 +197,17 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      */
     fun setApplicationId(newApplicationId: Int)
 
-    /** Executes the given SQLite statement. */
-    fun executeStatement(sqlStatement: String)
+    /**
+     * Executes the given SQLite statement.
+     *
+     * @param sqlStatement The SQL statement (for example, an "INSERT" statement) to execute.
+     * @param bindings Binding to replace the "?" values in the given [sqlStatement]. A null value
+     * (the default) is the same as an empty list. Supported values are: `null`, [CharSequence],
+     * [ByteArray], [Int], [Long], [Float], and [Double]. If the list contains values of any other
+     * type then an exception will be thrown. See [bindTo] for the authoritative list of supported
+     * binding types.
+     */
+    fun executeStatement(sqlStatement: String, bindings: List<Any?>? = null)
   }
 
   @VisibleForTesting
@@ -218,13 +237,13 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
 
     final override fun getApplicationId(): Int = getIntPragmaValue("application_id")
 
-    final override fun getDatabases(): MutableList<GetDatabasesResult> {
-      val results = mutableListOf<GetDatabasesResult>()
+    final override fun getDatabases(): MutableList<ReadOnlyTransaction.GetDatabasesResult> {
+      val results = mutableListOf<ReadOnlyTransaction.GetDatabasesResult>()
       db.rawQuery("PRAGMA database_list", null).use { cursor ->
         while (cursor.moveToNext()) {
           val dbName = cursor.getString(1)
           val filePath = cursor.getString(2)
-          results.add(GetDatabasesResult(dbName, filePath))
+          results.add(ReadOnlyTransaction.GetDatabasesResult(dbName, filePath))
         }
       }
       return results
@@ -302,7 +321,7 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
       setIntPragmaValue("application_id", newApplicationId)
     }
 
-    override fun executeStatement(sqlStatement: String) {
+    override fun executeStatement(sqlStatement: String, bindings: List<Any?>?) {
       db.execSQL(sqlStatement)
     }
 
