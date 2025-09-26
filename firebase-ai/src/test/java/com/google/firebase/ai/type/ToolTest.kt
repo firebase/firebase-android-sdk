@@ -28,6 +28,7 @@ internal class ToolTest {
     tool.googleSearch.shouldNotBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.codeExecution.shouldBeNull()
+    @OptIn(PublicPreviewAPI::class)
     tool.urlContext.shouldBeNull()
   }
 
@@ -39,6 +40,7 @@ internal class ToolTest {
     tool.functionDeclarations?.first() shouldBe functionDeclaration
     tool.googleSearch.shouldBeNull()
     tool.codeExecution.shouldBeNull()
+    @OptIn(PublicPreviewAPI::class)
     tool.urlContext.shouldBeNull()
   }
 
@@ -48,9 +50,11 @@ internal class ToolTest {
     tool.codeExecution.shouldNotBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.googleSearch.shouldBeNull()
+    @OptIn(PublicPreviewAPI::class)
     tool.urlContext.shouldBeNull()
   }
 
+  @OptIn(PublicPreviewAPI::class)
   @Test
   fun `urlContext() creates a tool with a urlContext property`() {
     val tool = Tool.urlContext()
@@ -58,6 +62,7 @@ internal class ToolTest {
     tool.googleSearch.shouldBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.codeExecution.shouldBeNull()
+    @OptIn(PublicPreviewAPI::class)
     tool.urlContext.shouldNotBeNull()
   }
 }

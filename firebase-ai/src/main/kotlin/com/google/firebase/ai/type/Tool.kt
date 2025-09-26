@@ -24,12 +24,15 @@ import kotlinx.serialization.json.JsonObject
  * can be used to gather information or complete tasks.
  */
 public class Tool
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   internal val functionDeclarations: List<FunctionDeclaration>?,
   internal val googleSearch: GoogleSearch?,
   internal val codeExecution: JsonObject?,
-  internal val urlContext: UrlContext?,
+  @property:PublicPreviewAPI internal val urlContext: UrlContext?,
 ) {
+
+  @OptIn(PublicPreviewAPI::class)
   internal fun toInternal() =
     Internal(
       functionDeclarations?.map { it.toInternal() } ?: emptyList(),
@@ -37,6 +40,8 @@ internal constructor(
       codeExecution = this.codeExecution,
       urlContext = this.urlContext?.toInternal()
     )
+
+  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
@@ -47,6 +52,7 @@ internal constructor(
   )
   public companion object {
 
+    @OptIn(PublicPreviewAPI::class)
     private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap()), null) }
 
     /**
@@ -56,6 +62,7 @@ internal constructor(
      */
     @JvmStatic
     public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
+      @OptIn(PublicPreviewAPI::class)
       return Tool(functionDeclarations, null, null, null)
     }
 
@@ -97,6 +104,7 @@ internal constructor(
      */
     @JvmStatic
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
+      @OptIn(PublicPreviewAPI::class)
       return Tool(null, googleSearch, null, null)
     }
   }

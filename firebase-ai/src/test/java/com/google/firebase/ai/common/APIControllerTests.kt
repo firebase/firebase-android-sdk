@@ -26,6 +26,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FunctionCallingConfig
 import com.google.firebase.ai.type.GoogleSearch
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
@@ -285,6 +286,7 @@ internal class RequestFormatTests {
       )
 
     withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
       controller
         .generateContentStream(
           GenerateContentRequest(
@@ -323,6 +325,7 @@ internal class RequestFormatTests {
       )
 
     withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
       controller
         .generateContentStream(
           GenerateContentRequest(
@@ -432,6 +435,7 @@ internal class RequestFormatTests {
       )
 
     withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
       controller
         .generateContentStream(
           GenerateContentRequest(

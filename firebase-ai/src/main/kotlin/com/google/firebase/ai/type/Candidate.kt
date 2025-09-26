@@ -38,15 +38,17 @@ import kotlinx.serialization.json.JsonNames
  * enabled.
  */
 public class Candidate
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   public val content: Content,
   public val safetyRatings: List<SafetyRating>,
   public val citationMetadata: CitationMetadata?,
   public val finishReason: FinishReason?,
   public val groundingMetadata: GroundingMetadata?,
-  public val urlContextMetadata: UrlContextMetadata?
+  @property:PublicPreviewAPI public val urlContextMetadata: UrlContextMetadata?
 ) {
 
+  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class Internal(
     val content: Content.Internal? = null,
@@ -56,6 +58,8 @@ internal constructor(
     val groundingMetadata: GroundingMetadata.Internal? = null,
     val urlContextMetadata: UrlContextMetadata.Internal? = null
   ) {
+
+    @OptIn(PublicPreviewAPI::class)
     internal fun toPublic(): Candidate {
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       val citations = citationMetadata?.toPublic()
@@ -505,7 +509,9 @@ public class Segment(
  */
 @PublicPreviewAPI
 public class UrlContextMetadata internal constructor(public val urlMetadata: List<UrlMetadata>) {
+
   @Serializable
+  @PublicPreviewAPI
   internal data class Internal(val urlMetadata: List<UrlMetadata.Internal>?) {
     internal fun toPublic() = UrlContextMetadata(urlMetadata?.map { it.toPublic() } ?: emptyList())
   }

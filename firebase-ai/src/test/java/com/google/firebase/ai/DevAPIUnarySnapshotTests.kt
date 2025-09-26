@@ -18,6 +18,7 @@ package com.google.firebase.ai
 
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.UrlRetrievalStatus
@@ -135,6 +136,7 @@ internal class DevAPIUnarySnapshotTests {
       }
     }
 
+  @OptIn(PublicPreviewAPI::class)
   @Test
   fun `url context`() =
     goldenDevAPIUnaryFile("unary-success-url-context.json") {
@@ -167,6 +169,7 @@ internal class DevAPIUnarySnapshotTests {
       }
     }
 
+  @OptIn(PublicPreviewAPI::class)
   @Test
   fun `url context mixed validity`() =
     goldenDevAPIUnaryFile("unary-success-url-context-mixed-validity.json") {
