@@ -1,7 +1,8 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
-- [changed] Added better error messages to `ServiceConnectionHandshakeFailedException`
+  (#7382)
+- [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
 
 # 17.3.0
 
