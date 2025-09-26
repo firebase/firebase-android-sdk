@@ -322,7 +322,11 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     }
 
     override fun executeStatement(sqlStatement: String, bindings: List<Any?>?) {
-      db.execSQL(sqlStatement)
+      if (bindings === null || bindings.isEmpty()) {
+        db.execSQL(sqlStatement)
+      } else {
+        db.execSQL(sqlStatement, bindings.toTypedArray())
+      }
     }
 
     private fun setIntPragmaValue(pragma: String, newValue: Int) {
