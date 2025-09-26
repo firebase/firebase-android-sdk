@@ -71,31 +71,34 @@ public class HarmCategory private constructor(public val ordinal: Int) {
     /** A new and not yet supported value. */
     @JvmField public val UNKNOWN: HarmCategory = HarmCategory(0)
 
-    /** Harassment content. */
+    /** Represents the harm category for content that is classified as harassment. */
     @JvmField public val HARASSMENT: HarmCategory = HarmCategory(1)
 
-    /** Hate speech and content. */
+    /** Represents the harm category for content that is classified as hate speech. */
     @JvmField public val HATE_SPEECH: HarmCategory = HarmCategory(2)
 
-    /** Sexually explicit content. */
+    /** Represents the harm category for content that is classified as sexually explicit content. */
     @JvmField public val SEXUALLY_EXPLICIT: HarmCategory = HarmCategory(3)
 
-    /** Dangerous content. */
+    /** Represents the harm category for content that is classified as dangerous content. */
     @JvmField public val DANGEROUS_CONTENT: HarmCategory = HarmCategory(4)
 
-    /** Content that may be used to harm civic integrity. */
+    /**
+     * Represents the harm category for content that is classified as content that may be used to
+     * harm civic integrity.
+     */
     @JvmField public val CIVIC_INTEGRITY: HarmCategory = HarmCategory(5)
 
-    /** Content that is image hate. */
+    /** Represents the harm category for image content that is classified as hateful. */
     @JvmField public val IMAGE_HATE: HarmCategory = HarmCategory(6)
 
-    /** Image dangerous content. */
+    /** Represents the harm category for image content that is classified as dangerous. */
     @JvmField public val IMAGE_DANGEROUS_CONTENT: HarmCategory = HarmCategory(7)
 
-    /** Content is image harassment. */
+    /** Represents the harm category for image content that is classified as harassment. */
     @JvmField public val IMAGE_HARASSMENT: HarmCategory = HarmCategory(8)
 
-    /** Image sexually explicit content. */
+    /** Represents the harm category for image content that is classified as sexually explicit. */
     @JvmField public val IMAGE_SEXUALLY_EXPLICIT: HarmCategory = HarmCategory(9)
   }
 }
