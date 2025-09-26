@@ -171,6 +171,9 @@ class KSQLiteDatabaseUnitTest {
         KSQLiteDatabase(sqliteDatabase).use { kdb ->
           @OptIn(BeVeryCarefulWithTheSQLiteDatabase::class)
           kdb.withSQLiteDatabaseForTesting { sqliteDatabase ->
+            // NOTE: Don't ever attach databases outside of tests because doing so disables WAL mode
+            // and eliminates parallel queries. See http://goo.gle/48yo1rM and
+            // https://goo.gle/48zixgo (SQLiteDatabase.java inline comments) for details.
             sqliteDatabase.execSQL("ATTACH DATABASE ? as by5v39dzmz", arrayOf(dbFile2.absolutePath))
             sqliteDatabase.execSQL("ATTACH DATABASE '' as zpt4vg35mt")
             sqliteDatabase.execSQL("ATTACH DATABASE ':memory:' as cvftrszszx")
