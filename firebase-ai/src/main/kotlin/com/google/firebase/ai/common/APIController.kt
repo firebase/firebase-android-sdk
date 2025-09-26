@@ -38,7 +38,7 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
@@ -174,7 +174,7 @@ internal constructor(
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
     }
 
-  suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
+  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
 
   fun generateContentStream(
