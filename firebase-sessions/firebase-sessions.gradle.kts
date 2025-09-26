@@ -16,6 +16,8 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("firebase-library")
   id("firebase-vendor")
@@ -49,7 +51,6 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
   testOptions {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
@@ -60,20 +61,21 @@ android {
   }
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
-  kotlinOptions.jvmTarget = "1.8"
+kotlin {
+  explicitApi()
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:22.0.0")
+  api(libs.firebase.common)
 
-  api("com.google.firebase:firebase-components:19.0.0")
+  api(libs.firebase.components)
   api("com.google.firebase:firebase-installations-interop:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
-  api("com.google.firebase:firebase-annotations:17.0.0")
+  api(libs.firebase.annotations)
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
 

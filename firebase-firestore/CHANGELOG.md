@@ -1,5 +1,20 @@
 # Unreleased
 
+# 26.0.1
+
+- [changed] Bumped internal dependencies.
+- [changed] Improve the performance of queries in collections that contain many deleted documents.
+  [#7295](//github.com/firebase/firebase-android-sdk/issues/7295)
+- [changed] Improve query performance in large result sets by replacing the deprecated AsyncTask
+  thread pool with a self-managed thread pool.
+  [#7376](//github.com/firebase/firebase-android-sdk/issues/7376)
+- [changed] Improve query performance via internal memoization of calculated document data.
+  [#7370](//github.com/firebase/firebase-android-sdk/issues/7370)
+- [changed] Improve query performance by avoiding excessive Comparator instance creation.
+  [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
+- [changed] Improve query performance by using an unsorted HashMap instead of a sorted TreeMap.
+  [#7389](//github.com/firebase/firebase-android-sdk/pull/7389)
+
 # 26.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.

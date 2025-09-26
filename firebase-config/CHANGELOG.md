@@ -1,5 +1,9 @@
 # Unreleased
 
+# 23.0.1
+
+- [changed] Bumped internal dependencies.
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
@@ -179,7 +183,7 @@ Kotlin extensions library has no additional updates.
 
 - [fixed] Fixed a bug that caused HTTP errors in some locales. For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/3757"
-     class="external">GitHub Issue #3757</a>
+   class="external">GitHub Issue #3757</a>
 
 ## Kotlin
 
@@ -193,7 +197,7 @@ Kotlin extensions library has no additional updates.
   contains a fix.
   For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/3757"
-     class="external">GitHub Issue #3757</a>
+	 class="external">GitHub Issue #3757</a>
 </aside>
 
 - [changed] Added first-open time to [remote_config] server requests.

@@ -1,10 +1,22 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+  (#7382)
+- [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
+
+# 17.3.0
+
+- [changed] Bumped internal dependencies.
+- [feature] Added support for code execution.
+- [changed] Marked the public constructors for `ExecutableCodePart` and `CodeExecutionResultPart` as
+  deprecated.
 - [feature] Introduced `MissingPermissionsException`, which is thrown when the necessary permissions
   have not been granted by the user.
 - [feature] Added helper functions to `LiveSession` to allow developers to track the status of the
   audio session and the underlying websocket connection.
 - [changed] Added new values to `HarmCategory` (#7324)
+- [fixed] Fixed an issue that caused unknown or empty `Part`s to throw an exception. Instead, we now
+  log them and filter them from the response (#7333)
 
 # 17.2.0
 
@@ -14,13 +26,13 @@
   exception when the response contained no candidates.
 - [changed] Added better description for requests which fail due to the Gemini API not being
   configured.
-
-* [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
+- [changed] Added a `dilation` parameter to `ImagenMaskReference.generateMaskAndPadForOutpainting`
   (#7260)
-* [feature] Added support for limited-use tokens with Firebase App Check. These short-lived tokens
-  provide greater protection for the APIs that give you access to Gemini and Imagen models. Learn
-  how to [enable usage of limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check).
-  (#7285)
+- [feature] Added support for limited-use tokens with Firebase App Check. These limited-use tokens
+  are required for an upcoming optional feature called _replay protection_. We recommend
+  [enabling the usage of limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check)
+  now so that when replay protection becomes available, you can enable it sooner because more of
+  your users will be on versions of your app that send limited-use tokens. (#7285)
 
 # 17.1.0
 
@@ -28,8 +40,7 @@
 
 - [feature] added support for Imagen Editing, including inpainting, outpainting, control, style
   transfer, and subject references (#7075)
-
-* [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
+- [feature] **Preview:** Added support for bidirectional streaming in Gemini Developer Api
 
 # 17.0.0
 

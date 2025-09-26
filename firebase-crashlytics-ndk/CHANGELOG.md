@@ -1,5 +1,9 @@
 # Unreleased
 
+# 20.0.2
+
+- [changed] Bumped internal dependencies.
+
 # 20.0.1
 
 - [changed] Updated `firebase-crashlytics` dependency to 20.0.1
@@ -103,7 +107,7 @@
 <aside class="caution">This version of <code>firebase-crashlytics-ndk</code> can
   cause a nondeterministic crash on startup. For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/4683"
-     class="external">GitHub Issue #4683</a>. We recommend updating to the
+	 class="external">GitHub Issue #4683</a>. We recommend updating to the
   latest version (v18.3.5+) which contains a fix.
 </aside>
 
@@ -290,16 +294,16 @@ the new SDK.
 <aside class="note"><p>The changes in these release notes are only relevant to
   [crashlytics] NDK users who are upgrading from the legacy Fabric SDK.</p>
   <ul>
-    <li>If you're using [crashlytics] for NDK crash reporting in your app for
-      the first time, follow the
-      <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
+	<li>If you're using [crashlytics] for NDK crash reporting in your app for
+	  the first time, follow the
+	  <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
 	started instructions</a>.
-    </li>
-    <li>If you're upgrading from the legacy Fabric SDK to the
-      [firebase_crashlytics] SDK for NDK crash reporting, follow the
-      <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
+	</li>
+	<li>If you're upgrading from the legacy Fabric SDK to the
+	  [firebase_crashlytics] SDK for NDK crash reporting, follow the
+	  <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
 	instructions</a> to update your app with the following SDK changes.
-    </li>
+	</li>
   </ul>
 </aside>
 

@@ -1,5 +1,8 @@
 # Unreleased
 
+# 22.0.2
+
+- [changed] Bumped internal dependencies.
 - [fixed] Fixed the behavior of app start traces on API 34+ devices. [#5920]
 
 # 22.0.1

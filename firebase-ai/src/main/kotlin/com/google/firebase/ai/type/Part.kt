@@ -18,6 +18,7 @@ package com.google.firebase.ai.type
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -53,6 +54,12 @@ internal constructor(
   ) : InternalPart
 }
 
+/**
+ * Represents the code execution result from the model.
+ * @property outcome The result of the execution.
+ * @property output The stdout from the code execution, or an error message if it failed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class CodeExecutionResultPart
 internal constructor(
   public val outcome: String,
@@ -61,7 +68,11 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(outcome: String, output: String) : this(outcome, output, false, null)
+
+  /** Indicates if the code execution was successful */
+  public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
 
   @Serializable
   internal data class Internal(
@@ -70,14 +81,16 @@ internal constructor(
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class CodeExecutionResult(
-      @SerialName("outcome") val outcome: String,
-      val output: String
-    )
+    @Serializable internal data class CodeExecutionResult(val outcome: String, val output: String)
   }
 }
 
+/**
+ * Represents the code that was executed by the model.
+ * @property language The programming language of the code.
+ * @property code The source code to be executed.
+ * @property isThought Indicates whether the response is a thought.
+ */
 public class ExecutableCodePart
 internal constructor(
   public val language: String,
@@ -86,6 +99,7 @@ internal constructor(
   internal val thoughtSignature: String?
 ) : Part {
 
+  @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
 
   @Serializable
@@ -270,6 +284,10 @@ internal constructor(
   }
 }
 
+internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
+  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
+}
+
 /** Returns the part as a [String] if it represents text, and null otherwise */
 public fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
 
@@ -290,6 +308,9 @@ internal const val BASE_64_FLAGS = android.util.Base64.NO_WRAP
 
 internal object PartSerializer :
   JsonContentPolymorphicSerializer<InternalPart>(InternalPart::class) {
+
+  private val TAG = PartSerializer::javaClass.name
+
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<InternalPart> {
     val jsonObject = element.jsonObject
     return when {
@@ -300,7 +321,10 @@ internal object PartSerializer :
       "functionResponse" in jsonObject -> FunctionResponsePart.Internal.serializer()
       "inlineData" in jsonObject -> InlineDataPart.Internal.serializer()
       "fileData" in jsonObject -> FileDataPart.Internal.serializer()
-      else -> throw SerializationException("Unknown Part type")
+      else -> {
+        Log.w(TAG, "Unknown part type received, ignoring.")
+        UnknownPart.Internal.serializer()
+      }
     }
   }
 }
@@ -410,6 +434,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
+    is UnknownPart.Internal -> UnknownPart()
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

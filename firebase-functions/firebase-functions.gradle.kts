@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 // Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("firebase-library")
@@ -49,7 +49,6 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
   testOptions {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
@@ -57,18 +56,9 @@ android {
   lint { targetSdk = targetSdkVersion }
 }
 
-// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
-// classes, methods, or properties have implicit `public` visibility. This check helps
-// avoid  accidentally leaking elements into the public API, requiring that any public
-// element be explicitly declared as `public`.
-// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
-// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
-tasks.withType<KotlinCompile>().all {
-  if (!name.contains("test", ignoreCase = true)) {
-    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
-      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
-    }
-  }
+kotlin {
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  explicitApi()
 }
 
 dependencies {
@@ -77,9 +67,9 @@ dependencies {
   javadocClasspath(libs.findbugs.jsr305)
 
   api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  api("com.google.firebase:firebase-common:22.0.0")
-  api("com.google.firebase:firebase-components:19.0.0")
-  api("com.google.firebase:firebase-annotations:17.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
+  api(libs.firebase.annotations)
   api("com.google.firebase:firebase-auth-interop:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
   }

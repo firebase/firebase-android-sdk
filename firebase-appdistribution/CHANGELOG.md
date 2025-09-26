@@ -1,5 +1,9 @@
 # Unreleased
 
+# 16.0.0-beta17
+
+- [changed] Bumped internal dependencies.
+
 # 16.0.0-beta16
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.

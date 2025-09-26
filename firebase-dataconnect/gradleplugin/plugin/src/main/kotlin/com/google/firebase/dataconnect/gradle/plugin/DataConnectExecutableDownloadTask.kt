@@ -110,7 +110,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
         .sorted()
         .joinToString(", ")
     val applicableVersions =
-      allVersions.filter { it.version == version && it.os == operatingSystem }
+      allVersions.filter { it.version.toString() == version && it.os == operatingSystem }
 
     if (applicableVersions.isEmpty()) {
       val message =

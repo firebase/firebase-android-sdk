@@ -219,7 +219,8 @@ package com.google.firebase.ai.type {
   }
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
-    ctor public CodeExecutionResultPart(String outcome, String output);
+    ctor @Deprecated public CodeExecutionResultPart(String outcome, String output);
+    method public boolean executionSucceeded();
     method public String getOutcome();
     method public String getOutput();
     method public boolean isThought();
@@ -296,7 +297,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
-    ctor public ExecutableCodePart(String language, String code);
+    ctor @Deprecated public ExecutableCodePart(String language, String code);
     method public String getCode();
     method public String getLanguage();
     method public boolean isThought();
@@ -822,7 +823,6 @@ package com.google.firebase.ai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
-    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
@@ -831,7 +831,6 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
-    field public Integer? candidateCount;
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
@@ -1199,12 +1198,14 @@ package com.google.firebase.ai.type {
   }
 
   public final class Tool {
+    method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
   public static final class Tool.Companion {
+    method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
   }

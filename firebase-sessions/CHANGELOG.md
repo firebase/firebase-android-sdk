@@ -1,5 +1,9 @@
 # Unreleased
 
+# 3.0.2
+
+- [changed] Bumped internal dependencies.
+
 # 3.0.1
 
 - [fixed] Bumped DataStore dependency to include the mitigation for `CorruptionException` released
