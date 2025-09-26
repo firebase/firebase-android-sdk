@@ -21,9 +21,11 @@ import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransactio
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.fail
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.doubles.shouldBeWithinPercentageOf
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
@@ -267,12 +269,12 @@ class KSQLiteDatabaseUnitTest {
           """
           CREATE TABLE w9cz37zszx (
             id INTEGER PRIMARY KEY,
-            charSequence TEXT NOT NULL,
-            byteArray BLOB NOT NULL,
-            int INTEGER NOT NULL,
-            long INTEGER NOT NULL,
-            float REAL NOT NULL,
-            double REAL NOT NULL
+            charSequence TEXT,
+            byteArray BLOB,
+            int INTEGER,
+            long INTEGER,
+            float REAL,
+            double REAL
           )
         """
         )
@@ -328,12 +330,12 @@ class KSQLiteDatabaseUnitTest {
   }
 
   private data class BindingValues(
-    val charSequence: CharSequence,
-    val byteArray: ByteArray,
-    val int: Int,
-    val long: Long,
-    val float: Float,
-    val double: Double,
+    val charSequence: CharSequence?,
+    val byteArray: ByteArray?,
+    val int: Int?,
+    val long: Long?,
+    val float: Float?,
+    val double: Double?,
   ) {
     override fun equals(other: Any?): Boolean =
       other is BindingValues &&
@@ -402,14 +404,44 @@ class KSQLiteDatabaseUnitTest {
         expected
 
       assertSoftly {
+        infix fun Double?.shouldEqualSqliteRoundTrip(expected: Double?) {
+          if (this == expected) {
+            return
+          }
+          if (this === null) {
+            fail("actual is null, but expected: $expected")
+          }
+          if (expected === null) {
+            fail("actual $this, but expected null")
+          }
+          if (this.isNaN()) {
+            if (!(expected.isNaN()) || expected == 0.0) {
+              fail("actual is null, but expected: $expected")
+            } else {
+              return
+            }
+          }
+          if (expected.isNaN()) {
+            if (!(this.isNaN()) || this == 0.0) {
+              fail("actual is $this, but expected: NaN")
+            } else {
+              return
+            }
+          }
+          this.shouldBeWithinPercentageOf(expected, 99.99)
+        }
+
+        infix fun Float?.shouldEqualSqliteRoundTrip(expected: Float?) =
+          this?.toDouble().shouldEqualSqliteRoundTrip(expected?.toDouble())
+
         withClue("charSequence") {
           charSequenceActual.toString() shouldBe charSequenceExpected.toString()
         }
-        withClue("byteArray") { byteArrayActual.toList() shouldBe byteArrayExpected.toList() }
+        withClue("byteArray") { byteArrayActual?.toList() shouldBe byteArrayExpected?.toList() }
         withClue("int") { intActual shouldBe intExpected }
         withClue("long") { longActual shouldBe longExpected }
-        withClue("float") { floatActual shouldBe floatExpected }
-        withClue("double") { doubleActual shouldBe doubleExpected }
+        withClue("float") { floatActual shouldEqualSqliteRoundTrip floatExpected }
+        withClue("double") { doubleActual shouldEqualSqliteRoundTrip doubleExpected }
       }
     }
   }
