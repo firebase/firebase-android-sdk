@@ -114,7 +114,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         "genai-android/${BuildConfig.VERSION_NAME}",
@@ -144,7 +144,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
@@ -174,7 +174,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -201,7 +201,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -229,7 +229,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -361,7 +361,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -398,7 +398,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -424,7 +424,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,

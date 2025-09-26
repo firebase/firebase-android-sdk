@@ -72,7 +72,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
@@ -84,7 +84,7 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         systemInstruction = content { text("system instruction") },
         controller = apiController
       )
@@ -120,7 +120,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -133,7 +133,7 @@ internal class GenerativeModelTesting {
     // Creating the
     val generativeModel =
       GenerativeModel(
-        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-1.5-flash",
+        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
         controller = apiController
       )
 
