@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -31,5 +32,34 @@ internal class DataConnectSequenceNumberDatabase(
     logger = logger,
   ) {
 
-  override suspend fun onOpen(db: KSQLiteDatabase) {}
+  override suspend fun onOpen(db: KSQLiteDatabase) {
+    db.runReadWriteTransaction { txn ->
+      val applicationId = txn.getApplicationId()
+      val userVersion = txn.getUserVersion()
+      if (applicationId == 0 && userVersion == 0) {
+        initializeDatabase(txn)
+      } else if (applicationId != APPLICATION_ID || userVersion != USER_VERSION) {
+        throw InvalidDatabaseException(
+          "sqlite database has an unexpected application_id " +
+            "(found ${applicationId.toString(16)}, expected ${APPLICATION_ID.toString(16)}) " +
+            "and/or user_version " +
+            "(found ${userVersion.toString(16)}, expected ${USER_VERSION.toString(16)}); " +
+            "this probably isn't the correct sqlite database; refusing to open it"
+        )
+      } else {}
+    }
+  }
+
+  private suspend fun initializeDatabase(txn: KSQLiteDatabase.ReadWriteTransaction) {
+    logger.debug { "initializing database" }
+    txn.setApplicationId(APPLICATION_ID)
+    txn.setUserVersion(USER_VERSION)
+  }
+
+  class InvalidDatabaseException(message: String) : Exception(message)
+
+  private companion object {
+    const val APPLICATION_ID: Int = 0x432d5d29
+    const val USER_VERSION: Int = 0x142a141e
+  }
 }

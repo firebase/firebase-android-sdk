@@ -45,7 +45,7 @@ import kotlinx.coroutines.withContext
 internal abstract class DataConnectSqliteDatabase(
   val file: File?,
   private val ioDispatcher: CoroutineDispatcher,
-  private val logger: Logger,
+  protected val logger: Logger,
 ) {
 
   private val coroutineScope =

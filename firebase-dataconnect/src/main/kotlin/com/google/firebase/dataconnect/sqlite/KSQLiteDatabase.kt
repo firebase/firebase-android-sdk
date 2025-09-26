@@ -17,11 +17,17 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
+import android.database.Cursor
+import android.database.sqlite.SQLiteCursor
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteQuery
+import android.os.CancellationSignal
 import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.Job
 
 /**
  * A thin wrapper around [SQLiteDatabase] that provides a more Kotlin-friendly API and also allows
@@ -140,6 +146,21 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      */
     fun getDatabases(): MutableList<GetDatabasesResult>
 
+    /**
+     * Executes the given SQLite query.
+     *
+     * The given block will be called with a cursor over the query results. The block does _not_
+     * need to look after closing the cursor, as that will be done by the implementation of this
+     * method.
+     *
+     * @return whatever the given block returns.
+     */
+    suspend fun <T> executeQuery(
+      sqlStatement: String,
+      bindings: List<Any?>? = null,
+      block: (Cursor) -> T
+    ): T
+
     /** The result type returned from [ReadOnlyTransaction.getDatabases]. */
     data class GetDatabasesResult(val dbName: String, val filePath: String)
   }
@@ -165,6 +186,9 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      * See [getApplicationId] for details.
      */
     fun setApplicationId(newApplicationId: Int)
+
+    /** Executes the given SQLite statement. */
+    fun executeStatement(sqlStatement: String)
   }
 
   @VisibleForTesting
@@ -206,11 +230,65 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
       return results
     }
 
+    override suspend fun <T> executeQuery(
+      sqlStatement: String,
+      bindings: List<Any?>?,
+      block: (Cursor) -> T
+    ): T {
+      val cancellationSignal = CancellationSignal()
+      val handle = coroutineContext[Job]?.invokeOnCompletion { cancellationSignal.cancel() }
+      return try {
+        val cursor =
+          if (bindings === null || bindings.isEmpty()) {
+            db.rawQuery(sqlStatement, null, cancellationSignal)
+          } else {
+            // Use a QueryFactory hack to avoid having to convert all bindings to strings.
+            // Firestore uses this hack too, in SQLitePersistence.java: http://goo.gle/46M38XN
+            db.rawQueryWithFactory(
+              { db, masterQuery, editTable, query ->
+                bindings.bindTo(query)
+                SQLiteCursor(masterQuery, editTable, query)
+              },
+              sqlStatement,
+              null,
+              null
+            )
+          }
+        cursor.use { block(it) }
+      } finally {
+        handle?.dispose()
+      }
+    }
+
     private fun getIntPragmaValue(pragma: String): Int =
       db.rawQuery("PRAGMA $pragma", null).use { cursor ->
         cursor.moveToNext()
         cursor.getInt(0)
       }
+
+    private companion object {
+
+      fun List<Any?>.bindTo(query: SQLiteQuery) =
+        query.run { forEachIndexed { index, value -> value.bindTo(query, index + 1) } }
+
+      fun Any?.bindTo(query: SQLiteQuery, index: Int) =
+        query.run {
+          val value = this@bindTo
+          when (value) {
+            null -> bindNull(index)
+            is CharSequence -> bindString(index, value.toString())
+            is ByteArray -> bindBlob(index, value)
+            is Int -> bindLong(index, value.toLong())
+            is Long -> bindLong(index, value)
+            is Float -> bindDouble(index, value.toDouble())
+            is Double -> bindDouble(index, value)
+            else ->
+              throw IllegalArgumentException(
+                "unsupported sqlite binding type " + "${value::class.qualifiedName} [e873hhvxm2]"
+              )
+          }
+        }
+    }
   }
 
   private class ReadWriteTransactionImpl(db: SQLiteDatabase) :
@@ -222,6 +300,10 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
 
     override fun setApplicationId(newApplicationId: Int) {
       setIntPragmaValue("application_id", newApplicationId)
+    }
+
+    override fun executeStatement(sqlStatement: String) {
+      db.execSQL(sqlStatement)
     }
 
     private fun setIntPragmaValue(pragma: String, newValue: Int) {
