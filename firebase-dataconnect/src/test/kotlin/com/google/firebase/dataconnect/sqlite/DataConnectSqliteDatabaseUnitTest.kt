@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.sqlite
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.NO_LOCALIZED_COLLATORS
 import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
+import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import io.kotest.assertions.assertSoftly
@@ -33,6 +34,8 @@ import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -58,14 +61,15 @@ class DataConnectSqliteDatabaseUnitTest {
     val userVersion = Arb.int().next(rs)
     val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
     val db =
-      object : DataConnectSqliteDatabase(dbFile, Dispatchers.IO, mockk(relaxed = true)) {
-        override suspend fun onOpen(db: KSQLiteDatabase) {
-          db.runReadWriteTransaction {
+      TestDataConnectSqliteDatabase(
+        file = dbFile,
+        onOpen = { kdb ->
+          kdb.runReadWriteTransaction {
             getDatabasesResult.set(it.getDatabases())
             it.setUserVersion(userVersion)
           }
         }
-      }
+      )
 
     try {
       db.ensureOpen()
@@ -83,11 +87,10 @@ class DataConnectSqliteDatabaseUnitTest {
   fun `constructor file argument null should use an in-memory database`() = runTest {
     val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
     val db =
-      object : DataConnectSqliteDatabase(null, Dispatchers.IO, mockk(relaxed = true)) {
-        override suspend fun onOpen(db: KSQLiteDatabase) {
-          db.runReadOnlyTransaction { getDatabasesResult.set(it.getDatabases()) }
-        }
-      }
+      TestDataConnectSqliteDatabase(
+        file = null,
+        onOpen = { kdb -> kdb.runReadOnlyTransaction { getDatabasesResult.set(it.getDatabases()) } }
+      )
 
     try {
       db.ensureOpen()
@@ -107,13 +110,11 @@ class DataConnectSqliteDatabaseUnitTest {
       val onOpenThread = AtomicReference<Thread>(null)
       val withDbThread = AtomicReference<Thread>(null)
       val db =
-        object :
-          DataConnectSqliteDatabase(null, executor.asCoroutineDispatcher(), mockk(relaxed = true)) {
-          override suspend fun onOpen(db: KSQLiteDatabase) {
-            onOpenThread.set(Thread.currentThread())
-          }
-          suspend fun callWithDb() = withDb { withDbThread.set(Thread.currentThread()) }
-        }
+        TestDataConnectSqliteDatabase(
+          ioDispatcher = dispatcher,
+          onOpen = { onOpenThread.set(Thread.currentThread()) },
+          withDb = { withDbThread.set(Thread.currentThread()) }
+        )
 
       try {
         db.callWithDb()
@@ -128,6 +129,43 @@ class DataConnectSqliteDatabaseUnitTest {
     } finally {
       executor.shutdown()
     }
+  }
+
+  @Test
+  fun `close can be called on a new instance without throwing an exception`() = runTest {
+    val db = TestDataConnectSqliteDatabase()
+
+    db.close()
+  }
+
+  @Test
+  fun `close can be called multiple times on a new instance without throwing an exception`() =
+    runTest {
+      val db = TestDataConnectSqliteDatabase()
+
+      db.close()
+      db.close()
+      db.close()
+      db.close()
+      db.close()
+    }
+
+  private inner class TestDataConnectSqliteDatabase(
+    file: File? = File(temporaryFolder.newFolder(), "db.sqlite"),
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    logger: Logger = mockk(relaxed = true),
+    onOpen: suspend (KSQLiteDatabase) -> Unit = {},
+    withDb: suspend CoroutineScope.(KSQLiteDatabase) -> Unit = {},
+  ) : DataConnectSqliteDatabase(file = file, ioDispatcher = ioDispatcher, logger = logger) {
+
+    private val _onOpen = onOpen
+    private val _withDb = withDb
+
+    override suspend fun onOpen(db: KSQLiteDatabase) {
+      _onOpen(db)
+    }
+
+    suspend fun callWithDb(): Unit = withDb(block = _withDb)
   }
 
   private companion object {
