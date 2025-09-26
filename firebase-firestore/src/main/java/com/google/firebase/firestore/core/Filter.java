@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.pipeline.BooleanExpr;
+import com.google.firebase.firestore.pipeline.BooleanExpression;
 import java.util.List;
 
 public abstract class Filter {
@@ -31,5 +31,5 @@ public abstract class Filter {
   /** Returns a list of all filters that are contained within this filter */
   public abstract List<Filter> getFilters();
 
-  abstract BooleanExpr toPipelineExpr();
+  abstract BooleanExpression toPipelineExpr();
 }

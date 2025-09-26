@@ -15,9 +15,9 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.map
-import com.google.firebase.firestore.pipeline.Expr.Companion.mapGet
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.mapGet
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

@@ -375,11 +375,11 @@ internal val evaluateSubtract = arithmeticPrimitive(LongMath::checkedSubtract, D
 
 internal val evaluateArray = variadicNullableValueFunction(EvaluateResult.Companion::list)
 
-internal val evaluateEqAny = binaryFunction(::eqAny)
+internal val evaluateEqAny = binaryFunction(::equalAny)
 
-internal val evaluateNotEqAny = binaryFunction(::notEqAny)
+internal val evaluateNotEqAny = binaryFunction(::notEqualAny)
 
-internal val evaluateArrayContains = binaryFunction { l: List<Value>, v: Value -> eqAny(v, l) }
+internal val evaluateArrayContains = binaryFunction { l: List<Value>, v: Value -> equalAny(v, l) }
 
 internal val evaluateArrayContainsAny =
   binaryFunction { array: List<Value>, searchValues: List<Value> ->
@@ -419,7 +419,7 @@ internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
   EvaluateResult.long(array.size)
 }
 
-private fun eqAny(value: Value, list: List<Value>): EvaluateResult {
+private fun equalAny(value: Value, list: List<Value>): EvaluateResult {
   var foundNull = false
   for (element in list) when (strictEquals(value, element)) {
     true -> return EvaluateResult.TRUE
@@ -429,7 +429,7 @@ private fun eqAny(value: Value, list: List<Value>): EvaluateResult {
   return if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
 }
 
-private fun notEqAny(value: Value, list: List<Value>): EvaluateResult {
+private fun notEqualAny(value: Value, list: List<Value>): EvaluateResult {
   var foundNull = false
   for (element in list) when (strictEquals(value, element)) {
     true -> return EvaluateResult.FALSE

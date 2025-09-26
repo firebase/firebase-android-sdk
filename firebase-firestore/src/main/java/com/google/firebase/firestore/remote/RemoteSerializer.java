@@ -57,9 +57,9 @@ import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.pipeline.CollectionGroupSource;
 import com.google.firebase.firestore.pipeline.CollectionSource;
 import com.google.firebase.firestore.pipeline.DocumentsSource;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
-import com.google.firebase.firestore.pipeline.FunctionExpr;
+import com.google.firebase.firestore.pipeline.FunctionExpression;
 import com.google.firebase.firestore.pipeline.InternalOptions;
 import com.google.firebase.firestore.pipeline.LimitStage;
 import com.google.firebase.firestore.pipeline.Ordering;
@@ -728,24 +728,25 @@ public final class RemoteSerializer {
     }
   }
 
-  private Expr decodeExpression(Value protoValue) {
+  private Expression decodeExpression(Value protoValue) {
     switch (protoValue.getValueTypeCase()) {
       case FIELD_REFERENCE_VALUE:
         return new Field(FieldPath.fromServerFormat(protoValue.getFieldReferenceValue()));
       case FUNCTION_VALUE:
         return decodeFunctionExpression(protoValue.getFunctionValue());
       default:
-        return new Expr.Constant(protoValue);
+        return new Expression.Constant(protoValue);
     }
   }
 
-  private FunctionExpr decodeFunctionExpression(com.google.firestore.v1.Function protoFunction) {
+  private FunctionExpression decodeFunctionExpression(
+      com.google.firestore.v1.Function protoFunction) {
     String funcName = protoFunction.getName();
-    List<Expr> decodedArgs = new ArrayList<>();
+    List<Expression> decodedArgs = new ArrayList<>();
     for (Value arg : protoFunction.getArgsList()) {
       decodedArgs.add(decodeExpression(arg));
     }
-    return new FunctionExpr(funcName, decodedArgs, InternalOptions.EMPTY);
+    return new FunctionExpression(funcName, decodedArgs, InternalOptions.EMPTY);
   }
 
   private Ordering decodeOrdering(Value protoValue) {
@@ -753,7 +754,7 @@ public final class RemoteSerializer {
         protoValue.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
         "Invalid proto_value type for Ordering, expected map_value.");
 
-    Expr decodedExpr = null;
+    Expression decodedExpr = null;
     Ordering.Direction decodedDirection = null;
 
     for (Map.Entry<String, Value> entry : protoValue.getMapValue().getFieldsMap().entrySet()) {

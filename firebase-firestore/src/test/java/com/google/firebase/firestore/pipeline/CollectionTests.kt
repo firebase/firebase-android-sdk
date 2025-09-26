@@ -19,13 +19,12 @@ import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -159,7 +158,7 @@ internal class CollectionTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(eqAny(field("score"), array(constant(90L), constant(97L))))
+        .where(equalAny(field("score"), array(constant(90L), constant(97L))))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
@@ -172,7 +171,8 @@ internal class CollectionTests {
 
   @Test
   fun `where inequality on values`(): Unit = runBlocking {
-    val pipeline = RealtimePipelineSource(db).collection("/users").where(field("score").gt(80L))
+    val pipeline =
+      RealtimePipelineSource(db).collection("/users").where(field("score").greaterThan(80L))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
@@ -184,7 +184,8 @@ internal class CollectionTests {
 
   @Test
   fun `where not equal on values`(): Unit = runBlocking {
-    val pipeline = RealtimePipelineSource(db).collection("/users").where(field("score").neq(50L))
+    val pipeline =
+      RealtimePipelineSource(db).collection("/users").where(field("score").notEqual(50L))
 
     val doc1 = doc("users/bob", 1000, mapOf("score" to 90L))
     val doc2 = doc("users/alice", 1000, mapOf("score" to 50L))
