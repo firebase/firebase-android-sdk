@@ -19,19 +19,23 @@ package com.google.firebase.dataconnect.sqlite
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.NO_LOCALIZED_COLLATORS
 import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
+import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.next
 import io.mockk.mockk
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Rule
@@ -52,57 +56,83 @@ class DataConnectSqliteDatabaseUnitTest {
   fun `constructor file argument should be used as the database file`() = runTest {
     val dbFile = File(temporaryFolder.newFolder(), "fqsywf8bdd.sqlite")
     val userVersion = Arb.int().next(rs)
+    val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
     val db =
-      object :
-        DataConnectSqliteDatabase(dbFile, backgroundScope, Dispatchers.IO, mockk(relaxed = true)) {
+      object : DataConnectSqliteDatabase(dbFile, Dispatchers.IO, mockk(relaxed = true)) {
         override suspend fun onOpen(db: KSQLiteDatabase) {
-          db.runReadWriteTransaction { it.setUserVersion(userVersion) }
-        }
-
-        suspend fun ensureOnOpenCalled() =
-          withDb {
-            // do nothing; the first call to withDb() should call onOpen()
+          db.runReadWriteTransaction {
+            getDatabasesResult.set(it.getDatabases())
+            it.setUserVersion(userVersion)
           }
+        }
       }
 
     try {
-      db.ensureOnOpenCalled()
+      db.ensureOpen()
     } finally {
       withContext(NonCancellable) { db.close() }
     }
 
+    withClue("getDatabasesResult") {
+      getDatabasesResult.get().first().filePath shouldBe dbFile.absolutePath
+    }
     withClue("userVersion") { db.file!!.getSqliteUserVersion() shouldBe userVersion }
   }
 
-  private inner class TestDataConnectSqliteDatabase(
-    testScope: TestScope,
-    onOpen: (suspend (KSQLiteDatabase) -> Unit) = {},
-  ) :
-    DataConnectSqliteDatabase(
-      file = File(temporaryFolder.newFolder(), "db.sqlite"),
-      parentCoroutineScope = testScope.backgroundScope,
-      blockingDispatcher = Dispatchers.IO,
-      logger = mockk(relaxed = true),
-    ) {
-    private val _onOpen = onOpen
-    private val _onOpenInvocationCount = AtomicInteger(0)
-    val onOpenInvocationCount: Int
-      get() = _onOpenInvocationCount.get()
+  @Test
+  fun `constructor file argument null should use an in-memory database`() = runTest {
+    val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
+    val db =
+      object : DataConnectSqliteDatabase(null, Dispatchers.IO, mockk(relaxed = true)) {
+        override suspend fun onOpen(db: KSQLiteDatabase) {
+          db.runReadOnlyTransaction { getDatabasesResult.set(it.getDatabases()) }
+        }
+      }
 
-    override suspend fun onOpen(db: KSQLiteDatabase) {
-      _onOpenInvocationCount.incrementAndGet()
-      _onOpen(db)
+    try {
+      db.ensureOpen()
+    } finally {
+      withContext(NonCancellable) { db.close() }
     }
 
-    suspend fun ensureOpen() =
-      withDb {
-        // do nothing
+    withClue("getDatabasesResult") { getDatabasesResult.get().first().filePath shouldBe "" }
+  }
+
+  @Test
+  fun `constructor CoroutineDispatcher argument is used`() = runTest {
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      val dispatcher = executor.asCoroutineDispatcher()
+      val dispatcherThread = withContext(dispatcher) { Thread.currentThread() }
+      val onOpenThread = AtomicReference<Thread>(null)
+      val withDbThread = AtomicReference<Thread>(null)
+      val db =
+        object :
+          DataConnectSqliteDatabase(null, executor.asCoroutineDispatcher(), mockk(relaxed = true)) {
+          override suspend fun onOpen(db: KSQLiteDatabase) {
+            onOpenThread.set(Thread.currentThread())
+          }
+          suspend fun callWithDb() = withDb { withDbThread.set(Thread.currentThread()) }
+        }
+
+      try {
+        db.callWithDb()
+      } finally {
+        withContext(NonCancellable) { db.close() }
       }
+
+      assertSoftly {
+        withClue("onOpenThread") { onOpenThread.get() shouldBeSameInstanceAs dispatcherThread }
+        withClue("withDbThread") { withDbThread.get() shouldBeSameInstanceAs dispatcherThread }
+      }
+    } finally {
+      executor.shutdown()
+    }
   }
 
   private companion object {
 
-    suspend fun File.getSqliteUserVersion(): Int {
+    fun File.getSqliteUserVersion(): Int {
       val openFlags = OPEN_READONLY or NO_LOCALIZED_COLLATORS
       return SQLiteDatabase.openDatabase(this.absolutePath, null, openFlags).use { sqliteDatabase ->
         sqliteDatabase.version

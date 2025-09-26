@@ -19,18 +19,15 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.core.Logger
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 
 internal class DataConnectSequenceNumberDatabase(
   dbFile: File?,
-  parentCoroutineScope: CoroutineScope,
-  blockingDispatcher: CoroutineDispatcher,
+  ioDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
   DataConnectSqliteDatabase(
     file = dbFile,
-    parentCoroutineScope = parentCoroutineScope,
-    blockingDispatcher = blockingDispatcher,
+    ioDispatcher = ioDispatcher,
     logger = logger,
   ) {
 

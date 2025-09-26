@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -98,9 +99,9 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      * Retrieves the value of the user-version integer at offset 60 in the database header.
      *
      * According to the
-     * [PRAGMA schema.user_version](https://www.sqlite.org/pragma.html#pragma_user_version)
-     * documentation, the user-version is an integer that is available to applications to use
-     * however they want. SQLite makes no use of the user-version itself.
+     * [PRAGMA user_version](https://www.sqlite.org/pragma.html#pragma_user_version) documentation,
+     * the user-version is an integer that is available to applications to use however they want.
+     * SQLite makes no use of the user-version itself.
      *
      * If the value has never been explicitly set then this method returns `0` (zero).
      *
@@ -112,7 +113,7 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      * Retrieves the value of the "Application ID" integer at offset 68 in the database header.
      *
      * According to the
-     * [PRAGMA schema.application_id](https://www.sqlite.org/pragma.html#pragma_application_id)
+     * [PRAGMA application_id](https://www.sqlite.org/pragma.html#pragma_application_id)
      * documentation, applications that use SQLite as their application file-format should set the
      * Application ID integer to a unique integer so that utilities such as `file` can determine the
      * specific file type rather than just reporting "SQLite3 Database".
@@ -122,6 +123,24 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
      * Use [ReadWriteTransaction.setApplicationId] to set the value.
      */
     fun getApplicationId(): Int
+
+    /**
+     * Retrieves the list of databases attached to the current database connection.
+     *
+     * According to the
+     * [PRAGMA database_list](https://www.sqlite.org/pragma.html#pragma_database_list)
+     * documentation, the [GetDatabasesResult.dbName] is "main" for the main database file, "temp"
+     * for the database file used to store TEMP objects, or the name of the ATTACHed database for
+     * other database files. The [GetDatabasesResult.filePath] is the name of the database file
+     * itself, or an empty string if the database is not associated with a file.
+     *
+     * @return a newly-created list containing the results; the caller has ownership of the list and
+     * can do with it whatever it pleases.
+     */
+    fun getDatabases(): MutableList<GetDatabasesResult>
+
+    /** The result type returned from [ReadOnlyTransaction.getDatabases]. */
+    data class GetDatabasesResult(val dbName: String, val filePath: String)
   }
 
   interface ReadWriteTransaction : ReadOnlyTransaction {
@@ -167,6 +186,18 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     final override fun getUserVersion(): Int = getIntPragmaValue("user_version")
 
     final override fun getApplicationId(): Int = getIntPragmaValue("application_id")
+
+    final override fun getDatabases(): MutableList<GetDatabasesResult> {
+      val results = mutableListOf<GetDatabasesResult>()
+      db.rawQuery("PRAGMA database_list", null).use { cursor ->
+        while (cursor.moveToNext()) {
+          val dbName = cursor.getString(1)
+          val filePath = cursor.getString(2)
+          results.add(GetDatabasesResult(dbName, filePath))
+        }
+      }
+      return results
+    }
 
     private fun getIntPragmaValue(pragma: String): Int =
       db.rawQuery("PRAGMA $pragma", null).use { cursor ->

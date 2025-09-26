@@ -32,7 +32,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -40,24 +39,24 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
 internal abstract class DataConnectSqliteDatabase(
   val file: File?,
-  parentCoroutineScope: CoroutineScope,
-  private val blockingDispatcher: CoroutineDispatcher,
+  private val ioDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
 
   private val coroutineScope =
     CoroutineScope(
-      parentCoroutineScope.coroutineContext +
-        SupervisorJob(parentCoroutineScope.coroutineContext[Job]) +
-        blockingDispatcher +
+      SupervisorJob() +
+        ioDispatcher +
         CoroutineName(logger.nameWithId) +
         CoroutineExceptionHandler { context, throwable ->
           logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
+            "uncaught exception in CoroutineScope ${logger.nameWithId} " +
+              "from a coroutine named ${context[CoroutineName]}: $throwable"
           }
         }
     )
@@ -76,26 +75,57 @@ internal abstract class DataConnectSqliteDatabase(
    * database operations. This method suspends until the database is closed.
    */
   suspend fun close() {
+    logger.debug { "close()" }
     coroutineScope.cancel("${logger.nameWithId} close() called")
 
-    val oldState = state.getAndUpdate { State.Closed }
+    val oldState =
+      state.getAndUpdate { currentState ->
+        when (currentState) {
+          State.Closed -> currentState
+          is State.Closing -> currentState
+          is State.Open -> State.Closing(currentState.job)
+        }
+      }
 
-    if (oldState !is State.Open) {
-      return
+    val job =
+      when (oldState) {
+        State.Closed -> return
+        is State.Closing -> oldState.job
+        is State.Open -> oldState.job
+      }
+
+    job.cancel("${logger.nameWithId} close() called")
+
+    val db = job.runCatching { await() }.getOrNull()
+    if (db !== null) {
+      logger.debug { "closing sqlite database connection due to close() invocation" }
+      val closeResult = withContext(NonCancellable + ioDispatcher) { db.runCatching { close() } }
+      closeResult.onFailure {
+        logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" }
+      }
     }
 
-    oldState.job.cancel("${logger.nameWithId} close() called")
-    val db = oldState.job.runCatching { await() }.getOrNull()
-    if (db === null) {
-      return
-    }
+    state.update { State.Closed }
+  }
 
-    logger.debug { "closing sqlite database connection due to close() invocation" }
-    val closeResult =
-      withContext(NonCancellable + blockingDispatcher) { db.runCatching { close() } }
-    closeResult.onFailure {
-      logger.warn(it) { "closing sqlite database failed (ignoring) [f85m9phe33]" }
-    }
+  /**
+   * Opens a connection to the underlying sqlite database and initializes it, possibly running
+   * schema migrations.
+   *
+   * It is not normally required to call this method, as the database is opened lazily when it is
+   * first accessed. But this method is made available for cases when it is desirable to eagerly
+   * initialize the database.
+   *
+   * This method throws an exception if this object has been closed by a call to [close], or if
+   * opening the database failed.
+   *
+   * The actual work of initializing the database is done in a separate coroutine on a dispatcher
+   * that is appropriate for blocking I/O operations. Therefore, it is safe to call this function
+   * from any thread, even the main thread, as it will not block (but it may suspend during database
+   * initialization).
+   */
+  suspend fun ensureOpen() {
+    getOrInitializeSqliteDatabase()
   }
 
   /**
@@ -111,13 +141,7 @@ internal abstract class DataConnectSqliteDatabase(
     operationName: String? = null,
     block: suspend CoroutineScope.(KSQLiteDatabase) -> T
   ): T {
-    val db =
-      when (val currentState = state.value) {
-        is State.Open -> currentState.job.await()
-        State.Closing,
-        State.Closed ->
-          throw IllegalStateException("${logger.nameWithId} has been closed [zgexv4ss46]")
-      }
+    val db = getOrInitializeSqliteDatabase()
 
     val job =
       coroutineScope.async(CoroutineName("${logger.nameWithId} withDb $operationName")) {
@@ -140,13 +164,15 @@ internal abstract class DataConnectSqliteDatabase(
    */
   protected abstract suspend fun onOpen(db: KSQLiteDatabase)
 
-  private suspend fun open(): SQLiteDatabase {
-    check(coroutineContext[CoroutineDispatcher] === blockingDispatcher) {
-      "internal error: open() is expected to be called by a coroutine that uses the " +
-        "blocking dispatcher so that blocking database operations don't need to be " +
-        "explicitly run on a separate dispatcher"
+  private suspend fun getOrInitializeSqliteDatabase(): SQLiteDatabase =
+    when (val currentState = state.value) {
+      is State.Open -> currentState.job.await()
+      is State.Closing,
+      State.Closed ->
+        throw IllegalStateException("${logger.nameWithId} has been closed [zgexv4ss46]")
     }
 
+  private suspend fun open(): SQLiteDatabase {
     val dbPath = file?.absolutePath ?: ":memory:"
 
     // Specify NO_LOCALIZED_COLLATORS to gain the performance benefits of bitwise collation instead
@@ -181,8 +207,11 @@ internal abstract class DataConnectSqliteDatabase(
   }
 
   private sealed interface State {
-    data class Open(val job: Deferred<SQLiteDatabase>) : State
-    object Closing : State
+    sealed interface StateWithJob : State {
+      val job: Deferred<SQLiteDatabase>
+    }
+    data class Open(override val job: Deferred<SQLiteDatabase>) : StateWithJob
+    data class Closing(override val job: Deferred<SQLiteDatabase>) : StateWithJob
     object Closed : State
   }
 
