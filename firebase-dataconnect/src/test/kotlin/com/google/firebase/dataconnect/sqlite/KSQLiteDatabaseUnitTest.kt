@@ -17,10 +17,12 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
@@ -157,6 +159,33 @@ class KSQLiteDatabaseUnitTest {
         }
       }
     }
+  }
+
+  @Test
+  fun `verify that getDatabases returns the attached databases`() = runTest {
+    val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
+    val dbFile2 = File(temporaryFolder.newFolder(), "db2.sqlite")
+
+    val databases =
+      SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { sqliteDatabase ->
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          @OptIn(BeVeryCarefulWithTheSQLiteDatabase::class)
+          kdb.withSQLiteDatabaseForTesting { sqliteDatabase ->
+            sqliteDatabase.execSQL("ATTACH DATABASE ? as by5v39dzmz", arrayOf(dbFile2.absolutePath))
+            sqliteDatabase.execSQL("ATTACH DATABASE '' as zpt4vg35mt")
+            sqliteDatabase.execSQL("ATTACH DATABASE ':memory:' as cvftrszszx")
+          }
+
+          kdb.runReadOnlyTransaction { it.getDatabases() }
+        }
+      }
+
+    databases.shouldContainExactlyInAnyOrder(
+      GetDatabasesResult(dbName = "main", filePath = dbFile.absolutePath),
+      GetDatabasesResult(dbName = "by5v39dzmz", filePath = dbFile2.absolutePath),
+      GetDatabasesResult(dbName = "zpt4vg35mt", filePath = ""),
+      GetDatabasesResult(dbName = "cvftrszszx", filePath = "")
+    )
   }
 
   private companion object {

@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -166,6 +167,12 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     fun setApplicationId(newApplicationId: Int)
   }
 
+  @VisibleForTesting
+  interface ReadWriteTransactionForTesting {
+
+    fun getSQLiteDatabaseForTesting(): SQLiteDatabase
+  }
+
   private open class BaseTransactionImpl(db: SQLiteDatabase) : AutoCloseable {
 
     private val dbAtomicReference = AtomicReference(db)
@@ -207,7 +214,7 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
   }
 
   private class ReadWriteTransactionImpl(db: SQLiteDatabase) :
-    ReadOnlyTransactionImpl(db), ReadWriteTransaction {
+    ReadOnlyTransactionImpl(db), ReadWriteTransaction, ReadWriteTransactionForTesting {
 
     override fun setUserVersion(newUserVersion: Int) {
       setIntPragmaValue("user_version", newUserVersion)
@@ -220,5 +227,7 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     private fun setIntPragmaValue(pragma: String, newValue: Int) {
       db.execSQL("PRAGMA $pragma = $newValue")
     }
+
+    override fun getSQLiteDatabaseForTesting() = db
   }
 }
