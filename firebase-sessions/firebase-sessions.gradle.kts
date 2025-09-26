@@ -19,6 +19,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+  id("LicenseResolverPlugin")
   id("firebase-library")
   id("firebase-vendor")
   id("kotlin-android")
@@ -64,6 +65,10 @@ android {
 kotlin {
   explicitApi()
   compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+}
+
+thirdPartyLicenses {
+  add("dagger2", "${projectDir}/third_party/dagger2/LICENSE")
 }
 
 dependencies {
