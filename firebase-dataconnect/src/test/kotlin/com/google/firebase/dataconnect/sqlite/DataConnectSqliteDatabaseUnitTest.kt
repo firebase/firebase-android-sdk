@@ -22,23 +22,42 @@ import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbs.wine.Vineyard
+import io.kotest.property.arbs.wine.vineyards
 import io.mockk.mockk
 import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Rule
@@ -150,7 +169,336 @@ class DataConnectSqliteDatabaseUnitTest {
       db.close()
     }
 
-  private inner class TestDataConnectSqliteDatabase(
+  @Test
+  fun `close on a new instance causes withDb to throw and never call onOpen`() = runTest {
+    val onOpenInvocationCount = AtomicInteger(0)
+    val db = TestDataConnectSqliteDatabase(onOpen = { onOpenInvocationCount.incrementAndGet() })
+    db.close()
+
+    val exception = shouldThrow<IllegalStateException> { db.callWithDb() }
+
+    assertSoftly {
+      withClue("exception.message") {
+        exception.message.shouldContainWithNonAbuttingTextIgnoringCase("closed")
+      }
+      withClue("onOpenInvocationCount") { onOpenInvocationCount.get() shouldBe 0 }
+    }
+  }
+
+  @Test
+  fun `close on an opened instance causes withDb to throw`() = runTest {
+    val onOpenInvocationCount = AtomicInteger(0)
+    val db = TestDataConnectSqliteDatabase(onOpen = { onOpenInvocationCount.incrementAndGet() })
+    db.ensureOpen()
+    db.close()
+
+    val exception = shouldThrow<IllegalStateException> { db.callWithDb() }
+
+    assertSoftly {
+      withClue("exception.message") {
+        exception.message.shouldContainWithNonAbuttingTextIgnoringCase("closed")
+      }
+      withClue("onOpenInvocationCount") { onOpenInvocationCount.get() shouldBe 1 }
+    }
+  }
+
+  @Test
+  fun `close causes an in-progress onOpen to be cancelled`() = runTest {
+    val latch1 = SuspendingCountDownLatch(2)
+    val latch2 = SuspendingCountDownLatch(2)
+    val onOpenResultFlow = MutableStateFlow<Result<Unit>?>(null)
+    val db =
+      TestDataConnectSqliteDatabase(
+        onOpen = {
+          onOpenResultFlow.value = runCatching {
+            latch1.countDown().await()
+            latch2.countDown().await()
+            coroutineContext.ensureActive() // should throw
+          }
+        }
+      )
+    async { db.ensureOpen() }
+
+    latch1.countDown().await()
+    db.close()
+    latch2.countDown()
+
+    val onOpenResult = onOpenResultFlow.filterNotNull().first()
+    val exception = onOpenResult.exceptionOrNull().shouldNotBeNull()
+    exception::class shouldBe CancellationException::class
+  }
+
+  @Test
+  fun `close causes an in-progress withDb to be cancelled`() = runTest {
+    val latch1 = SuspendingCountDownLatch(2)
+    val latch2 = SuspendingCountDownLatch(2)
+    val withDbResultFlow = MutableStateFlow<Result<Unit>?>(null)
+    val db =
+      TestDataConnectSqliteDatabase(
+        withDb = {
+          withDbResultFlow.value = runCatching {
+            latch1.countDown().await()
+            latch2.countDown().await()
+            coroutineContext.ensureActive() // should throw
+          }
+        }
+      )
+    async { db.callWithDb() }
+
+    latch1.countDown().await()
+    db.close()
+    latch2.countDown()
+
+    val withDbResult = withDbResultFlow.filterNotNull().first()
+    val exception = withDbResult.exceptionOrNull().shouldNotBeNull()
+    exception::class shouldBe CancellationException::class
+  }
+
+  @Test
+  fun `close suspends until onOpen completes`() = runTest {
+    val events = CopyOnWriteArrayList<String>()
+    val latch = SuspendingCountDownLatch(2)
+    val db =
+      TestDataConnectSqliteDatabase(
+        onOpen = {
+          withContext(NonCancellable) {
+            events.add("onOpen1")
+            latch.countDown().await()
+            events.add("onOpen2")
+            delay(200.milliseconds)
+            events.add("onOpen3")
+          }
+        }
+      )
+    async { db.ensureOpen() }
+
+    latch.countDown().await()
+    db.close()
+    events.add("closeReturned")
+
+    events.shouldContainExactly("onOpen1", "onOpen2", "onOpen3", "closeReturned")
+  }
+
+  @Test
+  fun `close concurrent calls all suspend until onOpen completes`() = runTest {
+    val events = CopyOnWriteArrayList<String>()
+    val latch1 = SuspendingCountDownLatch(2)
+    val latch2 = SuspendingCountDownLatch(2)
+    val db =
+      TestDataConnectSqliteDatabase(
+        onOpen = {
+          withContext(NonCancellable) {
+            latch1.countDown().await()
+            latch2.countDown().await()
+            delay(200.milliseconds)
+            events.add("opened")
+          }
+        }
+      )
+    async { db.ensureOpen() }
+
+    latch1.countDown().await()
+    val closeJobLatch = SuspendingCountDownLatch(6)
+    val jobs =
+      List(closeJobLatch.count - 1) {
+        launch(Dispatchers.IO) {
+          closeJobLatch.countDown()
+          db.close()
+          events.add("closed")
+        }
+      }
+
+    closeJobLatch.countDown().await()
+    latch2.countDown().await()
+    jobs.forEach { it.join() }
+    events.shouldContainExactly("opened", "closed", "closed", "closed", "closed", "closed")
+  }
+
+  @Test
+  fun `onOpen KSQLiteDatabase specified is closed upon return`() = runTest {
+    val kdbFlow = MutableStateFlow<KSQLiteDatabase?>(null)
+    val db = TestDataConnectSqliteDatabase(onOpen = { kdbFlow.value = it })
+
+    val exception =
+      try {
+        db.ensureOpen()
+        val kdb = kdbFlow.filterNotNull().first()
+        shouldThrow<java.lang.IllegalStateException> { kdb.runReadOnlyTransaction {} }
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
+  }
+
+  @Test
+  fun `onOpen KSQLiteDatabase specified is closed upon throwing`() = runTest {
+    val kdbFlow = MutableStateFlow<KSQLiteDatabase?>(null)
+    val db =
+      TestDataConnectSqliteDatabase(
+        onOpen = {
+          kdbFlow.value = it
+          throw Exception("forced exception y8hrmkz3bb")
+        }
+      )
+
+    val exception =
+      try {
+        db.runCatching { ensureOpen() }
+        val kdb = kdbFlow.filterNotNull().first()
+        shouldThrow<java.lang.IllegalStateException> { kdb.runReadOnlyTransaction {} }
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
+  }
+
+  @Test
+  fun `onOpen should only be called once when it completes normally`() = runTest {
+    val onOpenInvocationCount = AtomicInteger(0)
+    val db = TestDataConnectSqliteDatabase(onOpen = { onOpenInvocationCount.incrementAndGet() })
+
+    try {
+      repeat(5) {
+        db.ensureOpen()
+        db.callWithDb()
+      }
+    } finally {
+      withContext(NonCancellable) { db.close() }
+    }
+
+    onOpenInvocationCount.get() shouldBe 1
+  }
+
+  @Test
+  fun `onOpen should only be called once after it throws`() = runTest {
+    class MyException : Exception()
+    val onOpenInvocationCount = AtomicInteger(0)
+    val db =
+      TestDataConnectSqliteDatabase(
+        onOpen = {
+          onOpenInvocationCount.incrementAndGet()
+          throw MyException()
+        }
+      )
+
+    try {
+      repeat(5) {
+        db.runCatching { ensureOpen() }
+        db.runCatching { callWithDb() }
+      }
+    } finally {
+      withContext(NonCancellable) { db.close() }
+    }
+
+    onOpenInvocationCount.get() shouldBe 1
+  }
+
+  @Test
+  fun `withDb KSQLiteDatabase specified is closed upon return`() = runTest {
+    val kdbFlow = MutableStateFlow<KSQLiteDatabase?>(null)
+    val db = TestDataConnectSqliteDatabase(withDb = { kdbFlow.value = it })
+
+    val exception =
+      try {
+        db.callWithDb()
+        val kdb = kdbFlow.filterNotNull().first()
+        shouldThrow<java.lang.IllegalStateException> { kdb.runReadOnlyTransaction {} }
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
+  }
+
+  @Test
+  fun `withDb KSQLiteDatabase specified is closed upon throwing`() = runTest {
+    val kdbFlow = MutableStateFlow<KSQLiteDatabase?>(null)
+    val db =
+      TestDataConnectSqliteDatabase(
+        withDb = {
+          kdbFlow.value = it
+          throw Exception("forced exception t99h7jkvde")
+        }
+      )
+
+    val exception =
+      try {
+        db.runCatching { callWithDb() }
+        val kdb = kdbFlow.filterNotNull().first()
+        shouldThrow<java.lang.IllegalStateException> { kdb.runReadOnlyTransaction {} }
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
+  }
+
+  @Test
+  fun `withDb returns whatever its block returns`() = runTest {
+    val vineyard = Arb.vineyards().next(rs)
+    val db =
+      object : TestDataConnectSqliteDatabase() {
+        suspend fun withDbReturns(): Vineyard = withDb { vineyard }
+      }
+
+    val withDbReturnValue =
+      try {
+        db.withDbReturns()
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    withDbReturnValue shouldBeSameInstanceAs vineyard
+  }
+
+  @Test
+  fun `withDb should throw whatever its block throws`() = runTest {
+    class MyException : Exception()
+    val db = TestDataConnectSqliteDatabase(withDb = { throw MyException() })
+
+    try {
+      shouldThrow<MyException> { db.callWithDb() }
+    } finally {
+      withContext(NonCancellable) { db.close() }
+    }
+  }
+
+  @Test
+  fun `withDb should throw whatever onOpen throws`() = runTest {
+    class MyException : Exception()
+    val db = TestDataConnectSqliteDatabase(onOpen = { throw MyException() })
+
+    try {
+      shouldThrow<MyException> { db.callWithDb() }
+    } finally {
+      withContext(NonCancellable) { db.close() }
+    }
+  }
+
+  @Test
+  fun `withDb should throw the same exception every time`() = runTest {
+    class MyException(val key: String) : Exception()
+    val db =
+      TestDataConnectSqliteDatabase(onOpen = { throw MyException(Arb.vineyards().next(rs).value) })
+
+    val exceptionKeys =
+      try {
+        buildSet {
+          repeat(5) {
+            add(shouldThrow<MyException> { db.callWithDb() }.key)
+            add(shouldThrow<MyException> { db.ensureOpen() }.key)
+          }
+        }
+      } finally {
+        withContext(NonCancellable) { db.close() }
+      }
+
+    exceptionKeys shouldHaveSize 1
+  }
+
+  private open inner class TestDataConnectSqliteDatabase(
     file: File? = File(temporaryFolder.newFolder(), "db.sqlite"),
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     logger: Logger = mockk(relaxed = true),
