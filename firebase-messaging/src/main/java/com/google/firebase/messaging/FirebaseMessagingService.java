@@ -25,6 +25,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.gms.cloudmessaging.CloudMessage;
 import com.google.android.gms.cloudmessaging.Rpc;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
 import java.util.ArrayDeque;
@@ -73,6 +74,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
 
   static final String ACTION_NEW_TOKEN = "com.google.firebase.messaging.NEW_TOKEN";
   static final String EXTRA_TOKEN = "token";
+  static final String EXTRA_TOKEN_APP_NAME = "firebaseAppName";
 
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
 
@@ -163,6 +165,19 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
 
+  /**
+   * Called when a new token for the specified Firebase project is generated.
+   *
+   * <p>This is invoked after app install when a token is first generated, and again if the token
+   * changes.
+   *
+   * @param token The token used for sending messages to this application instance. This token is
+   *     the same as the one retrieved by {@link FirebaseMessaging#getToken()}.
+   * @param firebaseAppName The name of the FirebaseApp instance for which the token was generated.
+   */
+  @WorkerThread
+  public void onNewToken(@NonNull String token, @NonNull String firebaseAppName) {}
+
   /** @hide */
   @Override
   protected Intent getStartCommandIntent(Intent originalIntent) {
@@ -178,7 +193,11 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     if (ACTION_REMOTE_INTENT.equals(action) || ACTION_DIRECT_BOOT_REMOTE_INTENT.equals(action)) {
       handleMessageIntent(intent);
     } else if (ACTION_NEW_TOKEN.equals(action)) {
-      onNewToken(intent.getStringExtra(EXTRA_TOKEN));
+      String appName = intent.getStringExtra(EXTRA_TOKEN_APP_NAME);
+      onNewToken(intent.getStringExtra(EXTRA_TOKEN), appName);
+      if (appName == FirebaseApp.DEFAULT_APP_NAME) {
+        onNewToken(intent.getStringExtra(EXTRA_TOKEN));
+      }
     } else {
       Log.d(TAG, "Unknown intent action: " + intent.getAction());
     }
