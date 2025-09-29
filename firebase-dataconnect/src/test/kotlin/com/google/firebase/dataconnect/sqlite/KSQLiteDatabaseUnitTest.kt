@@ -20,13 +20,17 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.fail
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.doubles.shouldBeWithinPercentageOf
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
@@ -44,12 +48,11 @@ import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbs.wine.vineyards
 import io.kotest.property.checkAll
 import java.io.File
 import java.util.Objects
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.CharSequence
-import kotlin.getValue
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -212,6 +215,104 @@ class KSQLiteDatabaseUnitTest {
       GetDatabasesResult(dbName = "zpt4vg35mt", filePath = ""),
       GetDatabasesResult(dbName = "cvftrszszx", filePath = "")
     )
+  }
+
+  @Test
+  fun `runReadOnlyTransaction should return whatever the given block returns`() = runTest {
+    val expectedTransactionResult = Arb.vineyards().next(rs)
+    val actualTransactionResult =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadOnlyTransaction { expectedTransactionResult }
+      }
+
+    actualTransactionResult shouldBeSameInstanceAs expectedTransactionResult
+  }
+
+  @Test
+  fun `runReadOnlyTransaction should re-throw whatever the given block throws`() = runTest {
+    class MyException(message: String) : Exception(message)
+    val result =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runCatching {
+          runReadOnlyTransaction { throw MyException("forced exception ehvexm266x") }
+        }
+      }
+
+    result.exceptionOrNull() shouldBe MyException("forced exception ehvexm266x")
+  }
+
+  @Test
+  fun `runReadOnlyTransaction should close the transaction object given to the block`() = runTest {
+    val exception =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        val capturedTxn = kdb.runReadOnlyTransaction { txn -> txn }
+        shouldThrow<IllegalStateException> { capturedTxn.getUserVersion() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
+  }
+
+  @Test
+  fun `runReadWriteTransaction should return whatever the given block returns`() = runTest {
+    val expectedTransactionResult = Arb.vineyards().next(rs)
+    val actualTransactionResult =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction { expectedTransactionResult }
+      }
+
+    actualTransactionResult shouldBeSameInstanceAs expectedTransactionResult
+  }
+
+  @Test
+  fun `runReadWriteTransaction should re-throw whatever the given block throws`() = runTest {
+    class MyException(message: String) : Exception(message)
+    val result =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runCatching {
+          runReadWriteTransaction { throw MyException("forced exception ehvexm266x") }
+        }
+      }
+
+    result.exceptionOrNull() shouldBe MyException("forced exception ehvexm266x")
+  }
+
+  @Test
+  fun `runReadWriteTransaction should roll back when an exception occurs`() = runTest {
+    val barValues: List<String> =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction { txn ->
+          txn.executeStatement("CREATE TABLE foo (bar TEXT)")
+          txn.executeStatement("INSERT INTO foo (bar) VALUES ('sep3tjrvjk')")
+        }
+        kdb.runCatching {
+          runReadWriteTransaction { txn ->
+            txn.executeStatement("INSERT INTO foo (bar) VALUES ('pe49bj7cag')")
+            throw Exception("forced exception qnfdyyejyp")
+          }
+        }
+        kdb.runReadOnlyTransaction { txn ->
+          buildList {
+            txn.executeQuery("SELECT bar FROM foo") { cursor ->
+              while (cursor.moveToNext()) {
+                add(cursor.getString(0))
+              }
+            }
+          }
+        }
+      }
+
+    barValues.shouldContainExactly("sep3tjrvjk")
+  }
+
+  @Test
+  fun `runReadWriteTransaction should close the transaction object given to the block`() = runTest {
+    val exception =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        val capturedTxn = kdb.runReadWriteTransaction { txn -> txn }
+        shouldThrow<IllegalStateException> { capturedTxn.getUserVersion() }
+      }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
   }
 
   @Test
