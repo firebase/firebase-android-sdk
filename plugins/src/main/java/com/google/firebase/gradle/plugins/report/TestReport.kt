@@ -11,19 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.gradle.plugins.report
 
-package com.google.firebase.gradle.plugins.report;
-
-public record TestReport(String name, Type type, Status status, String commit, String url) {
-
-  public enum Type {
+@JvmRecord
+data class TestReport(
+  val name: String,
+  val type: Type,
+  val status: Status,
+  val commit: String,
+  val url: String,
+) {
+  enum class Type {
     UNIT_TEST,
-    INSTRUMENTATION_TEST
+    INSTRUMENTATION_TEST,
   }
 
-  public enum Status {
+  enum class Status {
     SUCCESS,
     FAILURE,
-    OTHER
+    OTHER,
   }
 }
