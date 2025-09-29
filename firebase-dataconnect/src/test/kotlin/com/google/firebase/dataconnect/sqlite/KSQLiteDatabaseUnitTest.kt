@@ -425,6 +425,51 @@ class KSQLiteDatabaseUnitTest {
     }
   }
 
+  @Test
+  fun `executeQuery with default bindings`() {
+    testExecuteQueryWithNullOrEmptyBindings(BindingsSpecification.Unspecified)
+  }
+
+  @Test
+  fun `executeQuery with null bindings`() {
+    testExecuteQueryWithNullOrEmptyBindings(BindingsSpecification.Specified(null))
+  }
+
+  @Test
+  fun `executeQuery with a zero-length bindings list`() {
+    testExecuteQueryWithNullOrEmptyBindings(BindingsSpecification.Specified(emptyList()))
+  }
+
+  private fun testExecuteQueryWithNullOrEmptyBindings(bindings: BindingsSpecification) = runTest {
+    val id = Arb.int(1000..9999).next(rs)
+    val value = Arb.string(codepoints = Codepoint.alphanumeric()).next(rs)
+    data class IdValuePair(val id: Int, val value: String?)
+    val idValuePair =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction { txn ->
+          txn.executeStatement("CREATE TABLE foo (id INTEGER PRIMARY KEY, value TEXT)")
+          txn.executeStatement("INSERT INTO foo (id, value) VALUES ($id, '$value')")
+        }
+        kdb.runReadOnlyTransaction { txn ->
+          val querySql = "SELECT id, value from foo"
+          when (bindings) {
+            BindingsSpecification.Unspecified ->
+              txn.executeQuery(querySql) { cursor ->
+                cursor.moveToNext()
+                IdValuePair(cursor.getInt(0), cursor.getString(1))
+              }
+            is BindingsSpecification.Specified ->
+              txn.executeQuery(querySql, bindings.bindings) { cursor ->
+                cursor.moveToNext()
+                IdValuePair(cursor.getInt(0), cursor.getString(1))
+              }
+          }
+        }
+      }
+
+    idValuePair shouldBe IdValuePair(id, value)
+  }
+
   private sealed interface BindingsSpecification {
     object Unspecified : BindingsSpecification
     class Specified(val bindings: List<Any?>?) : BindingsSpecification
