@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.fail
@@ -32,6 +33,7 @@ import io.kotest.matchers.doubles.shouldBeWithinPercentageOf
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
@@ -44,15 +46,18 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbs.wine.vineyards
 import io.kotest.property.checkAll
+import io.kotest.property.exhaustive.of
 import java.io.File
 import java.util.Objects
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -468,6 +473,120 @@ class KSQLiteDatabaseUnitTest {
       }
 
     idValuePair shouldBe IdValuePair(id, value)
+  }
+
+  @Test
+  fun `executeQuery with bindings of all different types`() = runTest {
+    KSQLiteDatabase(sqliteDatabase).use { kdb ->
+      kdb.runReadWriteTransaction { txn ->
+        txn.executeStatement(
+          """
+          CREATE TABLE xg8t7dg6e7 (
+            id INTEGER PRIMARY KEY,
+            charSequence TEXT,
+            byteArray BLOB,
+            int INTEGER,
+            long INTEGER,
+            float REAL,
+            double REAL
+          )
+        """
+        )
+      }
+    }
+
+    val nextId = AtomicInteger(1)
+    checkAll(propTestConfig, Arb.list(Arb.bindingValues(), 2..5)) {
+      bindingValuesList: List<BindingValues> ->
+
+      // Insert the rows into the database.
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        val insertedIds =
+          kdb.runReadWriteTransaction { txn ->
+            txn.executeStatement("DELETE FROM xg8t7dg6e7")
+            val insertedIds = mutableListOf<Int>()
+            bindingValuesList.forEach { bindingValues ->
+              val id = nextId.incrementAndGet()
+              insertedIds.add(id)
+              val bindings =
+                bindingValues.run { listOf(id, charSequence, byteArray, int, long, float, double) }
+              txn.executeStatement(
+                """
+                  INSERT INTO xg8t7dg6e7
+                  (id, charSequence, byteArray, int, long, float, double)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                bindings
+              )
+            }
+            insertedIds.toList()
+          }
+
+        // Create a function that verifies that the query bindings match the expected rows.
+        suspend fun <T> verifyQueryResults(
+          column: String,
+          isEqual: (T, T) -> Boolean = { a, b -> a == b },
+          getBinding: (BindingValues) -> T,
+        ) {
+          withClue("verifyQueryResults column=$column") {
+            kdb.runReadOnlyTransaction { txn ->
+              val binding = getBinding(bindingValuesList[0])
+              val queryResultIds = buildList {
+                txn.executeQuery("SELECT id FROM xg8t7dg6e7 where $column=?", listOf(binding)) {
+                  cursor ->
+                  while (cursor.moveToNext()) {
+                    add(cursor.getInt(0))
+                  }
+                }
+              }
+              val expectedQueryResultIds =
+                bindingValuesList.mapIndexedNotNull { index, bindingValues ->
+                  if (isEqual(binding, getBinding(bindingValues))) {
+                    insertedIds[index]
+                  } else {
+                    null
+                  }
+                }
+              queryResultIds shouldContainExactlyInAnyOrder expectedQueryResultIds
+            }
+          }
+        }
+
+        // Verify that each different supported binding type matches the expected rows.
+        assertSoftly {
+          verifyQueryResults("charSequence") { it.charSequence }
+          verifyQueryResults("byteArray", { a, b -> a.contentEquals(b) }) { it.byteArray }
+          verifyQueryResults("int") { it.int }
+          verifyQueryResults("long") { it.long }
+          verifyQueryResults("float", { a, b -> a == b && (a === null || !a.isNaN()) }) { it.float }
+          verifyQueryResults("double", { a, b -> a == b && (a === null || !a.isNaN()) }) {
+            it.double
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `executeQuery should throw if given a binding of unsupported type`() = runTest {
+    KSQLiteDatabase(sqliteDatabase).use { kdb ->
+      kdb.runReadWriteTransaction { txn -> txn.executeStatement("CREATE TABLE foo (a TEXT)") }
+    }
+
+    checkAll(propTestConfig, Exhaustive.of(true, listOf("foo"), 20.milliseconds)) { binding ->
+      val exception: IllegalArgumentException =
+        KSQLiteDatabase(sqliteDatabase).use { kdb ->
+          kdb.runReadOnlyTransaction { txn ->
+            shouldThrow<IllegalArgumentException> {
+              txn.executeQuery("SELECT * FROM foo WHERE a=?", listOf(binding)) {
+                throw Exception("should not get here b5sdvfe37t")
+              }
+            }
+          }
+        }
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "unsupported"
+      exception.message shouldContainWithNonAbuttingText binding::class.qualifiedName!!
+    }
   }
 
   private sealed interface BindingsSpecification {
