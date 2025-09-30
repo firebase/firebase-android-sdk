@@ -389,7 +389,8 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(propTestConfig, Arb.bindingValues()) { bindingValues: BindingValues ->
+    checkAll(propTestConfig.copy(seed = -490777565634057632), Arb.bindingValues()) {
+      bindingValues: BindingValues ->
       val (charSequence, byteArray, int, long, float, double) = bindingValues
       val id = nextId.incrementAndGet()
 
@@ -497,8 +498,10 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(propTestConfig, Arb.list(Arb.bindingValues(), 2..5)) {
-      bindingValuesList: List<BindingValues> ->
+    checkAll(
+      propTestConfig.copy(seed = 4569193912793683312),
+      Arb.list(Arb.bindingValues(), 2..5)
+    ) { bindingValuesList: List<BindingValues> ->
 
       // Insert the rows into the database.
       KSQLiteDatabase(sqliteDatabase).use { kdb ->
@@ -527,36 +530,56 @@ class KSQLiteDatabaseUnitTest {
         suspend fun <T> verifyQueryResults(
           column: String,
           isEqual: (T, T) -> Boolean = { a, b -> a == b },
+          toString: (T) -> String = { it.toString() },
           getBinding: (BindingValues) -> T,
         ) {
-          withClue("verifyQueryResults column=$column") {
-            kdb.runReadOnlyTransaction { txn ->
-              val binding = getBinding(bindingValuesList[0])
-              val queryResultIds = buildList {
-                txn.executeQuery("SELECT id FROM xg8t7dg6e7 where $column=?", listOf(binding)) {
-                  cursor ->
-                  while (cursor.moveToNext()) {
-                    add(cursor.getInt(0))
+          val binding = getBinding(bindingValuesList[0])
+          withClue("verifyQueryResults column=$column binding=${toString(binding)}") {
+            val queryResultIds =
+              kdb.runReadOnlyTransaction { txn ->
+                buildList {
+                  txn.executeQuery("SELECT id FROM xg8t7dg6e7 where $column=?", listOf(binding)) {
+                    cursor ->
+                    while (cursor.moveToNext()) {
+                      add(cursor.getInt(0))
+                    }
                   }
                 }
               }
-              val expectedQueryResultIds =
-                bindingValuesList.mapIndexedNotNull { index, bindingValues ->
-                  if (isEqual(binding, getBinding(bindingValues))) {
-                    insertedIds[index]
-                  } else {
-                    null
-                  }
-                }
-              queryResultIds shouldContainExactlyInAnyOrder expectedQueryResultIds
+
+            data class QueryResultRow(val id: Int, val bindingValues: BindingValues) {
+              val binding: T = getBinding(bindingValues)
+              override fun toString(): String =
+                "{id=$id, binding=${toString(binding)}, bindingValues=$bindingValues}"
             }
+
+            val actualQueryResults: List<QueryResultRow> =
+              queryResultIds.map { id ->
+                val bindingValuesListIndex = insertedIds.indexOf(id)
+                val bindingValues = bindingValuesList[bindingValuesListIndex]
+                QueryResultRow(id, bindingValues)
+              }
+
+            val expectedQueryResults: List<QueryResultRow> =
+              bindingValuesList.mapIndexedNotNull { index, bindingValues ->
+                val queryResultRow = QueryResultRow(id = insertedIds[index], bindingValues)
+                if (isEqual(binding, queryResultRow.binding)) queryResultRow else null
+              }
+
+            actualQueryResults shouldContainExactlyInAnyOrder expectedQueryResults
           }
         }
 
         // Verify that each different supported binding type matches the expected rows.
         assertSoftly {
           verifyQueryResults("charSequence") { it.charSequence }
-          verifyQueryResults("byteArray", { a, b -> a.contentEquals(b) }) { it.byteArray }
+          verifyQueryResults(
+            "byteArray",
+            isEqual = { a, b -> a.contentEquals(b) },
+            toString = { it.contentToString() }
+          ) {
+            it.byteArray
+          }
           verifyQueryResults("int") { it.int }
           verifyQueryResults("long") { it.long }
           verifyQueryResults("float", { a, b -> a == b && (a === null || !a.isNaN()) }) { it.float }
