@@ -24,13 +24,11 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.fail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.doubles.shouldBeWithinPercentageOf
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -56,7 +54,6 @@ import io.kotest.property.arbs.wine.vineyards
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
 import java.io.File
-import java.util.Objects
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.test.runTest
@@ -389,40 +386,40 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(propTestConfig.copy(seed = -490777565634057632), Arb.bindingValues()) {
-      bindingValues: BindingValues ->
-      val (charSequence, byteArray, int, long, float, double) = bindingValues
+    checkAll(propTestConfig, Arb.bindingValues()) { bindingValues: BindingValues ->
       val id = nextId.incrementAndGet()
 
       val queryResult: BindingValues =
         KSQLiteDatabase(sqliteDatabase).use { kdb ->
           kdb.runReadWriteTransaction { txn ->
-            val bindings = listOf(id, charSequence, byteArray, int, long, float, double)
+            txn.executeStatement("DELETE FROM w9cz37zszx")
+            val bindings =
+              bindingValues.run { listOf(id, charSequence, byteArray, int, long, float, double) }
             txn.executeStatement(
               """
-            INSERT INTO w9cz37zszx
-            (id, charSequence, byteArray, int, long, float, double)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          """,
+                INSERT INTO w9cz37zszx
+                (id, charSequence, byteArray, int, long, float, double)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+              """,
               bindings
             )
           }
           kdb.runReadOnlyTransaction { txn ->
             txn.executeQuery(
               """
-            SELECT charSequence, byteArray, int, long, float, double
-            FROM w9cz37zszx
-            WHERE id=$id
-          """
+                SELECT charSequence, byteArray, int, long, float, double
+                FROM w9cz37zszx
+                WHERE id=$id
+              """
             ) { cursor ->
               cursor.moveToNext()
               BindingValues(
-                charSequence = cursor.getString(0),
-                byteArray = cursor.getBlob(1),
-                int = cursor.getInt(2),
-                long = cursor.getLong(3),
-                float = cursor.getFloat(4),
-                double = cursor.getDouble(5),
+                charSequence = if (cursor.isNull(0)) null else cursor.getString(0),
+                byteArray = if (cursor.isNull(1)) null else cursor.getBlob(1),
+                int = if (cursor.isNull(2)) null else cursor.getInt(2),
+                long = if (cursor.isNull(3)) null else cursor.getLong(3),
+                float = if (cursor.isNull(4)) null else cursor.getFloat(4),
+                double = if (cursor.isNull(5)) null else cursor.getDouble(5),
               )
             }
           }
@@ -665,7 +662,7 @@ class KSQLiteDatabaseUnitTest {
     class Specified(val bindings: List<Any?>?) : BindingsSpecification
   }
 
-  private data class BindingValues(
+  private class BindingValues(
     val charSequence: CharSequence?,
     val byteArray: ByteArray?,
     val int: Int?,
@@ -673,17 +670,6 @@ class KSQLiteDatabaseUnitTest {
     val float: Float?,
     val double: Double?,
   ) {
-    override fun equals(other: Any?): Boolean =
-      other is BindingValues &&
-        other.charSequence == charSequence &&
-        other.byteArray.contentEquals(byteArray) &&
-        other.int == int &&
-        other.long == long &&
-        other.float == float &&
-        other.double == double
-
-    override fun hashCode(): Int = Objects.hash(charSequence, byteArray, int, long, float, double)
-
     override fun toString(): String = buildString {
       append("BindingValues{")
       append("charSequence=").append(charSequence)
@@ -728,56 +714,15 @@ class KSQLiteDatabaseUnitTest {
       }
 
     infix fun BindingValues.shouldBe(expected: BindingValues) {
-      val (charSequenceActual, byteArrayActual, intActual, longActual, floatActual, doubleActual) =
-        this
-      val (
-        charSequenceExpected,
-        byteArrayExpected,
-        intExpected,
-        longExpected,
-        floatExpected,
-        doubleExpected) =
-        expected
-
       assertSoftly {
-        infix fun Double?.shouldEqualSqliteRoundTrip(expected: Double?) {
-          if (this == expected) {
-            return
-          }
-          if (this === null) {
-            fail("actual is null, but expected: $expected")
-          }
-          if (expected === null) {
-            fail("actual $this, but expected null")
-          }
-          if (this.isNaN()) {
-            if (!(expected.isNaN()) || expected == 0.0) {
-              fail("actual is null, but expected: $expected")
-            } else {
-              return
-            }
-          }
-          if (expected.isNaN()) {
-            if (!(this.isNaN()) || this == 0.0) {
-              fail("actual is $this, but expected: NaN")
-            } else {
-              return
-            }
-          }
-          this.shouldBeWithinPercentageOf(expected, 99.99)
-        }
-
-        infix fun Float?.shouldEqualSqliteRoundTrip(expected: Float?) =
-          this?.toDouble().shouldEqualSqliteRoundTrip(expected?.toDouble())
-
         withClue("charSequence") {
-          charSequenceActual.toString() shouldBe charSequenceExpected.toString()
+          this.charSequence?.toString() shouldBe expected.charSequence?.toString()
         }
-        withClue("byteArray") { byteArrayActual?.toList() shouldBe byteArrayExpected?.toList() }
-        withClue("int") { intActual shouldBe intExpected }
-        withClue("long") { longActual shouldBe longExpected }
-        withClue("float") { floatActual shouldEqualSqliteRoundTrip floatExpected }
-        withClue("double") { doubleActual shouldEqualSqliteRoundTrip doubleExpected }
+        withClue("byteArray") { this.byteArray?.toList() shouldBe expected.byteArray?.toList() }
+        withClue("int") { this.int shouldBe expected.int }
+        withClue("long") { this.long shouldBe expected.long }
+        withClue("float") { this.float shouldBeSqliteRoundTripValue expected.float }
+        withClue("double") { this.double shouldBeSqliteRoundTripValue expected.double }
       }
     }
   }

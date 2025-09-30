@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import io.kotest.matchers.shouldBe
 
 @MustBeDocumented
 @Retention(value = AnnotationRetention.BINARY)
@@ -46,4 +47,32 @@ internal suspend fun <T> KSQLiteDatabase.withSQLiteDatabaseForTesting(
 ): T {
   val sqliteDatabase = runReadWriteTransaction { it.getSQLiteDatabaseForTesting() }
   return block(sqliteDatabase)
+}
+
+/** Returns the [Float] value that will be round-tripped if written into a sqlite `REAL` column. */
+fun Float?.sqliteRoundTripValue(): Float? =
+  if (this === null || isNaN()) {
+    null
+  } else if (this == -0.0f) {
+    0.0f
+  } else {
+    this
+  }
+
+/** Returns the [Double] value that will be round-tripped if written into a sqlite `REAL` column. */
+fun Double?.sqliteRoundTripValue(): Double? =
+  if (this === null || isNaN()) {
+    null
+  } else if (this == -0.0) {
+    0.0
+  } else {
+    this
+  }
+
+infix fun Double?.shouldBeSqliteRoundTripValue(expected: Double?) {
+  this shouldBe expected.sqliteRoundTripValue()
+}
+
+infix fun Float?.shouldBeSqliteRoundTripValue(expected: Float?) {
+  this shouldBe expected.sqliteRoundTripValue()
 }
