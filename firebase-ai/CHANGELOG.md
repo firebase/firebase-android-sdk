@@ -4,6 +4,7 @@
 - [changed] Added support for the URL context tool, which allows the model to access content from
   provided public web URLs to inform and enhance its responses. (#7382)
 - [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
+- [changed] Marked the public constructor for `UsageMetadata` as deprecated (#7420)
 
 # 17.3.0
 

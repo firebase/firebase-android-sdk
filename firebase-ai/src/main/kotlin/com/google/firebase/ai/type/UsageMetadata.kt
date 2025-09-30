@@ -33,7 +33,8 @@ import kotlinx.serialization.Serializable
  * @param thoughtsTokenCount The number of tokens used by the model's internal "thinking" process.
  * @param toolUsePromptTokenCount The number of tokens used by tools.
  */
-public class UsageMetadata(
+public class UsageMetadata
+internal constructor(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
   public val totalTokenCount: Int,
@@ -42,7 +43,30 @@ public class UsageMetadata(
   public val thoughtsTokenCount: Int,
   public val toolUsePromptTokenCount: Int,
   public val toolUsePromptTokensDetails: List<ModalityTokenCount>,
+  placeholder: Unit
 ) {
+
+  @Deprecated("Not intended for public use")
+  public constructor(
+    promptTokenCount: Int,
+    candidatesTokenCount: Int?,
+    totalTokenCount: Int,
+    promptTokensDetails: List<ModalityTokenCount>,
+    candidatesTokensDetails: List<ModalityTokenCount>,
+    thoughtsTokenCount: Int,
+    toolUsePromptTokenCount: Int,
+    toolUsePromptTokensDetails: List<ModalityTokenCount>
+  ) : this(
+    promptTokenCount,
+    candidatesTokenCount,
+    totalTokenCount,
+    promptTokensDetails,
+    candidatesTokensDetails,
+    thoughtsTokenCount,
+    toolUsePromptTokenCount,
+    toolUsePromptTokensDetails,
+    Unit
+  )
 
   @Serializable
   internal data class Internal(
