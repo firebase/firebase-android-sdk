@@ -72,7 +72,6 @@ internal constructor(
     }
 
     /**
-<<<<<<< HEAD
      * Creates a [Tool] instance that allows you to provide additional context to the models in the
      * form of public web URLs. By including URLs in your request, the Gemini model will access the
      * content from those pages to inform and enhance its response.
