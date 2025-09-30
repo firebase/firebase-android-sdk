@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadWriteTransaction
 import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -32,28 +33,26 @@ internal class DataConnectSequenceNumberDatabase(
     logger = logger,
   ) {
 
-  override suspend fun onOpen(db: KSQLiteDatabase) {
-    db.runReadWriteTransaction { txn ->
-      val applicationId = txn.getApplicationId()
-      val userVersion = txn.getUserVersion()
-      if (applicationId == 0 && userVersion == 0) {
-        initializeDatabase(txn)
-      } else if (applicationId != APPLICATION_ID || userVersion != USER_VERSION) {
-        throw InvalidDatabaseException(
-          "sqlite database has an unexpected application_id " +
-            "(found ${applicationId.toString(16)}, expected ${APPLICATION_ID.toString(16)}) " +
-            "and/or user_version " +
-            "(found ${userVersion.toString(16)}, expected ${USER_VERSION.toString(16)}); " +
-            "this probably isn't the correct sqlite database; refusing to open it"
-        )
-      } else {}
-    }
-  }
+  override suspend fun onOpen(db: KSQLiteDatabase) = db.runReadWriteTransaction(::onOpen)
 
-  private suspend fun initializeDatabase(txn: KSQLiteDatabase.ReadWriteTransaction) {
-    logger.debug { "initializing database" }
-    txn.setApplicationId(APPLICATION_ID)
-    txn.setUserVersion(USER_VERSION)
+  private fun onOpen(txn: ReadWriteTransaction) {
+    val applicationId = txn.getApplicationId()
+    val userVersion = txn.getUserVersion()
+
+    if (applicationId == 0 && userVersion == 0) {
+      logger.debug { "initializing database" }
+      txn.setApplicationId(APPLICATION_ID)
+      txn.setUserVersion(USER_VERSION)
+      txn.executeStatement("CREATE TABLE sequence_number (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    } else if (applicationId != APPLICATION_ID || userVersion != USER_VERSION) {
+      throw InvalidDatabaseException(
+        "sqlite database has an unexpected application_id " +
+          "(found ${applicationId.toString(16)}, expected ${APPLICATION_ID.toString(16)}) " +
+          "and/or user_version " +
+          "(found ${userVersion.toString(16)}, expected ${USER_VERSION.toString(16)}); " +
+          "this probably isn't the correct sqlite database; refusing to open it"
+      )
+    }
   }
 
   class InvalidDatabaseException(message: String) : Exception(message)
