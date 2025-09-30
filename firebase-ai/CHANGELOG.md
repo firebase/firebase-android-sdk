@@ -3,6 +3,7 @@
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
   (#7382)
 - [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
+- [changed] Marked the public constructor for `UsageMetadata` as deprecated (#7420)
 
 # 17.3.0
 
