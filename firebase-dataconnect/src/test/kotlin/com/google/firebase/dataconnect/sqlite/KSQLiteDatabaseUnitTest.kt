@@ -498,11 +498,8 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(
-      propTestConfig.copy(seed = 4569193912793683312),
-      Arb.list(Arb.bindingValues(), 2..5)
-    ) { bindingValuesList: List<BindingValues> ->
-
+    checkAll(propTestConfig, Arb.list(Arb.bindingValues(), 2..5)) {
+      bindingValuesList: List<BindingValues> ->
       // Insert the rows into the database.
       KSQLiteDatabase(sqliteDatabase).use { kdb ->
         val insertedIds =
@@ -572,7 +569,9 @@ class KSQLiteDatabaseUnitTest {
 
         // Verify that each different supported binding type matches the expected rows.
         assertSoftly {
-          verifyQueryResults("charSequence") { it.charSequence }
+          verifyQueryResults("charSequence", isEqual = { a, b -> a?.toString() == b?.toString() }) {
+            it.charSequence
+          }
           verifyQueryResults(
             "byteArray",
             isEqual = { a, b -> a.contentEquals(b) },
