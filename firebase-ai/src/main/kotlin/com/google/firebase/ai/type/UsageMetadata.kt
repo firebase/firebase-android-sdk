@@ -42,8 +42,7 @@ internal constructor(
   public val candidatesTokensDetails: List<ModalityTokenCount>,
   public val thoughtsTokenCount: Int,
   public val toolUsePromptTokenCount: Int,
-  public val toolUsePromptTokensDetails: List<ModalityTokenCount>,
-  placeholder: Unit
+  public val toolUsePromptTokensDetails: List<ModalityTokenCount>
 ) {
 
   @Deprecated("Not intended for public use")
@@ -53,9 +52,7 @@ internal constructor(
     totalTokenCount: Int,
     promptTokensDetails: List<ModalityTokenCount>,
     candidatesTokensDetails: List<ModalityTokenCount>,
-    thoughtsTokenCount: Int,
-    toolUsePromptTokenCount: Int,
-    toolUsePromptTokensDetails: List<ModalityTokenCount>
+    thoughtsTokenCount: Int
   ) : this(
     promptTokenCount,
     candidatesTokenCount,
@@ -63,9 +60,8 @@ internal constructor(
     promptTokensDetails,
     candidatesTokensDetails,
     thoughtsTokenCount,
-    toolUsePromptTokenCount,
-    toolUsePromptTokensDetails,
-    Unit
+    0,
+    emptyList()
   )
 
   @Serializable
