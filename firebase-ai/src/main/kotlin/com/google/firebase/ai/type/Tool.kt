@@ -56,19 +56,19 @@ internal constructor(
       return Tool(functionDeclarations, null, null)
     }
 
-    /** Creates a [Tool] instance that allows the model to use Code Execution. */
+    /** Creates a [Tool] instance that allows the model to use code execution. */
     @JvmStatic
     public fun codeExecution(): Tool {
       return codeExecutionInstance
     }
 
     /**
-     * Creates a [Tool] instance that allows the model to use Grounding with Google Search.
+     * Creates a [Tool] instance that allows the model to use grounding with Google Search.
      *
      * Grounding with Google Search can be used to allow the model to connect to Google Search to
      * access and incorporate up-to-date information from the web into it's responses.
      *
-     * When using this feature, you are required to comply with the "Grounding with Google Search"
+     * When using this feature, you are required to comply with the "grounding with Google Search"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
      * or Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)

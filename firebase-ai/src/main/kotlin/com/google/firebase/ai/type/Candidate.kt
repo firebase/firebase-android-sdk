@@ -297,7 +297,7 @@ public class FinishReason private constructor(public val name: String, public va
 /**
  * Metadata returned to the client when grounding is enabled.
  *
- * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
+ * If using grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
  * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
