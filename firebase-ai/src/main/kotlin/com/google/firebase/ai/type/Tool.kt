@@ -87,7 +87,7 @@ internal constructor(
     }
 
     /**
-     * Creates a [Tool] instance that allows the model to use Grounding with Google Search.
+     * Creates a [Tool] instance that allows the model to use grounding with Google Search.
      *
      * Grounding with Google Search can be used to allow the model to connect to Google Search to
      * access and incorporate up-to-date information from the web into it's responses.
