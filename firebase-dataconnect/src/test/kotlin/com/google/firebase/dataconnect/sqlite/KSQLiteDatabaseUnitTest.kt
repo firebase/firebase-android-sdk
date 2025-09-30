@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction.GetDatabasesResult
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
@@ -563,6 +564,54 @@ class KSQLiteDatabaseUnitTest {
             it.double
           }
         }
+      }
+    }
+  }
+
+  @Test
+  fun `executeQuery with more than 1 binding`() = runTest {
+    KSQLiteDatabase(sqliteDatabase).use { kdb ->
+      kdb.runReadWriteTransaction { txn ->
+        txn.executeStatement("CREATE TABLE fr2b9nzen3 (id INTEGER PRIMARY KEY, s TEXT, i INTEGER)")
+      }
+    }
+
+    val nextId = AtomicInteger(1)
+    checkAll(propTestConfig, Arb.string().distinctPair(), Arb.int().distinctPair()) {
+      (s1, s2),
+      (i1, i2) ->
+
+      // Insert the rows into the database.
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        val insertedIds =
+          kdb.runReadWriteTransaction { txn ->
+            txn.executeStatement("DELETE FROM fr2b9nzen3")
+            val id1 = nextId.incrementAndGet()
+            txn.executeStatement(
+              """INSERT INTO fr2b9nzen3 (id, s, i) VALUES (?, ?, ?)""",
+              listOf(id1, s1, i1)
+            )
+            val id2 = nextId.incrementAndGet()
+            txn.executeStatement(
+              """INSERT INTO fr2b9nzen3 (id, s, i) VALUES (?, ?, ?)""",
+              listOf(id2, s2, i2)
+            )
+            Pair(id1, id2)
+          }
+
+        val queryResultIds =
+          kdb.runReadOnlyTransaction { txn ->
+            val bindings = listOf(s1, i1)
+            buildList {
+              txn.executeQuery("SELECT id FROM fr2b9nzen3 WHERE s=? AND i=?", bindings) { cursor ->
+                while (cursor.moveToNext()) {
+                  add(cursor.getInt(0))
+                }
+              }
+            }
+          }
+
+        queryResultIds shouldContainExactly listOf(insertedIds.first)
       }
     }
   }
