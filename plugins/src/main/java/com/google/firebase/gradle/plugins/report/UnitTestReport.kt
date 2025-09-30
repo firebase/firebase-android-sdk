@@ -1,16 +1,18 @@
-// Copyright 2025 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.firebase.gradle.plugins.report
 
 import com.google.gson.Gson
@@ -25,23 +27,17 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.util.Arrays
-import java.util.function.Function
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-import java.util.stream.Collectors
 import org.gradle.internal.Pair
 
 @SuppressWarnings("NewApi")
 class UnitTestReport(private val apiToken: String) {
-  private val client: HttpClient
-
-  init {
-    this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
-  }
+  private val client: HttpClient =
+    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
   fun createReport(commitCount: Int) {
-    val response = request("commits", JsonArray::class.java)
+    val response = request("commits?per_page=$commitCount", JsonArray::class.java)
     val commits =
       response
         .getAsJsonArray()
@@ -72,7 +68,7 @@ class UnitTestReport(private val apiToken: String) {
     output.append(
       generateTable(
         commits,
-        reports.stream().filter { r: TestReport -> r.type == TestReport.Type.UNIT_TEST }.toList(),
+        reports.filter { r: TestReport -> r.type == TestReport.Type.UNIT_TEST },
       )
     )
     output.append("\n")
@@ -80,10 +76,7 @@ class UnitTestReport(private val apiToken: String) {
     output.append(
       generateTable(
         commits,
-        reports
-          .stream()
-          .filter { r: TestReport -> r.type == TestReport.Type.INSTRUMENTATION_TEST }
-          .toList(),
+        reports.filter { r: TestReport -> r.type == TestReport.Type.INSTRUMENTATION_TEST },
       )
     )
     output.append("\n")
@@ -98,16 +91,10 @@ class UnitTestReport(private val apiToken: String) {
   }
 
   private fun generateTable(reportCommits: List<ReportCommit>, reports: List<TestReport>): String {
-    val commitLookup =
-      reportCommits
-        .stream()
-        .collect(Collectors.toMap(ReportCommit::sha, Function { c: ReportCommit? -> c }))
-    val commits = reports.stream().map(TestReport::commit).distinct().toList()
-    var sdks = reports.stream().map(TestReport::name).distinct().sorted().toList()
-    val lookup: MutableMap<Pair<String, String>, TestReport> = HashMap()
-    for (report in reports) {
-      lookup.put(Pair.of(report.name, report.commit), report)
-    }
+    val commitLookup = reportCommits.associateBy(ReportCommit::sha)
+    val commits = reports.map(TestReport::commit).distinct()
+    var sdks = reports.map(TestReport::name).distinct().sorted()
+    val lookup = reports.associateBy({ report -> Pair.of(report.name, report.commit) })
     val successPercentage: MutableMap<String, Int> = HashMap()
     var passingSdks = 0
     // Get success percentage
@@ -132,10 +119,8 @@ class UnitTestReport(private val apiToken: String) {
     }
     sdks =
       sdks
-        .stream()
         .filter { s: String? -> successPercentage[s] != 100 }
-        .sorted(Comparator.comparing<String, Int> { o: String -> successPercentage[o]!! })
-        .toList()
+        .sortedBy { o: String -> successPercentage[o]!! }
     if (sdks.isEmpty()) {
       return "*All tests passing*\n"
     }
@@ -144,12 +129,7 @@ class UnitTestReport(private val apiToken: String) {
       val rc = commitLookup.get(commit)
       output.append(" ")
       if (rc != null && rc.pr != -1) {
-        output
-          .append("[#")
-          .append(rc.pr)
-          .append("](https://github.com/firebase/firebase-android-sdk/pull/")
-          .append(rc.pr)
-          .append(")")
+        output.append("[#${rc.pr}](https://github.com/firebase/firebase-android-sdk/pull/${rc.pr})")
       } else {
         output.append(commit)
       }
@@ -269,9 +249,7 @@ class UnitTestReport(private val apiToken: String) {
       if (json is JsonObject) {
         // Retrieve and merge objects from other pages, if present
         response.headers().firstValue("Link").ifPresent { link: String ->
-          val parts =
-            Arrays.stream(link.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
-              .toList()
+          val parts = link.split(",".toRegex()).dropLastWhile { it.isEmpty() }
           for (part in parts) {
             if (part.endsWith("rel=\"next\"")) {
               // <foo>; rel="next" -> foo
