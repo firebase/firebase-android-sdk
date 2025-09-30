@@ -49,6 +49,7 @@ import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbs.wine.vineyards
 import io.kotest.property.checkAll
@@ -386,10 +387,10 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(propTestConfig, Arb.bindingValues()) { bindingValues: BindingValues ->
+    checkAll(propTestConfig, Arb.nullableBindingValues()) { bindingValues: NullableBindingValues ->
       val id = nextId.incrementAndGet()
 
-      val queryResult: BindingValues =
+      val queryResult: NullableBindingValues =
         KSQLiteDatabase(sqliteDatabase).use { kdb ->
           kdb.runReadWriteTransaction { txn ->
             txn.executeStatement("DELETE FROM w9cz37zszx")
@@ -413,7 +414,7 @@ class KSQLiteDatabaseUnitTest {
               """
             ) { cursor ->
               cursor.moveToNext()
-              BindingValues(
+              NullableBindingValues(
                 charSequence = if (cursor.isNull(0)) null else cursor.getString(0),
                 byteArray = if (cursor.isNull(1)) null else cursor.getBlob(1),
                 int = if (cursor.isNull(2)) null else cursor.getInt(2),
@@ -495,8 +496,8 @@ class KSQLiteDatabaseUnitTest {
     }
 
     val nextId = AtomicInteger(1)
-    checkAll(propTestConfig, Arb.list(Arb.bindingValues(), 2..5)) {
-      bindingValuesList: List<BindingValues> ->
+    checkAll(propTestConfig, Arb.list(Arb.nonNullableBindingValues(), 2..5)) {
+      bindingValuesList: List<NonNullableBindingValues> ->
       // Insert the rows into the database.
       KSQLiteDatabase(sqliteDatabase).use { kdb ->
         val insertedIds =
@@ -525,7 +526,7 @@ class KSQLiteDatabaseUnitTest {
           column: String,
           isEqual: (T, T) -> Boolean = { a, b -> a == b },
           toString: (T) -> String = { it.toString() },
-          getBinding: (BindingValues) -> T,
+          getBinding: (NonNullableBindingValues) -> T,
         ) {
           val binding = getBinding(bindingValuesList[0])
           withClue("verifyQueryResults column=$column binding=${toString(binding)}") {
@@ -541,7 +542,7 @@ class KSQLiteDatabaseUnitTest {
                 }
               }
 
-            data class QueryResultRow(val id: Int, val bindingValues: BindingValues) {
+            data class QueryResultRow(val id: Int, val bindingValues: NonNullableBindingValues) {
               val binding: T = getBinding(bindingValues)
               override fun toString(): String =
                 "{id=$id, binding=${toString(binding)}, bindingValues=$bindingValues}"
@@ -566,7 +567,7 @@ class KSQLiteDatabaseUnitTest {
 
         // Verify that each different supported binding type matches the expected rows.
         assertSoftly {
-          verifyQueryResults("charSequence", isEqual = { a, b -> a?.toString() == b?.toString() }) {
+          verifyQueryResults("charSequence", isEqual = { a, b -> a.toString() == b.toString() }) {
             it.charSequence
           }
           verifyQueryResults(
@@ -578,10 +579,8 @@ class KSQLiteDatabaseUnitTest {
           }
           verifyQueryResults("int") { it.int }
           verifyQueryResults("long") { it.long }
-          verifyQueryResults("float", { a, b -> a == b && (a === null || !a.isNaN()) }) { it.float }
-          verifyQueryResults("double", { a, b -> a == b && (a === null || !a.isNaN()) }) {
-            it.double
-          }
+          verifyQueryResults("float", { a, b -> a == b && !a.isNaN() }) { it.float }
+          verifyQueryResults("double", { a, b -> a == b && !a.isNaN() }) { it.double }
         }
       }
     }
@@ -662,13 +661,33 @@ class KSQLiteDatabaseUnitTest {
     class Specified(val bindings: List<Any?>?) : BindingsSpecification
   }
 
-  private class BindingValues(
+  private class NullableBindingValues(
     val charSequence: CharSequence?,
     val byteArray: ByteArray?,
     val int: Int?,
     val long: Long?,
     val float: Float?,
     val double: Double?,
+  ) {
+    override fun toString(): String = buildString {
+      append("BindingValues{")
+      append("charSequence=").append(charSequence)
+      append(", byteArray=").append(byteArray.contentToString())
+      append(", int=").append(int)
+      append(", long=").append(long)
+      append(", float=").append(float)
+      append(", double=").append(double)
+      append("}")
+    }
+  }
+
+  private class NonNullableBindingValues(
+    val charSequence: CharSequence,
+    val byteArray: ByteArray,
+    val int: Int,
+    val long: Long,
+    val float: Float,
+    val double: Double,
   ) {
     override fun toString(): String = buildString {
       append("BindingValues{")
@@ -694,14 +713,14 @@ class KSQLiteDatabaseUnitTest {
       stringBuilder: Arb<StringBuilder> = stringBuilder()
     ): Arb<CharSequence> = Arb.choice(string, stringBuilder)
 
-    fun Arb.Companion.bindingValues(
-      charSequence: Arb<CharSequence> = charSequence(),
-      byteArray: Arb<ByteArray> = byteArray(int(0..10), byte()),
-      int: Arb<Int> = int(),
-      long: Arb<Long> = long(),
-      float: Arb<Float> = float(),
-      double: Arb<Double> = double(),
-    ): Arb<BindingValues> =
+    fun Arb.Companion.nullableBindingValues(
+      charSequence: Arb<CharSequence?> = charSequence().orNull(nullProbability = 0.33),
+      byteArray: Arb<ByteArray?> = byteArray(int(0..10), byte()).orNull(nullProbability = 0.33),
+      int: Arb<Int?> = int().orNull(nullProbability = 0.33),
+      long: Arb<Long?> = long().orNull(nullProbability = 0.33),
+      float: Arb<Float?> = float().orNull(nullProbability = 0.33),
+      double: Arb<Double?> = double().orNull(nullProbability = 0.33),
+    ): Arb<NullableBindingValues> =
       Arb.bind(
         charSequence,
         byteArray,
@@ -710,10 +729,10 @@ class KSQLiteDatabaseUnitTest {
         float,
         double,
       ) { charSequence, byteArray, int, long, float, double ->
-        BindingValues(charSequence, byteArray, int, long, float, double)
+        NullableBindingValues(charSequence, byteArray, int, long, float, double)
       }
 
-    infix fun BindingValues.shouldBe(expected: BindingValues) {
+    infix fun NullableBindingValues.shouldBe(expected: NullableBindingValues) {
       assertSoftly {
         withClue("charSequence") {
           this.charSequence?.toString() shouldBe expected.charSequence?.toString()
@@ -725,5 +744,24 @@ class KSQLiteDatabaseUnitTest {
         withClue("double") { this.double shouldBeSqliteRoundTripValue expected.double }
       }
     }
+
+    fun Arb.Companion.nonNullableBindingValues(
+      charSequence: Arb<CharSequence> = charSequence(),
+      byteArray: Arb<ByteArray> = byteArray(int(0..10), byte()),
+      int: Arb<Int> = int(),
+      long: Arb<Long> = long(),
+      float: Arb<Float> = float(),
+      double: Arb<Double> = double(),
+    ): Arb<NonNullableBindingValues> =
+      Arb.bind(
+        charSequence,
+        byteArray,
+        int,
+        long,
+        float,
+        double,
+      ) { charSequence, byteArray, int, long, float, double ->
+        NonNullableBindingValues(charSequence, byteArray, int, long, float, double)
+      }
   }
 }
