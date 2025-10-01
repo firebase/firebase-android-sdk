@@ -133,6 +133,7 @@ dependencies {
   testImplementation(libs.mockk)
   testImplementation(libs.testonly.three.ten.abp)
   testImplementation(libs.robolectric)
+  testImplementation("io.github.z4kn4fein:semver:3.0.0")
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))

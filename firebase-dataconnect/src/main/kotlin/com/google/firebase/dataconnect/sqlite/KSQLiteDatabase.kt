@@ -146,6 +146,28 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     fun getDatabases(): MutableList<GetDatabasesResult>
 
     /**
+     * Retrieves the sqlite version under use using the `sqlite_version()` sqlite builtin function.
+     *
+     * This function simply executes the
+     * [sqlite_version()](https://sqlite.org/lang_corefunc.html#sqlite_version) built-in function
+     * and returns whatever it returns.
+     */
+    fun getSqliteVersion(): String
+
+    /**
+     * Retrieves the ROWID of the last-inserted row using the `last_insert_rowid()` sqlite builtin
+     * function.
+     *
+     * This function simply executes the
+     * [last_insert_rowid()](https://sqlite.org/lang_corefunc.html#last_insert_rowid) built-in
+     * function and returns whatever it returns.
+     *
+     * @return the ROWID of the last-inserted row, or some indeterminate value if no rows have been
+     * inserted.
+     */
+    fun getLastInsertRowid(): Long
+
+    /**
      * Executes the given SQLite query.
      *
      * The given block will be called with a cursor over the query results. The block does _not_
@@ -249,6 +271,18 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
       return results
     }
 
+    override fun getSqliteVersion(): String =
+      db.rawQuery("SELECT sqlite_version()", null).use { cursor ->
+        cursor.moveToNext()
+        cursor.getString(0)
+      }
+
+    override fun getLastInsertRowid(): Long =
+      db.rawQuery("SELECT last_insert_rowid()", null).use { cursor ->
+        cursor.moveToNext()
+        cursor.getLong(0)
+      }
+
     override suspend fun <T> executeQuery(
       sqlStatement: String,
       bindings: List<Any?>?,
@@ -270,7 +304,8 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
               },
               sqlStatement,
               null,
-              null
+              null,
+              cancellationSignal
             )
           }
         cursor.use { block(it) }

@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import io.github.z4kn4fein.semver.toVersion
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -75,6 +76,32 @@ class KSQLiteDatabaseUnitTest {
 
   @get:Rule val randomSeedTestRule = RandomSeedTestRule()
   private val rs: RandomSource by randomSeedTestRule.rs
+
+  @Test
+  fun `getSqliteVersion should return the value of the sqlite_version() function`() = runTest {
+    val sqliteVersion =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadOnlyTransaction { it.getSqliteVersion() }
+      }
+
+    val expectedSqliteVersion =
+      sqliteDatabase.rawQuery("SELECT sqlite_version()", null).use {
+        it.moveToFirst()
+        it.getString(0)
+      }
+
+    sqliteVersion shouldBe expectedSqliteVersion
+  }
+
+  @Test
+  fun `getSqliteVersion should return a semantic version`() = runTest {
+    val sqliteVersionString =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadOnlyTransaction { it.getSqliteVersion() }
+      }
+
+    sqliteVersionString.toVersion() // will throw if parsing the version string fails
+  }
 
   @Test
   fun `getUserVersion should return 0 on a new database`() = runTest {
@@ -219,6 +246,46 @@ class KSQLiteDatabaseUnitTest {
       GetDatabasesResult(dbName = "zpt4vg35mt", filePath = ""),
       GetDatabasesResult(dbName = "cvftrszszx", filePath = "")
     )
+  }
+
+  @Test
+  fun `lastInsertRowid should not throw if no rows have been inserted`() = runTest {
+    KSQLiteDatabase(sqliteDatabase).use { kdb ->
+      kdb.runReadOnlyTransaction { it.getLastInsertRowid() }
+    }
+  }
+
+  @Test
+  fun `lastInsertRowid should return the ROWID of the only inserted row`() = runTest {
+    val id = Arb.long().next(rs)
+
+    val lastInsertRowid =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction { txn ->
+          txn.executeStatement("CREATE TABLE foo (id INTEGER PRIMARY KEY)")
+          txn.executeStatement("INSERT INTO foo (id) VALUES ($id)")
+          txn.getLastInsertRowid()
+        }
+      }
+
+    lastInsertRowid shouldBe id
+  }
+
+  @Test
+  fun `lastInsertRowid should return the ROWID of the last inserted row`() = runTest {
+    val id = Arb.long().next(rs)
+
+    val lastInsertRowid =
+      KSQLiteDatabase(sqliteDatabase).use { kdb ->
+        kdb.runReadWriteTransaction { txn ->
+          txn.executeStatement("CREATE TABLE foo (id INTEGER PRIMARY KEY)")
+          txn.executeStatement("INSERT INTO foo DEFAULT VALUES")
+          txn.executeStatement("INSERT INTO foo (id) VALUES ($id)")
+          txn.getLastInsertRowid()
+        }
+      }
+
+    lastInsertRowid shouldBe id
   }
 
   @Test

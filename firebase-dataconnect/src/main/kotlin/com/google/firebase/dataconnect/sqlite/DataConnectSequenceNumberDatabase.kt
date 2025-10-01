@@ -43,6 +43,8 @@ internal class DataConnectSequenceNumberDatabase(
       logger.debug { "initializing database" }
       txn.setApplicationId(APPLICATION_ID)
       txn.setUserVersion(USER_VERSION)
+      // Specify AUTOINCREMENT to guarantee monotonically-increasing values of the ROWID (of which
+      // the "id" column is an alias). See https://www.sqlite.org/autoinc.html
       txn.executeStatement("CREATE TABLE sequence_number (id INTEGER PRIMARY KEY AUTOINCREMENT)")
     } else if (applicationId != APPLICATION_ID || userVersion != USER_VERSION) {
       throw InvalidDatabaseException(
@@ -52,6 +54,15 @@ internal class DataConnectSequenceNumberDatabase(
           "(found ${userVersion.toString(16)}, expected ${USER_VERSION.toString(16)}); " +
           "this probably isn't the correct sqlite database; refusing to open it"
       )
+    }
+  }
+
+  suspend fun nextSequenceNumber(): Long = withDb { db ->
+    db.runReadWriteTransaction { txn ->
+      txn.executeStatement("INSERT INTO sequence_number DEFAULT VALUES")
+      val sequenceNumber = txn.getLastInsertRowid()
+      txn.executeStatement("DELETE FROM sequence_number")
+      sequenceNumber
     }
   }
 
