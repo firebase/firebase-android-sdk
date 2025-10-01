@@ -207,7 +207,6 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.LoadBundleTask loadBundle(java.io.InputStream);
     method public com.google.firebase.firestore.LoadBundleTask loadBundle(java.nio.ByteBuffer);
     method public com.google.firebase.firestore.PipelineSource pipeline();
-    method public com.google.firebase.firestore.RealtimePipelineSource realtimePipeline();
     method public com.google.android.gms.tasks.Task<java.lang.Void!> runBatch(com.google.firebase.firestore.WriteBatch.Function);
     method public <TResult> com.google.android.gms.tasks.Task<TResult!> runTransaction(com.google.firebase.firestore.Transaction.Function<TResult!>);
     method public <TResult> com.google.android.gms.tasks.Task<TResult!> runTransaction(com.google.firebase.firestore.TransactionOptions, com.google.firebase.firestore.Transaction.Function<TResult!>);
@@ -613,19 +612,6 @@ package com.google.firebase.firestore {
     method public <T> java.util.List<T!> toObjects(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
 
-  public final class RealtimePipeline {
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.RealtimePipelineOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor executor, com.google.firebase.firestore.RealtimePipelineOptions options, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.RealtimePipelineSnapshot> listener);
-    method public String canonicalId();
-    method public com.google.firebase.firestore.RealtimePipeline limit(int limit);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipelineSnapshot> snapshots();
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.RealtimePipelineSnapshot> snapshots(com.google.firebase.firestore.RealtimePipelineOptions options);
-    method public com.google.firebase.firestore.RealtimePipeline sort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrders);
-    method public com.google.firebase.firestore.RealtimePipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
-  }
-
   public final class RealtimePipelineOptions {
     ctor public RealtimePipelineOptions();
     method public com.google.firebase.firestore.RealtimePipelineOptions withMetadataChanges(com.google.firebase.firestore.MetadataChanges metadataChanges);
@@ -644,13 +630,6 @@ package com.google.firebase.firestore {
     method public java.util.List<com.google.firebase.firestore.PipelineResult> getResults();
     property public final com.google.firebase.firestore.PipelineSnapshotMetadata metadata;
     property public final java.util.List<com.google.firebase.firestore.PipelineResult> results;
-  }
-
-  public final class RealtimePipelineSource {
-    method public com.google.firebase.firestore.RealtimePipeline collection(com.google.firebase.firestore.CollectionReference ref);
-    method public com.google.firebase.firestore.RealtimePipeline collection(String path);
-    method public com.google.firebase.firestore.RealtimePipeline collectionGroup(String collectionId);
-    method public com.google.firebase.firestore.RealtimePipeline convertFrom(com.google.firebase.firestore.Query query);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface ServerTimestamp {
