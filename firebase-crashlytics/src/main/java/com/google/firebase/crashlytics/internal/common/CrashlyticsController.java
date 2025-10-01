@@ -43,6 +43,7 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.sessions.api.CrashEventReceiver;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -188,6 +189,11 @@ class CrashlyticsController {
 
     Logger.getLogger()
         .d("Handling uncaught " + "exception \"" + ex + "\" from thread " + thread.getName());
+
+    // Notify the Firebase Sessions SDK that a fatal crash has occurred.
+    if (!isOnDemand) {
+      CrashEventReceiver.notifyCrashOccurred();
+    }
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
@@ -661,15 +667,15 @@ class CrashlyticsController {
   }
 
   private static byte[] readResource(InputStream is) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int length;
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      byte[] buffer = new byte[1024];
+      int length;
 
-    while ((length = is.read(buffer)) != -1) {
-      out.write(buffer, 0, length);
+      while ((length = is.read(buffer)) != -1) {
+        out.write(buffer, 0, length);
+      }
+      return out.toByteArray();
     }
-
-    return out.toByteArray();
   }
 
   private void finalizePreviousNativeSession(String previousSessionId) {

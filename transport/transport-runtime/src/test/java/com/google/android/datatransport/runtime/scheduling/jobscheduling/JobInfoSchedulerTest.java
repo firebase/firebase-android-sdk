@@ -14,7 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static android.os.Build.VERSION_CODES.M;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.app.job.JobInfo;
@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@Config(sdk = {LOLLIPOP})
+@Config(sdk = {M})
 @RunWith(RobolectricTestRunner.class)
 public class JobInfoSchedulerTest {
   private static final long TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;

@@ -14,7 +14,7 @@
 
 plugins {
     id 'firebase-library'
-    id 'copy-google-services'
+//    id 'copy-google-services'
 }
 
 firebaseLibrary {
@@ -23,7 +23,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Debug Testing")
         versionName.set("appcheck-debug-testing")
-        hasKTX.set(false)
     }
 }
 
@@ -55,8 +54,8 @@ dependencies {
     api project(':appcheck:firebase-appcheck')
     api project(':appcheck:firebase-appcheck-debug')
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
-    api 'com.google.firebase:firebase-common:21.0.0'
-    api 'com.google.firebase:firebase-components:18.0.0'
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.androidx.test.core
     implementation libs.playservices.base

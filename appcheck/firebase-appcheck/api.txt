@@ -41,14 +41,3 @@ package com.google.firebase.appcheck {
 
 }
 
-package com.google.firebase.appcheck.ktx {
-
-  public final class FirebaseAppCheckKt {
-    method @Deprecated public static com.google.firebase.appcheck.FirebaseAppCheck appCheck(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
-    method @Deprecated public static operator String component1(com.google.firebase.appcheck.AppCheckToken);
-    method @Deprecated public static operator long component2(com.google.firebase.appcheck.AppCheckToken);
-    method @Deprecated public static com.google.firebase.appcheck.FirebaseAppCheck getAppCheck(com.google.firebase.ktx.Firebase);
-  }
-
-}
-

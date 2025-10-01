@@ -40,7 +40,6 @@ log = logging.getLogger('fireci.clean')
 
   \b
   $ fireci clean firebase-common
-  $ fireci clean firebase-common firebase-vertexai
 
   Clean all projects:
 

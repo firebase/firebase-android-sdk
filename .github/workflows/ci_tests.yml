@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
+    if: ${{ needs.determine_changed.outputs.modules != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -56,9 +57,9 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Clone mock responses
-        if: matrix.module == ':firebase-vertexai'
-        run: firebase-vertexai/update_responses.sh
+      - name: Clone ai mock responses
+        if: matrix.module == ':firebase-ai'
+        run: firebase-ai/update_responses.sh
 
       - name: Add google-services.json
         env:
@@ -72,6 +73,7 @@ jobs:
         run: |
           ./gradlew ${{matrix.module}}:check withErrorProne
       - name: Compute upload file name
+        if: always()
         run: |
           MODULE=${{matrix.module}}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
@@ -88,12 +90,11 @@ jobs:
   # to be used as a required check for merging.
   check_all:
     runs-on: ubuntu-22.04
-    if: always()
     name: Unit Tests (matrix)
     needs: unit_tests
+    if: ${{ failure() }}
     steps:
-      - name: Check test matrix
-        if: needs.unit_tests.result != 'success'
+      - name: Check test matrix results
         run: exit 1
 
 
@@ -165,5 +166,8 @@ jobs:
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
+        if: always()
         with:
           files: "artifacts/**/*.xml"
+          comment_mode: off
+          compare_to_earlier_commit: false

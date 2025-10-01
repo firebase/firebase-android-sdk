@@ -16,6 +16,7 @@ indent-width = 2
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+  "C901", # function is too complex
   "COM812", # missing-trailing-comma
   "D100", # Missing docstring in public module
   "D101", # Missing docstring in public class
@@ -29,6 +30,8 @@ ignore = [
   "E501", # Line too long (will be fixed by the formatter)
   "EM101", # Exception must not use a string literal, assign to variable first
   "LOG015", # root-logger-call
+  "PLR0912", # Too many branches
+  "PLR0915", # Too many statements
   "TRY003", # Avoid specifying long messages outside the exception class
 ]
 
