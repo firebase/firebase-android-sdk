@@ -15,11 +15,10 @@
  */
 package com.google.firebase.gradle.plugins.report
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.io.FileWriter
 import java.io.IOException
 import java.net.URI
@@ -30,6 +29,8 @@ import java.time.Duration
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import org.gradle.internal.Pair
+import java.util.stream.Stream
+import kotlin.streams.toList
 
 @SuppressWarnings("NewApi")
 class UnitTestReport(private val apiToken: String) {
@@ -40,19 +41,17 @@ class UnitTestReport(private val apiToken: String) {
     val response = request("commits?per_page=$commitCount", JsonArray::class.java)
     val commits =
       response
-        .getAsJsonArray()
-        .asList()
         .stream()
         .limit(commitCount.toLong())
         .map { el: JsonElement ->
-          val obj = el.getAsJsonObject()
+          val obj = el as JsonObject
           var pr = -1
           val matcher: Matcher =
-            PR_NUMBER_MATCHER.matcher(obj.getAsJsonObject("commit").get("message").asString)
+            PR_NUMBER_MATCHER.matcher((obj["commit"] as JsonObject)["message"].toString())
           if (matcher.find()) {
             pr = matcher.group(1).toInt()
           }
-          ReportCommit(obj.get("sha").asString, pr)
+          ReportCommit(obj["sha"].toString(), pr)
         }
         .toList()
     outputReport(commits)
@@ -173,11 +172,11 @@ class UnitTestReport(private val apiToken: String) {
 
   private fun parseTestReports(commit: String): List<TestReport> {
     val runs = request("actions/runs?head_sha=" + commit)
-    for (el in runs.getAsJsonArray("workflow_runs")) {
-      val run = el.getAsJsonObject()
-      val name = run.get("name").getAsString()
+    for (el in runs["workflow_runs"] as JsonArray) {
+      val run = el as JsonObject
+      val name = run["name"].toString()
       if (name == "CI Tests") {
-        return parseCITests(run.get("id").getAsString(), commit)
+        return parseCITests(run["id"].toString(), commit)
       }
     }
     return listOf()
@@ -186,9 +185,9 @@ class UnitTestReport(private val apiToken: String) {
   private fun parseCITests(id: String, commit: String): List<TestReport> {
     val reports: MutableList<TestReport> = ArrayList()
     val jobs = request("actions/runs/" + id + "/jobs")
-    for (el in jobs.getAsJsonArray("jobs")) {
-      val job = el.getAsJsonObject()
-      val jid = job.get("name").getAsString()
+    for (el in jobs["jobs"] as JsonArray) {
+      val job = el as JsonObject
+      val jid = job["name"].toString()
       if (jid.startsWith("Unit Tests (:")) {
         reports.add(parseJob(TestReport.Type.UNIT_TEST, job, commit))
       } else if (jid.startsWith("Instrumentation Tests (:")) {
@@ -200,22 +199,21 @@ class UnitTestReport(private val apiToken: String) {
 
   private fun parseJob(type: TestReport.Type, job: JsonObject, commit: String): TestReport {
     var name =
-      job
-        .get("name")
-        .getAsString()
+      job["name"]
+        .toString()
         .split("\\(:".toRegex())
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
     var status = TestReport.Status.OTHER
-    if (job.get("status").asString == "completed") {
-      if (job.get("conclusion").asString == "success") {
+    if (job["status"].toString() == "completed") {
+      if (job["conclusion"].toString() == "success") {
         status = TestReport.Status.SUCCESS
       } else {
         status = TestReport.Status.FAILURE
       }
     }
-    val url = job.get("html_url").getAsString()
+    val url = job["html_url"].toString()
     return TestReport(name, type, status, commit, url)
   }
 
@@ -245,10 +243,14 @@ class UnitTestReport(private val apiToken: String) {
         System.err.println(response)
         System.err.println(body)
       }
-      val json: T = GSON.fromJson(body, clazz)
+      val json = when (clazz) {
+        JsonObject::class.java -> Json.decodeFromString<JsonObject>(body)
+        JsonArray::class.java -> Json.decodeFromString<JsonArray>(body)
+        else -> throw IllegalArgumentException()
+      }
       if (json is JsonObject) {
         // Retrieve and merge objects from other pages, if present
-        response.headers().firstValue("Link").ifPresent { link: String ->
+        return response.headers().firstValue("Link").map { link: String ->
           val parts = link.split(",".toRegex()).dropLastWhile { it.isEmpty() }
           for (part in parts) {
             if (part.endsWith("rel=\"next\"")) {
@@ -262,17 +264,20 @@ class UnitTestReport(private val apiToken: String) {
                   .dropLastWhile { it.isEmpty() }
                   .toTypedArray()[1]
               val p = request<JsonObject>(URI.create(url), JsonObject::class.java)
-              for (key in json.keySet()) {
-                if (json.get(key).isJsonArray && p.has(key) && p.get(key).isJsonArray) {
-                  json.getAsJsonArray(key).addAll(p.getAsJsonArray(key))
+              return@map JsonObject(json.keys.associateWith {
+                key: String ->
+
+                if (json[key] is JsonArray && p.containsKey(key) && p[key] is JsonArray) {
+                  JsonArray(Stream.concat((json[key] as JsonArray).stream(), (p[key] as JsonArray).stream()).toList())
                 }
-              }
-              break
+                json[key]!!
+              })
             }
           }
-        }
+          return@map json
+        }.orElse(json) as T
       }
-      return json
+      return json as T
     } catch (e: IOException) {
       throw RuntimeException(e)
     } catch (e: InterruptedException) {
@@ -281,8 +286,10 @@ class UnitTestReport(private val apiToken: String) {
   }
 
   companion object {
+    /*
+     * Matches commit names for their PR number generated by GitHub, eg, `foo bar (#1234)`.
+     */
     private val PR_NUMBER_MATCHER: Pattern = Pattern.compile(".*\\(#([0-9]+)\\)")
     private const val URL_PREFIX = "https://api.github.com/repos/firebase/firebase-android-sdk/"
-    private val GSON: Gson = GsonBuilder().create()
   }
 }
