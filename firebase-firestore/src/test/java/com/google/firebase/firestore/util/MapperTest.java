@@ -102,7 +102,6 @@ public class MapperTest {
     public Timestamp timestamp;
     public Date date;
     public Instant instant;
-    public kotlinx.datetime.Instant instantKt;
 
     @Override
     public boolean equals(Object o) {
@@ -112,13 +111,12 @@ public class MapperTest {
       TimeBean timeBean = (TimeBean) o;
       return Objects.equals(timestamp, timeBean.timestamp)
           && Objects.equals(date, timeBean.date)
-          && Objects.equals(instant, timeBean.instant)
-          && Objects.equals(instantKt, timeBean.instantKt);
+          && Objects.equals(instant, timeBean.instant);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(timestamp, date, instant, instantKt);
+      return Objects.hash(timestamp, date, instant);
     }
 
     @Override
@@ -130,8 +128,6 @@ public class MapperTest {
           + timestamp
           + ", _instant="
           + instant
-          + ", _instantKt="
-          + instantKt
           + '}';
     }
   }
@@ -1523,17 +1519,8 @@ public class MapperTest {
     bean.instant = Instant.ofEpochSecond(1234, 5678);
     bean.timestamp = new Timestamp(bean.instant);
     bean.date = new Date(1234);
-    bean.instantKt = new kotlinx.datetime.Instant(bean.instant);
     assertEquals(
-        Map.of(
-            "timestamp",
-            bean.timestamp,
-            "date",
-            bean.date,
-            "instant",
-            bean.timestamp,
-            "instantKt",
-            bean.timestamp),
+        Map.of("timestamp", bean.timestamp, "date", bean.date, "instant", bean.timestamp),
         serialize(bean));
   }
 
@@ -1543,19 +1530,10 @@ public class MapperTest {
     bean.instant = Instant.ofEpochSecond(1234, 5678);
     bean.timestamp = new Timestamp(bean.instant);
     bean.date = new Date(1234);
-    bean.instantKt = new kotlinx.datetime.Instant(bean.instant);
     assertEquals(
         bean,
         convertToCustomClass(
-            Map.of(
-                "timestamp",
-                bean.timestamp,
-                "date",
-                bean.date,
-                "instant",
-                bean.timestamp,
-                "instantKt",
-                bean.timestamp),
+            Map.of("timestamp", bean.timestamp, "date", bean.date, "instant", bean.timestamp),
             TimeBean.class));
   }
 

@@ -183,10 +183,6 @@ public class CustomClassMapper {
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && o instanceof Instant) {
       Instant instant = (Instant) o;
       return new Timestamp(instant.getEpochSecond(), instant.getNano());
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-        && o instanceof kotlinx.datetime.Instant) {
-      kotlinx.datetime.Instant instant = (kotlinx.datetime.Instant) o;
-      return new Timestamp(instant.getEpochSeconds(), instant.getNanosecondsOfSecond());
     } else if (o instanceof Uri || o instanceof URI || o instanceof URL) {
       return o.toString();
     } else {
@@ -250,9 +246,6 @@ public class CustomClassMapper {
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
         && Instant.class.isAssignableFrom(clazz)) {
       return (T) convertInstant(o, context);
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-        && kotlinx.datetime.Instant.class.isAssignableFrom(clazz)) {
-      return (T) new kotlinx.datetime.Instant(convertInstant(o, context));
     } else if (Blob.class.isAssignableFrom(clazz)) {
       return (T) convertBlob(o, context);
     } else if (GeoPoint.class.isAssignableFrom(clazz)) {
@@ -965,8 +958,7 @@ public class CustomClassMapper {
         Class<?> fieldType = field.getType();
         if (fieldType != Date.class
             && fieldType != Timestamp.class
-            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && (fieldType == Instant.class || fieldType == kotlinx.datetime.Instant.class))) {
+            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && fieldType == Instant.class)) {
           throw new IllegalArgumentException(
               "Field "
                   + field.getName()
@@ -989,8 +981,7 @@ public class CustomClassMapper {
         Class<?> returnType = method.getReturnType();
         if (returnType != Date.class
             && returnType != Timestamp.class
-            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && (returnType == Instant.class || returnType == kotlinx.datetime.Instant.class))) {
+            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && returnType == Instant.class)) {
           throw new IllegalArgumentException(
               "Method "
                   + method.getName()
