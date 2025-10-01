@@ -34,12 +34,15 @@ import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.UnsupportedUserLocationException
+import com.google.firebase.ai.type.UrlRetrievalStatus
 import com.google.firebase.ai.util.goldenVertexUnaryFile
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -661,6 +664,97 @@ internal class VertexAIUnarySnapshotTests {
         secondGroundingSupport.segment.text shouldBe
           "The temperature is 67°F (19°C), but it feels like 75°F (24°C)."
         secondGroundingSupport.groundingChunkIndices.first() shouldBe 1
+      }
+    }
+
+  @Test
+  fun `url context`() =
+    goldenVertexUnaryFile("unary-success-url-context.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(1)
+        urlContextMetadata.urlMetadata[0].retrievedUrl.shouldBe("https://berkshirehathaway.com")
+        urlContextMetadata.urlMetadata[0].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(2)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails
+          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+      }
+    }
+
+  @Test
+  fun `url context mixed validity`() =
+    goldenVertexUnaryFile("unary-success-url-context-mixed-validity.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(3)
+        urlContextMetadata.urlMetadata[2]
+          .retrievedUrl
+          .shouldBe("https://a-completely-non-existent-url-for-testing.org")
+        urlContextMetadata.urlMetadata[2].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.ERROR)
+        urlContextMetadata.urlMetadata[1].retrievedUrl.shouldBe("https://ai.google.dev")
+        urlContextMetadata.urlMetadata[1].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(6)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails
+          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+      }
+    }
+
+  // This test only applies to Vertex AI, since this is a bug in the backend.
+  @Test
+  fun `url context missing retrievedUrl`() =
+    goldenVertexUnaryFile("unary-success-url-context-missing-retrievedurl.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(20)
+        // Not all the retrievedUrls are null. Only the last 10. We only need to check one.
+        urlContextMetadata.urlMetadata.last().retrievedUrl.shouldBeNull()
+        urlContextMetadata.urlMetadata.last().urlRetrievalStatus.shouldNotBeNull()
       }
     }
 }

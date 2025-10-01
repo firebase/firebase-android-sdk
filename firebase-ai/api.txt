@@ -191,11 +191,13 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.FinishReason? getFinishReason();
     method public com.google.firebase.ai.type.GroundingMetadata? getGroundingMetadata();
     method public java.util.List<com.google.firebase.ai.type.SafetyRating> getSafetyRatings();
+    method public com.google.firebase.ai.type.UrlContextMetadata? getUrlContextMetadata();
     property public final com.google.firebase.ai.type.CitationMetadata? citationMetadata;
     property public final com.google.firebase.ai.type.Content content;
     property public final com.google.firebase.ai.type.FinishReason? finishReason;
     property public final com.google.firebase.ai.type.GroundingMetadata? groundingMetadata;
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
+    property public final com.google.firebase.ai.type.UrlContextMetadata? urlContextMetadata;
   }
 
   public final class Citation {
@@ -942,7 +944,7 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
   }
 
-  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface PublicPreviewAPI {
   }
 
   public final class QuotaExceededException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -1201,6 +1203,7 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
@@ -1208,6 +1211,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }
 
   public final class ToolConfig {
@@ -1220,19 +1224,55 @@ package com.google.firebase.ai.type {
   public final class UnsupportedUserLocationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContext {
+    ctor public UrlContext();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContextMetadata {
+    method public java.util.List<com.google.firebase.ai.type.UrlMetadata> getUrlMetadata();
+    property public final java.util.List<com.google.firebase.ai.type.UrlMetadata> urlMetadata;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlMetadata {
+    method public String? getRetrievedUrl();
+    method public com.google.firebase.ai.type.UrlRetrievalStatus getUrlRetrievalStatus();
+    property public final String? retrievedUrl;
+    property public final com.google.firebase.ai.type.UrlRetrievalStatus urlRetrievalStatus;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlRetrievalStatus {
+    method public String getName();
+    method public int getOrdinal();
+    property public final String name;
+    property public final int ordinal;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus.Companion Companion;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus ERROR;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus PAYWALL;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus SUCCESS;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus UNSAFE;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus UNSPECIFIED;
+  }
+
+  public static final class UrlRetrievalStatus.Companion {
+  }
+
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
+    ctor @Deprecated public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
     method public int getThoughtsTokenCount();
+    method public int getToolUsePromptTokenCount();
+    method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getToolUsePromptTokensDetails();
     method public int getTotalTokenCount();
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
     property public final int thoughtsTokenCount;
+    property public final int toolUsePromptTokenCount;
+    property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> toolUsePromptTokensDetails;
     property public final int totalTokenCount;
   }
 
