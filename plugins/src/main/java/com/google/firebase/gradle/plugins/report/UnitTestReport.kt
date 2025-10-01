@@ -30,13 +30,14 @@ import java.time.Duration
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import org.gradle.internal.Pair
+import java.io.File
 
 @SuppressWarnings("NewApi")
 class UnitTestReport(private val apiToken: String) {
   private val client: HttpClient =
     HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
-  fun createReport(commitCount: Int) {
+  fun createReport(outputFile: File, commitCount: Int) {
     val response = request("commits?per_page=$commitCount", JsonArray::class.java)
     val commits =
       response
@@ -55,10 +56,10 @@ class UnitTestReport(private val apiToken: String) {
           ReportCommit(obj.get("sha").asString, pr)
         }
         .toList()
-    outputReport(commits)
+    outputReport(outputFile, commits)
   }
 
-  private fun outputReport(commits: List<ReportCommit>) {
+  private fun outputReport(outputFile: File, commits: List<ReportCommit>) {
     val reports: MutableList<TestReport> = ArrayList()
     for (commit in commits) {
       reports.addAll(parseTestReports(commit.sha))
@@ -82,7 +83,7 @@ class UnitTestReport(private val apiToken: String) {
     output.append("\n")
 
     try {
-      val writer = FileWriter("test-report.md")
+      val writer = FileWriter(outputFile)
       writer.append(output.toString())
       writer.close()
     } catch (e: Exception) {
