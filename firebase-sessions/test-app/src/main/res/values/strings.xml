@@ -1,4 +1,4 @@
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2023 Google LLC
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,5 +16,22 @@
 
 <resources>
   <string name="app_name">Firebase Sessions Test App</string>
-  <string name="firebase_greetings">Greetings from Firebase!</string>
+  <string name="action_settings">Settings</string>
+  <string name="first_fragment_label">First Fragment</string>
+  <string name="crash_test_widget_description">Test Widget for Crashing</string>
+  <string name="widget_crash_button_text">Crash!</string>
+  <string name="crash_button_text">Crash!</string>
+  <string name="non_fatal_button_text">Non Fatal</string>
+  <string name="button_anr_text">ANR</string>
+  <string name="create_trace">Create New Trace: test_trace</string>
+  <string name="create_trace_2">Create New Trace: test_trace_2</string>
+  <string name="create_network_trace">Create network trace</string>
+  <string name="start_foreground_service_text">Start Foreground Service</string>
+  <string name="start_splitcreen_text">Start splitscreen - Different activity</string>
+  <string name="start_splitcreen_same_text">Start splitscreen - Same activity</string>
+  <string name="next_activity_text">Next activity</string>
+  <string name="prev_activity_text">Previous activity</string>
+  <string name="kill_processes_button_text">Kill Background Processes</string>
+  <string name="no_session_text">No Session Set</string>
+  <string name="session_id_label">Session Id: </string>
 </resources>

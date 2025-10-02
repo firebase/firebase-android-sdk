@@ -77,7 +77,10 @@ public class DataTest {
 
   @Test
   public void readAndWrite()
-      throws DatabaseException, ExecutionException, InterruptedException, TimeoutException,
+      throws DatabaseException,
+          ExecutionException,
+          InterruptedException,
+          TimeoutException,
           TestFailure {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     ReadFuture future = ReadFuture.untilNonNull(ref);
@@ -120,7 +123,10 @@ public class DataTest {
 
   @Test
   public void writeAValueReconnectRead()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -139,7 +145,10 @@ public class DataTest {
 
   @Test
   public void writeABunchOfDataReconnectRead()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -259,7 +268,10 @@ public class DataTest {
 
   @Test
   public void writeLeafNodeRemoveParentWaitForEvents()
-      throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          TimeoutException,
+          TestFailure,
           ExecutionException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -335,7 +347,10 @@ public class DataTest {
 
   @Test
   public void writeLeafNodeRemoveLeafNodeWaitForEvents()
-      throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          TimeoutException,
+          TestFailure,
           ExecutionException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -563,7 +578,10 @@ public class DataTest {
 
   @Test
   public void removeCallbackIsHit()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -635,7 +653,10 @@ public class DataTest {
 
   @Test
   public void onceWithCallbackHitsServerToGetData()
-      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TimeoutException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(3);
     DatabaseReference writer = refs.get(0);
@@ -682,7 +703,10 @@ public class DataTest {
 
   @Test
   public void setAndThenListenForValueEvents()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -737,7 +761,10 @@ public class DataTest {
 
   @Test
   public void setANodeWithChildrenToAPrimitiveThenBack()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -793,7 +820,10 @@ public class DataTest {
 
   @Test
   public void writeLeafNodeRemoveItTryToAddChildToRemovedNode()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -810,7 +840,10 @@ public class DataTest {
 
   @Test
   public void listenForValueThenWriteOnANodeWithExistingData()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -870,7 +903,10 @@ public class DataTest {
 
   @Test
   public void setWithPrioritySetsPriorityAndValue()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -896,7 +932,10 @@ public class DataTest {
 
   @Test
   public void setOverwritesPriorityOfTopLevelNodesAndSubnodes()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -915,7 +954,10 @@ public class DataTest {
 
   @Test
   public void setWithPriorityOfALeafSavesCorrectly()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -930,7 +972,10 @@ public class DataTest {
 
   @Test
   public void setPriorityOfAnObjectSavesCorrectly()
-      throws DatabaseException, ExecutionException, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          InterruptedException,
           TestFailure {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1063,7 +1108,10 @@ public class DataTest {
 
   @Test
   public void largeNumericPrioritiesWork()
-      throws DatabaseException, TestFailure, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          TestFailure,
+          TimeoutException,
+          InterruptedException,
           ExecutionException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1078,7 +1126,10 @@ public class DataTest {
 
   @Test
   public void urlEncodingAndDecodingWorks()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
@@ -1098,7 +1149,10 @@ public class DataTest {
 
   @Test
   public void nameWorksForRootAndNonRootLocations()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
@@ -1110,7 +1164,10 @@ public class DataTest {
 
   @Test
   public void nameAndRefWorkForSnapshots()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
@@ -1157,7 +1214,10 @@ public class DataTest {
 
   @Test
   public void setAChildAndListenAtTheRoot()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1471,7 +1531,10 @@ public class DataTest {
 
   @Test
   public void namespaceAreCaseInsensitive()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseConfig ctx1 = IntegrationTestHelpers.getContext(0);
     DatabaseConfig ctx2 = IntegrationTestHelpers.getContext(1);
@@ -1513,7 +1576,10 @@ public class DataTest {
 
   @Test
   public void setANodeWithAQuotedKey()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -1525,7 +1591,10 @@ public class DataTest {
 
   @Test
   public void setAChildWithAQuote()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -1556,7 +1625,10 @@ public class DataTest {
 
   @Test
   public void onAfterSetWaitsForLatestData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1571,7 +1643,10 @@ public class DataTest {
 
   @Test
   public void onceWaitsForLatestDataEachTime()
-      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+      throws DatabaseException,
+          InterruptedException,
+          TestFailure,
+          ExecutionException,
           TimeoutException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1632,7 +1707,10 @@ public class DataTest {
 
   @Test
   public void memoryFreeingOnUnlistenDoesNotCorruptData()
-      throws DatabaseException, TestFailure, TimeoutException, InterruptedException,
+      throws DatabaseException,
+          TestFailure,
+          TimeoutException,
+          InterruptedException,
           ExecutionException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference ref1 = refs.get(0);
@@ -1727,7 +1805,10 @@ public class DataTest {
 
   @Test
   public void updateRaisesCorrectRemoteEvents()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -1759,7 +1840,10 @@ public class DataTest {
 
   @Test
   public void updateRaisesChildEventsOnNewListener()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     EventHelper helper =
@@ -1781,7 +1865,10 @@ public class DataTest {
 
   @Test
   public void updateAfterSetLeafNodeWorks()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
@@ -1807,7 +1894,10 @@ public class DataTest {
 
   @Test
   public void updateChangesAreStoredCorrectlyByTheServer()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -1858,7 +1948,10 @@ public class DataTest {
 
   @Test
   public void updateDoesntAffectPriorityRemotely()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference reader = refs.get(0);
@@ -1989,7 +2082,10 @@ public class DataTest {
 
   @Test
   public void updateFiresCorrectEventWhenAChildIsDeleted()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2026,7 +2122,10 @@ public class DataTest {
 
   @Test
   public void updateFiresCorrectEventOnNewChildren()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2075,7 +2174,10 @@ public class DataTest {
 
   @Test
   public void updateFiresCorrectEventWhenAllChildrenAreDeleted()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2111,7 +2213,10 @@ public class DataTest {
 
   @Test
   public void updateFiresCorrectEventOnChangedChildren()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3242,7 +3347,10 @@ public class DataTest {
 
   @Test
   public void negativeIntegersDontCreateArrayValue()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 

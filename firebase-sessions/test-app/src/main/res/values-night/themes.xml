@@ -1,4 +1,4 @@
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2023 Google LLC
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Base application theme. -->
-  <style name="Theme.TestApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+  <style name="Theme.Widget_test_app" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
     <!-- Primary brand color. -->
     <item name="colorPrimary">@color/purple_200</item>
     <item name="colorPrimaryVariant">@color/purple_700</item>
@@ -25,8 +25,6 @@
     <item name="colorSecondary">@color/teal_200</item>
     <item name="colorSecondaryVariant">@color/teal_200</item>
     <item name="colorOnSecondary">@color/black</item>
-    <!-- Status bar color. -->
-    <item name="android:statusBarColor" tools:targetApi="21">?attr/colorPrimaryVariant</item>
     <!-- Customize your theme here. -->
   </style>
 </resources>

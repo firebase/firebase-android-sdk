@@ -31,13 +31,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
   private ImmutableSortedMap<DocumentKey, Document> docs;
+
   /** Manages the collection group index. */
   private IndexManager indexManager;
 
@@ -100,7 +100,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       IndexOffset offset,
-      @Nonnull Set<DocumentKey> mutatedKeys,
+      @NonNull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
@@ -141,7 +141,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 

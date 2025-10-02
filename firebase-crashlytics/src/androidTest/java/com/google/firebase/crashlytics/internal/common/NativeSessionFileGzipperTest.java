@@ -15,14 +15,19 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static java.util.Arrays.stream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import android.content.Context;
+import androidx.test.filters.SdkSuppress;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.internal.util.collections.Sets;
 
@@ -33,9 +38,8 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
   File missingFile;
   File gzipDir;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() throws Exception {
     final Context context = getContext();
     testFile = new File(context.getFilesDir(), "testFile");
     try (FileOutputStream fout = new FileOutputStream(testFile);
@@ -49,15 +53,15 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     gzipDir.mkdirs();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
+  @After
+  public void tearDown() throws Exception {
     File[] gzipFiles = gzipDir.listFiles();
     if (gzipFiles != null) {
       stream(gzipFiles).forEach(File::delete);
     }
   }
 
+  @SdkSuppress(minSdkVersion = 24) // streams
   @Test
   public void testProcessNativeSessions_putsFilesInCorrectLocation() {
     String fileBackedSessionName = "file";
@@ -77,6 +81,7 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
         Sets.newSet(gzipFiles));
   }
 
+  @SdkSuppress(minSdkVersion = 24) // streams
   @Test
   public void testProcessNativeSessionsWhenDataIsNull_putsFilesInCorrectLocation() {
     String fileBackedSessionName = "file";

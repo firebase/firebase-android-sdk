@@ -53,8 +53,8 @@ public class UserData {
      */
     Argument,
     /**
-     * Indicates that the source is an Argument that may directly contain nested arrays (e.g. the
-     * operand of a `whereIn` query).
+     * Indicates that the source is an Argument that may directly contain nested arrays (for example
+     * the operand of a `whereIn` query).
      */
     ArrayArgument
   }
@@ -259,14 +259,14 @@ public class UserData {
 
     public ParseContext childContext(String fieldName) {
       FieldPath childPath = path == null ? null : path.append(fieldName);
-      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /* arrayElement= */ false);
       context.validatePathSegment(fieldName);
       return context;
     }
 
     public ParseContext childContext(FieldPath fieldPath) {
       FieldPath childPath = path == null ? null : path.append(fieldPath);
-      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /* arrayElement= */ false);
       context.validatePath();
       return context;
     }
@@ -274,7 +274,7 @@ public class UserData {
     @SuppressWarnings("unused")
     public ParseContext childContext(int arrayIndex) {
       // TODO: We don't support array paths right now; so make path null.
-      return new ParseContext(accumulator, /*path=*/ null, /*arrayElement=*/ true);
+      return new ParseContext(accumulator, /* path= */ null, /* arrayElement= */ true);
     }
 
     /** Adds the given {@code fieldPath} to the accumulated FieldMask. */
@@ -321,7 +321,7 @@ public class UserData {
     }
   }
 
-  /** The result of parsing document data (e.g. for a setData call). */
+  /** The result of parsing document data (like from a setData call). */
   public static class ParsedSetData {
     private final ObjectValue data;
     @Nullable private final FieldMask fieldMask;
@@ -356,7 +356,7 @@ public class UserData {
     }
   }
 
-  /** The result of parsing "update" data (i.e. for an updateData call). */
+  /** The result of parsing "update" data (specifically, for an updateData call). */
   public static class ParsedUpdateData {
     private final ObjectValue data;
     // The fieldMask does not include document transforms.

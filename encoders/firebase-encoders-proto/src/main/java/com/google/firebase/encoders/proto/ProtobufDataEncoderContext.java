@@ -100,6 +100,7 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
     return add(field, obj, true);
   }
 
+  @SuppressWarnings("EnumOrdinal")
   ObjectEncoderContext add(
       @NonNull FieldDescriptor field, @Nullable Object obj, boolean skipDefault)
       throws IOException {

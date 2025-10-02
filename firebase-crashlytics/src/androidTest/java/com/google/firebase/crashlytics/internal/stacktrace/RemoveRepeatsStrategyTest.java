@@ -14,13 +14,17 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import static org.junit.Assert.assertTrue;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.util.Arrays;
+import org.junit.Test;
 
 public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
 
   private RemoveRepeatsStrategy removeRepeatsStrategy;
 
+  @Test
   public void testRepeatsAreRemoved() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -37,6 +41,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testAllRepeatsAreRetained_ifLessThanMaxRepeats() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy(5);
 
@@ -51,6 +56,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(fullStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRetained_upToMaxRepeats() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy(3);
 
@@ -67,6 +73,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_repeatsInFront() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -83,6 +90,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_repeatsInBack() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -99,6 +107,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_backSmallerThanLoopSize() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -115,6 +124,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_backSameAsLoopSize() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -131,6 +141,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_backLargerThanLoopSize() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -147,6 +158,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testRepeatsAreRemoved_multiplePossibleRepeats() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -163,6 +175,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testStackIsNotModified_ifNoRepeatsAreFound() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -177,6 +190,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(fullStack, trimmedStack));
   }
 
+  @Test
   public void testStackIsNotModified_ifRepeatsAreNotContiguous() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -191,6 +205,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(fullStack, trimmedStack));
   }
 
+  @Test
   public void testMultipleSetsOfRepeatsAreRemoved() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -207,6 +222,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testMultipleSetsOfRepeatsAreRemoved_ifRepeatsAreDifferentSizes() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -223,6 +239,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testLargeRepeatIsRemoved() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -239,6 +256,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(expectedStack, trimmedStack));
   }
 
+  @Test
   public void testLargeRepeatIsNotRemoved_ifNotContiguous() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 
@@ -253,6 +271,7 @@ public class RemoveRepeatsStrategyTest extends CrashlyticsTestCase {
         Arrays.equals(fullStack, trimmedStack));
   }
 
+  @Test
   public void testStackIsNotModified_ifStackHasRepetitionButNoLoops() {
     removeRepeatsStrategy = new RemoveRepeatsStrategy();
 

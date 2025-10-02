@@ -18,6 +18,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
@@ -35,10 +36,14 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateFactory;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -53,17 +58,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>A unique FRC instance is returned for each {{@link FirebaseApp}, {@code namespace}}
  * combination.
  *
- * @author Miraziz Yusupov
  * @hide
  */
 @KeepForSdk
-public class RemoteConfigComponent {
+public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   /** Name of the file where activated configs are stored. */
   public static final String ACTIVATE_FILE_NAME = "activate";
+
   /** Name of the file where fetched configs are stored. */
   public static final String FETCH_FILE_NAME = "fetch";
+
   /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
+
   /** Timeout for the call to the Firebase Remote Config servers in second. */
   public static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
@@ -159,7 +166,7 @@ public class RemoteConfigComponent {
     ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME);
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
-    ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+    ConfigSharedPrefsClient sharedPrefsClient = getSharedPrefsClient(context, appId, namespace);
 
     ConfigGetParameterHandler getHandler = getGetHandler(activatedCacheClient, defaultsCacheClient);
     Personalization personalization =
@@ -167,6 +174,9 @@ public class RemoteConfigComponent {
     if (personalization != null) {
       getHandler.addListener(personalization::logArmActive);
     }
+
+    RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
+        getRolloutsStateSubscriptionsHandler(activatedCacheClient, defaultsCacheClient);
 
     return get(
         firebaseApp,
@@ -177,11 +187,13 @@ public class RemoteConfigComponent {
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
-        getFetchHandler(namespace, fetchedCacheClient, metadataClient),
+        getFetchHandler(namespace, fetchedCacheClient, sharedPrefsClient),
         getHandler,
-        metadataClient);
+        sharedPrefsClient,
+        rolloutsStateSubscriptionsHandler);
   }
 
+  // TODO: Pass ConfigRealtimeHandler so it's mock-able in tests.
   @VisibleForTesting
   synchronized FirebaseRemoteConfig get(
       FirebaseApp firebaseApp,
@@ -194,7 +206,8 @@ public class RemoteConfigComponent {
       ConfigCacheClient defaultsClient,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient metadataClient) {
+      ConfigSharedPrefsClient sharedPrefsClient,
+      RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
           new FirebaseRemoteConfig(
@@ -208,7 +221,7 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient,
+              sharedPrefsClient,
               getRealtime(
                   firebaseApp,
                   firebaseInstallations,
@@ -216,7 +229,8 @@ public class RemoteConfigComponent {
                   activatedClient,
                   context,
                   namespace,
-                  metadataClient));
+                  sharedPrefsClient),
+              rolloutsStateSubscriptionsHandler);
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesStatic.put(namespace, in);
@@ -240,20 +254,22 @@ public class RemoteConfigComponent {
 
   @VisibleForTesting
   ConfigFetchHttpClient getFrcBackendApiClient(
-      String apiKey, String namespace, ConfigMetadataClient metadataClient) {
+      String apiKey, String namespace, ConfigSharedPrefsClient sharedPrefsClient) {
     String appId = firebaseApp.getOptions().getApplicationId();
     return new ConfigFetchHttpClient(
         context,
         appId,
         apiKey,
         namespace,
-        /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
-        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
+        /* connectTimeoutInSeconds= */ sharedPrefsClient.getFetchTimeoutInSeconds(),
+        /* readTimeoutInSeconds= */ sharedPrefsClient.getFetchTimeoutInSeconds());
   }
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
-      String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
+      String namespace,
+      ConfigCacheClient fetchedCacheClient,
+      ConfigSharedPrefsClient sharedPrefsClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
@@ -261,8 +277,8 @@ public class RemoteConfigComponent {
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
         fetchedCacheClient,
-        getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, metadataClient),
-        metadataClient,
+        getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, sharedPrefsClient),
+        sharedPrefsClient,
         this.customHeaders);
   }
 
@@ -273,7 +289,7 @@ public class RemoteConfigComponent {
       ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
-      ConfigMetadataClient metadataClient) {
+      ConfigSharedPrefsClient sharedPrefsClient) {
     return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
@@ -281,7 +297,7 @@ public class RemoteConfigComponent {
         activatedCacheClient,
         context,
         namespace,
-        metadataClient,
+        sharedPrefsClient,
         executor);
   }
 
@@ -291,13 +307,14 @@ public class RemoteConfigComponent {
   }
 
   @VisibleForTesting
-  static ConfigMetadataClient getMetadataClient(Context context, String appId, String namespace) {
+  static ConfigSharedPrefsClient getSharedPrefsClient(
+      Context context, String appId, String namespace) {
     String fileName =
         String.format(
             "%s_%s_%s_%s",
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, PREFERENCES_FILE_NAME);
     SharedPreferences preferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
-    return new ConfigMetadataClient(preferences);
+    return new ConfigSharedPrefsClient(preferences);
   }
 
   @Nullable
@@ -307,6 +324,15 @@ public class RemoteConfigComponent {
       return new Personalization(analyticsConnector);
     }
     return null;
+  }
+
+  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler(
+      ConfigCacheClient activatedConfigsCache, ConfigCacheClient defaultConfigsCache) {
+    RolloutsStateFactory rolloutsStateFactory =
+        RolloutsStateFactory.create(activatedConfigsCache, defaultConfigsCache);
+
+    return new RolloutsStateSubscriptionsHandler(
+        activatedConfigsCache, rolloutsStateFactory, executor);
   }
 
   /**
@@ -340,6 +366,22 @@ public class RemoteConfigComponent {
     for (FirebaseRemoteConfig frc : frcNamespaceInstancesStatic.values()) {
       frc.setConfigUpdateBackgroundState(isInBackground);
     }
+  }
+
+  /**
+   * Register a {@link RolloutsStateSubscriber} {@code subscriber} in for the given Remote Config
+   * {@code namespace}.
+   *
+   * <p>This implements {@link FirebaseRemoteConfigInterop} for use by other Firebase SDKs. See
+   * {@link FirebaseRemoteConfigInterop#registerRolloutsStateSubscriber(String,
+   * RolloutsStateSubscriber)} for more details.
+   */
+  @Override
+  public void registerRolloutsStateSubscriber(
+      @NonNull String namespace, @NonNull RolloutsStateSubscriber subscriber) {
+    get(namespace)
+        .getRolloutsStateSubscriptionsHandler()
+        .registerRolloutsStateSubscriber(subscriber);
   }
 
   private static class GlobalBackgroundListener

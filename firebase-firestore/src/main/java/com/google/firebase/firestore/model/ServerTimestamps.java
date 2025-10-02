@@ -30,7 +30,7 @@ import com.google.firestore.v1.Value;
  * <p>Notes:
  * <li>ServerTimestamp Values are created as the result of applying a transform. They can only exist
  *     in the local view of a document. Therefore they do not need to be parsed or serialized.
- * <li>When evaluated locally (e.g. via DocumentSnapshot data), they evaluate to null.
+ * <li>When evaluated locally (for example, via DocumentSnapshot data), they evaluate to null.
  * <li>They sort after all Timestamp Values. With respect to other ServerTimestamp Values, they sort
  *     by their localWriteTime.
  */

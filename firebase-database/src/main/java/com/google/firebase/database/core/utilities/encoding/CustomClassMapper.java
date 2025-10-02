@@ -494,6 +494,7 @@ public class CustomClassMapper {
       // getMethods/getFields only returns public methods/fields we need to traverse the
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
+      Map<String, Method> bridgeMethods = new HashMap<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -504,12 +505,19 @@ public class CustomClassMapper {
               if (!existingPropertyName.equals(propertyName)) {
                 throw new DatabaseException(
                     "Found setter with invalid " + "case-sensitive name: " + method.getName());
+              } else if (method.isBridge()) {
+                // We ignore bridge setters when creating a bean, but include them in the map
+                // for the purpose of the `isSetterOverride()` check
+                bridgeMethods.put(propertyName, method);
               } else {
                 Method existingSetter = setters.get(propertyName);
+                Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
                   method.setAccessible(true);
                   setters.put(propertyName, method);
-                } else if (!isSetterOverride(method, existingSetter)) {
+                } else if (!isSetterOverride(method, existingSetter)
+                    && !(correspondingBridgeMethod != null
+                        && isSetterOverride(method, correspondingBridgeMethod))) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
                   throw new DatabaseException(
@@ -701,6 +709,10 @@ public class CustomClassMapper {
       }
       // Non-zero parameters
       if (method.getParameterTypes().length != 0) {
+        return false;
+      }
+      // Bridge methods
+      if (method.isBridge()) {
         return false;
       }
       // Excluded methods

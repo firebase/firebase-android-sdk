@@ -19,10 +19,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import java.util.Objects;
 
-// TODO(sumavg): Remove the `hide` and scope annotations.
-/** @hide */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+/** Represents an aggregation that can be performed by Firestore. */
 public abstract class AggregateField {
+  /** The field over which the aggregation is performed. */
   @Nullable private final FieldPath fieldPath;
 
   @NonNull private final String operator;
@@ -40,7 +39,7 @@ public abstract class AggregateField {
 
   /**
    * Returns the field on which the aggregation takes place. Returns an empty string if there's no
-   * field (e.g. for count).
+   * field (specifically, for count).
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
@@ -89,43 +88,123 @@ public abstract class AggregateField {
     return Objects.hash(getOperator(), getFieldPath());
   }
 
+  /**
+   * Create a {@link CountAggregateField} object that can be used to compute the count of documents
+   * in the result set of a query.
+   *
+   * <p>The result of a count operation will always be a 64-bit integer value.
+   *
+   * @return The `CountAggregateField` object that can be used to compute the count of documents in
+   *     the result set of a query.
+   */
   @NonNull
   public static CountAggregateField count() {
     return new CountAggregateField();
   }
 
+  /**
+   * Create a {@link SumAggregateField} object that can be used to compute the sum of a specified
+   * field over a range of documents in the result set of a query.
+   *
+   * <p>The result of a sum operation will always be a 64-bit integer value, a double, or NaN.
+   *
+   * <ul>
+   *   <li>Summing over zero documents or fields will result in 0L.
+   *   <li>Summing over NaN will result in a double value representing NaN.
+   *   <li>A sum that overflows the maximum representable 64-bit integer value will result in a
+   *       double return value. This may result in lost precision of the result.
+   *   <li>A sum that overflows the maximum representable double value will result in a double
+   *       return value representing infinity.
+   * </ul>
+   *
+   * @param field Specifies the field to sum across the result set.
+   * @return The `SumAggregateField` object that can be used to compute the sum of a specified field
+   *     over a range of documents in the result set of a query.
+   */
   @NonNull
   public static SumAggregateField sum(@NonNull String field) {
     return new SumAggregateField(FieldPath.fromDotSeparatedPath(field));
   }
 
+  /**
+   * Create a {@link SumAggregateField} object that can be used to compute the sum of a specified
+   * field over a range of documents in the result set of a query.
+   *
+   * <p>The result of a sum operation will always be a 64-bit integer value, a double, or NaN.
+   *
+   * <ul>
+   *   <li>Summing over zero documents or fields will result in 0L.
+   *   <li>Summing over NaN will result in a double value representing NaN.
+   *   <li>A sum that overflows the maximum representable 64-bit integer value will result in a
+   *       double return value. This may result in lost precision of the result.
+   *   <li>A sum that overflows the maximum representable double value will result in a double
+   *       return value representing infinity.
+   * </ul>
+   *
+   * @param fieldPath Specifies the field to sum across the result set.
+   * @return The `SumAggregateField` object that can be used to compute the sum of a specified field
+   *     over a range of documents in the result set of a query.
+   */
   @NonNull
   public static SumAggregateField sum(@NonNull FieldPath fieldPath) {
     return new SumAggregateField(fieldPath);
   }
 
+  /**
+   * Create an {@link AverageAggregateField} object that can be used to compute the average of a
+   * specified field over a range of documents in the result set of a query.
+   *
+   * <p>The result of an average operation will always be a double or NaN.
+   *
+   * <ul>
+   *   <li>Averaging over zero documents or fields will result in a double value representing NaN.
+   *   <li>Averaging over NaN will result in a double value representing NaN.
+   * </ul>
+   *
+   * @param field Specifies the field to average across the result set.
+   * @return The `AverageAggregateField` object that can be used to compute the average of a
+   *     specified field over a range of documents in the result set of a query.
+   */
   @NonNull
   public static AverageAggregateField average(@NonNull String field) {
     return new AverageAggregateField(FieldPath.fromDotSeparatedPath(field));
   }
 
+  /**
+   * Create an {@link AverageAggregateField} object that can be used to compute the average of a
+   * specified field over a range of documents in the result set of a query.
+   *
+   * <p>The result of an average operation will always be a double or NaN.
+   *
+   * <ul>
+   *   <li>Averaging over zero documents or fields will result in a double value representing NaN.
+   *   <li>Averaging over NaN will result in a double value representing NaN.
+   * </ul>
+   *
+   * @param fieldPath Specifies the field to average across the result set.
+   * @return The `AverageAggregateField` object that can be used to compute the average of a
+   *     specified field over a range of documents in the result set of a query.
+   */
   @NonNull
   public static AverageAggregateField average(@NonNull FieldPath fieldPath) {
     return new AverageAggregateField(fieldPath);
   }
 
+  /** Represents a "count" aggregation that can be performed by Firestore. */
   public static class CountAggregateField extends AggregateField {
     private CountAggregateField() {
       super(null, "count");
     }
   }
 
+  /** Represents a "sum" aggregation that can be performed by Firestore. */
   public static class SumAggregateField extends AggregateField {
     private SumAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "sum");
     }
   }
 
+  /** Represents an "average" aggregation that can be performed by Firestore. */
   public static class AverageAggregateField extends AggregateField {
     private AverageAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "average");

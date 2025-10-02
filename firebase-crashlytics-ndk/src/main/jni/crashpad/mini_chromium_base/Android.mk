@@ -10,7 +10,7 @@ LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/mini_chromium
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -flto \
@@ -25,6 +25,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/mini_chromium/base/posix/safe_strerror.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/process/memory.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/rand_util.cc \
+    $(THIRD_PARTY_PATH)/mini_chromium/base/strings/pattern.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/string_number_conversions.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/string_util.cc \
     $(THIRD_PARTY_PATH)/mini_chromium/base/strings/stringprintf.cc \

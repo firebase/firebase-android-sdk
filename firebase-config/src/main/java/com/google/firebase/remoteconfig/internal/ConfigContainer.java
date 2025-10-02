@@ -14,7 +14,9 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,6 +37,10 @@ public class ConfigContainer {
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
+  static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
+  public static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
+  public static final String ROLLOUT_METADATA_ID = "rolloutId";
+  public static final String ROLLOUT_METADATA_VARIANT_ID = "variantId";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -52,6 +58,7 @@ public class ConfigContainer {
    * <p>Used by the FRC client to retrieve config values.
    */
   private JSONObject configsJson;
+
   /** Cached value of the time when this container's values were fetched. */
   private Date fetchTime;
 
@@ -60,6 +67,8 @@ public class ConfigContainer {
   private JSONObject personalizationMetadata;
 
   private long templateVersionNumber;
+
+  private JSONArray rolloutMetadata;
 
   /**
    * Creates a new container with the specified configs and fetch time.
@@ -71,7 +80,8 @@ public class ConfigContainer {
       Date fetchTime,
       JSONArray abtExperiments,
       JSONObject personalizationMetadata,
-      long templateVersionNumber)
+      long templateVersionNumber,
+      JSONArray rolloutMetadata)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
@@ -79,12 +89,14 @@ public class ConfigContainer {
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
     containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
     containerJson.put(TEMPLATE_VERSION_NUMBER_KEY, templateVersionNumber);
+    containerJson.put(ROLLOUT_METADATA_KEY, rolloutMetadata);
 
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
     this.personalizationMetadata = personalizationMetadata;
     this.templateVersionNumber = templateVersionNumber;
+    this.rolloutMetadata = rolloutMetadata;
 
     this.containerJson = containerJson;
   }
@@ -102,13 +114,20 @@ public class ConfigContainer {
       personalizationMetadataJSON = new JSONObject();
     }
 
+    // Default to empty JSONArray if Rollout metadata does not exist.
+    JSONArray rolloutMetadataJSON = containerJson.optJSONArray(ROLLOUT_METADATA_KEY);
+    if (rolloutMetadataJSON == null) {
+      rolloutMetadataJSON = new JSONArray();
+    }
+
     return new ConfigContainer(
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
         personalizationMetadataJSON,
         // Default to 0 if template_version_number_key has not been cached yet.
-        containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
+        containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY),
+        rolloutMetadataJSON);
   }
 
   /**
@@ -150,6 +169,10 @@ public class ConfigContainer {
     return templateVersionNumber;
   }
 
+  public JSONArray getRolloutMetadata() {
+    return rolloutMetadata;
+  }
+
   @Override
   public String toString() {
     return containerJson.toString();
@@ -168,6 +191,35 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  // Create a map of maps of parameter key to `rolloutId`/`variantId`.
+  private Map<String, Map<String, String>> createRolloutParameterKeyMap() throws JSONException {
+    // Create a map where the key is the parameter key and the value is a maps of
+    // rolloutId`/`variantId`.
+    Map<String, Map<String, String>> rolloutMetadataMap = new HashMap<>();
+    for (int i = 0; i < this.getRolloutMetadata().length(); i++) {
+      JSONObject rolloutMetadata = this.getRolloutMetadata().getJSONObject(i);
+      String rolloutId = rolloutMetadata.getString(ROLLOUT_METADATA_ID);
+      String variantId = rolloutMetadata.getString(ROLLOUT_METADATA_VARIANT_ID);
+      JSONArray parameterKeys = rolloutMetadata.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
+
+      // Iterate through `affectedParameterKeys` and put `rolloutId`/`variantId` into the key's map.
+      for (int j = 0; j < parameterKeys.length(); j++) {
+        String parameterKey = parameterKeys.getString(j);
+        if (!rolloutMetadataMap.containsKey(parameterKey)) {
+          rolloutMetadataMap.put(parameterKey, new HashMap<>());
+        }
+
+        // Place `rolloutId`/`variantId` into parameterKey's map.
+        Map<String, String> parameterKeyRolloutMetadata = rolloutMetadataMap.get(parameterKey);
+        if (parameterKeyRolloutMetadata != null) {
+          parameterKeyRolloutMetadata.put(rolloutId, variantId);
+        }
+      }
+    }
+
+    return rolloutMetadataMap;
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -176,6 +228,10 @@ public class ConfigContainer {
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a deep copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
+
+    // Config key to `rolloutMetadata` map.
+    Map<String, Map<String, String>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
+    Map<String, Map<String, String>> otherRolloutMetadataMap = other.createRolloutParameterKeyMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -213,6 +269,21 @@ public class ConfigContainer {
         continue;
       }
 
+      // If only one of the configs has `rolloutMetadata` for the given key.
+      if (rolloutMetadataMap.containsKey(key) != otherRolloutMetadataMap.containsKey(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If both of the configs have `rolloutMetadata` for the given key but the metadata has
+      // changed.
+      if (rolloutMetadataMap.containsKey(key)
+          && otherRolloutMetadataMap.containsKey(key)
+          && !rolloutMetadataMap.get(key).equals(otherRolloutMetadataMap.get(key))) {
+        changed.add(key);
+        continue;
+      }
+
       // Since the key is the same in both configs, remove it from otherConfig
       otherConfig.remove(key);
     }
@@ -238,6 +309,7 @@ public class ConfigContainer {
     private JSONArray builderAbtExperiments;
     private JSONObject builderPersonalizationMetadata;
     private long builderTemplateVersionNumber;
+    private JSONArray builderRolloutMetadata;
 
     private Builder() {
       builderConfigsJson = new JSONObject();
@@ -245,6 +317,7 @@ public class ConfigContainer {
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
       builderTemplateVersionNumber = 0L;
+      builderRolloutMetadata = new JSONArray();
     }
 
     public Builder(ConfigContainer otherContainer) {
@@ -253,13 +326,16 @@ public class ConfigContainer {
       this.builderAbtExperiments = otherContainer.getAbtExperiments();
       this.builderPersonalizationMetadata = otherContainer.getPersonalizationMetadata();
       this.builderTemplateVersionNumber = otherContainer.getTemplateVersionNumber();
+      this.builderRolloutMetadata = otherContainer.getRolloutMetadata();
     }
 
+    @CanIgnoreReturnValue
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
       this.builderConfigsJson = new JSONObject(configsMap);
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder replaceConfigsWith(JSONObject configsJson) {
       try {
         this.builderConfigsJson = new JSONObject(configsJson.toString());
@@ -272,11 +348,13 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withFetchTime(Date fetchTime) {
       this.builderFetchTime = fetchTime;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withAbtExperiments(JSONArray abtExperiments) {
       try {
         this.builderAbtExperiments = new JSONArray(abtExperiments.toString());
@@ -289,6 +367,7 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withPersonalizationMetadata(JSONObject personalizationMetadata) {
       try {
         this.builderPersonalizationMetadata = new JSONObject(personalizationMetadata.toString());
@@ -301,8 +380,22 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withTemplateVersionNumber(long templateVersionNumber) {
       this.builderTemplateVersionNumber = templateVersionNumber;
+      return this;
+    }
+
+    @CanIgnoreReturnValue
+    public Builder withRolloutMetadata(JSONArray rolloutMetadata) {
+      try {
+        this.builderRolloutMetadata = new JSONArray(rolloutMetadata.toString());
+      } catch (JSONException e) {
+        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
+        // being set in the builder.
+        // A JSONException should never occur because the JSON that is being deserialized is
+        // guaranteed to be valid.
+      }
       return this;
     }
 
@@ -313,7 +406,8 @@ public class ConfigContainer {
           builderFetchTime,
           builderAbtExperiments,
           builderPersonalizationMetadata,
-          builderTemplateVersionNumber);
+          builderTemplateVersionNumber,
+          builderRolloutMetadata);
     }
   }
 

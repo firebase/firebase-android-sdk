@@ -20,7 +20,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.resource.ResourceType;
@@ -46,6 +46,7 @@ final class RateLimiter {
 
   /** Gets the sampling and rate limiting configs. */
   private final ConfigResolver configResolver;
+
   /** The app's bucket ID for sampling, a number in [0.0, 1.0). */
   private final double samplingBucketId;
 

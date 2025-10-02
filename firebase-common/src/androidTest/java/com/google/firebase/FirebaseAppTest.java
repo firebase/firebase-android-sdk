@@ -143,7 +143,7 @@ public class FirebaseAppTest {
     // After sorting the user agents are expected to be {"fire-android/", "fire-auth/x.y.z",
     // "fire-core/x.y.z", "test-component/1.2.3"}
     assertThat(actualUserAgent[0]).contains("android-installer");
-    assertThat(actualUserAgent[1]).contains("android-min-sdk/14");
+    assertThat(actualUserAgent[1]).contains("android-min-sdk/23");
     assertThat(actualUserAgent[2]).contains("android-platform");
     assertThat(actualUserAgent[3]).contains("android-target-sdk");
     assertThat(actualUserAgent[4]).contains("device-brand");

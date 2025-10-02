@@ -62,7 +62,7 @@ import org.junit.runners.Parameterized;
  */
 @RunWith(Parameterized.class)
 public class ConformanceTest {
-  private static final FirebaseFirestore firestore = testFirestore();
+  private static FirebaseFirestore firestore;
   private static TestCaseIgnoreList testCaseIgnoreList;
 
   static {
@@ -108,6 +108,7 @@ public class ConformanceTest {
 
   @BeforeClass
   public static void beforeClass() throws ExecutionException, InterruptedException {
+    firestore = testFirestore();
     // Disable logging to speed up test runs.
     FirebaseFirestore.setLoggingEnabled(false);
     // Disable network to reduce costs.

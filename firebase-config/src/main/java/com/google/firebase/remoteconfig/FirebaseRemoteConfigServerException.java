@@ -16,7 +16,6 @@ package com.google.firebase.remoteconfig;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import javax.annotation.Nonnull;
 
 /**
  * A Firebase Remote Config internal issue caused by an interaction with the Firebase Remote Config
@@ -46,7 +45,7 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
    * Creates a Firebase Remote Config server exception with the given message and {@code
    * FirebaseRemoteConfigException} code.
    */
-  public FirebaseRemoteConfigServerException(@NonNull String detailMessage, @Nonnull Code code) {
+  public FirebaseRemoteConfigServerException(@NonNull String detailMessage, @NonNull Code code) {
     super(detailMessage, code);
     this.httpStatusCode = -1;
   }
@@ -56,7 +55,7 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
    * {@code FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigServerException(
-      int httpStatusCode, @NonNull String detailMessage, @Nonnull Code code) {
+      int httpStatusCode, @NonNull String detailMessage, @NonNull Code code) {
     super(detailMessage, code);
     this.httpStatusCode = httpStatusCode;
   }

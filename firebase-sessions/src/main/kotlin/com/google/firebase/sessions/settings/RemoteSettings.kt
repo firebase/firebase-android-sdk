@@ -19,29 +19,31 @@ package com.google.firebase.sessions.settings
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
-import kotlin.coroutines.CoroutineContext
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
+import com.google.firebase.sessions.InstallationId
+import com.google.firebase.sessions.TimeProvider
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.tasks.await
 import org.json.JSONException
 import org.json.JSONObject
 
-internal class RemoteSettings(
-  private val backgroundDispatcher: CoroutineContext,
+@Singleton
+internal class RemoteSettings
+@Inject
+constructor(
+  private val timeProvider: TimeProvider,
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher,
-  dataStore: DataStore<Preferences>,
+  private val settingsCache: SettingsCache,
 ) : SettingsProvider {
-  private val settingsCache = SettingsCache(dataStore)
   private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?
@@ -68,12 +70,13 @@ internal class RemoteSettings(
     fetchInProgress.withLock {
       // Double check if cache is expired. If not, return.
       if (!settingsCache.hasCacheExpired()) {
+        Log.d(TAG, "Remote settings cache not expired. Using cached values.")
         return
       }
 
       // Get the installations ID before making a remote config fetch.
-      val installationId = firebaseInstallationsApi.id.await()
-      if (installationId == null) {
+      val installationId = InstallationId.create(firebaseInstallationsApi).fid
+      if (installationId == "") {
         Log.w(TAG, "Error getting Firebase Installation ID. Skipping this Session Event.")
         return
       }
@@ -82,60 +85,58 @@ internal class RemoteSettings(
       val options =
         mapOf(
           "X-Crashlytics-Installation-ID" to installationId,
-          "X-Crashlytics-Device-Model" to
-            removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
-          "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
-          "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
-          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+          "X-Crashlytics-Device-Model" to sanitize("${Build.MANUFACTURER}${Build.MODEL}"),
+          "X-Crashlytics-OS-Build-Version" to sanitize(Build.VERSION.INCREMENTAL),
+          "X-Crashlytics-OS-Display-Version" to sanitize(Build.VERSION.RELEASE),
+          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion,
         )
 
+      Log.d(TAG, "Fetching settings from server.")
       configsFetcher.doConfigFetch(
         headerOptions = options,
         onSuccess = {
+          Log.d(TAG, "Fetched settings: $it")
           var sessionsEnabled: Boolean? = null
           var sessionSamplingRate: Double? = null
           var sessionTimeoutSeconds: Int? = null
           var cacheDuration: Int? = null
           if (it.has("app_quality")) {
-            val aqsSettings = it.get("app_quality") as JSONObject
+            val aqsSettings = it["app_quality"] as JSONObject
             try {
               if (aqsSettings.has("sessions_enabled")) {
-                sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
+                sessionsEnabled = aqsSettings["sessions_enabled"] as Boolean?
               }
 
               if (aqsSettings.has("sampling_rate")) {
-                sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
+                sessionSamplingRate = aqsSettings["sampling_rate"] as Double?
               }
 
               if (aqsSettings.has("session_timeout_seconds")) {
-                sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
+                sessionTimeoutSeconds = aqsSettings["session_timeout_seconds"] as Int?
               }
 
               if (aqsSettings.has("cache_duration")) {
-                cacheDuration = aqsSettings.get("cache_duration") as Int?
+                cacheDuration = aqsSettings["cache_duration"] as Int?
               }
             } catch (exception: JSONException) {
               Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
             }
           }
 
-          sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
-
-          sessionTimeoutSeconds?.let {
-            settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
-          }
-
-          sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
-
-          cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
-            ?: let { settingsCache.updateSessionCacheDuration(86400) }
-
-          settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
+          settingsCache.updateConfigs(
+            SessionConfigs(
+              sessionsEnabled = sessionsEnabled,
+              sessionTimeoutSeconds = sessionTimeoutSeconds,
+              sessionSamplingRate = sessionSamplingRate,
+              cacheDurationSeconds = cacheDuration ?: defaultCacheDuration,
+              cacheUpdatedTimeSeconds = timeProvider.currentTime().seconds,
+            )
+          )
         },
         onFailure = { msg ->
           // Network request failed here.
-          Log.e(TAG, "Error failing to fetch the remote configs: $msg")
-        }
+          Log.e(TAG, "Error failed to fetch the remote configs: $msg")
+        },
       )
     }
   }
@@ -143,18 +144,15 @@ internal class RemoteSettings(
   override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
 
   @VisibleForTesting
-  internal fun clearCachedSettings() {
-    val scope = CoroutineScope(backgroundDispatcher)
-    scope.launch { settingsCache.removeConfigs() }
+  internal suspend fun clearCachedSettings() {
+    settingsCache.updateConfigs(SessionConfigsSerializer.defaultValue)
   }
 
-  private fun removeForwardSlashesIn(s: String): String {
-    return s.replace(FORWARD_SLASH_STRING.toRegex(), "")
-  }
+  private fun sanitize(s: String) = s.replace(sanitizeRegex, "")
 
   private companion object {
-    const val TAG = "SessionConfigFetcher"
+    val defaultCacheDuration = 24.hours.inWholeSeconds.toInt()
 
-    const val FORWARD_SLASH_STRING: String = "/"
+    val sanitizeRegex = "/".toRegex()
   }
 }

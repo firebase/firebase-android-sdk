@@ -75,7 +75,7 @@ public abstract class Persistence {
    *
    * <p>Note: The implementation is free to return the same instance every time this is called for a
    * given user. In particular, the memory-backed implementation does this to emulate the persisted
-   * implementation to the extent possible (e.g. in the case of uid switching from
+   * implementation to the extent possible (for example, in the case of uid switching from
    * sally=>jack=>sally, sally's mutation queue will be preserved).
    */
   abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);
@@ -85,6 +85,9 @@ public abstract class Persistence {
 
   /** Creates a RemoteDocumentCache representing the persisted cache of remote documents. */
   abstract RemoteDocumentCache getRemoteDocumentCache();
+
+  /** Creates GlobalCache that provides access to global values. */
+  abstract GlobalsCache getGlobalsCache();
 
   /** Creates an IndexManager that manages our persisted query indexes. */
   abstract IndexManager getIndexManager(User user);

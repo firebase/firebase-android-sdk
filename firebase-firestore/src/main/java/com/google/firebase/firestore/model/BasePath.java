@@ -83,19 +83,48 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return createPathWithSegments(segments.subList(0, count));
   }
 
+  /**
+   * Compare the current path against another Path object. Paths are compared segment by segment,
+   * prioritizing numeric IDs (e.g., "__id123__") in numeric ascending order, followed by string
+   * segments in lexicographical order.
+   */
   @Override
   public int compareTo(@NonNull B o) {
     int i = 0;
     int myLength = length();
     int theirLength = o.length();
     while (i < myLength && i < theirLength) {
-      int localCompare = getSegment(i).compareTo(o.getSegment(i));
+      int localCompare = compareSegments(getSegment(i), o.getSegment(i));
       if (localCompare != 0) {
         return localCompare;
       }
       i++;
     }
-    return Util.compareIntegers(myLength, theirLength);
+    return Integer.compare(myLength, theirLength);
+  }
+
+  private static int compareSegments(String lhs, String rhs) {
+    boolean isLhsNumeric = isNumericId(lhs);
+    boolean isRhsNumeric = isNumericId(rhs);
+
+    if (isLhsNumeric && !isRhsNumeric) { // Only lhs is numeric
+      return -1;
+    } else if (!isLhsNumeric && isRhsNumeric) { // Only rhs is numeric
+      return 1;
+    } else if (isLhsNumeric && isRhsNumeric) { // both numeric
+      return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
+    } else { // both string
+      return Util.compareUtf8Strings(lhs, rhs);
+    }
+  }
+
+  /** Checks if a segment is a numeric ID (starts with "__id" and ends with "__"). */
+  private static boolean isNumericId(String segment) {
+    return segment.startsWith("__id") && segment.endsWith("__");
+  }
+
+  private static long extractNumericId(String segment) {
+    return Long.parseLong(segment.substring(4, segment.length() - 2));
   }
 
   /** @return Returns the last segment of the path */

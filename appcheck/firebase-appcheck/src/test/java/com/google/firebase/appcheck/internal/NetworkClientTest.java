@@ -65,8 +65,6 @@ public class NetworkClientTest {
           .setApplicationId(APP_ID)
           .setProjectId(PROJECT_ID)
           .build();
-  private static final String SAFETY_NET_EXPECTED_URL =
-      "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
   private static final String DEBUG_EXPECTED_URL =
       "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
   private static final String PLAY_INTEGRITY_CHALLENGE_EXPECTED_URL =
@@ -112,57 +110,6 @@ public class NetworkClientTest {
         () -> {
           new NetworkClient(null);
         });
-  }
-
-  @Test
-  public void exchangeSafetyNetToken_successResponse_returnsAppCheckTokenResponse()
-      throws Exception {
-    JSONObject responseBodyJson = createAttestationResponse();
-
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
-    when(mockHttpUrlConnection.getInputStream())
-        .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
-    when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
-
-    AppCheckTokenResponse tokenResponse =
-        networkClient.exchangeAttestationForAppCheckToken(
-            JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
-    assertThat(tokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
-    assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
-
-    URL expectedUrl = new URL(SAFETY_NET_EXPECTED_URL);
-    verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(mockOutputStream)
-        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
-    verify(mockRetryManager).resetBackoffOnSuccess();
-    verifyRequestHeaders();
-  }
-
-  @Test
-  public void exchangeSafetyNetToken_errorResponse_throwsException() throws Exception {
-    JSONObject responseBodyJson = createHttpErrorResponse();
-
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
-    when(mockHttpUrlConnection.getErrorStream())
-        .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
-    when(mockHttpUrlConnection.getResponseCode()).thenReturn(ERROR_CODE);
-
-    FirebaseException exception =
-        assertThrows(
-            FirebaseException.class,
-            () ->
-                networkClient.exchangeAttestationForAppCheckToken(
-                    JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager));
-
-    assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
-    URL expectedUrl = new URL(SAFETY_NET_EXPECTED_URL);
-    verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(mockOutputStream)
-        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
-    verify(mockRetryManager, never()).resetBackoffOnSuccess();
-    verifyRequestHeaders();
   }
 
   @Test
@@ -288,7 +235,7 @@ public class NetworkClientTest {
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
     // The heartbeat request header should not be attached when the heartbeat is HeartBeat.NONE.
     networkClient.exchangeAttestationForAppCheckToken(
-        JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
+        JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager);
 
     verifyRequestHeaders();
   }
@@ -325,7 +272,7 @@ public class NetworkClientTest {
     verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
-    verify(mockRetryManager).resetBackoffOnSuccess();
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 

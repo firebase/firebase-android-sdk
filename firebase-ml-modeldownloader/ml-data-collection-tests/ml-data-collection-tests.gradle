@@ -22,9 +22,9 @@ android {
     }
 
     namespace "com.google.firebase.ml_data_collection_tests"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
         multiDexEnabled true
@@ -42,12 +42,13 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.3.1'
     implementation project(':firebase-ml-modeldownloader')
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    implementation 'androidx.core:core:1.2.0'
+    implementation libs.androidx.core
+    implementation 'com.google.firebase:firebase-common:22.0.0'
+
+    testImplementation libs.androidx.test.runner
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.robolectric
 }

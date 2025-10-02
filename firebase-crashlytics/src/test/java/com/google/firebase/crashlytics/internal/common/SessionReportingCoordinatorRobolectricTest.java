@@ -25,9 +25,11 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
-import android.os.Build;
-import androidx.annotation.RequiresApi;
+import android.os.Build.VERSION_CODES;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.filters.SdkSuppress;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -61,6 +63,9 @@ public class SessionReportingCoordinatorRobolectricTest {
 
   private SessionReportingCoordinator reportingCoordinator;
 
+  private final CrashlyticsWorkers crashlyticsWorkers =
+      new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -72,7 +77,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             reportSender,
             logFileManager,
             reportMetadata,
-            idManager);
+            idManager,
+            crashlyticsWorkers);
     mockEventInteractions();
   }
 
@@ -197,7 +203,7 @@ public class SessionReportingCoordinatorRobolectricTest {
     return activityManager.getHistoricalProcessExitReasons(null, 0, 0);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.R)
+  @SdkSuppress(minSdkVersion = VERSION_CODES.R)
   private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
       ApplicationExitInfo applicationExitInfo) {
     // The ApplicationExitInfo inserted by ShadowApplicationManager does not contain an input trace,

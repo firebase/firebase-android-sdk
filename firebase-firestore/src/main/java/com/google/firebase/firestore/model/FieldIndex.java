@@ -67,7 +67,7 @@ public abstract class FieldIndex {
   /** An index component consisting of field path and index type. */
   @AutoValue
   public abstract static class Segment implements Comparable<Segment> {
-    /** The type of the index, e.g. for which type of query it can be used. */
+    /** The type of the index. For which type of query it can be used. */
     public enum Kind {
       /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
       ASCENDING,
@@ -193,8 +193,8 @@ public abstract class FieldIndex {
   }
 
   /**
-   * The index ID. Returns -1 if the index ID is not available (e.g. the index has not yet been
-   * persisted).
+   * The index ID. Returns -1 if the index ID is not available (for example, the index has not yet
+   * been persisted).
    */
   public abstract int getIndexId();
 

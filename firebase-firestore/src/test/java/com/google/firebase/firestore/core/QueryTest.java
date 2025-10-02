@@ -40,14 +40,12 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -237,7 +235,7 @@ public class QueryTest {
 
     // Null match.
     document = doc("collection/1", 0, map("zip", null));
-    assertTrue(query.matches(document));
+    assertFalse(query.matches(document));
 
     // NaN match.
     document = doc("collection/1", 0, map("zip", Double.NaN));
@@ -333,7 +331,7 @@ public class QueryTest {
     assertTrue(query.matches(doc3));
     assertTrue(query.matches(doc4));
     assertTrue(query.matches(doc5));
-    assertTrue(query.matches(doc6));
+    assertFalse(query.matches(doc6));
   }
 
   @Test
@@ -582,37 +580,49 @@ public class QueryTest {
   public void testImplicitOrderBy() {
     Query baseQuery = Query.atPath(path("foo"));
     // Default is ascending
-    assertEquals(asList(orderBy(KEY_FIELD_NAME, "asc")), baseQuery.getOrderBy());
+    assertEquals(asList(orderBy(KEY_FIELD_NAME, "asc")), baseQuery.getNormalizedOrderBy());
 
     // Explicit key ordering is respected
     assertEquals(
         asList(orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "asc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "desc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy(KEY_FIELD_NAME, "asc"))
+            .getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy(KEY_FIELD_NAME, "desc"))
+            .getNormalizedOrderBy());
 
     // Inequality filters add order bys
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.filter(filter("foo", "<", 5)).getOrderBy());
+        baseQuery.filter(filter("foo", "<", 5)).getNormalizedOrderBy());
 
     // Descending order by applies to implicit key ordering
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo", "desc")).getOrderBy());
+        baseQuery.orderBy(orderBy("foo", "desc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo", "asc"), orderBy("bar", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo", "asc")).orderBy(orderBy("bar", "desc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo", "asc"))
+            .orderBy(orderBy("bar", "desc"))
+            .getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo", "desc"))
+            .orderBy(orderBy("bar", "asc"))
+            .getNormalizedOrderBy());
   }
 
   @Test
@@ -631,7 +641,7 @@ public class QueryTest {
             .filter(filter("aa", "<", 5))
             .filter(filter("b", "<", 5))
             .filter(filter("A", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // numbers
     assertEquals(
@@ -646,7 +656,7 @@ public class QueryTest {
             .filter(filter("1", "<", 5))
             .filter(filter("2", "<", 5))
             .filter(filter("19", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // nested fields
     assertEquals(
@@ -659,7 +669,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("aa", "<", 5))
             .filter(filter("a.a", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // special characters
     assertEquals(
@@ -672,7 +682,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("_a", "<", 5))
             .filter(filter("a.a", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // field name with dot
     assertEquals(
@@ -685,7 +695,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("`a.a`", "<", 5)) // Field name with dot
             .filter(filter("a.z", "<", 5)) // Nested field
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // composite filter
     assertEquals(
@@ -701,7 +711,7 @@ public class QueryTest {
                 andFilters(
                     orFilters(filter("b", ">=", 1), filter("c", "<=", 1)),
                     orFilters(filter("d", "<=", 1), filter("e", "==", 1))))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // OrderBy
     assertEquals(
@@ -715,7 +725,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("z", "<", 5))
             .orderBy(orderBy("z"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // last explicit order by direction
     assertEquals(
@@ -728,7 +738,7 @@ public class QueryTest {
             .filter(filter("b", "<", 5))
             .filter(filter("a", "<", 5))
             .orderBy(orderBy("z", "desc"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     assertEquals(
         asList(
@@ -742,7 +752,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .orderBy(orderBy("z", "desc"))
             .orderBy(orderBy("c"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
   }
 
   @Test
@@ -979,10 +989,7 @@ public class QueryTest {
 
     while (iterator.hasNext()) {
       MutableDocument doc = iterator.next();
-      // Only put the processing in the backgroundQueue if there are more documents
-      // in the list. This behavior matches SQLiteRemoteDocumentCache.getAll(...)
-      Executor executor = iterator.hasNext() ? backgroundQueue : Executors.DIRECT_EXECUTOR;
-      executor.execute(
+      backgroundQueue.submit(
           () -> {
             // We call query.matches() to indirectly test query.matchesOrderBy()
             boolean result = query.matches(doc);
@@ -1021,9 +1028,63 @@ public class QueryTest {
             .orderBy(orderBy("e"))
             .orderBy(orderBy("f"));
 
-    List<OrderBy> orderByList = query.getOrderBy();
+    List<OrderBy> orderByList = query.getNormalizedOrderBy();
 
     assertThrows(UnsupportedOperationException.class, () -> orderByList.add(orderBy("g")));
+  }
+
+  @Test
+  public void testOrderByForAggregateAndNonAggregate() {
+    Query col = query("collection");
+
+    // Build two identical queries
+    Query query1 = col.filter(filter("foo", ">", 1));
+    Query query2 = col.filter(filter("foo", ">", 1));
+
+    // Compute an aggregate and non-aggregate target from the queries
+    Target aggregateTarget = query1.toAggregateTarget();
+    Target target = query2.toTarget();
+
+    assertEquals(aggregateTarget.getOrderBy().size(), 0);
+
+    assertEquals(target.getOrderBy().size(), 2);
+    assertEquals(target.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target.getOrderBy().get(1).getField().toString(), "__name__");
+  }
+
+  @Test
+  public void testGeneratedOrderBysNotAffectedByPreviouslyMemoizedTargets() {
+    Query col = query("collection");
+
+    // Build two identical queries
+    Query query1 = col.filter(filter("foo", ">", 1));
+    Query query2 = col.filter(filter("foo", ">", 1));
+
+    // query1 - first to aggregate target, then to non-aggregate target
+    Target aggregateTarget1 = query1.toAggregateTarget();
+    Target target1 = query1.toTarget();
+
+    // query2 - first to non-aggregate target, then to aggregate target
+    Target target2 = query2.toTarget();
+    Target aggregateTarget2 = query2.toAggregateTarget();
+
+    assertEquals(aggregateTarget1.getOrderBy().size(), 0);
+
+    assertEquals(aggregateTarget2.getOrderBy().size(), 0);
+
+    assertEquals(target1.getOrderBy().size(), 2);
+    assertEquals(target1.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target1.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target1.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target1.getOrderBy().get(1).getField().toString(), "__name__");
+
+    assertEquals(target2.getOrderBy().size(), 2);
+    assertEquals(target2.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target2.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target2.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target2.getOrderBy().get(1).getField().toString(), "__name__");
   }
 
   private void assertQueryMatches(

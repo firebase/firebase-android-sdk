@@ -14,11 +14,9 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.messaging.ServiceStarter.ACTION_MESSAGING_EVENT;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Notification;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -66,6 +64,7 @@ public class CommonNotificationBuilderRoboTest {
   private static final String NOTIFICATION_PRIORITY_DEFAULT = "0";
   private static final String NOTIFICATION_PRIORITY_NEGATIVE = "-999";
   private static final int DEFAULTS_ALL_OFF = 0;
+  private static final String ACTION_RECEIVER = "com.google.android.c2dm.intent.RECEIVE";
 
   private Context appContext;
   private Context callingContext;
@@ -432,7 +431,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+    assertThat(notificationInfo.notificationBuilder.build().visibility)
         .isEqualTo(expectedVisibility);
   }
 
@@ -447,8 +446,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
-        .isEqualTo(0);
+    assertThat(notificationInfo.notificationBuilder.build().visibility).isEqualTo(0);
   }
 
   @Test
@@ -462,8 +460,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
-        .isEqualTo(0);
+    assertThat(notificationInfo.notificationBuilder.build().visibility).isEqualTo(0);
   }
 
   @Test
@@ -802,10 +799,8 @@ public class CommonNotificationBuilderRoboTest {
     assertThat(deletePendingIntent.isBroadcastIntent()).isTrue();
     assertThat(deletePendingIntent.getSavedContext()).isEqualTo(callingContext);
     Intent deleteIntent = deletePendingIntent.getSavedIntent();
-    assertThat(deleteIntent.getComponent())
-        .isEqualTo(
-            new ComponentName(appContext, "com.google.firebase.iid.FirebaseInstanceIdReceiver"));
-    assertThat(deleteIntent.getAction()).isEqualTo(ACTION_MESSAGING_EVENT);
+    assertThat(deleteIntent.getPackage()).isEqualTo(appContext.getPackageName());
+    assertThat(deleteIntent.getAction()).isEqualTo(ACTION_RECEIVER);
     Intent dismissIntent = deleteIntent.getParcelableExtra(IntentKeys.WRAPPED_INTENT);
     assertThat(dismissIntent).isNotNull();
     assertThat(dismissIntent.getAction()).isEqualTo(IntentActionKeys.NOTIFICATION_DISMISS);

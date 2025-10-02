@@ -299,7 +299,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
         UserWriteRecord record;
         if (WRITE_TYPE_OVERWRITE.equals(type)) {
           Node set = NodeUtilities.NodeFromJSON(writeValue);
-          record = new UserWriteRecord(writeId, path, set, /*visible=*/ true);
+          record = new UserWriteRecord(writeId, path, set, /* visible= */ true);
         } else if (WRITE_TYPE_MERGE.equals(type)) {
           @SuppressWarnings("unchecked")
           CompoundWrite merge = CompoundWrite.fromValue((Map<String, Object>) writeValue);
@@ -355,13 +355,13 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
   @Override
   public void overwriteServerCache(Path path, Node node) {
     verifyInsideTransaction();
-    updateServerCache(path, node, /*merge=*/ false);
+    updateServerCache(path, node, /* merge= */ false);
   }
 
   @Override
   public void mergeIntoServerCache(Path path, Node node) {
     verifyInsideTransaction();
-    updateServerCache(path, node, /*merge=*/ true);
+    updateServerCache(path, node, /* merge= */ true);
   }
 
   private void updateServerCache(Path path, Node node, boolean merge) {
@@ -483,7 +483,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
             null,
             null,
             null,
-            /*orderBy=*/ TRACKED_QUERY_ID_COLUMN_NAME);
+            /* orderBy= */ TRACKED_QUERY_ID_COLUMN_NAME);
 
     List<TrackedQuery> queries = new ArrayList<TrackedQuery>();
     try {
@@ -609,7 +609,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
         TRACKED_KEYS_ID_COLUMN_NAME + " IN (" + commaSeparatedList(trackedQueryIds) + ")";
     Cursor cursor =
         database.query(
-            /*distinct=*/ true,
+            /* distinct= */ true,
             TRACKED_KEYS_TABLE,
             columns,
             whereClause,

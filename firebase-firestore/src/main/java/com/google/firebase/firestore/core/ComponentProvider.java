@@ -14,11 +14,15 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Assert.hardAssertNonNull;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalStore;
@@ -26,6 +30,9 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.firestore.remote.RemoteComponenetProvider;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 
@@ -36,70 +43,72 @@ import com.google.firebase.firestore.util.AsyncQueue;
  */
 public abstract class ComponentProvider {
 
+  protected final FirebaseFirestoreSettings settings;
+  private RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider();
   private Persistence persistence;
   private LocalStore localStore;
   private SyncEngine syncEngine;
   private RemoteStore remoteStore;
   private EventManager eventManager;
-  private ConnectivityMonitor connectivityMonitor;
   @Nullable private IndexBackfiller indexBackfiller;
   @Nullable private Scheduler garbageCollectionScheduler;
 
-  /** Configuration options for the component provider. */
-  public static class Configuration {
+  public ComponentProvider(FirebaseFirestoreSettings settings) {
+    this.settings = settings;
+  }
 
-    private final Context context;
-    private final AsyncQueue asyncQueue;
-    private final DatabaseInfo databaseInfo;
-    private final Datastore datastore;
-    private final User initialUser;
-    private final int maxConcurrentLimboResolutions;
-    private final FirebaseFirestoreSettings settings;
+  @NonNull
+  public static ComponentProvider defaultFactory(@NonNull FirebaseFirestoreSettings settings) {
+    return settings.isPersistenceEnabled()
+        ? new SQLiteComponentProvider(settings)
+        : new MemoryComponentProvider(settings);
+  }
+
+  /** Configuration options for the component provider. */
+  public static final class Configuration {
+
+    public final Context context;
+    public final AsyncQueue asyncQueue;
+    public final DatabaseInfo databaseInfo;
+    public final User initialUser;
+    public final int maxConcurrentLimboResolutions;
+    public final CredentialsProvider<User> authProvider;
+    public final CredentialsProvider<String> appCheckProvider;
+
+    @Nullable public final GrpcMetadataProvider metadataProvider;
 
     public Configuration(
         Context context,
         AsyncQueue asyncQueue,
         DatabaseInfo databaseInfo,
-        Datastore datastore,
         User initialUser,
         int maxConcurrentLimboResolutions,
-        FirebaseFirestoreSettings settings) {
+        CredentialsProvider<User> authProvider,
+        CredentialsProvider<String> appCheckProvider,
+        @Nullable GrpcMetadataProvider metadataProvider) {
       this.context = context;
       this.asyncQueue = asyncQueue;
       this.databaseInfo = databaseInfo;
-      this.datastore = datastore;
       this.initialUser = initialUser;
       this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
-      this.settings = settings;
+      this.authProvider = authProvider;
+      this.appCheckProvider = appCheckProvider;
+      this.metadataProvider = metadataProvider;
     }
+  }
 
-    FirebaseFirestoreSettings getSettings() {
-      return settings;
-    }
+  @VisibleForTesting
+  public void setRemoteProvider(RemoteComponenetProvider remoteProvider) {
+    hardAssert(remoteStore == null, "cannot set remoteProvider after initialize");
+    this.remoteProvider = remoteProvider;
+  }
 
-    AsyncQueue getAsyncQueue() {
-      return asyncQueue;
-    }
+  public RemoteSerializer getRemoteSerializer() {
+    return remoteProvider.getRemoteSerializer();
+  }
 
-    DatabaseInfo getDatabaseInfo() {
-      return databaseInfo;
-    }
-
-    Datastore getDatastore() {
-      return datastore;
-    }
-
-    User getInitialUser() {
-      return initialUser;
-    }
-
-    int getMaxConcurrentLimboResolutions() {
-      return maxConcurrentLimboResolutions;
-    }
-
-    Context getContext() {
-      return context;
-    }
+  public Datastore getDatastore() {
+    return remoteProvider.getDatastore();
   }
 
   public Persistence getPersistence() {
@@ -133,23 +142,23 @@ public abstract class ComponentProvider {
   }
 
   protected ConnectivityMonitor getConnectivityMonitor() {
-    return hardAssertNonNull(connectivityMonitor, "connectivityMonitor not initialized yet");
+    return remoteProvider.getConnectivityMonitor();
   }
 
   public void initialize(Configuration configuration) {
     /**
      * The order in which components are created is important.
      *
-     * <p>The implementation of abstract createX methods (e.g. createRemoteStore) will call the getX
-     * methods (e.g. getLocalStore). Consequently, creating components out of order will cause
-     * createX method to fail because a dependency is null.
+     * <p>The implementation of abstract createX methods (for example createRemoteStore) will call
+     * the getX methods (for example getLocalStore). Consequently, creating components out of order
+     * will cause createX method to fail because a dependency is null.
      *
      * <p>To catch incorrect order, all getX methods have runtime check for null.
      */
+    remoteProvider.initialize(configuration);
     persistence = createPersistence(configuration);
     persistence.start();
     localStore = createLocalStore(configuration);
-    connectivityMonitor = createConnectivityMonitor(configuration);
     remoteStore = createRemoteStore(configuration);
     syncEngine = createSyncEngine(configuration);
     eventManager = createEventManager(configuration);
@@ -166,8 +175,6 @@ public abstract class ComponentProvider {
   protected abstract EventManager createEventManager(Configuration configuration);
 
   protected abstract LocalStore createLocalStore(Configuration configuration);
-
-  protected abstract ConnectivityMonitor createConnectivityMonitor(Configuration configuration);
 
   protected abstract Persistence createPersistence(Configuration configuration);
 

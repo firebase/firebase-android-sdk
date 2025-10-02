@@ -141,8 +141,8 @@ public abstract class Mutation {
 
   /**
    * Applies this mutation to the given Document for the purposes of computing a new remote document
-   * If the input document doesn't match the expected state (e.g. it is invalid or outdated), the
-   * document state may transition to unknown.
+   * If the input document doesn't match the expected state (for example, the document is invalid or
+   * outdated), the document state may transition to unknown.
    *
    * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.

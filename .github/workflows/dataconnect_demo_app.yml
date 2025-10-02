@@ -1,0 +1,228 @@
+name: Data Connect Demo App
+
+on:
+  workflow_dispatch:
+    inputs:
+      nodeVersion:
+      firebaseToolsVersion:
+      javaVersion:
+      gradleInfoLog:
+        type: boolean
+      pythonVersion:
+  pull_request:
+    paths:
+      - firebase-dataconnect/demo/**
+      - .github/workflows/dataconnect_demo_app.yml
+  schedule:
+    - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
+
+env:
+  FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.16.0' }}
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
+  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
+  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: firebase-dataconnect/demo
+
+      - name: Create Cache Key Files
+        run: |
+          echo "gmagjr2b9d" >github_actions_demo_test_cache_key.txt
+          echo "${{ env.FDC_FIREBASE_TOOLS_VERSION }}" >github_actions_demo_assemble_firebase_tools_version.txt
+
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ env.FDC_NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            github_actions_demo_test_cache_key.txt
+            github_actions_demo_assemble_firebase_tools_version.txt
+
+      - name: cache package-lock.json
+        id: package_json_lock
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        with:
+          path: ${{ env.FDC_FIREBASE_TOOLS_DIR }}/package*.json
+          key: firebase_tools_package_json-${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: install firebase-tools from scratch
+        if: steps.package_json_lock.outputs.cache-hit != 'true'
+        run: |
+          set -v
+          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          echo '{}' > package.json
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: install firebase-tools from package-lock.json
+        if: steps.package_json_lock.outputs.cache-hit == 'true'
+        run: |
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          npm ci --fund=false --audit=false
+
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: |
+            firebase-dataconnect/demo/build.gradle.kts
+            firebase-dataconnect/demo/gradle.properties
+            firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+            github_actions_demo_test_cache_key.txt
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          function run_cmd {
+            echo "==============================================================================="
+            echo "Running Command: $*"
+            ("$@" 2>&1) || echo "WARNING: command failed with non-zero exit code $?: $*"
+          }
+
+          run_cmd which java
+          run_cmd java -version
+          run_cmd which javac
+          run_cmd javac -version
+          run_cmd which node
+          run_cmd node --version
+          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd firebase-dataconnect/demo/gradlew --version
+
+      - name: gradle assemble test
+        run: |
+          set -x
+          firebase-dataconnect/demo/gradlew \
+          --project-dir firebase-dataconnect/demo \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          --profile \
+          --warning-mode all \
+          -PdataConnect.demo.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
+          assemble test
+
+      - name: gradle dokkaGeneratePublicationHtml
+        run: |
+          set -x
+          firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
+          --project-dir firebase-dataconnect/demo \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          dokkaGeneratePublicationHtml
+
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: apks
+          path: firebase-dataconnect/demo/build/**/*.apk
+          if-no-files-found: warn
+          compression-level: 0
+
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: gradle_build_reports
+          path: firebase-dataconnect/demo/build/reports/
+          if-no-files-found: warn
+          compression-level: 9
+
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: ktdoc
+          path: firebase-dataconnect/demo/build/dokka/html
+          if-no-files-found: warn
+          compression-level: 9
+
+  spotlessCheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: firebase-dataconnect/demo
+
+      - name: Create Cache Key Files
+        run: echo "h99ee4egfd" >github_actions_demo_spotless_cache_key.txt
+
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: |
+            firebase-dataconnect/demo/build.gradle.kts
+            firebase-dataconnect/demo/gradle.properties
+            firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+            github_actions_demo_spotless_cache_key.txt
+
+      - name: tool versions
+        continue-on-error: true
+        run: |
+          set +e -v
+          which java
+          java -version
+          which javac
+          javac -version
+          firebase-dataconnect/demo/gradlew --version
+
+      - name: gradle spotlessCheck
+        run: |
+          set -x
+          firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
+          --project-dir firebase-dataconnect/demo \
+          --no-daemon \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          spotlessCheck
+
+  # The "send-notifications" job adds a comment to GitHub Issue
+  # https://github.com/firebase/firebase-android-sdk/issues/6891 with the results of the scheduled
+  # nightly runs. Interested parties can then subscribe to that issue to be aprised of the outcome
+  # of the nightly runs.
+  #
+  # When testing the comment-adding logic itself, you can add the line
+  #   trksmnkncd_notification_issue=6863
+  # into the PR's description to instead post a comment to issue #6863, an issue specifically
+  # created for testing, avoiding spamming the main issue to which others are subscribed.
+  send-notifications:
+    needs:
+      - 'test'
+      - 'spotlessCheck'
+    if: always()
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            .github/
+
+      - name: gh auth login
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+
+      - name: Create Job Results File
+        id: create-job-results-file
+        run: |
+          set -xveuo pipefail
+          cat >'${{ runner.temp }}/job_results.txt' <<EOF
+          test:${{ needs.test.result }}
+          spotlessCheck:${{ needs.spotlessCheck.result }}
+          EOF
+
+      - uses: ./.github/actions/dataconnect-send-notifications
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+          github-issue-for-scheduled-runs: "6891"
+          job-results-file: ${{ runner.temp }}/job_results.txt

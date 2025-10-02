@@ -15,7 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -75,7 +75,7 @@ public class AbtIntegrationHelperTest {
   @Test
   public void updateRunningExperiments_noExperiments_doesNotCallAbt() {
     abtIntegrationHelper.updateRunningExperiments(noExperimentResponse);
-    verifyZeroInteractions(abTesting);
+    verifyNoInteractions(abTesting);
   }
 
   @Test
@@ -87,6 +87,6 @@ public class AbtIntegrationHelperTest {
   @Test
   public void updateRunningExperiments_testExperiments_doesNotCallAbt() throws Exception {
     abtIntegrationHelper.updateRunningExperiments(testExperimentResponse);
-    verifyZeroInteractions(abTesting);
+    verifyNoInteractions(abTesting);
   }
 }

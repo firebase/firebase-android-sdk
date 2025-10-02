@@ -14,6 +14,23 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.firebase.firestore.util.ApiUtil.invoke;
+import static com.google.firebase.firestore.util.ApiUtil.newInstance;
+
+import android.net.Uri;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.IgnoreExtraProperties;
+import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.ServerTimestamp;
+import com.google.firebase.firestore.ThrowOnExtraProperties;
+import com.google.firebase.firestore.VectorValue;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -172,7 +189,8 @@ public class CustomClassMapper {
         || o instanceof GeoPoint
         || o instanceof Blob
         || o instanceof DocumentReference
-        || o instanceof FieldValue) {
+        || o instanceof FieldValue
+        || o instanceof VectorValue) {
       return o;
     } else if (o instanceof Uri || o instanceof URI || o instanceof URL) {
       return o.toString();
@@ -240,6 +258,8 @@ public class CustomClassMapper {
       return (T) convertGeoPoint(o, context);
     } else if (DocumentReference.class.isAssignableFrom(clazz)) {
       return (T) convertDocumentReference(o, context);
+    } else if (VectorValue.class.isAssignableFrom(clazz)) {
+      return (T) convertVectorValue(o, context);
     } else if (clazz.isArray()) {
       throw deserializeError(
           context.errorPath, "Converting to Arrays is not supported, please use Lists instead");
@@ -531,6 +551,16 @@ public class CustomClassMapper {
     }
   }
 
+  private static VectorValue convertVectorValue(Object o, DeserializeContext context) {
+    if (o instanceof VectorValue) {
+      return (VectorValue) o;
+    } else {
+      throw deserializeError(
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to VectorValue");
+    }
+  }
+
   private static DocumentReference convertDocumentReference(Object o, DeserializeContext context) {
     if (o instanceof DocumentReference) {
       return (DocumentReference) o;
@@ -638,6 +668,7 @@ public class CustomClassMapper {
       // getMethods/getFields only returns public methods/fields we need to traverse the
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
+      Map<String, Method> bridgeMethods = new HashMap<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -651,13 +682,20 @@ public class CustomClassMapper {
                         + currentClass.getName()
                         + " with invalid case-sensitive name: "
                         + method.getName());
+              } else if (method.isBridge()) {
+                // We ignore bridge setters when creating a bean, but include them in the map
+                // for the purpose of the `isSetterOverride()` check
+                bridgeMethods.put(propertyName, method);
               } else {
                 Method existingSetter = setters.get(propertyName);
+                Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
                   method.setAccessible(true);
                   setters.put(propertyName, method);
                   applySetterAnnotations(method);
-                } else if (!isSetterOverride(method, existingSetter)) {
+                } else if (!isSetterOverride(method, existingSetter)
+                    && !(correspondingBridgeMethod != null
+                        && isSetterOverride(method, correspondingBridgeMethod))) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
                   if (currentClass == clazz) {
@@ -928,6 +966,10 @@ public class CustomClassMapper {
       }
       // Non-zero parameters
       if (method.getParameterTypes().length != 0) {
+        return false;
+      }
+      // Bridge methods
+      if (method.isBridge()) {
         return false;
       }
       // Excluded methods

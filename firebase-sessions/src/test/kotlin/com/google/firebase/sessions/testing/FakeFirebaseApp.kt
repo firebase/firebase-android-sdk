@@ -16,39 +16,57 @@
 
 package com.google.firebase.sessions.testing
 
+import android.app.ActivityManager
 import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.content.pm.PackageInfoBuilder
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
+import com.google.firebase.initialize
 import org.robolectric.Shadows
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowActivityManager
 
-internal class FakeFirebaseApp(metadata: Bundle? = null) {
+internal class FakeFirebaseApp(
+  metadata: Bundle? = null,
+  processes: List<ActivityManager.RunningAppProcessInfo> = emptyList(),
+) {
   val firebaseApp: FirebaseApp
 
   init {
-    val shadowPackageManager =
-      Shadows.shadowOf(ApplicationProvider.getApplicationContext<Context>().packageManager)
-    val packageInfo =
-      PackageInfoBuilder.newBuilder()
-        .setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName)
-        .build()
+    val context: Context = ApplicationProvider.getApplicationContext()
+    context.applicationInfo.uid = 313
+
+    val shadowPackageManager = Shadows.shadowOf(context.packageManager)
+    val packageInfo = PackageInfoBuilder.newBuilder().setPackageName(context.packageName).build()
     packageInfo.versionName = MOCK_APP_VERSION
 
-    metadata?.let { packageInfo.applicationInfo.metaData = it }
+    metadata?.let { packageInfo.applicationInfo!!.metaData = it }
     shadowPackageManager.installPackage(packageInfo)
+
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val shadowActivityManager: ShadowActivityManager = Shadow.extract(activityManager)
+    if (processes.isEmpty()) {
+      val runningAppProcessInfo = ActivityManager.RunningAppProcessInfo()
+      runningAppProcessInfo.pid = 0
+      runningAppProcessInfo.uid = 313
+      runningAppProcessInfo.processName = context.packageName
+      runningAppProcessInfo.importance = 100
+      shadowActivityManager.setProcesses(listOf(runningAppProcessInfo))
+    } else {
+      shadowActivityManager.setProcesses(processes)
+    }
 
     firebaseApp =
       Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
+        context,
         FirebaseOptions.Builder()
           .setApplicationId(MOCK_APP_ID)
           .setApiKey(MOCK_API_KEY)
           .setProjectId(MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
   }
 

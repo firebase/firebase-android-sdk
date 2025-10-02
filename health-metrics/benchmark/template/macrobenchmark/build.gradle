@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'com.android.test'
     id 'org.jetbrains.kotlin.android'
 }
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 34
+
+    namespace "com.google.firebase.macrobenchmark"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
     defaultConfig {
         minSdk 29
-        targetSdk 32
+        targetSdk 34
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -48,11 +48,13 @@ android {
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
-    implementation "androidx.test.ext:junit:1.1.5"
-    implementation 'androidx.test.espresso:espresso-core:3.4.0'
-    implementation 'androidx.test.uiautomator:uiautomator:2.2.0'
     implementation 'androidx.benchmark:benchmark-macro-junit4:1.1.0'
+    implementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.test.ext:junit:1.1.5'
+    implementation 'androidx.test.uiautomator:uiautomator:2.2.0'
 }
 
 androidComponents {

@@ -33,6 +33,7 @@ import java.util.List;
 class Metadata {
   /** GMScore holds this permission. Use it for security checks. */
   private static final String GMSCORE_SEND_PERMISSION = "com.google.android.c2dm.permission.SEND";
+
   /* GmsCore package name. package visible as it's used by other classes in firebase-iid. */
   static final String GMS_PACKAGE = "com.google.android.gms";
 

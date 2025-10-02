@@ -15,13 +15,13 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
-    <!--<uses-sdk android:minSdkVersion="14"/>-->
+    <!--<uses-sdk android:minSdkVersion="21"/>-->
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application>
-        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
+        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false"> <meta-data android:name="com.google.firebase.components:com.google.firebase.database.FirebaseDatabaseKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
             <meta-data android:name="com.google.firebase.components:com.google.firebase.database.DatabaseRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>

@@ -112,7 +112,7 @@ public class ConfigCacheClient {
    * @return A {@link Task} with the {@link ConfigContainer} that was written to disk.
    */
   public Task<ConfigContainer> put(ConfigContainer configContainer) {
-    return put(configContainer, /*shouldUpdateInMemoryContainer=*/ true);
+    return put(configContainer, /* shouldUpdateInMemoryContainer= */ true);
   }
 
   /**

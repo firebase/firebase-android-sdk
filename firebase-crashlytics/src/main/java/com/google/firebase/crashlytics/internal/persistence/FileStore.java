@@ -14,14 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
-import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.ProcessDetailsProvider;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
@@ -52,14 +50,23 @@ import java.util.List;
  * convention, any use of new File(...) or similar outside of this class is a code smell.
  */
 public class FileStore {
+
+  /** Deprecated old file system for systems that are not process aware. */
   private static final String CRASHLYTICS_PATH_V1 = ".com.google.firebase.crashlytics.files.v1";
+
+  /** Deprecated old file system, process aware. Use v3, there is no use for this system anymore. */
   private static final String CRASHLYTICS_PATH_V2 = ".com.google.firebase.crashlytics.files.v2";
+
+  /** Current file system, avoids long file names. */
+  private static final String CRASHLYTICS_PATH_V3 = ".crashlytics.v3";
+
   private static final String SESSIONS_PATH = "open-sessions";
   private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
   private static final String PRIORITY_REPORTS_PATH = "priority-reports";
   private static final String NATIVE_REPORTS_PATH = "native-reports";
 
+  final String processName;
   private final File filesDir;
   private final File crashlyticsDir;
   private final File sessionsDir;
@@ -67,11 +74,14 @@ public class FileStore {
   private final File priorityReportsDir;
   private final File nativeReportsDir;
 
+  @SuppressWarnings("KotlinInternal")
   public FileStore(Context context) {
+    processName =
+        ProcessDetailsProvider.INSTANCE.getCurrentProcessDetails(context).getProcessName();
     filesDir = context.getFilesDir();
     String crashlyticsPath =
-        useV2FileSystem()
-            ? CRASHLYTICS_PATH_V2 + File.pathSeparator + sanitizeName(Application.getProcessName())
+        useV3FileSystem()
+            ? CRASHLYTICS_PATH_V3 + File.separator + sanitizeName(processName)
             : CRASHLYTICS_PATH_V1;
     crashlyticsDir = prepareBaseDir(new File(filesDir, crashlyticsPath));
     sessionsDir = prepareBaseDir(new File(crashlyticsDir, SESSIONS_PATH));
@@ -88,18 +98,32 @@ public class FileStore {
   /** Clean up files from previous file systems. */
   public void cleanupPreviousFileSystems() {
     // Clean up pre-versioned file systems.
-    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics"));
-    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics-ndk"));
+    cleanupFileSystemDir(".com.google.firebase.crashlytics");
+    cleanupFileSystemDir(".com.google.firebase.crashlytics-ndk");
 
-    // Clean up v1 file system.
-    if (useV2FileSystem()) {
-      cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V1));
+    // Clean up old versioned file systems.
+    if (useV3FileSystem()) {
+      cleanupFileSystemDir(CRASHLYTICS_PATH_V1);
+      // The v2 file system named dirs like ".com....v2:process_name"
+      cleanupFileSystemDirs(CRASHLYTICS_PATH_V2 + File.pathSeparator);
     }
   }
 
-  private void cleanupDir(File dir) {
+  private void cleanupFileSystemDir(String child) {
+    File dir = new File(filesDir, child);
     if (dir.exists() && recursiveDelete(dir)) {
       Logger.getLogger().d("Deleted previous Crashlytics file system: " + dir.getPath());
+    }
+  }
+
+  private void cleanupFileSystemDirs(String prefix) {
+    if (filesDir.exists()) {
+      String[] list = filesDir.list((dir, name) -> name.startsWith(prefix));
+      if (list != null) {
+        for (String child : list) {
+          cleanupFileSystemDir(child);
+        }
+      }
     }
   }
 
@@ -113,12 +137,16 @@ public class FileStore {
     return fileOrDirectory.delete();
   }
 
-  /** @return internal File used by Crashlytics, that is not specific to a session */
+  /**
+   * @return internal File used by Crashlytics, that is not specific to a session
+   */
   public File getCommonFile(String filename) {
     return new File(crashlyticsDir, filename);
   }
 
-  /** @return all common (non session specific) files matching the given filter. */
+  /**
+   * @return all common (non session specific) files matching the given filter.
+   */
   public List<File> getCommonFiles(FilenameFilter filter) {
     return safeArrayToList(crashlyticsDir.listFiles(filter));
   }
@@ -206,14 +234,21 @@ public class FileStore {
     return (array == null) ? Collections.emptyList() : Arrays.asList(array);
   }
 
-  @SuppressLint("AnnotateVersionCheck")
-  private static boolean useV2FileSystem() {
-    return VERSION.SDK_INT >= VERSION_CODES.P;
+  private boolean useV3FileSystem() {
+    // If the process name is known, use the v3 file system.
+    return !processName.isEmpty();
   }
 
-  /** Replace potentially unsafe chars with underscores to make a safe file name. */
+  /**
+   * Replace potentially unsafe chars with underscores to make a safe file name.
+   *
+   * <p>If the filename is too long, hash it to a short name.
+   */
   @VisibleForTesting
   static String sanitizeName(String filename) {
+    if (filename.length() > 40) {
+      return CommonUtils.sha1(filename);
+    }
     return filename.replaceAll("[^a-zA-Z0-9.]", "_");
   }
 }

@@ -101,7 +101,7 @@ public class MemoryGaugeCollector {
       return;
     }
 
-    memoryMetricCollectorJob.cancel(/*mayInterruptIfRunning =*/ false);
+    memoryMetricCollectorJob.cancel(/* mayInterruptIfRunning= */ false);
     memoryMetricCollectorJob = null;
     memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
   }
@@ -132,7 +132,7 @@ public class MemoryGaugeCollector {
                 }
               },
               /* initialDelay */ 0,
-              /*period=*/ memoryMetricCollectionRate,
+              /* period= */ memoryMetricCollectionRate,
               TimeUnit.MILLISECONDS);
     } catch (RejectedExecutionException e) {
       logger.warn("Unable to start collecting Memory Metrics: " + e.getMessage());

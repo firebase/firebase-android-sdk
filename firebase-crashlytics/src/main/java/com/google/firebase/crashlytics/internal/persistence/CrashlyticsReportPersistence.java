@@ -23,7 +23,6 @@ import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.io.ByteArrayOutputStream;
@@ -357,7 +356,7 @@ public class CrashlyticsReportPersistence {
               .reportFromJson(readTextFile(reportFile))
               .withSessionEndFields(sessionEndTime, isHighPriorityReport, userId)
               .withAppQualitySessionId(appQualitySessionId)
-              .withEvents(ImmutableList.from(events));
+              .withEvents(events);
       final Session session = report.getSession();
 
       if (session == null) {

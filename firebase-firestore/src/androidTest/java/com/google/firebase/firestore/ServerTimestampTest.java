@@ -214,7 +214,7 @@ public class ServerTimestampTest {
   @Test
   public void testServerTimestampsCanRetainPreviousValueThroughConsecutiveUpdates() {
     writeInitialData();
-    waitFor(docRef.getFirestore().getClient().disableNetwork());
+    waitFor(docRef.getFirestore().disableNetwork());
     accumulator.awaitRemoteEvent();
 
     docRef.update("a", FieldValue.serverTimestamp());
@@ -226,7 +226,7 @@ public class ServerTimestampTest {
     localSnapshot = accumulator.awaitLocalEvent();
     assertEquals(42L, localSnapshot.get("a", ServerTimestampBehavior.PREVIOUS));
 
-    waitFor(docRef.getFirestore().getClient().enableNetwork());
+    waitFor(docRef.getFirestore().enableNetwork());
 
     DocumentSnapshot remoteSnapshot = accumulator.awaitRemoteEvent();
     assertThat(remoteSnapshot.get("a")).isInstanceOf(Timestamp.class);
@@ -235,7 +235,7 @@ public class ServerTimestampTest {
   @Test
   public void testServerTimestampsUsesPreviousValueFromLocalMutation() {
     writeInitialData();
-    waitFor(docRef.getFirestore().getClient().disableNetwork());
+    waitFor(docRef.getFirestore().disableNetwork());
     accumulator.awaitRemoteEvent();
 
     docRef.update("a", FieldValue.serverTimestamp());
@@ -249,7 +249,7 @@ public class ServerTimestampTest {
     localSnapshot = accumulator.awaitLocalEvent();
     assertEquals(1337L, localSnapshot.get("a", ServerTimestampBehavior.PREVIOUS));
 
-    waitFor(docRef.getFirestore().getClient().enableNetwork());
+    waitFor(docRef.getFirestore().enableNetwork());
 
     DocumentSnapshot remoteSnapshot = accumulator.awaitRemoteEvent();
     assertThat(remoteSnapshot.get("a")).isInstanceOf(Timestamp.class);

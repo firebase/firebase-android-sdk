@@ -20,10 +20,10 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
+import com.google.firebase.initialize
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import org.junit.After
 import org.junit.Test
@@ -35,7 +35,12 @@ class ApplicationInfoTest {
 
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
-    val applicationInfo = SessionEvents.getApplicationInfo(FakeFirebaseApp().firebaseApp)
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val myProcessDetails =
+      ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext)
+    val appProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
+    val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
     assertThat(applicationInfo)
       .isEqualTo(
         ApplicationInfo(
@@ -49,13 +54,15 @@ class ApplicationInfoTest {
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
             appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
             deviceManufacturer = Build.MANUFACTURER,
-          )
+            myProcessDetails,
+            appProcessDetails,
+          ),
         )
       )
   }
 
   @Test
-  fun applicationInfo_missiongVersionCode_populatesInfoCorrectly() {
+  fun applicationInfo_missingVersionCode_populatesInfoCorrectly() {
     // Initialize Firebase with no version code set.
     val firebaseApp =
       Firebase.initialize(
@@ -64,8 +71,13 @@ class ApplicationInfoTest {
           .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
           .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
           .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
+
+    val myProcessDetails =
+      ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext)
+    val appProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
 
     val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
 
@@ -82,7 +94,9 @@ class ApplicationInfoTest {
             versionName = "0",
             appBuildVersion = "0",
             deviceManufacturer = Build.MANUFACTURER,
-          )
+            myProcessDetails,
+            appProcessDetails,
+          ),
         )
       )
   }

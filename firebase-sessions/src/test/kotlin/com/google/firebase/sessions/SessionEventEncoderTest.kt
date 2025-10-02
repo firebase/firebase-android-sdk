@@ -27,13 +27,11 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionEventEncoderTest {
 
@@ -46,7 +44,7 @@ class SessionEventEncoderTest {
   fun sessionEvent_encodesToJson() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
@@ -81,7 +79,8 @@ class SessionEventEncoderTest {
                 "crashlytics":2,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"1:12345:android:app",
@@ -93,7 +92,21 @@ class SessionEventEncoderTest {
                 "packageName":"com.google.firebase.sessions.test",
                 "versionName":"1.0.0",
                 "appBuildVersion":"0",
-                "deviceManufacturer":"${Build.MANUFACTURER}"
+                "deviceManufacturer":"${Build.MANUFACTURER}",
+                "currentProcessDetails":{
+                  "processName":"com.google.firebase.sessions.test",
+                  "pid":0,
+                  "importance":100,
+                  "defaultProcess":false
+                },
+                "appProcessDetails":[
+                  {
+                    "processName":"com.google.firebase.sessions.test",
+                    "pid":0,
+                    "importance":100,
+                    "defaultProcess":false
+                  }
+                ]
               }
             }
           }
@@ -114,6 +127,9 @@ class SessionEventEncoderTest {
             firstSessionId = "",
             sessionIndex = 0,
             eventTimestampUs = 0,
+            dataCollectionStatus = DataCollectionStatus(),
+            firebaseInstallationId = "",
+            firebaseAuthenticationToken = "",
           ),
         applicationInfo =
           ApplicationInfo(
@@ -127,8 +143,10 @@ class SessionEventEncoderTest {
               versionName = "",
               appBuildVersion = "",
               deviceManufacturer = "",
+              currentProcessDetails = ProcessDetails("", 0, 0, false),
+              appProcessDetails = listOf(),
             ),
-          )
+          ),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -148,7 +166,8 @@ class SessionEventEncoderTest {
                 "crashlytics":1,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"",
@@ -160,7 +179,14 @@ class SessionEventEncoderTest {
                 "packageName":"",
                 "versionName":"",
                 "appBuildVersion":"",
-                "deviceManufacturer":""
+                "deviceManufacturer":"",
+                "currentProcessDetails":{
+                  "processName":"",
+                  "pid":0,
+                  "importance":0,
+                  "defaultProcess":false
+                },
+                "appProcessDetails":[]
               }
             }
           }
@@ -178,7 +204,7 @@ class SessionEventEncoderTest {
           EventType.SESSION_START,
           EventType.EVENT_TYPE_UNKNOWN,
           EventType.SESSION_START,
-          EventType.SESSION_START
+          EventType.SESSION_START,
         )
       )
 

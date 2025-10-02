@@ -14,7 +14,7 @@
 
 def isErrorProneRequested = getGradle().getStartParameter().getTaskNames().contains("withErrorProne")
 
-def errorproneVersion = '2.4.0'
+def errorproneVersion = '2.26.0'
 def errorproneJavacVersion = '9+181-r4173-1'
 
 if (isErrorProneRequested) {

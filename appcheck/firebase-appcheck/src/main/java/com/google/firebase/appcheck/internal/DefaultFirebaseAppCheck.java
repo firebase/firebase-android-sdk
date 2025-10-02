@@ -61,6 +61,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private AppCheckProviderFactory appCheckProviderFactory;
   private AppCheckProvider appCheckProvider;
   private AppCheckToken cachedToken;
+  private Task<AppCheckToken> cachedTokenTask;
 
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
@@ -192,24 +193,27 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                 DefaultAppCheckTokenResult.constructFromError(
                     new FirebaseException("No AppCheckProvider installed.")));
           }
-          // TODO: Cache the in-flight task.
-          return fetchTokenFromProvider()
-              .continueWithTask(
-                  liteExecutor,
-                  appCheckTokenTask -> {
-                    if (appCheckTokenTask.isSuccessful()) {
-                      return Tasks.forResult(
-                          DefaultAppCheckTokenResult.constructFromAppCheckToken(
-                              appCheckTokenTask.getResult()));
-                    }
-                    // If the token exchange failed, return a dummy token for integrators to attach
-                    // in their headers.
-                    return Tasks.forResult(
-                        DefaultAppCheckTokenResult.constructFromError(
-                            new FirebaseException(
-                                appCheckTokenTask.getException().getMessage(),
-                                appCheckTokenTask.getException())));
-                  });
+          if (cachedTokenTask == null
+              || cachedTokenTask.isComplete()
+              || cachedTokenTask.isCanceled()) {
+            cachedTokenTask = fetchTokenFromProvider();
+          }
+          return cachedTokenTask.continueWithTask(
+              liteExecutor,
+              appCheckTokenTask -> {
+                if (appCheckTokenTask.isSuccessful()) {
+                  return Tasks.forResult(
+                      DefaultAppCheckTokenResult.constructFromAppCheckToken(
+                          appCheckTokenTask.getResult()));
+                }
+                // If the token exchange failed, return a dummy token for integrators to attach
+                // in their headers.
+                return Tasks.forResult(
+                    DefaultAppCheckTokenResult.constructFromError(
+                        new FirebaseException(
+                            appCheckTokenTask.getException().getMessage(),
+                            appCheckTokenTask.getException())));
+              });
         });
   }
 
@@ -247,7 +251,12 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
           if (appCheckProvider == null) {
             return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
           }
-          return fetchTokenFromProvider();
+          if (cachedTokenTask == null
+              || cachedTokenTask.isComplete()
+              || cachedTokenTask.isCanceled()) {
+            cachedTokenTask = fetchTokenFromProvider();
+          }
+          return cachedTokenTask;
         });
   }
 

@@ -23,7 +23,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_TEST_M
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_WITHOUT_ACTIONS;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -125,7 +125,7 @@ public class MetricsLoggerClientTest {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface).logEvent(any());
   }
 
   @Test
@@ -176,7 +176,7 @@ public class MetricsLoggerClientTest {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface).logEvent(any());
   }
 
   @Test
@@ -250,7 +250,7 @@ public class MetricsLoggerClientTest {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface).logEvent(any());
   }
 
   @Test
@@ -333,7 +333,7 @@ public class MetricsLoggerClientTest {
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface).logEvent(any());
   }
 
   @Test
@@ -469,7 +469,7 @@ public class MetricsLoggerClientTest {
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface).logEvent(any());
   }
 
   @Test
@@ -765,7 +765,7 @@ public class MetricsLoggerClientTest {
         BANNER_TEST_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
     waitForBlockingExecutor();
 
-    verify(engagementMetricsLoggerInterface, never()).logEvent(anyObject());
+    verify(engagementMetricsLoggerInterface, never()).logEvent(any());
   }
 
   private static void waitForBlockingExecutor() throws InterruptedException {

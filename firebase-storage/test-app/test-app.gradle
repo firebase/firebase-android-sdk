@@ -14,13 +14,14 @@
 
 
 apply plugin: "com.android.application"
+apply plugin: 'copy-google-services'
 
 android {
   compileSdkVersion project.targetSdkVersion
 
   defaultConfig {
     applicationId "com.example.storage"
-    minSdkVersion 16
+    minSdkVersion project.minSdkVersion
     targetSdkVersion project.targetSdkVersion
     versionCode 1
     versionName "1.0"
@@ -47,25 +48,15 @@ dependencies {
     exclude group: 'com.google.firebase', module: 'firebase-common'
     exclude group: 'com.google.firebase', module: 'firebase-components'
   }
-
+  implementation 'androidx.appcompat:appcompat:1.0.2'
+  implementation 'com.google.android.gms:play-services-base:18.0.1'
+  implementation 'com.google.android.gms:play-services-basement:18.1.0'
+  implementation 'com.google.android.material:material:1.0.0'
+  implementation 'com.google.firebase:firebase-auth:20+'
   // We intentionally use an open ended version to pick up any SNAPSHOT
   // versions published to the root project' s build/ directory.
   implementation 'com.google.firebase:firebase-common:19+'
-  implementation 'com.google.firebase:firebase-auth:20+'
-  implementation 'com.google.android.gms:play-services-basement:18.1.0'
-  implementation 'com.google.android.gms:play-services-base:18.0.1'
 
-  implementation 'com.google.android.material:material:1.0.0'
-  implementation 'androidx.appcompat:appcompat:1.0.2'
-
-  androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
   androidTestImplementation 'androidx.test:rules:1.2.0'
+  androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
-
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.example.storage"
-apply from: '../../gradle/googleServices.gradle'

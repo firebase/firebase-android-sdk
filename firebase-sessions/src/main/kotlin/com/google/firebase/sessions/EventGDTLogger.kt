@@ -21,6 +21,9 @@ import com.google.android.datatransport.Encoding
 import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * The [EventGDTLoggerInterface] is for testing purposes so that we can mock EventGDTLogger in other
@@ -28,7 +31,7 @@ import com.google.firebase.inject.Provider
  *
  * @hide
  */
-internal interface EventGDTLoggerInterface {
+internal fun interface EventGDTLoggerInterface {
   fun log(sessionEvent: SessionEvent)
 }
 
@@ -38,31 +41,27 @@ internal interface EventGDTLoggerInterface {
  *
  * @hide
  */
-internal class EventGDTLogger(private val transportFactoryProvider: Provider<TransportFactory>) :
+@Singleton
+internal class EventGDTLogger
+@Inject
+constructor(private val transportFactoryProvider: Provider<TransportFactory>) :
   EventGDTLoggerInterface {
 
   // Logs a [SessionEvent] to FireLog
   override fun log(sessionEvent: SessionEvent) {
     transportFactoryProvider
       .get()
-      .getTransport(
-        EventGDTLogger.AQS_LOG_SOURCE,
-        SessionEvent::class.java,
-        Encoding.of("json"),
-        this::encode,
-      )
+      .getTransport(AQS_LOG_SOURCE, SessionEvent::class.java, Encoding.of("json"), this::encode)
       .send(Event.ofData(sessionEvent))
   }
 
   private fun encode(value: SessionEvent): ByteArray {
     val jsonEvent = SessionEvents.SESSION_EVENT_ENCODER.encode(value)
-    Log.d(TAG, "Session Event: $jsonEvent")
+    Log.d(TAG, "Session Event Type: ${value.eventType.name}")
     return jsonEvent.toByteArray()
   }
 
   companion object {
-    private const val TAG = "EventGDTLogger"
-
     private const val AQS_LOG_SOURCE = "FIREBASE_APPQUALITY_SESSION"
   }
 }

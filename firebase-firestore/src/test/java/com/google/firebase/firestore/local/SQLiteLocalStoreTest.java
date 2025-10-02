@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -26,6 +27,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.keyMap;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
@@ -40,9 +42,11 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
@@ -64,9 +68,16 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
+
+  private final AtomicReference<SQLitePersistence> sqlitePersistence = new AtomicReference<>();
+
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    SQLitePersistence sqlitePersistence = PersistenceTestHelpers.createSQLitePersistence();
+    if (!this.sqlitePersistence.compareAndSet(null, sqlitePersistence)) {
+      throw new RuntimeException("getPersistence() has already been called [error code qvw3g9kns]");
+    }
+    return sqlitePersistence;
   }
 
   @Override
@@ -291,6 +302,80 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("coll/a", "coll/c");
+  }
+
+  @Test
+  public void testIndexesVectorValues() {
+    FieldIndex index =
+        fieldIndex(
+            "coll", 0, FieldIndex.INITIAL_STATE, "embedding", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/arr1", map("embedding", Arrays.asList(0.1, 0.2, 0.3))));
+    writeMutation(setMutation("coll/map2", map("embedding", map())));
+    writeMutation(
+        setMutation("coll/doc3", map("embedding", FieldValue.vector(new double[] {4, 5, 6}))));
+    writeMutation(setMutation("coll/doc4", map("embedding", FieldValue.vector(new double[] {5}))));
+
+    Query query = query("coll").orderBy(orderBy("embedding", "asc"));
+    executeQuery(query);
+    assertQueryReturned("coll/arr1", "coll/doc4", "coll/doc3", "coll/map2");
+
+    query =
+        query("coll").filter(filter("embedding", "==", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertQueryReturned("coll/doc3");
+
+    query =
+        query("coll").filter(filter("embedding", ">", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("embedding", ">=", FieldValue.vector(new double[] {4})));
+    executeQuery(query);
+    assertQueryReturned("coll/doc4", "coll/doc3");
+
+    backfillIndexes();
+
+    query = query("coll").orderBy(orderBy("embedding", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 4, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/arr1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/map2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/arr1", "coll/doc4", "coll/doc3", "coll/map2");
+
+    query =
+        query("coll").filter(filter("embedding", "==", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc3", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3");
+
+    query =
+        query("coll").filter(filter("embedding", ">", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("embedding", ">=", FieldValue.vector(new double[] {4})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc3");
   }
 
   @Test
@@ -741,5 +826,111 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
+  }
+
+  @Test
+  public void testDocumentTypeIsSetToFoundWhenFoundDocumentAdded() {
+    Mutation mutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(mutation.getKey().getPath(), 2); // 2 is a "found" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeIsSetToNoDocumentWhenUnknownDocumentDeleted() {
+    Mutation mutation = writeMutation(deleteMutation("coll/a"));
+    acknowledgeMutation(1);
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(mutation.getKey().getPath(), 1); // 1 is a "no" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeIsUpdatedToNoDocumentWhenFoundDocumentDeleted() {
+    Mutation mutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    writeMutation(deleteMutation(mutation.getKey()));
+    acknowledgeMutation(2);
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(mutation.getKey().getPath(), 1); // 1 is a "no" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testDocumentTypeIsSetToUnknownWhenApplyingPatchMutationWithNoBaseDocument() {
+    Mutation mutation = writeMutation(patchMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(mutation.getKey().getPath(), 3); // 3 is a "unknown" document
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testQueryBackfillsRowsWithNullDocumentType() {
+    Mutation foundDocMutation = writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    Mutation noDocMutation = writeMutation(deleteMutation("coll/b"));
+    acknowledgeMutation(1);
+    Mutation unknownDocMutation = writeMutation(patchMutation("coll/c", map("foo", "bar")));
+    acknowledgeMutation(1);
+    sqlitePersistence.get().execute("UPDATE remote_documents SET document_type = NULL");
+    assertWithMessage("precondition check: all rows have null document type")
+        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
+        .containsExactly(null, null, null);
+
+    executeQuery(query("coll"));
+
+    Map<ResourcePath, Integer> expected = new HashMap<>();
+    expected.put(foundDocMutation.getKey().getPath(), 2);
+    expected.put(noDocMutation.getKey().getPath(), 1);
+    expected.put(unknownDocMutation.getKey().getPath(), 3);
+    assertThat(getDocumentTypeByPathFromRemoteDocumentsTable()).containsExactlyEntriesIn(expected);
+  }
+
+  @Test
+  public void testQueryResultsIncludeRowsWithNullDocumentType() {
+    writeMutation(setMutation("coll/a", map("foo", "bar")));
+    acknowledgeMutation(1);
+    writeMutation(deleteMutation("coll/b"));
+    acknowledgeMutation(1);
+    writeMutation(patchMutation("coll/c", map("foo", "bar")));
+    acknowledgeMutation(1);
+    sqlitePersistence.get().execute("UPDATE remote_documents SET document_type = NULL");
+    assertWithMessage("precondition check: all rows have null document type")
+        .that(getDocumentTypeByPathFromRemoteDocumentsTable().values())
+        .containsExactly(null, null, null);
+
+    executeQuery(query("coll"));
+
+    assertQueryReturned("coll/a");
+  }
+
+  /**
+   * Scans the entire "remote documents" sqlite table and returns the value of the "document type"
+   * column for each row, keyed by the value of the "path" column of the corresponding row. Note
+   * that the values of the returned map may be `null`, if the column value for that row is null.
+   */
+  private Map<ResourcePath, Integer> getDocumentTypeByPathFromRemoteDocumentsTable() {
+    HashMap<ResourcePath, Integer> documentTypeByPath = new HashMap<>();
+    sqlitePersistence
+        .get()
+        .query("SELECT path, document_type FROM remote_documents")
+        .forEach(
+            row -> {
+              String encodedPath = row.getString(0);
+              ResourcePath path = EncodedPath.decodeResourcePath(encodedPath);
+              Integer documentType = row.isNull(1) ? null : row.getInt(1);
+              synchronized (documentTypeByPath) {
+                documentTypeByPath.put(path, documentType);
+              }
+            });
+    synchronized (documentTypeByPath) {
+      return documentTypeByPath;
+    }
   }
 }

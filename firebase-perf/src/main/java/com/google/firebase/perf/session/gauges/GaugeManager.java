@@ -144,9 +144,9 @@ public class GaugeManager {
                   () -> {
                     syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
-                  /*initialDelay=*/ collectionFrequency
+                  /* initialDelay= */ collectionFrequency
                       * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-                  /*period=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  /* period= */ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
                   TimeUnit.MILLISECONDS);
 
     } catch (RejectedExecutionException e) {

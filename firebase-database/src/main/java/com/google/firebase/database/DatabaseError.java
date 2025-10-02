@@ -30,10 +30,13 @@ public class DatabaseError {
 
   /** <strong>Internal use</strong> */
   public static final int DATA_STALE = -1;
+
   /** The server indicated that this operation failed */
   public static final int OPERATION_FAILED = -2;
+
   /** This client does not have permission to perform this operation */
   public static final int PERMISSION_DENIED = -3;
+
   /** The operation had to be aborted due to a network disconnect */
   public static final int DISCONNECTED = -4;
 
@@ -42,17 +45,22 @@ public class DatabaseError {
 
   /** The supplied auth token has expired */
   public static final int EXPIRED_TOKEN = -6;
+
   /**
    * The specified authentication token is invalid. This can occur when the token is malformed,
    * expired, or the secret that was used to generate it has been revoked.
    */
   public static final int INVALID_TOKEN = -7;
+
   /** The transaction had too many retries */
   public static final int MAX_RETRIES = -8;
+
   /** The transaction was overridden by a subsequent set */
   public static final int OVERRIDDEN_BY_SET = -9;
+
   /** The service is unavailable */
   public static final int UNAVAILABLE = -10;
+
   /** An exception occurred in user code */
   public static final int USER_CODE_EXCEPTION = -11;
 

@@ -14,21 +14,21 @@
 
 package com.google.firebase.firestore.spec;
 
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.MemoryComponentProvider;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import java.util.Set;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@Config(sdk = 23, manifest = Config.NONE)
 public class MemorySpecTest extends SpecTestCase {
 
   private static final String DURABLE_PERSISTENCE = "durable-persistence";
@@ -40,21 +40,23 @@ public class MemorySpecTest extends SpecTestCase {
 
   @Override
   protected MemoryComponentProvider initializeComponentProvider(
-      ComponentProvider.Configuration configuration, boolean useEagerGc) {
+      RemoteComponenetProvider remoteProvider,
+      ComponentProvider.Configuration configuration,
+      boolean useEagerGc) {
     MemoryComponentProvider provider =
-        new MemoryComponentProvider() {
+        new MemoryComponentProvider(new FirebaseFirestoreSettings.Builder().build()) {
           @Override
           protected Persistence createPersistence(Configuration configuration) {
             if (useEagerGc) {
               return MemoryPersistence.createEagerGcMemoryPersistence();
             } else {
-              DatabaseId databaseId = DatabaseId.forProject("projectId");
-              LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+              LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
               return MemoryPersistence.createLruGcMemoryPersistence(
                   LruGarbageCollector.Params.Default(), serializer);
             }
           }
         };
+    provider.setRemoteProvider(remoteProvider);
     provider.initialize(configuration);
     return provider;
   }

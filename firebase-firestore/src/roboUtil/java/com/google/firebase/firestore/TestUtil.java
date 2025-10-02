@@ -58,7 +58,7 @@ public class TestUtil {
       return DocumentSnapshot.fromNoDocument(FIRESTORE, key(path), isFromCache);
     } else {
       return DocumentSnapshot.fromDocument(
-          FIRESTORE, doc(path, 1L, data), isFromCache, /*hasPendingWrites=*/ false);
+          FIRESTORE, doc(path, 1L, data), isFromCache, /* hasPendingWrites= */ false);
     }
   }
 

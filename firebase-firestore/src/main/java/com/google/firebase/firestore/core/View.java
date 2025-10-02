@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_FIRST;
 import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.Util.compareIntegers;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -30,6 +29,7 @@ import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +78,7 @@ public class View {
   /**
    * A flag whether the view is current with the backend. A view is considered current after it has
    * seen the current flag from the backend and did not lose consistency within the watch stream
-   * (e.g. because of an existence filter mismatch).
+   * (for example because of an existence filter mismatch).
    */
   private boolean current;
 
@@ -157,6 +157,7 @@ public class View {
             ? oldDocumentSet.getFirstDocument()
             : null;
 
+    Comparator<Document> queryComparator = query.comparator();
     for (Map.Entry<DocumentKey, Document> entry : docChanges) {
       DocumentKey key = entry.getKey();
       Document oldDoc = oldDocumentSet.getDocument(key);
@@ -183,9 +184,9 @@ public class View {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
 
-            if ((lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0)
+            if ((lastDocInLimit != null && queryComparator.compare(newDoc, lastDocInLimit) > 0)
                 || (firstDocInLimit != null
-                    && query.comparator().compare(newDoc, firstDocInLimit) < 0)) {
+                    && queryComparator.compare(newDoc, firstDocInLimit) < 0)) {
               // This doc moved from inside the limit to outside the limit. That means there may be
               // some doc in the local cache that should be included instead.
               needsRefill = true;
@@ -245,11 +246,11 @@ public class View {
 
   private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {
     // We suppress the initial change event for documents that were modified as part of a write
-    // acknowledgment (e.g. when the value of a server transform is applied) as Watch will send us
-    // the same document again. By suppressing the event, we only raise two user visible events (one
-    // with `hasPendingWrites` and the final state of the document) instead of three (one with
-    // `hasPendingWrites`, the modified document with `hasPendingWrites` and the final state of the
-    // document).
+    // acknowledgment (for example when the value of a server transform is applied) as Watch will
+    // send us the same document again. By suppressing the event, we only raise two user visible
+    // events (one with `hasPendingWrites` and the final state of the document) instead of three
+    // (one with `hasPendingWrites`, the modified document with `hasPendingWrites` and the final
+    // state of the document).
     return (oldDoc.hasLocalMutations()
         && newDoc.hasCommittedMutations()
         && !newDoc.hasLocalMutations());
@@ -275,6 +276,21 @@ public class View {
    * @return A new ViewChange with the given docs, changes, and sync state.
    */
   public ViewChange applyChanges(DocumentChanges docChanges, TargetChange targetChange) {
+    return applyChanges(docChanges, targetChange, false);
+  }
+
+  /**
+   * Updates the view with the given ViewDocumentChanges and updates limbo docs and sync state from
+   * the given (optional) target change.
+   *
+   * @param docChanges The set of changes to make to the view's docs.
+   * @param targetChange A target change to apply for computing limbo docs and sync state.
+   * @param targetIsPendingReset - Whether the target is pending to reset due to existence filter
+   *     mismatch. If not explicitly specified, it is treated equivalently to `false`.
+   * @return A new ViewChange with the given docs, changes, and sync state.
+   */
+  public ViewChange applyChanges(
+      DocumentChanges docChanges, TargetChange targetChange, boolean targetIsPendingReset) {
     hardAssert(!docChanges.needsRefill, "Cannot apply changes that need a refill");
 
     DocumentSet oldDocumentSet = documentSet;
@@ -282,19 +298,25 @@ public class View {
     mutatedKeys = docChanges.mutatedKeys;
 
     // Sort changes based on type and query comparator.
+
     List<DocumentViewChange> viewChanges = docChanges.changeSet.getChanges();
+    Comparator<Document> queryComparator = query.comparator();
     Collections.sort(
         viewChanges,
         (DocumentViewChange o1, DocumentViewChange o2) -> {
-          int typeComp = compareIntegers(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
+          int typeComp = Integer.compare(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
           if (typeComp != 0) {
             return typeComp;
           }
-          return query.comparator().compare(o1.getDocument(), o2.getDocument());
+          return queryComparator.compare(o1.getDocument(), o2.getDocument());
         });
     applyTargetChange(targetChange);
-    List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments();
-    boolean synced = limboDocuments.size() == 0 && current;
+    List<LimboDocumentChange> limboDocumentChanges =
+        targetIsPendingReset ? Collections.emptyList() : updateLimboDocuments();
+
+    // We are at synced state if there is no limbo docs are waiting to be resolved, view is current
+    // with the backend, and the query is not pending to reset due to existence filter mismatch.
+    boolean synced = limboDocuments.size() == 0 && current && !targetIsPendingReset;
     SyncState newSyncState = synced ? SyncState.SYNCED : SyncState.LOCAL;
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
@@ -331,7 +353,7 @@ public class View {
       this.current = false;
       return applyChanges(
           new DocumentChanges(
-              documentSet, new DocumentViewChangeSet(), mutatedKeys, /*needsRefill=*/ false));
+              documentSet, new DocumentViewChangeSet(), mutatedKeys, /* needsRefill= */ false));
     } else {
       // No effect, just return a no-op ViewChange.
       return new ViewChange(null, Collections.emptyList());

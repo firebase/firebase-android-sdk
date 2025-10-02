@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
@@ -907,8 +908,24 @@ public class MapperTest {
     }
   }
 
+  private static class GenericExcludedSetterBean implements GenericInterface<String> {
+    private String value = null;
+
+    @Nullable
+    @Override
+    public String getValue() {
+      return value;
+    }
+
+    @Exclude
+    @Override
+    public void setValue(@Nullable String value) {
+      this.value = "wrong setter";
+    }
+  }
+
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
-    return deserialize(jsonString, clazz, /*docRef=*/ null);
+    return deserialize(jsonString, clazz, /* docRef= */ null);
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
@@ -2218,18 +2235,27 @@ public class MapperTest {
         () -> serialize(bean));
   }
 
-  // This should work, but generics and subclassing are tricky to get right. For now we will just
-  // throw and we can add support for generics & subclassing if it becomes a high demand feature
   @Test
-  public void settersCanOverrideGenericSettersParsingNot() {
-    assertExceptionContains(
-        "Class com.google.firebase.firestore.util.MapperTest$NonConflictingGenericSetterSubBean "
-            + "has multiple setter overloads",
-        () -> {
-          NonConflictingGenericSetterSubBean bean =
-              deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
-          assertEquals("subsetter:value", bean.value);
-        });
+  public void settersCanOverrideGenericSettersParsing() {
+    NonConflictingGenericSetterSubBean bean =
+        deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
+    assertEquals("subsetter:value", bean.value);
+  }
+
+  @Test
+  public void excludedOverriddenGenericSetterSetsValueNotJava() {
+    GenericExcludedSetterBean bean =
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
+    assertEquals("foo", bean.value);
+  }
+
+  // Unlike Java, in Kotlin, annotations do not get propagated to bridge methods.
+  // That's why there are 2 separate tests for Java and Kotlin
+  @Test
+  public void excludedOverriddenGenericSetterSetsValueNotKotlin() {
+    GenericExcludedSetterBeanKotlin bean =
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKotlin.class);
+    assertEquals("foo", bean.getValue());
   }
 
   @Test

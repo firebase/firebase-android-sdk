@@ -18,6 +18,7 @@ import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNo
 import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.NotificationType.FEEDBACK;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -97,6 +98,9 @@ class FirebaseAppDistributionNotificationsManager
     this.uiThreadExecutor = uiThreadExecutor;
   }
 
+  // Suppress lint as `areNotificationsEnabled()` verifies whether the notification can be send,
+  // including API 33+. Developers are expected to ask for notification permissions themselves.
+  @SuppressLint("MissingPermission")
   void showAppUpdateNotification(long totalBytes, long downloadedBytes, int stringResourceId) {
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
@@ -148,7 +152,7 @@ class FirebaseAppDistributionNotificationsManager
     int commonFlags =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
     return PendingIntent.getActivity(
-        context, /* requestCode = */ 0, intent, extraFlags | commonFlags);
+        context, /* requestCode= */ 0, intent, extraFlags | commonFlags);
   }
 
   public void showFeedbackNotification(
@@ -179,7 +183,8 @@ class FirebaseAppDistributionNotificationsManager
         });
   }
 
-  // this must be run on the main (UI) thread
+  // This must be run on the main (UI) thread.
+  @SuppressLint("MissingPermission")
   private void doShowFeedbackNotification() {
     LogWrapper.i(TAG, "Showing feedback notification");
     notificationManager.notify(FEEDBACK.tag, FEEDBACK.id, feedbackNotificationToBeShown);

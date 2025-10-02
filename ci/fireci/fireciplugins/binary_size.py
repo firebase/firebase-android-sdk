@@ -38,7 +38,7 @@ _logger = logging.getLogger('fireci.binary_size')
 )
 @click.option(
   '--metrics-service-url',
-  default='https://api.firebase-sdk-health-metrics.com',
+  default='https://metric-service-tv5rmd4a6q-uc.a.run.app',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
 @click.option(
@@ -55,6 +55,13 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   affected_artifacts, all_artifacts = _parse_artifacts()
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
+  if not sdks:
+    _logger.info(
+      "No sdks found whose binary size to measure ("
+      "pull_request=%s affected_artifacts=%s all_artifacts=%s)",
+      pull_request, affected_artifacts, all_artifacts
+    )
+    return
 
   workdir = 'health-metrics/apk-size'
   process = gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)

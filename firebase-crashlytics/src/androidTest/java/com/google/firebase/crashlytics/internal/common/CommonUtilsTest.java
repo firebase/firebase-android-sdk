@@ -14,12 +14,17 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -32,57 +37,56 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Test;
 
 public class CommonUtilsTest extends CrashlyticsTestCase {
   private static final String LEGACY_ID_VALUE = "legacy_id";
   private static final String CRASHLYTICS_ID_VALUE = "crashlytics_id";
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
   private static final String ABC_EXPECTED_HASH = "a9993e364706816aba3e25717850c26c9cd0d89d";
 
+  @Test
   public void testCreateInstanceIdFromNullInput() {
     assertNull(CommonUtils.createInstanceIdFrom(((String[]) null)));
   }
 
+  @Test
   public void testCreateInstanceIdFromEmptyInput() {
     assertNull(CommonUtils.createInstanceIdFrom((new String[] {})));
   }
 
+  @Test
   public void testCreateInstanceIdFromArrayWithNull() {
     assertNull(CommonUtils.createInstanceIdFrom((new String[] {null})));
   }
 
+  @Test
   public void testCreateInstanceIdFromSingleId() {
     assertEquals(
         "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8",
         CommonUtils.createInstanceIdFrom((new String[] {"A"})));
   }
 
+  @Test
   public void testCreateInstanceIdFromMultipleIds() {
     assertEquals(
         ABC_EXPECTED_HASH, CommonUtils.createInstanceIdFrom((new String[] {"B", "C", "A"})));
   }
 
+  @Test
   public void testCreateInstanceIdFromMultipleIdsSorted() {
     assertEquals(
         ABC_EXPECTED_HASH, CommonUtils.createInstanceIdFrom((new String[] {"A", "B", "C"})));
   }
 
+  @Test
   public void testCreateInstanceIdFromMultipleIdsWithNull() {
     // We expect the null value to be skipped
     assertEquals(
         ABC_EXPECTED_HASH, CommonUtils.createInstanceIdFrom((new String[] {"B", null, "C", "A"})));
   }
 
+  @Test
   public void testCreateInstanceIdFromIdsWithDashes() {
     // We expect dashes to be stripped
     assertEquals(
@@ -90,6 +94,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         CommonUtils.createInstanceIdFrom((new String[] {"B-3-4", "C-5-6", "A-1-2"})));
   }
 
+  @Test
   public void testPadWithZerosToMaxIntWidthNegative() {
     try {
       CommonUtils.padWithZerosToMaxIntWidth(-1);
@@ -99,6 +104,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     fail();
   }
 
+  @Test
   public void testPadWithZerosToMaxIntWidth() {
     assertEquals("0000000000", CommonUtils.padWithZerosToMaxIntWidth(0));
     assertEquals("0000000001", CommonUtils.padWithZerosToMaxIntWidth(1));
@@ -106,6 +112,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     assertEquals("2147483647", CommonUtils.padWithZerosToMaxIntWidth(Integer.MAX_VALUE));
   }
 
+  @Test
   public void testSha1() {
     String source = "sha1 test";
     String result = CommonUtils.sha1(source);
@@ -120,6 +127,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     assertEquals("0470a17620f98ce61700faa3d4e21e29c49ad0e1", result);
   }
 
+  @Test
   public void testGetCpuArchitectureInt() {
     final int archInt = CommonUtils.getCpuArchitectureInt();
     assertTrue(archInt < CommonUtils.Architecture.values().length);
@@ -127,11 +135,13 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     Log.d(Logger.TAG, "testGetArchitecture: archInt=" + archInt);
   }
 
+  @Test
   public void testGetCpuArchitecture() {
     assertNotNull(CommonUtils.Architecture.getValue());
     assertFalse(CommonUtils.Architecture.UNKNOWN.equals(CommonUtils.Architecture.getValue()));
   }
 
+  @Test
   public void testGetTotalRamInBytes() {
     final long bytes = CommonUtils.calculateTotalRamInBytes(getContext());
     // can't check complete string because emulators & devices may be different.
@@ -139,18 +149,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     Log.d(Logger.TAG, "testGetTotalRam: " + bytes);
   }
 
-  public void testGetAppProcessInfo() {
-    final Context context = getContext();
-    RunningAppProcessInfo info = CommonUtils.getAppProcessInfo(context.getPackageName(), context);
-    assertNotNull(info);
-    // It is not possible to test the state of info.importance because the value is not
-    // always the same under test as it is when the sdk is running in an app. In API 21, the
-    // importance under test started returning VISIBLE instead of FOREGROUND.
-
-    info = CommonUtils.getAppProcessInfo("nonexistant.package.name", context);
-    assertNull(info);
-  }
-
+  @Test
   public void testIsRooted() {
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.
@@ -161,6 +160,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     assertTrue(true);
   }
 
+  @Test
   public void testIsDebuggerAttached() {
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.
@@ -173,6 +173,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     return (data & mask) == mask;
   }
 
+  @Test
   public void testGetDeviceState() {
 
     final int state = CommonUtils.getDeviceState();
@@ -220,18 +221,22 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testCheckPermission_hasPermission() {
     assertTrue(CommonUtils.checkPermission(mockPermissionContext(true), "random.perm"));
   }
 
+  @Test
   public void testCheckPermission_noPermission() {
     assertFalse(CommonUtils.checkPermission(mockPermissionContext(false), "random.perm"));
   }
 
+  @Test
   public void testCanTryConnection_withoutPermission() {
     assertTrue(CommonUtils.canTryConnection(mockPermissionContext(false)));
   }
 
+  @Test
   public void testResolveMappingFileId_legacyId() throws Exception {
     assertBuildId(
         LEGACY_ID_VALUE,
@@ -242,6 +247,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveBuildId_crashlyticsId() throws Exception {
     assertBuildId(
         CRASHLYTICS_ID_VALUE,
@@ -252,6 +258,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveBuildId_bothIds() throws Exception {
     assertBuildId(
         CRASHLYTICS_ID_VALUE,
@@ -263,10 +270,12 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveNativeBuildIds_missing_returnsEmptyList() {
     assertNativeBuildIds(new ArrayList<BuildIdInfo>(), new HashMap<String, List<String>>());
   }
 
+  @Test
   public void testResolveNativeBuildIds_missingResourceArray_returnsEmptyList() {
     assertNativeBuildIds(
         new ArrayList<BuildIdInfo>(),
@@ -282,6 +291,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveNativeBuildIds_returnsSingleLibrary() {
     assertNativeBuildIds(
         new ArrayList<BuildIdInfo>(Arrays.asList(new BuildIdInfo("lib.so", "x86", "aabb"))),
@@ -300,6 +310,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveNativeBuildIds_returnsMultipleLibrary() {
     assertNativeBuildIds(
         new ArrayList<BuildIdInfo>(
@@ -321,6 +332,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
         });
   }
 
+  @Test
   public void testResolveNativeBuildIds_mismatchedArray_returnsEmptyList() {
     assertNativeBuildIds(
         new ArrayList<BuildIdInfo>(),

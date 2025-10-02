@@ -32,16 +32,14 @@ internal object SessionEvents {
       .ignoreNullValues(true)
       .build()
 
-  /**
-   * Construct a Session Start event.
-   *
-   * Some mutable fields, e.g. firebaseInstallationId, get populated later.
-   */
-  fun startSession(
+  /** Construct a Session Start event. */
+  fun buildSession(
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
+    firebaseInstallationId: String = "",
+    firebaseAuthenticationToken: String = "",
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -56,14 +54,15 @@ internal object SessionEvents {
             crashlytics = toDataCollectionState(subscribers[SessionSubscriber.Name.CRASHLYTICS]),
             sessionSamplingRate = sessionsSettings.samplingRate,
           ),
+          firebaseInstallationId,
+          firebaseAuthenticationToken,
         ),
-      applicationInfo = getApplicationInfo(firebaseApp)
+      applicationInfo = getApplicationInfo(firebaseApp),
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
     val context = firebaseApp.applicationContext
     val packageName = context.packageName
-    @Suppress("DEPRECATION") // TODO(mrober): Use ApplicationInfoFlags when target sdk set to 33
     val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
     val buildVersion =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -84,7 +83,9 @@ internal object SessionEvents {
           versionName = packageInfo.versionName ?: buildVersion,
           appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
-        )
+          ProcessDetailsProvider.getMyProcessDetails(firebaseApp.applicationContext),
+          ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
+        ),
     )
   }
 

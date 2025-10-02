@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.EventContext;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.datatransport.runtime.scheduling.Scheduler;
@@ -155,12 +156,30 @@ public class TransportRuntime implements TransportInternal {
   }
 
   private EventInternal convert(SendRequest request) {
-    return EventInternal.builder()
-        .setEventMillis(eventClock.getTime())
-        .setUptimeMillis(uptimeClock.getTime())
-        .setTransportName(request.getTransportName())
-        .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
-        .setCode(request.getEvent().getCode())
-        .build();
+    EventInternal.Builder builder =
+        EventInternal.builder()
+            .setEventMillis(eventClock.getTime())
+            .setUptimeMillis(uptimeClock.getTime())
+            .setTransportName(request.getTransportName())
+            .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
+            .setCode(request.getEvent().getCode());
+    if (request.getEvent().getProductData() != null
+        && request.getEvent().getProductData().getProductId() != null) {
+      builder.setProductId(request.getEvent().getProductData().getProductId());
+    }
+    if (request.getEvent().getEventContext() != null) {
+      EventContext eventContext = request.getEvent().getEventContext();
+      if (eventContext.getPseudonymousId() != null) {
+        builder.setPseudonymousId(eventContext.getPseudonymousId());
+      }
+      if (eventContext.getExperimentIdsClear() != null) {
+        builder.setExperimentIdsClear(eventContext.getExperimentIdsClear());
+      }
+      if (eventContext.getExperimentIdsEncrypted() != null) {
+        builder.setExperimentIdsEncrypted(eventContext.getExperimentIdsEncrypted());
+      }
+    }
+
+    return builder.build();
   }
 }

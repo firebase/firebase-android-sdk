@@ -69,6 +69,8 @@ public class CommonUtils {
       "com.google.firebase.crashlytics.build_ids_arch";
   static final String BUILD_IDS_BUILD_ID_RESOURCE_NAME =
       "com.google.firebase.crashlytics.build_ids_build_id";
+  static final String VERSION_CONTROL_INFO_RESOURCE_NAME =
+      "com.google.firebase.crashlytics.version_control_info";
 
   // TODO: Maybe move this method into a more appropriate class.
   public static SharedPreferences getSharedPrefs(Context context) {
@@ -114,7 +116,9 @@ public class CommonUtils {
       matcher.put("x86", X86_32);
     }
 
-    /** @Return {@link CommonUtils.Architecture} enum based on @param String */
+    /**
+     * @Return {@link CommonUtils.Architecture} enum based on @param String
+     */
     static Architecture getValue() {
       String arch = Build.CPU_ABI;
 
@@ -132,33 +136,12 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * Returns the RunningAppProcessInfo object for the given package, or null if it cannot be found.
-   */
-  public static ActivityManager.RunningAppProcessInfo getAppProcessInfo(
-      String packageName, Context context) {
-    final ActivityManager actman =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-    final List<ActivityManager.RunningAppProcessInfo> processes = actman.getRunningAppProcesses();
-    ActivityManager.RunningAppProcessInfo procInfo = null;
-    // According to docs, the result of getRunningAppProcesses can be null instead of empty.
-    // Yay.
-    if (processes != null) {
-      for (ActivityManager.RunningAppProcessInfo info : processes) {
-        if (info.processName.equals(packageName)) {
-          procInfo = info;
-          break;
-        }
-      }
-    }
-    return procInfo;
-  }
-
   public static String streamToString(InputStream is) {
     // Previous code was running into this: http://code.google.com/p/android/issues/detail?id=14562
     // on Android 2.3.3. The below code below does not exhibit that problem.
-    final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-    return s.hasNext() ? s.next() : "";
+    try (final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A")) {
+      return s.hasNext() ? s.next() : "";
+    }
   }
 
   public static String sha1(String source) {
@@ -270,7 +253,9 @@ public class CommonUtils {
     }
   }
 
-  /** @deprecated This method will now always return false. It should not be used. */
+  /**
+   * @deprecated This method will now always return false. It should not be used.
+   */
   @Deprecated
   public static boolean isLoggingEnabled(Context context) {
     return false;
@@ -543,6 +528,15 @@ public class CommonUtils {
     return buildIdInfoList;
   }
 
+  @Nullable
+  public static String getVersionControlInfo(Context context) {
+    int id = getResourcesIdentifier(context, VERSION_CONTROL_INFO_RESOURCE_NAME, "string");
+    if (id == 0) {
+      return null;
+    }
+    return context.getResources().getString(id);
+  }
+
   public static void closeQuietly(Closeable closeable) {
     if (closeable != null) {
       try {
@@ -554,7 +548,9 @@ public class CommonUtils {
     }
   }
 
-  /** @return if the given permission is granted */
+  /**
+   * @return if the given permission is granted
+   */
   public static boolean checkPermission(Context context, String permission) {
     final int res = context.checkCallingOrSelfPermission(permission);
     return (res == PackageManager.PERMISSION_GRANTED);
@@ -578,7 +574,9 @@ public class CommonUtils {
     }
   }
 
-  /** @return true if s1.equals(s2), or if both are null. */
+  /**
+   * @return true if s1.equals(s2), or if both are null.
+   */
   public static boolean nullSafeEquals(@Nullable String s1, @Nullable String s2) {
     // :TODO: replace calls to this method with Objects.equals(...) when minSdkVersion is 19+
     if (s1 == null) {

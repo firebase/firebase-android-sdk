@@ -90,7 +90,8 @@ public final class AtMyAnnotation {
   }
 
   public MyAnnotation build() {
-    return new MyAnnotationImpl(intVal, longVal, boolVal, shortVal, floatVal, doubleVal, doubleArrayVal, strVal, enumVal);
+    return new MyAnnotationImpl(
+        intVal, longVal, boolVal, shortVal, floatVal, doubleVal, doubleArrayVal, strVal, enumVal);
   }
 
   private static final class MyAnnotationImpl implements MyAnnotation {
@@ -112,8 +113,16 @@ public final class AtMyAnnotation {
 
     private final MyAnnotation.MyEnum enumVal;
 
-    MyAnnotationImpl(int intVal, long longVal, boolean boolVal, short shortVal, float floatVal,
-        double doubleVal, double[] doubleArrayVal, String strVal, MyAnnotation.MyEnum enumVal) {
+    MyAnnotationImpl(
+        int intVal,
+        long longVal,
+        boolean boolVal,
+        short shortVal,
+        float floatVal,
+        double doubleVal,
+        double[] doubleArrayVal,
+        String strVal,
+        MyAnnotation.MyEnum enumVal) {
       this.intVal = intVal;
       this.longVal = longVal;
       this.boolVal = boolVal;
@@ -195,16 +204,18 @@ public final class AtMyAnnotation {
 
     @Override
     public int hashCode() {
-      return + (-15901618 ^ ((int)intVal))
-          + (1338661755 ^ ((int)(longVal ^ (longVal >>> 32))))
+      return +(-15901618 ^ ((int) intVal))
+          + (1338661755 ^ ((int) (longVal ^ (longVal >>> 32))))
           + (-373377111 ^ (boolVal ? 1231 : 1237))
-          + (-549529221 ^ ((int)shortVal))
+          + (-549529221 ^ ((int) shortVal))
           + (1880085339 ^ (Float.floatToIntBits(floatVal)))
-          + (696767088 ^ ((int) ((Double.doubleToLongBits(doubleVal) >>> 32) ^ Double.doubleToLongBits(doubleVal))))
+          + (696767088
+              ^ ((int)
+                  ((Double.doubleToLongBits(doubleVal) >>> 32)
+                      ^ Double.doubleToLongBits(doubleVal))))
           + (-1932334201 ^ Arrays.hashCode(doubleArrayVal))
           + (-1615429424 ^ strVal.hashCode())
-          + (-170319456 ^ enumVal.hashCode())
-          ;
+          + (-170319456 ^ enumVal.hashCode());
     }
 
     @Override

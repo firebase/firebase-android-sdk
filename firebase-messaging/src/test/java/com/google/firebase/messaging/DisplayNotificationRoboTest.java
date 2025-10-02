@@ -17,7 +17,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -476,7 +475,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that a valid notification with color is displayed. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testColor() {
     final String color = "#123456";
     Bundle data = new Bundle();
@@ -490,7 +489,7 @@ public class DisplayNotificationRoboTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testNoColor() {
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -504,7 +503,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that the user can choose the default color via AndroidManifest metadata. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+  @Config(sdk = Build.VERSION_CODES.M)
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
     metadata.putInt(
@@ -524,20 +523,6 @@ public class DisplayNotificationRoboTest {
     assertEquals(
         context.getResources().getColor(com.google.firebase.messaging.test.R.color.fcm_test_color),
         n.color);
-  }
-
-  /** Test that a color is ignored pre-Lollipop where it wasn't supported. */
-  @Test
-  @Config(sdk = Build.VERSION_CODES.KITKAT)
-  public void testColor_kitkat() {
-    final String color = "#123456";
-    Bundle data = new Bundle();
-    data.putString(KEY_COLOR, color);
-    assertTrue(
-        new DisplayNotification(context, new NotificationParams(data), executor)
-            .handleNotification());
-
-    assertNotNull(getSingleNotification());
   }
 
   /** Test a valid notification with default notification sound is displayed. */

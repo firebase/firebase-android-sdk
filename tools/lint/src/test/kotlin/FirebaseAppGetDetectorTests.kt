@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.lint.checks
 
@@ -118,7 +120,7 @@ class FirebaseAppGetDetectorTests : LintDetectorTest() {
                 val instance = FirebaseApp.getInstance().get(Foo::class.java)
 
                 @JvmStatic
-                fun getInstance(app: FirebaseApp) = app.get(Foo::class.java)
+                fun getInstance(app: FirebaseApp): Foo = app.get(Foo::class.java)
               }
             }
         """
@@ -143,7 +145,7 @@ class FirebaseAppGetDetectorTests : LintDetectorTest() {
                 val instance = FirebaseApp.getInstance().get(FooImpl::class.java)
 
                 @JvmStatic
-                fun getInstance(app: FirebaseApp) = app.get(FooImpl::class.java)
+                fun getInstance(app: FirebaseApp): Foo = app.get(FooImpl::class.java)
               }
             }
             class FooImpl : Foo()

@@ -17,8 +17,11 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
-    publishSources = true
+    libraryGroup = "appcheck"
+    releaseNotes {
+        name.set("{{app_check}} Play integrity")
+        versionName.set("appcheck-playintegrity")
+    }
 }
 
 android {
@@ -27,7 +30,7 @@ android {
     }
 
     namespace "com.google.firebase.appcheck.playintegrity"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
@@ -43,20 +46,24 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation project(':appcheck:firebase-appcheck')
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.android.play:integrity:1.0.1'
+    javadocClasspath libs.autovalue.annotations
 
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    api project(':appcheck:firebase-appcheck')
+    api libs.firebase.annotations
+    api libs.firebase.common
+    api libs.firebase.components
 
-    testImplementation project(':integ-testing')
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:3.4.6'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    implementation libs.playservices.base
+    implementation libs.playservices.tasks
+    implementation libs.integrity
+
+    testImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 }

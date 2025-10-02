@@ -18,9 +18,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 
 import androidx.annotation.NonNull;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.inject.Deferred;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,10 +36,16 @@ public class CrashlyticsNativeComponentDeferredProxyTest {
   private static final long TEST_START_TIME = 123;
 
   @Mock private CrashlyticsNativeComponent component;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test

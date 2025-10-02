@@ -16,14 +16,17 @@ apply plugin: 'com.android.application'
 // Firebase performance plugin, the relevant dependency is specified in the "buildSrc/build-src.gradle"
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'copy-google-services'
 
 firebaseTestLab {
     device 'model=Pixel2,version=28,locale=en,orientation=portrait'
 }
 
 android {
-    namespace "com.googletest.firebase.perf.testapp.prod"
-    compileSdkVersion 31
+    compileSdkVersion project.compileSdkVersion
+
+    namespace "com.googletest.firebase.perf.testapp"
+    buildFeatures.buildConfig true
 
     compileOptions {
         sourceCompatibility 1.8
@@ -45,10 +48,10 @@ android {
     defaultConfig {
         // NOTE: This can be different than the package name.
         // https://developer.android.com/studio/build/application-id.html
-        applicationId "com.googletest.firebase.perf.testapp.prod"
+        applicationId "com.googletest.firebase.perf.testapp"
 
-        minSdkVersion 16
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionCode 3
         versionName "3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -84,7 +87,7 @@ dependencies {
     if (project.hasProperty("fireperfBuildForAutopush")) {
         println("Building with HEAD version ':firebase-perf' of SDK")
         implementation project(":firebase-perf")
-        implementation project(":firebase-common")
+        implementation "com.google.firebase:firebase-common:22.0.0"
         implementation project(":firebase-config")
 
     } else {
@@ -110,14 +113,10 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.12.0'
 
     // Integration Test Deps
-    androidTestImplementation 'junit:junit:4.13.2'
+    androidTestImplementation libs.junit
     androidTestImplementation 'androidx.test:rules:1.4.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     androidTestImplementation 'com.google.truth:truth:1.1.2'
     androidTestImplementation 'com.google.truth.extensions:truth-java8-extension:1.0.1'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.perf.testapp.prod"
-apply from: '../../gradle/googleServices.gradle'

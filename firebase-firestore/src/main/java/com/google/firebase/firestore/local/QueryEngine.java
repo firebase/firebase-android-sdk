@@ -169,10 +169,10 @@ public class QueryEngine {
     if (query.hasLimit() && indexType.equals(IndexType.PARTIAL)) {
       // We cannot apply a limit for targets that are served using a partial index.
       // If a partial index will be used to serve the target, the query may return a superset of
-      // documents that match the target (e.g. if the index doesn't include all the target's
-      // filters), or may return the correct set of documents in the wrong order (e.g. if the index
-      // doesn't include a segment for one of the orderBys). Therefore a limit should not be applied
-      // in such cases.
+      // documents that match the target (for example, if the index doesn't include all the target's
+      // filters), or may return the correct set of documents in the wrong order (for example, if
+      // the index doesn't include a segment for one of the orderBys). Therefore a limit should not
+      // be applied in such cases.
       return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 

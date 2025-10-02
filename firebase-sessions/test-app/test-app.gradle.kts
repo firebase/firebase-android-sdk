@@ -1,7 +1,3 @@
-@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -18,52 +14,107 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.testing.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
+
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    minSdk = 16
-    targetSdk = 33
+    applicationIdSuffix = "" // e.g. app3
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
+    multiDexKeepProguard = file("multidex-config.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // We only want to actually crash the app on specific runs.
+    buildConfigField(
+      "boolean",
+      "SHOULD_CRASH_APP",
+      project.hasProperty("triggerCrashes").toString(),
+    )
   }
+
+  buildTypes {
+    release { signingConfig = signingConfigs["debug"] }
+    create("benchmark") {
+      initWith(buildTypes["release"])
+      signingConfig = signingConfigs["debug"]
+      matchingFallbacks += "release"
+      isDebuggable = false
+    }
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
+
+  buildFeatures {
+    buildConfig = true
+    viewBinding = true
+  }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
-  // TODO(mrober): Remove when we have configurable deps on Crashlytics and Fireperf.
-  implementation(project(":firebase-crashlytics"))
-  implementation(project(":firebase-perf"))
-  implementation(project(":firebase-sessions"))
+  if (project.hasProperty("useReleasedVersions")) {
+    implementation(platform("com.google.firebase:firebase-bom:latest.release"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-sessions")
+  } else {
+    implementation(project(":firebase-crashlytics")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
+    implementation(project(":firebase-perf")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
+    implementation(project(":firebase-sessions"))
+  }
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.core:core-ktx:1.9.0")
-  implementation("com.google.android.material:material:1.8.0")
+  implementation("androidx.core:core-ktx:1.7.0")
+  implementation("androidx.multidex:multidex:2.0.1")
+  implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
+  implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
+  implementation("com.google.android.material:material:1.9.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
+  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
+  implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.2")
+  androidTestImplementation("com.google.firebase:firebase-common:22.0.0")
+  androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
 
-extra["packageName"] = "com.google.firebase.testing.sessions"
-
-apply(from = "../../gradle/googleServices.gradle")
-
 apply<FirebaseTestLabPlugin>()
+
+configure<FirebaseTestLabExtension> {
+  device("model=panther,version=33") // Pixel7
+}

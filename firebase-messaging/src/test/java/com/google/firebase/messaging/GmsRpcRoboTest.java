@@ -26,10 +26,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.cloudmessaging.CloudMessage;
 import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -40,7 +42,6 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import com.google.firebase.messaging.shadows.ShadowGoogleSignatureVerifier;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.LibraryVersion;
@@ -60,7 +61,7 @@ import org.robolectric.annotation.Config;
 
 /** Robolectric test for the GmsRpcRoboTest. */
 @RunWith(RobolectricTestRunner.class)
-@Config(shadows = {ShadowGoogleSignatureVerifier.class, ShadowPreconditions.class})
+@Config(shadows = {ShadowPreconditions.class})
 public class GmsRpcRoboTest {
 
   private static final int TIMEOUT_S = 5;
@@ -241,6 +242,27 @@ public class GmsRpcRoboTest {
   @Test
   public void testUnsubscribeFromToken_propagatesIoException() {
     testPropagatesIoException(() -> gmsRpc.unsubscribeFromTopic("cachedToken", "topic"));
+  }
+
+  @Test
+  public void setRetainProxiedNotifications() {
+    when(internalRpc.setRetainProxiedNotifications(anyBoolean())).thenReturn(Tasks.forResult(null));
+
+    Task<Void> resultTask = gmsRpc.setRetainProxiedNotifications(true);
+
+    assertThat(resultTask.isSuccessful()).isTrue();
+    verify(internalRpc).setRetainProxiedNotifications(true);
+  }
+
+  @Test
+  public void getProxyNotificationData() {
+    CloudMessage proxyData = new CloudMessage(new Intent());
+    when(internalRpc.getProxiedNotificationData()).thenReturn(Tasks.forResult(proxyData));
+
+    Task<CloudMessage> resultTask = gmsRpc.getProxyNotificationData();
+
+    assertThat(resultTask.isSuccessful()).isTrue();
+    assertThat(resultTask.getResult()).isEqualTo(proxyData);
   }
 
   @Test

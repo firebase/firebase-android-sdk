@@ -313,10 +313,10 @@ public abstract class FirebaseMlLogEvent {
     @AutoValue.Builder
     public abstract static class Builder {
       @NonNull
-      public abstract Builder setErrorCode(@Nullable ErrorCode value);
+      public abstract Builder setErrorCode(@NonNull ErrorCode value);
 
       @NonNull
-      public abstract Builder setDownloadStatus(@Nullable DownloadStatus value);
+      public abstract Builder setDownloadStatus(@NonNull DownloadStatus value);
 
       @NonNull
       public abstract Builder setDownloadFailureStatus(int value);

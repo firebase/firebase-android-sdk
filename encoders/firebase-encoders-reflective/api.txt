@@ -1,10 +1,10 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.encoders.reflective {
 
-  public class ReflectiveObjectEncoder implements com.google.firebase.encoders.ObjectEncoder<java.lang.Object> {
+  public class ReflectiveObjectEncoder implements com.google.firebase.encoders.ObjectEncoder<java.lang.Object!> {
     ctor public ReflectiveObjectEncoder(boolean);
-    method public void encode(@NonNull Object, @NonNull com.google.firebase.encoders.ObjectEncoderContext) throws java.io.IOException;
-    field @NonNull public static final com.google.firebase.encoders.reflective.ReflectiveObjectEncoder DEFAULT;
+    method public void encode(Object, com.google.firebase.encoders.ObjectEncoderContext) throws java.io.IOException;
+    field public static final com.google.firebase.encoders.reflective.ReflectiveObjectEncoder DEFAULT;
   }
 
 }

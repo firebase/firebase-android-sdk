@@ -16,26 +16,35 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
+  id("LicenseResolverPlugin")
   id("firebase-library")
+  id("firebase-vendor")
   id("kotlin-android")
   id("kotlin-kapt")
+  id("kotlinx-serialization")
 }
 
 firebaseLibrary {
+  libraryGroup = "crashlytics"
+
   testLab.enabled = true
-  publishSources = true
   publishJavadoc = false
+
+  releaseNotes { enabled = false }
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
-    targetSdk = targetSdkVersion
+    minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -43,34 +52,72 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint {
+    baseline = file("lint-baseline.xml")
+    targetSdk = targetSdkVersion
+  }
 }
 
-dependencies {
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
-  implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
-  implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-encoders-json:18.0.1")
-  implementation("com.google.firebase:firebase-encoders:17.0.0")
-  implementation("com.google.firebase:firebase-installations-interop:17.1.0")
-  implementation(libs.androidx.annotation)
+kotlin {
+  explicitApi()
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+}
 
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8")
-  runtimeOnly("com.google.firebase:firebase-installations:17.1.3")
+thirdPartyLicenses { add("dagger2", "${projectDir}/third_party/dagger2/LICENSE") }
+
+dependencies {
+  api(libs.firebase.common)
+
+  api(libs.firebase.components)
+  api("com.google.firebase:firebase-installations-interop:17.2.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+
+  api(libs.firebase.annotations)
+  api("com.google.firebase:firebase-encoders:17.0.0")
+  api("com.google.firebase:firebase-encoders-json:18.0.1")
+
+  implementation("com.google.android.datatransport:transport-api:3.2.0")
+  implementation(libs.javax.inject)
+  implementation(libs.androidx.annotation)
+  implementation(libs.androidx.datastore)
+  implementation(libs.kotlinx.serialization.json)
+
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
+
+  compileOnly(libs.errorprone.annotations)
+
+  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
 
   kapt(project(":encoders:firebase-encoders-processor"))
+  kapt(libs.dagger.compiler)
 
+  testImplementation(project(":integ-testing")) {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
-  testImplementation(project(":integ-testing"))
 
   androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }

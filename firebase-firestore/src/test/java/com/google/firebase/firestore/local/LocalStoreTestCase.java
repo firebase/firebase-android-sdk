@@ -137,8 +137,9 @@ public abstract class LocalStoreTestCase {
     localStorePersistence.shutdown();
   }
 
-  protected void writeMutation(Mutation mutation) {
+  protected Mutation writeMutation(Mutation mutation) {
     writeMutations(asList(mutation));
+    return mutation;
   }
 
   private void writeMutations(List<Mutation> mutations) {
@@ -188,11 +189,11 @@ public abstract class LocalStoreTestCase {
     lastChanges = localStore.acknowledgeBatch(result);
   }
 
-  private void acknowledgeMutation(long documentVersion) {
+  protected void acknowledgeMutation(long documentVersion) {
     acknowledgeMutationWithTransformResults(documentVersion);
   }
 
-  private void rejectMutation() {
+  protected void rejectMutation() {
     MutationBatch batch = batches.get(0);
     batches.remove(0);
     lastChanges = localStore.rejectBatch(batch.getBatchId());
@@ -1197,7 +1198,7 @@ public abstract class LocalStoreTestCase {
     Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     cachedTargetData = localStore.getTargetData(target);
     Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
@@ -1253,7 +1254,7 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     releaseTarget(targetId);
 
     // Start another query and add more matching documents to the collection.
@@ -1290,7 +1291,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     releaseTarget(targetId);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.

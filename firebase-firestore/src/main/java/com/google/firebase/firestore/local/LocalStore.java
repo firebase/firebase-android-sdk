@@ -111,6 +111,9 @@ public final class LocalStore implements BundleCallback {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** General purpose global state. */
+  private GlobalsCache globalsCache;
+
   /** Manages the list of active field and collection indices. */
   private IndexManager indexManager;
 
@@ -153,6 +156,7 @@ public final class LocalStore implements BundleCallback {
     this.persistence = persistence;
     this.queryEngine = queryEngine;
 
+    globalsCache = persistence.getGlobalsCache();
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
@@ -392,10 +396,18 @@ public final class LocalStore implements BundleCallback {
     return targetCache.getLastRemoteSnapshotVersion();
   }
 
+  public ByteString getSessionToken() {
+    return globalsCache.getSessionsToken();
+  }
+
+  public void setSessionsToken(ByteString sessionToken) {
+    globalsCache.setSessionToken(sessionToken);
+  }
+
   /**
    * Updates the "ground-state" (remote) documents. We assume that the remote event reflects any
-   * write batches that have been acknowledged or rejected (i.e. we do not re-apply local mutations
-   * to updates from this event).
+   * write batches that have been acknowledged or rejected (specifically, we do not re-apply local
+   * mutations to updates from this event).
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */

@@ -1,58 +1,66 @@
-// Signature format: 2.0
-package com.google.firebase {
-
-  public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
-    ctor public Timestamp(long, int);
-    ctor protected Timestamp(@NonNull android.os.Parcel);
-    ctor public Timestamp(@NonNull java.util.Date);
-    method public int compareTo(@NonNull com.google.firebase.Timestamp);
-    method public int describeContents();
-    method public int getNanoseconds();
-    method public long getSeconds();
-    method @NonNull public static com.google.firebase.Timestamp now();
-    method @NonNull public java.util.Date toDate();
-    method public void writeToParcel(@NonNull android.os.Parcel, int);
-    field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
-  }
-
-}
-
+// Signature format: 3.0
 package com.google.firebase.firestore {
 
+  public abstract class AggregateField {
+    method public static com.google.firebase.firestore.AggregateField.AverageAggregateField average(com.google.firebase.firestore.FieldPath);
+    method public static com.google.firebase.firestore.AggregateField.AverageAggregateField average(String);
+    method public static com.google.firebase.firestore.AggregateField.CountAggregateField count();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public String getAlias();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public String getFieldPath();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public String getOperator();
+    method public static com.google.firebase.firestore.AggregateField.SumAggregateField sum(com.google.firebase.firestore.FieldPath);
+    method public static com.google.firebase.firestore.AggregateField.SumAggregateField sum(String);
+  }
+
+  public static class AggregateField.AverageAggregateField extends com.google.firebase.firestore.AggregateField {
+  }
+
+  public static class AggregateField.CountAggregateField extends com.google.firebase.firestore.AggregateField {
+  }
+
+  public static class AggregateField.SumAggregateField extends com.google.firebase.firestore.AggregateField {
+  }
+
   public class AggregateQuery {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.AggregateQuerySnapshot> get(@NonNull com.google.firebase.firestore.AggregateSource);
-    method @NonNull public com.google.firebase.firestore.Query getQuery();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.AggregateQuerySnapshot!> get(com.google.firebase.firestore.AggregateSource);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public java.util.List<com.google.firebase.firestore.AggregateField!> getAggregateFields();
+    method public com.google.firebase.firestore.Query getQuery();
   }
 
   public class AggregateQuerySnapshot {
+    method public Object? get(com.google.firebase.firestore.AggregateField);
+    method public Double? get(com.google.firebase.firestore.AggregateField.AverageAggregateField);
+    method public long get(com.google.firebase.firestore.AggregateField.CountAggregateField);
     method public long getCount();
-    method @NonNull public com.google.firebase.firestore.AggregateQuery getQuery();
+    method public Double? getDouble(com.google.firebase.firestore.AggregateField);
+    method public Long? getLong(com.google.firebase.firestore.AggregateField);
+    method public com.google.firebase.firestore.AggregateQuery getQuery();
   }
 
   public enum AggregateSource {
     enum_constant public static final com.google.firebase.firestore.AggregateSource SERVER;
   }
 
-  public class Blob implements java.lang.Comparable<com.google.firebase.firestore.Blob> {
-    method public int compareTo(@NonNull com.google.firebase.firestore.Blob);
-    method @NonNull public static com.google.firebase.firestore.Blob fromBytes(@NonNull byte[]);
-    method @NonNull public byte[] toBytes();
+  public class Blob implements java.lang.Comparable<com.google.firebase.firestore.Blob!> {
+    method public int compareTo(com.google.firebase.firestore.Blob);
+    method public static com.google.firebase.firestore.Blob fromBytes(byte[]);
+    method public byte[] toBytes();
   }
 
   public class CollectionReference extends com.google.firebase.firestore.Query {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentReference> add(@NonNull Object);
-    method @NonNull public com.google.firebase.firestore.DocumentReference document();
-    method @NonNull public com.google.firebase.firestore.DocumentReference document(@NonNull String);
-    method @NonNull public String getId();
-    method @Nullable public com.google.firebase.firestore.DocumentReference getParent();
-    method @NonNull public String getPath();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentReference!> add(Object);
+    method public com.google.firebase.firestore.DocumentReference document();
+    method public com.google.firebase.firestore.DocumentReference document(String);
+    method public String getId();
+    method public com.google.firebase.firestore.DocumentReference? getParent();
+    method public String getPath();
   }
 
   public class DocumentChange {
-    method @NonNull public com.google.firebase.firestore.QueryDocumentSnapshot getDocument();
+    method public com.google.firebase.firestore.QueryDocumentSnapshot getDocument();
     method public int getNewIndex();
     method public int getOldIndex();
-    method @NonNull public com.google.firebase.firestore.DocumentChange.Type getType();
+    method public com.google.firebase.firestore.DocumentChange.Type getType();
   }
 
   public enum DocumentChange.Type {
@@ -65,57 +73,59 @@ package com.google.firebase.firestore {
   }
 
   public class DocumentReference {
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
-    method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot> get();
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot> get(@NonNull com.google.firebase.firestore.Source);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestore getFirestore();
-    method @NonNull public String getId();
-    method @NonNull public com.google.firebase.firestore.CollectionReference getParent();
-    method @NonNull public String getPath();
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> set(@NonNull Object);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> set(@NonNull Object, @NonNull com.google.firebase.firestore.SetOptions);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> update(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> update(@NonNull String, @Nullable Object, java.lang.Object...);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> update(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object, java.lang.Object...);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(android.app.Activity, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(android.app.Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.SnapshotListenOptions, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot!>);
+    method public com.google.firebase.firestore.CollectionReference collection(String);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> delete();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot!> get();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot!> get(com.google.firebase.firestore.Source);
+    method public com.google.firebase.firestore.FirebaseFirestore getFirestore();
+    method public String getId();
+    method public com.google.firebase.firestore.CollectionReference getParent();
+    method public String getPath();
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> set(Object);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> set(Object, com.google.firebase.firestore.SetOptions);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> update(com.google.firebase.firestore.FieldPath, Object?, java.lang.Object!...!);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> update(String, Object?, java.lang.Object!...!);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> update(java.util.Map<java.lang.String!,java.lang.Object!>);
   }
 
   public class DocumentSnapshot {
-    method public boolean contains(@NonNull String);
-    method public boolean contains(@NonNull com.google.firebase.firestore.FieldPath);
+    method public boolean contains(com.google.firebase.firestore.FieldPath);
+    method public boolean contains(String);
     method public boolean exists();
-    method @Nullable public Object get(@NonNull String);
-    method @Nullable public Object get(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public Object get(@NonNull com.google.firebase.firestore.FieldPath);
-    method @Nullable public Object get(@NonNull com.google.firebase.firestore.FieldPath, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public <T> T get(@NonNull String, @NonNull Class<T>);
-    method @Nullable public <T> T get(@NonNull String, @NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public <T> T get(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Class<T>);
-    method @Nullable public <T> T get(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public com.google.firebase.firestore.Blob getBlob(@NonNull String);
-    method @Nullable public Boolean getBoolean(@NonNull String);
-    method @Nullable public java.util.Map<java.lang.String,java.lang.Object> getData();
-    method @Nullable public java.util.Map<java.lang.String,java.lang.Object> getData(@NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public java.util.Date getDate(@NonNull String);
-    method @Nullable public java.util.Date getDate(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public com.google.firebase.firestore.DocumentReference getDocumentReference(@NonNull String);
-    method @Nullable public Double getDouble(@NonNull String);
-    method @Nullable public com.google.firebase.firestore.GeoPoint getGeoPoint(@NonNull String);
-    method @NonNull public String getId();
-    method @Nullable public Long getLong(@NonNull String);
-    method @NonNull public com.google.firebase.firestore.SnapshotMetadata getMetadata();
-    method @NonNull public com.google.firebase.firestore.DocumentReference getReference();
-    method @Nullable public String getString(@NonNull String);
-    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String);
-    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
-    method @Nullable public <T> T toObject(@NonNull Class<T>);
-    method @Nullable public <T> T toObject(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public Object? get(com.google.firebase.firestore.FieldPath);
+    method public Object? get(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public <T> T? get(com.google.firebase.firestore.FieldPath, Class<T!>);
+    method public <T> T? get(com.google.firebase.firestore.FieldPath, Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public Object? get(String);
+    method public Object? get(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public <T> T? get(String, Class<T!>);
+    method public <T> T? get(String, Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public com.google.firebase.firestore.Blob? getBlob(String);
+    method public Boolean? getBoolean(String);
+    method public java.util.Map<java.lang.String!,java.lang.Object!>? getData();
+    method public java.util.Map<java.lang.String!,java.lang.Object!>? getData(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public java.util.Date? getDate(String);
+    method public java.util.Date? getDate(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public com.google.firebase.firestore.DocumentReference? getDocumentReference(String);
+    method public Double? getDouble(String);
+    method public com.google.firebase.firestore.GeoPoint? getGeoPoint(String);
+    method public String getId();
+    method public Long? getLong(String);
+    method public com.google.firebase.firestore.SnapshotMetadata getMetadata();
+    method public com.google.firebase.firestore.DocumentReference getReference();
+    method public String? getString(String);
+    method public com.google.firebase.Timestamp? getTimestamp(String);
+    method public com.google.firebase.Timestamp? getTimestamp(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public com.google.firebase.firestore.VectorValue? getVectorValue(String);
+    method public <T> T? toObject(Class<T!>);
+    method public <T> T? toObject(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
 
   public enum DocumentSnapshot.ServerTimestampBehavior {
@@ -125,93 +135,94 @@ package com.google.firebase.firestore {
   }
 
   public interface EventListener<T> {
-    method public void onEvent(@Nullable T, @Nullable com.google.firebase.firestore.FirebaseFirestoreException);
+    method public void onEvent(T?, com.google.firebase.firestore.FirebaseFirestoreException?);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface Exclude {
   }
 
   public final class FieldPath {
-    method @NonNull public static com.google.firebase.firestore.FieldPath documentId();
-    method @NonNull public static com.google.firebase.firestore.FieldPath of(java.lang.String...);
+    method public static com.google.firebase.firestore.FieldPath documentId();
+    method public static com.google.firebase.firestore.FieldPath of(java.lang.String!...!);
   }
 
   public abstract class FieldValue {
-    method @NonNull public static com.google.firebase.firestore.FieldValue arrayRemove(java.lang.Object...);
-    method @NonNull public static com.google.firebase.firestore.FieldValue arrayUnion(java.lang.Object...);
-    method @NonNull public static com.google.firebase.firestore.FieldValue delete();
-    method @NonNull public static com.google.firebase.firestore.FieldValue increment(long);
-    method @NonNull public static com.google.firebase.firestore.FieldValue increment(double);
-    method @NonNull public static com.google.firebase.firestore.FieldValue serverTimestamp();
+    method public static com.google.firebase.firestore.FieldValue arrayRemove(java.lang.Object!...!);
+    method public static com.google.firebase.firestore.FieldValue arrayUnion(java.lang.Object!...!);
+    method public static com.google.firebase.firestore.FieldValue delete();
+    method public static com.google.firebase.firestore.FieldValue increment(double);
+    method public static com.google.firebase.firestore.FieldValue increment(long);
+    method public static com.google.firebase.firestore.FieldValue serverTimestamp();
+    method public static com.google.firebase.firestore.VectorValue vector(double[]);
   }
 
   public class Filter {
     ctor public Filter();
-    method @NonNull public static com.google.firebase.firestore.Filter and(com.google.firebase.firestore.Filter...);
-    method @NonNull public static com.google.firebase.firestore.Filter arrayContains(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter arrayContains(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter arrayContainsAny(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter arrayContainsAny(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter equalTo(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter equalTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter greaterThan(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter greaterThan(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter inArray(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter inArray(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter lessThan(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter lessThan(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter lessThanOrEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter lessThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter notEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter notEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public static com.google.firebase.firestore.Filter notInArray(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter notInArray(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
-    method @NonNull public static com.google.firebase.firestore.Filter or(com.google.firebase.firestore.Filter...);
+    method public static com.google.firebase.firestore.Filter and(com.google.firebase.firestore.Filter!...!);
+    method public static com.google.firebase.firestore.Filter arrayContains(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter arrayContains(String, Object?);
+    method public static com.google.firebase.firestore.Filter arrayContainsAny(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter arrayContainsAny(String, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter equalTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter equalTo(String, Object?);
+    method public static com.google.firebase.firestore.Filter greaterThan(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter greaterThan(String, Object?);
+    method public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(String, Object?);
+    method public static com.google.firebase.firestore.Filter inArray(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter inArray(String, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter lessThan(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter lessThan(String, Object?);
+    method public static com.google.firebase.firestore.Filter lessThanOrEqualTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter lessThanOrEqualTo(String, Object?);
+    method public static com.google.firebase.firestore.Filter notEqualTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public static com.google.firebase.firestore.Filter notEqualTo(String, Object?);
+    method public static com.google.firebase.firestore.Filter notInArray(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter notInArray(String, java.util.List<? extends java.lang.Object!>);
+    method public static com.google.firebase.firestore.Filter or(com.google.firebase.firestore.Filter!...!);
   }
 
   public class FirebaseFirestore {
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull android.app.Activity, @NonNull Runnable);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull java.util.concurrent.Executor, @NonNull Runnable);
-    method @NonNull public com.google.firebase.firestore.WriteBatch batch();
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> clearPersistence();
-    method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
-    method @NonNull public com.google.firebase.firestore.Query collectionGroup(@NonNull String);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> disableNetwork();
-    method @NonNull public com.google.firebase.firestore.DocumentReference document(@NonNull String);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> enableNetwork();
-    method @NonNull public com.google.firebase.FirebaseApp getApp();
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings getFirestoreSettings();
-    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance();
-    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp);
-    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull String);
-    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Query> getNamedQuery(@NonNull String);
-    method @Nullable public com.google.firebase.firestore.PersistentCacheIndexManager getPersistentCacheIndexManager();
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.io.InputStream);
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull byte[]);
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.nio.ByteBuffer);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> runBatch(@NonNull com.google.firebase.firestore.WriteBatch.Function);
-    method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
-    method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.TransactionOptions, @NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
-    method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
-    method @NonNull @com.google.firebase.annotations.PreviewApi public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(android.app.Activity, Runnable);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(Runnable);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(java.util.concurrent.Executor, Runnable);
+    method public com.google.firebase.firestore.WriteBatch batch();
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> clearPersistence();
+    method public com.google.firebase.firestore.CollectionReference collection(String);
+    method public com.google.firebase.firestore.Query collectionGroup(String);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> disableNetwork();
+    method public com.google.firebase.firestore.DocumentReference document(String);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> enableNetwork();
+    method public com.google.firebase.FirebaseApp getApp();
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings getFirestoreSettings();
+    method public static com.google.firebase.firestore.FirebaseFirestore getInstance();
+    method public static com.google.firebase.firestore.FirebaseFirestore getInstance(com.google.firebase.FirebaseApp);
+    method public static com.google.firebase.firestore.FirebaseFirestore getInstance(com.google.firebase.FirebaseApp, String);
+    method public static com.google.firebase.firestore.FirebaseFirestore getInstance(String);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Query!> getNamedQuery(String);
+    method public com.google.firebase.firestore.PersistentCacheIndexManager? getPersistentCacheIndexManager();
+    method public com.google.firebase.firestore.LoadBundleTask loadBundle(byte[]);
+    method public com.google.firebase.firestore.LoadBundleTask loadBundle(java.io.InputStream);
+    method public com.google.firebase.firestore.LoadBundleTask loadBundle(java.nio.ByteBuffer);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> runBatch(com.google.firebase.firestore.WriteBatch.Function);
+    method public <TResult> com.google.android.gms.tasks.Task<TResult!> runTransaction(com.google.firebase.firestore.Transaction.Function<TResult!>);
+    method public <TResult> com.google.android.gms.tasks.Task<TResult!> runTransaction(com.google.firebase.firestore.TransactionOptions, com.google.firebase.firestore.Transaction.Function<TResult!>);
+    method public void setFirestoreSettings(com.google.firebase.firestore.FirebaseFirestoreSettings);
+    method @Deprecated @com.google.firebase.annotations.PreviewApi public com.google.android.gms.tasks.Task<java.lang.Void!> setIndexConfiguration(String);
     method public static void setLoggingEnabled(boolean);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
-    method public void useEmulator(@NonNull String, int);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> waitForPendingWrites();
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> terminate();
+    method public void useEmulator(String, int);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> waitForPendingWrites();
   }
 
   public class FirebaseFirestoreException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code);
-    ctor public FirebaseFirestoreException(@NonNull String, @NonNull com.google.firebase.firestore.FirebaseFirestoreException.Code, @Nullable Throwable);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreException.Code getCode();
+    ctor public FirebaseFirestoreException(String, com.google.firebase.firestore.FirebaseFirestoreException.Code);
+    ctor public FirebaseFirestoreException(String, com.google.firebase.firestore.FirebaseFirestoreException.Code, Throwable?);
+    method public com.google.firebase.firestore.FirebaseFirestoreException.Code getCode();
   }
 
   public enum FirebaseFirestoreException.Code {
-    method @NonNull public static com.google.firebase.firestore.FirebaseFirestoreException.Code fromValue(int);
+    method public static com.google.firebase.firestore.FirebaseFirestoreException.Code fromValue(int);
     method public int value();
     enum_constant public static final com.google.firebase.firestore.FirebaseFirestoreException.Code ABORTED;
     enum_constant public static final com.google.firebase.firestore.FirebaseFirestoreException.Code ALREADY_EXISTS;
@@ -233,9 +244,9 @@ package com.google.firebase.firestore {
   }
 
   public final class FirebaseFirestoreSettings {
-    method @Nullable public com.google.firebase.firestore.LocalCacheSettings getCacheSettings();
+    method public com.google.firebase.firestore.LocalCacheSettings? getCacheSettings();
     method @Deprecated public long getCacheSizeBytes();
-    method @NonNull public String getHost();
+    method public String getHost();
     method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
     field public static final long CACHE_SIZE_UNLIMITED = -1L; // 0xffffffffffffffffL
@@ -243,22 +254,48 @@ package com.google.firebase.firestore {
 
   public static final class FirebaseFirestoreSettings.Builder {
     ctor public FirebaseFirestoreSettings.Builder();
-    ctor public FirebaseFirestoreSettings.Builder(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings build();
+    ctor public FirebaseFirestoreSettings.Builder(com.google.firebase.firestore.FirebaseFirestoreSettings);
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings build();
     method @Deprecated public long getCacheSizeBytes();
-    method @NonNull public String getHost();
+    method public String getHost();
     method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
-    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(@NonNull String);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setLocalCacheSettings(@NonNull com.google.firebase.firestore.LocalCacheSettings);
-    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
+    method @Deprecated public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(String);
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings);
+    method @Deprecated public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
   }
 
-  public class GeoPoint implements java.lang.Comparable<com.google.firebase.firestore.GeoPoint> {
+  public final class FirestoreKt {
+    method public static inline <reified T> kotlinx.coroutines.flow.Flow<T?> dataObjects(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
+    method public static inline <reified T> kotlinx.coroutines.flow.Flow<java.util.List<? extends T>> dataObjects(com.google.firebase.firestore.Query, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
+    method public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app);
+    method public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, String database);
+    method public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.Firebase, String database);
+    method public static com.google.firebase.firestore.FirebaseFirestoreSettings firestoreSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.FirebaseFirestoreSettings.Builder,kotlin.Unit> init);
+    method public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath fieldPath);
+    method public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath fieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, String field);
+    method public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, String field, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method public static com.google.firebase.firestore.FirebaseFirestore getFirestore(com.google.firebase.Firebase);
+    method public static com.google.firebase.firestore.MemoryCacheSettings memoryCacheSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryCacheSettings.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.firestore.MemoryEagerGcSettings memoryEagerGcSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryEagerGcSettings.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.firestore.MemoryLruGcSettings memoryLruGcSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryLruGcSettings.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.firestore.PersistentCacheSettings persistentCacheSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.PersistentCacheSettings.Builder,kotlin.Unit> init);
+    method public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.DocumentSnapshot> snapshots(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
+    method public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.QuerySnapshot> snapshots(com.google.firebase.firestore.Query, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
+    method public static inline <reified T> T? toObject(com.google.firebase.firestore.DocumentSnapshot);
+    method public static inline <reified T> T? toObject(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method public static inline <reified T> T toObject(com.google.firebase.firestore.QueryDocumentSnapshot);
+    method public static inline <reified T> T toObject(com.google.firebase.firestore.QueryDocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method public static inline <reified T> java.util.List<T> toObjects(com.google.firebase.firestore.QuerySnapshot);
+    method public static inline <reified T> java.util.List<T> toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+  }
+
+  public class GeoPoint implements java.lang.Comparable<com.google.firebase.firestore.GeoPoint!> {
     ctor public GeoPoint(double, double);
-    method public int compareTo(@NonNull com.google.firebase.firestore.GeoPoint);
+    method public int compareTo(com.google.firebase.firestore.GeoPoint);
     method public double getLatitude();
     method public double getLongitude();
   }
@@ -266,45 +303,50 @@ package com.google.firebase.firestore {
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
+  public enum ListenSource {
+    enum_constant public static final com.google.firebase.firestore.ListenSource CACHE;
+    enum_constant public static final com.google.firebase.firestore.ListenSource DEFAULT;
+  }
+
   public interface ListenerRegistration {
     method public void remove();
   }
 
-  public class LoadBundleTask extends com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull com.google.android.gms.tasks.OnCanceledListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnCanceledListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnCanceledListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull com.google.android.gms.tasks.OnFailureListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnFailureListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnFailureListener);
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWith(@NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWith(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWithTask(@NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,com.google.android.gms.tasks.Task<TContinuationResult>>);
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWithTask(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,com.google.android.gms.tasks.Task<TContinuationResult>>);
-    method @Nullable public Exception getException();
-    method @NonNull public com.google.firebase.firestore.LoadBundleTaskProgress getResult();
-    method @NonNull public <X extends java.lang.Throwable> com.google.firebase.firestore.LoadBundleTaskProgress getResult(@NonNull Class<X>) throws X;
+  public class LoadBundleTask extends com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> {
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCanceledListener(android.app.Activity, com.google.android.gms.tasks.OnCanceledListener);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCanceledListener(com.google.android.gms.tasks.OnCanceledListener);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCanceledListener(java.util.concurrent.Executor, com.google.android.gms.tasks.OnCanceledListener);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCompleteListener(android.app.Activity, com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCompleteListener(com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnCompleteListener(java.util.concurrent.Executor, com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnFailureListener(android.app.Activity, com.google.android.gms.tasks.OnFailureListener);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnFailureListener(com.google.android.gms.tasks.OnFailureListener);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnFailureListener(java.util.concurrent.Executor, com.google.android.gms.tasks.OnFailureListener);
+    method public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(android.app.Activity, com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(java.util.concurrent.Executor, com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnSuccessListener(android.app.Activity, com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnSuccessListener(com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress!> addOnSuccessListener(java.util.concurrent.Executor, com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress!>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> continueWith(com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress!,TContinuationResult!>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> continueWith(java.util.concurrent.Executor, com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress!,TContinuationResult!>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> continueWithTask(com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress!,com.google.android.gms.tasks.Task<TContinuationResult!>!>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> continueWithTask(java.util.concurrent.Executor, com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress!,com.google.android.gms.tasks.Task<TContinuationResult!>!>);
+    method public Exception? getException();
+    method public com.google.firebase.firestore.LoadBundleTaskProgress getResult();
+    method public <X extends java.lang.Throwable> com.google.firebase.firestore.LoadBundleTaskProgress getResult(Class<X!>) throws X;
     method public boolean isCanceled();
     method public boolean isComplete();
     method public boolean isSuccessful();
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
-    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> onSuccessTask(com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress!,TContinuationResult!>);
+    method public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult!> onSuccessTask(java.util.concurrent.Executor, com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress!,TContinuationResult!>);
   }
 
   public final class LoadBundleTaskProgress {
     method public long getBytesLoaded();
     method public int getDocumentsLoaded();
-    method @Nullable public Exception getException();
-    method @NonNull public com.google.firebase.firestore.LoadBundleTaskProgress.TaskState getTaskState();
+    method public Exception? getException();
+    method public com.google.firebase.firestore.LoadBundleTaskProgress.TaskState getTaskState();
     method public long getTotalBytes();
     method public int getTotalDocuments();
   }
@@ -319,21 +361,21 @@ package com.google.firebase.firestore {
   }
 
   public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
-    method @NonNull public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
-    method @NonNull public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
+    method public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
+    method public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
   }
 
   public static class MemoryCacheSettings.Builder {
-    method @NonNull public com.google.firebase.firestore.MemoryCacheSettings build();
-    method @NonNull public com.google.firebase.firestore.MemoryCacheSettings.Builder setGcSettings(@NonNull com.google.firebase.firestore.MemoryGarbageCollectorSettings);
+    method public com.google.firebase.firestore.MemoryCacheSettings build();
+    method public com.google.firebase.firestore.MemoryCacheSettings.Builder setGcSettings(com.google.firebase.firestore.MemoryGarbageCollectorSettings);
   }
 
   public final class MemoryEagerGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
-    method @NonNull public static com.google.firebase.firestore.MemoryEagerGcSettings.Builder newBuilder();
+    method public static com.google.firebase.firestore.MemoryEagerGcSettings.Builder newBuilder();
   }
 
   public static class MemoryEagerGcSettings.Builder {
-    method @NonNull public com.google.firebase.firestore.MemoryEagerGcSettings build();
+    method public com.google.firebase.firestore.MemoryEagerGcSettings build();
   }
 
   public interface MemoryGarbageCollectorSettings {
@@ -341,12 +383,12 @@ package com.google.firebase.firestore {
 
   public final class MemoryLruGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
     method public long getSizeBytes();
-    method @NonNull public static com.google.firebase.firestore.MemoryLruGcSettings.Builder newBuilder();
+    method public static com.google.firebase.firestore.MemoryLruGcSettings.Builder newBuilder();
   }
 
   public static class MemoryLruGcSettings.Builder {
-    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings build();
-    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings.Builder setSizeBytes(long);
+    method public com.google.firebase.firestore.MemoryLruGcSettings build();
+    method public com.google.firebase.firestore.MemoryLruGcSettings.Builder setSizeBytes(long);
   }
 
   public enum MetadataChanges {
@@ -355,7 +397,7 @@ package com.google.firebase.firestore {
   }
 
   public interface OnProgressListener<ProgressT> {
-    method public void onProgress(@NonNull ProgressT);
+    method public void onProgress(ProgressT);
   }
 
   public final class PersistentCacheIndexManager {
@@ -366,12 +408,12 @@ package com.google.firebase.firestore {
 
   public final class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method public long getSizeBytes();
-    method @NonNull public static com.google.firebase.firestore.PersistentCacheSettings.Builder newBuilder();
+    method public static com.google.firebase.firestore.PersistentCacheSettings.Builder newBuilder();
   }
 
   public static class PersistentCacheSettings.Builder {
-    method @NonNull public com.google.firebase.firestore.PersistentCacheSettings build();
-    method @NonNull public com.google.firebase.firestore.PersistentCacheSettings.Builder setSizeBytes(long);
+    method public com.google.firebase.firestore.PersistentCacheSettings build();
+    method public com.google.firebase.firestore.PersistentCacheSettings.Builder setSizeBytes(long);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
@@ -379,51 +421,53 @@ package com.google.firebase.firestore {
   }
 
   public class Query {
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
-    method @NonNull public com.google.firebase.firestore.AggregateQuery count();
-    method @NonNull public com.google.firebase.firestore.Query endAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
-    method @NonNull public com.google.firebase.firestore.Query endAt(java.lang.Object...);
-    method @NonNull public com.google.firebase.firestore.Query endBefore(@NonNull com.google.firebase.firestore.DocumentSnapshot);
-    method @NonNull public com.google.firebase.firestore.Query endBefore(java.lang.Object...);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> get();
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> get(@NonNull com.google.firebase.firestore.Source);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestore getFirestore();
-    method @NonNull public com.google.firebase.firestore.Query limit(long);
-    method @NonNull public com.google.firebase.firestore.Query limitToLast(long);
-    method @NonNull public com.google.firebase.firestore.Query orderBy(@NonNull String);
-    method @NonNull public com.google.firebase.firestore.Query orderBy(@NonNull com.google.firebase.firestore.FieldPath);
-    method @NonNull public com.google.firebase.firestore.Query orderBy(@NonNull String, @NonNull com.google.firebase.firestore.Query.Direction);
-    method @NonNull public com.google.firebase.firestore.Query orderBy(@NonNull com.google.firebase.firestore.FieldPath, @NonNull com.google.firebase.firestore.Query.Direction);
-    method @NonNull public com.google.firebase.firestore.Query startAfter(@NonNull com.google.firebase.firestore.DocumentSnapshot);
-    method @NonNull public com.google.firebase.firestore.Query startAfter(java.lang.Object...);
-    method @NonNull public com.google.firebase.firestore.Query startAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
-    method @NonNull public com.google.firebase.firestore.Query startAt(java.lang.Object...);
-    method @NonNull public com.google.firebase.firestore.Query where(@NonNull com.google.firebase.firestore.Filter);
-    method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull String, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereArrayContainsAny(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereArrayContainsAny(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereGreaterThan(@NonNull String, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereGreaterThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(@NonNull String, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereIn(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereIn(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull String, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull String, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(android.app.Activity, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(android.app.Activity, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(com.google.firebase.firestore.SnapshotListenOptions, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(java.util.concurrent.Executor, com.google.firebase.firestore.MetadataChanges, com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot!>);
+    method public com.google.firebase.firestore.AggregateQuery aggregate(com.google.firebase.firestore.AggregateField, com.google.firebase.firestore.AggregateField!...);
+    method public com.google.firebase.firestore.AggregateQuery count();
+    method public com.google.firebase.firestore.Query endAt(com.google.firebase.firestore.DocumentSnapshot);
+    method public com.google.firebase.firestore.Query endAt(java.lang.Object!...!);
+    method public com.google.firebase.firestore.Query endBefore(com.google.firebase.firestore.DocumentSnapshot);
+    method public com.google.firebase.firestore.Query endBefore(java.lang.Object!...!);
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot!> get();
+    method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot!> get(com.google.firebase.firestore.Source);
+    method public com.google.firebase.firestore.FirebaseFirestore getFirestore();
+    method public com.google.firebase.firestore.Query limit(long);
+    method public com.google.firebase.firestore.Query limitToLast(long);
+    method public com.google.firebase.firestore.Query orderBy(com.google.firebase.firestore.FieldPath);
+    method public com.google.firebase.firestore.Query orderBy(com.google.firebase.firestore.FieldPath, com.google.firebase.firestore.Query.Direction);
+    method public com.google.firebase.firestore.Query orderBy(String);
+    method public com.google.firebase.firestore.Query orderBy(String, com.google.firebase.firestore.Query.Direction);
+    method public com.google.firebase.firestore.Query startAfter(com.google.firebase.firestore.DocumentSnapshot);
+    method public com.google.firebase.firestore.Query startAfter(java.lang.Object!...!);
+    method public com.google.firebase.firestore.Query startAt(com.google.firebase.firestore.DocumentSnapshot);
+    method public com.google.firebase.firestore.Query startAt(java.lang.Object!...!);
+    method public com.google.firebase.firestore.Query where(com.google.firebase.firestore.Filter);
+    method public com.google.firebase.firestore.Query whereArrayContains(com.google.firebase.firestore.FieldPath, Object);
+    method public com.google.firebase.firestore.Query whereArrayContains(String, Object);
+    method public com.google.firebase.firestore.Query whereArrayContainsAny(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public com.google.firebase.firestore.Query whereArrayContainsAny(String, java.util.List<? extends java.lang.Object!>);
+    method public com.google.firebase.firestore.Query whereEqualTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public com.google.firebase.firestore.Query whereEqualTo(String, Object?);
+    method public com.google.firebase.firestore.Query whereGreaterThan(com.google.firebase.firestore.FieldPath, Object);
+    method public com.google.firebase.firestore.Query whereGreaterThan(String, Object);
+    method public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(com.google.firebase.firestore.FieldPath, Object);
+    method public com.google.firebase.firestore.Query whereGreaterThanOrEqualTo(String, Object);
+    method public com.google.firebase.firestore.Query whereIn(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public com.google.firebase.firestore.Query whereIn(String, java.util.List<? extends java.lang.Object!>);
+    method public com.google.firebase.firestore.Query whereLessThan(com.google.firebase.firestore.FieldPath, Object);
+    method public com.google.firebase.firestore.Query whereLessThan(String, Object);
+    method public com.google.firebase.firestore.Query whereLessThanOrEqualTo(com.google.firebase.firestore.FieldPath, Object);
+    method public com.google.firebase.firestore.Query whereLessThanOrEqualTo(String, Object);
+    method public com.google.firebase.firestore.Query whereNotEqualTo(com.google.firebase.firestore.FieldPath, Object?);
+    method public com.google.firebase.firestore.Query whereNotEqualTo(String, Object?);
+    method public com.google.firebase.firestore.Query whereNotIn(com.google.firebase.firestore.FieldPath, java.util.List<? extends java.lang.Object!>);
+    method public com.google.firebase.firestore.Query whereNotIn(String, java.util.List<? extends java.lang.Object!>);
   }
 
   public enum Query.Direction {
@@ -434,27 +478,43 @@ package com.google.firebase.firestore {
   public class QueryDocumentSnapshot extends com.google.firebase.firestore.DocumentSnapshot {
   }
 
-  public class QuerySnapshot implements java.lang.Iterable<com.google.firebase.firestore.QueryDocumentSnapshot> {
-    method @NonNull public java.util.List<com.google.firebase.firestore.DocumentChange> getDocumentChanges();
-    method @NonNull public java.util.List<com.google.firebase.firestore.DocumentChange> getDocumentChanges(@NonNull com.google.firebase.firestore.MetadataChanges);
-    method @NonNull public java.util.List<com.google.firebase.firestore.DocumentSnapshot> getDocuments();
-    method @NonNull public com.google.firebase.firestore.SnapshotMetadata getMetadata();
-    method @NonNull public com.google.firebase.firestore.Query getQuery();
+  public class QuerySnapshot implements java.lang.Iterable<com.google.firebase.firestore.QueryDocumentSnapshot!> {
+    method public java.util.List<com.google.firebase.firestore.DocumentChange!> getDocumentChanges();
+    method public java.util.List<com.google.firebase.firestore.DocumentChange!> getDocumentChanges(com.google.firebase.firestore.MetadataChanges);
+    method public java.util.List<com.google.firebase.firestore.DocumentSnapshot!> getDocuments();
+    method public com.google.firebase.firestore.SnapshotMetadata getMetadata();
+    method public com.google.firebase.firestore.Query getQuery();
     method public boolean isEmpty();
-    method @NonNull public java.util.Iterator<com.google.firebase.firestore.QueryDocumentSnapshot> iterator();
+    method public java.util.Iterator<com.google.firebase.firestore.QueryDocumentSnapshot!> iterator();
     method public int size();
-    method @NonNull public <T> java.util.List<T> toObjects(@NonNull Class<T>);
-    method @NonNull public <T> java.util.List<T> toObjects(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public <T> java.util.List<T!> toObjects(Class<T!>);
+    method public <T> java.util.List<T!> toObjects(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface ServerTimestamp {
   }
 
   public final class SetOptions {
-    method @NonNull public static com.google.firebase.firestore.SetOptions merge();
-    method @NonNull public static com.google.firebase.firestore.SetOptions mergeFieldPaths(@NonNull java.util.List<com.google.firebase.firestore.FieldPath>);
-    method @NonNull public static com.google.firebase.firestore.SetOptions mergeFields(@NonNull java.util.List<java.lang.String>);
-    method @NonNull public static com.google.firebase.firestore.SetOptions mergeFields(java.lang.String...);
+    method public static com.google.firebase.firestore.SetOptions merge();
+    method public static com.google.firebase.firestore.SetOptions mergeFieldPaths(java.util.List<com.google.firebase.firestore.FieldPath!>);
+    method public static com.google.firebase.firestore.SetOptions mergeFields(java.lang.String!...!);
+    method public static com.google.firebase.firestore.SetOptions mergeFields(java.util.List<java.lang.String!>);
+  }
+
+  public final class SnapshotListenOptions {
+    method public android.app.Activity? getActivity();
+    method public java.util.concurrent.Executor getExecutor();
+    method public com.google.firebase.firestore.MetadataChanges getMetadataChanges();
+    method public com.google.firebase.firestore.ListenSource getSource();
+  }
+
+  public static class SnapshotListenOptions.Builder {
+    ctor public SnapshotListenOptions.Builder();
+    method public com.google.firebase.firestore.SnapshotListenOptions build();
+    method public com.google.firebase.firestore.SnapshotListenOptions.Builder setActivity(android.app.Activity);
+    method public com.google.firebase.firestore.SnapshotListenOptions.Builder setExecutor(java.util.concurrent.Executor);
+    method public com.google.firebase.firestore.SnapshotListenOptions.Builder setMetadataChanges(com.google.firebase.firestore.MetadataChanges);
+    method public com.google.firebase.firestore.SnapshotListenOptions.Builder setSource(com.google.firebase.firestore.ListenSource);
   }
 
   public class SnapshotMetadata {
@@ -472,17 +532,17 @@ package com.google.firebase.firestore {
   }
 
   public class Transaction {
-    method @NonNull public com.google.firebase.firestore.Transaction delete(@NonNull com.google.firebase.firestore.DocumentReference);
-    method @NonNull public com.google.firebase.firestore.DocumentSnapshot get(@NonNull com.google.firebase.firestore.DocumentReference) throws com.google.firebase.firestore.FirebaseFirestoreException;
-    method @NonNull public com.google.firebase.firestore.Transaction set(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Transaction set(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull Object, @NonNull com.google.firebase.firestore.SetOptions);
-    method @NonNull public com.google.firebase.firestore.Transaction update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull java.util.Map<java.lang.String,java.lang.Object>);
-    method @NonNull public com.google.firebase.firestore.Transaction update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull String, @Nullable Object, java.lang.Object...);
-    method @NonNull public com.google.firebase.firestore.Transaction update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull com.google.firebase.firestore.FieldPath, @Nullable Object, java.lang.Object...);
+    method public com.google.firebase.firestore.Transaction delete(com.google.firebase.firestore.DocumentReference);
+    method public com.google.firebase.firestore.DocumentSnapshot get(com.google.firebase.firestore.DocumentReference) throws com.google.firebase.firestore.FirebaseFirestoreException;
+    method public com.google.firebase.firestore.Transaction set(com.google.firebase.firestore.DocumentReference, Object);
+    method public com.google.firebase.firestore.Transaction set(com.google.firebase.firestore.DocumentReference, Object, com.google.firebase.firestore.SetOptions);
+    method public com.google.firebase.firestore.Transaction update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, Object?, java.lang.Object!...!);
+    method public com.google.firebase.firestore.Transaction update(com.google.firebase.firestore.DocumentReference, String, Object?, java.lang.Object!...!);
+    method public com.google.firebase.firestore.Transaction update(com.google.firebase.firestore.DocumentReference, java.util.Map<java.lang.String!,java.lang.Object!>);
   }
 
   public static interface Transaction.Function<TResult> {
-    method @Nullable public TResult apply(@NonNull com.google.firebase.firestore.Transaction) throws com.google.firebase.firestore.FirebaseFirestoreException;
+    method public TResult? apply(com.google.firebase.firestore.Transaction) throws com.google.firebase.firestore.FirebaseFirestoreException;
   }
 
   public final class TransactionOptions {
@@ -491,23 +551,27 @@ package com.google.firebase.firestore {
 
   public static final class TransactionOptions.Builder {
     ctor public TransactionOptions.Builder();
-    ctor public TransactionOptions.Builder(@NonNull com.google.firebase.firestore.TransactionOptions);
-    method @NonNull public com.google.firebase.firestore.TransactionOptions build();
-    method @NonNull public com.google.firebase.firestore.TransactionOptions.Builder setMaxAttempts(int);
+    ctor public TransactionOptions.Builder(com.google.firebase.firestore.TransactionOptions);
+    method public com.google.firebase.firestore.TransactionOptions build();
+    method public com.google.firebase.firestore.TransactionOptions.Builder setMaxAttempts(int);
+  }
+
+  public class VectorValue {
+    method public double[] toArray();
   }
 
   public class WriteBatch {
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> commit();
-    method @NonNull public com.google.firebase.firestore.WriteBatch delete(@NonNull com.google.firebase.firestore.DocumentReference);
-    method @NonNull public com.google.firebase.firestore.WriteBatch set(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.WriteBatch set(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull Object, @NonNull com.google.firebase.firestore.SetOptions);
-    method @NonNull public com.google.firebase.firestore.WriteBatch update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull java.util.Map<java.lang.String,java.lang.Object>);
-    method @NonNull public com.google.firebase.firestore.WriteBatch update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull String, @Nullable Object, java.lang.Object...);
-    method @NonNull public com.google.firebase.firestore.WriteBatch update(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull com.google.firebase.firestore.FieldPath, @Nullable Object, java.lang.Object...);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> commit();
+    method public com.google.firebase.firestore.WriteBatch delete(com.google.firebase.firestore.DocumentReference);
+    method public com.google.firebase.firestore.WriteBatch set(com.google.firebase.firestore.DocumentReference, Object);
+    method public com.google.firebase.firestore.WriteBatch set(com.google.firebase.firestore.DocumentReference, Object, com.google.firebase.firestore.SetOptions);
+    method public com.google.firebase.firestore.WriteBatch update(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.FieldPath, Object?, java.lang.Object!...!);
+    method public com.google.firebase.firestore.WriteBatch update(com.google.firebase.firestore.DocumentReference, String, Object?, java.lang.Object!...!);
+    method public com.google.firebase.firestore.WriteBatch update(com.google.firebase.firestore.DocumentReference, java.util.Map<java.lang.String!,java.lang.Object!>);
   }
 
   public static interface WriteBatch.Function {
-    method public void apply(@NonNull com.google.firebase.firestore.WriteBatch);
+    method public void apply(com.google.firebase.firestore.WriteBatch);
   }
 
 }

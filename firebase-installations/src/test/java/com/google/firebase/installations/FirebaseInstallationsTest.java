@@ -29,7 +29,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.SharedPreferences;
@@ -312,7 +312,7 @@ public class FirebaseInstallationsTest {
 
     // check that the mockClient didn't get invoked at all, since the fid is already registered
     // and the authtoken is present and not expired
-    verifyZeroInteractions(mockBackend);
+    verifyNoInteractions(mockBackend);
 
     // check that the fid is still the expected one and is registered
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();

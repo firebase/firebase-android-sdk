@@ -37,14 +37,28 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class Values {
+  public static final String TYPE_KEY = "__type__";
   public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
   public static final Value MIN_VALUE = NULL_VALUE;
-  private static final Value MAX_VALUE_TYPE = Value.newBuilder().setStringValue("__max__").build();
+  public static final Value MAX_VALUE_TYPE = Value.newBuilder().setStringValue("__max__").build();
   public static final Value MAX_VALUE =
       Value.newBuilder()
-          .setMapValue(MapValue.newBuilder().putFields("__type__", MAX_VALUE_TYPE))
+          .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
+          .build();
+
+  public static final Value VECTOR_VALUE_TYPE =
+      Value.newBuilder().setStringValue("__vector__").build();
+  public static final String VECTOR_MAP_VECTORS_KEY = "value";
+  private static final Value MIN_VECTOR_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields(TYPE_KEY, VECTOR_VALUE_TYPE)
+                  .putFields(
+                      VECTOR_MAP_VECTORS_KEY,
+                      Value.newBuilder().setArrayValue(ArrayValue.newBuilder()).build()))
           .build();
 
   /**
@@ -62,7 +76,8 @@ public class Values {
   public static final int TYPE_ORDER_REFERENCE = 7;
   public static final int TYPE_ORDER_GEOPOINT = 8;
   public static final int TYPE_ORDER_ARRAY = 9;
-  public static final int TYPE_ORDER_MAP = 10;
+  public static final int TYPE_ORDER_VECTOR = 10;
+  public static final int TYPE_ORDER_MAP = 11;
 
   public static final int TYPE_ORDER_MAX_VALUE = Integer.MAX_VALUE;
 
@@ -94,6 +109,8 @@ public class Values {
           return TYPE_ORDER_SERVER_TIMESTAMP;
         } else if (isMaxValue(value)) {
           return TYPE_ORDER_MAX_VALUE;
+        } else if (isVectorValue(value)) {
+          return TYPE_ORDER_VECTOR;
         } else {
           return TYPE_ORDER_MAP;
         }
@@ -122,6 +139,7 @@ public class Values {
         return numberEquals(left, right);
       case TYPE_ORDER_ARRAY:
         return arrayEquals(left, right);
+      case TYPE_ORDER_VECTOR:
       case TYPE_ORDER_MAP:
         return objectEquals(left, right);
       case TYPE_ORDER_SERVER_TIMESTAMP:
@@ -196,7 +214,7 @@ public class Values {
     int rightType = typeOrder(right);
 
     if (leftType != rightType) {
-      return Util.compareIntegers(leftType, rightType);
+      return Integer.compare(leftType, rightType);
     }
 
     switch (leftType) {
@@ -212,7 +230,7 @@ public class Values {
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
       case TYPE_ORDER_STRING:
-        return left.getStringValue().compareTo(right.getStringValue());
+        return Util.compareUtf8Strings(left.getStringValue(), right.getStringValue());
       case TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case TYPE_ORDER_REFERENCE:
@@ -223,6 +241,8 @@ public class Values {
         return compareArrays(left.getArrayValue(), right.getArrayValue());
       case TYPE_ORDER_MAP:
         return compareMaps(left.getMapValue(), right.getMapValue());
+      case TYPE_ORDER_VECTOR:
+        return compareVectors(left.getMapValue(), right.getMapValue());
       default:
         throw fail("Invalid value type: " + leftType);
     }
@@ -271,7 +291,7 @@ public class Values {
     } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
       long leftLong = left.getIntegerValue();
       if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(leftLong, right.getIntegerValue());
+        return Long.compare(leftLong, right.getIntegerValue());
       } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
         return -1 * Util.compareMixed(right.getDoubleValue(), leftLong);
       }
@@ -281,11 +301,11 @@ public class Values {
   }
 
   private static int compareTimestamps(Timestamp left, Timestamp right) {
-    int cmp = Util.compareLongs(left.getSeconds(), right.getSeconds());
+    int cmp = Long.compare(left.getSeconds(), right.getSeconds());
     if (cmp != 0) {
       return cmp;
     }
-    return Util.compareIntegers(left.getNanos(), right.getNanos());
+    return Integer.compare(left.getNanos(), right.getNanos());
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
@@ -299,7 +319,7 @@ public class Values {
         return cmp;
       }
     }
-    return Util.compareIntegers(leftSegments.length, rightSegments.length);
+    return Integer.compare(leftSegments.length, rightSegments.length);
   }
 
   private static int compareGeoPoints(LatLng left, LatLng right) {
@@ -318,7 +338,7 @@ public class Values {
         return cmp;
       }
     }
-    return Util.compareIntegers(left.getValuesCount(), right.getValuesCount());
+    return Integer.compare(left.getValuesCount(), right.getValuesCount());
   }
 
   private static int compareMaps(MapValue left, MapValue right) {
@@ -329,7 +349,7 @@ public class Values {
     while (iterator1.hasNext() && iterator2.hasNext()) {
       Map.Entry<String, Value> entry1 = iterator1.next();
       Map.Entry<String, Value> entry2 = iterator2.next();
-      int keyCompare = entry1.getKey().compareTo(entry2.getKey());
+      int keyCompare = Util.compareUtf8Strings(entry1.getKey(), entry2.getKey());
       if (keyCompare != 0) {
         return keyCompare;
       }
@@ -341,6 +361,23 @@ public class Values {
 
     // Only equal if both iterators are exhausted.
     return Util.compareBooleans(iterator1.hasNext(), iterator2.hasNext());
+  }
+
+  private static int compareVectors(MapValue left, MapValue right) {
+    Map<String, Value> leftMap = left.getFieldsMap();
+    Map<String, Value> rightMap = right.getFieldsMap();
+
+    // The vector is a map, but only vector value is compared.
+    ArrayValue leftArrayValue = leftMap.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue();
+    ArrayValue rightArrayValue = rightMap.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue();
+
+    int lengthCompare =
+        Integer.compare(leftArrayValue.getValuesCount(), rightArrayValue.getValuesCount());
+    if (lengthCompare != 0) {
+      return lengthCompare;
+    }
+
+    return compareArrays(leftArrayValue, rightArrayValue);
   }
 
   /** Generate the canonical ID for the provided field value (as used in Target serialization). */
@@ -404,9 +441,9 @@ public class Values {
   }
 
   private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
-    // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
-    // received from the backend), local modifications can bring elements out of order. We need to
-    // re-sort the elements to ensure that canonical IDs are independent of insertion order.
+    // Even though MapValue are likely sorted correctly based on their insertion order (for example,
+    // when received from the backend), local modifications can bring elements out of order. We need
+    // to re-sort the elements to ensure that canonical IDs are independent of insertion order.
     List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
     Collections.sort(keys);
 
@@ -482,70 +519,97 @@ public class Values {
     return value;
   }
 
+  public static Value MIN_BOOLEAN = Value.newBuilder().setBooleanValue(false).build();
+  public static Value MIN_NUMBER = Value.newBuilder().setDoubleValue(Double.NaN).build();
+  public static Value MIN_TIMESTAMP =
+      Value.newBuilder()
+          .setTimestampValue(Timestamp.newBuilder().setSeconds(Long.MIN_VALUE))
+          .build();
+  public static Value MIN_STRING = Value.newBuilder().setStringValue("").build();
+  public static Value MIN_BYTES = Value.newBuilder().setBytesValue(ByteString.EMPTY).build();
+  public static Value MIN_REFERENCE = refValue(DatabaseId.EMPTY, DocumentKey.empty());
+  public static Value MIN_GEO_POINT =
+      Value.newBuilder()
+          .setGeoPointValue(LatLng.newBuilder().setLatitude(-90.0).setLongitude(-180.0))
+          .build();
+  public static Value MIN_ARRAY =
+      Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build();
+  public static Value MIN_MAP =
+      Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
+
   /** Returns the lowest value for the given value type (inclusive). */
-  public static Value getLowerBound(Value.ValueTypeCase valueTypeCase) {
-    switch (valueTypeCase) {
+  public static Value getLowerBound(Value value) {
+    switch (value.getValueTypeCase()) {
       case NULL_VALUE:
         return Values.NULL_VALUE;
       case BOOLEAN_VALUE:
-        return Value.newBuilder().setBooleanValue(false).build();
+        return MIN_BOOLEAN;
       case INTEGER_VALUE:
       case DOUBLE_VALUE:
-        return Value.newBuilder().setDoubleValue(Double.NaN).build();
+        return MIN_NUMBER;
       case TIMESTAMP_VALUE:
-        return Value.newBuilder()
-            .setTimestampValue(Timestamp.newBuilder().setSeconds(Long.MIN_VALUE))
-            .build();
+        return MIN_TIMESTAMP;
       case STRING_VALUE:
-        return Value.newBuilder().setStringValue("").build();
+        return MIN_STRING;
       case BYTES_VALUE:
-        return Value.newBuilder().setBytesValue(ByteString.EMPTY).build();
+        return MIN_BYTES;
       case REFERENCE_VALUE:
-        return refValue(DatabaseId.EMPTY, DocumentKey.empty());
+        return MIN_REFERENCE;
       case GEO_POINT_VALUE:
-        return Value.newBuilder()
-            .setGeoPointValue(LatLng.newBuilder().setLatitude(-90.0).setLongitude(-180.0))
-            .build();
+        return MIN_GEO_POINT;
       case ARRAY_VALUE:
-        return Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build();
+        return MIN_ARRAY;
       case MAP_VALUE:
-        return Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
+        // VectorValue sorts after ArrayValue and before an empty MapValue
+        if (isVectorValue(value)) {
+          return MIN_VECTOR_VALUE;
+        }
+        return MIN_MAP;
       default:
-        throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
+        throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
     }
   }
 
   /** Returns the largest value for the given value type (exclusive). */
-  public static Value getUpperBound(Value.ValueTypeCase valueTypeCase) {
-    switch (valueTypeCase) {
+  public static Value getUpperBound(Value value) {
+    switch (value.getValueTypeCase()) {
       case NULL_VALUE:
-        return getLowerBound(Value.ValueTypeCase.BOOLEAN_VALUE);
+        return MIN_BOOLEAN;
       case BOOLEAN_VALUE:
-        return getLowerBound(Value.ValueTypeCase.INTEGER_VALUE);
+        return MIN_NUMBER;
       case INTEGER_VALUE:
       case DOUBLE_VALUE:
-        return getLowerBound(Value.ValueTypeCase.TIMESTAMP_VALUE);
+        return MIN_TIMESTAMP;
       case TIMESTAMP_VALUE:
-        return getLowerBound(Value.ValueTypeCase.STRING_VALUE);
+        return MIN_STRING;
       case STRING_VALUE:
-        return getLowerBound(Value.ValueTypeCase.BYTES_VALUE);
+        return MIN_BYTES;
       case BYTES_VALUE:
-        return getLowerBound(Value.ValueTypeCase.REFERENCE_VALUE);
+        return MIN_REFERENCE;
       case REFERENCE_VALUE:
-        return getLowerBound(Value.ValueTypeCase.GEO_POINT_VALUE);
+        return MIN_GEO_POINT;
       case GEO_POINT_VALUE:
-        return getLowerBound(Value.ValueTypeCase.ARRAY_VALUE);
+        return MIN_ARRAY;
       case ARRAY_VALUE:
-        return getLowerBound(Value.ValueTypeCase.MAP_VALUE);
+        return MIN_VECTOR_VALUE;
       case MAP_VALUE:
+        // VectorValue sorts after ArrayValue and before an empty MapValue
+        if (isVectorValue(value)) {
+          return MIN_MAP;
+        }
         return MAX_VALUE;
       default:
-        throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
+        throw new IllegalArgumentException("Unknown value type: " + value.getValueTypeCase());
     }
   }
 
   /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
   public static boolean isMaxValue(Value value) {
-    return MAX_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get("__type__"));
+    return MAX_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
+  }
+
+  /** Returns true if the Value represents a VectorValue . */
+  public static boolean isVectorValue(Value value) {
+    return VECTOR_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get(TYPE_KEY));
   }
 }

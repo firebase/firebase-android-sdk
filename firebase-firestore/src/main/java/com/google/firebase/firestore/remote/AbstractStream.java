@@ -77,6 +77,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   class StreamObserver implements IncomingStreamObserver<RespT> {
     private final CloseGuardedRunner dispatcher;
 
+    private int responseCount = 0;
+
     StreamObserver(CloseGuardedRunner dispatcher) {
       this.dispatcher = dispatcher;
     }
@@ -107,17 +109,24 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     @Override
     public void onNext(RespT response) {
+      final int currentResponseCount = responseCount + 1;
       dispatcher.run(
           () -> {
             if (Logger.isDebugEnabled()) {
               Logger.debug(
                   AbstractStream.this.getClass().getSimpleName(),
-                  "(%x) Stream received: %s",
+                  "(%x) Stream received (%s): %s",
                   System.identityHashCode(AbstractStream.this),
+                  currentResponseCount,
                   response);
             }
-            AbstractStream.this.onNext(response);
+            if (currentResponseCount == 1) {
+              AbstractStream.this.onFirst(response);
+            } else {
+              AbstractStream.this.onNext(response);
+            }
           });
+      responseCount = currentResponseCount;
     }
 
     @Override
@@ -296,7 +305,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     cancelHealthCheck();
     this.backoff.cancel();
 
-    // Invalidates any stream-related callbacks (e.g. from auth or the underlying stream),
+    // Invalidates any stream-related callbacks (for example, from auth or the underlying stream),
     // guaranteeing they won't execute.
     this.closeCount++;
 
@@ -343,7 +352,21 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
             getClass().getSimpleName(),
             "(%x) Closing stream client-side",
             System.identityHashCode(this));
-        call.halfClose();
+        try {
+          call.halfClose();
+        } catch (IllegalStateException e) {
+          // Secondary failure encountered. The underlying RPC has entered an error state. We will
+          // log and continue since the RPC is being discarded anyway.
+          //
+          // Example, "IllegalStateException: call was cancelled" was observed in
+          // https://github.com/firebase/firebase-android-sdk/issues/6883
+          // Likely caused by other part of system already cancelling stream.
+          Logger.debug(
+              getClass().getSimpleName(),
+              "(%x) Closing stream client-side result in exception: [%s]",
+              System.identityHashCode(this),
+              e);
+        }
       }
       call = null;
     }
@@ -428,6 +451,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
               });
     }
   }
+
+  public abstract void onFirst(RespT change);
 
   public abstract void onNext(RespT change);
 

@@ -60,7 +60,7 @@ class TestProjectBuilder:
     self.logger.debug(f'Copied project template files into "{self.project_dir}"')
 
   def _download_gradle_wrapper(self):
-    args = ['wrapper', '--gradle-version', '7.5.1', '--project-dir', str(self.project_dir)]
+    args = ['wrapper', '--gradle-version', '8.4', '--project-dir', str(self.project_dir)]
     execute('./gradlew', *args, logger=self.logger)
     self.logger.debug(f'Created gradle wrapper in "{self.project_dir}"')
 

@@ -753,6 +753,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     completeListener.addListener(null, executor, listener);
     return this;
   }
+
   /**
    * Adds a listener that is called when the Task succeeds or fails.
    *

@@ -1,4 +1,4 @@
-name: Changelog
+name: Verify changelog update
 
 on:
   pull_request
@@ -13,11 +13,11 @@ jobs:
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
-    - uses: actions/checkout@v3.5.3
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 100
         submodules: true
-    - uses: ruby/setup-ruby@v1
+    - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
       with:
         ruby-version: '2.7'
     - name: Setup Bundler

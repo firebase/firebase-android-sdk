@@ -14,6 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,12 +30,15 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
+import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
@@ -43,7 +49,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
@@ -62,10 +69,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   private SettingsController mockSettingsController;
   private AppData appData;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockAppContext = newMockContext();
     mockResources = mock(Resources.class);
     testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
@@ -78,18 +83,13 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settings));
   }
 
-  @Override
-  public void tearDown() throws Exception {
-    super.tearDown();
-  }
-
   private static final class CoreBuilder {
     private FirebaseApp app;
     private IdManager idManager;
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
-    private ExecutorService crashHandlerExecutor;
     private FileStore fileStore;
+    private CrashlyticsWorkers crashlyticsWorkers;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
       app = mock(FirebaseApp.class);
@@ -118,12 +118,18 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-      crashHandlerExecutor = new SameThreadExecutorService();
+      crashlyticsWorkers =
+          new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
       fileStore = new FileStore(context);
     }
 
     public CoreBuilder setNativeComponent(CrashlyticsNativeComponent nativeComponent) {
       this.nativeComponent = nativeComponent;
+      return this;
+    }
+
+    public CoreBuilder setFileStore(FileStore fileStore) {
+      this.fileStore = fileStore;
       return this;
     }
 
@@ -136,8 +142,9 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           new DisabledBreadcrumbSource(),
           new UnavailableAnalyticsEventLogger(),
           fileStore,
-          crashHandlerExecutor,
-          mock(CrashlyticsAppQualitySessionsSubscriber.class));
+          mock(CrashlyticsAppQualitySessionsSubscriber.class),
+          mock(RemoteConfigDeferredProxy.class),
+          crashlyticsWorkers);
     }
   }
 
@@ -186,14 +193,16 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   // FIXME: Restore this test without hasOpenSession
-  //  public void testOnPreExecute_openSessionExists() {
-  //    final CrashlyticsCore crashlyticsCore = builder().build();
-  //    setupBuildIdRequired("false");
-  //    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
-  //    assertNotNull(crashlyticsCore.getController());
-  //    assertTrue(crashlyticsCore.getController().hasOpenSession());
-  //  }
+  //  @Test
+  public void testOnPreExecute_openSessionExists() {
+    //    final CrashlyticsCore crashlyticsCore = builder().build();
+    //    setupBuildIdRequired("false");
+    //    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    //    assertNotNull(crashlyticsCore.getController());
+    //    assertTrue(crashlyticsCore.getController().hasOpenSession());
+  }
 
+  @Test
   public void testOnPreExecute_buildIdRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
@@ -201,6 +210,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
@@ -213,6 +223,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testOnPreExecute_buildIdNotRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("false");
@@ -220,6 +231,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_buildIdNotRequiredAndDoesNotExist() {
     setupBuildIdRequired("false");
     setupAppData(null);
@@ -227,8 +239,10 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
-    final CrashlyticsCore crashlyticsCore = builder().build();
+    // Use the same file store for core as the crash marker.
+    CrashlyticsCore crashlyticsCore = builder().setFileStore(fileStore).build();
     setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
     setupCrashMarker();
@@ -239,6 +253,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertFalse(getCrashMarkerFile().exists());
   }
 
+  @Test
   public void testOnPreExecute_didNotCrashOnPreviousExecution() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired(String.valueOf(false));

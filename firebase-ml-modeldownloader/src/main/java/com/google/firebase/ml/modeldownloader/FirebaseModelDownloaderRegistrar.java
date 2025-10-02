@@ -26,6 +26,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
+import com.google.firebase.datatransport.TransportBackend;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -47,13 +48,15 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+    Qualified<TransportFactory> transportFactory =
+        Qualified.qualified(TransportBackend.class, TransportFactory.class);
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.requiredProvider(transportFactory))
             .add(Dependency.required(bgExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
@@ -64,7 +67,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                         .setFis(c.getProvider(FirebaseInstallationsApi.class))
                         .setBlockingExecutor(c.get(blockingExecutor))
                         .setBgExecutor(c.get(bgExecutor))
-                        .setTransportFactory(c.getProvider(TransportFactory.class))
+                        .setTransportFactory(c.getProvider(transportFactory))
                         .build()
                         .getModelDownloader())
             .build(),

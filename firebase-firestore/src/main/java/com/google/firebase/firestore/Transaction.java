@@ -56,7 +56,7 @@ public class Transaction {
    * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
    * @param documentRef The {@code DocumentReference} to overwrite.
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @return This {@code Transaction} instance. Used for chaining method calls.
    */
@@ -71,7 +71,7 @@ public class Transaction {
    * into an existing document.
    *
    * @param documentRef The {@code DocumentReference} to overwrite.
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
    * @return This {@code Transaction} instance. Used for chaining method calls.
@@ -200,10 +200,10 @@ public class Transaction {
               MutableDocument doc = docs.get(0);
               if (doc.isFoundDocument()) {
                 return DocumentSnapshot.fromDocument(
-                    firestore, doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+                    firestore, doc, /* fromCache= */ false, /* hasPendingWrites= */ false);
               } else if (doc.isNoDocument()) {
                 return DocumentSnapshot.fromNoDocument(
-                    firestore, doc.getKey(), /*fromCache=*/ false);
+                    firestore, doc.getKey(), /* fromCache= */ false);
               } else {
                 throw fail(
                     "BatchGetDocumentsRequest returned unexpected document type: "

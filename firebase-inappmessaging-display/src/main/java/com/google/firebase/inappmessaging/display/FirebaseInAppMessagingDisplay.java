@@ -40,6 +40,7 @@ import com.google.firebase.inappmessaging.display.internal.FiamAnimator;
 import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
 import com.google.firebase.inappmessaging.display.internal.FiamWindowManager;
 import com.google.firebase.inappmessaging.display.internal.FirebaseInAppMessagingDisplayImpl;
+import com.google.firebase.inappmessaging.display.internal.GlideErrorListener;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.Logging;
 import com.google.firebase.inappmessaging.display.internal.RenewableTimer;
@@ -144,9 +145,18 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       Activity activity,
       InAppMessage inAppMessage,
       FirebaseInAppMessagingDisplayCallbacks callbacks) {
+    setInAppMessageAndCallbacks(inAppMessage, callbacks);
+    showActiveFiam(activity);
+  }
+
+  private void setInAppMessageAndCallbacks(
+      InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.callbacks = callbacks;
-    showActiveFiam(activity);
+  }
+
+  private void clearInAppMessageAndCallbacks() {
+    setInAppMessageAndCallbacks(null, null);
   }
 
   /**
@@ -204,8 +214,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
               Logging.logd("Active FIAM exists. Skipping trigger");
               return;
             }
-            inAppMessage = iam;
-            callbacks = cb;
+            setInAppMessageAndCallbacks(iam, cb);
             showActiveFiam(activity);
           });
       // set the current activity to be the one passed in so that we know not to bind again to the
@@ -329,8 +338,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                 // Ensure that we remove the displayed FIAM, and ensure that on re-load, the message
                 // isn't re-displayed
                 removeDisplayedFiam(activity);
-                inAppMessage = null;
-                callbacks = null;
+                clearInAppMessageAndCallbacks();
               }
             };
       } else {
@@ -432,8 +440,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                   .removeGlobalOnLayoutListener(layoutListener);
             }
             cancelTimers(); // Not strictly necessary.
-            inAppMessage = null;
-            callbacks = null;
+            clearInAppMessageAndCallbacks();
           }
         });
   }
@@ -492,6 +499,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     if (isValidImageData(imageData)) {
       imageLoader
           .load(imageData.getImageUrl())
+          .addErrorListener(new GlideErrorListener(inAppMessage, callbacks))
           .tag(activity.getClass())
           .placeholder(R.drawable.image_placeholder)
           .into(fiam.getImageView(), callback);
@@ -506,8 +514,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     Logging.logd("Dismissing fiam");
     notifyFiamDismiss();
     removeDisplayedFiam(activity);
-    inAppMessage = null;
-    callbacks = null;
+    clearInAppMessageAndCallbacks();
   }
 
   private void removeDisplayedFiam(Activity activity) {

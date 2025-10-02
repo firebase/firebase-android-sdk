@@ -317,6 +317,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private final LogWrapper logger;
   private final RetryHelper retryHelper;
   private String lastSessionId;
+
   /** Counter to check whether the callback is for the last getToken call */
   private long currentGetTokenAttempt = 0;
 
@@ -445,7 +446,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void put(List<String> path, Object data, RequestResultCallback onComplete) {
-    putInternal(REQUEST_ACTION_PUT, path, data, /*hash=*/ null, onComplete);
+    putInternal(REQUEST_ACTION_PUT, path, data, /* hash= */ null, onComplete);
   }
 
   @Override
@@ -456,7 +457,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void merge(List<String> path, Map<String, Object> data, RequestResultCallback onComplete) {
-    putInternal(REQUEST_ACTION_MERGE, path, data, /*hash=*/ null, onComplete);
+    putInternal(REQUEST_ACTION_MERGE, path, data, /* hash= */ null, onComplete);
   }
 
   @Override
@@ -1019,15 +1020,15 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private void upgradeAuth() {
-    sendAuthHelper(/*restoreStateAfterComplete=*/ false);
+    sendAuthHelper(/* restoreStateAfterComplete= */ false);
   }
 
   private void upgradeAppCheck() {
-    sendAppCheckTokenHelper(/*restoreStateAfterComplete=*/ false);
+    sendAppCheckTokenHelper(/* restoreStateAfterComplete= */ false);
   }
 
   private void sendAuthAndRestoreState() {
-    sendAuthHelper(/*restoreStateAfterComplete=*/ true);
+    sendAuthHelper(/* restoreStateAfterComplete= */ true);
   }
 
   private void sendAuthHelper(final boolean restoreStateAfterComplete) {
@@ -1079,10 +1080,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       if (gAuthToken.getAuth() != null) {
         request.put(REQUEST_AUTHVAR, gAuthToken.getAuth());
       }
-      sendSensitive(REQUEST_ACTION_GAUTH, /*isSensitive=*/ true, request, onComplete);
+      sendSensitive(REQUEST_ACTION_GAUTH, /* isSensitive= */ true, request, onComplete);
     } else {
       request.put(REQUEST_CREDENTIAL, authToken);
-      sendSensitive(REQUEST_ACTION_AUTH, /*isSensitive=*/ true, request, onComplete);
+      sendSensitive(REQUEST_ACTION_AUTH, /* isSensitive= */ true, request, onComplete);
     }
   }
 
@@ -1117,7 +1118,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     Map<String, Object> request = new HashMap<>();
     hardAssert(appCheckToken != null, "App check token must be set!");
     request.put(REQUEST_APPCHECK_TOKEN, appCheckToken);
-    sendSensitive(REQUEST_ACTION_APPCHECK, /*isSensitive=*/ true, request, onComplete);
+    sendSensitive(REQUEST_ACTION_APPCHECK, /* isSensitive= */ true, request, onComplete);
   }
 
   private void sendUnauth() {
@@ -1410,7 +1411,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   private void sendAction(
       String action, Map<String, Object> message, ConnectionRequestCallback onResponse) {
-    sendSensitive(action, /*isSensitive=*/ false, message, onResponse);
+    sendSensitive(action, /* isSensitive= */ false, message, onResponse);
   }
 
   private void sendSensitive(

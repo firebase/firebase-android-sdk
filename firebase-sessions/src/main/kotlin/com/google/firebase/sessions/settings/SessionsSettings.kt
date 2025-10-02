@@ -16,42 +16,24 @@
 
 package com.google.firebase.sessions.settings
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
-import com.google.firebase.installations.FirebaseInstallationsApi
-import com.google.firebase.sessions.ApplicationInfo
-import kotlin.coroutines.CoroutineContext
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import com.google.firebase.sessions.FirebaseSessionsComponent
+import com.google.firebase.sessions.LocalOverrideSettingsProvider
+import com.google.firebase.sessions.RemoteSettingsProvider
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /** [SessionsSettings] manages all the configs that are relevant to the sessions library. */
-internal class SessionsSettings(
-  private val localOverrideSettings: SettingsProvider,
-  private val remoteSettings: SettingsProvider,
+@Singleton
+internal class SessionsSettings
+@Inject
+constructor(
+  @LocalOverrideSettingsProvider private val localOverrideSettings: SettingsProvider,
+  @RemoteSettingsProvider private val remoteSettings: SettingsProvider,
 ) {
-  constructor(
-    context: Context,
-    blockingDispatcher: CoroutineContext,
-    backgroundDispatcher: CoroutineContext,
-    firebaseInstallationsApi: FirebaseInstallationsApi,
-    appInfo: ApplicationInfo,
-  ) : this(
-    localOverrideSettings = LocalOverrideSettings(context),
-    remoteSettings =
-      RemoteSettings(
-        backgroundDispatcher,
-        firebaseInstallationsApi,
-        appInfo,
-        configsFetcher =
-          RemoteSettingsFetcher(
-            appInfo,
-            blockingDispatcher,
-          ),
-        dataStore = context.dataStore,
-      ),
-  )
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides
@@ -117,10 +99,8 @@ internal class SessionsSettings(
     remoteSettings.updateSettings()
   }
 
-  private companion object {
-    const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-
-    private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SESSION_CONFIGS_NAME)
+  internal companion object {
+    val instance: SessionsSettings
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionsSettings
   }
 }

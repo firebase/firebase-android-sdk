@@ -20,14 +20,17 @@ from . import plugins
 from .internal import main
 
 # Unnecessary on CI as GitHub Actions provides them already.
-asctime_place_holder = '' if os.getenv('CI') else '%(asctime)s '
+is_ci = os.getenv('CI')
+asctime_place_holder = '' if is_ci else '%(asctime)s '
 log_format = f'[%(levelname).1s] {asctime_place_holder}%(name)s: %(message)s'
 logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S %z %Z',
     format=log_format,
     level=logging.INFO,
 )
-logging.getLogger('fireci').setLevel(logging.DEBUG)
+
+level = logging.DEBUG if is_ci else logging.INFO
+logging.getLogger('fireci').setLevel(level)
 
 plugins.discover()
 

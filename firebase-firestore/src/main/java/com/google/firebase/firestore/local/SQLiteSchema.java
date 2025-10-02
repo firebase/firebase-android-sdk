@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 16;
+  static final int VERSION = 18;
 
   /**
    * The batch size for data migrations.
@@ -177,6 +177,14 @@ class SQLiteSchema {
 
     if (fromVersion < 16 && toVersion >= 16) {
       createFieldIndex();
+    }
+
+    if (fromVersion < 17 && toVersion >= 17) {
+      createGlobalsTable();
+    }
+
+    if (fromVersion < 18 && toVersion >= 18) {
+      addDocumentType();
     }
 
     /*
@@ -444,6 +452,18 @@ class SQLiteSchema {
     }
   }
 
+  private void addDocumentType() {
+    // The new "document_type" column is a copy of the document type encoded in the "contents" blob.
+    // Its range of values are defined in the `SQLiteRemoteDocumentCache.DocumentType` enum.
+    // The "document_type" value for a given row must be equal to the document type encoded in the
+    // "contents" column for that row. The purpose of the "document_type" column is to enable
+    // efficient filtering on document type. But when using it as a filter, a null value must also
+    // be considered as their document type must be determined by parsing the the "contents" column.
+    if (!tableContainsColumn("remote_documents", "document_type")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN document_type INTEGER");
+    }
+  }
+
   private boolean hasReadTime() {
     boolean hasReadTimeSeconds = tableContainsColumn("remote_documents", "read_time_seconds");
     boolean hasReadTimeNanos = tableContainsColumn("remote_documents", "read_time_nanos");
@@ -526,10 +546,11 @@ class SQLiteSchema {
     ifTablesDontExist(
         new String[] {"collection_parents"},
         () -> {
-          // A table storing associations between a Collection ID (e.g. 'messages') to a parent path
-          // (e.g. '/chats/123') that contains it as a (sub)collection. This is used to efficiently
-          // find all collections to query when performing a Collection Group query. Note that the
-          // parent path will be an empty path in the case of root-level collections.
+          // A table storing associations between a Collection ID (for example, 'messages') to a
+          // parent path (for example, '/chats/123') that contains it as a (sub)collection. This is
+          // used to efficiently find all collections to query when performing a Collection Group
+          // query. Note that the parent path will be an empty path in the case of root-level
+          // collections.
           db.execSQL(
               "CREATE TABLE collection_parents ("
                   + "collection_id TEXT, "
@@ -710,6 +731,15 @@ class SQLiteSchema {
     db.execSQL(
         "INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)",
         new String[] {migration});
+  }
+
+  private void createGlobalsTable() {
+    ifTablesDontExist(
+        new String[] {"globals"},
+        () -> {
+          // A table of key value pairs by user.
+          db.execSQL("CREATE TABLE globals (" + "name TEXT PRIMARY KEY, " + "value BLOB)");
+        });
   }
 
   private boolean tableExists(String table) {

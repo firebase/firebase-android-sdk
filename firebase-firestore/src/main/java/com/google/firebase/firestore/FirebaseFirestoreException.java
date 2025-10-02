@@ -44,7 +44,7 @@ public class FirebaseFirestoreException extends FirebaseException {
     /**
      * Client specified an invalid argument. Note that this differs from {@link
      * #FAILED_PRECONDITION}. {@code INVALID_ARGUMENT} indicates arguments that are problematic
-     * regardless of the state of the system (e.g., an invalid field name).
+     * regardless of the state of the system (like an invalid field name).
      */
     INVALID_ARGUMENT(3),
 

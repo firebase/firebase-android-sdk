@@ -44,9 +44,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
- * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
- * mutations in the MutationQueue to the RemoteDocumentCache.
+ * A readonly view of the local state of all documents we're tracking (specifically, we have a
+ * cached version in remoteDocumentCache or local mutations for the document). The view is computed
+ * by applying the mutations in the MutationQueue to the RemoteDocumentCache.
  */
 class LocalDocumentsView {
 
@@ -340,7 +340,7 @@ class LocalDocumentsView {
         count - docs.size() > 0
             ? documentOverlayCache.getOverlays(
                 collectionGroup, offset.getLargestBatchId(), count - docs.size())
-            : Collections.emptyMap();
+            : new HashMap<>();
 
     int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
     for (Overlay overlay : overlays.values()) {

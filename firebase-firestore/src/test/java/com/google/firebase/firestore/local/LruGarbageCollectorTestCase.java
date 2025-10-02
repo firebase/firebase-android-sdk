@@ -427,6 +427,56 @@ public abstract class LruGarbageCollectorTestCase {
     assertEquals(orphanedDocumentCount, removed);
   }
 
+  // This is a test for https://github.com/firebase/firebase-android-sdk/issues/5417
+  @Test
+  public void testRemoveRunToCompleteWhenNoDocumentsIsRemovedWithLargeNumberOfDocs() {
+    int orphanedDocumentCount =
+        SQLiteLruReferenceDelegate.REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE * 2 + 1;
+
+    persistence.runTransaction(
+        "add orphaned docs",
+        () -> {
+          for (int i = 0; i < orphanedDocumentCount; i++) {
+            MutableDocument doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+            Timestamp writeTime = Timestamp.now();
+            mutationQueue.addMutationBatch(
+                writeTime,
+                Collections.emptyList(),
+                Collections.singletonList(mutation(doc.getKey())));
+          }
+        });
+
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(0, removed);
+  }
+
+  @Test
+  public void testRemoveWhatCanBeRemovedWithLargeNumberOfDocs() {
+    int orphanedDocumentCount =
+        SQLiteLruReferenceDelegate.REMOVE_ORPHANED_DOCUMENTS_BATCH_SIZE * 2 + 1;
+
+    persistence.runTransaction(
+        "add orphaned docs",
+        () -> {
+          for (int i = 0; i < orphanedDocumentCount; i++) {
+            MutableDocument doc = cacheADocumentInTransaction();
+            markDocumentEligibleForGcInTransaction(doc.getKey());
+
+            if (i % 10 != 0) {
+              Timestamp writeTime = Timestamp.now();
+              mutationQueue.addMutationBatch(
+                  writeTime,
+                  Collections.emptyList(),
+                  Collections.singletonList(mutation(doc.getKey())));
+            }
+          }
+        });
+
+    int removed = garbageCollector.removeOrphanedDocuments(1000);
+    assertEquals(21, removed);
+  }
+
   @Test
   public void testRemoveTargetsThenGC() {
     // Create 3 targets, add docs to all of them

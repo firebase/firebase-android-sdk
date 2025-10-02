@@ -22,5 +22,5 @@ package com.google.firebase.firestore.testutil;
  * without wrapping. It is not meant to be implemented directly.
  */
 public interface ThrowingRunnable {
-    void run() throws Throwable;
+  void run() throws Throwable;
 }

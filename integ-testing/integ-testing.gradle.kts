@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("com.android.library")
   kotlin("android")
@@ -35,11 +37,12 @@ android {
   }
 }
 
-dependencies {
-  implementation("com.google.firebase:firebase-common:20.3.2")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
-  implementation(libs.junit)
+dependencies {
+  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation("com.google.firebase:firebase-components:19.0.0")
   implementation(libs.androidx.test.runner)
+  implementation(libs.junit)
   implementation(libs.kotlin.coroutines.test)
 }

@@ -15,18 +15,21 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.firebase.crashlytics.internal.metadata.LogFileManager.MAX_LOG_SIZE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,10 +51,11 @@ public class LogFileManagerTest extends CrashlyticsTestCase {
 
   private LogFileManager logFileManager;
   private File testLogFile;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     final File tempDir = temporaryFolder.newFolder();
     mockFileStore = mock(FileStore.class);
@@ -59,6 +63,11 @@ public class LogFileManagerTest extends CrashlyticsTestCase {
     when(mockFileStore.getSessionFile(any(), any())).thenReturn(testLogFile);
 
     logFileManager = new LogFileManager(mockFileStore);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test

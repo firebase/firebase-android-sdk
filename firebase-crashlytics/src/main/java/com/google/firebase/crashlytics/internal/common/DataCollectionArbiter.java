@@ -24,7 +24,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.Logger;
-import java.util.concurrent.Executor;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
 
 // Determines whether automatic data collection is enabled.
 public class DataCollectionArbiter {
@@ -129,11 +129,9 @@ public class DataCollectionArbiter {
    * Returns a task which will be resolved when either: 1) automatic data collection has been
    * enabled, or 2) grantDataCollectionPermission has been called.
    */
-  public Task<Void> waitForDataCollectionPermission(Executor executor) {
-    return Utils.race(
-        executor,
-        dataCollectionExplicitlyApproved.getTask(),
-        waitForAutomaticDataCollectionEnabled());
+  public Task<Void> waitForDataCollectionPermission() {
+    return CrashlyticsTasks.race(
+        dataCollectionExplicitlyApproved.getTask(), waitForAutomaticDataCollectionEnabled());
   }
 
   /**

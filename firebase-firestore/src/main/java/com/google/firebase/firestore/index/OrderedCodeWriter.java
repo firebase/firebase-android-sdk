@@ -40,6 +40,7 @@ public class OrderedCodeWriter {
   public static final long DOUBLE_SIGN_MASK = 0x8000000000000000L;
 
   public static final long DOUBLE_ALL_BITS = 0xFFFFFFFFFFFFFFFFL;
+
   /**
    * The default size of the buffer. This is arbitrary, but likely larger than most index values so
    * that less copies of the underlying buffer will be made. For large values, a single copy will

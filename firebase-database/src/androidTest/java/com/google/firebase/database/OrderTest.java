@@ -102,7 +102,10 @@ public class OrderTest {
 
   @Test
   public void pushABunchOfDataReconnectReadItBack()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
@@ -133,7 +136,10 @@ public class OrderTest {
 
   @Test
   public void pushABunchOfDataWithExplicitPriorityReconnectReadBackInOrder()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
@@ -164,7 +170,10 @@ public class OrderTest {
 
   @Test
   public void pushDataWithExponentialPriorityAndCheckOrder()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
@@ -283,7 +292,10 @@ public class OrderTest {
 
   @Test
   public void verifyOrderOfMixedNumbersStringAndNoPriorities()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -351,7 +363,10 @@ public class OrderTest {
 
   @Test
   public void verifyOrderOfIntegerKeys()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -379,7 +394,10 @@ public class OrderTest {
 
   @Test
   public void verifyOrderOfLargeIntegerKeys()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -682,7 +700,10 @@ public class OrderTest {
 
   @Test
   public void case595ShouldNotGetChildMovedWhenDeletingPrioritizedGrandChild()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 

@@ -150,8 +150,8 @@ final class SQLiteIndexManager implements IndexManager {
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
 
                 // If we fetched an index state for the user above, combine it with this index.
-                // We use the default state if we don't have an index state (e.g. the index was
-                // created while a different user as logged in).
+                // We use the default state if we don't have an index state (for example, if the
+                // index was created while a different user as logged in).
                 FieldIndex.IndexState indexState =
                     indexStates.containsKey(indexId)
                         ? indexStates.get(indexId)
@@ -774,7 +774,7 @@ final class SQLiteIndexManager implements IndexManager {
   /**
    * Creates a separate encoder for each element of an array.
    *
-   * <p>The method appends each value to all existing encoders (e.g. filter("a", "==",
+   * <p>The method appends each value to all existing encoders (for example, filter("a", "==",
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */

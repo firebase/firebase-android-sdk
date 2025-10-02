@@ -15,7 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -49,10 +49,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 22, qualifiers = "es")
+@Config(manifest = Config.NONE, sdk = Config.OLDEST_SDK, qualifiers = "es")
 public class ApiClientTest {
 
   public static final String TIME_ZONE = "Europe/London";
@@ -210,7 +211,8 @@ public class ApiClientTest {
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
 
     // sdk version set in roboelectric annotation above
-    assertThat(clientSignals.getPlatformVersion()).isEqualTo("22");
+    assertThat(clientSignals.getPlatformVersion())
+        .isEqualTo(String.valueOf(RuntimeEnvironment.getApiLevel()));
   }
 
   @Test

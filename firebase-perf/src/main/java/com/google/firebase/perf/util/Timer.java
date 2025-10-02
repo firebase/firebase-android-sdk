@@ -17,12 +17,11 @@ package com.google.firebase.perf.util;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 
 /**
  * A Timer class provides both wall-clock (epoch) time and monotonic time (elapsedRealtime).
@@ -38,6 +37,7 @@ public class Timer implements Parcelable {
    * jump forwards or backwards unpredictably. {@see SystemClock}
    */
   private long wallClockMicros;
+
   /**
    * Monotonic time measured in the {@link SystemClock#elapsedRealtime()} timebase. Only used to
    * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
@@ -71,10 +71,7 @@ public class Timer implements Parcelable {
    * @return wall-clock time in microseconds.
    */
   private static long elapsedRealtimeMicros() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
-    }
-    return MILLISECONDS.toMicros(SystemClock.elapsedRealtime());
+    return NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
   }
 
   // TODO: make all constructors private, use public static factory methods, per Effective Java

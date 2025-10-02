@@ -26,26 +26,28 @@ import com.google.firebase.sessions.DataCollectionState
 import com.google.firebase.sessions.DataCollectionStatus
 import com.google.firebase.sessions.EventType
 import com.google.firebase.sessions.LogEnvironment
+import com.google.firebase.sessions.ProcessDetails
 import com.google.firebase.sessions.SessionDetails
 import com.google.firebase.sessions.SessionEvent
 import com.google.firebase.sessions.SessionInfo
+import com.google.firebase.sessions.Time
 
 internal object TestSessionEventData {
-  const val TEST_SESSION_TIMESTAMP_US: Long = 12340000
+  val TEST_SESSION_TIMESTAMP: Time = Time(ms = 12340)
 
   val TEST_SESSION_DETAILS =
     SessionDetails(
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
       sessionIndex = 3,
-      sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US
+      sessionStartTimestampUs = TEST_SESSION_TIMESTAMP.us,
     )
 
   val TEST_DATA_COLLECTION_STATUS =
     DataCollectionStatus(
       performance = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
       crashlytics = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
-      sessionSamplingRate = 1.0
+      sessionSamplingRate = 1.0,
     )
 
   val TEST_SESSION_DATA =
@@ -53,10 +55,16 @@ internal object TestSessionEventData {
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
       sessionIndex = 3,
-      eventTimestampUs = TEST_SESSION_TIMESTAMP_US,
+      eventTimestampUs = TEST_SESSION_TIMESTAMP.us,
       dataCollectionStatus = TEST_DATA_COLLECTION_STATUS,
       firebaseInstallationId = "",
+      firebaseAuthenticationToken = "",
     )
+
+  val TEST_PROCESS_DETAILS =
+    ProcessDetails(processName = "com.google.firebase.sessions.test", 0, 100, false)
+
+  val TEST_APP_PROCESS_DETAILS = listOf(TEST_PROCESS_DETAILS)
 
   val TEST_APPLICATION_INFO =
     ApplicationInfo(
@@ -70,6 +78,8 @@ internal object TestSessionEventData {
         versionName = FakeFirebaseApp.MOCK_APP_VERSION,
         appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
         deviceManufacturer = Build.MANUFACTURER,
+        currentProcessDetails = TEST_PROCESS_DETAILS,
+        appProcessDetails = TEST_APP_PROCESS_DETAILS,
       ),
     )
 
@@ -77,6 +87,6 @@ internal object TestSessionEventData {
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData = TEST_SESSION_DATA,
-      applicationInfo = TEST_APPLICATION_INFO
+      applicationInfo = TEST_APPLICATION_INFO,
     )
 }

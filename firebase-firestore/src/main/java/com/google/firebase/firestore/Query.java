@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -34,7 +33,6 @@ import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
-import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -400,7 +398,8 @@ public class Query {
   public Query where(@NonNull Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
     if (parsedFilter.getFilters().isEmpty()) {
-      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
+      // Return the existing query if not adding any more filters (because composite filter is
+      // empty).
       return this;
     }
     validateNewFilter(parsedFilter);
@@ -729,7 +728,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -743,7 +742,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(Object... fieldValues) {
-    Bound bound = boundFromFields("startAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("startAt", fieldValues, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -757,7 +756,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -772,7 +771,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(Object... fieldValues) {
-    Bound bound = boundFromFields("startAfter", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("startAfter", fieldValues, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -786,7 +785,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -800,7 +799,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(Object... fieldValues) {
-    Bound bound = boundFromFields("endBefore", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("endBefore", fieldValues, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -814,7 +813,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -828,7 +827,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(Object... fieldValues) {
-    Bound bound = boundFromFields("endAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("endAt", fieldValues, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -858,7 +857,7 @@ public class Query {
     // contain the document key. That way the position becomes unambiguous and the query
     // continues/ends exactly at the provided document. Without the key (by using the explicit sort
     // orders), multiple documents could match the position, yielding duplicate results.
-    for (OrderBy orderBy : query.getOrderBy()) {
+    for (OrderBy orderBy : query.getNormalizedOrderBy()) {
       if (orderBy.getField().equals(com.google.firebase.firestore.model.FieldPath.KEY_PATH)) {
         components.add(Values.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
@@ -965,8 +964,7 @@ public class Query {
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
-          .getClient()
-          .getDocumentsFromLocalCache(query)
+          .callClient(client -> client.getDocumentsFromLocalCache(query))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<ViewSnapshot> viewSnap) ->
@@ -1071,7 +1069,7 @@ public class Query {
   /**
    * Starts listening to this query with the given options.
    *
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1086,7 +1084,7 @@ public class Query {
    * Starts listening to this query with the given options.
    *
    * @param executor The executor to use to call the listener.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1108,7 +1106,7 @@ public class Query {
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
    * @param activity The activity to scope the listener to.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1123,6 +1121,27 @@ public class Query {
     checkNotNull(listener, "Provided EventListener must not be null.");
     return addSnapshotListenerInternal(
         Executors.DEFAULT_CALLBACK_EXECUTOR, internalOptions(metadataChanges), activity, listener);
+  }
+
+  /**
+   * Starts listening to this query with the given options.
+   *
+   * @param options Sets snapshot listener options, including whether metadata-only changes should
+   *     trigger snapshot events, the source to listen to, the executor to use to call the listener,
+   *     or the activity to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull SnapshotListenOptions options, @NonNull EventListener<QuerySnapshot> listener) {
+    checkNotNull(options, "Provided options value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        options.getExecutor(),
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        options.getActivity(),
+        listener);
   }
 
   /**
@@ -1161,10 +1180,16 @@ public class Query {
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(executor, viewListener);
 
-    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
-    return ActivityScope.bind(
-        activity,
-        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {
@@ -1181,8 +1206,8 @@ public class Query {
    * <em>without actually downloading the documents</em>.
    *
    * <p>Using the returned query to count the documents is efficient because only the final count,
-   * not the documents' data, is downloaded. The returned query can even count the documents if the
-   * result set would be prohibitively large to download entirely (e.g. thousands of documents).
+   * not the documents' data, is downloaded. The returned query can count the documents in cases
+   * where the result set is prohibitively large to download entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
@@ -1192,20 +1217,17 @@ public class Query {
   }
 
   /**
-   * Calculates the specified aggregations over the documents in the result set of the given query,
+   * Calculates the specified aggregations over the documents in the result set of the given query
    * without actually downloading the documents.
    *
-   * <p>Using this function to perform aggregations is efficient because only the final aggregation
-   * values, not the documents' data, is downloaded. This function can even perform aggregations of
-   * the documents if the result set would be prohibitively large to download entirely (e.g.
-   * thousands of documents).
+   * <p>Using the returned query to perform aggregations is efficient because only the final
+   * aggregation values, not the documents' data, is downloaded. The returned query can perform
+   * aggregations of the documents in cases where the result set is prohibitively large to download
+   * entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
    *     set of this query.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public AggregateQuery aggregate(
       @NonNull AggregateField aggregateField, @NonNull AggregateField... aggregateFields) {
@@ -1242,10 +1264,16 @@ public class Query {
 
   /** Converts the public API options object to the internal options object. */
   private static ListenOptions internalOptions(MetadataChanges metadataChanges) {
+    return internalOptions(metadataChanges, ListenSource.DEFAULT);
+  }
+
+  private static ListenOptions internalOptions(
+      MetadataChanges metadataChanges, ListenSource source) {
     ListenOptions internalOptions = new ListenOptions();
     internalOptions.includeDocumentMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.includeQueryMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.waitForSyncWhenOnline = false;
+    internalOptions.source = source;
     return internalOptions;
   }
 }

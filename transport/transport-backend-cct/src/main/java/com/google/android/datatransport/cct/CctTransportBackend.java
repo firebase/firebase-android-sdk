@@ -29,6 +29,10 @@ import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
+import com.google.android.datatransport.cct.internal.ComplianceData;
+import com.google.android.datatransport.cct.internal.ExperimentIds;
+import com.google.android.datatransport.cct.internal.ExternalPRequestContext;
+import com.google.android.datatransport.cct.internal.ExternalPrivacyContext;
 import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.android.datatransport.cct.internal.LogResponse;
@@ -59,9 +63,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -78,6 +84,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   static final String API_KEY_HEADER_KEY = "X-Goog-Api-Key";
+  private static final String COOKIE_HEADER_KEY = "Cookie";
   private static final String JSON_CONTENT_TYPE = "application/json";
 
   @VisibleForTesting static final String KEY_NETWORK_TYPE = "net-type";
@@ -280,6 +287,32 @@ final class CctTransportBackend implements TransportBackend {
         if (eventInternal.getCode() != null) {
           event.setEventCode(eventInternal.getCode());
         }
+        if (eventInternal.getProductId() != null) {
+          event.setComplianceData(
+              ComplianceData.builder()
+                  .setPrivacyContext(
+                      ExternalPrivacyContext.builder()
+                          .setPrequest(
+                              ExternalPRequestContext.builder()
+                                  .setOriginAssociatedProductId(eventInternal.getProductId())
+                                  .build())
+                          .build())
+                  .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
+                  .build());
+        }
+
+        if (eventInternal.getExperimentIdsClear() != null
+            || eventInternal.getExperimentIdsEncrypted() != null) {
+          ExperimentIds.Builder builder = ExperimentIds.builder();
+          if (eventInternal.getExperimentIdsClear() != null) {
+            builder.setClearBlob(eventInternal.getExperimentIdsClear());
+          }
+          if (eventInternal.getExperimentIdsEncrypted() != null) {
+            builder.setEncryptedBlob(eventInternal.getExperimentIdsEncrypted());
+          }
+          event.setExperimentIds(builder.build());
+        }
+
         logEvents.add(event.build());
       }
       requestBuilder.setLogEvents(logEvents);
@@ -290,7 +323,6 @@ final class CctTransportBackend implements TransportBackend {
   }
 
   private HttpResponse doSend(HttpRequest request) throws IOException {
-
     Logging.i(LOG_TAG, "Making request to: %s", request.url);
     HttpURLConnection connection = (HttpURLConnection) request.url.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
@@ -303,6 +335,11 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+
+    if (request.pseudonymousId != null) {
+      connection.setRequestProperty(
+          COOKIE_HEADER_KEY, String.format("NID=%s", request.pseudonymousId));
+    }
 
     if (request.apiKey != null) {
       connection.setRequestProperty(API_KEY_HEADER_KEY, request.apiKey);
@@ -353,6 +390,24 @@ final class CctTransportBackend implements TransportBackend {
     return input;
   }
 
+  private @Nullable String findPseudonymousId(BackendRequest request) {
+    Iterator<EventInternal> events = request.getEvents().iterator();
+
+    if (!events.hasNext()) return null;
+
+    String pseudonymousId = events.next().getPseudonymousId();
+
+    for (EventInternal event : request.getEvents()) {
+      String currentId = event.getPseudonymousId();
+      if (!Objects.equals(pseudonymousId, currentId)) {
+        Logging.w(LOG_TAG, "Invalid pseudonymous id event found: %s", currentId);
+        return null;
+      }
+    }
+
+    return pseudonymousId;
+  }
+
   @Override
   public BackendResponse send(BackendRequest request) {
     BatchedLogRequest requestBody = getRequestBody(request);
@@ -375,11 +430,13 @@ final class CctTransportBackend implements TransportBackend {
       }
     }
 
+    String pseudonymousId = findPseudonymousId(request);
+
     try {
       HttpResponse response =
           retry(
               5,
-              new HttpRequest(actualEndPoint, requestBody, apiKey),
+              new HttpRequest(actualEndPoint, requestBody, apiKey, pseudonymousId),
               this::doSend,
               (req, resp) -> {
                 if (resp.redirectUrl != null) {
@@ -408,7 +465,6 @@ final class CctTransportBackend implements TransportBackend {
 
   @VisibleForTesting
   static long getTzOffset() {
-    Calendar.getInstance();
     TimeZone tz = TimeZone.getDefault();
     return tz.getOffset(Calendar.getInstance().getTimeInMillis()) / 1000;
   }
@@ -428,16 +484,22 @@ final class CctTransportBackend implements TransportBackend {
   static final class HttpRequest {
     final URL url;
     final BatchedLogRequest requestBody;
+    @Nullable final String pseudonymousId;
     @Nullable final String apiKey;
 
-    HttpRequest(URL url, BatchedLogRequest requestBody, @Nullable String apiKey) {
+    HttpRequest(
+        URL url,
+        BatchedLogRequest requestBody,
+        @Nullable String apiKey,
+        @Nullable String pseudonymousId) {
       this.url = url;
       this.requestBody = requestBody;
       this.apiKey = apiKey;
+      this.pseudonymousId = pseudonymousId;
     }
 
     HttpRequest withUrl(URL newUrl) {
-      return new HttpRequest(newUrl, requestBody, apiKey);
+      return new HttpRequest(newUrl, requestBody, apiKey, pseudonymousId);
     }
   }
 }

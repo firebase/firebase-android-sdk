@@ -24,5 +24,10 @@ internal class FakeSessionSubscriber(
   override val isDataCollectionEnabled: Boolean = true,
   override val sessionSubscriberName: SessionSubscriber.Name = CRASHLYTICS,
 ) : SessionSubscriber {
-  override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) = Unit
+
+  val sessionChangedEvents = mutableListOf<SessionSubscriber.SessionDetails>()
+
+  override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
+    sessionChangedEvents.add(sessionDetails)
+  }
 }

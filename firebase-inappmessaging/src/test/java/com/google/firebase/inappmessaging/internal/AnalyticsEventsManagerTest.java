@@ -16,8 +16,8 @@ package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.inappmessaging.CommonTypesProto.Trigger.ON_FOREGROUND;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import android.util.Log;
@@ -43,7 +43,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 22, qualifiers = "es")
+@Config(manifest = Config.NONE, sdk = Config.OLDEST_SDK, qualifiers = "es")
 public class AnalyticsEventsManagerTest {
 
   @Rule public final ExpectedLogMessagesRule logged = new ExpectedLogMessagesRule();
