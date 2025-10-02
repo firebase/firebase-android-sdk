@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Addressed minor reference documentation issues (#7399)
+
 # 17.0.1
 
 - [changed] Bumped internal dependencies.
