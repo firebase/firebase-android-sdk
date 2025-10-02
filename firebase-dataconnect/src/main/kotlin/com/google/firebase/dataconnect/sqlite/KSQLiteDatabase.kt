@@ -57,15 +57,56 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
     }
   }
 
+  /**
+   * Starts a read-only transaction on the database, calls the given block with the transaction,
+   * then terminates the transaction when the block returns.
+   *
+   * On newer Android API versions, this method allows concurrent read transactions, and even read
+   * transactions concurrent with a write transaction due to the behavior of sqlite WAL mode.
+   *
+   * The given block will be called at most once and will not be retained by this object. If the
+   * given block throws an exception then that exception will be re-thrown by this method.
+   *
+   * Although there may be roundabout ways to perform write operations on the given transaction,
+   * this should not be done because (a) it violates the semantics of using a read-only transaction,
+   * (b) it could upgrade the underlying sqlite transaction to an exclusive lock, which suffers from
+   * a read-write-modify race condition if not done with meticulous care using a compare-and-swap
+   * ("CAS") loop taking care to avoid the ABA problem (https://en.wikipedia.org/wiki/ABA_problem),
+   * and (c) it will throw an exception on Android API 35 and later, which supports
+   * SQLiteDatabase.beginTransactionReadOnly().
+   *
+   * @param block the block to perform the database operations with the transaction.
+   * @return whatever the given block returns.
+   */
   suspend fun <T> runReadOnlyTransaction(block: suspend (ReadOnlyTransaction) -> T): T {
     val transaction = ReadOnlyTransactionImpl(db)
     // TODO(API35) Use SQLiteDatabase.beginTransactionReadOnly to begin read-only transactions once
     //  compileSdkVersion is set to 35 (VANILLA_ICE_CREAM) or greater; at the time of writing
     //  compileSdkVersion 34 is in use, so this function is not available at compile time.
-    @SuppressLint("UseKtx") db.beginTransaction()
+    // Note that since the database is opened in WAL mode "EXCLUSIVE and IMMEDIATE are the same"
+    // (see https://www.sqlite.org/lang_transaction.html) so there is real value is calling
+    // beginTransactionNonExclusive() over beginTransaction(); however, the code below,
+    // nevertheless, uses beginTransactionNonExclusive() to communicate the intention of supporting
+    // multiple concurrent readers, as beginTransactionReadOnly() will support.
+    @SuppressLint("UseKtx") db.beginTransactionNonExclusive()
     return runTransaction(transaction, block)
   }
 
+  /**
+   * Starts a read-write transaction on the database, calls the given block with the transaction,
+   * then commits the transaction if the block returns successfully or rolls back the transaction
+   * if the block throws an exception.
+   *
+   * On newer Android API versions, read-write transactions can be concurrent with read
+   * transactions, due to the behavior of sqlite WAL mode, but only one write transaction can be
+   * active at any given time.
+   *
+   * The given block will be called at most once and will not be retained by this object. If the
+   * given block throws an exception then that exception will be re-thrown by this method.
+   *
+   * @param block the block to perform the database operations with the transaction.
+   * @return whatever the given block returns.
+   */
   suspend fun <T> runReadWriteTransaction(block: suspend (ReadWriteTransaction) -> T): T {
     val transaction = ReadWriteTransactionImpl(db)
     @SuppressLint("UseKtx") db.beginTransaction()

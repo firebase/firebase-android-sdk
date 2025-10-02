@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import android.database.Cursor
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction
@@ -93,7 +94,7 @@ internal class DataConnectCacheDatabase(
     var done = false
     while (!done) {
       db.runReadWriteTransaction { txn ->
-        val schemaVersion = txn.getMetadataTextValueForKey("schema_version")
+        val schemaVersion = txn.getMetadataSchemaVersion()
         logger.debug { "schemaVersion=$schemaVersion" }
 
         // Guard against an infinite loop if there is a bug in the migration logic that updates the
@@ -105,6 +106,28 @@ internal class DataConnectCacheDatabase(
         }
         visitedSchemaVersions.add(schemaVersionNullableRef)
 
+        // ========= Schema Versioning Versioning Scheme =========
+        // The database schema version uses "semantic versioning" (https://semver.org/).
+        //
+        // The MAJOR version changes when backwards and/or forwards incompatible changes are made
+        // to the database schema, such as deleting tables or columns, changing the type of columns,
+        // or changing the semantics of the tables such that older clients' updates will corrupt the
+        // database. If the application sees a major version that it doesn't know about it MUST
+        // immediately abort and refuse to write to the database. MAJOR version changes MUST
+        // correspond to major version bumps of the SDK itself.
+        //
+        // The MINOR version changes when the schema meaningfully changes, such as adding new tables
+        // or adding columns to existing tables, but added in a backwards-compatible manner. The
+        // logic that uses these new columns and/or tables must be resilient to older clients
+        // that are unaware of these tables/columns making their updates in ignorance of their
+        // existence. For example, if a new "modified date" column is added to a table then older
+        // clients will not know about this column and will not update it. The newer code must
+        // handle such updates by, for example, explicitly checking for null values even thought the
+        // latest code would never put null values into that column. MINOR version changes SHOULD
+        // (but are not strictly required to) correspond to minor version bumps of the SDK itself.
+        //
+        // The PATCH version changes for all other non-schema-affecting changes, such as adding an
+        // index to an existing table.
         when (schemaVersion) {
           null -> {
             initializeSchema(txn)
@@ -128,22 +151,58 @@ internal class DataConnectCacheDatabase(
   }
 
   private suspend fun ReadOnlyTransaction.getMetadataSchemaVersion(): String? =
-    getMetadataTextValueForKey(SCHEMA_VERSION_KEY)
+    getMetadataStringValue(SCHEMA_VERSION_KEY)
 
   private suspend fun ReadWriteTransaction.setMetadataSchemaVersion(value: String): Unit =
-    setMetadataValueForKey(SCHEMA_VERSION_KEY, value)
+    setMetadataStringValue(SCHEMA_VERSION_KEY, value)
 
-  private suspend fun ReadOnlyTransaction.getMetadataTextValueForKey(key: String): String? =
-    executeQuery("SELECT text FROM metadata WHERE key = ?", bindings = listOf(key)) { cursor ->
-      if (cursor.moveToNext()) cursor.getString(0) else null
-    }
+  private fun ReadWriteTransaction.setMetadataBlobValue(key: String, value: ByteArray) {
+    setMetadataValue(key, "blob", value)
+  }
 
-  private fun ReadWriteTransaction.setMetadataValueForKey(key: String, value: String) {
+  private fun ReadWriteTransaction.setMetadataStringValue(key: String, value: String) {
+    setMetadataValue(key, "text", value)
+  }
+
+  private fun ReadWriteTransaction.setMetadataIntValue(key: String, value: Int) {
+    setMetadataValue(key, "int", value)
+  }
+
+  private fun <T> ReadWriteTransaction.setMetadataValue(key: String, columnName: String, value: T) {
     executeStatement(
-      "INSERT OR REPLACE INTO metadata (key, blob, text, int) VALUES (?, NULL, ?, NULL)",
+      """
+        INSERT OR REPLACE INTO metadata
+        (key, $columnName)
+        VALUES
+        (?, ?)
+      """,
       bindings = listOf(key, value)
     )
   }
+
+  private suspend fun ReadOnlyTransaction.getMetadataBlobValue(key: String): ByteArray? =
+    getMetadataValue(key, "blob") { cursor -> cursor.getBlob(0) }
+
+  private suspend fun ReadOnlyTransaction.getMetadataStringValue(key: String): String? =
+    getMetadataValue(key, "text") { cursor -> cursor.getString(0) }
+
+  private suspend fun ReadOnlyTransaction.getMetadataIntValue(key: String): Int? =
+    getMetadataValue(key, "int") { cursor -> cursor.getInt(0) }
+
+  private suspend inline fun <T> ReadOnlyTransaction.getMetadataValue(key: String, columnName: String, crossinline block: (Cursor) -> T): T? =
+    executeQuery("""
+        SELECT $columnName
+        FROM metadata
+        WHERE key = ?
+      """,
+      bindings = listOf(key),
+    ) { cursor ->
+      if (cursor.moveToNext() && !cursor.isNull(0)) {
+        block(cursor)
+      } else {
+        null
+      }
+    }
 
   class InvalidDatabaseException(message: String) : Exception(message)
 
