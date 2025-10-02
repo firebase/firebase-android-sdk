@@ -16,13 +16,11 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.sqlite.DataConnectSequenceNumberDatabase.InvalidDatabaseException
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.InvalidDatabaseException
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.filter
@@ -39,7 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class DataConnectSequenceNumberDatabaseUnitTest {
+class DataConnectCacheDatabaseUnitTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
   private val dbFile: File by lazy { File(temporaryFolder.newFolder(), "db.sqlite") }
@@ -48,77 +46,43 @@ class DataConnectSequenceNumberDatabaseUnitTest {
   private val rs: RandomSource by randomSeedTestRule.rs
 
   @Test
-  fun `nextSequenceNumber should return distinct numbers`() = runTest {
-    val sequenceNumbers: List<Long> =
-      withDataConnectSequenceNumberDatabase(dbFile) { db: DataConnectSequenceNumberDatabase ->
-        buildList { repeat(1000) { add(db.nextSequenceNumber()) } }
-      }
-
-    sequenceNumbers.distinct() shouldContainExactlyInAnyOrder sequenceNumbers
-  }
-
-  @Test
-  fun `nextSequenceNumber should return montonically-increasing numbers`() = runTest {
-    val sequenceNumbers: List<Long> =
-      withDataConnectSequenceNumberDatabase(dbFile) { db: DataConnectSequenceNumberDatabase ->
-        buildList { repeat(1000) { add(db.nextSequenceNumber()) } }
-      }
-
-    sequenceNumbers shouldContainExactly sequenceNumbers.sorted()
-  }
-
-  @Test
-  fun `nextSequenceNumber should montonically increase even after database re-opens`() = runTest {
-    val sequenceNumbers: List<Long> = buildList {
-      repeat(5) {
-        withDataConnectSequenceNumberDatabase(dbFile) { db: DataConnectSequenceNumberDatabase ->
-          repeat(1000) { add(db.nextSequenceNumber()) }
-        }
-      }
-    }
-
-    sequenceNumbers shouldContainExactly sequenceNumbers.sorted()
-  }
-
-  @Test
   fun `onOpen should throw if application_id is invalid`() = runTest {
-    withDataConnectSequenceNumberDatabase(dbFile) { db -> db.ensureOpen() }
-    val invalidApplicationId = Arb.int().filter { it != 0x432d5d29 }.next(rs)
+    withDataConnectCacheDatabase(dbFile) { db -> db.ensureOpen() }
+    val invalidApplicationId = Arb.int().filter { it != 0x7f1bc816 }.next(rs)
     setDataConnectSqliteDatabaseApplicationId(dbFile, invalidApplicationId)
 
     val exception =
-      withDataConnectSequenceNumberDatabase(dbFile) { db ->
+      withDataConnectCacheDatabase(dbFile) { db ->
         shouldThrow<InvalidDatabaseException> { db.ensureOpen() }
       }
 
     exception.message shouldContainWithNonAbuttingText "application_id"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "432d5d29"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "7f1bc816"
     exception.message shouldContainWithNonAbuttingTextIgnoringCase invalidApplicationId.toString(16)
   }
 
   @Test
   fun `onOpen should throw if user_version is invalid`() = runTest {
-    withDataConnectSequenceNumberDatabase(dbFile) { db -> db.ensureOpen() }
-    val invalidUserVersion = Arb.int().filter { it != 0x142a141e }.next(rs)
-    setDataConnectSqliteDatabaseUserVersion(dbFile, invalidUserVersion)
+    withDataConnectCacheDatabase(dbFile) { db -> db.ensureOpen() }
+    setDataConnectSqliteDatabaseUserVersion(dbFile, 2)
 
     val exception =
-      withDataConnectSequenceNumberDatabase(dbFile) { db ->
+      withDataConnectCacheDatabase(dbFile) { db ->
         shouldThrow<InvalidDatabaseException> { db.ensureOpen() }
       }
 
     exception.message shouldContainWithNonAbuttingText "user_version"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "142a141e"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase invalidUserVersion.toString(16)
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "0 or 1"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "2"
   }
 
   private companion object {
 
-    private suspend inline fun <T> withDataConnectSequenceNumberDatabase(
+    private suspend inline fun <T> withDataConnectCacheDatabase(
       dbFile: File,
-      block: suspend (DataConnectSequenceNumberDatabase) -> T
+      block: suspend (DataConnectCacheDatabase) -> T
     ): T {
-      val db = DataConnectSequenceNumberDatabase(dbFile, Dispatchers.IO, mockk(relaxed = true))
+      val db = DataConnectCacheDatabase(dbFile, Dispatchers.IO, mockk(relaxed = true))
       return try {
         block(db)
       } finally {

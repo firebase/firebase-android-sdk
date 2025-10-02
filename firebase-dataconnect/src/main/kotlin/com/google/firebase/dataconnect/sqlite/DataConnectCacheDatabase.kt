@@ -140,7 +140,7 @@ internal class DataConnectCacheDatabase(
 
   private fun ReadWriteTransaction.setMetadataValueForKey(key: String, value: String) {
     executeStatement(
-      "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)",
+      "INSERT OR REPLACE INTO metadata (key, blob, text, int) VALUES (?, NULL, ?, NULL)",
       bindings = listOf(key, value)
     )
   }
