@@ -22,6 +22,5 @@ package com.google.firebase.ai.type
  * @param gcsUri Contains the `gs://` URI for the image.
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`).
  */
-@PublicPreviewAPI
 internal class ImagenGCSImage
 internal constructor(public val gcsUri: String, public val mimeType: String) {}
