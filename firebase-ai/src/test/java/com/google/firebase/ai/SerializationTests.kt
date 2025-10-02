@@ -148,7 +148,12 @@ internal class SerializationTests {
             "BLOCKLIST",
             "PROHIBITED_CONTENT",
             "SPII",
-            "MALFORMED_FUNCTION_CALL"
+            "MALFORMED_FUNCTION_CALL",
+            "IMAGE_SAFETY",
+            "IMAGE_PROHIBITED_CONTENT",
+            "IMAGE_RECITATION",
+            "IMAGE_OTHER",
+            "NO_IMAGE"
           ]
         },
         "safetyRatings": {
