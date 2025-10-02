@@ -9,6 +9,9 @@
   [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
 - [changed] Improve query performance by using an unsorted HashMap instead of a sorted TreeMap.
   [#7389](//github.com/firebase/firebase-android-sdk/pull/7389)
+- [changed] Add `java.time.Instant` support to `DocumentSnapshot.toObject()`,
+  `DocumentReference.set()`, `DocumentReference.update()`, and similar.
+  [#6235](//github.com/firebase/firebase-android-sdk/pull/6235)
 
 # 26.0.1
 
