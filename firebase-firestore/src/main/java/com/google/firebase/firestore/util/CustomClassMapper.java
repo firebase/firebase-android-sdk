@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
-import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentId;
@@ -50,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -59,8 +59,8 @@ public class CustomClassMapper {
   private static final int MAX_DEPTH = 500;
 
   private static final ConcurrentMap<Class<?>, BeanMapper<?>> mappers = new ConcurrentHashMap<>();
-  private static final HashSet<String> RECORD_BASE_CLASS_NAMES =
-      Sets.newHashSet("java.lang.Record", "com.android.tools.r8.RecordTag");
+  private static final Set<String> RECORD_BASE_CLASS_NAMES =
+      Set.of("java.lang.Record", "com.android.tools.r8.RecordTag");
 
   private static void hardAssert(boolean assertion) {
     hardAssert(assertion, "Internal inconsistency");
