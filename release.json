@@ -1,0 +1,8 @@
+{
+    "name": "m171",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-dataconnect",
+        ":firebase-firestore"
+    ]
+}
