@@ -16,6 +16,7 @@
 
 package com.google.firebase.firestore.util;
 
+import android.os.Build;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
@@ -23,19 +24,17 @@ import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
-
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 
 /** Base bean mapper class, providing common functionality for class and record serialization. */
 abstract class BeanMapper<T> {
@@ -98,9 +97,15 @@ abstract class BeanMapper<T> {
   void applyFieldAnnotations(Field field) {
     if (field.isAnnotationPresent(ServerTimestamp.class)) {
       Class<?> fieldType = field.getType();
-      if (fieldType != Date.class && fieldType != Timestamp.class) {
-        throw new IllegalArgumentException("Field " + field.getName() + " is annotated with @ServerTimestamp but is "
-                                                           + fieldType + " instead of Date or Timestamp.");
+      if (fieldType != Date.class
+          && fieldType != Timestamp.class
+          && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && fieldType == Instant.class)) {
+        throw new IllegalArgumentException(
+            "Field "
+                + field.getName()
+                + " is annotated with @ServerTimestamp but is "
+                + fieldType
+                + " instead of Date, Timestamp, or Instant.");
       }
       serverTimestamps.add(propertyName(field));
     }
@@ -114,7 +119,7 @@ abstract class BeanMapper<T> {
 
   static String propertyName(Field field) {
     String annotatedName = annotatedName(field);
-    return annotatedName != null? annotatedName : field.getName();
+    return annotatedName != null ? annotatedName : field.getName();
   }
 
   static String annotatedName(AnnotatedElement obj) {

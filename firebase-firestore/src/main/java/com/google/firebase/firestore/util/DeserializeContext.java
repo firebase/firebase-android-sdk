@@ -18,7 +18,6 @@ package com.google.firebase.firestore.util;
 
 import com.google.firebase.firestore.DocumentReference;
 
-
 /** Holds information a deserialization operation needs to complete the job. */
 class DeserializeContext {
   /**

@@ -16,32 +16,40 @@
 
 package com.google.firebase.firestore.util;
 
+import android.os.Build;
+import androidx.annotation.RequiresApi;
+import com.google.firebase.firestore.FieldValue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import android.os.Build;
-import androidx.annotation.RequiresApi;
-import com.google.firebase.firestore.FieldValue;
-
+import java.util.stream.Collectors;
 
 /**
- * Serializes java records. Uses automatic record constructors and accessors only. Therefore,
- * exclusion of fields is not supported. Supports DocumentId, PropertyName, and ServerTimestamp
- * annotations on record components.
+ * Serializes java records. Uses canonical record constructors and accessors only. Therefore,
+ * exclusion of fields is not supported. Supports {@code DocumentId}, {@code PropertyName},
+ * and {@code ServerTimestamp} annotations on record components.
+ * Since java records may be desugared, and record component-related reflection methods may be missing,
+ * the canonical record constructor is identified through matching of parameter names and types with fields.
+ * Therefore, a mapped record must not have a custom constructor
+ * with the same set of parameter names and types as the canonical one
+ * (by default, only the canonical constructor's parameter names are preserved at runtime,
+ * and the others' get generic runtime names,
+ * but that can be changed with the {@code -parameters} compiler option).
  *
  * @author Eran Leshem
  */
+@RequiresApi(api = Build.VERSION_CODES.O)
 class RecordMapper<T> extends BeanMapper<T> {
   private static final Logger LOGGER = Logger.getLogger(RecordMapper.class.getName());
   private static final Class<?>[] CLASSES_ARRAY_TYPE = new Class<?>[0];
@@ -53,18 +61,10 @@ class RecordMapper<T> extends BeanMapper<T> {
   private final Constructor<T> constructor;
   private final Map<String, Integer> constructorParamIndexes = new HashMap<>();
 
-  @RequiresApi(api = Build.VERSION_CODES.O)
   RecordMapper(Class<T> clazz) {
     super(clazz);
 
-    Constructor<?>[] constructors = clazz.getConstructors();
-    if (constructors.length != 1) {
-      throw new RuntimeException("Record class has custom constructor(s): " + clazz.getName());
-    }
-
-    //noinspection unchecked
-    constructor = (Constructor<T>) constructors[0];
-
+    constructor = getConstructor(clazz);
     Parameter[] recordComponents = constructor.getParameters();
     if (recordComponents.length == 0) {
       throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
@@ -81,6 +81,34 @@ class RecordMapper<T> extends BeanMapper<T> {
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static <T> Constructor<T> getConstructor(Class<T> clazz) {
+    Map<String, Type> components =
+        Arrays.stream(clazz.getDeclaredFields())
+            .filter(field -> !Modifier.isStatic(field.getModifiers()))
+            .collect(Collectors.toMap(Field::getName, Field::getGenericType));
+    Constructor<T> match = null;
+    //noinspection unchecked
+    for (Constructor<T> ctor : (Constructor<T>[]) clazz.getConstructors()) {
+      Parameter[] parameters = ctor.getParameters();
+      Map<String, Type> parameterTypes =
+          Arrays.stream(parameters)
+              .collect(Collectors.toMap(Parameter::getName, Parameter::getParameterizedType));
+      if (!parameterTypes.equals(components)) {
+        continue;
+      }
+
+      if (match != null) {
+        throw new RuntimeException(
+            String.format(
+                "Multiple constructors match set of components for record %s", clazz.getName()));
+      }
+
+      match = ctor;
+    }
+
+    return match;
   }
 
   @Override

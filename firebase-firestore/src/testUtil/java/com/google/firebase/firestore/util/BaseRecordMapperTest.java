@@ -1,21 +1,17 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+package com.google.firebase.firestore.util;
 
-package com.google.firebase.firestore.sdk34.util;
+import static com.google.firebase.firestore.testutil.TestUtil.fromSingleQuotedString;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.ThrowOnExtraProperties;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,233 +21,128 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import org.junit.Assert;
 import org.junit.Test;
-import org.robolectric.annotation.Config;
 
-import com.google.firebase.firestore.DocumentId;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.PropertyName;
-import com.google.firebase.firestore.TestUtil;
-import com.google.firebase.firestore.ThrowOnExtraProperties;
-import com.google.firebase.firestore.util.CustomClassMapper;
+/**
+ * @author Eran Leshem
+ *
+ * @noinspection JUnitMalformedDeclaration*/
+class BaseRecordMapperTest {
+  public record StringBean(String value) {}
 
-import static com.google.firebase.firestore.sdk34.LocalFirestoreHelper.fromSingleQuotedString;
-import static com.google.firebase.firestore.sdk34.LocalFirestoreHelper.mapAnyType;
-import static org.junit.Assert.*;
+  public record DoubleBean(double value) {}
 
-@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 33)
-@SuppressWarnings({"unused", "WeakerAccess", "SpellCheckingInspection"})
-public class RecordMapperTest {
-  private static final double EPSILON = 0.0003;
+  public record FloatBean(float value) {}
 
-  public record StringBean (
-    String value
-  ){}
+  public record LongBean(long value) {}
 
-  public record DoubleBean (
-    double value
-  ){}
+  public record IntBean(int value) {}
 
-  public record BigDecimalBean (
-    BigDecimal value
-  ){}
+  public record BooleanBean(boolean value) {}
 
-  public record FloatBean (
-    float value
-  ){}
+  public record ShortBean(short value) {}
 
-  public record LongBean (
-    long value
-  ){}
+  public record ByteBean(byte value) {}
 
-  public record IntBean (
-    int value
-  ){}
+  public record CharBean(char value) {}
 
-  public record BooleanBean (
-    boolean value
-  ){}
+  public record IntArrayBean(int[] values) {}
 
-  public record ShortBean (
-    short value
-  ){}
+  public record StringArrayBean(String[] values) {}
 
-  public record ByteBean (
-    byte value
-  ){}
+  public record XMLAndURLBean(String XMLAndURL) {}
 
-  public record CharBean (
-    char value
-  ){}
+  public record CaseSensitiveFieldBean1(String VALUE) {}
 
-  public record IntArrayBean (
-    int[] values
-  ){}
+  public record CaseSensitiveFieldBean2(String value) {}
 
-  public record StringArrayBean (
-    String[] values
-  ){}
+  public record CaseSensitiveFieldBean3(String Value) {}
 
-  public record XMLAndURLBean (
-    String XMLAndURL
-  ){}
+  public record CaseSensitiveFieldBean4(String valUE) {}
 
-  public record CaseSensitiveFieldBean1 (
-    String VALUE
-  ){}
+  public record NestedBean(StringBean bean) {}
 
-  public record CaseSensitiveFieldBean2 (
-    String value
-  ){}
+  public record ObjectBean(Object value) {}
 
-  public record CaseSensitiveFieldBean3 (
-    String Value
-  ){}
+  public record GenericBean<B>(B value) {}
 
-  public record CaseSensitiveFieldBean4 (
-    String valUE
-  ){}
+  public record DoubleGenericBean<A, B>(A valueA, B valueB) {}
 
-  public record NestedBean (
-    StringBean bean
-  ){}
+  public record ListBean(List<String> values) {}
 
-  public record ObjectBean (
-    Object value
-  ){}
+  public record SetBean(Set<String> values) {}
 
-  public record GenericBean<B> (
-    B value
-  ){}
+  public record CollectionBean(Collection<String> values) {}
 
-  public record DoubleGenericBean<A, B> (
-    A valueA,
-    B valueB
-  ){}
-
-  public record ListBean (
-    List<String> values
-  ){}
-
-  public record SetBean (
-    Set<String> values
-  ){}
-
-  public record CollectionBean (
-    Collection<String> values
-  ){}
-
-  public record MapBean (
-    Map<String, String> values
-  ){}
+  public record MapBean(Map<String, String> values) {}
 
   /**
    * This form is not terribly useful in Java, but Kotlin Maps are immutable and are rewritten into
    * this form (b/67470108 has more details).
    */
-  public record UpperBoundedMapBean (
-    Map<String, ? extends Date> values
-  ){}
+  public record UpperBoundedMapBean(Map<String, ? extends Date> values) {}
 
-  public record MultiBoundedMapBean<T extends Date & Serializable> (
-    Map<String, T> values
-  ){}
+  public record MultiBoundedMapBean<T extends Date & Serializable>(Map<String, T> values) {}
 
-  public record MultiBoundedMapHolderBean (
-    MultiBoundedMapBean<Date> map
-  ){}
+  public record MultiBoundedMapHolderBean(MultiBoundedMapBean<Date> map) {}
 
-  public record UnboundedMapBean (
-    Map<String, ?> values
-  ){}
+  public record UnboundedMapBean(Map<String, ?> values) {}
 
-  public record UnboundedTypeVariableMapBean<T> (
-    Map<String, T> values
-  ){}
+  public record UnboundedTypeVariableMapBean<T>(Map<String, T> values) {}
 
-  public record UnboundedTypeVariableMapHolderBean (
-    UnboundedTypeVariableMapBean<String> map
-  ){}
+  public record UnboundedTypeVariableMapHolderBean(UnboundedTypeVariableMapBean<String> map) {}
 
-  public record NestedListBean (
-    List<StringBean> values
-  ){}
+  public record NestedListBean(List<StringBean> values) {}
 
-  public record NestedMapBean (
-    Map<String, StringBean> values
-  ){}
+  public record NestedMapBean(Map<String, StringBean> values) {}
 
-  public record IllegalKeyMapBean (
-    Map<Integer, StringBean> values
-  ){}
+  public record IllegalKeyMapBean(Map<Integer, StringBean> values) {}
 
   @ThrowOnExtraProperties
-  public record ThrowOnUnknownPropertiesBean (
-    String value
-  ){}
+  public record ThrowOnUnknownPropertiesBean(String value) {}
 
   @ThrowOnExtraProperties
-  public record NoFieldBean(
-  ){}
+  public record NoFieldBean() {}
 
-  public record PropertyNameBean (
-    @PropertyName("my_key")
-    String key,
-
-    @PropertyName("my_value")
-    String value
-  ){}
+  public record PropertyNameBean(
+      @PropertyName("my_key") String key, @PropertyName("my_value") String value) {}
 
   @SuppressWarnings({"NonAsciiCharacters"})
-  public record UnicodeBean (
-    String 漢字
-  ){}
+  public record UnicodeBean(String 漢字) {}
 
-  private static <T> T deserialize(String jsonString, Class<T> clazz) {
-    return deserialize(jsonString, clazz, /*docRef=*/ null);
-  }
+  public record AllCapsDefaultHandlingBean(String UUID) {}
 
-  private static <T> T deserialize(Map<String, Object> json, Class<T> clazz) {
-    return deserialize(json, clazz, /*docRef=*/ null);
-  }
+  public record AllCapsWithPropertyName(@PropertyName("uuid") String UUID) {}
 
-  private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
-    var json = fromSingleQuotedString(jsonString);
-    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
-  }
+  // Bean definitions with @DocumentId applied to wrong type.
+  public record FieldWithDocumentIdOnWrongTypeBean(@DocumentId Integer intField) {}
 
-  private static <T> T deserialize(
-      Map<String, Object> json, Class<T> clazz, DocumentReference docRef) {
-    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
-  }
+  public record PropertyWithDocumentIdOnWrongTypeBean(
+      @PropertyName("intField") @DocumentId int intField) {}
 
-  private static Object serialize(Object object) {
-    return CustomClassMapper.convertToPlainJavaTypes(object);
-  }
+  public record DocumentIdOnStringField(@DocumentId String docId) {}
 
-  private static void assertJson(String expected, Object actual) {
-    assertEquals(fromSingleQuotedString(expected), actual);
-  }
+  public record DocumentIdOnStringFieldAsProperty(
+      @PropertyName("docIdProperty") @DocumentId String docId,
+      @PropertyName("anotherProperty") int someOtherProperty) {}
 
-  private static void assertExceptionContains(String partialMessage, Runnable run) {
-    try {
-      run.run();
-      fail("Expected exception not thrown");
-    } catch (RuntimeException e) {
-      assertTrue(e.getMessage().contains(partialMessage));
+  public record DocumentIdOnNestedObjects(
+      @PropertyName("nestedDocIdHolder") DocumentIdOnStringField nestedDocIdHolder) {}
+
+  public record CustomConstructorBean(String value) {
+    public CustomConstructorBean() {
+      this("value");
     }
   }
 
-  private static <T> T convertToCustomClass(
-      Object object, Class<T> clazz, DocumentReference docRef) {
-    return CustomClassMapper.convertToCustomClass(object, clazz, docRef);
+  public record ConflictingConstructorBean(String value, int i) {
+    public ConflictingConstructorBean(int i, String value) {
+      this(value, i);
+    }
   }
 
-  private static <T> T convertToCustomClass(Object object, Class<T> clazz) {
-    return CustomClassMapper.convertToCustomClass(object, clazz, null);
-  }
+  private static final double EPSILON = 0.0003;
 
   @Test
   public void primitiveDeserializeString() {
@@ -348,52 +239,6 @@ public class RecordMapperTest {
     }
   }
 
-  /*
-  @Test
-  public void primitiveDeserializeBigDecimal() {
-    var beanBigdecimal = deserialize("{'value': 123}", BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(123.0), beanBigdecimal.value());
-
-    beanBigdecimal = deserialize("{'value': '123'}", BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(123), beanBigdecimal.value());
-
-    // Int
-    var beanInt =
-        deserialize(Collections.singletonMap("value", 1), BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(1), beanInt.value());
-
-    // Long
-    var beanLong =
-        deserialize(Collections.singletonMap("value", 1234567890123L), BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(1234567890123L), beanLong.value());
-
-    // Double
-    var beanDouble =
-        deserialize(Collections.singletonMap("value", 1.1), BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(1.1), beanDouble.value());
-
-    // BigDecimal
-    var beanBigDecimal =
-        deserialize(
-            Collections.singletonMap("value", BigDecimal.valueOf(1.2)), BigDecimalBean.class);
-    assertEquals(BigDecimal.valueOf(1.2), beanBigDecimal.value());
-
-    // Boolean
-    try {
-      deserialize("{'value': true}", BigDecimalBean.class);
-      fail("Should throw");
-    } catch (RuntimeException e) { // ignore
-    }
-
-    // String
-    try {
-      deserialize("{'value': 'foo'}", BigDecimalBean.class);
-      fail("Should throw");
-    } catch (RuntimeException e) { // ignore
-    }
-  }
-  */
-
   @Test
   public void primitiveDeserializeFloat() {
     var beanFloat = deserialize("{'value': 1.1}", FloatBean.class);
@@ -403,8 +248,7 @@ public class RecordMapperTest {
     var beanInt = deserialize(Collections.singletonMap("value", 1), FloatBean.class);
     assertEquals(1, beanInt.value(), EPSILON);
     // Long
-    var beanLong =
-        deserialize(Collections.singletonMap("value", 1234567890123L), FloatBean.class);
+    var beanLong = deserialize(Collections.singletonMap("value", 1234567890123L), FloatBean.class);
     assertEquals((float) 1234567890123L, beanLong.value(), EPSILON);
 
     // Boolean
@@ -518,7 +362,7 @@ public class RecordMapperTest {
   public void noFieldDeserialize() {
     assertExceptionContains(
         "No properties to serialize found on class "
-            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$NoFieldBean",
+            + "com.google.firebase.firestore.util.BaseRecordMapperTest$NoFieldBean",
         () -> deserialize("{'value': 'foo'}", NoFieldBean.class));
   }
 
@@ -526,42 +370,30 @@ public class RecordMapperTest {
   public void throwOnUnknownProperties() {
     assertExceptionContains(
         "No accessor for unknown found on class "
-            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$ThrowOnUnknownPropertiesBean",
+            + "com.google.firebase.firestore.util.BaseRecordMapperTest$ThrowOnUnknownPropertiesBean",
         () ->
             deserialize("{'value': 'foo', 'unknown': 'bar'}", ThrowOnUnknownPropertiesBean.class));
   }
 
   @Test
   public void XMLAndURLBean() {
-    var bean =
-        deserialize("{'XMLAndURL': 'foo'}", XMLAndURLBean.class);
+    var bean = deserialize("{'XMLAndURL': 'foo'}", XMLAndURLBean.class);
     assertEquals("foo", bean.XMLAndURL());
   }
-
-  public record AllCapsDefaultHandlingBean (
-    String UUID
-  ){}
 
   @Test
   public void allCapsSerializesToUppercaseByDefault() {
     var bean = new AllCapsDefaultHandlingBean("value");
     assertJson("{'UUID': 'value'}", serialize(bean));
-    var deserialized =
-        deserialize("{'UUID': 'value'}", AllCapsDefaultHandlingBean.class);
+    var deserialized = deserialize("{'UUID': 'value'}", AllCapsDefaultHandlingBean.class);
     assertEquals("value", deserialized.UUID());
   }
-
-  public record AllCapsWithPropertyName (
-    @PropertyName("uuid")
-    String UUID
-  ){}
 
   @Test
   public void allCapsWithPropertyNameSerializesToLowercase() {
     var bean = new AllCapsWithPropertyName("value");
     assertJson("{'uuid': 'value'}", serialize(bean));
-    var deserialized =
-        deserialize("{'uuid': 'value'}", AllCapsWithPropertyName.class);
+    var deserialized = deserialize("{'uuid': 'value'}", AllCapsWithPropertyName.class);
     assertEquals("value", deserialized.UUID());
   }
 
@@ -587,44 +419,42 @@ public class RecordMapperTest {
   @Test
   public void beansCanContainUpperBoundedMaps() {
     var date = new Date(1491847082123L);
-    var source = mapAnyType("values", mapAnyType("foo", date));
+    var source = map("values", map("foo", date));
     var bean = convertToCustomClass(source, UpperBoundedMapBean.class);
-    var expected = mapAnyType("foo", date);
+    var expected = map("foo", date);
     assertEquals(expected, bean.values());
   }
 
   @Test
   public void beansCanContainMultiBoundedMaps() {
     var date = new Date(1491847082123L);
-    var source = mapAnyType("map", mapAnyType("values", mapAnyType("foo", date)));
+    var source = map("map", map("values", map("foo", date)));
     var bean = convertToCustomClass(source, MultiBoundedMapHolderBean.class);
 
-    var expected = mapAnyType("foo", date);
+    var expected = map("foo", date);
     assertEquals(expected, bean.map().values());
   }
 
   @Test
   public void beansCanContainUnboundedMaps() {
     var bean = deserialize("{'values': {'foo': 'bar'}}", UnboundedMapBean.class);
-    var expected = mapAnyType("foo", "bar");
+    var expected = map("foo", "bar");
     assertEquals(expected, bean.values());
   }
 
   @Test
   public void beansCanContainUnboundedTypeVariableMaps() {
-    var source = mapAnyType("map", mapAnyType("values", mapAnyType("foo", "bar")));
-    var bean =
-        convertToCustomClass(source, UnboundedTypeVariableMapHolderBean.class);
+    var source = map("map", map("values", map("foo", "bar")));
+    var bean = convertToCustomClass(source, UnboundedTypeVariableMapHolderBean.class);
 
-    var expected = mapAnyType("foo", "bar");
+    var expected = map("foo", "bar");
     assertEquals(expected, bean.map().values());
   }
 
   @Test
   public void beansCanContainNestedUnboundedMaps() {
-    var bean =
-        deserialize("{'values': {'foo': {'bar': 'baz'}}}", UnboundedMapBean.class);
-    var expected = mapAnyType("foo", mapAnyType("bar", "baz"));
+    var bean = deserialize("{'values': {'foo': {'bar': 'baz'}}}", UnboundedMapBean.class);
+    var expected = map("foo", map("bar", "baz"));
     assertEquals(expected, bean.values());
   }
 
@@ -665,7 +495,7 @@ public class RecordMapperTest {
   @Test
   public void serializeIntBean() {
     var bean = new IntBean(1);
-    assertJson("{'value': 1}", serialize(Collections.singletonMap("value", 1.0)));
+    assertJson("{'value': 1}", serialize(Collections.singletonMap("value", 1)));
   }
 
   @Test
@@ -675,23 +505,6 @@ public class RecordMapperTest {
         "{'value': 1.234567890123E12}",
         serialize(Collections.singletonMap("value", 1.234567890123E12)));
   }
-
-  /*
-  @Test
-  public void serializeBigDecimalBean() {
-    var bean = new BigDecimalBean(BigDecimal.valueOf(1.1));
-    assertEquals(mapAnyType("value", "1.1"), serialize(bean));
-  }
-
-  @Test
-  public void bigDecimalRoundTrip() {
-    var doubleMaxPlusOne = BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.ONE);
-    var a = new BigDecimalBean(doubleMaxPlusOne);
-    var serialized = (Map<String, Object>) serialize(a);
-    var b = convertToCustomClass(serialized, BigDecimalBean.class);
-    assertEquals(a, b);
-  }
-  */
 
   @Test
   public void serializeBooleanBean() {
@@ -704,7 +517,7 @@ public class RecordMapperTest {
     var bean = new FloatBean(0.5f);
 
     // We don't use assertJson as it converts all floating point numbers to Double.
-    assertEquals(mapAnyType("value", 0.5f), serialize(bean));
+    Assert.assertEquals(map("value", 0.5f), serialize(bean));
   }
 
   @Test
@@ -712,7 +525,7 @@ public class RecordMapperTest {
     final var bean = new NoFieldBean();
     assertExceptionContains(
         "No properties to serialize found on class "
-            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$NoFieldBean",
+            + "com.google.firebase.firestore.util.BaseRecordMapperTest$NoFieldBean",
         () -> serialize(bean));
   }
 
@@ -739,8 +552,7 @@ public class RecordMapperTest {
   public void serializingUpperBoundedMapsWorks() {
     var date = new Date(1491847082123L);
     var bean = new UpperBoundedMapBean(Map.of("foo", date));
-    var expected =
-        mapAnyType("values", mapAnyType("foo", new Date(date.getTime())));
+    var expected = map("values", map("foo", new Date(date.getTime())));
     assertEquals(expected, serialize(bean));
   }
 
@@ -753,8 +565,7 @@ public class RecordMapperTest {
 
     var holder = new MultiBoundedMapHolderBean(new MultiBoundedMapBean<>(values));
 
-    var expected =
-        mapAnyType("map", mapAnyType("values", mapAnyType("foo", new Date(date.getTime()))));
+    var expected = map("map", map("values", map("foo", new Date(date.getTime()))));
     assertEquals(expected, serialize(holder));
   }
 
@@ -800,8 +611,7 @@ public class RecordMapperTest {
   public void roundTripCaseSensitiveFieldBean1() {
     var bean = new CaseSensitiveFieldBean1("foo");
     assertJson("{'VALUE': 'foo'}", serialize(bean));
-    var deserialized =
-        deserialize("{'VALUE': 'foo'}", CaseSensitiveFieldBean1.class);
+    var deserialized = deserialize("{'VALUE': 'foo'}", CaseSensitiveFieldBean1.class);
     assertEquals("foo", deserialized.VALUE());
   }
 
@@ -809,8 +619,7 @@ public class RecordMapperTest {
   public void roundTripCaseSensitiveFieldBean2() {
     var bean = new CaseSensitiveFieldBean2("foo");
     assertJson("{'value': 'foo'}", serialize(bean));
-    var deserialized =
-        deserialize("{'value': 'foo'}", CaseSensitiveFieldBean2.class);
+    var deserialized = deserialize("{'value': 'foo'}", CaseSensitiveFieldBean2.class);
     assertEquals("foo", deserialized.value());
   }
 
@@ -818,8 +627,7 @@ public class RecordMapperTest {
   public void roundTripCaseSensitiveFieldBean3() {
     var bean = new CaseSensitiveFieldBean3("foo");
     assertJson("{'Value': 'foo'}", serialize(bean));
-    var deserialized =
-        deserialize("{'Value': 'foo'}", CaseSensitiveFieldBean3.class);
+    var deserialized = deserialize("{'Value': 'foo'}", CaseSensitiveFieldBean3.class);
     assertEquals("foo", deserialized.Value());
   }
 
@@ -827,8 +635,7 @@ public class RecordMapperTest {
   public void roundTripCaseSensitiveFieldBean4() {
     var bean = new CaseSensitiveFieldBean4("foo");
     assertJson("{'valUE': 'foo'}", serialize(bean));
-    var deserialized =
-        deserialize("{'valUE': 'foo'}", CaseSensitiveFieldBean4.class);
+    var deserialized = deserialize("{'valUE': 'foo'}", CaseSensitiveFieldBean4.class);
     assertEquals("foo", deserialized.valUE());
   }
 
@@ -925,16 +732,17 @@ public class RecordMapperTest {
     var listValue = deserialize("{'value': ['foo']}", ObjectBean.class);
     assertEquals(Collections.singletonList("foo"), listValue.value());
     var mapValue = deserialize("{'value': {'foo':'bar'}}", ObjectBean.class);
-    assertEquals(fromSingleQuotedString("{'foo':'bar'}"), mapValue.value());
+    Assert.assertEquals(fromSingleQuotedString("{'foo':'bar'}"), mapValue.value());
     var complex = "{'value': {'foo':['bar', ['baz'], {'bam': 'qux'}]}, 'other':{'a': ['b']}}";
     var complexValue = deserialize(complex, ObjectBean.class);
-    assertEquals(fromSingleQuotedString(complex).get("value"), complexValue.value());
+    Assert.assertEquals(fromSingleQuotedString(complex).get("value"), complexValue.value());
   }
 
   @Test
   public void passingInGenericBeanTopLevelThrows() {
-    assertExceptionContains("Class com.google.firebase.firestore.sdk34.util.RecordMapperTest$GenericBean has generic type parameters",
-                            () -> deserialize("{'value': 'foo'}", GenericBean.class));
+    assertExceptionContains(
+        "Class com.google.firebase.firestore.util.BaseRecordMapperTest$GenericBean has generic type parameters",
+        () -> deserialize("{'value': 'foo'}", GenericBean.class));
   }
 
   @Test
@@ -974,7 +782,7 @@ public class RecordMapperTest {
     assertJson("{'value': {'value': 'foo'}}", serialize(recursiveBean));
 
     var doubleBean = new DoubleGenericBean<String, Double>("foo", 1.0);
-    assertJson("{'valueB': 1, 'valueA': 'foo'}", serialize(doubleBean));
+    assertJson("{'valueB': 1.0, 'valueA': 'foo'}", serialize(doubleBean));
   }
 
   @Test
@@ -986,22 +794,10 @@ public class RecordMapperTest {
 
   @Test
   public void propertyNamesAreParsed() {
-    var bean =
-        deserialize("{'my_key': 'foo', 'my_value': 'bar'}", PropertyNameBean.class);
+    var bean = deserialize("{'my_key': 'foo', 'my_value': 'bar'}", PropertyNameBean.class);
     assertEquals("foo", bean.key());
     assertEquals("bar", bean.value());
   }
-
-  // Bean definitions with @DocumentId applied to wrong type.
-  public record FieldWithDocumentIdOnWrongTypeBean (
-                  @DocumentId Integer intField
-  ){}
-
-  public record PropertyWithDocumentIdOnWrongTypeBean (
-    @PropertyName("intField")
-    @DocumentId
-    int intField
-  ){}
 
   @Test
   public void documentIdAnnotateWrongTypeThrows() {
@@ -1019,89 +815,71 @@ public class RecordMapperTest {
         () -> deserialize("{'intField': 1}", PropertyWithDocumentIdOnWrongTypeBean.class));
   }
 
-  public record DocumentIdOnStringField (
-    @DocumentId String docId
-  ){}
-
-  public record DocumentIdOnStringFieldAsProperty (
-    @PropertyName("docIdProperty")
-    @DocumentId
-    String docId,
-
-    @PropertyName("anotherProperty")
-    int someOtherProperty
-  ){}
-
-  public record DocumentIdOnNestedObjects (
-    @PropertyName("nestedDocIdHolder")
-    DocumentIdOnStringField nestedDocIdHolder
-  ){}
-
   @Test
-  public void documentIdsDeserialize() {
-    DocumentReference ref = TestUtil.documentReference("coll/doc123");
-
-    assertEquals("doc123", deserialize("{}", DocumentIdOnStringField.class, ref).docId());
-
+  public void customConstructorRoundTrip() {
+    final var bean = new CustomConstructorBean("foo");
     assertEquals(
-        "doc123",
-        deserialize(Collections.singletonMap("property", 100), DocumentIdOnStringField.class, ref)
-            .docId());
-
-    var target =
-        deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref);
-    assertEquals("doc123", target.docId());
-    assertEquals(100, target.someOtherProperty());
-
-    assertEquals(
-        "doc123",
-        deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)
-            .nestedDocIdHolder()
-            .docId());
+        bean,
+        CustomClassMapper.convertToCustomClass(serialize(bean), CustomConstructorBean.class, null));
   }
 
   @Test
-  public void documentIdsRoundTrip() {
-    // Implicitly verifies @DocumentId is ignored during serialization.
-
-    DocumentReference ref = TestUtil.documentReference("coll/doc123");
-
-    assertEquals(
-        Collections.emptyMap(), serialize(deserialize("{}", DocumentIdOnStringField.class, ref)));
-
-    assertEquals(
-        Collections.singletonMap("anotherProperty", 100),
-        serialize(
-            deserialize("{'anotherProperty': 100}", DocumentIdOnStringFieldAsProperty.class, ref)));
-
-    assertEquals(
-        Collections.singletonMap("nestedDocIdHolder", Collections.emptyMap()),
-        serialize(deserialize("{'nestedDocIdHolder': {}}", DocumentIdOnNestedObjects.class, ref)));
+  public void conflictingConstructorCantBeSerialized() {
+    final var bean = new ConflictingConstructorBean("foo", 5);
+    assertExceptionContains(
+        "Multiple constructors match set of components for record "
+            + "com.google.firebase.firestore.util.BaseRecordMapperTest$ConflictingConstructorBean",
+        () -> serialize(bean));
   }
 
   @Test
-  public void documentIdsDeserializeConflictThrows() {
-    final String expectedErrorMessage = "cannot apply @DocumentId on this property";
-    DocumentReference ref = TestUtil.documentReference("coll/doc123");
-
+  public void conflictingConstructorCantBeDeserialized() {
     assertExceptionContains(
-        expectedErrorMessage,
-        () -> deserialize("{'docId': 'toBeOverwritten'}", DocumentIdOnStringField.class, ref));
+        "Multiple constructors match set of components for record "
+            + "com.google.firebase.firestore.util.BaseRecordMapperTest$ConflictingConstructorBean",
+        () -> deserialize(map("foo", 5), ConflictingConstructorBean.class));
+  }
 
-    assertExceptionContains(
-        expectedErrorMessage,
-        () ->
-            deserialize(
-                "{'docIdProperty': 'toBeOverwritten', 'anotherProperty': 100}",
-                DocumentIdOnStringFieldAsProperty.class,
-                ref));
+  static <T> T deserialize(String jsonString, Class<T> clazz) {
+    return deserialize(jsonString, clazz, /* docRef= */ null);
+  }
 
-    assertExceptionContains(
-        expectedErrorMessage,
-        () ->
-            deserialize(
-                "{'nestedDocIdHolder': {'docId': 'toBeOverwritten'}}",
-                DocumentIdOnNestedObjects.class,
-                ref));
+  static <T> T deserialize(Map<String, Object> json, Class<T> clazz) {
+    return deserialize(json, clazz, /* docRef= */ null);
+  }
+
+  static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {
+    var json = fromSingleQuotedString(jsonString);
+    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
+  }
+
+  static <T> T deserialize(Map<String, Object> json, Class<T> clazz, DocumentReference docRef) {
+    return CustomClassMapper.convertToCustomClass(json, clazz, docRef);
+  }
+
+  static Object serialize(Object object) {
+    return CustomClassMapper.convertToPlainJavaTypes(object);
+  }
+
+  private static void assertJson(String expected, Object actual) {
+    Assert.assertEquals(fromSingleQuotedString(expected), actual);
+  }
+
+  static void assertExceptionContains(String partialMessage, Runnable run) {
+    try {
+      run.run();
+      fail("Expected exception not thrown");
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains(partialMessage));
+    }
+  }
+
+  private static <T> T convertToCustomClass(
+      Object object, Class<T> clazz, DocumentReference docRef) {
+    return CustomClassMapper.convertToCustomClass(object, clazz, docRef);
+  }
+
+  static <T> T convertToCustomClass(Object object, Class<T> clazz) {
+    return CustomClassMapper.convertToCustomClass(object, clazz, null);
   }
 }

@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
+import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentId;
@@ -27,12 +28,8 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.IgnoreExtraProperties;
-import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
-import com.google.firebase.firestore.ThrowOnExtraProperties;
 import com.google.firebase.firestore.VectorValue;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -56,27 +53,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import android.net.Uri;
-import android.os.Build;
-import com.google.common.collect.Sets;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.DocumentId;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.Exclude;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.ServerTimestamp;
-
-import static com.google.firebase.firestore.util.ApiUtil.invoke;
-import static com.google.firebase.firestore.util.ApiUtil.newInstance;
-
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
   /** Maximum depth before we give up and assume it's a recursive object graph. */
   private static final int MAX_DEPTH = 500;
 
   private static final ConcurrentMap<Class<?>, BeanMapper<?>> mappers = new ConcurrentHashMap<>();
+  private static final HashSet<String> RECORD_BASE_CLASS_NAMES =
+      Sets.newHashSet("java.lang.Record", "com.android.tools.r8.RecordTag");
 
   private static void hardAssert(boolean assertion) {
     hardAssert(assertion, "Internal inconsistency");
@@ -625,7 +609,7 @@ public class CustomClassMapper {
 
   private static boolean isRecordType(Class<?> cls) {
     Class<?> parent = cls.getSuperclass();
-    return parent != null && Sets.newHashSet("java.lang.Record", "com.android.tools.r8.RecordTag").contains(parent.getName());
+    return parent != null && RECORD_BASE_CLASS_NAMES.contains(parent.getName());
   }
 
   // Helper class to convert from maps to custom objects (Beans), and vice versa.
