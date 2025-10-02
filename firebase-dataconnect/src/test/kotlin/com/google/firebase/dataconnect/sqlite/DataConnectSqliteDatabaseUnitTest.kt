@@ -43,7 +43,6 @@ import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -70,81 +69,66 @@ import org.robolectric.RobolectricTestRunner
 class DataConnectSqliteDatabaseUnitTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
-  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
 
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
   private val rs: RandomSource by randomSeedTestRule.rs
 
   @Test
   fun `constructor file argument should be used as the database file`() = runTest {
     val dbFile = File(temporaryFolder.newFolder(), "fqsywf8bdd.sqlite")
     val userVersion = Arb.int().next(rs)
-    val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
-    val db =
-      TestDataConnectSqliteDatabase(
-        file = dbFile,
-        onOpen = { kdb ->
-          kdb.runReadWriteTransaction {
-            getDatabasesResult.set(it.getDatabases())
-            it.setUserVersion(userVersion)
-          }
-        }
-      )
 
-    try {
-      db.ensureOpen()
-    } finally {
-      withContext(NonCancellable) { db.close() }
-    }
+    val getDatabasesResult: List<GetDatabasesResult> =
+      onOpenDataConnectSqliteDatabase(dbFile) { kdb ->
+        kdb.runReadWriteTransaction {
+          it.setUserVersion(userVersion)
+          it.getDatabases()
+        }
+      }
 
     withClue("getDatabasesResult") {
-      getDatabasesResult.get().first().filePath shouldBe dbFile.absolutePath
+      getDatabasesResult.first().filePath shouldBe dbFile.absolutePath
     }
-    withClue("userVersion") { db.file!!.getSqliteUserVersion() shouldBe userVersion }
+    withClue("userVersion") { dbFile.getSqliteUserVersion() shouldBe userVersion }
   }
 
   @Test
   fun `constructor file argument null should use an in-memory database`() = runTest {
-    val getDatabasesResult = AtomicReference<List<GetDatabasesResult>>(null)
-    val db =
-      TestDataConnectSqliteDatabase(
-        file = null,
-        onOpen = { kdb -> kdb.runReadOnlyTransaction { getDatabasesResult.set(it.getDatabases()) } }
-      )
+    val getDatabasesResult: List<GetDatabasesResult> =
+      onOpenDataConnectSqliteDatabase(null) { kdb ->
+        kdb.runReadWriteTransaction { it.getDatabases() }
+      }
 
-    try {
-      db.ensureOpen()
-    } finally {
-      withContext(NonCancellable) { db.close() }
-    }
-
-    withClue("getDatabasesResult") { getDatabasesResult.get().first().filePath shouldBe "" }
+    withClue("getDatabasesResult") { getDatabasesResult.first().filePath shouldBe "" }
   }
 
   @Test
-  fun `constructor CoroutineDispatcher argument is used`() = runTest {
+  fun `constructor CoroutineDispatcher argument is used by onOpen`() = runTest {
     val executor = Executors.newSingleThreadExecutor()
     try {
       val dispatcher = executor.asCoroutineDispatcher()
       val dispatcherThread = withContext(dispatcher) { Thread.currentThread() }
-      val onOpenThread = AtomicReference<Thread>(null)
-      val withDbThread = AtomicReference<Thread>(null)
-      val db =
-        TestDataConnectSqliteDatabase(
-          ioDispatcher = dispatcher,
-          onOpen = { onOpenThread.set(Thread.currentThread()) },
-          withDb = { withDbThread.set(Thread.currentThread()) }
-        )
 
-      try {
-        db.callWithDb()
-      } finally {
-        withContext(NonCancellable) { db.close() }
-      }
+      val onOpenThread =
+        onOpenDataConnectSqliteDatabase(null, dispatcher) { Thread.currentThread() }
 
-      assertSoftly {
-        withClue("onOpenThread") { onOpenThread.get() shouldBeSameInstanceAs dispatcherThread }
-        withClue("withDbThread") { withDbThread.get() shouldBeSameInstanceAs dispatcherThread }
-      }
+      onOpenThread shouldBeSameInstanceAs dispatcherThread
+    } finally {
+      executor.shutdown()
+    }
+  }
+
+  @Test
+  fun `constructor CoroutineDispatcher argument is used by withDb`() = runTest {
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      val dispatcher = executor.asCoroutineDispatcher()
+      val dispatcherThread = withContext(dispatcher) { Thread.currentThread() }
+
+      val withDbThread =
+        withDbDataConnectSqliteDatabase(null, dispatcher) { Thread.currentThread() }
+
+      withDbThread shouldBeSameInstanceAs dispatcherThread
     } finally {
       executor.shutdown()
     }
@@ -323,7 +307,7 @@ class DataConnectSqliteDatabaseUnitTest {
       try {
         db.ensureOpen()
         val kdb = kdbFlow.filterNotNull().first()
-        shouldThrow<java.lang.IllegalStateException> { kdb.runReadOnlyTransaction {} }
+        shouldThrow<IllegalStateException> { kdb.runReadOnlyTransaction {} }
       } finally {
         withContext(NonCancellable) { db.close() }
       }
