@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Configuration parameters to use for image generation.
  *
@@ -33,9 +35,13 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
    * @see [imageConfig]
    */
   public class Builder {
-    @JvmField public var aspectRatio: AspectRatio? = null
+    @JvmField
+    @set:JvmSynthetic // hide void setter from Java
+    public var aspectRatio: AspectRatio? = null
 
-    public fun setAspectRatio(aspectRatio: AspectRatio?): Builder = apply { this.aspectRatio = aspectRatio }
+    public fun setAspectRatio(aspectRatio: AspectRatio?): Builder = apply {
+      this.aspectRatio = aspectRatio
+    }
 
     /** Create a new [ImageConfig] with the attached arguments. */
     public fun build(): ImageConfig = ImageConfig(aspectRatio = aspectRatio)
@@ -43,18 +49,7 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
 
   internal fun toInternal() = Internal(aspectRatio = aspectRatio?.internalVal)
 
-  internal data class Internal(val aspectRatio: String?)
-
-  public companion object {
-
-    /**
-     * Alternative casing for [ImageConfig.Builder]:
-     * ```
-     * val config = ImageConfig.builder()
-     * ```
-     */
-    public fun builder(): Builder = Builder()
-  }
+  @Serializable internal data class Internal(val aspectRatio: String?)
 }
 
 /**
@@ -68,7 +63,7 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
  * ```
  */
 public fun imageConfig(init: ImageConfig.Builder.() -> Unit): ImageConfig {
-  val builder = ImageConfig.builder()
+  val builder = ImageConfig.Builder()
   builder.init()
   return builder.build()
 }

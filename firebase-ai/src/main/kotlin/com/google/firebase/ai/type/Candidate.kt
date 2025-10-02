@@ -238,7 +238,11 @@ public class FinishReason private constructor(public val name: String, public va
     PROHIBITED_CONTENT,
     SPII,
     MALFORMED_FUNCTION_CALL,
-    @SerialName("NO_IMAGE") NO_IMAGE;
+    IMAGE_SAFETY,
+    IMAGE_PROHIBITED_CONTENT,
+    IMAGE_RECITATION,
+    IMAGE_OTHER,
+    NO_IMAGE;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
@@ -253,6 +257,10 @@ public class FinishReason private constructor(public val name: String, public va
         PROHIBITED_CONTENT -> FinishReason.PROHIBITED_CONTENT
         SPII -> FinishReason.SPII
         MALFORMED_FUNCTION_CALL -> FinishReason.MALFORMED_FUNCTION_CALL
+        IMAGE_SAFETY -> FinishReason.IMAGE_SAFETY
+        IMAGE_PROHIBITED_CONTENT -> FinishReason.IMAGE_PROHIBITED_CONTENT
+        IMAGE_RECITATION -> FinishReason.IMAGE_RECITATION
+        IMAGE_OTHER -> FinishReason.IMAGE_OTHER
         NO_IMAGE -> FinishReason.NO_IMAGE
         else -> FinishReason.UNKNOWN
       }
@@ -294,8 +302,21 @@ public class FinishReason private constructor(public val name: String, public va
     @JvmField
     public val MALFORMED_FUNCTION_CALL: FinishReason = FinishReason("MALFORMED_FUNCTION_CALL", 9)
 
-    /** No image was generated. */
-    @JvmField public val NO_IMAGE: FinishReason = FinishReason("NO_IMAGE", 10)
+    /** Token generation stopped because generated images has safety violations. */
+    @JvmField public val IMAGE_SAFETY: FinishReason = FinishReason("IMAGE_SAFETY", 10)
+
+    /** Image generation stopped because generated images has other prohibited content. */
+    @JvmField
+    public val IMAGE_PROHIBITED_CONTENT: FinishReason = FinishReason("IMAGE_PROHIBITED_CONTENT", 11)
+
+    /** Image generation stopped due to recitation. */
+    @JvmField public val IMAGE_RECITATION: FinishReason = FinishReason("IMAGE_RECITATION", 12)
+
+    /** Image generation stopped because of other miscellaneous issue. */
+    @JvmField public val IMAGE_OTHER: FinishReason = FinishReason("IMAGE_OTHER", 13)
+
+    /** The model was expected to generate an image, but none was generated. */
+    @JvmField public val NO_IMAGE: FinishReason = FinishReason("NO_IMAGE", 14)
   }
 }
 
