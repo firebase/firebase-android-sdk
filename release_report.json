@@ -1,0 +1,227 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "727a97e8038b6173b1932c1cb1af753be89ea491",
+                "prId": "7425",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove `PublicPreviewAPI` annotation for image generation (#7425)\n\nThe API surface is graduating to GA. It does not include imagen editing\nfeatures. Those still require the opt-in annotation to be used.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/727a97e8038b6173b1932c1cb1af753be89ea491",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7425"
+            },
+            {
+                "commitId": "1654b314ddc0efaef8b2054a6b27198ed5fc80f3",
+                "prId": "7401",
+                "author": "Daniel La Rocque",
+                "message": "[FirebaseAI] Add support for URL context (#7401)\n\nAPI proposal: [go/alf-urlcontext-api](http://go/alf-urlcontext-api)\n(internal)\n\nChanges:\n- Added `UrlContext` and `Tool.urlContext()` static initializer\n- Added `UrlContextMetadata` to `Candidate`.\n- Added `toolUsePromptTokenCount` and `toolUsePromptTokensDetails`,\nwhich will be populated when using Google Search, Code Execution, or URL\nContext.\n- Adjusted `GroundingMetadata` documentation. It used to only be used by\nGoogle Search, now it can be used by either Google Search or URL\ncontext- reworded a couple things to reflect this.\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1654b314ddc0efaef8b2054a6b27198ed5fc80f3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7401"
+            },
+            {
+                "commitId": "6974f4951959c52f99ad26bd5d1d51d71127fb57",
+                "prId": "7420",
+                "author": "Rodrigo Lazo",
+                "message": "[ALF] Deprecate `UsageMetadata` public constructor (#7420)\n\nThe class was never meant to be instantiated by clients. The public\nconstructor is now marked as deprecated and will be removed in a\nupcoming major version bump.\n\nAdditionally, the PR includes an unused parameter in the internal\nversion to get the code to build. It will be removed in a upcoming\nchange were an actual new parameter, exclusive to the internal\nconstructor, is added.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6974f4951959c52f99ad26bd5d1d51d71127fb57",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7420"
+            },
+            {
+                "commitId": "e6a9f6af04c1cf9b2b53aec0cf145639eede5e0e",
+                "prId": "7385",
+                "author": "David Motsonashvili",
+                "message": "Fixing documentation for M170 (#7385)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e6a9f6af04c1cf9b2b53aec0cf145639eede5e0e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7385"
+            },
+            {
+                "commitId": "9364dc36b3d51fbeb0fcf19044fda112e6f9a5ac",
+                "prId": "7414",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update changelog entries to include PR number (#7414)\n\nAdding the PR number to the changelog entry helps track down changes\nwhen necessary.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9364dc36b3d51fbeb0fcf19044fda112e6f9a5ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7414"
+            },
+            {
+                "commitId": "f8717ad8fea6ffce974e9b88a4d738091226ed3d",
+                "prId": "7412",
+                "author": "Vinay Guthal",
+                "message": "More details about the channel was closed exception (#7412)\n\nWhen the channel is closed by the server currently there is not much the\ndeveloper can tell why its closed. This PR adds more details about why\nthe channel was closed.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f8717ad8fea6ffce974e9b88a4d738091226ed3d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7412"
+            },
+            {
+                "commitId": "9b9b8f8f448ec705ab48db291606768190a07d5e",
+                "prId": "7409",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update model name's in tests (#7409)\n\nUpdate all model used in test to point to the 2.5 family\n\nInternal b/438111636",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9b9b8f8f448ec705ab48db291606768190a07d5e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7409"
+            },
+            {
+                "commitId": "badab217c75ef76298ae1f875e5f5801f6fe7c3d",
+                "prId": "7391",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Adjust backend nomenclature (#7391)\n\nReword how we refer to our gemini api backend.\n\nInternal b/441887682",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/badab217c75ef76298ae1f875e5f5801f6fe7c3d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7391"
+            },
+            {
+                "commitId": "e2f5b26c012b194ae2b58f5830ad74c381bbbe69",
+                "prId": "7386",
+                "author": "emilypgoogle",
+                "message": "Fix AI Compile Tests (#7386)\n\nPrevious compile test behavior was commented out during development of\ndaily AI testing, this re-enables it.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e2f5b26c012b194ae2b58f5830ad74c381bbbe69",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7386"
+            },
+            {
+                "commitId": "b0b3a8bfc4be10e5d7a297de04c9cbc424156952",
+                "prId": "7382",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove `CandidateCount` form `LiveGenerationConfig` (#7382)\n\nThe parameter is not only unused, but can cause an error in the backend\nif specified.\n\nInternal b/439861714",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b0b3a8bfc4be10e5d7a297de04c9cbc424156952",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7382"
+            },
+            {
+                "commitId": "2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prId": "7372",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update how we declare kotlin compiler options (#7372)\n\nKotlin compiler options should be specified using the kotlin block\ninstead of the `kotlinOptions` within `android`. See\n\nhttps://youtrack.jetbrains.com/issue/KT-27301/Expose-compiler-flags-via-Gradle-lazy-properties\nand https://b.corp.google.com/issues/247544167. This applies to how\nthe JVM target is declared.\n\nAdditionally, there's a better way to declare free compiler args, in\nour case to forche the explicit api flag to be \"strict\".",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7372"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "463c69fb286d7a0c89368ea37682c30178adc362",
+                "prId": "7428",
+                "author": "Rodrigo Lazo",
+                "message": "[DataConnect] Add changelog entry for #7399 (#7428)\n\nThe changes in PR #7399 are only kdoc fixes, but will be included in the\nnext release and need to have an entry in the changelog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/463c69fb286d7a0c89368ea37682c30178adc362",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7428"
+            },
+            {
+                "commitId": "81bb64604711c7c9d1e8bcfbde1fb17b0df0d43e",
+                "prId": "7404",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 2.13.0 (was 2.12.0) and firebase-tools to 14.16.0 (was 14.15.1) (#7404)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/81bb64604711c7c9d1e8bcfbde1fb17b0df0d43e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7404"
+            },
+            {
+                "commitId": "8b3b9ab3ee89bd635e511ed7e885c7aba072fbcd",
+                "prId": "7399",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix various kdoc documentation issues (#7399)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8b3b9ab3ee89bd635e511ed7e885c7aba072fbcd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7399"
+            },
+            {
+                "commitId": "2bed754c7b5bb0429ac5cd8707180f0a665f0e21",
+                "prId": "7153",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: EnumValue and EnumValueSerializer added (#7153)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2bed754c7b5bb0429ac5cd8707180f0a665f0e21",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7153"
+            },
+            {
+                "commitId": "2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prId": "7372",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update how we declare kotlin compiler options (#7372)\n\nKotlin compiler options should be specified using the kotlin block\ninstead of the `kotlinOptions` within `android`. See\n\nhttps://youtrack.jetbrains.com/issue/KT-27301/Expose-compiler-flags-via-Gradle-lazy-properties\nand https://b.corp.google.com/issues/247544167. This applies to how\nthe JVM target is declared.\n\nAdditionally, there's a better way to declare free compiler args, in\nour case to forche the explicit api flag to be \"strict\".",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7372"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "eb8e24afb1d533da786e2d58b00f94e78de51d9a",
+                "prId": "7418",
+                "author": "Mark Duckworth",
+                "message": "Fix CHANGELOG.md for release 26.0.1 (#7418)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eb8e24afb1d533da786e2d58b00f94e78de51d9a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7418"
+            },
+            {
+                "commitId": "482ac0ed711cf83236f923e07b9be9d59f90ecb5",
+                "prId": "7389",
+                "author": "Denver Coneybeare",
+                "message": "firestore: Improve query performance by using an unsorted map instead of a sorted map (#7389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/482ac0ed711cf83236f923e07b9be9d59f90ecb5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7389"
+            },
+            {
+                "commitId": "77aa34eb1636c87159d390fe5b564e019e2cb5d8",
+                "prId": "7388",
+                "author": "Denver Coneybeare",
+                "message": "firestore: Improve query performance by avoiding excessive `Comparator` instance creation (#7388)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/77aa34eb1636c87159d390fe5b564e019e2cb5d8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7388"
+            },
+            {
+                "commitId": "623acd6a81761bde2e3a601e264ea34aa23468cb",
+                "prId": "7405",
+                "author": "Rodrigo Lazo",
+                "message": "[Firestore] Fix README.md format (#7405)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/623acd6a81761bde2e3a601e264ea34aa23468cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7405"
+            },
+            {
+                "commitId": "5e6ec198917e30adb292eeca8e957834c5c39879",
+                "prId": "7402",
+                "author": "Denver Coneybeare",
+                "message": "firestore: add instructions for rolling your own build (#7402)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5e6ec198917e30adb292eeca8e957834c5c39879",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7402"
+            },
+            {
+                "commitId": "ae770aa5eb0ecdabf7ed20e57f89ba082662a5a6",
+                "prId": "7370",
+                "author": "Mark Duckworth",
+                "message": "firestore: update ObjectValue.buildProto to return the memoized proto (#7370)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ae770aa5eb0ecdabf7ed20e57f89ba082662a5a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7370"
+            },
+            {
+                "commitId": "b6453e8570096313ea08c7b545e4008068e86fd8",
+                "prId": "7376",
+                "author": "Denver Coneybeare",
+                "message": "firestore: re-write BackgroundQueue to NOT use the deprecated AsyncTask thread pool (#7376)\n\nThis change results in a significant performance improvement of queries\nwith a large number of documents in their result set.\n\nIn my testing, the performance improved by 91% from 3022 ms down to 265\nms on a real device! For some reason, there were _no_ performance gains\non the Android emulator. This must have something to do with how\ndifferent Android OS versions manage the threads in the (deprecated)\nAsyncTask thread pool.\n\nThe test environment was as follows:\n- Pixel 7 Pro real device running Android 16.\n- Test called collectionRef.whereGreaterThan(\"foo\",\n50).get(Source.CACHE) 200 times.\n- Calculated the average amount of time it took for the query results to\nbe received.\n- collectionRef is a Firestore collection containing 10,000 documents,\nof which 50% match the \"whereGreaterThan\" filter.\n- Local cache had no other documents in it.\n- Test app was compiled in \"release\" mode with\n\"proguard-android-optimize.txt\" r8 configuration.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b6453e8570096313ea08c7b545e4008068e86fd8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7376"
+            },
+            {
+                "commitId": "2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prId": "7372",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update how we declare kotlin compiler options (#7372)\n\nKotlin compiler options should be specified using the kotlin block\ninstead of the `kotlinOptions` within `android`. See\n\nhttps://youtrack.jetbrains.com/issue/KT-27301/Expose-compiler-flags-via-Gradle-lazy-properties\nand https://b.corp.google.com/issues/247544167. This applies to how\nthe JVM target is declared.\n\nAdditionally, there's a better way to declare free compiler args, in\nour case to forche the explicit api flag to be \"strict\".",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2083b52dbe3dfdce3001a6b67d0827b8e38c9f02",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7372"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-common",
+        ":firebase-config",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-database",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptchaenterprise",
+        ":encoders:firebase-encoders-json"
+    ]
+}
