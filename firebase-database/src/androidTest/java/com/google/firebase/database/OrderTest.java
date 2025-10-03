@@ -241,7 +241,7 @@ public class OrderTest {
       ref.child("c").setValue("third", 10);
       ref.child("a").setPriority(15);
 
-      helper.waitForEventsOrThrow();
+      helper.waitForEventsThatFulfillExpectationsOrThrow();
     }
   }
 

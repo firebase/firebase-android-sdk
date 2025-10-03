@@ -15,14 +15,21 @@
 package com.google.firebase.database
 
 import com.google.firebase.database.core.view.Event
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 
 internal class EventHelperKt : AutoCloseable {
 
   private val stateLock = ReentrantLock()
   private val stateCondition = stateLock.newCondition()
   private var state: State = State.Building(expectations = emptyList())
+
+  private val timeout: Duration
+    get() = IntegrationTestValues.getTimeout().milliseconds
 
   private open class Expectation(
     val eventType: Event.EventType,
@@ -183,62 +190,70 @@ internal class EventHelperKt : AutoCloseable {
     }
   }
 
-  private fun waitForInitialization() {
-    while (true) {
-      stateLock.withLock {
-        val listeningState: State.Listening =
-          when (val currentState = state) {
-            is State.Building -> throw IllegalStateException("unexpected state: $currentState")
-            State.Closed -> throw IllegalStateException("EventHelper has been closed")
-            is State.Listening -> currentState
-          }
+  private fun waitForInitialization() = waitForEvents { listeningState ->
+    val uninitializedLocations =
+      listeningState.expectations.map { it.ref.toString() }.toMutableSet()
 
-        val uninitializedLocations =
-          listeningState.expectations.map { it.ref.toString() }.toMutableSet()
-
-        val lastInitializedIndex =
-          listeningState.events.indexOfFirst { eventRecord ->
-            uninitializedLocations.remove(eventRecord.snapshot.ref.toString())
-            uninitializedLocations.isEmpty()
-          }
-
-        if (lastInitializedIndex >= 0) {
-          val newEvents = listeningState.events.toMutableList()
-          newEvents.subList(0, lastInitializedIndex + 1).clear()
-          state = listeningState.copy(events = newEvents)
-          return
-        }
-
-        stateCondition.await()
+    val lastInitializedIndex =
+      listeningState.events.indexOfFirst { eventRecord ->
+        uninitializedLocations.remove(eventRecord.snapshot.ref.toString())
+        uninitializedLocations.isEmpty()
       }
+
+    if (lastInitializedIndex < 0) {
+      WaitForEventsIterationResult.KeepWaiting
+    } else {
+      val newEvents = listeningState.events.toMutableList()
+      newEvents.subList(0, lastInitializedIndex + 1).clear()
+      state = listeningState.copy(events = newEvents)
+      WaitForEventsIterationResult.Done
     }
   }
 
-  fun waitForEventsOrThrow() {
+  fun waitForEventsThatFulfillExpectationsOrThrow() = waitForEvents { listeningState ->
+    val remainingExpectations = listeningState.expectations.toMutableList()
+    if (remainingExpectations.isEmpty()) {
+      throw IllegalStateException("waitForEvent() called with no expectations")
+    }
+
+    listeningState.events.forEach { eventRecord ->
+      val expectationIndex = remainingExpectations.indexOfFirst { it.matches(eventRecord) }
+      if (expectationIndex >= 0) {
+        remainingExpectations.removeAt(expectationIndex)
+      }
+    }
+
+    if (remainingExpectations.isEmpty()) {
+      WaitForEventsIterationResult.Done
+    } else {
+      WaitForEventsIterationResult.KeepWaiting
+    }
+  }
+
+  private enum class WaitForEventsIterationResult {
+    KeepWaiting,
+    Done,
+  }
+
+  private inline fun waitForEvents(block: (State.Listening) -> WaitForEventsIterationResult) {
+    val endTimeMs = System.nanoTime().nanoseconds.inWholeMilliseconds + timeout.inWholeMilliseconds
     while (true) {
       stateLock.withLock {
         val listeningState = state
         if (listeningState !is State.Listening) {
-          throw IllegalStateException("cannot call waitForEvents() in state: $listeningState")
+          throw IllegalStateException("unexpected state: $listeningState")
         }
 
-        val remainingExpectations = listeningState.expectations.toMutableList()
-        if (remainingExpectations.isEmpty()) {
-          throw IllegalStateException("waitForEvent() called with no expectations")
+        when (block(listeningState)) {
+          WaitForEventsIterationResult.KeepWaiting -> {}
+          WaitForEventsIterationResult.Done -> return
         }
 
-        listeningState.events.forEach { eventRecord ->
-          val expectationIndex = remainingExpectations.indexOfFirst { it.matches(eventRecord) }
-          if (expectationIndex >= 0) {
-            remainingExpectations.removeAt(expectationIndex)
-          }
+        val millisRemaining = endTimeMs - System.nanoTime().nanoseconds.inWholeMilliseconds
+        if (millisRemaining < 0) {
+          throw Exception("timeout (${timeout.inWholeMilliseconds} milliseconds)")
         }
-
-        if (remainingExpectations.isEmpty()) {
-          return
-        }
-
-        stateCondition.await()
+        stateCondition.await(millisRemaining, TimeUnit.MILLISECONDS)
       }
     }
   }
