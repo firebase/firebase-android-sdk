@@ -220,12 +220,11 @@ public class OrderTest {
   }
 
   @Test
-  public void receiveChildMovedEventWhenPriorityChanges()
-      throws DatabaseException, InterruptedException {
+  public void receiveChildMovedEventWhenPriorityChanges() throws DatabaseException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
-    EventHelper helper =
-        new EventHelper()
+    try (EventHelperKt helper =
+        new EventHelperKt()
             .addChildExpectation(ref, Event.EventType.CHILD_ADDED, "a")
             .addValueExpectation(ref)
             .addChildExpectation(ref, Event.EventType.CHILD_ADDED, "b")
@@ -235,14 +234,15 @@ public class OrderTest {
             .addChildExpectation(ref, Event.EventType.CHILD_MOVED, "a")
             .addChildExpectation(ref, Event.EventType.CHILD_CHANGED, "a")
             .addValueExpectation(ref)
-            .startListening(true);
+            .startListening(true)) {
 
-    ref.child("a").setValue("first", 1);
-    ref.child("b").setValue("second", 5);
-    ref.child("c").setValue("third", 10);
-    ref.child("a").setPriority(15);
+      ref.child("a").setValue("first", 1);
+      ref.child("b").setValue("second", 5);
+      ref.child("c").setValue("third", 10);
+      ref.child("a").setPriority(15);
 
-    assertTrue(helper.waitForEvents());
+      helper.waitForEventsOrThrow();
+    }
   }
 
   @Test
