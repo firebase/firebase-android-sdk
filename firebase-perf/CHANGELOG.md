@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bump dependency on OkHTTP to version 4.12.0.
+
 # 22.0.2
 
 - [changed] Bumped internal dependencies.
