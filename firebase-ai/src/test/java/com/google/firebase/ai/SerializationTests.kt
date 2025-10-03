@@ -32,6 +32,9 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SearchEntryPoint
 import com.google.firebase.ai.type.Segment
 import com.google.firebase.ai.type.Tool
+import com.google.firebase.ai.type.UrlContext
+import com.google.firebase.ai.type.UrlContextMetadata
+import com.google.firebase.ai.type.UrlMetadata
 import com.google.firebase.ai.type.WebGroundingChunk
 import io.kotest.assertions.json.shouldEqualJson
 import org.junit.Test
@@ -162,7 +165,10 @@ internal class SerializationTests {
             },
         "groundingMetadata": {
           "${'$'}ref": "GroundingMetadata"
-            }
+            },
+        "urlContextMetadata": {
+          "${'$'}ref": "UrlContextMetadata"
+        }
       }
     }
       """
@@ -288,6 +294,53 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(Segment.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test UrlContextMetadata serialization as Json`() {
+    val expectedJsonAsString =
+      """
+     {
+      "id": "UrlContextMetadata",
+      "type": "object",
+      "properties": {
+        "urlMetadata": { "type": "array", "items": { "${'$'}ref": "UrlMetadata" } }
+      }
+    }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(UrlContextMetadata.Internal.serializer().descriptor)
+    println(actualJson)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test UrlMetadata serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "UrlMetadata",
+        "type": "object",
+        "properties": {
+          "retrievedUrl": {
+            "type": "string"
+          },
+          "urlRetrievalStatus": {
+            "type": "string",
+            "enum": [
+              "UNSPECIFIED",
+              "SUCCESS",
+              "ERROR",
+              "PAYWALL",
+              "UNSAFE"
+            ]
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(UrlMetadata.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -447,6 +500,9 @@ internal class SerializationTests {
             "additionalProperties": {
               "${'$'}ref": "JsonElement"
              }
+          },
+          "urlContext": {
+            "${'$'}ref": "UrlContext"
           }
         }
       }
@@ -468,6 +524,21 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(GoogleSearch.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test UrlContext serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "UrlContext",
+        "type": "object",
+        "properties": {}
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(UrlContext.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }

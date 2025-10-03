@@ -77,7 +77,7 @@ internal data class CountTokensRequest(
 }
 
 @Serializable
-@PublicPreviewAPI
+@OptIn(PublicPreviewAPI::class)
 internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
@@ -88,7 +88,6 @@ internal data class GenerateImageRequest(
     val referenceImages: List<ImagenReferenceImage.Internal>?
   )
 
-  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
@@ -102,7 +101,7 @@ internal data class GenerateImageRequest(
     val addWatermark: Boolean?,
     val imageOutputOptions: ImagenImageFormat.Internal?,
     val editMode: String?,
-    val editConfig: ImagenEditingConfig.Internal?,
+    @OptIn(PublicPreviewAPI::class) val editConfig: ImagenEditingConfig.Internal?,
   )
 
   @Serializable
