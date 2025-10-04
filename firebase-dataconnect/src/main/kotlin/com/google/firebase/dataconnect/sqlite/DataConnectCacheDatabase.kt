@@ -150,64 +150,134 @@ internal class DataConnectCacheDatabase(
     // TODO: Create tables!
   }
 
-  private suspend fun ReadOnlyTransaction.getMetadataSchemaVersion(): String? =
-    getMetadataStringValue(SCHEMA_VERSION_KEY)
+  suspend fun <T> runReadOnlyMetadataTransaction(block: suspend (ReadOnlyMetadata) -> T): T =
+    withDb { kdb ->
+      kdb.runReadOnlyTransaction { txn -> block(ReadOnlyMetadataImpl(txn)) }
+    }
 
-  private suspend fun ReadWriteTransaction.setMetadataSchemaVersion(value: String): Unit =
-    setMetadataStringValue(SCHEMA_VERSION_KEY, value)
+  suspend fun <T> runReadWriteMetadataTransaction(block: suspend (ReadWriteMetadata) -> T): T =
+    withDb { kdb ->
+      kdb.runReadWriteTransaction { txn -> block(ReadWriteMetadataImpl(txn)) }
+    }
 
-  private fun ReadWriteTransaction.setMetadataBlobValue(key: String, value: ByteArray) {
-    setMetadataValue(key, "blob", value)
+  interface ReadOnlyMetadata {
+
+    suspend fun getInt(key: String): Int?
+    suspend fun getString(key: String): String?
+    suspend fun getBlob(key: String): ByteArray?
   }
 
-  private fun ReadWriteTransaction.setMetadataStringValue(key: String, value: String) {
-    setMetadataValue(key, "text", value)
+  private open class ReadOnlyMetadataImpl(private val txn: ReadOnlyTransaction) : ReadOnlyMetadata {
+
+    override suspend fun getInt(key: String): Int? = txn.getMetadataIntValue(key)
+
+    override suspend fun getString(key: String): String? = txn.getMetadataStringValue(key)
+
+    override suspend fun getBlob(key: String): ByteArray? = txn.getMetadataBlobValue(key)
   }
 
-  private fun ReadWriteTransaction.setMetadataIntValue(key: String, value: Int) {
-    setMetadataValue(key, "int", value)
+  interface ReadWriteMetadata : ReadOnlyMetadata {
+    fun set(key: String, value: CharSequence)
+    fun set(key: String, value: Int)
+    fun set(key: String, value: ByteArray)
   }
 
-  private fun <T> ReadWriteTransaction.setMetadataValue(key: String, columnName: String, value: T) {
-    executeStatement(
-      """
+  private class ReadWriteMetadataImpl(private val txn: ReadWriteTransaction) :
+    ReadOnlyMetadataImpl(txn), ReadWriteMetadata {
+
+    override fun set(key: String, value: CharSequence) = txn.setMetadataStringValue(key, value)
+
+    override fun set(key: String, value: Int) = txn.setMetadataIntValue(key, value)
+
+    override fun set(key: String, value: ByteArray) = txn.setMetadataBlobValue(key, value)
+  }
+
+  class InvalidDatabaseException(message: String) : Exception(message)
+
+  companion object {
+
+    internal suspend inline fun <reified T> ReadOnlyMetadata.get(key: String): T? =
+      when (val clazz = T::class) {
+        Int::class,
+        Number::class -> getInt(key) as T?
+        String::class,
+        CharSequence::class -> getString(key) as T?
+        ByteArray::class -> getBlob(key) as T?
+        else -> throw IllegalArgumentException("unsupported type: $clazz")
+      }
+
+    internal fun ReadWriteMetadata.set(key: String, value: Any): Unit =
+      when (value) {
+        is Int -> set(key, value)
+        is CharSequence -> set(key, value)
+        is ByteArray -> set(key, value)
+        else -> throw IllegalArgumentException("unsupported type: ${value::class.qualifiedName}")
+      }
+
+    private const val APPLICATION_ID: Int = 0x7f1bc816
+    private const val SCHEMA_VERSION_KEY = "schema_version"
+
+    private suspend fun ReadOnlyTransaction.getMetadataSchemaVersion(): String? =
+      getMetadataStringValue(SCHEMA_VERSION_KEY)
+
+    private suspend fun ReadWriteTransaction.setMetadataSchemaVersion(value: String): Unit =
+      setMetadataStringValue(SCHEMA_VERSION_KEY, value)
+
+    private fun ReadWriteTransaction.setMetadataBlobValue(key: String, value: ByteArray) {
+      setMetadataValue(key, "blob", value)
+    }
+
+    private fun ReadWriteTransaction.setMetadataStringValue(key: String, value: CharSequence) {
+      setMetadataValue(key, "text", value.toString())
+    }
+
+    private fun ReadWriteTransaction.setMetadataIntValue(key: String, value: Int) {
+      setMetadataValue(key, "int", value)
+    }
+
+    private fun <T> ReadWriteTransaction.setMetadataValue(
+      key: String,
+      columnName: String,
+      value: T
+    ) {
+      executeStatement(
+        """
         INSERT OR REPLACE INTO metadata
         (key, $columnName)
         VALUES
         (?, ?)
       """,
-      bindings = listOf(key, value)
-    )
-  }
+        bindings = listOf(key, value)
+      )
+    }
 
-  private suspend fun ReadOnlyTransaction.getMetadataBlobValue(key: String): ByteArray? =
-    getMetadataValue(key, "blob") { cursor -> cursor.getBlob(0) }
+    private suspend fun ReadOnlyTransaction.getMetadataBlobValue(key: String): ByteArray? =
+      getMetadataValue(key, "blob") { cursor -> cursor.getBlob(0) }
 
-  private suspend fun ReadOnlyTransaction.getMetadataStringValue(key: String): String? =
-    getMetadataValue(key, "text") { cursor -> cursor.getString(0) }
+    private suspend fun ReadOnlyTransaction.getMetadataStringValue(key: String): String? =
+      getMetadataValue(key, "text") { cursor -> cursor.getString(0) }
 
-  private suspend fun ReadOnlyTransaction.getMetadataIntValue(key: String): Int? =
-    getMetadataValue(key, "int") { cursor -> cursor.getInt(0) }
+    private suspend fun ReadOnlyTransaction.getMetadataIntValue(key: String): Int? =
+      getMetadataValue(key, "int") { cursor -> cursor.getInt(0) }
 
-  private suspend inline fun <T> ReadOnlyTransaction.getMetadataValue(key: String, columnName: String, crossinline block: (Cursor) -> T): T? =
-    executeQuery("""
+    private suspend inline fun <T> ReadOnlyTransaction.getMetadataValue(
+      key: String,
+      columnName: String,
+      crossinline block: (Cursor) -> T
+    ): T? =
+      executeQuery(
+        """
         SELECT $columnName
         FROM metadata
         WHERE key = ?
       """,
-      bindings = listOf(key),
-    ) { cursor ->
-      if (cursor.moveToNext() && !cursor.isNull(0)) {
-        block(cursor)
-      } else {
-        null
+        bindings = listOf(key),
+      ) { cursor ->
+        if (cursor.moveToNext() && !cursor.isNull(0)) {
+          block(cursor)
+        } else {
+          null
+        }
       }
-    }
-
-  class InvalidDatabaseException(message: String) : Exception(message)
-
-  private companion object {
-    const val APPLICATION_ID: Int = 0x7f1bc816
-    const val SCHEMA_VERSION_KEY = "schema_version"
   }
 }

@@ -94,8 +94,8 @@ internal class KSQLiteDatabase(db: SQLiteDatabase) : AutoCloseable {
 
   /**
    * Starts a read-write transaction on the database, calls the given block with the transaction,
-   * then commits the transaction if the block returns successfully or rolls back the transaction
-   * if the block throws an exception.
+   * then commits the transaction if the block returns successfully or rolls back the transaction if
+   * the block throws an exception.
    *
    * On newer Android API versions, read-write transactions can be concurrent with read
    * transactions, due to the behavior of sqlite WAL mode, but only one write transaction can be
