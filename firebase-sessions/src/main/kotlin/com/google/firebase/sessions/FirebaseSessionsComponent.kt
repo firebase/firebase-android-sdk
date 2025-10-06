@@ -150,9 +150,9 @@ internal interface FirebaseSessionsComponent {
             },
           scope = CoroutineScope(blockingDispatcher),
           produceFile = {
-            prepDataStoreFile(
-              appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data")
-            )
+            appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data").also {
+              prepDataStoreFile(it)
+            }
           },
         )
 
@@ -172,7 +172,9 @@ internal interface FirebaseSessionsComponent {
             },
           scope = CoroutineScope(blockingDispatcher),
           produceFile = {
-            prepDataStoreFile(appContext.dataStoreFile("firebaseSessions/sessionDataStore.data"))
+            appContext.dataStoreFile("firebaseSessions/sessionDataStore.data").also {
+              prepDataStoreFile(it)
+            }
           },
         )
 
@@ -211,8 +213,8 @@ internal interface FirebaseSessionsComponent {
        * Prepares the DataStore file by ensuring its parent directory exists. Throws [IOException]
        * if the directory could not be created, or if a conflicting file could not be removed.
        */
-      private fun prepDataStoreFile(dataStoreFile: File): File {
-        val parentDir = dataStoreFile.parentFile ?: return dataStoreFile
+      private fun prepDataStoreFile(dataStoreFile: File) {
+        val parentDir = dataStoreFile.parentFile ?: return
 
         // Check if something exists at the path, but isn't a directory
         if (parentDir.exists() && !parentDir.isDirectory) {
@@ -225,7 +227,7 @@ internal interface FirebaseSessionsComponent {
         }
 
         if (parentDir.isDirectory) {
-          return dataStoreFile
+          return
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -242,8 +244,6 @@ internal interface FirebaseSessionsComponent {
             }
           }
         }
-
-        return dataStoreFile
       }
     }
   }
