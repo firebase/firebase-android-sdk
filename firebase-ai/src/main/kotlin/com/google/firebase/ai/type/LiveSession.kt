@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
@@ -174,9 +175,11 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
-                JSON.decodeFromString<InternalLiveServerMessage>(
+                val x = JSON.decodeFromString<InternalLiveServerMessage>(
                   it.readBytes().toString(Charsets.UTF_8)
                 )
+                println(x)
+                x
               }
               ?.let { emit(it.toPublic()) }
             yield()
@@ -230,6 +233,7 @@ internal constructor(
           BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
             .toInternal()
         )
+      println("Sending function response $jsonString")
       session.send(Frame.Text(jsonString))
     }
   }
@@ -249,6 +253,7 @@ internal constructor(
         Json.encodeToString(
           BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
         )
+      println("Sending $jsonString")
       session.send(Frame.Text(jsonString))
     }
   }
@@ -305,7 +310,7 @@ internal constructor(
       ?.accumulateUntil(MIN_BUFFER_SIZE)
       ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
       ?.catch { throw FirebaseAIException.from(it) }
-      ?.launchIn(scope)
+      ?.launchIn(CoroutineScope(Dispatchers.IO))
   }
 
   /**
@@ -333,6 +338,7 @@ internal constructor(
             } else if (functionCallHandler != null) {
               // It's fine to suspend here since you can't have a function call running concurrently
               // with an audio response
+              println("Model is attempting to send a function call response")
               sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
             } else {
               Log.w(
@@ -348,11 +354,13 @@ internal constructor(
             )
           }
           is LiveServerContent -> {
+            println("State of it's interruption: ${it.interrupted}")
             if (it.interrupted) {
               playBackQueue.clear()
             } else {
               val audioParts = it.content?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
               for (part in audioParts) {
+                println("Model receiving ${part.inlineData}")
                 playBackQueue.add(part.inlineData)
               }
             }
@@ -396,7 +404,7 @@ internal constructor(
           if (enableInterruptions != true) {
             audioHelper?.pauseRecording()
           }
-
+          println("Model playing $playbackData")
           audioHelper?.playAudio(playbackData)
         }
       }

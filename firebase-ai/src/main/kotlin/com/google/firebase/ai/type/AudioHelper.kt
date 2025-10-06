@@ -140,8 +140,8 @@ internal class AudioHelper(
    * Returns an empty flow if this [AudioHelper] has been [released][release].
    */
   fun listenToRecording(): Flow<ByteArray> {
+    println("Released: $released")
     if (released) return emptyFlow()
-
     resumeRecording()
 
     return recorder.readAsFlow()

@@ -17,6 +17,7 @@
 package com.google.firebase.ai.common.util
 
 import android.media.AudioRecord
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.yield
 
@@ -36,15 +37,26 @@ internal val AudioRecord.minBufferSize: Int
 internal fun AudioRecord.readAsFlow() = flow {
   val buffer = ByteArray(minBufferSize)
 
+  var startTime = System.currentTimeMillis()
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+      delay(10)
       yield()
       continue
+    }
+    if (System.currentTimeMillis() - startTime >= 100) {
+      // This is the manual yield/pause point.
+      // Using delay(1) suspends the coroutine, freeing the thread
+      // for the dispatcher to run other tasks briefly.
+      delay(1)
+      yield()
+      startTime = System.currentTimeMillis() // Reset the timer
     }
 
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
     }
+    yield()
   }
 }
