@@ -17,6 +17,7 @@
 package com.google.firebase.sessions
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
@@ -48,6 +49,8 @@ import dagger.Component
 import dagger.Module
 import dagger.Provides
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
@@ -146,7 +149,11 @@ internal interface FirebaseSessionsComponent {
               SessionConfigsSerializer.defaultValue
             },
           scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionConfigsDataStore.data") },
+          produceFile = {
+            prepDataStoreFile(
+              appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data")
+            )
+          },
         )
 
       @Provides
@@ -164,7 +171,9 @@ internal interface FirebaseSessionsComponent {
               sessionDataSerializer.defaultValue
             },
           scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data") },
+          produceFile = {
+            prepDataStoreFile(appContext.dataStoreFile("firebaseSessions/sessionDataStore.data"))
+          },
         )
 
       private fun <T> createDataStore(
@@ -197,6 +206,45 @@ internal interface FirebaseSessionsComponent {
         } catch (_: SecurityException) {
           false
         }
+
+      /**
+       * Prepares the DataStore file by ensuring its parent directory exists. Throws [IOException]
+       * if the directory could not be created, or if a conflicting file could not be removed.
+       */
+      private fun prepDataStoreFile(dataStoreFile: File): File {
+        val parentDir = dataStoreFile.parentFile ?: return dataStoreFile
+
+        // Check if something exists at the path, but isn't a directory
+        if (parentDir.exists() && !parentDir.isDirectory) {
+          // Only delete it if it's the specific file we know we can safely remove
+          if (parentDir.name == "firebaseSessions") {
+            if (!parentDir.delete()) {
+              throw IOException("Failed to delete conflicting file: $parentDir")
+            }
+          }
+        }
+
+        if (parentDir.isDirectory) {
+          return dataStoreFile
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          try {
+            Files.createDirectories(parentDir.toPath())
+          } catch (ex: Exception) {
+            throw IOException("Failed to create directory: $parentDir", ex)
+          }
+        } else {
+          if (!parentDir.mkdirs()) {
+            // It's possible another thread created it in the meantime, so we double-check
+            if (!parentDir.isDirectory) {
+              throw IOException("Failed to create directory: $parentDir")
+            }
+          }
+        }
+
+        return dataStoreFile
+      }
     }
   }
 }
