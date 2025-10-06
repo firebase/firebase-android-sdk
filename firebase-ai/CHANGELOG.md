@@ -2,6 +2,8 @@
 
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
 - [changed] Added better error messages to `ServiceConnectionHandshakeFailedException`
+- [changed] Added support for user interrupts for the `startAudioConversation` method in the
+  `LiveSession` class.
 
 # 17.3.0
 

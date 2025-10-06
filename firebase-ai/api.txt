@@ -148,7 +148,9 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.ai.java.LiveSessionFutures.Companion Companion;
@@ -889,7 +891,7 @@ package com.google.firebase.ai.type {
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, Boolean? enableInterruptions = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
