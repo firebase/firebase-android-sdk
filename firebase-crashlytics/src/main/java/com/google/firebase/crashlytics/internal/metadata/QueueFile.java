@@ -21,7 +21,6 @@
  */
 package com.google.firebase.crashlytics.internal.metadata;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,14 +35,14 @@ import java.util.logging.Logger;
  * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). All operations
  * are atomic. Writes are synchronous; data will be written to disk before an operation returns. The
  * underlying file is structured to survive process and even system crashes. If an I/O exception is
- * thrown during a mutating change, the change is aborted. It is safe to continue to use a {@code
- * QueueFile} instance after an exception.
+ * thrown during a mutating change, the change is aborted. It is safe to continue to use a
+ * {@code QueueFile} instance after an exception.
  *
  * <p>
  *
  * <p>All operations are synchronized. In a traditional queue, the remove operation returns an
- * element. In this queue, {@link #peek} and {@link #remove} are used in conjunction. Use {@code
- * peek} to retrieve the first element, and then {@code remove} to remove it after successful
+ * element. In this queue, {@link #peek} and {@link #remove} are used in conjunction. Use
+ * {@code peek} to retrieve the first element, and then {@code remove} to remove it after successful
  * processing. If the system crashes after {@code peek} and during processing, the element will
  * remain in the queue, to be processed when the system restarts.
  *
@@ -57,13 +56,18 @@ import java.util.logging.Logger;
  * @author Bob Lee (bob@squareup.com)
  */
 @SuppressWarnings("PMD")
-class QueueFile implements Closeable {
+class QueueFile {
+
   private static final Logger LOGGER = Logger.getLogger(QueueFile.class.getName());
 
-  /** Initial file size in bytes. */
+  /**
+   * Initial file size in bytes.
+   */
   private static final int INITIAL_LENGTH = 4096; // one file system block
 
-  /** Length of header in bytes. */
+  /**
+   * Length of header in bytes.
+   */
   static final int HEADER_LENGTH = 16;
 
   /**
@@ -91,21 +95,31 @@ class QueueFile implements Closeable {
    *     Data   (Length bytes)
    * </pre>
    */
-  private final RandomAccessFile raf;
+  private final File rafFile;
 
-  /** Cached file length. Always a power of 2. */
+  /**
+   * Cached file length. Always a power of 2.
+   */
   int fileLength;
 
-  /** Number of elements. */
+  /**
+   * Number of elements.
+   */
   private int elementCount;
 
-  /** Pointer to first (or eldest) element. */
+  /**
+   * Pointer to first (or eldest) element.
+   */
   private Element first;
 
-  /** Pointer to last (or newest) element. */
+  /**
+   * Pointer to last (or newest) element.
+   */
   private Element last;
 
-  /** In-memory buffer. Big enough to hold the header. */
+  /**
+   * In-memory buffer. Big enough to hold the header.
+   */
   private final byte[] buffer = new byte[16];
 
   /**
@@ -113,22 +127,16 @@ class QueueFile implements Closeable {
    * access a given file at a time.
    */
   public QueueFile(File file) throws IOException {
+    this.rafFile = file;
     if (!file.exists()) {
       initialize(file);
     }
-    raf = open(file);
-    readHeader();
-  }
-
-  /** For testing. */
-  QueueFile(RandomAccessFile raf) throws IOException {
-    this.raf = raf;
     readHeader();
   }
 
   /**
-   * Stores int in buffer. The behavior is equivalent to calling {@link
-   * java.io.RandomAccessFile#writeInt}.
+   * Stores int in buffer. The behavior is equivalent to calling
+   * {@link java.io.RandomAccessFile#writeInt}.
    */
   private static void writeInt(byte[] buffer, int offset, int value) {
     buffer[offset] = (byte) (value >> 24);
@@ -138,8 +146,8 @@ class QueueFile implements Closeable {
   }
 
   /**
-   * Stores int values in buffer. The behavior is equivalent to calling {@link
-   * java.io.RandomAccessFile#writeInt} for each value.
+   * Stores int values in buffer. The behavior is equivalent to calling
+   * {@link java.io.RandomAccessFile#writeInt} for each value.
    */
   private static void writeInts(byte[] buffer, int... values) {
     int offset = 0;
@@ -149,7 +157,9 @@ class QueueFile implements Closeable {
     }
   }
 
-  /** Reads an int from a byte[]. */
+  /**
+   * Reads an int from a byte[].
+   */
   private static int readInt(byte[] buffer, int offset) {
     return ((buffer[offset] & 0xff) << 24)
         + ((buffer[offset + 1] & 0xff) << 16)
@@ -157,20 +167,25 @@ class QueueFile implements Closeable {
         + (buffer[offset + 3] & 0xff);
   }
 
-  /** Reads the header. */
+  /**
+   * Reads the header.
+   */
   private void readHeader() throws IOException {
-    raf.seek(0);
-    raf.readFully(buffer);
-    fileLength = readInt(buffer, 0);
-    if (fileLength > raf.length()) {
-      throw new IOException(
-          "File is truncated. Expected length: " + fileLength + ", Actual length: " + raf.length());
-    }
-    elementCount = readInt(buffer, 4);
-    int firstOffset = readInt(buffer, 8);
-    int lastOffset = readInt(buffer, 12);
-    first = readElement(firstOffset);
-    last = readElement(lastOffset);
+    openAndExecute(raf -> {
+      raf.seek(0);
+      raf.readFully(buffer);
+      fileLength = readInt(buffer, 0);
+      if (fileLength > raf.length()) {
+        throw new IOException(
+            "File is truncated. Expected length: " + fileLength + ", Actual length: "
+                + raf.length());
+      }
+      elementCount = readInt(buffer, 4);
+      int firstOffset = readInt(buffer, 8);
+      int lastOffset = readInt(buffer, 12);
+      first = readElement(firstOffset, raf);
+      last = readElement(lastOffset, raf);
+    });
   }
 
   /**
@@ -179,15 +194,18 @@ class QueueFile implements Closeable {
    * update the class member variables *after* this call succeeds. Assumes segment writes are atomic
    * in the underlying file system.
    */
-  private void writeHeader(int fileLength, int elementCount, int firstPosition, int lastPosition)
+  private void writeHeader(int fileLength, int elementCount, int firstPosition, int lastPosition,
+      RandomAccessFile raf)
       throws IOException {
     writeInts(buffer, fileLength, elementCount, firstPosition, lastPosition);
     raf.seek(0);
     raf.write(buffer);
   }
 
-  /** Returns the Element for the given offset. */
-  private Element readElement(int position) throws IOException {
+  /**
+   * Returns the Element for the given offset.
+   */
+  private Element readElement(int position, RandomAccessFile raf) throws IOException {
     if (position == 0) {
       return Element.NULL;
     }
@@ -195,19 +213,18 @@ class QueueFile implements Closeable {
     return new Element(position, raf.readInt());
   }
 
-  /** Atomically initializes a new file. */
+  /**
+   * Atomically initializes a new file.
+   */
   private static void initialize(File file) throws IOException {
     // Use a temp file so we don't leave a partially-initialized file.
     File tempFile = new File(file.getPath() + ".tmp");
-    RandomAccessFile raf = open(tempFile);
-    try {
+    try (RandomAccessFile raf = open(tempFile)) {
       raf.setLength(INITIAL_LENGTH);
       raf.seek(0);
       byte[] headerBuffer = new byte[16];
       writeInts(headerBuffer, INITIAL_LENGTH, 0, 0, 0);
       raf.write(headerBuffer);
-    } finally {
-      raf.close();
     }
 
     // A rename is atomic.
@@ -216,12 +233,25 @@ class QueueFile implements Closeable {
     }
   }
 
-  /** Opens a random access file that writes synchronously. */
+  /**
+   * Opens a random access file that writes synchronously.
+   */
   private static RandomAccessFile open(File file) throws FileNotFoundException {
     return new RandomAccessFile(file, "rwd");
   }
 
-  /** Wraps the position if it exceeds the end of the file. */
+  /**
+   * Opens a random access file that writes synchronously and executes the provided callback.
+   */
+  private void openAndExecute(RandomAccessFileCallable rafCallable) throws IOException {
+    try (RandomAccessFile raf = open(rafFile)) {
+      rafCallable.run(raf);
+    }
+  }
+
+  /**
+   * Wraps the position if it exceeds the end of the file.
+   */
   private int wrapPosition(int position) {
     return position < fileLength ? position : HEADER_LENGTH + position - fileLength;
   }
@@ -233,8 +263,10 @@ class QueueFile implements Closeable {
    * @param position in file to write to
    * @param buffer to write from
    * @param count # of bytes to write
+   * @param raf scoped underlying file
    */
-  private void ringWrite(int position, byte[] buffer, int offset, int count) throws IOException {
+  private void ringWrite(int position, byte[] buffer, int offset, int count, RandomAccessFile raf)
+      throws IOException {
     position = wrapPosition(position);
     if (position + count <= fileLength) {
       raf.seek(position);
@@ -256,8 +288,10 @@ class QueueFile implements Closeable {
    * @param position in file to read from
    * @param buffer to read into
    * @param count # of bytes to read
+   * @param raf scoped underlying file
    */
-  private void ringRead(int position, byte[] buffer, int offset, int count) throws IOException {
+  private void ringRead(int position, byte[] buffer, int offset, int count, RandomAccessFile raf)
+      throws IOException {
     position = wrapPosition(position);
     if (position + count <= fileLength) {
       raf.seek(position);
@@ -288,8 +322,8 @@ class QueueFile implements Closeable {
    * @param data to copy bytes from
    * @param offset to start from in buffer
    * @param count number of bytes to copy
-   * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code count < 0}, or if {@code
-   *     offset + count} is bigger than the length of {@code buffer}.
+   * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code count < 0}, or if
+   *     {@code offset + count} is bigger than the length of {@code buffer}.
    */
   public synchronized void add(byte[] data, int offset, int count) throws IOException {
     nonNull(data, "buffer");
@@ -297,34 +331,37 @@ class QueueFile implements Closeable {
       throw new IndexOutOfBoundsException();
     }
 
-    expandIfNecessary(count);
+    openAndExecute(raf -> {
+      expandIfNecessary(count, raf);
 
-    // Insert a new element after the current last element.
-    boolean wasEmpty = isEmpty();
-    int position =
-        wasEmpty
-            ? HEADER_LENGTH
-            : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
-    Element newLast = new Element(position, count);
+      // Insert a new element after the current last element.
+      boolean wasEmpty = isEmpty();
+      int position =
+          wasEmpty
+              ? HEADER_LENGTH
+              : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
+      Element newLast = new Element(position, count);
 
-    // Write length.
-    writeInt(buffer, 0, count);
-    ringWrite(newLast.position, buffer, 0, Element.HEADER_LENGTH);
+      // Write length.
+      writeInt(buffer, 0, count);
+      ringWrite(newLast.position, buffer, 0, Element.HEADER_LENGTH, raf);
 
-    // Write data.
-    ringWrite(newLast.position + Element.HEADER_LENGTH, data, offset, count);
-
-    // Commit the addition. If wasEmpty, first == last.
-    int firstPosition = wasEmpty ? newLast.position : first.position;
-    writeHeader(fileLength, elementCount + 1, firstPosition, newLast.position);
-    last = newLast;
-    elementCount++;
-    if (wasEmpty) {
-      first = last; // first element
-    }
+      // Write data.
+      ringWrite(newLast.position + Element.HEADER_LENGTH, data, offset, count, raf);
+      // Commit the addition. If wasEmpty, first == last.
+      int firstPosition = wasEmpty ? newLast.position : first.position;
+      writeHeader(fileLength, elementCount + 1, firstPosition, newLast.position, raf);
+      last = newLast;
+      elementCount++;
+      if (wasEmpty) {
+        first = last; // first element
+      }
+    });
   }
 
-  /** Returns the number of used bytes. */
+  /**
+   * Returns the number of used bytes.
+   */
   public int usedBytes() {
     if (elementCount == 0) {
       return HEADER_LENGTH;
@@ -346,12 +383,16 @@ class QueueFile implements Closeable {
     }
   }
 
-  /** Returns number of unused bytes. */
+  /**
+   * Returns number of unused bytes.
+   */
   private int remainingBytes() {
     return fileLength - usedBytes();
   }
 
-  /** Returns true if this queue contains no entries. */
+  /**
+   * Returns true if this queue contains no entries.
+   */
   public synchronized boolean isEmpty() {
     return elementCount == 0;
   }
@@ -361,7 +402,7 @@ class QueueFile implements Closeable {
    *
    * @param dataLength length of data being added
    */
-  private void expandIfNecessary(int dataLength) throws IOException {
+  private void expandIfNecessary(int dataLength, RandomAccessFile raf) throws IOException {
     int elementLength = Element.HEADER_LENGTH + dataLength;
     int remainingBytes = remainingBytes();
     if (remainingBytes >= elementLength) {
@@ -378,7 +419,7 @@ class QueueFile implements Closeable {
       previousLength = newLength;
     } while (remainingBytes < elementLength);
 
-    setLength(newLength);
+    setLength(newLength, raf);
 
     // Calculate the position of the tail end of the data in the ring buffer
     int endOfLastElement = wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
@@ -396,37 +437,43 @@ class QueueFile implements Closeable {
     // Commit the expansion.
     if (last.position < first.position) {
       int newLastPosition = fileLength + last.position - HEADER_LENGTH;
-      writeHeader(newLength, elementCount, first.position, newLastPosition);
+      writeHeader(newLength, elementCount, first.position, newLastPosition, raf);
       last = new Element(newLastPosition, last.length);
     } else {
-      writeHeader(newLength, elementCount, first.position, last.position);
+      writeHeader(newLength, elementCount, first.position, last.position, raf);
     }
 
     fileLength = newLength;
   }
 
-  /** Sets the length of the file. */
-  private void setLength(int newLength) throws IOException {
+  /**
+   * Sets the length of the file.
+   */
+  private void setLength(int newLength, RandomAccessFile raf) throws IOException {
     // Set new file length (considered metadata) and sync it to storage.
     raf.setLength(newLength);
     raf.getChannel().force(true);
   }
 
-  /** Reads the eldest element. Returns null if the queue is empty. */
+  /**
+   * Reads the eldest element. Returns null if the queue is empty.
+   */
   public synchronized byte[] peek() throws IOException {
     if (isEmpty()) {
       return null;
     }
     int length = first.length;
     byte[] data = new byte[length];
-    ringRead(first.position + Element.HEADER_LENGTH, data, 0, length);
+    openAndExecute(raf -> ringRead(first.position + Element.HEADER_LENGTH, data, 0, length, raf));
     return data;
   }
 
-  /** Invokes reader with the eldest element, if an element is available. */
+  /**
+   * Invokes reader with the eldest element, if an element is available.
+   */
   public synchronized void peek(ElementReader reader) throws IOException {
     if (elementCount > 0) {
-      reader.read(new ElementInputStream(first), first.length);
+      openAndExecute(raf -> reader.read(new ElementInputStream(first, raf), first.length));
     }
   }
 
@@ -435,12 +482,14 @@ class QueueFile implements Closeable {
    * added.
    */
   public synchronized void forEach(ElementReader reader) throws IOException {
-    int position = first.position;
-    for (int i = 0; i < elementCount; i++) {
-      Element current = readElement(position);
-      reader.read(new ElementInputStream(current), current.length);
-      position = wrapPosition(current.position + Element.HEADER_LENGTH + current.length);
-    }
+    openAndExecute(raf -> {
+      int position = first.position;
+      for (int i = 0; i < elementCount; i++) {
+        Element current = readElement(position, raf);
+        reader.read(new ElementInputStream(current, raf), current.length);
+        position = wrapPosition(current.position + Element.HEADER_LENGTH + current.length);
+      }
+    });
   }
 
   /**
@@ -455,14 +504,19 @@ class QueueFile implements Closeable {
     return t;
   }
 
-  /** Reads a single element. */
+  /**
+   * Reads a single element.
+   */
   private final class ElementInputStream extends InputStream {
+
     private int position;
     private int remaining;
+    private final RandomAccessFile raf;
 
-    private ElementInputStream(Element element) {
+    private ElementInputStream(Element element, RandomAccessFile raf) {
       position = wrapPosition(element.position + Element.HEADER_LENGTH);
       remaining = element.length;
+      this.raf = raf;
     }
 
     @Override
@@ -475,7 +529,7 @@ class QueueFile implements Closeable {
         if (length > remaining) {
           length = remaining;
         }
-        ringRead(position, buffer, offset, length);
+        ringRead(position, buffer, offset, length, raf);
         position = wrapPosition(position + length);
         remaining -= length;
         return length;
@@ -489,15 +543,18 @@ class QueueFile implements Closeable {
       if (remaining == 0) {
         return -1;
       }
+      int readByte;
       raf.seek(position);
-      int b = raf.read();
+      readByte = raf.read();
       position = wrapPosition(position + 1);
       remaining--;
-      return b;
+      return readByte;
     }
   }
 
-  /** Returns the number of elements in this queue. */
+  /**
+   * Returns the number of elements in this queue.
+   */
   public synchronized int size() {
     return elementCount;
   }
@@ -511,32 +568,33 @@ class QueueFile implements Closeable {
     if (isEmpty()) {
       throw new NoSuchElementException();
     }
-    if (elementCount == 1) {
-      clear();
-    } else {
-      // assert elementCount > 1
-      int newFirstPosition = wrapPosition(first.position + Element.HEADER_LENGTH + first.length);
-      ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH);
-      int length = readInt(buffer, 0);
-      writeHeader(fileLength, elementCount - 1, newFirstPosition, last.position);
-      elementCount--;
-      first = new Element(newFirstPosition, length);
-    }
+    openAndExecute(raf -> {
+      if (elementCount == 1) {
+        clear(raf);
+      } else {
+        // assert elementCount > 1
+        int newFirstPosition = wrapPosition(first.position + Element.HEADER_LENGTH + first.length);
+        ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH, raf);
+        int length = readInt(buffer, 0);
+        writeHeader(fileLength, elementCount - 1, newFirstPosition, last.position, raf);
+        elementCount--;
+        first = new Element(newFirstPosition, length);
+      }
+    });
   }
 
-  /** Clears this queue. Truncates the file to the initial size. */
-  public synchronized void clear() throws IOException {
-    writeHeader(INITIAL_LENGTH, 0, 0, 0);
+  /**
+   * Clears this queue. Truncates the file to the initial size.
+   */
+  private synchronized void clear(RandomAccessFile raf) throws IOException {
+    writeHeader(INITIAL_LENGTH, 0, 0, 0, raf);
     elementCount = 0;
     first = Element.NULL;
     last = Element.NULL;
-    if (fileLength > INITIAL_LENGTH) setLength(INITIAL_LENGTH);
+    if (fileLength > INITIAL_LENGTH) {
+      setLength(INITIAL_LENGTH, raf);
+    }
     fileLength = INITIAL_LENGTH;
-  }
-
-  /** Closes the underlying file. */
-  public synchronized void close() throws IOException {
-    raf.close();
   }
 
   /**
@@ -578,19 +636,29 @@ class QueueFile implements Closeable {
     return builder.toString();
   }
 
-  /** A pointer to an element. */
+  /**
+   * A pointer to an element.
+   */
   static class Element {
 
-    /** Length of element header in bytes. */
+    /**
+     * Length of element header in bytes.
+     */
     static final int HEADER_LENGTH = 4;
 
-    /** Null element. */
+    /**
+     * Null element.
+     */
     static final Element NULL = new Element(0, 0);
 
-    /** Position in file. */
+    /**
+     * Position in file.
+     */
     final int position;
 
-    /** The length of the data. */
+    /**
+     * The length of the data.
+     */
     final int length;
 
     /**
@@ -621,6 +689,7 @@ class QueueFile implements Closeable {
    * byte[].
    */
   public interface ElementReader {
+
     /**
      * Called once per element.
      *
@@ -630,5 +699,19 @@ class QueueFile implements Closeable {
      * @param length of element data in bytes
      */
     void read(InputStream in, int length) throws IOException;
+  }
+
+  /**
+   * SAM interface util for reusable interactions with RandomAccessFile.
+   */
+  private interface RandomAccessFileCallable {
+
+    /**
+     * Callback with scope-specific actions to be executed along RandomAccessFile open & close
+     * actions.
+     *
+     * @param file RandomAccessFile provided by {@link #open(File)}
+     */
+    void run(RandomAccessFile file) throws IOException;
   }
 }
