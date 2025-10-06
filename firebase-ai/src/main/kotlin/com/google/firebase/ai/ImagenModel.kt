@@ -45,7 +45,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider
  * See the documentation for a list of
  * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
-@PublicPreviewAPI
 public class ImagenModel
 internal constructor(
   private val modelName: String,
@@ -106,6 +105,7 @@ internal constructor(
    * @param prompt the text input given to the model as a prompt
    * @param config the editing configuration settings
    */
+  @PublicPreviewAPI
   public suspend fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -130,6 +130,7 @@ internal constructor(
    * @param mask the mask which defines where in the image can be painted by Imagen.
    * @param config the editing configuration settings, it should include an [ImagenEditMode]
    */
+  @PublicPreviewAPI
   public suspend fun inpaintImage(
     image: ImagenInlineImage,
     prompt: String,
@@ -154,6 +155,7 @@ internal constructor(
    * @param config the editing configuration settings
    * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
    */
+  @PublicPreviewAPI
   public suspend fun outpaintImage(
     image: ImagenInlineImage,
     newDimensions: Dimensions,
@@ -172,6 +174,7 @@ internal constructor(
     prompt: String,
     generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
+    @OptIn(PublicPreviewAPI::class)
     return GenerateImageRequest(
       listOf(GenerateImageRequest.ImagenPrompt(prompt, null)),
       GenerateImageRequest.ImagenParameters(
@@ -191,6 +194,7 @@ internal constructor(
     )
   }
 
+  @PublicPreviewAPI
   private fun constructEditRequest(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
