@@ -420,7 +420,6 @@ internal constructor(
           if (!enableInterruptions) {
             audioHelper?.pauseRecording()
           }
-          println("Playing audio")
           audioHelper?.playAudio(playbackData)
         }
       }
