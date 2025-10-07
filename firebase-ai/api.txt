@@ -27,10 +27,10 @@ package com.google.firebase.ai {
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app);
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend);
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null);
@@ -72,11 +72,11 @@ package com.google.firebase.ai {
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenModel {
-    method public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  public final class ImagenModel {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
     method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
@@ -581,7 +581,7 @@ package com.google.firebase.ai.type {
     property public boolean isThought;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenAspectRatio {
+  public final class ImagenAspectRatio {
     field public static final com.google.firebase.ai.type.ImagenAspectRatio.Companion Companion;
     field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_16x9;
     field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_4x3;
@@ -630,7 +630,7 @@ package com.google.firebase.ai.type {
     ctor public ImagenForegroundMask(Double? dilation = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenGenerationConfig {
+  public final class ImagenGenerationConfig {
     ctor public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.ai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
     method public Boolean? getAddWatermark();
     method public com.google.firebase.ai.type.ImagenAspectRatio? getAspectRatio();
@@ -665,17 +665,17 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagenGenerationConfigKt {
-    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenGenerationResponse<T> {
+  public final class ImagenGenerationResponse<T> {
     method public String? getFilteredReason();
     method public java.util.List<T> getImages();
     property public final String? filteredReason;
     property public final java.util.List<T> images;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenImageFormat {
+  public final class ImagenImageFormat {
     method public Integer? getCompressionQuality();
     method public String getMimeType();
     method public static com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
@@ -712,7 +712,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenInlineImage {
+  public final class ImagenInlineImage {
     method public android.graphics.Bitmap asBitmap();
     method public byte[] getData();
     method public String getMimeType();
@@ -737,7 +737,7 @@ package com.google.firebase.ai.type {
     method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
+  public final class ImagenPersonFilterLevel {
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ADULT;
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ALL;
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel BLOCK_ALL;
@@ -762,7 +762,7 @@ package com.google.firebase.ai.type {
     property public final Integer? referenceId;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSafetyFilterLevel {
+  public final class ImagenSafetyFilterLevel {
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_LOW_AND_ABOVE;
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_MEDIUM_AND_ABOVE;
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_NONE;
@@ -773,7 +773,7 @@ package com.google.firebase.ai.type {
   public static final class ImagenSafetyFilterLevel.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSafetySettings {
+  public final class ImagenSafetySettings {
     ctor public ImagenSafetySettings(com.google.firebase.ai.type.ImagenSafetyFilterLevel safetyFilterLevel, com.google.firebase.ai.type.ImagenPersonFilterLevel personFilterLevel);
   }
 
