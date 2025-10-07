@@ -92,16 +92,32 @@ internal constructor(
    * @param functionCallHandler A callback function that is invoked whenever the model receives a
    * function call. The [FunctionResponsePart] that the callback function returns will be
    * automatically sent to the model.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
+  ) {
+    startAudioConversation(functionCallHandler, false)
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
    *
-   * @param enableInterruptions Boolean to enable user to interrupt the model. Setting this variable
-   * would allow the user to talk while the model is responding.
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
    *
-   * **WARNING**: User interruption might not work reliably across all devices.
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
    */
   @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
-    enableInterruptions: Boolean? = null,
+    enableInterruptions: Boolean = false,
   ) {
 
     val context = firebaseApp.applicationContext
@@ -381,14 +397,14 @@ internal constructor(
    *
    * Launched asynchronously on [scope].
    */
-  private fun listenForModelPlayback(enableInterruptions: Boolean? = null) {
+  private fun listenForModelPlayback(enableInterruptions: Boolean = false) {
     scope.launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
           // The model playback queue is complete, so we can continue recording
           // TODO(b/408223520): Conditionally resume when param is added
-          if (enableInterruptions != true) {
+          if (!enableInterruptions) {
             audioHelper?.resumeRecording()
           }
           yield()

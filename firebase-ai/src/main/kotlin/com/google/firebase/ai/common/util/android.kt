@@ -17,6 +17,7 @@
 package com.google.firebase.ai.common.util
 
 import android.media.AudioRecord
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.yield
@@ -39,7 +40,7 @@ internal fun AudioRecord.readAsFlow() = flow {
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-      delay(10)
+      delay(10.milliseconds)
       yield()
       continue
     }

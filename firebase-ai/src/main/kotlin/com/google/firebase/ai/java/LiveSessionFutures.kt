@@ -63,10 +63,11 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation] or [close].
    *
-   * @param enableInterruptions Boolean to enable user to interrupt the model. Setting this variable
-   * would allow the user to talk while the model is responding.
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
    *
-   * **WARNING**: User interruption might not work reliably across all devices.
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(enableInterruptions: Boolean): ListenableFuture<Unit>
@@ -78,10 +79,11 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param functionCallHandler A callback function that is invoked whenever the model receives a
    * function call.
    *
-   * @param enableInterruptions Boolean to enable user to interrupt the model. Setting this variable
-   * would allow the user to talk while the model is responding.
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
    *
-   * **WARNING**: User interruption might not work reliably across all devices.
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
