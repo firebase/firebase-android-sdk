@@ -141,7 +141,6 @@ internal class AudioHelper(
    */
   fun listenToRecording(): Flow<ByteArray> {
     if (released) return emptyFlow()
-
     resumeRecording()
 
     return recorder.readAsFlow()
