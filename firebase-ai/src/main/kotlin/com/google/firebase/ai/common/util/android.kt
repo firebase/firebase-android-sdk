@@ -40,6 +40,7 @@ internal fun AudioRecord.readAsFlow() = flow {
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+      // TODO(vguthal): Investigate if both yield and delay are required.
       delay(10.milliseconds)
       yield()
       continue
