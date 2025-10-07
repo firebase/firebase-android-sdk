@@ -19,7 +19,7 @@ jobs:
         submodules: true
     - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
       with:
-        ruby-version: '2.7'
+        ruby-version: '3.4'
     - name: Setup Bundler
       run: ./ci/danger/setup_bundler.sh
     - name: Danger CHANGELOG verifier
