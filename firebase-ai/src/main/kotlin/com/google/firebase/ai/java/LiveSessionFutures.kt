@@ -47,6 +47,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param functionCallHandler A callback function that is invoked whenever the model receives a
    * function call.
    */
+  @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
   ): ListenableFuture<Unit>
@@ -57,6 +58,38 @@ public abstract class LiveSessionFutures internal constructor() {
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(enableInterruptions: Boolean): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call.
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+    enableInterruptions: Boolean
+  ): ListenableFuture<Unit>
 
   /**
    * Stops the audio conversation with the Gemini Server.
@@ -168,6 +201,24 @@ public abstract class LiveSessionFutures internal constructor() {
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(enableInterruptions: Boolean) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(enableInterruptions = enableInterruptions)
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(
+      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+      enableInterruptions: Boolean
+    ) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(
+          functionCallHandler,
+          enableInterruptions = enableInterruptions
+        )
+      }
 
     override fun stopAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.stopAudioConversation() }

@@ -97,6 +97,28 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
+    startAudioConversation(functionCallHandler, false)
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    enableInterruptions: Boolean = false,
+  ) {
 
     val context = firebaseApp.applicationContext
     if (
@@ -120,7 +142,7 @@ internal constructor(
 
       recordUserAudio()
       processModelResponses(functionCallHandler)
-      listenForModelPlayback()
+      listenForModelPlayback(enableInterruptions)
     }
   }
 
@@ -375,14 +397,16 @@ internal constructor(
    *
    * Launched asynchronously on [scope].
    */
-  private fun listenForModelPlayback() {
+  private fun listenForModelPlayback(enableInterruptions: Boolean = false) {
     scope.launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
           // The model playback queue is complete, so we can continue recording
           // TODO(b/408223520): Conditionally resume when param is added
-          audioHelper?.resumeRecording()
+          if (!enableInterruptions) {
+            audioHelper?.resumeRecording()
+          }
           yield()
         } else {
           /**
@@ -390,8 +414,9 @@ internal constructor(
            * no echo cancellation
            */
           // TODO(b/408223520): Conditionally pause when param is added
-          audioHelper?.pauseRecording()
-
+          if (enableInterruptions != true) {
+            audioHelper?.pauseRecording()
+          }
           audioHelper?.playAudio(playbackData)
         }
       }
