@@ -53,7 +53,6 @@ material = "1.12.0"
 mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.11"
 mockito = "5.20.0"
-mockitoAndroid = "3.4.0"
 mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
 playServicesCloudMessaging = "17.2.0"
 playServicesStats = "17.0.2"
@@ -192,7 +191,7 @@ kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kot
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockito" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -222,13 +221,13 @@ wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", v
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 maven-resolver = [
-	"maven-resolver-api",
-	"maven-resolver-connector-basic",
-	"maven-resolver-impl",
-	"maven-resolver-provider",
-	"maven-resolver-transport-file",
-	"maven-resolver-transport-http",
-	"maven-resolver-util"
+    "maven-resolver-api",
+    "maven-resolver-connector-basic",
+    "maven-resolver-impl",
+    "maven-resolver-provider",
+    "maven-resolver-transport-file",
+    "maven-resolver-transport-http",
+    "maven-resolver-util"
 ]
 
 [plugins]
