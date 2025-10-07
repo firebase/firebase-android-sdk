@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
@@ -270,6 +271,7 @@ internal constructor(
         Json.encodeToString(
           BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
         )
+      println("Sending $jsonString")
       session.send(Frame.Text(jsonString))
     }
   }
@@ -372,6 +374,7 @@ internal constructor(
             if (it.interrupted) {
               playBackQueue.clear()
             } else {
+              println("Sending audio parts")
               val audioParts = it.content?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
               for (part in audioParts) {
                 playBackQueue.add(part.inlineData)
@@ -387,7 +390,7 @@ internal constructor(
           }
         }
       }
-      .launchIn(scope)
+      .launchIn(CoroutineScope(Dispatchers.IO))
   }
 
   /**
@@ -398,7 +401,7 @@ internal constructor(
    * Launched asynchronously on [scope].
    */
   private fun listenForModelPlayback(enableInterruptions: Boolean = false) {
-    scope.launch {
+    CoroutineScope(Dispatchers.IO).launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
@@ -414,9 +417,10 @@ internal constructor(
            * no echo cancellation
            */
           // TODO(b/408223520): Conditionally pause when param is added
-          if (enableInterruptions != true) {
+          if (!enableInterruptions) {
             audioHelper?.pauseRecording()
           }
+          println("Playing audio")
           audioHelper?.playAudio(playbackData)
         }
       }
