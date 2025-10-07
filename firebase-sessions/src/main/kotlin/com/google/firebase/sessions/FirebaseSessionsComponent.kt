@@ -42,6 +42,7 @@ import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.settings.SettingsCache
 import com.google.firebase.sessions.settings.SettingsCacheImpl
 import com.google.firebase.sessions.settings.SettingsProvider
+import com.google.firebase.sessions.util.validateParentOrThrow
 import dagger.Binds
 import dagger.BindsInstance
 import dagger.Component
@@ -146,7 +147,7 @@ internal interface FirebaseSessionsComponent {
               SessionConfigsSerializer.defaultValue
             },
           scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionConfigsDataStore.data") },
+          produceFile = { appContext.dataStoreFile("aqs/sessionConfigsDataStore.data").validateParentOrThrow() },
         )
 
       @Provides
@@ -164,7 +165,7 @@ internal interface FirebaseSessionsComponent {
               sessionDataSerializer.defaultValue
             },
           scope = CoroutineScope(blockingDispatcher),
-          produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data") },
+          produceFile = { appContext.dataStoreFile("aqs/sessionDataStore.data").validateParentOrThrow() },
         )
 
       private fun <T> createDataStore(
