@@ -67,7 +67,10 @@ kotlin {
   compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
 }
 
-thirdPartyLicenses { add("dagger2", "${projectDir}/third_party/dagger2/LICENSE") }
+thirdPartyLicenses {
+  add("Apache-2.0", "${rootDir}/third_party/licenses/apache-2.0.txt")
+  add("Dagger", "${rootDir}/third_party/licenses/dagger.txt")
+}
 
 dependencies {
   api(libs.firebase.common)
