@@ -33,9 +33,12 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.gradle.internal.Pair
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 @SuppressWarnings("NewApi")
 class UnitTestReport(private val apiToken: String) {
+  private val LOG: Logger = LoggerFactory.getLogger("firebase-test-report")
   private val client: HttpClient =
     HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
@@ -73,7 +76,7 @@ class UnitTestReport(private val apiToken: String) {
   }
 
   private fun outputReport(commits: List<ReportCommit>) {
-    val reports: MutableList<TestReport> = ArrayList()
+    val reports: MutableList<TestReport> = mutableListOf()
     for (commit in commits) {
       reports.addAll(parseTestReports(commit.sha))
     }
@@ -109,7 +112,7 @@ class UnitTestReport(private val apiToken: String) {
     val commits = reports.map(TestReport::commit).distinct()
     var sdks = reports.map(TestReport::name).distinct().sorted()
     val lookup = reports.associateBy({ report -> Pair.of(report.name, report.commit) })
-    val successPercentage: MutableMap<String, Int> = HashMap()
+    val successPercentage: MutableMap<String, Int> = hashMapOf()
     var passingSdks = 0
     // Get success percentage
     for (sdk in sdks) {
@@ -140,7 +143,7 @@ class UnitTestReport(private val apiToken: String) {
     }
     val output = StringBuilder("| |")
     for (commit in commits) {
-      val rc = commitLookup.get(commit)
+      val rc = commitLookup[commit]
       output.append(" ")
       if (rc != null && rc.pr != -1) {
         output.append("[#${rc.pr}](https://github.com/firebase/firebase-android-sdk/pull/${rc.pr})")
@@ -154,7 +157,7 @@ class UnitTestReport(private val apiToken: String) {
     output.append(" :---: |".repeat(commits.size))
     output.append(" :--- |")
     for (sdk in sdks) {
-      output.append("\n| ").append(sdk).append(" |")
+      output.append("\n| $sdk |")
       for (commit in commits) {
         if (lookup.containsKey(Pair.of(sdk, commit))) {
           val report: TestReport = lookup[Pair.of(sdk, commit)]!!
@@ -174,19 +177,19 @@ class UnitTestReport(private val apiToken: String) {
       if (successChance == 100) {
         output.append("✅ 100%")
       } else {
-        output.append("⛔ ").append(successChance).append("%")
+        output.append("⛔ $successChance%")
       }
       output.append(" |")
     }
     output.append("\n")
     if (passingSdks > 0) {
-      output.append("\n*+").append(passingSdks).append(" passing SDKs*\n")
+      output.append("\n*+$passingSdks passing SDKs")
     }
     return output.toString()
   }
 
   private fun parseTestReports(commit: String): List<TestReport> {
-    val runs = request("actions/runs?head_sha=" + commit)
+    val runs = request("actions/runs?head_sha=$commit")
     for (el in runs["workflow_runs"] as JsonArray) {
       val run = el as JsonObject
       val name = run["name"]!!.jsonPrimitive.content
@@ -194,18 +197,18 @@ class UnitTestReport(private val apiToken: String) {
         return parseCITests(run["id"]!!.jsonPrimitive.content, commit)
       }
     }
-    return listOf()
+    return emptyList()
   }
 
   private fun parseCITests(id: String, commit: String): List<TestReport> {
-    val reports: MutableList<TestReport> = ArrayList()
-    val jobs = request("actions/runs/" + id + "/jobs")
+    val reports: MutableList<TestReport> = mutableListOf()
+    val jobs = request("actions/runs/$id/jobs")
     for (el in jobs["jobs"] as JsonArray) {
       val job = el as JsonObject
-      val jid = job["name"]!!.jsonPrimitive.content
-      if (jid.startsWith("Unit Tests (:")) {
+      val jobName = job["name"]!!.jsonPrimitive.content
+      if (jobName.startsWith("Unit Tests (:")) {
         reports.add(parseJob(TestReport.Type.UNIT_TEST, job, commit))
-      } else if (jid.startsWith("Instrumentation Tests (:")) {
+      } else if (jobName.startsWith("Instrumentation Tests (:")) {
         reports.add(parseJob(TestReport.Type.INSTRUMENTATION_TEST, job, commit))
       }
     }
@@ -217,17 +220,19 @@ class UnitTestReport(private val apiToken: String) {
       job["name"]!!
         .jsonPrimitive
         .content
-        .split("\\(:".toRegex())
+        .split("(:")
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
-    var status = TestReport.Status.OTHER
+    val status =
     if (job["status"]!!.jsonPrimitive.content == "completed") {
       if (job["conclusion"]!!.jsonPrimitive.content == "success") {
-        status = TestReport.Status.SUCCESS
+        TestReport.Status.SUCCESS
       } else {
-        status = TestReport.Status.FAILURE
+        TestReport.Status.FAILURE
       }
+    } else {
+      TestReport.Status.OTHER
     }
     val url = job["html_url"]!!.jsonPrimitive.content
     return TestReport(name, type, status, commit, url)
@@ -236,8 +241,7 @@ class UnitTestReport(private val apiToken: String) {
   private fun generateGraphQLQuery(commitCount: Int): JsonObject {
     return JsonObject(
       mapOf(
-        Pair(
-          "query",
+          "query" to
           JsonPrimitive(
             """
   query {
@@ -265,7 +269,6 @@ class UnitTestReport(private val apiToken: String) {
     """
           ),
         )
-      )
     )
   }
 
@@ -281,14 +284,14 @@ class UnitTestReport(private val apiToken: String) {
    * Abstracts away paginated calling. Naively joins pages together by merging root level arrays.
    */
   private fun <T> request(uri: URI, clazz: Class<T>, payload: JsonObject? = null): T {
-    val builder = HttpRequest.newBuilder()
-    if (payload == null) {
-      builder.GET()
-    } else {
-      builder.POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
-    }
     val request =
-      builder
+      HttpRequest.newBuilder().apply {
+        if (payload == null) {
+          GET()
+        } else {
+          POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+        }
+      }
         .uri(uri)
         .header("Authorization", "Bearer $apiToken")
         .header("X-GitHub-Api-Version", "2022-11-28")
@@ -297,14 +300,14 @@ class UnitTestReport(private val apiToken: String) {
       val response = client.send(request, HttpResponse.BodyHandlers.ofString())
       val body = response.body()
       if (response.statusCode() >= 300) {
-        System.err.println(response)
-        System.err.println(body)
+        LOG.error(response.toString())
+        LOG.error(body)
       }
       val json =
         when (clazz) {
           JsonObject::class.java -> Json.decodeFromString<JsonObject>(body)
           JsonArray::class.java -> Json.decodeFromString<JsonArray>(body)
-          else -> throw IllegalArgumentException()
+          else -> throw IllegalArgumentException("Unsupported deserialization type of $clazz")
         }
       if (json is JsonObject) {
         // Retrieve and merge objects from other pages, if present
@@ -312,16 +315,16 @@ class UnitTestReport(private val apiToken: String) {
           .headers()
           .firstValue("Link")
           .map { link: String ->
-            val parts = link.split(",".toRegex()).dropLastWhile { it.isEmpty() }
+            val parts = link.split(",").dropLastWhile { it.isEmpty() }
             for (part in parts) {
               if (part.endsWith("rel=\"next\"")) {
                 // <foo>; rel="next" -> foo
                 val url =
                   part
-                    .split(">;".toRegex())
+                    .split(">;")
                     .dropLastWhile { it.isEmpty() }
                     .toTypedArray()[0]
-                    .split("<".toRegex())
+                    .split("<")
                     .dropLastWhile { it.isEmpty() }
                     .toTypedArray()[1]
                 val p = request<JsonObject>(URI.create(url), JsonObject::class.java)
