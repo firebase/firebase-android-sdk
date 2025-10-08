@@ -17,6 +17,7 @@
 package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -26,6 +27,7 @@ import org.gradle.kotlin.dsl.register
 
 /**
  * Copies the root google-services.json into the project directory during build time.
+ * If the file doesn't exist, a dummy file is created and copied instead
  *
  * If a path is provided via `FIREBASE_GOOGLE_SERVICES_PATH`, that will be used instead. The file
  * will also be renamed to `google-services.json`, so provided files do *not* need to be properly
@@ -36,6 +38,12 @@ import org.gradle.kotlin.dsl.register
 abstract class CopyGoogleServicesPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project)
+    val sourcePath =
+      System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
+    if (!File(project.projectDir, "google-services.json").exists() && !File(sourcePath).exists()) {
+      val createDummyGoogleServices = registerDummyGoogleServicesTask(project, sourcePath)
+      copyRootGoogleServices.dependsOn(createDummyGoogleServices)
+    }
 
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
@@ -54,6 +62,38 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     val testTasks = listOf("AndroidTest", "connectedCheck", "deviceCheck")
 
     return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
+  }
+
+  private  fun registerDummyGoogleServicesTask(
+    project: Project,
+    path: String
+  ) = project.tasks.register("createRootGoogleServices") {
+    File(path).writeText("""
+        {
+          "project_info": {
+            "project_number": "1234567",
+            "firebase_url": "https://project-12345.firebaseio.com",
+            "project_id": "project-12345",
+            "storage_bucket": "project-12345.firebasestorage.app"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:1234567:android:12345ffff54321",
+                "android_client_info": {
+                  "package_name": "com.example.myapplication"
+                }
+              },
+              "api_key": [
+                {
+                  "current_key": "RaNdoMLett3r5aNdNuMb3rS"
+                }
+              ]
+            }
+          ],
+          "configuration_version": "1"
+        }
+    """.trimIndent())
   }
 
   private fun registerCopyRootGoogleServicesTask(project: Project) =
