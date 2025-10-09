@@ -38,6 +38,11 @@ import org.gradle.kotlin.dsl.register
 abstract class CopyGoogleServicesPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     val sourcePath = getSourcePath(project)
+    if (sourcePath == null) {
+      project.logger.warn("Google Services file already present in project, skipping copy task")
+      return
+    }
+
     val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project, sourcePath)
 
     project.allprojects {
@@ -94,10 +99,13 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     return !file.readText().contains(targetPackageLine)
   }
 
-  private fun getSourcePath(project: Project): String {
+  private fun getSourcePath(project: Project): String? {
     val path =
       System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
-    if (File(project.projectDir, "google-services.json").exists() || File(path).exists()) {
+    if (File(project.projectDir, "google-services.json").exists()) {
+      return null
+    }
+    if (File(path).exists()) {
       return path
     }
     project.logger.warn("Google services file not found, using fallback")
