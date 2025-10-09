@@ -70,6 +70,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     project: Project,
     path: String
   ) = project.tasks.register("createRootGoogleServices") {
+    println("Google services file not found, using fallback")
     File(path).writeText("""
         {
           "project_info": {
