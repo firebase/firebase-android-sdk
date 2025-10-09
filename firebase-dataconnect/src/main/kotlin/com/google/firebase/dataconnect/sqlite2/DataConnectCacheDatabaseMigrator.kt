@@ -189,13 +189,43 @@ internal object DataConnectCacheDatabaseMigrator {
     //
     // The PATCH version changes for all other non-schema-affecting changes, such as adding an
     // index to an existing table.
-    if (schemaVersion === null) {
+    return if (schemaVersion === null) {
       throw InvalidSchemaVersionException("schema_version is null")
+    } else if (schemaVersion == "1.0.0") {
+      RunMigrationStepResult.StepExecuted("1.1.0").apply {
+        logger.debug { "migrating to schema version $newSchemaVersion from $schemaVersion" }
+        run110MigrationStep(sqliteDatabase, cancellationSignal, logger)
+      }
     } else if (schemaVersion.startsWith("1.")) {
-      return RunMigrationStepResult.NoMore
+      RunMigrationStepResult.NoMore
     } else {
       throw InvalidSchemaVersionException("unsupported schema_version: $schemaVersion")
     }
+  }
+
+  private fun run110MigrationStep(
+    sqliteDatabase: SQLiteDatabase,
+    cancellationSignal: CancellationSignal,
+    logger: Logger
+  ) {
+    sqliteDatabase.execSQL(
+      """CREATE TABLE backing_data_objects (
+        id INTEGER PRIMARY KEY,
+        entityId BLOB NOT NULL UNIQUE,
+        flags INT NOT NULL,
+        data BLOB NOT NULL,
+        debug_info TEXT
+      )"""
+    )
+    sqliteDatabase.execSQL(
+      """CREATE TABLE stub_objects (
+        id INTEGER PRIMARY KEY,
+        queryId BLOB NOT NULL UNIQUE,
+        flags INT NOT NULL,
+        data BLOB NOT NULL,
+        debug_info TEXT
+      )"""
+    )
   }
 
   private class InvalidApplicationIdException(message: String) : Exception(message)
