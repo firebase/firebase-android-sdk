@@ -48,7 +48,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
       tasks.configureEach {
-        if (name !== "copyRootGoogleServices" || name!== "createRootGoogleServices") {
+        if (name !== "copyRootGoogleServices" && name!== "createRootGoogleServices") {
           dependsOn(copyRootGoogleServices)
         }
       }
