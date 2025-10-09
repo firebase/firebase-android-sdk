@@ -179,6 +179,48 @@ class SQLiteDatabaseExtsUnitTest {
   }
 
   @Test
+  fun `execSQL(Logger, sql, bindArgs) Int bindArgs should handle placeholder count not matching bindArgs length`() {
+    val (value1: Int, value2: Int) = Arb.int().distinctPair().next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT, col3)")
+
+    sqliteDatabase.execSQL(
+      mockLogger,
+      "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')",
+      arrayOf(value1, value2)
+    )
+
+    verify {
+      mockLogger.log(
+        null,
+        LogLevel.DEBUG,
+        "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')" + " bindArgs={$value1, $value2}"
+      )
+    }
+  }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) Int bindArgs should trim indent when placeholder count not matching bindArgs length`() {
+    val (value1: Int, value2: Int) = Arb.int().distinctPair().next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT, col3)")
+    val sql = """
+      INSERT INTO foo
+      (col1, col2, col3)
+      VALUES (?, ?, '?')
+    """
+    val expectedSql =
+      """
+      INSERT INTO foo
+      (col1, col2, col3)
+      VALUES (?, ?, '?')
+    """
+        .trimIndent() + " bindArgs={$value1, $value2}"
+
+    sqliteDatabase.execSQL(mockLogger, sql, arrayOf(value1, value2))
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, expectedSql) }
+  }
+
+  @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should execute the given sql`() {
     val (value1: Int, value2: Int) = Arb.int().distinctPair().next(rs)
 

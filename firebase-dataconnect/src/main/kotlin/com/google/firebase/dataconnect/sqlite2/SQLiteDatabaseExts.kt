@@ -92,6 +92,7 @@ internal object SQLiteDatabaseExts {
           }
           append(bindArg.escapedSQL())
         }
+        append('}')
       }
     }
   }
