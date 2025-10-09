@@ -225,7 +225,7 @@ internal object DataConnectCacheDatabaseMigrator {
         entityId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
         data BLOB NOT NULL,
-        sequence_number INT,
+        sequence_number INT NOT NULL,
         debug_info TEXT
       )"""
     )
@@ -236,9 +236,8 @@ internal object DataConnectCacheDatabaseMigrator {
         queryId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
         data BLOB NOT NULL,
-        ttl_milliseconds INT,
-        ttl_expiry_rfc3339 TEXT,
-        sequence_number INT,
+        sequence_number INT NOT NULL,
+        ttl BLOB,
         debug_info TEXT
       )"""
     )
