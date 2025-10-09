@@ -35,9 +35,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.gradle.internal.Pair
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
+import kotlin.io.use
 
 @SuppressWarnings("NewApi")
-class UnitTestReport(private val apiToken: String) {
+class TestReportGenerator(private val apiToken: String) {
   private val LOG: Logger = LoggerFactory.getLogger("firebase-test-report")
   private val client: HttpClient =
     HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
@@ -50,25 +52,25 @@ class UnitTestReport(private val apiToken: String) {
         generateGraphQLQuery(commitCount),
       )
     val commits =
-      response["data"]!!
-        .jsonObject["repository"]!!
-        .jsonObject["ref"]!!
-        .jsonObject["target"]!!
-        .jsonObject["history"]!!
-        .jsonObject["nodes"]!!
-        .jsonArray
+      (response["data"]
+        ?.jsonObject["repository"]
+        ?.jsonObject["ref"]
+        ?.jsonObject["target"]
+        ?.jsonObject["history"]
+        ?.jsonObject["nodes"]
+        ?.jsonArray ?: throw RuntimeException("Missing fields in response: $response"))
         .stream()
         .limit(commitCount.toLong())
         .map { el: JsonElement ->
           val obj = el as JsonObject
           ReportCommit(
-            obj["oid"]!!.jsonPrimitive.content,
-            obj["associatedPullRequests"]!!
-              .jsonObject["nodes"]!!
-              .jsonArray[0]
-              .jsonObject["number"]!!
-              .jsonPrimitive
-              .int,
+            obj["oid"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find commit SHA"),
+            obj["associatedPullRequests"]
+              ?.jsonObject["nodes"]
+              ?.jsonArray[0]
+              ?.jsonObject["number"]
+              ?.jsonPrimitive
+              ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
         }
         .toList()
@@ -99,9 +101,7 @@ class UnitTestReport(private val apiToken: String) {
     output.append("\n")
 
     try {
-      val writer = FileWriter("test-report.md")
-      writer.append(output.toString())
-      writer.close()
+      File("test-report.md").writeText(output.toString())
     } catch (e: Exception) {
       throw RuntimeException("Error writing report file", e)
     }
@@ -120,7 +120,7 @@ class UnitTestReport(private val apiToken: String) {
       var sdkTestSuccess = 0
       for (commit in commits) {
         if (lookup.containsKey(Pair.of(sdk, commit))) {
-          val report: TestReport = lookup.get(Pair.of(sdk, commit))!!
+          val report: TestReport = lookup[Pair.of(sdk, commit)]!!
           if (report.status != TestReport.Status.OTHER) {
             sdkTestCount++
             if (report.status == TestReport.Status.SUCCESS) {
@@ -137,7 +137,7 @@ class UnitTestReport(private val apiToken: String) {
     sdks =
       sdks
         .filter { s: String? -> successPercentage[s] != 100 }
-        .sortedBy { o: String -> successPercentage[o]!! }
+        .sortedBy { o: String -> successPercentage[o]?: 0 }
     if (sdks.isEmpty()) {
       return "*All tests passing*\n"
     }
@@ -173,7 +173,7 @@ class UnitTestReport(private val apiToken: String) {
         output.append(" |")
       }
       output.append(" ")
-      val successChance: Int = successPercentage.get(sdk)!!
+      val successChance: Int = successPercentage[sdk] ?: throw RuntimeException("Success percentage missing for $sdk")
       if (successChance == 100) {
         output.append("✅ 100%")
       } else {
@@ -192,9 +192,9 @@ class UnitTestReport(private val apiToken: String) {
     val runs = request("actions/runs?head_sha=$commit")
     for (el in runs["workflow_runs"] as JsonArray) {
       val run = el as JsonObject
-      val name = run["name"]!!.jsonPrimitive.content
+      val name = run["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find CI name")
       if (name == "CI Tests") {
-        return parseCITests(run["id"]!!.jsonPrimitive.content, commit)
+        return parseCITests(run["id"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find run id for $commit run $name"), commit)
       }
     }
     return emptyList()
@@ -205,7 +205,7 @@ class UnitTestReport(private val apiToken: String) {
     val jobs = request("actions/runs/$id/jobs")
     for (el in jobs["jobs"] as JsonArray) {
       val job = el as JsonObject
-      val jobName = job["name"]!!.jsonPrimitive.content
+      val jobName = job["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find name for job $id")
       if (jobName.startsWith("Unit Tests (:")) {
         reports.add(parseJob(TestReport.Type.UNIT_TEST, job, commit))
       } else if (jobName.startsWith("Instrumentation Tests (:")) {
@@ -217,16 +217,16 @@ class UnitTestReport(private val apiToken: String) {
 
   private fun parseJob(type: TestReport.Type, job: JsonObject, commit: String): TestReport {
     var name =
-      job["name"]!!
-        .jsonPrimitive
+      (job["name"]
+        ?.jsonPrimitive ?: throw RuntimeException("Job missing name"))
         .content
         .split("(:")
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
     val status =
-    if (job["status"]!!.jsonPrimitive.content == "completed") {
-      if (job["conclusion"]!!.jsonPrimitive.content == "success") {
+    if (job["status"]?.jsonPrimitive?.content == "completed") {
+      if (job["conclusion"]?.jsonPrimitive?.content == "success") {
         TestReport.Status.SUCCESS
       } else {
         TestReport.Status.FAILURE
@@ -234,7 +234,7 @@ class UnitTestReport(private val apiToken: String) {
     } else {
       TestReport.Status.OTHER
     }
-    val url = job["html_url"]!!.jsonPrimitive.content
+    val url = job["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("PR missing URL")
     return TestReport(name, type, status, commit, url)
   }
 

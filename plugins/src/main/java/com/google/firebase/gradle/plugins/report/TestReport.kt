@@ -15,6 +15,15 @@
  */
 package com.google.firebase.gradle.plugins.report
 
+
+/**
+ * Represents a single run of a test in CI. One unit/implementation test workflow run creates many `TestReport`s, one for each tested SDK.
+ * @param name SDK name of the associated test run.
+ * @param type What type of test result this is, either unit or instrumentation test.
+ * @param status Conclusion status of the test run, `SUCCESS`/`FAILURE` for typical results, `OTHER` for ongoing runs and unexpected data.
+ * @param commit Commit SHA this test was run on.
+ * @param url Link to the GHA test run info, including logs.
+ */
 data class TestReport(
   val name: String,
   val type: Type,
