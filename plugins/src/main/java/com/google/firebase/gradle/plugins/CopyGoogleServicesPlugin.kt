@@ -43,7 +43,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
       tasks.configureEach {
-        if (name !== "copyRootGoogleServices" && name !== "copyDummyGoogleServices") {
+        if (name !== "copyRootGoogleServices") {
           dependsOn(copyRootGoogleServices)
         }
       }
@@ -100,6 +100,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     if (File(project.projectDir, "google-services.json").exists() || File(path).exists()) {
       return path
     }
+    project.logger.warn("Google services file not found, using fallback")
     return "${project.rootDir}/plugins/resources/dummy-google-services.json"
   }
 }
