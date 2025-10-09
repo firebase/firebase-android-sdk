@@ -62,7 +62,10 @@ kotlin {
   explicitApi()
 }
 
-thirdPartyLicenses { add("dagger2", "${projectDir}/third_party/dagger2/LICENSE") }
+thirdPartyLicenses {
+  add("Apache-2.0", "${rootDir}/third_party/licenses/apache-2.0.txt")
+  add("Dagger", "${rootDir}/third_party/licenses/dagger.txt")
+}
 
 dependencies {
   javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")

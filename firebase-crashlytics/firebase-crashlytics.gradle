@@ -63,7 +63,8 @@ android {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 thirdPartyLicenses {
-    add 'Tape', "${projectDir}/third_party_licenses/tape/LICENSE"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Tape', "${rootDir}/third_party/licenses/tape.txt"
 }
 
 dependencies {
