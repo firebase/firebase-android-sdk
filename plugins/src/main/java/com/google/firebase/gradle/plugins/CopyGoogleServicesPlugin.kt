@@ -77,7 +77,6 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
   private fun registerCopyRootGoogleServicesTask(project: Project, path: String) =
     project.tasks.register<Copy>("copyRootGoogleServices") {
-
       val library = project.extensions.getByType<BaseExtension>()
 
       val targetPackageLine = "\"package_name\": \"${library.namespace}\""
