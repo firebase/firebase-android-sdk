@@ -220,7 +220,7 @@ internal object DataConnectCacheDatabaseMigrator {
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE entities (
+      """CREATE TABLE entity_data (
         id INTEGER PRIMARY KEY,
         entityId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
@@ -231,7 +231,7 @@ internal object DataConnectCacheDatabaseMigrator {
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE queries (
+      """CREATE TABLE query_results (
         id INTEGER PRIMARY KEY,
         queryId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
