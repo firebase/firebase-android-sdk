@@ -37,13 +37,8 @@ import org.gradle.kotlin.dsl.register
  */
 abstract class CopyGoogleServicesPlugin : Plugin<Project> {
   override fun apply(project: Project) {
-    val sourcePath =
-      System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
+    val sourcePath = getSourcePath(project)
     val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project, sourcePath)
-    if (!File(project.projectDir, "google-services.json").exists() && !File(sourcePath).exists()) {
-      val createDummyGoogleServices = registerDummyGoogleServicesTask(project, sourcePath)
-      copyRootGoogleServices.dependsOn(createDummyGoogleServices)
-    }
 
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
@@ -65,15 +60,6 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
     return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
   }
-
-  private fun registerDummyGoogleServicesTask(project: Project, path: String) =
-    project.tasks.register<Copy>("copyDummyGoogleServices") {
-      logger.warn("Google services file not found, using fallback")
-
-      from("${project.rootDir}/plugins/resources/dummy-google-services.json")
-      into(path)
-      rename { "google-services.json" }
-    }
 
   private fun registerCopyRootGoogleServicesTask(project: Project, path: String) =
     project.tasks.register<Copy>("copyRootGoogleServices") {
@@ -106,5 +92,14 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     if (!file.exists()) return true
 
     return !file.readText().contains(targetPackageLine)
+  }
+
+  private fun getSourcePath(project: Project): String {
+    val path =
+      System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
+    if (File(project.projectDir, "google-services.json").exists() || File(path).exists()) {
+      return path
+    }
+    return "${project.rootDir}/plugins/resources/dummy-google-services.json"
   }
 }
