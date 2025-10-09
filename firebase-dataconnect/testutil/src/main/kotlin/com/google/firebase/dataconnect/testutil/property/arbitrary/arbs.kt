@@ -28,6 +28,7 @@ import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
@@ -37,7 +38,6 @@ import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
@@ -49,10 +49,12 @@ object DataConnectArb {
   val javaTime: JavaTimeArbs = JavaTimeArbs
 
   val codepoints: Arb<Codepoint> =
-    Codepoint.ascii()
-      .merge(Codepoint.egyptianHieroglyphs())
-      .merge(Codepoint.arabic())
-      .merge(Codepoint.cyrillic())
+    Arb.choice(
+        Codepoint.ascii(),
+        Codepoint.egyptianHieroglyphs(),
+        Codepoint.arabic(),
+        Codepoint.cyrillic(),
+      )
       // Do not produce character code 0 because it's not supported by Postgresql:
       // https://www.postgresql.org/docs/current/datatype-character.html
       .filterNot { it.value == 0 }

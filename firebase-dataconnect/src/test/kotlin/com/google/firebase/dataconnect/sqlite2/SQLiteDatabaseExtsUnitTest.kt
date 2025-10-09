@@ -557,7 +557,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with placeholders replaced`() {
-    val (value1: String, value2: String) = Arb.dataConnect.string().distinctPair().next(rs)
+    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
 
     sqliteDatabase.execSQL(
@@ -567,13 +567,17 @@ class SQLiteDatabaseExtsUnitTest {
     )
 
     verify {
-      mockLogger.log(null, LogLevel.DEBUG, "INSERT INTO foo (col1, col2) VALUES ($value1, $value2)")
+      mockLogger.log(
+        null,
+        LogLevel.DEBUG,
+        "INSERT INTO foo (col1, col2) VALUES ('$value1', '$value2')"
+      )
     }
   }
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with indents trimmed`() {
-    val (value1: String, value2: String) = Arb.dataConnect.string().distinctPair().next(rs)
+    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
     val sql = """
       INSERT INTO foo
@@ -595,7 +599,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should handle placeholder count not matching bindArgs length`() {
-    val (value1: String, value2: String) = Arb.dataConnect.string().distinctPair().next(rs)
+    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
 
     sqliteDatabase.execSQL(
@@ -615,7 +619,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should trim indent when placeholder count not matching bindArgs length`() {
-    val (value1: String, value2: String) = Arb.dataConnect.string().distinctPair().next(rs)
+    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
     val sql = """
       INSERT INTO foo
@@ -657,7 +661,13 @@ class SQLiteDatabaseExtsUnitTest {
     values.shouldContainExactly(Row(value1, value2))
   }
 
-  // TODO: remove apostrophes from strings used in the tests above, and add explicit tests for
-  // strings containing apostrophes
+  // TODO: add explicit tests for strings containing apostrophes
 
+  private companion object {
+
+    val codepointsWithoutApostropheArb =
+      Arb.dataConnect.codepoints.filterNot { it.value == '\''.code }
+
+    val stringsWithoutApostropheArb = Arb.string(0..20, codepointsWithoutApostropheArb)
+  }
 }
