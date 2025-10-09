@@ -35,7 +35,7 @@ internal object SQLiteDatabaseExts {
   fun SQLiteDatabase.execSQL(
     logger: Logger,
     @Language("RoomSql") sql: String,
-    bindArgs: Array<Any?>?
+    bindArgs: Array<Any?>
   ) {
     logger.debugSql(sql, bindArgs)
     execSQL(sql, bindArgs)
