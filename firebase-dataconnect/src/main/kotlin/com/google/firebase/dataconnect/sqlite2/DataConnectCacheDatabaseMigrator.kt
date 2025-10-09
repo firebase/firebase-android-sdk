@@ -17,10 +17,13 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import android.annotation.SuppressLint
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.os.CancellationSignal
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
 
 internal object DataConnectCacheDatabaseMigrator {
 
@@ -49,11 +52,9 @@ internal object DataConnectCacheDatabaseMigrator {
       // integer to a unique integer so that utilities such as `file` can determine the specific
       // file type rather than just reporting "SQLite3 Database".
       val applicationId =
-        sqliteDatabase.rawQuery("PRAGMA application_id", null).let { cursor ->
-          cursor.use {
-            it.moveToNext()
-            it.getInt(0)
-          }
+        sqliteDatabase.rawQuery(logger, "PRAGMA application_id") { cursor ->
+          cursor.moveToNext()
+          cursor.getInt(0)
         }
       logger.debug { "application_id==${applicationId.toString(16)}" }
 
@@ -61,7 +62,7 @@ internal object DataConnectCacheDatabaseMigrator {
         logger.debug { "application_id is the expected value; leaving it alone" }
       } else if (applicationId == 0) {
         logger.debug { "setting application_id to: ${APPLICATION_ID.toString(16)}" }
-        sqliteDatabase.execSQL("PRAGMA application_id = $APPLICATION_ID")
+        sqliteDatabase.execSQL(logger, "PRAGMA application_id = $APPLICATION_ID")
       } else {
         logger.debug { "application_id is invalid; aborting" }
         throw InvalidApplicationIdException(
@@ -106,6 +107,7 @@ internal object DataConnectCacheDatabaseMigrator {
 
         logger.debug { "setting schema_version to: $newSchemaVersion" }
         sqliteDatabase.execSQL(
+          logger,
           "INSERT OR REPLACE INTO metadata (name, text) VALUES (?, ?)",
           arrayOf("schema_version", newSchemaVersion)
         )
@@ -136,13 +138,12 @@ internal object DataConnectCacheDatabaseMigrator {
       0 -> {
         logger.debug { "user_version is 0; creating metadata table" }
         sqliteDatabase.execSQL(
+          logger,
           """
           CREATE TABLE metadata (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
-            blob BLOB,
-            text TEXT,
-            int INTEGER
+            value -- omit type specification so the type is dynamic
           )"""
         )
         logger.debug { "setting user_version to 1" }
@@ -162,9 +163,14 @@ internal object DataConnectCacheDatabaseMigrator {
     logger: Logger
   ): RunMigrationStepResult {
     val schemaVersion: String? =
-      sqliteDatabase
-        .rawQuery("SELECT text FROM metadata WHERE name = 'schema_version'", null)
-        .let { cursor -> cursor.use { if (it.moveToNext()) it.getString(0) else null } }
+      sqliteDatabase.rawQuery(logger, "SELECT text FROM metadata WHERE name = 'schema_version'") {
+        cursor ->
+        if (cursor.moveToNext() && cursor.getType(0) == Cursor.FIELD_TYPE_STRING) {
+          cursor.getString(0)
+        } else {
+          null
+        }
+      }
     logger.debug { "current schema_version: $schemaVersion" }
 
     // ========= Schema Versioning Versioning Scheme =========
@@ -209,22 +215,47 @@ internal object DataConnectCacheDatabaseMigrator {
     logger: Logger
   ) {
     sqliteDatabase.execSQL(
-      """CREATE TABLE backing_data_objects (
+      logger,
+      "CREATE TABLE sequence_number (id INTEGER PRIMARY KEY AUTOINCREMENT)"
+    )
+    sqliteDatabase.execSQL(
+      logger,
+      """CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
         entityId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
         data BLOB NOT NULL,
+        sequence_number INT,
         debug_info TEXT
       )"""
     )
     sqliteDatabase.execSQL(
-      """CREATE TABLE stub_objects (
+      logger,
+      """CREATE TABLE queries (
         id INTEGER PRIMARY KEY,
         queryId BLOB NOT NULL UNIQUE,
         flags INT NOT NULL,
         data BLOB NOT NULL,
+        ttl_milliseconds INT,
+        ttl_expiry_rfc3339 TEXT,
+        sequence_number INT,
         debug_info TEXT
       )"""
+    )
+    sqliteDatabase.execSQL(
+      logger,
+      """CREATE TABLE entity_query_map (
+        queryId BLOB NOT NULL REFERENCES queries ON DELETE CASCADE ON UPDATE CASCADE,
+        entityId BLOB NOT NULL REFERENCES entities ON DELETE CASCADE ON UPDATE CASCADE,
+        PRIMARY KEY (queryId, entityId)
+      )"""
+    )
+    // Add an explicit index on the `entityId` column so that "WHERE entityId=?" queries are fast.
+    // Note that "WHERE queryId=?" queries are already fast because `queryId` is the _first_
+    // component of the primary key and, therefore, is implicitly indexed.
+    sqliteDatabase.execSQL(
+      logger,
+      "CREATE INDEX entity_query_map_entity_index ON entity_query_map(entityId)"
     )
   }
 
