@@ -26,8 +26,8 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
 /**
- * Copies the root google-services.json into the project directory during build time.
- * If the file doesn't exist, a dummy file is created and copied instead
+ * Copies the root google-services.json into the project directory during build time. If the file
+ * doesn't exist, a dummy file is created and copied instead
  *
  * If a path is provided via `FIREBASE_GOOGLE_SERVICES_PATH`, that will be used instead. The file
  * will also be renamed to `google-services.json`, so provided files do *not* need to be properly
@@ -48,7 +48,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
       tasks.configureEach {
-        if (name !== "copyRootGoogleServices" && name!== "createRootGoogleServices") {
+        if (name !== "copyRootGoogleServices" && name !== "createRootGoogleServices") {
           dependsOn(copyRootGoogleServices)
         }
       }
@@ -66,12 +66,12 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
   }
 
-  private  fun registerDummyGoogleServicesTask(
-    project: Project,
-    path: String
-  ) = project.tasks.register("createRootGoogleServices") {
-    println("Google services file not found, using fallback")
-    File(path).writeText("""
+  private fun registerDummyGoogleServicesTask(project: Project, path: String) =
+    project.tasks.register("createRootGoogleServices") {
+      println("Google services file not found, using fallback")
+      File(path)
+        .writeText(
+          """
         {
           "project_info": {
             "project_number": "1234567",
@@ -96,8 +96,10 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
           ],
           "configuration_version": "1"
         }
-    """.trimIndent())
-  }
+    """
+            .trimIndent()
+        )
+    }
 
   private fun registerCopyRootGoogleServicesTask(project: Project) =
     project.tasks.register<Copy>("copyRootGoogleServices") {
