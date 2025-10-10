@@ -168,9 +168,9 @@ org-json = { module = "org.json:json", version = "20240303" }
 play-services-cloud-messaging = { module = "com.google.android.gms:play-services-cloud-messaging", version.ref = "playServicesCloudMessaging" }
 play-services-stats = { module = "com.google.android.gms:play-services-stats", version.ref = "playServicesStats" }
 play-services-vision = { module = "com.google.android.gms:play-services-vision", version.ref = "playServicesVision" }
-playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.1.0" }
+playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.9.0" }
 playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.8.0" }
-playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.1.0" }
+playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.9.0" }
 proto-google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version.ref = "protoGoogleCommonProtos" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
 protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
