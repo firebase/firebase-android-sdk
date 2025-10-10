@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.1.0
+
 - [fixed] Addressed minor reference documentation issues (#7399)
 - [changed] Added classes `EnumValue` and `EnumValueSerializer`. These classes are identical to
   those produced by the Data Connect code generator; however, a future version of the code generator
