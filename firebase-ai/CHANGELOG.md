@@ -1,6 +1,10 @@
 # Unreleased
 
+# 17.4.0
+
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
+- [changed] Added support for user interrupts for the `startAudioConversation` method in the
+  `LiveSession` class. (#7413)
 - [changed] Added support for the URL context tool, which allows the model to access content from
   provided public web URLs to inform and enhance its responses. (#7382)
 - [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
