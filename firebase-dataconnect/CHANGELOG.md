@@ -1,99 +1,109 @@
 # Unreleased
 
-
 # 17.1.0
-* [fixed] Addressed minor reference documentation issues (#7399)
-* [changed] Added classes `EnumValue` and `EnumValueSerializer`. These classes are identical to
+
+- [fixed] Addressed minor reference documentation issues (#7399)
+- [changed] Added classes `EnumValue` and `EnumValueSerializer`. These classes are identical to
   those produced by the Data Connect code generator; however, a future version of the code generator
   will start using these classes from the SDK rather than generating them.
   ([#7153](https://github.com/firebase/firebase-android-sdk/pull/7153))
 
 # 17.0.1
-* [changed] Bumped internal dependencies.
-* [changed] Ignore unknown fields in response data instead of throwing a
+
+- [changed] Bumped internal dependencies.
+- [changed] Ignore unknown fields in response data instead of throwing a
   `DataConnectOperationException` with message "decoding data from the server's response failed: An
   unknown field for index -3" ([#7314](https://github.com/firebase/firebase-android-sdk/pull/7314))
 
 # 17.0.0
-* [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
-* [changed] Removed superfluous and noisy debug logging of operation variables.
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+- [changed] Removed superfluous and noisy debug logging of operation variables.
 
 # 16.0.3
-* [fixed] Fixed occasional `NullPointerException` when registering with FirebaseAuth, leading to
+
+- [fixed] Fixed occasional `NullPointerException` when registering with FirebaseAuth, leading to
   erroneous UNAUTHENTICATED exceptions.
   ([#7001](https://github.com/firebase/firebase-android-sdk/pull/7001))
 
 # 16.0.2
-* [changed] Improved code robustness related to state management in `FirebaseDataConnect` objects.
+
+- [changed] Improved code robustness related to state management in `FirebaseDataConnect` objects.
   ([#6861](https://github.com/firebase/firebase-android-sdk/pull/6861))
 
 # 16.0.1
-* [changed] Internal improvements.
+
+- [changed] Internal improvements.
 
 # 16.0.0
-* [changed] DataConnectOperationException added, enabling support for partial errors; that is, any
+
+- [changed] DataConnectOperationException added, enabling support for partial errors; that is, any
   data that was received and/or was able to be decoded is now available via the "response" property
   of the exception thrown when a query or mutation is executed.
   ([#6794](https://github.com/firebase/firebase-android-sdk/pull/6794))
 
 # 16.0.0-beta05
-* [changed] Changed gRPC proto package to v1 (was v1beta).
+
+- [changed] Changed gRPC proto package to v1 (was v1beta).
   ([#6729](https://github.com/firebase/firebase-android-sdk/pull/6729))
 
 # 16.0.0-beta04
-* [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
+
+- [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
   `MutableStateFlow<LogLevel>`. This enables apps to "collect" the flow to, for example, update a UI
   component when the log level changes.
   ([#6586](https://github.com/firebase/firebase-android-sdk/pull/6586))
 
 # 16.0.0-beta03
-* [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.
-* [feature] QueryRef and MutationRef gain methods copy(), withDataDeserializer(), and
+
+- [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.
+- [feature] QueryRef and MutationRef gain methods copy(), withDataDeserializer(), and
   withVariablesSerializer(). ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-* [feature] GeneratedConnector gains methods copy(), operations(), queries(), and mutations().
+- [feature] GeneratedConnector gains methods copy(), operations(), queries(), and mutations().
   ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-* [feature] GeneratedQuery and GeneratedMutation gain methods copy(), withVariablesSerializer(), and
+- [feature] GeneratedQuery and GeneratedMutation gain methods copy(), withVariablesSerializer(), and
   withDataDeserializer(). ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-* [feature] GeneratedConnector, GeneratedQuery, and GeneratedMutation now must implement equals() to
+- [feature] GeneratedConnector, GeneratedQuery, and GeneratedMutation now must implement equals() to
   be a _logical_ comparsion, rather than just checking for _referencial_ equality using the `===`
   operator. ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-* [feature] ExperimentalFirebaseDataConnect annotation added, and some APIs have been annotated with
+- [feature] ExperimentalFirebaseDataConnect annotation added, and some APIs have been annotated with
   it, requiring applications that make use of these experimental APIs to opt-in using
   `@OptIn(ExperimentalFirebaseDataConnect::class)` to suppress warnings or errors related to using
   these experimental APIs. ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424)) and
   ([#6433](https://github.com/firebase/firebase-android-sdk/pull/6433))
-* [changed] Replaced java.util.Date with com.google.firebase.dataconnect.LocalDate.
+- [changed] Replaced java.util.Date with com.google.firebase.dataconnect.LocalDate.
   ([#6434](https://github.com/firebase/firebase-android-sdk/pull/6434))
-* [changed] `DateSerializer` removed, as it is superceded by `LocalDateSerializer`. As of Data
+- [changed] `DateSerializer` removed, as it is superceded by `LocalDateSerializer`. As of Data
   Connect emulator version 1.7.0, the generated Kotlin code uses
   `com.google.firebase.dataconnect.LocalDate` instead of `java.util.Date`. Therefore, this version
   of the SDK must be paired with code generated by version 1.7.0 (or later) of the Data Connect
   emulator. ([#6513](https://github.com/firebase/firebase-android-sdk/pull/6513))
-* [feature] JavaTimeLocalDateSerializer and KotlinxDatetimeLocalDateSerializer added, to enable
+- [feature] JavaTimeLocalDateSerializer and KotlinxDatetimeLocalDateSerializer added, to enable
   using the standard "local date" classes `java.time.LocalDate` and/or `kotlinx.datetime.LocalDate`
   instead of the bespoke `com.google.firebase.dataconnect.LocalDate` class for `Date` GraphQL fields
   and variables. ([#6519](https://github.com/firebase/firebase-android-sdk/pull/6519))
 
 # 16.0.0-beta02
-* [changed] Updated protobuf dependency to `3.25.5` to fix
+
+- [changed] Updated protobuf dependency to `3.25.5` to fix
   [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
 
 # 16.0.0-beta01
-* [feature] Initial release of the Data Connect SDK (public preview). Learn how to
+
+- [feature] Initial release of the Data Connect SDK (public preview). Learn how to
   [get started](https://firebase.google.com/docs/data-connect/android-sdk) with the SDK in your app.
-* [feature] Added App Check support.
+- [feature] Added App Check support.
   ([#6176](https://github.com/firebase/firebase-android-sdk/pull/6176))
-* [feature] Added `AnyValue` to support the `Any` custom GraphQL scalar type.
+- [feature] Added `AnyValue` to support the `Any` custom GraphQL scalar type.
   ([#6285](https://github.com/firebase/firebase-android-sdk/pull/6285))
-* [feature] Added `OrderDirection` enum support.
+- [feature] Added `OrderDirection` enum support.
   ([#6307](https://github.com/firebase/firebase-android-sdk/pull/6307))
-* [feature] Added ability to specify `SerializersModule` when serializing.
+- [feature] Added ability to specify `SerializersModule` when serializing.
   ([#6297](https://github.com/firebase/firebase-android-sdk/pull/6297))
-* [feature] Added `CallerSdkType`, which enables tracking of the generated SDK usage.
+- [feature] Added `CallerSdkType`, which enables tracking of the generated SDK usage.
   ([#6298](https://github.com/firebase/firebase-android-sdk/pull/6298) and
   [#6179](https://github.com/firebase/firebase-android-sdk/pull/6179))
-* [changed] Changed gRPC proto package to v1beta (was v1alpha).
+- [changed] Changed gRPC proto package to v1beta (was v1alpha).
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
-* [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
+- [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
-
