@@ -2,15 +2,15 @@
 
 
 # 17.4.0
-* [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
-* [changed] Added support for user interrupts for the `startAudioConversation` method in the
+- [changed] --Breaking Change--: Removed the `candidateCount` option from `LiveGenerationConfig`
+- [changed] Added support for user interrupts for the `startAudioConversation` method in the
   `LiveSession` class. (#7413)
-* [changed] Added support for the URL context tool, which allows the model to access content from
+- [changed] Added support for the URL context tool, which allows the model to access content from
   provided public web URLs to inform and enhance its responses. (#7382)
-* [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
-* [changed] Marked the public constructor for `UsageMetadata` as deprecated (#7420)
-* [changed] Using Firebase AI Logic with the Gemini Developer API is now Generally Available (GA).
-* [changed] Using Firebase AI Logic with the Imagen generation APIs is now Generally Available (GA).
+- [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
+- [changed] Marked the public constructor for `UsageMetadata` as deprecated (#7420)
+- [changed] Using Firebase AI Logic with the Gemini Developer API is now Generally Available (GA).
+- [changed] Using Firebase AI Logic with the Imagen generation APIs is now Generally Available (GA).
 
 # 17.3.0
 * [changed] Bumped internal dependencies.
@@ -93,4 +93,3 @@ features will be in this new SDK.
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
