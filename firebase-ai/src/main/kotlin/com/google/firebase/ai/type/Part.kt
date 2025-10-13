@@ -329,7 +329,7 @@ internal object PartSerializer :
   }
 }
 
-internal fun Part.toInternal(): InternalPart {
+internal fun Part.toInternalOpenApi(): InternalPart {
   return when (this) {
     is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
     is ImagePart ->

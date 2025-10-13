@@ -200,7 +200,7 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal(),
+      responseSchema = responseSchema?.toInternalOpenApi(),
       responseModalities = responseModalities?.map { it.toInternal() },
       thinkingConfig = thinkingConfig?.toInternal()
     )
