@@ -256,12 +256,55 @@ internal constructor(
   }
 
   /**
+   * Sends audio data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param audio The audio data to send.
+   */
+  public suspend fun sendAudioRealtime(audio: InlineDataPart) {
+    val msg = bidiGenerateContentRealtimeInput { this.audio = audio }
+    FirebaseAIException.catchAsync {
+      val jsonString = Json.encodeToString(msg.toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
+   * Sends video data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param video The video data to send. Video MIME type could be either video or image.
+   */
+  public suspend fun sendVideoRealtime(video: InlineDataPart) {
+    val msg = bidiGenerateContentRealtimeInput { this.video = video }
+    FirebaseAIException.catchAsync {
+      val jsonString = Json.encodeToString(msg.toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
+   * Sends text data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param text The text data to send.
+   */
+  public suspend fun sendTextRealtime(text: String) {
+    val msg = bidiGenerateContentRealtimeInput { this.text = text }
+    FirebaseAIException.catchAsync {
+      val jsonString = Json.encodeToString(msg.toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
+  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
