@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -329,7 +328,7 @@ internal object PartSerializer :
   }
 }
 
-internal fun Part.toInternalOpenApi(): InternalPart {
+internal fun Part.toInternal(): InternalPart {
   return when (this) {
     is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
     is ImagePart ->

@@ -42,6 +42,6 @@ internal data class GRpcErrorResponse(val error: GRpcError) : Response {
   }
 }
 
-internal fun JSONObject.toInternalOpenApi() = Json.decodeFromString<JsonObject>(toString())
+internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
 
 internal fun JsonObject.toPublic() = JSONObject(toString())
