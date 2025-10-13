@@ -22,14 +22,17 @@ internal class HttpsCallOptions {
   private var timeout = DEFAULT_TIMEOUT
   private var timeoutUnits = DEFAULT_TIMEOUT_UNITS
   @JvmField public val limitedUseAppCheckTokens: Boolean
+  @JvmField val headers: MutableMap<String, String>
 
   /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions]. */
   internal constructor(publicCallableOptions: HttpsCallableOptions) {
     limitedUseAppCheckTokens = publicCallableOptions.limitedUseAppCheckTokens
+    headers = publicCallableOptions.headers.toMutableMap()
   }
 
   internal constructor() {
     limitedUseAppCheckTokens = false
+    headers = mutableMapOf()
   }
 
   internal fun getLimitedUseAppCheckTokens(): Boolean {
@@ -54,6 +57,31 @@ internal class HttpsCallOptions {
    */
   internal fun getTimeout(): Long {
     return timeoutUnits.toMillis(timeout)
+  }
+
+  /**
+   * Adds an HTTP header for calls from this instance of Functions.
+   *
+   * Note that an existing header with the same name will be overwritten.
+   *
+   * @param name Name of HTTP header
+   * @param value Value of HTTP header
+   */
+  internal fun addHeader(name: String, value: String): HttpsCallOptions {
+    headers[name] = value
+    return this
+  }
+
+  /**
+   * Adds all HTTP headers of passed map for calls from this instance of Functions.
+   *
+   * Note that an existing header with the same name will be overwritten.
+   *
+   * @param headers Map of HTTP headers (name to value)
+   */
+  internal fun addHeaders(headers: Map<String, String>): HttpsCallOptions {
+    this.headers.putAll(headers)
+    return this
   }
 
   /** Creates a new OkHttpClient with these options applied to it. */

@@ -133,6 +133,10 @@ exports.timeoutTest = functions.https.onRequest((request, response) => {
   setTimeout(() => response.send({data: true}), 500);
 });
 
+exports.headersTest = functions.https.onRequest((request, response) => {
+  response.status(200).send({data: request.headers});
+});
+
 const streamData = ['hello', 'world', 'this', 'is', 'cool'];
 
 /**

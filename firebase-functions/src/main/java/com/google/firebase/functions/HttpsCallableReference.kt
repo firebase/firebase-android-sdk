@@ -202,4 +202,29 @@ public class HttpsCallableReference {
     other.setTimeout(timeout, units)
     return other
   }
+
+  /**
+   * Adds an HTTP header for calls from this instance of Functions.
+   *
+   * Note that an existing header with the same name will be overwritten.
+   *
+   * @param name Name of HTTP header
+   * @param value Value of HTTP header
+   */
+  public fun addHeader(name: String, value: String): HttpsCallableReference {
+    options.addHeader(name, value)
+    return this
+  }
+
+  /**
+   * Adds all HTTP headers of passed map for calls from this instance of Functions.
+   *
+   * Note that an existing header with the same name will be overwritten.
+   *
+   * @param headers Map of HTTP headers (name to value)
+   */
+  public fun addHeaders(headers: Map<String, String>): HttpsCallableReference {
+    options.addHeaders(headers)
+    return this
+  }
 }

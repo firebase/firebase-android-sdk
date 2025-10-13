@@ -38,6 +38,7 @@ import java.util.concurrent.Executor
 import javax.inject.Named
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.Headers
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -229,7 +230,9 @@ internal constructor(
     val bodyJSON = JSONObject(body)
     val contentType = MediaType.parse("application/json")
     val requestBody = RequestBody.create(contentType, bodyJSON.toString())
-    var request = Request.Builder().url(url).post(requestBody)
+    // Add custom headers first so that internal headers cannot be overwritten
+    val customHeaders = Headers.of(options.headers)
+    var request = Request.Builder().url(url).post(requestBody).headers(customHeaders)
     if (context!!.authToken != null) {
       request = request.header("Authorization", "Bearer " + context.authToken)
     }
