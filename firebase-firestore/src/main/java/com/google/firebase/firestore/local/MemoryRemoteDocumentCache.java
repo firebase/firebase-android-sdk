@@ -112,7 +112,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     if (query.isQuery()) {
       path = query.query().getPath();
     } else {
-      path = ResourcePath.fromString(getPipelineCollection(query.pipeline()));
+      path =
+          ResourcePath.fromString(
+              getPipelineCollection(query.pipeline$com_google_firebase_firebase_firestore()));
     }
     DocumentKey prefix = DocumentKey.fromPath(path.append(""));
     Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
