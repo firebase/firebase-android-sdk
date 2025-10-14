@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import android.Manifest
 import android.Manifest.permission.RECORD_AUDIO
 import android.content.pm.PackageManager
 import android.media.AudioFormat
