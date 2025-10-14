@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
@@ -28,9 +29,12 @@ import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -38,12 +42,16 @@ import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -965,5 +973,166 @@ class SQLiteDatabaseExtsUnitTest {
     }
 
     results.shouldContainExactly(value2, value3)
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Int bindArgs should log the given sql with placeholders replaced`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.int(), 1..10)) { values ->
+        val sql = "SELECT * FROM foo WHERE " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          "SELECT * FROM foo WHERE " + values.joinToString(" OR ") { "col=$it" }
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Int bindArgs should log the given sql with indents trimmed`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.int(), 1..10)) { values ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+          
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          ("""
+        SELECT *
+        FROM foo
+        WHERE """ +
+              values.joinToString(" OR ") { "col=$it" } +
+              """
+          
+        """)
+            .trimIndent()
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Int bindArgs should handle placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.int(), 1..10)) { values ->
+        val sql =
+          "SELECT * FROM foo WHERE col='?' OR " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage = sql + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Int bindArgs should trim indents when placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.int(), 1..10)) { values ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE col='?' OR """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+          
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          sql.trimIndent() + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Int bindArgs should execute the given sql`() = runTest {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col)")
+
+    checkAll(rawQueryPropTestConfig, Arb.list(Arb.int(), 1..10)) { values ->
+      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val bindArgs = setupResult.someValues(randomSource())
+      val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
+      val sql =
+        "SELECT rowid FROM foo WHERE " + List(bindArgs.size) { "col=?" }.joinToString(" OR ")
+
+      val actualRowIds =
+        sqliteDatabase.rawQuery(mockLogger, sql, bindArgs.toTypedArray()) { cursor ->
+          cursor.toLongList()
+        }
+
+      actualRowIds shouldContainExactlyInAnyOrder expectedRowIds
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper classes and functions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  private data class SetupTableForTesting<T>(val valueByRowId: Map<Long, T>) {
+    fun someValues(rs: RandomSource): List<T> {
+      val values = valueByRowId.values.toList()
+      if (values.size <= 1) {
+        return values
+      }
+      val dropCount = 1 + rs.random.nextInt(values.size - 1)
+      return values.shuffled(rs.random).drop(dropCount)
+    }
+
+    fun rowIdsForValues(values: Collection<T>): Set<Long> {
+      return valueByRowId.filter { values.contains(it.value) }.map { it.key }.toSet()
+    }
+  }
+
+  private fun <T> SQLiteDatabase.setupTableForTesting(
+    tableName: String,
+    columnName: String,
+    values: Iterable<T>
+  ): SetupTableForTesting<T> {
+    execSQL(mockLogger, "DELETE FROM $tableName")
+    val valueByRowId = buildMap {
+      beginTransaction()
+      try {
+        values.forEach { value ->
+          execSQL(mockLogger, "INSERT INTO $tableName ($columnName) VALUES (?)", arrayOf(value))
+          put(getLastInsertRowId(mockLogger), value)
+        }
+        setTransactionSuccessful()
+      } finally {
+        endTransaction()
+      }
+    }
+
+    return SetupTableForTesting(valueByRowId)
+  }
+
+
+  private companion object {
+
+    @OptIn(ExperimentalKotest::class) val rawQueryPropTestConfig = PropTestConfig(iterations = 10)
+
+    fun Cursor.toLongList(): List<Long> = buildList {
+      while (moveToNext()) {
+        add(getLong(0))
+      }
+    }
   }
 }
