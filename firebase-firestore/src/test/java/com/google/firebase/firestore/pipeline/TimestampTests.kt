@@ -16,15 +16,15 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue // For null constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampAdd
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMicros
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixMillis
-import com.google.firebase.firestore.pipeline.Expr.Companion.timestampToUnixSeconds
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMicrosToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixMillisToTimestamp
-import com.google.firebase.firestore.pipeline.Expr.Companion.unixSecondsToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue // For null constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampAdd
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMicros
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMillis
+import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixSeconds
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMicrosToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixMillisToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.unixSecondsToTimestamp
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

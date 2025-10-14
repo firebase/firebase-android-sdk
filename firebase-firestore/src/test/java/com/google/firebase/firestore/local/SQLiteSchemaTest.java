@@ -580,7 +580,7 @@ public class SQLiteSchemaTest {
                 String expectedCanonicalId =
                     targetData.getTarget().isTarget()
                         ? targetData.getTarget().target().getCanonicalId()
-                        : targetData.getTarget().pipeline().canonicalId();
+                        : targetData.getTarget().pipeline().toString();
                 assertEquals(expectedCanonicalId, actualCanonicalId);
               } catch (InvalidProtocolBufferException e) {
                 fail("Failed to decode Target data");

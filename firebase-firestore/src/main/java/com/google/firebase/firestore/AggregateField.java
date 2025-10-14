@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.pipeline.Expr.field;
+import static com.google.firebase.firestore.pipeline.Expression.field;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -232,7 +232,7 @@ public abstract class AggregateField {
     @NonNull
     @Override
     AliasedAggregate toPipeline() {
-      return field(getFieldPath()).avg().alias(getAlias());
+      return field(getFieldPath()).average().alias(getAlias());
     }
   }
 }

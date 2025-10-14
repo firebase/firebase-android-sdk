@@ -16,22 +16,22 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue // Returns com.google.protobuf.Value
-import com.google.firebase.firestore.pipeline.Expr.Companion.abs
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.ceil
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.divide
-import com.google.firebase.firestore.pipeline.Expr.Companion.exp
-import com.google.firebase.firestore.pipeline.Expr.Companion.floor
-import com.google.firebase.firestore.pipeline.Expr.Companion.ln
-import com.google.firebase.firestore.pipeline.Expr.Companion.log
-import com.google.firebase.firestore.pipeline.Expr.Companion.log10
-import com.google.firebase.firestore.pipeline.Expr.Companion.mod
-import com.google.firebase.firestore.pipeline.Expr.Companion.multiply
-import com.google.firebase.firestore.pipeline.Expr.Companion.pow
-import com.google.firebase.firestore.pipeline.Expr.Companion.round
-import com.google.firebase.firestore.pipeline.Expr.Companion.sqrt
-import com.google.firebase.firestore.pipeline.Expr.Companion.subtract
+import com.google.firebase.firestore.pipeline.Expression.Companion.abs
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.ceil
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.Expression.Companion.exp
+import com.google.firebase.firestore.pipeline.Expression.Companion.floor
+import com.google.firebase.firestore.pipeline.Expression.Companion.ln
+import com.google.firebase.firestore.pipeline.Expression.Companion.log
+import com.google.firebase.firestore.pipeline.Expression.Companion.log10
+import com.google.firebase.firestore.pipeline.Expression.Companion.mod
+import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
+import com.google.firebase.firestore.pipeline.Expression.Companion.pow
+import com.google.firebase.firestore.pipeline.Expression.Companion.round
+import com.google.firebase.firestore.pipeline.Expression.Companion.sqrt
+import com.google.firebase.firestore.pipeline.Expression.Companion.subtract
 import kotlin.math.E
 import org.junit.Test
 

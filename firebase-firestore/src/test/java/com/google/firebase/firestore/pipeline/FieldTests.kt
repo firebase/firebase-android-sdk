@@ -25,7 +25,7 @@ class FieldTests {
   @Test
   fun `can get field`() {
     val docWithField = doc("coll/doc1", 1, mapOf("exists" to true))
-    val fieldExpr = Expr.field("exists")
+    val fieldExpr = Expression.field("exists")
     val result = evaluate(fieldExpr, docWithField) // Using evaluate from pipeline.testUtil
     assertEvaluatesTo(result, true, "Expected field 'exists' to evaluate to true")
   }
@@ -33,7 +33,7 @@ class FieldTests {
   @Test
   fun `returns unset if not found`() {
     val doc = doc("coll/doc1", 1, emptyMap())
-    val fieldExpr = Expr.field("not-exists")
+    val fieldExpr = Expression.field("not-exists")
     val result = evaluate(fieldExpr, doc) // Using evaluate from pipeline.testUtil
     assertEvaluatesToUnset(result, "Expected non-existent field to evaluate to UNSET")
   }

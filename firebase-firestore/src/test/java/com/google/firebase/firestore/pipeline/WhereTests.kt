@@ -18,18 +18,17 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.exists
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
-import com.google.firebase.firestore.pipeline.Expr.Companion.or
-import com.google.firebase.firestore.pipeline.Expr.Companion.xor
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
+import com.google.firebase.firestore.pipeline.Expression.Companion.xor
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,7 +43,9 @@ internal class WhereTests {
   fun `empty database returns no results`(): Unit = runBlocking {
     val documents = emptyList<MutableDocument>()
     val pipeline =
-      RealtimePipelineSource(TestUtil.firestore()).collection("users").where(field("age").gte(10L))
+      RealtimePipelineSource(TestUtil.firestore())
+        .collection("users")
+        .where(field("age").greaterThanOrEqual(10L))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -62,7 +63,7 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(and(field("age").gte(10.0), field("age").gte(20.0)))
+        .where(and(field("age").greaterThanOrEqual(10.0), field("age").greaterThanOrEqual(20.0)))
     // age >= 10.0 AND age >= 20.0 => age >= 20.0
     // Matches: doc1 (75.5), doc2 (25.0), doc3 (100.0)
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
@@ -77,12 +78,14 @@ internal class WhereTests {
     val documents = listOf(doc1, doc2, doc3)
 
     val pipeline1 =
-      RealtimePipelineSource(TestUtil.firestore()).collection("users").where(field("age").eq(25.0))
+      RealtimePipelineSource(TestUtil.firestore())
+        .collection("users")
+        .where(field("age").equal(25.0))
 
     val pipeline2 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(constant(25.0).eq(field("age")))
+        .where(constant(25.0).equal(field("age")))
 
     val result1 = runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList()
     val result2 = runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList()
@@ -101,12 +104,12 @@ internal class WhereTests {
     val pipeline1 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(and(field("age").gt(10.0), field("age").lt(70.0)))
+        .where(and(field("age").greaterThan(10.0), field("age").lessThan(70.0)))
 
     val pipeline2 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(and(field("age").lt(70.0), field("age").gt(10.0)))
+        .where(and(field("age").lessThan(70.0), field("age").greaterThan(10.0)))
 
     val result1 = runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList()
     val result2 = runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList()
@@ -125,12 +128,12 @@ internal class WhereTests {
     val pipeline1 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(or(field("age").lt(10.0), field("age").gt(80.0)))
+        .where(or(field("age").lessThan(10.0), field("age").greaterThan(80.0)))
 
     val pipeline2 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(or(field("age").gt(80.0), field("age").lt(10.0)))
+        .where(or(field("age").greaterThan(80.0), field("age").lessThan(10.0)))
     val result1 = runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList()
     val result2 = runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList()
 
@@ -150,12 +153,12 @@ internal class WhereTests {
     val pipeline1 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(field("name").eqAny(values))
+        .where(field("name").equalAny(values))
 
     val pipeline2 =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(eqAny(field("name"), array(values)))
+        .where(equalAny(field("name"), array(values)))
 
     val result1 = runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList()
     val result2 = runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList()
@@ -176,8 +179,8 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(field("age").gte(10.0))
-        .where(field("age").gte(20.0))
+        .where(field("age").greaterThanOrEqual(10.0))
+        .where(field("age").greaterThanOrEqual(20.0))
 
     // age >= 10.0 THEN age >= 20.0 => age >= 20.0
     // Matches: doc1 (75.5), doc2 (25.0), doc3 (100.0)
@@ -197,8 +200,8 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(field("age").eq(75L))
-        .where(field("height").eq(55L)) // 55L will also match 55.0
+        .where(field("age").equal(75L))
+        .where(field("height").equal(55L)) // 55L will also match 55.0
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3)
@@ -216,8 +219,8 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(field("age").gt(50L))
-        .where(field("height").lt(75L))
+        .where(field("age").greaterThan(50L))
+        .where(field("height").lessThan(75L))
 
     // age > 50 AND height < 75
     // doc1: 75 > 50 (T) AND 60 < 75 (T) -> True
@@ -293,8 +296,8 @@ internal class WhereTests {
     val pipeline =
       RealtimePipelineSource(TestUtil.firestore())
         .collection("users")
-        .where(field("age").eq(75L))
-        .where(field("height").gt(45L))
+        .where(field("age").equal(75L))
+        .where(field("height").greaterThan(45L))
         .where(field("last").regexMatch(".*er$")) // ends with 'er'
 
     // age == 75 AND height > 45 AND last ends with 'er'
@@ -563,8 +566,8 @@ internal class WhereTests {
     val doc3 = doc("users/c", 1000, mapOf("a" to 2L, "b" to 2L))
     val documents = listOf(doc1, doc2, doc3)
 
-    val equalityArgument1 = field("a").eq(1L)
-    val equalityArgument2 = field("b").eq(2L)
+    val equalityArgument1 = field("a").equal(1L)
+    val equalityArgument2 = field("b").equal(2L)
 
     // Combined AND
     val pipelineAnd1 =
