@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -557,7 +558,8 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with placeholders replaced`() {
-    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
+    val (value1: String, value2: String) =
+      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
 
     sqliteDatabase.execSQL(
@@ -577,7 +579,8 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with indents trimmed`() {
-    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
+    val (value1: String, value2: String) =
+      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
     val sql = """
       INSERT INTO foo
@@ -599,7 +602,8 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should handle placeholder count not matching bindArgs length`() {
-    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
+    val (value1: String, value2: String) =
+      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
 
     sqliteDatabase.execSQL(
@@ -619,7 +623,8 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should trim indent when placeholder count not matching bindArgs length`() {
-    val (value1: String, value2: String) = stringsWithoutApostropheArb.distinctPair().next(rs)
+    val (value1: String, value2: String) =
+      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
     val sql = """
       INSERT INTO foo
@@ -661,13 +666,130 @@ class SQLiteDatabaseExtsUnitTest {
     values.shouldContainExactly(Row(value1, value2))
   }
 
-  // TODO: add explicit tests for strings containing apostrophes
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) String bindArgs with apostrophes should log the given sql with placeholders replaced`() {
+    val (value1, value2) = Arb.twoValues(Arb.sqlite.stringWithApostrophes()).next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
 
-  private companion object {
+    sqliteDatabase.execSQL(
+      mockLogger,
+      "INSERT INTO foo (col1, col2) VALUES (?, ?)",
+      arrayOf(value1.stringWithApostrophes, value2.stringWithApostrophes)
+    )
 
-    val codepointsWithoutApostropheArb =
-      Arb.dataConnect.codepoints.filterNot { it.value == '\''.code }
+    verify {
+      mockLogger.log(
+        null,
+        LogLevel.DEBUG,
+        "INSERT INTO foo (col1, col2) VALUES ('" +
+          value1.stringWithApostrophesEscaped +
+          "', '" +
+          value2.stringWithApostrophesEscaped +
+          "')"
+      )
+    }
+  }
 
-    val stringsWithoutApostropheArb = Arb.string(0..20, codepointsWithoutApostropheArb)
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) String bindArgs with apostrophes should log the given sql with indents trimmed`() {
+    val (value1, value2) = Arb.twoValues(Arb.sqlite.stringWithApostrophes()).next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
+    val sql = """
+      INSERT INTO foo
+      (col1, col2) VALUES
+      (?, ?)
+    """
+    val expectedLoggedSql =
+      """
+      INSERT INTO foo
+      (col1, col2) VALUES
+      ('${value1.stringWithApostrophesEscaped}', '${value2.stringWithApostrophesEscaped}')
+    """
+        .trimIndent()
+
+    sqliteDatabase.execSQL(
+      mockLogger,
+      sql,
+      arrayOf(value1.stringWithApostrophes, value2.stringWithApostrophes)
+    )
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, expectedLoggedSql) }
+  }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) String bindArgs with apostrophes should handle placeholder count not matching bindArgs length`() {
+    val (value1, value2) = Arb.twoValues(Arb.sqlite.stringWithApostrophes()).next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
+
+    sqliteDatabase.execSQL(
+      mockLogger,
+      "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')",
+      arrayOf(value1.stringWithApostrophes, value2.stringWithApostrophes)
+    )
+
+    verify {
+      mockLogger.log(
+        null,
+        LogLevel.DEBUG,
+        "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?') bindArgs={'" +
+          value1.stringWithApostrophesEscaped +
+          "', '" +
+          value2.stringWithApostrophesEscaped +
+          "'}"
+      )
+    }
+  }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) String bindArgs with apostrophes should trim indent when placeholder count not matching bindArgs length`() {
+    val (value1, value2) = Arb.twoValues(Arb.sqlite.stringWithApostrophes()).next(rs)
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
+    val sql = """
+      INSERT INTO foo
+      (col1, col2, col3)
+      VALUES (?, ?, '?')
+    """
+    val expectedSql =
+      """
+      INSERT INTO foo
+      (col1, col2, col3)
+      VALUES (?, ?, '?')
+    """
+        .trimIndent() +
+        " bindArgs={'" +
+        value1.stringWithApostrophesEscaped +
+        "', '" +
+        value2.stringWithApostrophesEscaped +
+        "'}"
+
+    sqliteDatabase.execSQL(
+      mockLogger,
+      sql,
+      arrayOf(value1.stringWithApostrophes, value2.stringWithApostrophes)
+    )
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, expectedSql) }
+  }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) String bindArgs with apostrophes should execute the given sql`() {
+    val (value1, value2) = Arb.twoValues(Arb.sqlite.stringWithApostrophes()).next(rs)
+
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
+    sqliteDatabase.execSQL(
+      mockLogger,
+      "INSERT INTO foo (col1, col2) VALUES (?, ?)",
+      arrayOf(value1.stringWithApostrophes, value2.stringWithApostrophes)
+    )
+
+    data class Row(val col1: String, val col2: String)
+    val values = buildList {
+      sqliteDatabase.rawQuery("SELECT col1, col2 FROM foo", null).use { cursor ->
+        while (cursor.moveToNext()) {
+          add(Row(cursor.getString(0), cursor.getString(1)))
+        }
+      }
+    }
+    values.shouldContainExactly(Row(value1.stringWithApostrophes, value2.stringWithApostrophes))
   }
 }
