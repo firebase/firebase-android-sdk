@@ -17,6 +17,7 @@ package com.google.firebase.gradle.plugins.report
 
 /**
  * @param sha Commit SHA.
- * @param pr GitHub PR number that was squashed to create this commit. Used only for display purposes, does not affect logic.
+ * @param pr GitHub PR number that was squashed to create this commit. Used only for display
+ *   purposes, does not affect logic.
  */
 data class ReportCommit(val sha: String, val pr: Int)

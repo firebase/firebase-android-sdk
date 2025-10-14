@@ -15,7 +15,7 @@
  */
 package com.google.firebase.gradle.plugins.report
 
-import java.io.FileWriter
+import java.io.File
 import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
@@ -35,8 +35,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.gradle.internal.Pair
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
-import kotlin.io.use
 
 @SuppressWarnings("NewApi")
 class TestReportGenerator(private val apiToken: String) {
@@ -45,7 +43,7 @@ class TestReportGenerator(private val apiToken: String) {
     HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
   fun createReport(commitCount: Int) {
-    val response =
+    val response: JsonObject =
       request(
         URI.create("https://api.github.com/graphql"),
         JsonObject::class.java,
@@ -53,22 +51,31 @@ class TestReportGenerator(private val apiToken: String) {
       )
     val commits =
       (response["data"]
-        ?.jsonObject["repository"]
-        ?.jsonObject["ref"]
-        ?.jsonObject["target"]
-        ?.jsonObject["history"]
-        ?.jsonObject["nodes"]
-        ?.jsonArray ?: throw RuntimeException("Missing fields in response: $response"))
+          ?.jsonObject
+          ?.get("repository")
+          ?.jsonObject
+          ?.get("ref")
+          ?.jsonObject
+          ?.get("target")
+          ?.jsonObject
+          ?.get("history")
+          ?.jsonObject
+          ?.get("nodes")
+          ?.jsonArray ?: throw RuntimeException("Missing fields in response: $response"))
         .stream()
         .limit(commitCount.toLong())
         .map { el: JsonElement ->
           val obj = el as JsonObject
           ReportCommit(
-            obj["oid"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find commit SHA"),
+            obj["oid"]?.jsonPrimitive?.content
+              ?: throw RuntimeException("Couldn't find commit SHA"),
             obj["associatedPullRequests"]
-              ?.jsonObject["nodes"]
-              ?.jsonArray[0]
-              ?.jsonObject["number"]
+              ?.jsonObject
+              ?.get("nodes")
+              ?.jsonArray
+              ?.get(0)
+              ?.jsonObject
+              ?.get("number")
               ?.jsonPrimitive
               ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
@@ -137,7 +144,7 @@ class TestReportGenerator(private val apiToken: String) {
     sdks =
       sdks
         .filter { s: String? -> successPercentage[s] != 100 }
-        .sortedBy { o: String -> successPercentage[o]?: 0 }
+        .sortedBy { o: String -> successPercentage[o] ?: 0 }
     if (sdks.isEmpty()) {
       return "*All tests passing*\n"
     }
@@ -173,7 +180,8 @@ class TestReportGenerator(private val apiToken: String) {
         output.append(" |")
       }
       output.append(" ")
-      val successChance: Int = successPercentage[sdk] ?: throw RuntimeException("Success percentage missing for $sdk")
+      val successChance: Int =
+        successPercentage[sdk] ?: throw RuntimeException("Success percentage missing for $sdk")
       if (successChance == 100) {
         output.append("✅ 100%")
       } else {
@@ -192,9 +200,14 @@ class TestReportGenerator(private val apiToken: String) {
     val runs = request("actions/runs?head_sha=$commit")
     for (el in runs["workflow_runs"] as JsonArray) {
       val run = el as JsonObject
-      val name = run["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find CI name")
+      val name =
+        run["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find CI name")
       if (name == "CI Tests") {
-        return parseCITests(run["id"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find run id for $commit run $name"), commit)
+        return parseCITests(
+          run["id"]?.jsonPrimitive?.content
+            ?: throw RuntimeException("Couldn't find run id for $commit run $name"),
+          commit,
+        )
       }
     }
     return emptyList()
@@ -205,7 +218,9 @@ class TestReportGenerator(private val apiToken: String) {
     val jobs = request("actions/runs/$id/jobs")
     for (el in jobs["jobs"] as JsonArray) {
       val job = el as JsonObject
-      val jobName = job["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find name for job $id")
+      val jobName =
+        job["name"]?.jsonPrimitive?.content
+          ?: throw RuntimeException("Couldn't find name for job $id")
       if (jobName.startsWith("Unit Tests (:")) {
         reports.add(parseJob(TestReport.Type.UNIT_TEST, job, commit))
       } else if (jobName.startsWith("Instrumentation Tests (:")) {
@@ -217,23 +232,22 @@ class TestReportGenerator(private val apiToken: String) {
 
   private fun parseJob(type: TestReport.Type, job: JsonObject, commit: String): TestReport {
     var name =
-      (job["name"]
-        ?.jsonPrimitive ?: throw RuntimeException("Job missing name"))
+      (job["name"]?.jsonPrimitive ?: throw RuntimeException("Job missing name"))
         .content
         .split("(:")
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
     val status =
-    if (job["status"]?.jsonPrimitive?.content == "completed") {
-      if (job["conclusion"]?.jsonPrimitive?.content == "success") {
-        TestReport.Status.SUCCESS
+      if (job["status"]?.jsonPrimitive?.content == "completed") {
+        if (job["conclusion"]?.jsonPrimitive?.content == "success") {
+          TestReport.Status.SUCCESS
+        } else {
+          TestReport.Status.FAILURE
+        }
       } else {
-        TestReport.Status.FAILURE
+        TestReport.Status.OTHER
       }
-    } else {
-      TestReport.Status.OTHER
-    }
     val url = job["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("PR missing URL")
     return TestReport(name, type, status, commit, url)
   }
@@ -241,7 +255,7 @@ class TestReportGenerator(private val apiToken: String) {
   private fun generateGraphQLQuery(commitCount: Int): JsonObject {
     return JsonObject(
       mapOf(
-          "query" to
+        "query" to
           JsonPrimitive(
             """
   query {
@@ -267,8 +281,8 @@ class TestReportGenerator(private val apiToken: String) {
     }
   }
     """
-          ),
-        )
+          )
+      )
     )
   }
 
@@ -285,13 +299,14 @@ class TestReportGenerator(private val apiToken: String) {
    */
   private fun <T> request(uri: URI, clazz: Class<T>, payload: JsonObject? = null): T {
     val request =
-      HttpRequest.newBuilder().apply {
-        if (payload == null) {
-          GET()
-        } else {
-          POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+      HttpRequest.newBuilder()
+        .apply {
+          if (payload == null) {
+            GET()
+          } else {
+            POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+          }
         }
-      }
         .uri(uri)
         .header("Authorization", "Bearer $apiToken")
         .header("X-GitHub-Api-Version", "2022-11-28")
