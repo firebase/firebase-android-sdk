@@ -215,8 +215,8 @@ internal constructor(
 
       scope = CoroutineScope(blockingDispatcher + childJob())
       val cameraManager =
-        context.getSystemService(android.content.Context.CAMERA_SERVICE) as
-          android.hardware.camera2.CameraManager
+        context.getSystemService(android.content.Context.CAMERA_SERVICE)
+          as android.hardware.camera2.CameraManager
       videoHelper = VideoHelper.build(cameraManager)
       videoHelper
         ?.start(cameraId)

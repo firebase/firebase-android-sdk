@@ -90,7 +90,9 @@ internal class VideoHelper(
 
     val characteristics = cameraManager.getCameraCharacteristics(cameraId)
     val streamConfigurationMap =
-      characteristics.get(android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+      characteristics.get(
+        android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
+      )
     val outputSizes = streamConfigurationMap?.getOutputSizes(ImageFormat.JPEG)
     val size = outputSizes?.maxByOrNull { it.width * it.height } ?: return emptyFlow()
 
