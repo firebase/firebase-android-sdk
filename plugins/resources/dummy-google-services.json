@@ -1,0 +1,24 @@
+{
+  "project_info": {
+    "project_number": "000000000",
+    "firebase_url": "https://fakeProject.firebaseio.com",
+    "project_id": "fakeProject",
+    "storage_bucket": "fakeProject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:0000000:android:fakeProjectCopyGoogleServices",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "aFakeKeyBecauseThisWholeJsonFileIsFake"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}

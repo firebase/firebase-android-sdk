@@ -34,9 +34,8 @@ googleServices = "4.3.15"
 gradleErrorpronePlugin = "4.2.0"
 grpc = "1.62.2"
 grpcKotlin = "1.4.1"
-hamcrest = "2.2"
-hamcrestJunit = "2.0.0.0"
-hamcrestLibrary = "2.2"
+hamcrest = "3.0"
+hamcrestLibrary = "3.0"
 httpclientAndroid = "4.3.5.1"
 integrity = "1.4.0"
 jacksonCore = "2.13.1"
@@ -52,8 +51,7 @@ lifecycleProcess = "2.3.1"
 material = "1.12.0"
 mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.11"
-mockito = "5.16.0"
-mockitoAndroid = "3.4.0"
+mockito = "5.20.0"
 mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
 playServicesCloudMessaging = "17.2.0"
 playServicesStats = "17.0.2"
@@ -130,7 +128,6 @@ grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.re
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 grpc-testing = { module = "io.grpc:grpc-testing", version.ref = "grpc" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
-hamcrest-junit = { module = "org.hamcrest:hamcrest-junit", version.ref = "hamcrestJunit" }
 hamcrest-library = { module = "org.hamcrest:hamcrest-library", version.ref = "hamcrestLibrary" }
 httpclient-android = { module = "org.apache.httpcomponents:httpclient-android", version.ref = "httpclientAndroid" }
 integrity = { module = "com.google.android.play:integrity", version.ref = "integrity" }
@@ -192,7 +189,7 @@ kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kot
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockito" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -222,13 +219,13 @@ wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", v
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 maven-resolver = [
-	"maven-resolver-api",
-	"maven-resolver-connector-basic",
-	"maven-resolver-impl",
-	"maven-resolver-provider",
-	"maven-resolver-transport-file",
-	"maven-resolver-transport-http",
-	"maven-resolver-util"
+    "maven-resolver-api",
+    "maven-resolver-connector-basic",
+    "maven-resolver-impl",
+    "maven-resolver-provider",
+    "maven-resolver-transport-file",
+    "maven-resolver-transport-http",
+    "maven-resolver-util"
 ]
 
 [plugins]

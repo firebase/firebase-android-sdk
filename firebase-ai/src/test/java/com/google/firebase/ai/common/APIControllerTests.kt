@@ -28,6 +28,7 @@ import com.google.firebase.ai.type.FunctionCallingConfig
 import com.google.firebase.ai.type.GoogleSearch
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
