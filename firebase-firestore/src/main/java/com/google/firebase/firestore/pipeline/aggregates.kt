@@ -17,7 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Value
 
-class AggregateWithAlias
+class AliasedAggregate
 internal constructor(internal val alias: String, internal val expr: AggregateFunction)
 
 /** A class that represents an aggregate function. */
@@ -33,6 +33,16 @@ private constructor(
 
   companion object {
 
+    /**
+     * Creates a generic aggregation function.
+     *
+     * This method provides a way to call aggregation functions that are supported by the Firestore
+     * backend but that are not available as specific factory methods in this class.
+     *
+     * @param name The name of the aggregation function.
+     * @param expr The expressions to pass as arguments to the function.
+     * @return A new [AggregateFunction] for the specified function.
+     */
     @JvmStatic fun generic(name: String, vararg expr: Expr) = AggregateFunction(name, expr)
 
     /**
@@ -66,14 +76,14 @@ private constructor(
      * @param condition The boolean expression to evaluate on each input.
      * @return A new [AggregateFunction] representing the count aggregation.
      */
-    @JvmStatic fun countIf(condition: BooleanExpr) = AggregateFunction("countIf", condition)
+    @JvmStatic fun countIf(condition: BooleanExpr) = AggregateFunction("count_if", condition)
 
     /**
      * Creates an aggregation that calculates the sum of a field's values across multiple stage
      * inputs.
      *
      * @param fieldName The name of the field containing numeric values to sum up.
-     * @return A new [AggregateFunction] representing the average aggregation.
+     * @return A new [AggregateFunction] representing the sum aggregation.
      */
     @JvmStatic fun sum(fieldName: String) = AggregateFunction("sum", fieldName)
 
@@ -137,16 +147,34 @@ private constructor(
      * @return A new [AggregateFunction] representing the maximum aggregation.
      */
     @JvmStatic fun maximum(expression: Expr) = AggregateFunction("max", expression)
+
+    /**
+     * Creates an aggregation that counts the number of distinct values of a field across multiple
+     * stage inputs.
+     *
+     * @param fieldName The name of the field to count the distinct values of.
+     * @return A new [AggregateFunction] representing the count distinct aggregation.
+     */
+    @JvmStatic fun countDistinct(fieldName: String) = AggregateFunction("count_distinct", fieldName)
+
+    /**
+     * Creates an aggregation that counts the number of distinct values of an expression across
+     * multiple stage inputs.
+     *
+     * @param expression The expression to count the distinct values of.
+     * @return A new [AggregateFunction] representing the count distinct aggregation.
+     */
+    @JvmStatic fun countDistinct(expression: Expr) = AggregateFunction("count_distinct", expression)
   }
 
   /**
    * Assigns an alias to this aggregate.
    *
    * @param alias The alias to assign to this aggregate.
-   * @return A new [AggregateWithAlias] that wraps this aggregate and associates it with the
-   * provided alias.
+   * @return A new [AliasedAggregate] that wraps this aggregate and associates it with the provided
+   * alias.
    */
-  fun alias(alias: String) = AggregateWithAlias(alias, this)
+  fun alias(alias: String) = AliasedAggregate(alias, this)
 
   internal fun toProto(userDataReader: UserDataReader): Value {
     val builder = com.google.firestore.v1.Function.newBuilder()
