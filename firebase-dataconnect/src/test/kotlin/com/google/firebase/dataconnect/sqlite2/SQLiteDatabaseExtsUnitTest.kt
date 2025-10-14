@@ -38,6 +38,7 @@ import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
 import io.mockk.verify
@@ -796,7 +797,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `rawQuery(Logger, sql) should log the given sql verbatim`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
 
@@ -807,7 +808,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `rawQuery(Logger, sql) should log the given sql verbatim with indents trimmed`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = """
       SELECT *
@@ -821,8 +822,28 @@ class SQLiteDatabaseExtsUnitTest {
   }
 
   @Test
+  fun `rawQuery(Logger, sql) should execute the given sql`() {
+    val fiveInts = Arb.set(Arb.int(), 5..5).next(rs).shuffled(rs.random)
+    val (key1, value1, key2, value2, value3) = fiveInts
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1, col2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key1, $value1)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value3)")
+    val sql = "SELECT col2 FROM foo WHERE col1=$key2"
+
+    val results = mutableSetOf<Int>()
+    sqliteDatabase.rawQuery(mockLogger, sql) { cursor ->
+      while (cursor.moveToNext()) {
+        results.add(cursor.getInt(0))
+      }
+    }
+
+    results.shouldContainExactly(value2, value3)
+  }
+
+  @Test
   fun `rawQuery(Logger, sql, bindArgs) null bindArgs should log the given sql verbatim`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
 
@@ -833,7 +854,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `rawQuery(Logger, sql, bindArgs) null bindArgs should log the given sql verbatim with indents trimmed`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = """
       SELECT *
@@ -847,8 +868,28 @@ class SQLiteDatabaseExtsUnitTest {
   }
 
   @Test
+  fun `rawQuery(Logger, sql, bindArgs) null bindArgs should execute the given sql`() {
+    val fiveInts = Arb.set(Arb.int(), 5..5).next(rs).shuffled(rs.random)
+    val (key1, value1, key2, value2, value3) = fiveInts
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1, col2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key1, $value1)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value3)")
+    val sql = "SELECT col2 FROM foo WHERE col1=$key2"
+
+    val results = mutableSetOf<Int>()
+    sqliteDatabase.rawQuery(mockLogger, sql, null) { cursor ->
+      while (cursor.moveToNext()) {
+        results.add(cursor.getInt(0))
+      }
+    }
+
+    results.shouldContainExactly(value2, value3)
+  }
+
+  @Test
   fun `rawQuery(Logger, sql, bindArgs) empty bindArgs should log the given sql verbatim`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
 
@@ -859,7 +900,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `rawQuery(Logger, sql, bindArgs) empty bindArgs should log the given sql verbatim with indents trimmed`() {
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)")
     val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
     val sql = """
       SELECT *
@@ -870,5 +911,25 @@ class SQLiteDatabaseExtsUnitTest {
     sqliteDatabase.rawQuery(mockLogger, sql, emptyArray()) {}
 
     verify { mockLogger.log(null, LogLevel.DEBUG, sql.trimIndent()) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) empty bindArgs should execute the given sql`() {
+    val fiveInts = Arb.set(Arb.int(), 5..5).next(rs).shuffled(rs.random)
+    val (key1, value1, key2, value2, value3) = fiveInts
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1, col2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key1, $value1)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value2)")
+    sqliteDatabase.execSQL(mockLogger, "INSERT INTO foo (col1, col2) VALUES ($key2, $value3)")
+    val sql = "SELECT col2 FROM foo WHERE col1=$key2"
+
+    val results = mutableSetOf<Int>()
+    sqliteDatabase.rawQuery(mockLogger, sql, emptyArray()) { cursor ->
+      while (cursor.moveToNext()) {
+        results.add(cursor.getInt(0))
+      }
+    }
+
+    results.shouldContainExactly(value2, value3)
   }
 }
