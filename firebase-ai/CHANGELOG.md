@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Removed redundant internal exception types. (#7475)
+
 # 17.4.0
 
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`

@@ -17,7 +17,6 @@
 package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -38,18 +37,17 @@ import org.gradle.kotlin.dsl.register
 abstract class CopyGoogleServicesPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     if (File(project.projectDir, "google-services.json").exists()) {
-      project.logger.warn("Google Services file already present in project, skipping copy task")
-      return
-    }
+      project.logger.info("Google Services file already present in project, skipping copy task")
+    } else {
+      val sourcePath = getSourcePath(project)
+      val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project, sourcePath)
 
-    val sourcePath = getSourcePath(project)
-    val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project, sourcePath)
-
-    project.allprojects {
-      // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
-      tasks.configureEach {
-        if (name !== "copyRootGoogleServices") {
-          dependsOn(copyRootGoogleServices)
+      project.allprojects {
+        // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
+        tasks.configureEach {
+          if (name !== "copyRootGoogleServices") {
+            dependsOn(copyRootGoogleServices)
+          }
         }
       }
     }

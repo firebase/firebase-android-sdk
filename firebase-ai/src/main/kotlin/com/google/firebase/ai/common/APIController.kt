@@ -21,16 +21,26 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
+import com.google.firebase.ai.type.APINotConfiguredException
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
+import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GRpcErrorResponse
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationResponse
+import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.QuotaExceededException
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.Response
+import com.google.firebase.ai.type.ResponseStoppedException
+import com.google.firebase.ai.type.SerializationException
+import com.google.firebase.ai.type.ServerException
+import com.google.firebase.ai.type.ServiceDisabledException
+import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.options
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -149,7 +159,7 @@ internal constructor(
         .body<GenerateContentResponse.Internal>()
         .validate()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
@@ -162,7 +172,7 @@ internal constructor(
         .also { validateResponse(it) }
         .body<ImagenGenerationResponse.Internal>()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   private fun getBidiEndpoint(location: String): String =
@@ -187,7 +197,7 @@ internal constructor(
         applyCommonConfiguration(request)
       }
       .map { it.validate() }
-      .catch { throw FirebaseCommonAIException.from(it) }
+      .catch { throw FirebaseAIException.from(it) }
 
   suspend fun countTokens(request: CountTokensRequest): CountTokensResponse.Internal =
     try {
@@ -199,7 +209,7 @@ internal constructor(
         .also { validateResponse(it) }
         .body()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   private fun HttpRequestBuilder.applyCommonHeaders() {
@@ -372,9 +382,9 @@ private fun GenerateContentResponse.Internal.validate() = apply {
   if ((candidates?.isEmpty() != false) && promptFeedback == null) {
     throw SerializationException("Error deserializing response, found no valid fields")
   }
-  promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
+  promptFeedback?.blockReason?.let { throw PromptBlockedException(this.toPublic(), null, null) }
   candidates
     ?.mapNotNull { it.finishReason }
     ?.firstOrNull { it != FinishReason.Internal.STOP }
-    ?.let { throw ResponseStoppedException(this) }
+    ?.let { throw ResponseStoppedException(this.toPublic()) }
 }
