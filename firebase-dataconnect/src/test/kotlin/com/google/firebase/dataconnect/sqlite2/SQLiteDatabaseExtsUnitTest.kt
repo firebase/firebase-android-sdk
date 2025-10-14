@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
@@ -559,7 +560,7 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with placeholders replaced`() {
     val (value1: String, value2: String) =
-      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
+      Arb.sqlite.stringWithoutSqliteSpecialChars().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
 
     sqliteDatabase.execSQL(
@@ -580,7 +581,7 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should log the given sql with indents trimmed`() {
     val (value1: String, value2: String) =
-      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
+      Arb.sqlite.stringWithoutSqliteSpecialChars().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT)")
     val sql = """
       INSERT INTO foo
@@ -603,7 +604,7 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should handle placeholder count not matching bindArgs length`() {
     val (value1: String, value2: String) =
-      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
+      Arb.sqlite.stringWithoutSqliteSpecialChars().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
 
     sqliteDatabase.execSQL(
@@ -624,7 +625,7 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) String bindArgs should trim indent when placeholder count not matching bindArgs length`() {
     val (value1: String, value2: String) =
-      Arb.sqlite.stringWithoutApostrophe().distinctPair().next(rs)
+      Arb.sqlite.stringWithoutSqliteSpecialChars().distinctPair().next(rs)
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 TEXT, col2 TEXT, col3)")
     val sql = """
       INSERT INTO foo
@@ -791,5 +792,83 @@ class SQLiteDatabaseExtsUnitTest {
       }
     }
     values.shouldContainExactly(Row(value1.stringWithApostrophes, value2.stringWithApostrophes))
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql) should log the given sql verbatim`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
+
+    sqliteDatabase.rawQuery(mockLogger, sql) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql) should log the given sql verbatim with indents trimmed`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = """
+      SELECT *
+      FROM foo
+      WHERE mycol='$whereText'
+    """
+
+    sqliteDatabase.rawQuery(mockLogger, sql) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql.trimIndent()) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) null bindArgs should log the given sql verbatim`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
+
+    sqliteDatabase.rawQuery(mockLogger, sql, null) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) null bindArgs should log the given sql verbatim with indents trimmed`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = """
+      SELECT *
+      FROM foo
+      WHERE mycol='$whereText'
+    """
+
+    sqliteDatabase.rawQuery(mockLogger, sql, null) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql.trimIndent()) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) empty bindArgs should log the given sql verbatim`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = "SELECT * FROM foo WHERE mycol='$whereText'"
+
+    sqliteDatabase.rawQuery(mockLogger, sql, emptyArray()) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql) }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) empty bindArgs should log the given sql verbatim with indents trimmed`() {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (mycol)", emptyArray())
+    val whereText = Arb.string(10..20, Codepoint.alphanumeric()).next(rs)
+    val sql = """
+      SELECT *
+      FROM foo
+      WHERE mycol='$whereText'
+    """
+
+    sqliteDatabase.rawQuery(mockLogger, sql, emptyArray()) {}
+
+    verify { mockLogger.log(null, LogLevel.DEBUG, sql.trimIndent()) }
   }
 }

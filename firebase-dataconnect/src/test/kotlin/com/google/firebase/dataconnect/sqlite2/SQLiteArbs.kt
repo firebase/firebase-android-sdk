@@ -28,14 +28,21 @@ import kotlin.random.nextInt
 
 object SQLiteArbs {
 
-  fun codepointsWithoutApostrophe() = Arb.dataConnect.codepoints.filterNot { it.value == '\''.code }
+  // Omit apostrophe (') because it gets tested explicitly.
+  // Omit question mark (?) because it also gets tested explicitly.
+  // Omit newlines because their effects when trimming indents are unpredictable for tests.
+  private val sqliteSpecialCharCodes = listOf('\'', '?', '\r', '\n').map { it.code }
 
-  fun stringWithoutApostrophe() = Arb.string(0..20, codepointsWithoutApostrophe())
+  fun codepointsWithoutSqliteSpecialChars() =
+    Arb.dataConnect.codepoints.filterNot { sqliteSpecialCharCodes.contains(it.value) }
+
+  fun stringWithoutSqliteSpecialChars() = Arb.string(0..20, codepointsWithoutSqliteSpecialChars())
 
   fun stringWithApostrophes(
-    stringWithoutApostrophe: Arb<String> = stringWithoutApostrophe(),
+    stringWithoutSqliteSpecialChars: Arb<String> = stringWithoutSqliteSpecialChars(),
     apostropheCount: IntRange = 1..3,
-  ): Arb<StringWithApostrophes> = StringWithApostrophesArb(stringWithoutApostrophe, apostropheCount)
+  ): Arb<StringWithApostrophes> =
+    StringWithApostrophesArb(stringWithoutSqliteSpecialChars, apostropheCount)
 }
 
 val Arb.Companion.sqlite: SQLiteArbs
@@ -90,7 +97,7 @@ data class StringWithApostrophes(
 }
 
 private class StringWithApostrophesArb(
-  private val stringWithoutApostrophe: Arb<String>,
+  private val stringWithoutSqliteSpecialChars: Arb<String>,
   private val apostropheCount: IntRange
 ) : Arb<StringWithApostrophes>() {
 
@@ -104,8 +111,8 @@ private class StringWithApostrophesArb(
     val s: String by
       lazy(LazyThreadSafetyMode.NONE) {
         when (rs.random.nextBoolean()) {
-          true -> stringWithoutApostrophe.edgecase(rs)!!
-          false -> stringWithoutApostrophe.next(rs)
+          true -> stringWithoutSqliteSpecialChars.edgecase(rs)!!
+          false -> stringWithoutSqliteSpecialChars.next(rs)
         }
       }
     val apostropheCount =
@@ -170,8 +177,9 @@ private class StringWithApostrophesArb(
   }
 
   override fun sample(rs: RandomSource): Sample<StringWithApostrophes> {
-    val stringWithoutApostrophe = stringWithoutApostrophe.next(rs)
-    val stringWithApostrophes = stringWithoutApostrophe.map { it.toString() }.toMutableList()
+    val stringWithoutSqliteSpecialChars = stringWithoutSqliteSpecialChars.next(rs)
+    val stringWithApostrophes =
+      stringWithoutSqliteSpecialChars.map { it.toString() }.toMutableList()
     val stringWithApostrophesEscaped = stringWithApostrophes.toMutableList()
     val apostropheCount = rs.random.nextInt(apostropheCount)
     repeat(apostropheCount) {
