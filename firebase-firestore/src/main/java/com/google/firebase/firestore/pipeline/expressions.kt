@@ -17,6 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Pipeline
@@ -29,6 +30,9 @@ import com.google.firebase.firestore.model.FieldPath.CREATE_TIME_PATH
 import com.google.firebase.firestore.model.FieldPath.KEY_PATH
 import com.google.firebase.firestore.model.FieldPath.UPDATE_TIME_PATH
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime
+import com.google.firebase.firestore.model.ServerTimestamps.getPreviousValue
+import com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.canonicalId
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -303,6 +307,13 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic fun field(fieldPath: FieldPath): Field = Field(fieldPath.internalPath)
 
+    /**
+     * Creates a generic function expression that is not yet implemented.
+     *
+     * @param name The name of the generic function.
+     * @param expr The expressions to be passed as arguments to the function.
+     * @return A new [Expr] representing the generic function.
+     */
     @JvmStatic
     fun generic(name: String, vararg expr: Expr): Expr = FunctionExpr(name, notImplemented, expr)
 
@@ -758,6 +769,120 @@ abstract class Expr internal constructor() : Canonicalizable {
       FunctionExpr("pow", evaluatePow, numericField, exponent)
 
     /**
+     * Creates an expression that returns the absolute value of [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the absolute value operation.
+     */
+    @JvmStatic fun abs(numericExpr: Expr): Expr = FunctionExpr("abs", evaluateAbs, numericExpr)
+
+    /**
+     * Creates an expression that returns the absolute value of [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the absolute value operation.
+     */
+    @JvmStatic fun abs(numericField: String): Expr = FunctionExpr("abs", evaluateAbs, numericField)
+
+    /**
+     * Creates an expression that returns Euler's number e raised to the power of [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the exponentiation.
+     */
+    @JvmStatic fun exp(numericExpr: Expr): Expr = FunctionExpr("exp", evaluateExp, numericExpr)
+
+    /**
+     * Creates an expression that returns Euler's number e raised to the power of [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the exponentiation.
+     */
+    @JvmStatic fun exp(numericField: String): Expr = FunctionExpr("exp", evaluateExp, numericField)
+
+    /**
+     * Creates an expression that returns the natural logarithm (base e) of [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the natural logarithm.
+     */
+    @JvmStatic fun ln(numericExpr: Expr): Expr = FunctionExpr("ln", evaluateLn, numericExpr)
+
+    /**
+     * Creates an expression that returns the natural logarithm (base e) of [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the natural logarithm.
+     */
+    @JvmStatic fun ln(numericField: String): Expr = FunctionExpr("ln", evaluateLn, numericField)
+
+    /**
+     * Creates an expression that returns the logarithm of [numericExpr] with a given [base].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param base The base of the logarithm.
+     * @return A new [Expr] representing a numeric result from the logarithm of [numericExpr] with a
+     * given [base].
+     */
+    @JvmStatic
+    fun log(numericExpr: Expr, base: Number): Expr =
+      FunctionExpr("log", evaluateLog, numericExpr, constant(base))
+
+    /**
+     * Creates an expression that returns the logarithm of [numericField] with a given [base].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param base The base of the logarithm.
+     * @return A new [Expr] representing a numeric result from the logarithm of [numericField] with
+     * a given [base].
+     */
+    @JvmStatic
+    fun log(numericField: String, base: Number): Expr =
+      FunctionExpr("log", evaluateLog, numericField, constant(base))
+
+    /**
+     * Creates an expression that returns the logarithm of [numericExpr] with a given [base].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param base The base of the logarithm.
+     * @return A new [Expr] representing a numeric result from the logarithm of [numericExpr] with a
+     * given [base].
+     */
+    @JvmStatic
+    fun log(numericExpr: Expr, base: Expr): Expr =
+      FunctionExpr("log", evaluateLog, numericExpr, base)
+
+    /**
+     * Creates an expression that returns the logarithm of [numericField] with a given [base].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param base The base of the logarithm.
+     * @return A new [Expr] representing a numeric result from the logarithm of [numericField] with
+     * a given [base].
+     */
+    @JvmStatic
+    fun log(numericField: String, base: Expr): Expr =
+      FunctionExpr("log", evaluateLog, numericField, base)
+
+    /**
+     * Creates an expression that returns the base 10 logarithm of [numericExpr].
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the base 10 logarithm.
+     */
+    @JvmStatic
+    fun log10(numericExpr: Expr): Expr = FunctionExpr("log10", evaluateLog10, numericExpr)
+
+    /**
+     * Creates an expression that returns the base 10 logarithm of [numericField].
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expr] representing the numeric result of the base 10 logarithm.
+     */
+    @JvmStatic
+    fun log10(numericField: String): Expr = FunctionExpr("log10", evaluateLog10, numericField)
+
+    /**
      * Creates an expression that returns the square root of [numericExpr].
      *
      * @param numericExpr An expression that returns number when evaluated.
@@ -1102,7 +1227,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [BooleanExpr] representing the isAbsent operation.
      */
     @JvmStatic
-    fun isAbsent(value: Expr): BooleanExpr = BooleanExpr("is_absent", notImplemented, value)
+    fun isAbsent(value: Expr): BooleanExpr = BooleanExpr("is_absent", evaluateIsAbsent, value)
 
     /**
      * Creates an expression that returns true if a field is absent. Otherwise, returns false even
@@ -1113,7 +1238,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun isAbsent(fieldName: String): BooleanExpr =
-      BooleanExpr("is_absent", notImplemented, fieldName)
+      BooleanExpr("is_absent", evaluateIsAbsent, fieldName)
 
     /**
      * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
@@ -1683,6 +1808,30 @@ abstract class Expr internal constructor() : Canonicalizable {
       BooleanExpr("ends_with", evaluateEndsWith, fieldName, suffix)
 
     /**
+     * Creates an expression that returns a substring of the given string.
+     *
+     * @param stringExpression The expression representing the string to get a substring from.
+     * @param index The starting index of the substring.
+     * @param length The length of the substring.
+     * @return A new [Expr] representing the substring.
+     */
+    @JvmStatic
+    fun substr(stringExpression: Expr, index: Expr, length: Expr): Expr =
+      FunctionExpr("substr", evaluateSubstring, stringExpression, index, length)
+
+    /**
+     * Creates an expression that returns a substring of the given string.
+     *
+     * @param fieldName The name of the field containing the string to get a substring from.
+     * @param index The starting index of the substring.
+     * @param length The length of the substring.
+     * @return A new [Expr] representing the substring.
+     */
+    @JvmStatic
+    fun substr(fieldName: String, index: Int, length: Int): Expr =
+      FunctionExpr("substr", evaluateSubstring, fieldName, index, length)
+
+    /**
      * Creates an expression that converts a string expression to lowercase.
      *
      * @param stringExpression The expression representing the string to convert to lowercase.
@@ -1690,7 +1839,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun toLower(stringExpression: Expr): Expr =
-      FunctionExpr("to_lowercase", evaluateToLowercase, stringExpression)
+      FunctionExpr("to_lower", evaluateToLowercase, stringExpression)
 
     /**
      * Creates an expression that converts a string field to lowercase.
@@ -1699,8 +1848,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the lowercase string.
      */
     @JvmStatic
-    fun toLower(fieldName: String): Expr =
-      FunctionExpr("to_lowercase", evaluateToLowercase, fieldName)
+    fun toLower(fieldName: String): Expr = FunctionExpr("to_lower", evaluateToLowercase, fieldName)
 
     /**
      * Creates an expression that converts a string expression to uppercase.
@@ -1710,7 +1858,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      */
     @JvmStatic
     fun toUpper(stringExpression: Expr): Expr =
-      FunctionExpr("to_uppercase", evaluateToUppercase, stringExpression)
+      FunctionExpr("to_upper", evaluateToUppercase, stringExpression)
 
     /**
      * Creates an expression that converts a string field to uppercase.
@@ -1719,8 +1867,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the lowercase string.
      */
     @JvmStatic
-    fun toUpper(fieldName: String): Expr =
-      FunctionExpr("to_uppercase", evaluateToUppercase, fieldName)
+    fun toUpper(fieldName: String): Expr = FunctionExpr("to_upper", evaluateToUppercase, fieldName)
 
     /**
      * Creates an expression that removes leading and trailing whitespace from a string expression.
@@ -2284,7 +2431,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the resulting timestamp.
      */
     @JvmStatic
-    fun timestampAdd(timestamp: Expr, unit: String, amount: Double): Expr =
+    fun timestampAdd(timestamp: Expr, unit: String, amount: Long): Expr =
       FunctionExpr("timestamp_add", evaluateTimestampAdd, timestamp, unit, amount)
 
     /**
@@ -2310,7 +2457,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the resulting timestamp.
      */
     @JvmStatic
-    fun timestampAdd(fieldName: String, unit: String, amount: Double): Expr =
+    fun timestampAdd(fieldName: String, unit: String, amount: Long): Expr =
       FunctionExpr("timestamp_add", evaluateTimestampAdd, fieldName, unit, amount)
 
     /**
@@ -2336,7 +2483,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the resulting timestamp.
      */
     @JvmStatic
-    fun timestampSub(timestamp: Expr, unit: String, amount: Double): Expr =
+    fun timestampSub(timestamp: Expr, unit: String, amount: Long): Expr =
       FunctionExpr("timestamp_sub", evaluateTimestampSub, timestamp, unit, amount)
 
     /**
@@ -2362,7 +2509,7 @@ abstract class Expr internal constructor() : Canonicalizable {
      * @return A new [Expr] representing the resulting timestamp.
      */
     @JvmStatic
-    fun timestampSub(fieldName: String, unit: String, amount: Double): Expr =
+    fun timestampSub(fieldName: String, unit: String, amount: Long): Expr =
       FunctionExpr("timestamp_sub", evaluateTimestampSub, fieldName, unit, amount)
 
     /**
@@ -3126,7 +3273,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * @return A new [Selectable] (typically an [ExprWithAlias]) that wraps this expression and
    * associates it with the provided alias.
    */
-  open fun alias(alias: String) = ExprWithAlias(alias, this)
+  open fun alias(alias: String): Selectable = ExprWithAlias(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -3563,6 +3710,25 @@ abstract class Expr internal constructor() : Canonicalizable {
   fun endsWith(suffix: String) = Companion.endsWith(this, suffix)
 
   /**
+   * Creates an expression that returns a substring of the given string.
+   *
+   * @param start The starting index of the substring.
+   * @param length The length of the substring.
+   * @return A new [Expr] representing the substring.
+   */
+  fun substr(start: Expr, length: Expr): Expr = Companion.substr(this, start, length)
+
+  /**
+   * Creates an expression that returns a substring of the given string.
+   *
+   * @param start The starting index of the substring.
+   * @param length The length of the substring.
+   * @return A new [Expr] representing the substring.
+   */
+  fun substr(start: Int, length: Int): Expr =
+    Companion.substr(this, constant(start), constant(length))
+
+  /**
    * Creates an expression that converts this string expression to lowercase.
    *
    * @return A new [Expr] representing the lowercase string.
@@ -3796,7 +3962,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * @param amount The amount of time to add.
    * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampAdd(unit: String, amount: Double): Expr = Companion.timestampAdd(this, unit, amount)
+  fun timestampAdd(unit: String, amount: Long): Expr = Companion.timestampAdd(this, unit, amount)
 
   /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
@@ -3816,7 +3982,7 @@ abstract class Expr internal constructor() : Canonicalizable {
    * @param amount The amount of time to subtract.
    * @return A new [Expr] representing the resulting timestamp.
    */
-  fun timestampSub(unit: String, amount: Double): Expr = Companion.timestampSub(this, unit, amount)
+  fun timestampSub(unit: String, amount: Long): Expr = Companion.timestampSub(this, unit, amount)
 
   /**
    * Creates an expression that concatenates a field's array value with other arrays.
@@ -4184,17 +4350,40 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   internal fun toProto(): Value =
     Value.newBuilder().setFieldReferenceValue(fieldPath.canonicalString()).build()
 
-  override fun evaluateFunction(context: EvaluationContext) =
-    block@{ input: MutableDocument ->
-      EvaluateResultValue(
-        when (fieldPath) {
-          KEY_PATH -> Value.newBuilder().setReferenceValue(input.key.path.canonicalString()).build()
-          CREATE_TIME_PATH -> encodeValue(input.createTime.timestamp)
-          UPDATE_TIME_PATH -> encodeValue(input.version.timestamp)
-          else -> input.getField(fieldPath) ?: return@block EvaluateResultUnset
+  override fun evaluateFunction(context: EvaluationContext) = { input: MutableDocument ->
+    when (fieldPath) {
+      KEY_PATH ->
+        EvaluateResultValue(
+          Value.newBuilder().setReferenceValue(input.key.path.canonicalString()).build()
+        )
+      CREATE_TIME_PATH -> EvaluateResultValue(encodeValue(input.createTime.timestamp))
+      UPDATE_TIME_PATH -> EvaluateResultValue(encodeValue(input.version.timestamp))
+      else ->
+        input.getField(fieldPath)?.let { fieldValue ->
+          // This block runs only if fieldValue is not null.
+          if (isServerTimestamp(fieldValue)) {
+            getServerTimestamp(fieldValue, context)
+          } else {
+            EvaluateResultValue(fieldValue)
+          }
         }
-      )
+          ?: EvaluateResultUnset // This value is used if getField() returns null.
     }
+  }
+  private fun getServerTimestamp(fieldValue: Value, context: EvaluationContext): EvaluateResult {
+    val behavior =
+      context.pipeline.internalOptions?.serverTimestampBehavior
+        ?: DocumentSnapshot.ServerTimestampBehavior.NONE
+    return when (behavior) {
+      DocumentSnapshot.ServerTimestampBehavior.NONE -> EvaluateResult.NULL
+      DocumentSnapshot.ServerTimestampBehavior.ESTIMATE ->
+        EvaluateResult.timestamp(getLocalWriteTime(fieldValue))
+      DocumentSnapshot.ServerTimestampBehavior.PREVIOUS -> {
+        val previousValue = getPreviousValue(fieldValue)
+        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue!!)
+      }
+    }
+  }
 
   override fun canonicalId(): String = "fld(${fieldPath.canonicalString()})"
 
@@ -4346,6 +4535,11 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
   companion object {
 
     /**
+     * Creates a generic boolean function expression that is not yet implemented.
+     *
+     * @param name The name of the generic function.
+     * @param expr The expressions to be passed as arguments to the function.
+     * @return A new [BooleanExpr] representing the generic function.
      */
     @JvmStatic
     fun generic(name: String, vararg expr: Expr): BooleanExpr =

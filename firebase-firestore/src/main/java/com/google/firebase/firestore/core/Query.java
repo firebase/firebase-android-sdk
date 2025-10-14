@@ -537,9 +537,11 @@ public final class Query {
   public RealtimePipeline toRealtimePipeline(
       FirebaseFirestore firestore, UserDataReader userDataReader) {
     return new RealtimePipeline(
+        firestore,
         new RemoteSerializer(userDataReader.getDatabaseId()),
         userDataReader,
-        convertToStages(userDataReader));
+        convertToStages(userDataReader),
+        null);
   }
 
   private List<Stage<?>> convertToStages(UserDataReader userDataReader) {
@@ -593,6 +595,11 @@ public final class Query {
         stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
         stages.add(new LimitStage((int) limit, InternalOptions.EMPTY));
       } else {
+        if (explicitSortOrder.isEmpty()) {
+          throw new IllegalStateException(
+              "limitToLast() queries require specifying at least one orderBy() clause");
+        }
+
         List<Ordering> reversedOrderings = new ArrayList<>();
         for (Ordering ordering : orderings) {
           reversedOrderings.add(ordering.reverse());

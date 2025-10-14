@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.RealtimePipelineKt.changesFromSnapshot;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.testutil.TestUtil.ackTarget;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -98,7 +99,18 @@ public class DocumentChangeTest {
 
     FirebaseFirestore firestore = mock(FirebaseFirestore.class);
     List<DocumentChange> changes =
-        DocumentChange.changesFromSnapshot(firestore, MetadataChanges.EXCLUDE, updatedSnapshot);
+        changesFromSnapshot(
+            MetadataChanges.EXCLUDE,
+            updatedSnapshot,
+            (doc, type, oldIndex, newIndex) -> {
+              QueryDocumentSnapshot documentSnapshot =
+                  QueryDocumentSnapshot.fromDocument(
+                      firestore,
+                      doc,
+                      updatedSnapshot.isFromCache(),
+                      updatedSnapshot.getMutatedKeys().contains(doc.getKey()));
+              return new DocumentChange(documentSnapshot, type, oldIndex, newIndex);
+            });
 
     for (DocumentChange change : changes) {
       if (change.getType() != Type.ADDED) {

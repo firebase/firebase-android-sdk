@@ -29,10 +29,12 @@ import com.google.firebase.firestore.pipeline.Expr.Companion.reverse
 import com.google.firebase.firestore.pipeline.Expr.Companion.startsWith
 import com.google.firebase.firestore.pipeline.Expr.Companion.strConcat
 import com.google.firebase.firestore.pipeline.Expr.Companion.strContains
+import com.google.firebase.firestore.pipeline.Expr.Companion.substr
 import com.google.firebase.firestore.pipeline.Expr.Companion.toLower
 import com.google.firebase.firestore.pipeline.Expr.Companion.toUpper
 import com.google.firebase.firestore.pipeline.Expr.Companion.trim
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
+import com.google.protobuf.ByteString
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -921,5 +923,274 @@ internal class StringTests {
   fun reverse_null() {
     val expr = reverse(nullValue())
     assertEvaluatesToNull(evaluate(expr), "reverse(null)")
+  }
+
+  @Test
+  fun substr_onString_returnsSubstring() {
+    val expr = substr(constant("abc"), constant(1L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abc\", 1, 2)")
+  }
+
+  @Test
+  fun substr_onString_largePosition_returnsEmptyString() {
+    val expr = substr(constant("abc"), constant(Long.MAX_VALUE), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substr('abc', Long.MAX_VALUE, 1)")
+  }
+
+  @Test
+  fun substr_onString_positionOnLast_returnsLastCharacter() {
+    val expr = substr(constant("abc"), constant(2L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substr(\"abc\", 2, 2)")
+  }
+
+  @Test
+  fun substr_onString_positionPastLast_returnsEmptyString() {
+    val expr = substr(constant("abc"), constant(3L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substr(\"abc\", 3, 2)")
+  }
+
+  @Test
+  fun substr_onString_positionOnZero_startsFromZero() {
+    val expr = substr(constant("abc"), constant(0L), constant(6L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("abc"), "substr(\"abc\", 0, 6)")
+  }
+
+  @Test
+  fun substr_onString_oversizedLength_returnsTruncatedString() {
+    val expr = substr(constant("abc"), constant(1L), constant(Long.MAX_VALUE))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abc\", 1, Long.MAX_VALUE)")
+  }
+
+  @Test
+  fun substr_onString_negativePosition() {
+    val expr = substr(constant("abcd"), constant(-3L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abcd\", -3, 2)")
+  }
+
+  @Test
+  fun substr_onString_negativePosition_startsFromLast() {
+    val expr = substr(constant("abc"), constant(-1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substr(\"abc\", -1, 1)")
+  }
+
+  @Test
+  fun substr_onCodePoints_negativePosition_startsFromLast() {
+    val expr = substr(constant("㉇🀄"), constant(-1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("🀄"), "substr(\"㉇🀄\", -1, 1)")
+  }
+
+  @Test
+  fun substr_onString_maxNegativePosition_startsFromZero() {
+    val expr = substr(blob("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(2L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("ab".toByteArray())),
+      "substr(blob(abc), -Long.MAX_VALUE, 2)"
+    )
+  }
+
+  @Test
+  fun substr_onString_oversizedNegativePosition_startsFromZero() {
+    val expr = substr(blob("abc".toByteArray()), constant(-4L), constant(2L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("ab".toByteArray())),
+      "substr(blob(abc), -4, 2)"
+    )
+  }
+
+  @Test
+  fun substr_onNonAsciiString() {
+    val expr = substr(constant("ϖϗϠ"), constant(1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗ"), "substr(\"ϖϗϠ\", 1, 1)")
+  }
+
+  @Test
+  fun substr_onCharacterDecomposition_treatedAsSeparateCharacters() {
+    val umlaut = String(charArrayOf(0x0308.toChar()))
+    val decomposedChar = "u" + umlaut
+
+    // Assert that the component characters of a decomposed character are trimmed correctly.
+    val expr1 = substr(constant(decomposedChar), constant(1), constant(2))
+    assertEvaluatesTo(evaluate(expr1), encodeValue(umlaut), "substr(decomposed, 1, 2)")
+
+    val expr2 = substr(constant(decomposedChar), constant(0), constant(1))
+    assertEvaluatesTo(evaluate(expr2), encodeValue("u"), "substr(decomposed, 0, 1)")
+  }
+
+  @Test
+  fun substr_onComposedCharacter_treatedAsSingleCharacter() {
+    val expr1 = substr(constant("ü"), constant(1), constant(1))
+    assertEvaluatesTo(evaluate(expr1), encodeValue(""), "substr(\"ü\", 1, 1)")
+
+    val expr2 = substr(constant("ü"), constant(0), constant(1))
+    assertEvaluatesTo(evaluate(expr2), encodeValue("ü"), "substr(\"ü\", 0, 1)")
+  }
+
+  @Test
+  fun substr_mixedAsciiNonAsciiString_returnsSubstring() {
+    val expr = substr(constant("aϗbϖϗϠc"), constant(1), constant(3))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗbϖ"), "substr(\"aϗbϖϗϠc\", 1, 3)")
+  }
+
+  @Test
+  fun substr_mixedAsciiNonAsciiString_afterNonAscii() {
+    val expr = substr(constant("aϗbϖϗϠc"), constant(4), constant(2))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗϠ"), "substr(\"aϗbϖϗϠc\", 4, 2)")
+  }
+
+  @Test
+  fun substr_onString_negativeLength_throws() {
+    val expr = substr(blob("abc".toByteArray()), constant(1L), constant(-1L))
+    assertEvaluatesToError(evaluate(expr), "substr with negative length")
+  }
+
+  @Test
+  fun substr_onBytes_returnsSubstring() {
+    val expr = substr(blob("abc".toByteArray()), constant(1L), constant(2L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("bc".toByteArray())),
+      "substr(blob(abc), 1, 2)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_returnsInvalidUTF8Substring() {
+    val expr =
+      substr(
+        blob(ByteString.fromHex("F9FAFB").toByteArray()),
+        constant(1L),
+        constant(Long.MAX_VALUE)
+      )
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.fromHex("FAFB"))),
+      "substr invalid utf8"
+    )
+  }
+
+  @Test
+  fun substr_onCodePoints_returnsSubstring() {
+    val codePoints = "🌎㉇🀄⛹"
+    val expr = substr(constant(codePoints), constant(1L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄"), "substr(\"🌎㉇🀄⛹\", 1, 2)")
+  }
+
+  @Test
+  fun substr_onCodePoints_andAscii_returnsSubstring() {
+    val codePoints = "🌎㉇foo🀄bar⛹"
+    val expr = substr(constant(codePoints), constant(4L), constant(4L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("o🀄ba"), "substr(\"🌎㉇foo🀄bar⛹\", 4, 4)")
+  }
+
+  @Test
+  fun substr_onCodePoints_oversizedLength_returnsSubstring() {
+    val codePoints = "🌎㉇🀄⛹"
+    val expr = substr(constant(codePoints), constant(1L), constant(6L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄⛹"), "substr(\"🌎㉇🀄⛹\", 1, 6)")
+  }
+
+  @Test
+  fun substr_onCodePoints_startingAtZero_returnsSubstring() {
+    val codePoints = "🌎㉇🀄⛹"
+    val expr = substr(constant(codePoints), constant(0L), constant(3L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("🌎㉇🀄"), "substr(\"🌎㉇🀄⛹\", 0, 3)")
+  }
+
+  @Test
+  fun substr_onSingleCodePointGrapheme_doesNotSplit() {
+    val expr1 = substr(constant("🖖"), constant(0L), constant(1L))
+    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substr(\"🖖\", 0, 1)")
+    val expr2 = substr(constant("🖖"), constant(1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr2), encodeValue(""), "substr(\"🖖\", 1, 1)")
+  }
+
+  @Test
+  fun substr_onMultiCodePointGrapheme_splitsGrapheme() {
+    val expr1 = substr(constant("🖖🏻"), constant(0L), constant(1L))
+    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substr(\"🖖🏻\", 0, 1)")
+    // Asserting that when the second half is split, it only returns the skin tone code point.
+    val expr2 = substr(constant("🖖🏻"), constant(1L), constant(1L))
+    val skinTone = String(charArrayOf(0xD83C.toChar(), 0xDFFB.toChar()))
+    assertEvaluatesTo(evaluate(expr2), encodeValue(skinTone), "substr(\"🖖🏻\", 1, 1)")
+  }
+
+  @Test
+  fun substr_onBytes_largePosition_returnsEmptyString() {
+    val expr = substr(blob("abc".toByteArray()), constant(Long.MAX_VALUE), constant(3L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.EMPTY)),
+      "substr(blob(abc), Long.MAX_VALUE, 3)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_positionOnLast_returnsLastByte() {
+    val expr = substr(blob("abc".toByteArray()), constant(2L), constant(2L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("c".toByteArray())),
+      "substr(blob(abc), 2, 2)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_positionPastLast_returnsEmptyByteString() {
+    val expr = substr(blob("abc".toByteArray()), constant(3L), constant(2L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.EMPTY)),
+      "substr(blob(abc), 3, 2)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_positionOnZero_startsFromZero() {
+    val expr = substr(blob("abc".toByteArray()), constant(0L), constant(6L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("abc".toByteArray())),
+      "substr(blob(abc), 0, 6)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_negativePosition_startsFromLast() {
+    val expr = substr(blob("abc".toByteArray()), constant(-1L), constant(1L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("c".toByteArray())),
+      "substr(blob(abc), -1, 1)"
+    )
+  }
+
+  @Test
+  fun substr_onBytes_oversizedNegativePosition_startsFromZero() {
+    val expr = substr(blob("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(3L))
+    assertEvaluatesTo(
+      evaluate(expr),
+      encodeValue(com.google.firebase.firestore.Blob.fromBytes("abc".toByteArray())),
+      "substr(blob(abc), -Long.MAX_VALUE, 3)"
+    )
+  }
+
+  @Test
+  fun substr_unknownValueType_returnsError() {
+    val expr = substr(constant(20L), constant(4L), constant(1L))
+    assertEvaluatesToError(evaluate(expr), "substr on non-string/blob")
+  }
+
+  @Test
+  fun substr_unknownPositionType_returnsError() {
+    val expr = substr(constant("abc"), constant("foo"), constant(1L))
+    assertEvaluatesToError(evaluate(expr), "substr with non-integer position")
+  }
+
+  @Test
+  fun substr_unknownLengthType_returnsError() {
+    val expr = substr(constant("abc"), constant(1L), constant("foo"))
+    assertEvaluatesToError(evaluate(expr), "substr with non-integer length")
   }
 }

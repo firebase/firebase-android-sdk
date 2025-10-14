@@ -675,7 +675,10 @@ public final class RemoteSerializer {
       decodedStages.add(decodeStage(stageProto));
     }
 
-    return new RealtimePipeline(this, new UserDataReader(this.databaseId()), decodedStages);
+    // It is ok for firestore field to be null, because deserialzed realtime pipeline is only used
+    // for facilitating pipeline request in remote store, firestore field is not used.
+    return new RealtimePipeline(
+        null, this, new UserDataReader(this.databaseId()), decodedStages, null);
   }
 
   private Stage<?> decodeStage(com.google.firestore.v1.Pipeline.Stage protoStage) {

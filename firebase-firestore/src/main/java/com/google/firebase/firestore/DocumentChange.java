@@ -14,17 +14,9 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.firestore.core.DocumentViewChange;
-import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentSet;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A {@code DocumentChange} represents a change to the documents matching a query. It contains the
@@ -121,84 +113,5 @@ public class DocumentChange {
    */
   public int getNewIndex() {
     return newIndex;
-  }
-
-  /** Creates the list of document changes from a {@code ViewSnapshot}. */
-  static List<DocumentChange> changesFromSnapshot(
-      FirebaseFirestore firestore, MetadataChanges metadataChanges, ViewSnapshot snapshot) {
-    List<DocumentChange> documentChanges = new ArrayList<>();
-    if (snapshot.getOldDocuments().isEmpty()) {
-      // Special case the first snapshot because index calculation is easy and fast. Also all
-      // changes on the first snapshot are adds so there are also no metadata-only changes to filter
-      // out.
-      int index = 0;
-      Document lastDoc = null;
-      for (DocumentViewChange change : snapshot.getChanges()) {
-        Document document = change.getDocument();
-        QueryDocumentSnapshot documentSnapshot =
-            QueryDocumentSnapshot.fromDocument(
-                firestore,
-                document,
-                snapshot.isFromCache(),
-                snapshot.getMutatedKeys().contains(document.getKey()));
-        hardAssert(
-            change.getType() == DocumentViewChange.Type.ADDED,
-            "Invalid added event for first snapshot");
-        hardAssert(
-            lastDoc == null || snapshot.getQuery().comparator().compare(lastDoc, document) < 0,
-            "Got added events in wrong order");
-        documentChanges.add(new DocumentChange(documentSnapshot, Type.ADDED, -1, index++));
-        lastDoc = document;
-      }
-    } else {
-      // A DocumentSet that is updated incrementally as changes are applied to use to lookup the
-      // index of a document.
-      DocumentSet indexTracker = snapshot.getOldDocuments();
-      for (DocumentViewChange change : snapshot.getChanges()) {
-        if (metadataChanges == MetadataChanges.EXCLUDE
-            && change.getType() == DocumentViewChange.Type.METADATA) {
-          continue;
-        }
-        Document document = change.getDocument();
-        QueryDocumentSnapshot documentSnapshot =
-            QueryDocumentSnapshot.fromDocument(
-                firestore,
-                document,
-                snapshot.isFromCache(),
-                snapshot.getMutatedKeys().contains(document.getKey()));
-        int oldIndex, newIndex;
-        Type type = getType(change);
-        if (type != Type.ADDED) {
-          oldIndex = indexTracker.indexOf(document.getKey());
-          hardAssert(oldIndex >= 0, "Index for document not found");
-          indexTracker = indexTracker.remove(document.getKey());
-        } else {
-          oldIndex = -1;
-        }
-        if (type != Type.REMOVED) {
-          indexTracker = indexTracker.add(document);
-          newIndex = indexTracker.indexOf(document.getKey());
-          hardAssert(newIndex >= 0, "Index for document not found");
-        } else {
-          newIndex = -1;
-        }
-        documentChanges.add(new DocumentChange(documentSnapshot, type, oldIndex, newIndex));
-      }
-    }
-    return documentChanges;
-  }
-
-  private static Type getType(DocumentViewChange change) {
-    switch (change.getType()) {
-      case ADDED:
-        return Type.ADDED;
-      case METADATA:
-      case MODIFIED:
-        return Type.MODIFIED;
-      case REMOVED:
-        return Type.REMOVED;
-      default:
-        throw new IllegalArgumentException("Unknown view change type: " + change.getType());
-    }
   }
 }
