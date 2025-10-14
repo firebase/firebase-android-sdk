@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
@@ -28,6 +29,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -63,6 +65,38 @@ class SQLiteDatabaseExtsUnitTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   private val mockLogger: Logger by lazy { mockk(relaxed = true) }
+
+  @Test
+  fun `getLastInsertRowId() should not throw if executed before any inserts`() {
+    // Do not validate the return value because it is unpredictable. It appears that Android's
+    // sqlite wrapper performs an insert before giving the instance to the caller.
+    sqliteDatabase.getLastInsertRowId(mockLogger)
+  }
+
+  @Test
+  fun `getLastInsertRowId() should return the rowid of a single insert`() {
+    sqliteDatabase.beginTransaction()
+    sqliteDatabase.execSQL("CREATE TABLE foo (id INTEGER PRIMARY KEY, col)")
+    val insertedRowId = Arb.positiveInt().next(rs)
+    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId)")
+
+    val getLastInsertRowIdReturnValue = sqliteDatabase.getLastInsertRowId(mockLogger)
+
+    getLastInsertRowIdReturnValue shouldBe insertedRowId
+  }
+
+  @Test
+  fun `getLastInsertRowId() should return the rowid of a the most recent insert`() {
+    sqliteDatabase.beginTransaction()
+    sqliteDatabase.execSQL("CREATE TABLE foo (id INTEGER PRIMARY KEY, col)")
+    val (insertedRowId1, insertedRowId2) = Arb.positiveInt().distinctPair().next(rs)
+    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId1)")
+    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId2)")
+
+    val getLastInsertRowIdReturnValue = sqliteDatabase.getLastInsertRowId(mockLogger)
+
+    getLastInsertRowIdReturnValue shouldBe insertedRowId2
+  }
 
   @Test
   fun `execSQL(Logger, sql) should log the given sql verbatim`() {
