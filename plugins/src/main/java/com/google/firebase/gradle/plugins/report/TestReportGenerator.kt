@@ -330,17 +330,10 @@ class TestReportGenerator(private val apiToken: String) {
           .map { link: String ->
             val parts = link.split(",").dropLastWhile { it.isEmpty() }
             for (part in parts) {
-              if (part.endsWith("rel=\"next\"")) {
-                // <foo>; rel="next" -> foo
-                val url =
-                  part
-                    .split(">;")
-                    .dropLastWhile { it.isEmpty() }
-                    .toTypedArray()[0]
-                    .split("<")
-                    .dropLastWhile { it.isEmpty() }
-                    .toTypedArray()[1]
-                val p = request<JsonObject>(URI.create(url), JsonObject::class.java)
+              val m = NEXT_LINK_REGEX.matchEntire(part)
+              if (m != null) {
+                val url = m.groups[0]?.value ?: throw RuntimeException("Malformed groups")
+                val p = request(URI.create(url), JsonObject::class.java)
                 return@map JsonObject(
                   json.keys.associateWith { key: String ->
                     if (json[key] is JsonArray && p.containsKey(key) && p[key] is JsonArray) {
@@ -368,5 +361,29 @@ class TestReportGenerator(private val apiToken: String) {
   companion object {
     private const val URL_PREFIX = "https://api.github.com/repos/firebase/firebase-android-sdk/"
     private const val GITHUB_API_VERSION = "2022-11-28"
+    // Pulls the URL corresponding to the rel="next" link header, if present.
+    // Ignores other link header values ("prev", etc) and ignores parameters
+    // eg `<http://www.foo.bar/>; baz="qux"; rel="next";` -> `http://www.foo.bar/`
+    private val NEXT_LINK_REGEX =
+      Regex(
+        "<" + // eg `<http://www.foo.bar/>`
+          "(" + // URL group
+          /**/ "[^>]*" + // Only ignoring `>`, other illegal characters assumed not present
+          ")" +
+          ">" +
+          "\\s*" +
+          ";" + // Link separator
+          "(" + // Ignore other parameters, eg `foo="bar";`
+          /**/ "\\s*" +
+          /**/ "\\w+" + // Key
+          /**/ "=" +
+          /**/ "\"\\w*\"" + // Quoted value
+          /**/ "\\s*" +
+          /**/ ";" +
+          ")" +
+          "\\s*" +
+          "rel=\"next\""
+        // "<([^>]*)>\\s*;(\\s*\\w+=\"\\w*\"\\s*;)\\s*rel=\"next\""
+      )
   }
 }
