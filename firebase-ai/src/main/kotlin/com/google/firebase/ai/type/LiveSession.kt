@@ -265,7 +265,10 @@ internal constructor(
    * @param audio The audio data to send.
    */
   public suspend fun sendAudioRealtime(audio: InlineDataPart) {
-    val msg = BidiGenerateContentRealtimeInputSetup(audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal())
+    val msg =
+      BidiGenerateContentRealtimeInputSetup(
+        audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal()
+      )
     FirebaseAIException.catchAsync {
       val jsonString = Json.encodeToString(msg.toInternal())
       session.send(Frame.Text(jsonString))
@@ -281,7 +284,10 @@ internal constructor(
    * @param video The video data to send. Video MIME type could be either video or image.
    */
   public suspend fun sendVideoRealtime(video: InlineDataPart) {
-    val msg = BidiGenerateContentRealtimeInputSetup(video = MediaData(video.inlineData, mimeType = video.mimeType).toInternal())
+    val msg =
+      BidiGenerateContentRealtimeInputSetup(
+        video = MediaData(video.inlineData, mimeType = video.mimeType).toInternal()
+      )
     FirebaseAIException.catchAsync {
       val jsonString = Json.encodeToString(msg.toInternal())
       session.send(Frame.Text(jsonString))
