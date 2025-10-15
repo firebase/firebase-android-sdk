@@ -328,7 +328,10 @@ internal constructor(
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
+      ?.onEach {
+        sendMediaStream(listOf(MediaData(it, "audio/pcm")))
+        delay(0)
+      }
       ?.catch { throw FirebaseAIException.from(it) }
       ?.launchIn(scope)
   }
