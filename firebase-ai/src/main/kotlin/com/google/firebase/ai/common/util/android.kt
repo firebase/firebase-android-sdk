@@ -42,15 +42,13 @@ internal fun AudioRecord.readAsFlow() = callbackFlow {
 
   while (isActive) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-      // TODO(vguthal): Investigate if both yield and delay are required.
-      delay(10.milliseconds)
-      yield()
+      delay(0)
       continue
     }
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
       send(buffer.copyOf(bytesRead))
     }
-    yield()
+    delay(0)
   }
 }

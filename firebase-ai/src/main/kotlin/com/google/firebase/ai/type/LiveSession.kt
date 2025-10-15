@@ -41,6 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
@@ -411,7 +412,7 @@ internal constructor(
           if (!enableInterruptions) {
             audioHelper?.resumeRecording()
           }
-          yield()
+          delay(0)
         } else {
           println("Playing audio data")
           /**
