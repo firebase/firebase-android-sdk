@@ -223,6 +223,16 @@ object SQLiteArbs {
       getValueFromCursor = { getString(it) },
     )
 
+  /**
+   * The same as [String.drop] except that if the drop would break up a surrogate pair, causing a
+   * lone surrogate, then one fewer characters than requested will be dropped.
+   *
+   * This function is _not_ safe if the receiving object contains lone surrogates and the behavior
+   * of this function is undefined if that is the case.
+   */
+  private fun String.surrogateSafeDrop(n: Int): String =
+    drop(if (n < length && get(n).isLowSurrogate()) n - 1 else n)
+
   private class StringColumnValueArb(
     private val string: Arb<String>,
     private val containsApostropheProbability: Float,
@@ -263,8 +273,16 @@ object SQLiteArbs {
       val loggedValue = StringBuilder(originalString)
       val indices = originalString.indices.shuffled(rs.random).take(apostropheCount)
       indices.sortedDescending().forEach { index ->
-        bindArgsValue.insert(index, "'")
-        loggedValue.insert(index, "''")
+        // Avoid splitting up a surrogate pair because that yields an invalid sequence of
+        // UTF-16 code units and is undefined how sqlite would persist such a value.
+        val insertIndex =
+          if (index > 0 && bindArgsValue[index].isLowSurrogate()) {
+            index - 1
+          } else {
+            index
+          }
+        bindArgsValue.insert(insertIndex, "'")
+        loggedValue.insert(insertIndex, "''")
       }
 
       return StringColumnValue(
@@ -291,8 +309,10 @@ object SQLiteArbs {
           nonEmptyStringWithoutApostrophes.next(rs).let {
             val leadingApostropheCount = rs.random.nextInt(1..it.length)
             StringColumnValue(
-              bindArgsValue = "'".repeat(leadingApostropheCount) + it.drop(leadingApostropheCount),
-              loggedValue = "''".repeat(leadingApostropheCount) + it.drop(leadingApostropheCount),
+              bindArgsValue =
+                "'".repeat(leadingApostropheCount) + it.surrogateSafeDrop(leadingApostropheCount),
+              loggedValue =
+                "''".repeat(leadingApostropheCount) + it.surrogateSafeDrop(leadingApostropheCount),
             )
           }
         EdgeCase.EndsWithApostrophes ->
@@ -300,8 +320,10 @@ object SQLiteArbs {
             val trailingApostropheCount = rs.random.nextInt(1..it.length)
             StringColumnValue(
               bindArgsValue =
-                it.drop(trailingApostropheCount) + "'".repeat(trailingApostropheCount),
-              loggedValue = it.drop(trailingApostropheCount) + "''".repeat(trailingApostropheCount),
+                it.surrogateSafeDrop(trailingApostropheCount) + "'".repeat(trailingApostropheCount),
+              loggedValue =
+                it.surrogateSafeDrop(trailingApostropheCount) +
+                  "''".repeat(trailingApostropheCount),
             )
           }
         EdgeCase.BeginsAndEndsWithApostrophes ->
@@ -318,11 +340,11 @@ object SQLiteArbs {
               StringColumnValue(
                 bindArgsValue =
                   "'".repeat(leadingApostropheCount) +
-                    it.drop(leadingApostropheCount + trailingApostropheCount) +
+                    it.surrogateSafeDrop(leadingApostropheCount + trailingApostropheCount) +
                     "'".repeat(trailingApostropheCount),
                 loggedValue =
                   "''".repeat(leadingApostropheCount) +
-                    it.drop(leadingApostropheCount + trailingApostropheCount) +
+                    it.surrogateSafeDrop(leadingApostropheCount + trailingApostropheCount) +
                     "''".repeat(trailingApostropheCount),
               )
             }
