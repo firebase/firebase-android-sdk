@@ -19,6 +19,7 @@ package com.google.firebase.ai.common.util
 import android.media.AudioRecord
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.yield
 
@@ -35,7 +36,7 @@ internal val AudioRecord.minBufferSize: Int
  *
  * Will yield when this instance is not recording.
  */
-internal fun AudioRecord.readAsFlow() = flow {
+internal fun AudioRecord.readAsFlow() = callbackFlow {
   val buffer = ByteArray(minBufferSize)
 
   while (true) {
@@ -47,7 +48,7 @@ internal fun AudioRecord.readAsFlow() = flow {
     }
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
-      emit(buffer.copyOf(bytesRead))
+      send(buffer.copyOf(bytesRead))
     }
     yield()
   }
