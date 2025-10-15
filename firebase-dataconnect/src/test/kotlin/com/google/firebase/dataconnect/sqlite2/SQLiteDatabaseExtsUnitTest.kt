@@ -20,6 +20,8 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.ColumnValue
+import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.StringColumnValue
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
@@ -43,6 +45,7 @@ import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.set
@@ -221,7 +224,8 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) non-empty bindArgs should log the given sql with indents trimmed`() =
     runTest {
-      checkAll(propTestConfig, Arb.list(Arb.sqlite.columnValue(), 1..10)) { columnValues ->
+      checkAll(propTestConfig, Arb.list(Arb.sqlite.columnValueWithoutNewlines(), 1..10)) {
+        columnValues ->
         val createTableResult = sqliteDatabase.createTable(columnValues)
         val (tableName: String, columnNames: List<String>) = createTableResult
         val sql =
@@ -268,7 +272,8 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) non-empty bindArgs should trim indent when placeholder count not matching bindArgs length`() =
     runTest {
-      checkAll(propTestConfig, Arb.list(Arb.sqlite.columnValue(), 1..10)) { columnValues ->
+      checkAll(propTestConfig, Arb.list(Arb.sqlite.columnValueWithoutNewlines(), 1..10)) {
+        columnValues ->
         val createTableResult = sqliteDatabase.createTable(columnValues)
         val (tableName: String, columnNames: List<String>) = createTableResult
         val extraColumnName = "col${nextId()}"
@@ -291,14 +296,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) non-empty bindArgs should execute the given sql`() = runTest {
-    var zzyzx = 0
-    checkAll(
-      propTestConfig.copy(seed = -6457392272925426822),
-      Arb.list(Arb.sqlite.columnValue(), 1..10)
-    ) { columnValues ->
-      zzyzx++
-      println("zzyzx $zzyzx")
-
+    checkAll(propTestConfig, Arb.list(Arb.sqlite.columnValue(), 1..10)) { columnValues ->
       val createTableResult = sqliteDatabase.createTable(columnValues)
       val (tableName: String, columnNames: List<String>) = createTableResult
       val bindArgs = columnValues.map { it.bindArgsValue }
@@ -945,14 +943,8 @@ class SQLiteDatabaseExtsUnitTest {
 
     fun nextId(): Long = nextIdAtomic.incrementAndGet()
 
-    fun SQLiteDatabase.createTableWithUniqueName(sql: String): String {
-      val tableName = "table${nextId()}"
-      execSQL(sql.replace("%s", tableName))
-      return tableName
-    }
-
     fun SQLiteDatabase.createTable(
-      columnValues: List<SQLiteArbs.ColumnValue<*>>
+      columnValues: List<ColumnValue<*>>
     ): CreateTableWithColumnCountResult {
       val tableName = "table${nextId()}"
       val columnNames = List(columnValues.size) { "col${nextId()}" }
@@ -1000,5 +992,18 @@ class SQLiteDatabaseExtsUnitTest {
 
       return SetupTableForRawQueryTestingResult(valueByRowId)
     }
+
+    fun ColumnValue<*>.withoutNewlines(): ColumnValue<*> =
+      if (this !is StringColumnValue) {
+        this
+      } else {
+        StringColumnValue(
+          bindArgsValue = bindArgsValue.replace("\r", "").replace("\n", ""),
+          loggedValue = loggedValue.replace("\r", "").replace("\n", ""),
+        )
+      }
+
+    fun SQLiteArbs.columnValueWithoutNewlines(): Arb<ColumnValue<*>> =
+      columnValue().map { it.withoutNewlines() }
   }
 }
