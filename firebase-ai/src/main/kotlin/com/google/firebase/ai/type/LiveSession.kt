@@ -390,7 +390,7 @@ internal constructor(
           }
         }
       }
-      .launchIn(CoroutineScope(Dispatchers.IO))
+      .launchIn(scope)
   }
 
   /**
@@ -401,7 +401,7 @@ internal constructor(
    * Launched asynchronously on [scope].
    */
   private fun listenForModelPlayback(enableInterruptions: Boolean = false) {
-    CoroutineScope(Dispatchers.IO).launch {
+    scope.launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
