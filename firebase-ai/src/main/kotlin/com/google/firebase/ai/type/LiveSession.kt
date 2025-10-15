@@ -33,6 +33,7 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
+import kotlinx.coroutines.CoroutineName
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
@@ -137,8 +138,8 @@ internal constructor(
         )
         return@catchAsync
       }
-
-      scope = CoroutineScope(blockingDispatcher + childJob())
+      // TODO: maybe it should be THREAD_PRIORITY_AUDIO anyways for playback and recording (not network though)
+      scope = CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Scope"))
       audioHelper = AudioHelper.build()
 
       recordUserAudio()
