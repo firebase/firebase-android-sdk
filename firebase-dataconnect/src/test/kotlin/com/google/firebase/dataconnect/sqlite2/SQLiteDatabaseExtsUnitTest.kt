@@ -39,7 +39,6 @@ import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -476,8 +475,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) Float bindArgs should execute the given sql`() {
-    val roundTrippableSqliteFloatsArb = Arb.float().filterNot { it.isNaN() || it == -0.0f }
-    val (value1: Float, value2: Float) = roundTrippableSqliteFloatsArb.distinctPair().next(rs)
+    val (value1: Float, value2: Float) = Arb.sqlite.roundTrippableFloat().distinctPair().next(rs)
 
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 REAL, col2 REAL)")
     sqliteDatabase.execSQL(
@@ -579,8 +577,7 @@ class SQLiteDatabaseExtsUnitTest {
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) Double bindArgs should execute the given sql`() {
-    val roundTrippableSqliteDoublesArb = Arb.double().filterNot { it.isNaN() || it == -0.0 }
-    val (value1: Double, value2: Double) = roundTrippableSqliteDoublesArb.distinctPair().next(rs)
+    val (value1: Double, value2: Double) = Arb.sqlite.roundTrippableDouble().distinctPair().next(rs)
 
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 REAL, col2 REAL)")
     sqliteDatabase.execSQL(
@@ -1004,7 +1001,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE """ +
             List(values.size) { "col=?" }.joinToString(" OR ") +
             """
-          
+
         """
 
         sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
@@ -1016,7 +1013,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE """ +
               values.joinToString(" OR ") { "col=$it" } +
               """
-          
+
         """)
             .trimIndent()
         verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
@@ -1052,7 +1049,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE col='?' OR """ +
             List(values.size) { "col=?" }.joinToString(" OR ") +
             """
-          
+
         """
 
         sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
@@ -1112,7 +1109,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE """ +
             List(values.size) { "col=?" }.joinToString(" OR ") +
             """
-          
+
         """
 
         sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
@@ -1124,7 +1121,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE """ +
               values.joinToString(" OR ") { "col=$it" } +
               """
-          
+
         """)
             .trimIndent()
         verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
@@ -1160,7 +1157,7 @@ class SQLiteDatabaseExtsUnitTest {
         WHERE col='?' OR """ +
             List(values.size) { "col=?" }.joinToString(" OR ") +
             """
-          
+
         """
 
         sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
@@ -1176,6 +1173,224 @@ class SQLiteDatabaseExtsUnitTest {
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col INT)")
 
     checkAll(rawQueryPropTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val bindArgs = setupResult.someValues(randomSource())
+      val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
+      val sql =
+        "SELECT rowid FROM foo WHERE " + List(bindArgs.size) { "col=?" }.joinToString(" OR ")
+
+      val actualRowIds =
+        sqliteDatabase.rawQuery(mockLogger, sql, bindArgs.toTypedArray()) { cursor ->
+          cursor.toLongList()
+        }
+
+      actualRowIds shouldContainExactlyInAnyOrder expectedRowIds
+    }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Float bindArgs should log the given sql with placeholders replaced`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.float(), 1..10)) { values: List<Float> ->
+        val sql = "SELECT * FROM foo WHERE " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          "SELECT * FROM foo WHERE " + values.joinToString(" OR ") { "col=$it" }
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Float bindArgs should log the given sql with indents trimmed`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.float(), 1..10)) { values: List<Float> ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          ("""
+        SELECT *
+        FROM foo
+        WHERE """ +
+              values.joinToString(" OR ") { "col=$it" } +
+              """
+
+        """)
+            .trimIndent()
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Float bindArgs should handle placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.float(), 1..10)) { values: List<Float> ->
+        val sql =
+          "SELECT * FROM foo WHERE col='?' OR " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage = sql + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Float bindArgs should trim indents when placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.float(), 1..10)) { values: List<Float> ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE col='?' OR """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          sql.trimIndent() + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Float bindArgs should execute the given sql`() = runTest {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+    checkAll(rawQueryPropTestConfig, Arb.list(Arb.sqlite.roundTrippableFloat(), 1..10)) {
+      values: List<Float> ->
+      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val bindArgs = setupResult.someValues(randomSource())
+      val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
+      val sql =
+        "SELECT rowid FROM foo WHERE " + List(bindArgs.size) { "col=?" }.joinToString(" OR ")
+
+      val actualRowIds =
+        sqliteDatabase.rawQuery(mockLogger, sql, bindArgs.toTypedArray()) { cursor ->
+          cursor.toLongList()
+        }
+
+      actualRowIds shouldContainExactlyInAnyOrder expectedRowIds
+    }
+  }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Double bindArgs should log the given sql with placeholders replaced`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.double(), 1..10)) { values: List<Double> ->
+        val sql = "SELECT * FROM foo WHERE " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          "SELECT * FROM foo WHERE " + values.joinToString(" OR ") { "col=$it" }
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Double bindArgs should log the given sql with indents trimmed`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.double(), 1..10)) { values: List<Double> ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          ("""
+        SELECT *
+        FROM foo
+        WHERE """ +
+              values.joinToString(" OR ") { "col=$it" } +
+              """
+
+        """)
+            .trimIndent()
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Double bindArgs should handle placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.double(), 1..10)) { values: List<Double> ->
+        val sql =
+          "SELECT * FROM foo WHERE col='?' OR " + List(values.size) { "col=?" }.joinToString(" OR ")
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage = sql + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Double bindArgs should trim indents when placeholder count not matching bindArgs length`() =
+    runTest {
+      sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+      checkAll(rawQueryPropTestConfig, Arb.list(Arb.double(), 1..10)) { values: List<Double> ->
+        val sql =
+          """
+        SELECT *
+        FROM foo
+        WHERE col='?' OR """ +
+            List(values.size) { "col=?" }.joinToString(" OR ") +
+            """
+
+        """
+
+        sqliteDatabase.rawQuery(mockLogger, sql, values.toTypedArray()) {}
+
+        val expectedLogMessage =
+          sql.trimIndent() + " bindArgs={" + (values.joinToString(", ") { "$it" }) + "}"
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLogMessage) }
+      }
+    }
+
+  @Test
+  fun `rawQuery(Logger, sql, bindArgs) Double bindArgs should execute the given sql`() = runTest {
+    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col REAL)")
+
+    checkAll(rawQueryPropTestConfig, Arb.list(Arb.sqlite.roundTrippableDouble(), 1..10)) {
+      values: List<Double> ->
       val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
       val bindArgs = setupResult.someValues(randomSource())
       val expectedRowIds = setupResult.rowIdsForValues(bindArgs)

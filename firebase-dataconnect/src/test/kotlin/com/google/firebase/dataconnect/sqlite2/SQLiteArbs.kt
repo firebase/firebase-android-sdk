@@ -20,7 +20,9 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
+import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
@@ -43,6 +45,10 @@ object SQLiteArbs {
     apostropheCount: IntRange = 1..3,
   ): Arb<StringWithApostrophes> =
     StringWithApostrophesArb(stringWithoutSqliteSpecialChars, apostropheCount)
+
+  fun roundTrippableFloat(): Arb<Float> = Arb.float().filterNot { it.isNaN() || it == -0.0f }
+
+  fun roundTrippableDouble(): Arb<Double> = Arb.double().filterNot { it.isNaN() || it == -0.0 }
 }
 
 val Arb.Companion.sqlite: SQLiteArbs
