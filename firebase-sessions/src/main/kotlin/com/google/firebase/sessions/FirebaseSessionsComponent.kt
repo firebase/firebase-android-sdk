@@ -150,9 +150,7 @@ internal interface FirebaseSessionsComponent {
             },
           scope = CoroutineScope(blockingDispatcher),
           produceFile = {
-            appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data").also {
-              prepDataStoreFile(it)
-            }
+            produceFile(appContext, "firebaseSessions/sessionConfigsDataStore.data")
           },
         )
 
@@ -172,11 +170,21 @@ internal interface FirebaseSessionsComponent {
             },
           scope = CoroutineScope(blockingDispatcher),
           produceFile = {
-            appContext.dataStoreFile("firebaseSessions/sessionDataStore.data").also {
-              prepDataStoreFile(it)
-            }
+            produceFile(appContext, "firebaseSessions/sessionDataStore.data")
           },
         )
+
+
+      private fun produceFile(appContext: Context, fileName: String): File {
+        val deContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          appContext.createDeviceProtectedStorageContext()
+        } else {
+          appContext
+        }
+        return deContext.dataStoreFile(fileName).also {
+          prepDataStoreFile(it)
+        }
+      }
 
       private fun <T> createDataStore(
         serializer: Serializer<T>,
