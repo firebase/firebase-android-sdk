@@ -18,12 +18,10 @@ package com.google.firebase.ai.type
 
 import io.kotest.assertions.json.shouldEqualJson
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 import org.junit.Test
 
 internal class FunctionDeclarationTest {
-  internal val JSON = Json { classDiscriminatorMode = ClassDiscriminatorMode.NONE }
 
   @Test
   fun `Basic FunctionDeclaration with name, description and parameters`() {
@@ -55,7 +53,7 @@ internal class FunctionDeclarationTest {
     """
         .trimIndent()
 
-    JSON.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
+    Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
 
   @Test
@@ -97,6 +95,6 @@ internal class FunctionDeclarationTest {
     """
         .trimIndent()
 
-    JSON.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
+    Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
 }

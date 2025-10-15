@@ -67,6 +67,6 @@ public class FunctionDeclaration(
   internal data class Internal(
     val name: String,
     val description: String,
-    val parameters: Schema.Internal
+    val parameters: Schema.InternalOpenAPI
   )
 }

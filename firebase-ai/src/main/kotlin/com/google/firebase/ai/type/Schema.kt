@@ -417,7 +417,7 @@ internal constructor(
     val type: String? = null,
     val description: String? = null,
     val format: String? = null,
-    val nullable: Boolean? = fals"e,
+    val nullable: Boolean? = false,
     val enum: List<String>? = null,
     val properties: Map<String, InternalOpenAPI>? = null,
     val required: List<String>? = null,
