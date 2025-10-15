@@ -22,7 +22,6 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.util.stream.Stream
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -62,8 +61,6 @@ class TestReportGenerator(private val apiToken: String) {
           ?.jsonObject
           ?.get("nodes")
           ?.jsonArray ?: throw RuntimeException("Missing fields in response: $response"))
-        .stream()
-        .limit(commitCount.toLong())
         .map { el: JsonElement ->
           val obj = el as JsonObject
           ReportCommit(
@@ -80,15 +77,11 @@ class TestReportGenerator(private val apiToken: String) {
               ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
         }
-        .toList()
     outputReport(commits)
   }
 
   private fun outputReport(commits: List<ReportCommit>) {
-    val reports: MutableList<TestReport> = mutableListOf()
-    for (commit in commits) {
-      reports.addAll(parseTestReports(commit.sha))
-    }
+    val reports = commits.flatMap { commit -> parseTestReports(commit.sha) }
     val output = StringBuilder()
     output.append("### Unit Tests\n\n")
     output.append(
@@ -114,20 +107,18 @@ class TestReportGenerator(private val apiToken: String) {
     }
   }
 
-  private fun generateTable(reportCommits: List<ReportCommit>, reports: List<TestReport>): String {
-    val commitLookup = reportCommits.associateBy(ReportCommit::sha)
-    val commits = reports.map(TestReport::commit).distinct()
-    var sdks = reports.map(TestReport::name).distinct().sorted()
-    val lookup = reports.associateBy({ report -> Pair.of(report.name, report.commit) })
+  private fun calculateSuccess(
+    sdks: List<String>,
+    commits: List<String>,
+    testLookup: Map<Pair<String, String>, TestReport>,
+  ): Map<String, Int> {
     val successPercentage: MutableMap<String, Int> = hashMapOf()
-    var passingSdks = 0
-    // Get success percentage
     for (sdk in sdks) {
       var sdkTestCount = 0
       var sdkTestSuccess = 0
       for (commit in commits) {
-        if (lookup.containsKey(Pair.of(sdk, commit))) {
-          val report: TestReport = lookup[Pair.of(sdk, commit)]!!
+        if (testLookup.containsKey(Pair.of(sdk, commit))) {
+          val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
           if (report.status != TestReport.Status.OTHER) {
             sdkTestCount++
             if (report.status == TestReport.Status.SUCCESS) {
@@ -136,11 +127,17 @@ class TestReportGenerator(private val apiToken: String) {
           }
         }
       }
-      if (sdkTestSuccess == sdkTestCount) {
-        passingSdks++
-      }
       successPercentage.put(sdk, sdkTestSuccess * 100 / sdkTestCount)
     }
+    return successPercentage
+  }
+
+  private fun generateTable(reportCommits: List<ReportCommit>, reports: List<TestReport>): String {
+    val commitLookup = reportCommits.associateBy(ReportCommit::sha)
+    val commits = reports.map(TestReport::commit).distinct()
+    var sdks = reports.map(TestReport::name).distinct().sorted()
+    val testLookup = reports.associateBy({ report -> Pair.of(report.name, report.commit) })
+    val successPercentage = calculateSuccess(sdks, commits, testLookup)
     sdks =
       sdks
         .filter { s: String? -> successPercentage[s] != 100 }
@@ -166,8 +163,8 @@ class TestReportGenerator(private val apiToken: String) {
     for (sdk in sdks) {
       output.append("\n| $sdk |")
       for (commit in commits) {
-        if (lookup.containsKey(Pair.of(sdk, commit))) {
-          val report: TestReport = lookup[Pair.of(sdk, commit)]!!
+        if (testLookup.containsKey(Pair.of(sdk, commit))) {
+          val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
           val icon =
             when (report.status) {
               TestReport.Status.SUCCESS -> "✅"
@@ -190,6 +187,7 @@ class TestReportGenerator(private val apiToken: String) {
       output.append(" |")
     }
     output.append("\n")
+    val passingSdks = successPercentage.values.count { it == 100 }
     if (passingSdks > 0) {
       output.append("\n*+$passingSdks passing SDKs")
     }
@@ -309,7 +307,7 @@ class TestReportGenerator(private val apiToken: String) {
         }
         .uri(uri)
         .header("Authorization", "Bearer $apiToken")
-        .header("X-GitHub-Api-Version", "2022-11-28")
+        .header("X-GitHub-Api-Version", GITHUB_API_VERSION)
         .build()
     try {
       val response = client.send(request, HttpResponse.BodyHandlers.ofString())
@@ -347,11 +345,7 @@ class TestReportGenerator(private val apiToken: String) {
                   json.keys.associateWith { key: String ->
                     if (json[key] is JsonArray && p.containsKey(key) && p[key] is JsonArray) {
                       return@associateWith JsonArray(
-                        Stream.concat(
-                            (json[key] as JsonArray).stream(),
-                            (p[key] as JsonArray).stream(),
-                          )
-                          .toList()
+                        (json[key] as JsonArray) + (p[key] as JsonArray)
                       )
                     }
                     return@associateWith json[key]!!
@@ -373,5 +367,6 @@ class TestReportGenerator(private val apiToken: String) {
 
   companion object {
     private const val URL_PREFIX = "https://api.github.com/repos/firebase/firebase-android-sdk/"
+    private const val GITHUB_API_VERSION = "2022-11-28"
   }
 }

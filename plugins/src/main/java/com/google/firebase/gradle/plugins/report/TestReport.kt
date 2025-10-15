@@ -16,7 +16,7 @@
 package com.google.firebase.gradle.plugins.report
 
 /**
- * Represents a single run of a test in CI. One unit/implementation test workflow run creates many
+ * Represents a single run of a test in CI. One unit/instrumentation test workflow run creates many
  * `TestReport`s, one for each tested SDK.
  *
  * @param name SDK name of the associated test run.
