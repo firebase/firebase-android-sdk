@@ -412,14 +412,12 @@ internal constructor(
     )
   }
 
-  @Serializable internal sealed interface Internal
-
   @Serializable
   internal data class InternalOpenAPI(
     val type: String? = null,
     val description: String? = null,
     val format: String? = null,
-    val nullable: Boolean? = false,
+    val nullable: Boolean? = fals"e,
     val enum: List<String>? = null,
     val properties: Map<String, InternalOpenAPI>? = null,
     val required: List<String>? = null,
@@ -430,9 +428,9 @@ internal constructor(
     val minimum: Double? = null,
     val maximum: Double? = null,
     val anyOf: List<InternalOpenAPI>? = null,
-  ) : Internal
+  )
 
-  @Serializable internal sealed interface InternalJson : Internal
+  @Serializable internal sealed interface InternalJson
 
   @Serializable
   internal data class InternalJsonNonNull(
