@@ -36,6 +36,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -966,7 +967,12 @@ class SQLiteDatabaseExtsUnitTest {
 
   private companion object {
 
-    @OptIn(ExperimentalKotest::class) val propTestConfig = PropTestConfig(iterations = 10)
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 50,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+      )
 
     fun Cursor.toLongList(): List<Long> = buildList {
       while (moveToNext()) {
