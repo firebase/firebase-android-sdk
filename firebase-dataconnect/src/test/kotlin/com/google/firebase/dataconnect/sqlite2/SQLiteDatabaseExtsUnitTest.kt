@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -185,19 +186,21 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should log the given sql with placeholders replaced`() =
     runTest {
-      sqliteDatabase.execSQL("CREATE TABLE foo (col1 INT, col2 INT)")
-      checkAll(propTestConfig, Arb.int().distinctPair()) { (value1: Int, value2: Int) ->
+      checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
         sqliteDatabase.execSQL(
           mockLogger,
-          "INSERT INTO foo (col1, col2) VALUES (?, ?)",
-          arrayOf(value1, value2)
+          "INSERT INTO $tableName (${columnNames.joinToString()})" +
+            " VALUES (${columnNames.joinToString { "?" }})",
+          values.toTypedArray()
         )
 
         verify {
           mockLogger.log(
             null,
             LogLevel.DEBUG,
-            "INSERT INTO foo (col1, col2) VALUES ($value1, $value2)"
+            "INSERT INTO $tableName (${columnNames.joinToString()}) VALUES (${values.joinToString()})"
           )
         }
       }
@@ -206,23 +209,24 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should log the given sql with indents trimmed`() =
     runTest {
-      sqliteDatabase.execSQL("CREATE TABLE foo (col1 INT, col2 INT)")
-      checkAll(propTestConfig, Arb.int().distinctPair()) { (value1: Int, value2: Int) ->
+      checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
         val sql =
           """
-          INSERT INTO foo
-          (col1, col2) VALUES
-          (?, ?)
+          INSERT INTO $tableName
+          (${columnNames.joinToString()}) VALUES
+          (${columnNames.joinToString { "?" }})
         """
         val expectedLoggedSql =
           """
-            INSERT INTO foo
-            (col1, col2) VALUES
-            ($value1, $value2)
+            INSERT INTO $tableName
+            (${columnNames.joinToString()}) VALUES
+            (${values.joinToString { "$it" }})
           """
             .trimIndent()
 
-        sqliteDatabase.execSQL(mockLogger, sql, arrayOf(value1, value2))
+        sqliteDatabase.execSQL(mockLogger, sql, values.toTypedArray())
 
         verify { mockLogger.log(null, LogLevel.DEBUG, expectedLoggedSql) }
       }
@@ -231,19 +235,20 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should handle placeholder count not matching bindArgs length`() =
     runTest {
-      sqliteDatabase.execSQL("CREATE TABLE foo (col1 INT, col2 INT, col3)")
-      checkAll(propTestConfig, Arb.int().distinctPair()) { (value1: Int, value2: Int) ->
-        sqliteDatabase.execSQL(
-          mockLogger,
-          "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')",
-          arrayOf(value1, value2)
-        )
+      checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size + 1, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        val insertSql =
+          "INSERT INTO $tableName (${columnNames.joinToString()})" +
+            " VALUES ('?', ${values.joinToString { "?" }})"
+
+        sqliteDatabase.execSQL(mockLogger, insertSql, values.toTypedArray())
 
         verify {
           mockLogger.log(
             null,
             LogLevel.DEBUG,
-            "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?') bindArgs={$value1, $value2}"
+            "$insertSql bindArgs={${values.joinToString { "$it" }}}"
           )
         }
       }
@@ -252,44 +257,43 @@ class SQLiteDatabaseExtsUnitTest {
   @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should trim indent when placeholder count not matching bindArgs length`() =
     runTest {
-      sqliteDatabase.execSQL("CREATE TABLE foo (col1 INT, col2 INT, col3)")
-      checkAll(propTestConfig, Arb.int().distinctPair()) { (value1: Int, value2: Int) ->
-        val sql =
+      checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size + 1, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        val insertSql =
           """
-          INSERT INTO foo
-          (col1, col2, col3)
-          VALUES (?, ?, '?')
+          INSERT INTO $tableName (${columnNames.joinToString()})
+          VALUES ('?', ${values.joinToString { "?" }})
         """
-        val expectedSql =
-          """
-          INSERT INTO foo
-          (col1, col2, col3)
-          VALUES (?, ?, '?')
-        """
-            .trimIndent() + " bindArgs={$value1, $value2}"
 
-        sqliteDatabase.execSQL(mockLogger, sql, arrayOf(value1, value2))
+        sqliteDatabase.execSQL(mockLogger, insertSql, values.toTypedArray())
 
-        verify { mockLogger.log(null, LogLevel.DEBUG, expectedSql) }
+        verify {
+          mockLogger.log(
+            null,
+            LogLevel.DEBUG,
+            insertSql.trimIndent() + " bindArgs={${values.joinToString { "$it" }}}"
+          )
+        }
       }
     }
 
   @Test
   fun `execSQL(Logger, sql, bindArgs) Int bindArgs should execute the given sql`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
-      val columnNames = values.indices.map { "col$it" }
-      val createSql = "CREATE TABLE %s (id INT, " + (columnNames.joinToString { "$it INT" }) + ")"
-      val tableName = sqliteDatabase.createTableWithUniqueName(createSql)
-      val insertSql =
-        "INSERT INTO $tableName (${columnNames.joinToString()}) " +
-          "VALUES (${columnNames.joinToString { "?" }})"
-
-      sqliteDatabase.execSQL(mockLogger, insertSql, values.toTypedArray())
+      val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+      val (tableName: String, columnNames: List<String>) = createTableResult
+      sqliteDatabase.execSQL(
+        mockLogger,
+        "INSERT INTO $tableName (${columnNames.joinToString()})" +
+          " VALUES (${columnNames.joinToString { "?" }})",
+        values.toTypedArray()
+      )
 
       val actualRow =
         sqliteDatabase.rawQuery("SELECT * FROM $tableName", null).use { cursor ->
           cursor.moveToNext()
-          columnNames.map { columnName -> cursor.getInt(cursor.getColumnIndex(columnName)) }
+          columnNames.map { cursor.getInt(cursor.getColumnIndex(it)) }
         }
 
       actualRow shouldContainExactly values
@@ -297,105 +301,120 @@ class SQLiteDatabaseExtsUnitTest {
   }
 
   @Test
-  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should log the given sql with placeholders replaced`() {
-    val (value1: Long, value2: Long) = Arb.long().distinctPair().next(rs)
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT)")
+  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should log the given sql with placeholders replaced`() =
+    runTest {
+      checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        sqliteDatabase.execSQL(
+          mockLogger,
+          "INSERT INTO $tableName (${columnNames.joinToString()})" +
+            " VALUES (${columnNames.joinToString { "?" }})",
+          values.toTypedArray()
+        )
 
-    sqliteDatabase.execSQL(
-      mockLogger,
-      "INSERT INTO foo (col1, col2) VALUES (?, ?)",
-      arrayOf(value1, value2)
-    )
-
-    verify {
-      mockLogger.log(null, LogLevel.DEBUG, "INSERT INTO foo (col1, col2) VALUES ($value1, $value2)")
-    }
-  }
-
-  @Test
-  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should log the given sql with indents trimmed`() {
-    val (value1: Long, value2: Long) = Arb.long().distinctPair().next(rs)
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT)")
-    val sql = """
-      INSERT INTO foo
-      (col1, col2) VALUES
-      (?, ?)
-    """
-    val expectedLoggedSql =
-      """
-      INSERT INTO foo
-      (col1, col2) VALUES
-      ($value1, $value2)
-    """
-        .trimIndent()
-
-    sqliteDatabase.execSQL(mockLogger, sql, arrayOf(value1, value2))
-
-    verify { mockLogger.log(null, LogLevel.DEBUG, expectedLoggedSql) }
-  }
-
-  @Test
-  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should handle placeholder count not matching bindArgs length`() {
-    val (value1: Long, value2: Long) = Arb.long().distinctPair().next(rs)
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT, col3)")
-
-    sqliteDatabase.execSQL(
-      mockLogger,
-      "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')",
-      arrayOf(value1, value2)
-    )
-
-    verify {
-      mockLogger.log(
-        null,
-        LogLevel.DEBUG,
-        "INSERT INTO foo (col1, col2, col3) VALUES (?, ?, '?')" + " bindArgs={$value1, $value2}"
-      )
-    }
-  }
-
-  @Test
-  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should trim indent when placeholder count not matching bindArgs length`() {
-    val (value1: Long, value2: Long) = Arb.long().distinctPair().next(rs)
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT, col3)")
-    val sql = """
-      INSERT INTO foo
-      (col1, col2, col3)
-      VALUES (?, ?, '?')
-    """
-    val expectedSql =
-      """
-      INSERT INTO foo
-      (col1, col2, col3)
-      VALUES (?, ?, '?')
-    """
-        .trimIndent() + " bindArgs={$value1, $value2}"
-
-    sqliteDatabase.execSQL(mockLogger, sql, arrayOf(value1, value2))
-
-    verify { mockLogger.log(null, LogLevel.DEBUG, expectedSql) }
-  }
-
-  @Test
-  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should execute the given sql`() {
-    val (value1: Long, value2: Long) = Arb.long().distinctPair().next(rs)
-
-    sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col1 INT, col2 INT)")
-    sqliteDatabase.execSQL(
-      mockLogger,
-      "INSERT INTO foo (col1, col2) VALUES (?, ?)",
-      arrayOf(value1, value2)
-    )
-
-    data class Row(val col1: Long, val col2: Long)
-    val values = buildList {
-      sqliteDatabase.rawQuery("SELECT col1, col2 FROM foo", null).use { cursor ->
-        while (cursor.moveToNext()) {
-          add(Row(cursor.getLong(0), cursor.getLong(1)))
+        verify {
+          mockLogger.log(
+            null,
+            LogLevel.DEBUG,
+            "INSERT INTO $tableName (${columnNames.joinToString()}) VALUES (${values.joinToString()})"
+          )
         }
       }
     }
-    values.shouldContainExactly(Row(value1, value2))
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should log the given sql with indents trimmed`() =
+    runTest {
+      checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        val sql =
+          """
+          INSERT INTO $tableName
+          (${columnNames.joinToString()}) VALUES
+          (${columnNames.joinToString { "?" }})
+        """
+        val expectedLoggedSql =
+          """
+            INSERT INTO $tableName
+            (${columnNames.joinToString()}) VALUES
+            (${values.joinToString { "$it" }})
+          """
+            .trimIndent()
+
+        sqliteDatabase.execSQL(mockLogger, sql, values.toTypedArray())
+
+        verify { mockLogger.log(null, LogLevel.DEBUG, expectedLoggedSql) }
+      }
+    }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should handle placeholder count not matching bindArgs length`() =
+    runTest {
+      checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size + 1, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        val insertSql =
+          "INSERT INTO $tableName (${columnNames.joinToString()})" +
+            " VALUES ('?', ${values.joinToString { "?" }})"
+
+        sqliteDatabase.execSQL(mockLogger, insertSql, values.toTypedArray())
+
+        verify {
+          mockLogger.log(
+            null,
+            LogLevel.DEBUG,
+            "$insertSql bindArgs={${values.joinToString { "$it" }}}"
+          )
+        }
+      }
+    }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should trim indent when placeholder count not matching bindArgs length`() =
+    runTest {
+      checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+        val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size + 1, "INT")
+        val (tableName: String, columnNames: List<String>) = createTableResult
+        val insertSql =
+          """
+          INSERT INTO $tableName (${columnNames.joinToString()})
+          VALUES ('?', ${values.joinToString { "?" }})
+        """
+
+        sqliteDatabase.execSQL(mockLogger, insertSql, values.toTypedArray())
+
+        verify {
+          mockLogger.log(
+            null,
+            LogLevel.DEBUG,
+            insertSql.trimIndent() + " bindArgs={${values.joinToString { "$it" }}}"
+          )
+        }
+      }
+    }
+
+  @Test
+  fun `execSQL(Logger, sql, bindArgs) Long bindArgs should execute the given sql`() = runTest {
+    checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
+      val createTableResult = sqliteDatabase.createTableWithColumnCount(values.size, "INT")
+      val (tableName: String, columnNames: List<String>) = createTableResult
+      sqliteDatabase.execSQL(
+        mockLogger,
+        "INSERT INTO $tableName (${columnNames.joinToString()})" +
+          " VALUES (${columnNames.joinToString { "?" }})",
+        values.toTypedArray()
+      )
+
+      val actualRow =
+        sqliteDatabase.rawQuery("SELECT * FROM $tableName", null).use { cursor ->
+          cursor.moveToNext()
+          columnNames.map { cursor.getLong(cursor.getColumnIndex(it)) }
+        }
+
+      actualRow shouldContainExactly values
+    }
   }
 
   @Test
@@ -1070,7 +1089,7 @@ class SQLiteDatabaseExtsUnitTest {
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col INT)")
 
     checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { values: List<Int> ->
-      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val setupResult = sqliteDatabase.setupTableForRawQueryTesting("foo", "col", values)
       val bindArgs = setupResult.someValues(randomSource())
       val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
       val sql =
@@ -1178,7 +1197,7 @@ class SQLiteDatabaseExtsUnitTest {
     sqliteDatabase.execSQL(mockLogger, "CREATE TABLE foo (col INT)")
 
     checkAll(propTestConfig, Arb.list(Arb.long(), 1..10)) { values: List<Long> ->
-      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val setupResult = sqliteDatabase.setupTableForRawQueryTesting("foo", "col", values)
       val bindArgs = setupResult.someValues(randomSource())
       val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
       val sql =
@@ -1287,7 +1306,7 @@ class SQLiteDatabaseExtsUnitTest {
 
     checkAll(propTestConfig, Arb.list(Arb.sqlite.roundTrippableFloat(), 1..10)) {
       values: List<Float> ->
-      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val setupResult = sqliteDatabase.setupTableForRawQueryTesting("foo", "col", values)
       val bindArgs = setupResult.someValues(randomSource())
       val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
       val sql =
@@ -1396,7 +1415,7 @@ class SQLiteDatabaseExtsUnitTest {
 
     checkAll(propTestConfig, Arb.list(Arb.sqlite.roundTrippableDouble(), 1..10)) {
       values: List<Double> ->
-      val setupResult = sqliteDatabase.setupTableForTesting("foo", "col", values)
+      val setupResult = sqliteDatabase.setupTableForRawQueryTesting("foo", "col", values)
       val bindArgs = setupResult.someValues(randomSource())
       val expectedRowIds = setupResult.rowIdsForValues(bindArgs)
       val sql =
@@ -1415,7 +1434,7 @@ class SQLiteDatabaseExtsUnitTest {
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  private data class SetupTableForTestingResult<T>(val valueByRowId: Map<Long, T>) {
+  private data class SetupTableForRawQueryTestingResult<T>(val valueByRowId: Map<Long, T>) {
     fun someValues(rs: RandomSource): List<T> {
       val values = valueByRowId.values.toList()
       if (values.size <= 1) {
@@ -1473,10 +1492,48 @@ class SQLiteDatabaseExtsUnitTest {
 
     fun nextId(): Long = nextIdAtomic.incrementAndGet()
 
-    private fun SQLiteDatabase.createTableWithUniqueName(sql: String): String {
+    fun SQLiteDatabase.createTableWithUniqueName(sql: String): String {
       val tableName = "table${nextId()}"
       execSQL(sql.replace("%s", tableName))
       return tableName
+    }
+
+    fun SQLiteDatabase.createTableWithColumnCount(
+      columnCount: Int,
+      columnType: String
+    ): CreateTableWithColumnCountResult {
+      val tableName = "table${nextId()}"
+      val columnNames = List(columnCount) { "col$it" }
+      val sql = "CREATE TABLE $tableName (${columnNames.joinToString { "$it $columnType" }})"
+      execSQL(sql)
+      return CreateTableWithColumnCountResult(tableName, columnNames)
+    }
+
+    private inline fun <reified T> SQLiteDatabase.setupTableForRawQueryTesting(
+      tableName: String,
+      columnName: String,
+      values: Iterable<T>
+    ): SetupTableForRawQueryTestingResult<T> {
+      execSQL("DELETE FROM $tableName")
+      val valueByRowId = buildMap {
+        beginTransaction()
+        try {
+          values.forEach { value ->
+            execSQL("INSERT INTO $tableName ($columnName) VALUES (?)", arrayOf(value))
+            val lastInsertRowId =
+              rawQuery("SELECT last_insert_rowid()", null).use { cursor ->
+                cursor.moveToNext().shouldBeTrue()
+                cursor.getLong(0)
+              }
+            put(lastInsertRowId, value)
+          }
+          setTransactionSuccessful()
+        } finally {
+          endTransaction()
+        }
+      }
+
+      return SetupTableForRawQueryTestingResult(valueByRowId)
     }
   }
 }
