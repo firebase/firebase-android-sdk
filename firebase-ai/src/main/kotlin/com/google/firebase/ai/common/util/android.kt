@@ -21,6 +21,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.yield
 
 /**
@@ -39,7 +40,7 @@ internal val AudioRecord.minBufferSize: Int
 internal fun AudioRecord.readAsFlow() = callbackFlow {
   val buffer = ByteArray(minBufferSize)
 
-  while (true) {
+  while (isActive) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
       // TODO(vguthal): Investigate if both yield and delay are required.
       delay(10.milliseconds)
