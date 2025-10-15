@@ -16,48 +16,149 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
+import com.google.firebase.dataconnect.testutil.shouldNotContainLoneSurrogates
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.sequences.shouldHaveSize
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.of
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
 import io.kotest.property.checkAll
-import io.kotest.property.exhaustive.of
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class SQLiteArbsUnitTest {
 
   @Test
-  fun `stringWithApostrophes should generate strings with apostrophes`() = runTest {
-    val strings = listOf("", "jjpr5vt2c5", "h6ve394y6f", "mqf4q8cve6", "tty5xj523r", "yvk8tbrjg7")
-    val stringArb = Arb.of(strings)
-    val apostropheCountArb = 1..10
-    checkAll(200, Arb.sqlite.stringWithApostrophes(stringArb, apostropheCountArb)) { testCase ->
-      testCase.run {
-        assertSoftly {
-          withClue("stringWithApostrophes apostrophe count") {
-            stringWithApostrophes.count { it == '\'' } shouldBe testCase.apostropheCount
-          }
-          withClue("stringWithApostrophesEscaped apostrophe count") {
-            val regex = Regex.fromLiteral("''")
-            regex.findAll(stringWithApostrophesEscaped) shouldHaveSize testCase.apostropheCount
-          }
-          val stringWithApostrophesWithoutApostrophes =
-            stringWithApostrophes.filterNot { it == '\'' }
-          val stringWithApostrophesEscapedWithoutApostrophes =
-            stringWithApostrophesEscaped.filterNot { it == '\'' }
-          withClue("stringWithApostrophesWithoutApostrophes") {
-            strings shouldContain stringWithApostrophesWithoutApostrophes
-          }
-          withClue("stringWithApostrophesEscapedWithoutApostrophes") {
-            stringWithApostrophesEscapedWithoutApostrophes shouldBe
-              stringWithApostrophesWithoutApostrophes
-          }
-        }
-      }
+  fun `nullColumnValue should always return a NullColumnValue instance`() = runTest {
+    checkAll(propTestConfig, Arb.sqlite.nullColumnValue()) { value ->
+      value shouldBe SQLiteArbs.NullColumnValue
     }
+  }
+
+  @Test
+  fun `intColumnValue should generate IntColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<Int>()
+    checkAll(propTestConfig, Arb.sqlite.intColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues shouldContain 0
+      bindArgsValues shouldContain 1
+      bindArgsValues shouldContain -1
+      bindArgsValues shouldContain Int.MIN_VALUE
+      bindArgsValues shouldContain Int.MAX_VALUE
+      bindArgsValues.count { it < 0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it > 0 } shouldBeGreaterThan 200
+    }
+  }
+
+  @Test
+  fun `longColumnValue should generate LongColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<Long>()
+    checkAll(propTestConfig, Arb.sqlite.longColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues shouldContain 0
+      bindArgsValues shouldContain 1
+      bindArgsValues shouldContain -1
+      bindArgsValues shouldContain Long.MIN_VALUE
+      bindArgsValues shouldContain Long.MAX_VALUE
+      bindArgsValues.count { it < 0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it > 0 } shouldBeGreaterThan 200
+    }
+  }
+
+  @Test
+  fun `floatColumnValue should generate FloatColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<Float>()
+    checkAll(propTestConfig, Arb.sqlite.floatColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues shouldContain 0.0f
+      bindArgsValues shouldContain -0.0f
+      bindArgsValues shouldContain Float.MIN_VALUE
+      bindArgsValues shouldContain Float.MAX_VALUE
+      bindArgsValues shouldContain Float.POSITIVE_INFINITY
+      bindArgsValues shouldContain Float.NEGATIVE_INFINITY
+      bindArgsValues.count { it < 0.0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it > 0.0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it.isNaN() } shouldBeGreaterThan 1
+    }
+  }
+
+  @Test
+  fun `doubleColumnValue should generate DoubleColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<Double>()
+    checkAll(propTestConfig, Arb.sqlite.doubleColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues shouldContain 0.0f
+      bindArgsValues shouldContain -0.0f
+      bindArgsValues shouldContain Double.MIN_VALUE
+      bindArgsValues shouldContain Double.MAX_VALUE
+      bindArgsValues shouldContain Double.POSITIVE_INFINITY
+      bindArgsValues shouldContain Double.NEGATIVE_INFINITY
+      bindArgsValues.count { it < 0.0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it > 0.0 } shouldBeGreaterThan 200
+      bindArgsValues.count { it.isNaN() } shouldBeGreaterThan 1
+    }
+  }
+
+  @Test
+  fun `stringColumnValue should generate StringColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<String>()
+    checkAll(propTestConfig, Arb.sqlite.stringColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues shouldContain ""
+      bindArgsValues.count { it.replace("'", "").isEmpty() } shouldBeGreaterThan 0
+      bindArgsValues.count { it.startsWith("'") } shouldBeGreaterThan 0
+      bindArgsValues.count { it.endsWith("'") } shouldBeGreaterThan 0
+      bindArgsValues.count { it.startsWith("'") && it.endsWith("'") } shouldBeGreaterThan 0
+    }
+  }
+
+  @Test
+  fun `stringColumnValue should not produce lone surrogates`() = runTest {
+    checkAll(propTestConfig, Arb.sqlite.stringColumnValue()) { value ->
+      value.bindArgsValue.shouldNotContainLoneSurrogates()
+    }
+  }
+
+  @Test
+  fun `columnValue should generate all ColumnValue types`() = runTest {
+    val columnValues = mutableListOf<SQLiteArbs.ColumnValue<*>>()
+    checkAll(propTestConfig, Arb.sqlite.columnValue()) { value -> columnValues.add(value) }
+
+    assertSoftly {
+      columnValues.count { it is SQLiteArbs.NullColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.IntColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.LongColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.FloatColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.DoubleColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.StringColumnValue } shouldBeGreaterThan 10
+    }
+  }
+
+  private companion object {
+
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 1000,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5)
+      )
   }
 }
