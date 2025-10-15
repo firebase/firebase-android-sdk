@@ -28,6 +28,7 @@ import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
+import com.google.firebase.ai.type.MediaData.Internal
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -195,6 +196,8 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
+                var x = it.readBytes().toString(Charsets.UTF_8)
+                Log.d(TAG, x)
                 JSON.decodeFromString<InternalLiveServerMessage>(
                   it.readBytes().toString(Charsets.UTF_8)
                 )
@@ -262,11 +265,15 @@ internal constructor(
    * @param audio The audio data to send.
    */
   public suspend fun sendAudioRealtime(audio: InlineDataPart) {
-    val msg = bidiGenerateContentRealtimeInput { this.audio = audio }
+    Log.d(TAG, "sendAudioRealtime called with audio data")
+    val msg = BidiGenerateContentRealtimeInputSetup(audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal())
     FirebaseAIException.catchAsync {
       val jsonString = Json.encodeToString(msg.toInternal())
       session.send(Frame.Text(jsonString))
+      Log.d(TAG, jsonString)
+      Log.d(TAG, "sendAudioRealtime sent audio data size: ${jsonString.length}")
     }
+    Log.d(TAG, "finish sending audio data")
   }
 
   /**
@@ -313,6 +320,7 @@ internal constructor(
         Json.encodeToString(
           BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
         )
+      Log.d(TAG, jsonString)
       session.send(Frame.Text(jsonString))
     }
   }
@@ -362,12 +370,13 @@ internal constructor(
 
   /** Listen to the user's microphone and send the data to the model. */
   private fun recordUserAudio() {
+    // ?.onEach { sendAudioRealtime(InlineDataPart (it, "audio/pcm")) }
     // Buffer the recording so we can keep recording while data is sent to the server
     audioHelper
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
+      ?.onEach { sendAudioRealtime(InlineDataPart(it, "audio/pcm")) }
       ?.catch { throw FirebaseAIException.from(it) }
       ?.launchIn(scope)
   }
@@ -507,15 +516,24 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class BidiGenerateContentRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
+  internal class BidiGenerateContentRealtimeInputSetup(
+    val mediaChunks: List<MediaData.Internal>? = null,
+    val audio: MediaData.Internal? = null,
+    val video: MediaData.Internal? = null,
+    val text: String? = null
+  ) {
     @Serializable
     internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
       @Serializable
       internal data class BidiGenerateContentRealtimeInput(
-        val mediaChunks: List<MediaData.Internal>
+        val mediaChunks: List<MediaData.Internal>?,
+        val audio: MediaData.Internal?,
+        val video: MediaData.Internal?,
+        val text: String?
       )
     }
-    fun toInternal() = Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks))
+    fun toInternal() =
+      Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks, audio, video, text))
   }
 
   private companion object {
