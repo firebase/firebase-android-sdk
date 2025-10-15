@@ -374,7 +374,7 @@ internal constructor(
             if (it.interrupted) {
               playBackQueue.clear()
             } else {
-              println("Sending audio parts")
+              println("Queuing audio parts from model")
               val audioParts = it.content?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
               for (part in audioParts) {
                 playBackQueue.add(part.inlineData)
