@@ -26,7 +26,6 @@ import kotlinx.serialization.Serializable
  * means the image is permitted to be lower quality to reduce size. This parameter is not relevant
  * for every MIME type.
  */
-@PublicPreviewAPI
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
 

@@ -170,7 +170,6 @@ internal constructor(
    * @return The initialized [ImagenModel] instance.
    */
   @JvmOverloads
-  @PublicPreviewAPI
   public fun imagenModel(
     modelName: String,
     generationConfig: ImagenGenerationConfig? = null,

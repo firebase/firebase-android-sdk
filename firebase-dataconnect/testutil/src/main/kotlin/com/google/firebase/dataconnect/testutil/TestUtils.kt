@@ -136,7 +136,7 @@ const val MAX_SAFE_INTEGER = 9007199254740991.0
 /**
  * Generates and returns a random, valid string suitable to be the "name" of a [FirebaseApp].
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "fmfbm74g32").
+ * for correlating the application ID with its call site (for example, "fmfbm74g32").
  */
 fun randomAppName(key: String) = "appName-$key-${Random.nextAlphanumericString(length = 8)}"
 
@@ -144,14 +144,14 @@ fun randomAppName(key: String) = "appName-$key-${Random.nextAlphanumericString(l
  * Generates and returns a random, valid string suitable to be the "applicationId" of a
  * [FirebaseApp].
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "axqm2rajxv").
+ * for correlating the application ID with its call site (for example, "axqm2rajxv").
  */
 fun randomApplicationId(key: String) = "appId-$key-${Random.nextAlphanumericString(length = 8)}"
 
 /**
  * Generates and returns a random, valid string suitable to be the "projectId" of a [FirebaseApp].
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "ncdd6n863r").
+ * for correlating the application ID with its call site (for example, "ncdd6n863r").
  */
 @Deprecated(
   "use Arb.projectId() from Arbs.kt instead",
@@ -163,7 +163,7 @@ fun randomProjectId(key: String) = "projId-$key-${Random.nextAlphanumericString(
 /**
  * Generates and returns a random, valid string suitable to be a host name in [DataConnectSettings].
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "cxncg4zbvb").
+ * for correlating the application ID with its call site (for example, "cxncg4zbvb").
  */
 fun randomHost(key: String) = "host.$key.${Random.nextAlphanumericString(length = 8)}"
 
@@ -172,7 +172,7 @@ fun randomSslEnabled() = Random.nextBoolean()
 
 /**
  * Generates and returns a new [DataConnectSettings] object with random values.
- * @param hostKey A value to specify to [randomHost] (e.g. "wqxhf5apez").
+ * @param hostKey A value to specify to [randomHost] (for example, "wqxhf5apez").
  */
 fun randomDataConnectSettings(hostKey: String) =
   DataConnectSettings(host = randomHost(hostKey), sslEnabled = randomSslEnabled())
@@ -180,7 +180,7 @@ fun randomDataConnectSettings(hostKey: String) =
 /**
  * Generates and returns a random, valid string suitable for a "request ID".
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "9p6dyyr2zp").
+ * for correlating the application ID with its call site (for example, "9p6dyyr2zp").
  */
 @Deprecated(
   "use Arb.requestId() from Arbs.kt instead",
@@ -192,7 +192,7 @@ fun randomRequestId(key: String) = "requestId_${key}_${Random.nextAlphanumericSt
 /**
  * Generates and returns a random, valid string suitable for [OperationRef.operationName].
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "sc4kc7mqba").
+ * for correlating the application ID with its call site (for example, "sc4kc7mqba").
  */
 @Deprecated(
   "use Arb.requestId() from Arbs.kt instead",

@@ -67,7 +67,7 @@ dokka {
 
 // The remaining code in this file can be omitted from customer facing
 // documentation. It's here just to make things compile and/or configure
-// optional components of the build (e.g. spotless code formatting).
+// optional components of the build (for example, spotless code formatting).
 
 android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"

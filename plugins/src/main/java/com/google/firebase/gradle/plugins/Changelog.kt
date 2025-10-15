@@ -326,7 +326,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
  */
 data class Change(val type: ChangeType, val message: String) {
 
-  override fun toString(): String = "* [$type] $message"
+  override fun toString(): String = "- [$type] $message"
 
   companion object {
     /**

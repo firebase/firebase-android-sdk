@@ -1,5 +1,11 @@
 # Unreleased
 
+# 3.0.3
+
+- [fixed] Made creating DataStore files more resilient (#7440)
+
+# 3.0.2
+
 - [changed] Bumped internal dependencies.
 
 # 3.0.1

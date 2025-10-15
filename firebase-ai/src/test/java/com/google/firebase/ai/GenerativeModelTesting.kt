@@ -23,6 +23,7 @@ import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
@@ -41,7 +42,6 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import org.junit.Before
 import org.junit.Test
@@ -72,7 +72,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
@@ -84,7 +84,7 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         systemInstruction = content { text("system instruction") },
         controller = apiController
       )
@@ -120,7 +120,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -133,7 +133,7 @@ internal class GenerativeModelTesting {
     // Creating the
     val generativeModel =
       GenerativeModel(
-        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-1.5-flash",
+        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
         controller = apiController
       )
 
@@ -146,7 +146,7 @@ internal class GenerativeModelTesting {
     exception.message shouldContain "location"
   }
 
-  @OptIn(ExperimentalSerializationApi::class)
+  @OptIn(PublicPreviewAPI::class)
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
       GenerateContentResponse.Internal(
