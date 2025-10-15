@@ -38,10 +38,10 @@ import java.util.concurrent.Executor
 import javax.inject.Named
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
@@ -87,7 +87,7 @@ internal constructor(
       try {
         URL(regionOrCustomDomain)
         false
-      } catch (malformedURLException: MalformedURLException) {
+      } catch (_: MalformedURLException) {
         true
       }
     if (isRegion) {
@@ -227,8 +227,8 @@ internal constructor(
     val encoded = serializer.encode(data)
     body["data"] = encoded
     val bodyJSON = JSONObject(body)
-    val contentType = MediaType.parse("application/json")
-    val requestBody = RequestBody.create(contentType, bodyJSON.toString())
+    val contentType = "application/json".toMediaTypeOrNull()
+    val requestBody = bodyJSON.toString().toRequestBody(contentType)
     var request = Request.Builder().url(url).post(requestBody)
     if (context!!.authToken != null) {
       request = request.header("Authorization", "Bearer " + context.authToken)
@@ -268,8 +268,8 @@ internal constructor(
 
         @Throws(IOException::class)
         override fun onResponse(ignored: Call, response: Response) {
-          val code = fromHttpStatus(response.code())
-          val bodyAsString = response.body()!!.string()
+          val code = fromHttpStatus(response.code)
+          val bodyAsString = response.body!!.string()
           val exception = fromResponse(code, bodyAsString, serializer)
           if (exception != null) {
             tcs.setException(exception)
