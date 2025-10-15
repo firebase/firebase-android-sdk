@@ -221,7 +221,18 @@ object SQLiteArbs {
       readBackNullableValue = bindArgsValue,
       sqliteColumnType = "TEXT",
       getValueFromCursor = { getString(it) },
-    )
+    ) {
+    companion object {
+      fun fromValueAndEscapedValue(
+        bindArgsValue: String,
+        bindArgsValueEscaped: String,
+      ): StringColumnValue =
+        StringColumnValue(
+          bindArgsValue = bindArgsValue,
+          loggedValue = "'$bindArgsValueEscaped'",
+        )
+    }
+  }
 
   /**
    * The same as [String.drop] except that if the drop would break up a surrogate pair, causing a
@@ -285,43 +296,43 @@ object SQLiteArbs {
         loggedValue.insert(insertIndex, "''")
       }
 
-      return StringColumnValue(
+      return StringColumnValue.fromValueAndEscapedValue(
         bindArgsValue = bindArgsValue.toString(),
-        loggedValue = loggedValue.toString(),
+        bindArgsValueEscaped = loggedValue.toString(),
       )
     }
 
     override fun edgecase(rs: RandomSource): StringColumnValue =
       when (EdgeCase.entries.random(rs.random)) {
         EdgeCase.EmptyString ->
-          StringColumnValue(
+          StringColumnValue.fromValueAndEscapedValue(
             bindArgsValue = "",
-            loggedValue = "",
+            bindArgsValueEscaped = "",
           )
         EdgeCase.OnlyApostrophes ->
           string.next(rs).let {
-            StringColumnValue(
+            StringColumnValue.fromValueAndEscapedValue(
               bindArgsValue = "'".repeat(it.length),
-              loggedValue = "''".repeat(it.length),
+              bindArgsValueEscaped = "''".repeat(it.length),
             )
           }
         EdgeCase.BeginsWithApostrophes ->
           nonEmptyStringWithoutApostrophes.next(rs).let {
             val leadingApostropheCount = rs.random.nextInt(1..it.length)
-            StringColumnValue(
+            StringColumnValue.fromValueAndEscapedValue(
               bindArgsValue =
                 "'".repeat(leadingApostropheCount) + it.surrogateSafeDrop(leadingApostropheCount),
-              loggedValue =
+              bindArgsValueEscaped =
                 "''".repeat(leadingApostropheCount) + it.surrogateSafeDrop(leadingApostropheCount),
             )
           }
         EdgeCase.EndsWithApostrophes ->
           nonEmptyStringWithoutApostrophes.next(rs).let {
             val trailingApostropheCount = rs.random.nextInt(1..it.length)
-            StringColumnValue(
+            StringColumnValue.fromValueAndEscapedValue(
               bindArgsValue =
                 it.surrogateSafeDrop(trailingApostropheCount) + "'".repeat(trailingApostropheCount),
-              loggedValue =
+              bindArgsValueEscaped =
                 it.surrogateSafeDrop(trailingApostropheCount) +
                   "''".repeat(trailingApostropheCount),
             )
@@ -329,20 +340,20 @@ object SQLiteArbs {
         EdgeCase.BeginsAndEndsWithApostrophes ->
           nonEmptyStringWithoutApostrophes.next(rs).let {
             if (it.length <= 2) {
-              StringColumnValue(
+              StringColumnValue.fromValueAndEscapedValue(
                 bindArgsValue = "'".repeat(it.length),
-                loggedValue = "''".repeat(it.length),
+                bindArgsValueEscaped = "''".repeat(it.length),
               )
             } else {
               val leadingApostropheCount = rs.random.nextInt(1..it.length - 2)
               val trailingApostropheCount =
                 rs.random.nextInt(1..it.length - 1 - leadingApostropheCount)
-              StringColumnValue(
+              StringColumnValue.fromValueAndEscapedValue(
                 bindArgsValue =
                   "'".repeat(leadingApostropheCount) +
                     it.surrogateSafeDrop(leadingApostropheCount + trailingApostropheCount) +
                     "'".repeat(trailingApostropheCount),
-                loggedValue =
+                bindArgsValueEscaped =
                   "''".repeat(leadingApostropheCount) +
                     it.surrogateSafeDrop(leadingApostropheCount + trailingApostropheCount) +
                     "''".repeat(trailingApostropheCount),
