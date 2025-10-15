@@ -276,7 +276,7 @@ object SQLiteArbs {
           containsApostropheProbability == 0.0f ||
           rs.random.nextFloat() > containsApostropheProbability
       ) {
-        return StringColumnValue(originalString, originalString)
+        return StringColumnValue.fromValueAndEscapedValue(originalString, originalString)
       }
 
       val apostropheCount = rs.random.nextInt(1..originalString.length)
