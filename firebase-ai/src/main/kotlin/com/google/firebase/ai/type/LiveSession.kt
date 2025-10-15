@@ -51,7 +51,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -122,7 +121,6 @@ internal constructor(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
     enableInterruptions: Boolean = false,
   ) {
-
     val context = firebaseApp.applicationContext
     if (
       ContextCompat.checkSelfPermission(context, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
@@ -203,7 +201,7 @@ internal constructor(
                 )
               }
               ?.let { emit(it.toPublic()) }
-            yield()
+            delay(0)
           }
         }
         .onCompletion { stopAudioConversation() }
