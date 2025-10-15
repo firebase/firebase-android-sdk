@@ -412,6 +412,7 @@ internal constructor(
           }
           yield()
         } else {
+          println("Playing audio data")
           /**
            * We pause the recording while the model is speaking to avoid interrupting it because of
            * no echo cancellation
