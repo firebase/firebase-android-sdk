@@ -76,10 +76,6 @@ internal object DataConnectSQLiteDatabaseOpener {
       // https://www.sqlite.org/pragma.html#pragma_cell_size_check
       sqliteDatabase.execSQL("PRAGMA cell_size_check = true")
 
-      // Explicitly specify UTF-8 as the text encoding in the database.
-      // https://www.sqlite.org/pragma.html#pragma_encoding
-      sqliteDatabase.execSQL("PRAGMA encoding = 'UTF-8'")
-
       sqliteDatabase.setTransactionSuccessful()
     } finally {
       sqliteDatabase.endTransaction()
