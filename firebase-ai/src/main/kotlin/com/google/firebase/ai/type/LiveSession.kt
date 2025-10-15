@@ -265,16 +265,16 @@ internal constructor(
    * @param audio The audio data to send.
    */
   public suspend fun sendAudioRealtime(audio: InlineDataPart) {
-    val msg =
-      BidiGenerateContentRealtimeInputSetup(
-        audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal()
-      )
     FirebaseAIException.catchAsync {
-      val jsonString = Json.encodeToString(msg.toInternal())
+      val jsonString =
+        Json.encodeToString(
+          BidiGenerateContentRealtimeInputSetup(
+              audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal()
+            )
+            .toInternal()
+        )
       session.send(Frame.Text(jsonString))
-      Log.d(TAG, "sendAudioRealtime sent audio data size: ${jsonString.length}")
     }
-    Log.d(TAG, "finish sending audio data")
   }
 
   /**
@@ -284,16 +284,16 @@ internal constructor(
    * @param video The video data to send. Video MIME type could be either video or image.
    */
   public suspend fun sendVideoRealtime(video: InlineDataPart) {
-    val msg =
-      BidiGenerateContentRealtimeInputSetup(
-        video = MediaData(video.inlineData, mimeType = video.mimeType).toInternal()
-      )
     FirebaseAIException.catchAsync {
-      val jsonString = Json.encodeToString(msg.toInternal())
+      val jsonString =
+        Json.encodeToString(
+          BidiGenerateContentRealtimeInputSetup(
+              video = MediaData(video.inlineData, mimeType = video.mimeType).toInternal()
+            )
+            .toInternal()
+        )
       session.send(Frame.Text(jsonString))
-      Log.d(TAG, "sendVideoRealtime sent video data size: ${jsonString.length}")
     }
-    Log.d(TAG, "finish sending video data")
   }
 
   /**
@@ -303,13 +303,11 @@ internal constructor(
    * @param text The text data to send.
    */
   public suspend fun sendTextRealtime(text: String) {
-    val msg = BidiGenerateContentRealtimeInputSetup(text = text)
     FirebaseAIException.catchAsync {
-      val jsonString = Json.encodeToString(msg.toInternal())
+      val jsonString =
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
       session.send(Frame.Text(jsonString))
-      Log.d(TAG, "sendTextRealtime sent text data size: ${jsonString.length}")
     }
-    Log.d(TAG, "finish sending text data")
   }
 
   /**
