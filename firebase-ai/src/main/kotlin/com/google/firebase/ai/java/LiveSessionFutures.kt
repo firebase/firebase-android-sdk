@@ -90,12 +90,12 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation] or [close].
    *
-   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
-   * ongoing reply.
-   *
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
    * transcript. The first [Transcription] object is the input transcription, and the second is the
    * output transcription
+   * 
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
    *
    * **WARNING**: The user interruption feature relies on device-specific support, and may not be
    * consistently available.
