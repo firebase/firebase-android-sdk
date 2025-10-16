@@ -19,6 +19,7 @@ package com.google.firebase.ai.type
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.google.firebase.ai.type.ImagenImageFormat.Internal
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -161,14 +162,22 @@ internal constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("inlineData") val inlineData: InlineData,
+    @SerialName("inlineData") val inlineData: InlineData.Internal,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null
-  ) : InternalPart {
+  ) : InternalPart
+}
 
-    @Serializable
-    internal data class InlineData(@SerialName("mimeType") val mimeType: String, val data: Base64)
-  }
+/**
+ * Represents binary data with an associated MIME type.
+ * @property data the binary data as a [ByteArray]
+ * @property mimeType an IANA standard MIME type.
+ */
+public class InlineData(public val data: ByteArray, public val mimeType: String) {
+  @Serializable internal data class Internal(val mimeType: String, val data: Base64)
+
+  internal fun toInternal() =
+    Internal(mimeType, android.util.Base64.encodeToString(data, BASE_64_FLAGS))
 }
 
 /** Represents function call name and params received from requests. */
@@ -334,13 +343,13 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image)),
+        InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image)),
         isThought,
         thoughtSignature
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData(
+        InlineData.Internal(
           mimeType,
           android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
         ),
