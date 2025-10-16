@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabaseMigrator.InvalidApplicationIdException
+import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabaseMigrator.InvalidUserVersionException
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
@@ -105,6 +106,55 @@ class DataConnectCacheDatabaseMigratorUnitTest {
         exception.message shouldContainWithNonAbuttingTextIgnoringCase applicationId.to0xHexString()
         exception.message shouldContainWithNonAbuttingText 0x7f1bc816.toString()
         exception.message shouldContainWithNonAbuttingTextIgnoringCase 0x7f1bc816.to0xHexString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "aborting"
+      }
+    }
+  }
+
+  @Test
+  fun `migrate() user_version should set the value in a new database`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val userVersion =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
+        db.version
+      }
+    userVersion shouldBe 1
+  }
+
+  @Test
+  fun `migrate() user_version should leave value alone if already correct`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val userVersion =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
+        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
+        db.version
+      }
+    userVersion shouldBe 1
+  }
+
+  @Test
+  fun `migrate() user_version should throw if the value is invalid`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { userVersion ->
+      assume(userVersion != 0 && userVersion != 1)
+      val mockLogger: Logger = mockk(relaxed = true)
+
+      val exception =
+        DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db ->
+          db.version = userVersion
+          shouldThrow<InvalidUserVersionException> {
+            DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
+          }
+        }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "user_version"
+        exception.message shouldContainWithNonAbuttingText "0"
+        exception.message shouldContainWithNonAbuttingText "1"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase userVersion.to0xHexString()
+        exception.message shouldContainWithNonAbuttingText userVersion.toString()
         exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown"
         exception.message shouldContainWithNonAbuttingTextIgnoringCase "aborting"
       }

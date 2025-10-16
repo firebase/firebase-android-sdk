@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import android.annotation.SuppressLint
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -140,8 +139,11 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
         RunMigrationStepResult.StepExecuted(newSchemaVersion = "1.0.0")
       }
       else -> {
-        logger.debug { "user_version $userVersion is unsupported; aborting" }
-        throw InvalidUserVersionException("user_version is $userVersion, but expected 0 or 1")
+        throw InvalidUserVersionException(
+          "user_version $userVersion (${userVersion.to0xHexString()}) is unknown;" +
+            " expected 0 or 1;" +
+            " aborting to avoid corrupting the contents of the database"
+        )
       }
     }
   }
@@ -150,7 +152,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     val schemaVersion: String? =
       sqliteDatabase.rawQuery(logger, "SELECT text FROM metadata WHERE name = 'schema_version'") {
         cursor ->
-        if (cursor.moveToNext() && cursor.getType(0) == Cursor.FIELD_TYPE_STRING) {
+        if (cursor.moveToNext()) {
           cursor.getString(0)
         } else {
           null
