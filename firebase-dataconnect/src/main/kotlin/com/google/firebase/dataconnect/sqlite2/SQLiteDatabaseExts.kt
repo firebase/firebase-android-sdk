@@ -28,16 +28,6 @@ import org.intellij.lang.annotations.Language
 
 internal object SQLiteDatabaseExts {
 
-  fun SQLiteDatabase.getLastInsertRowId(logger: Logger): Long {
-    val lastInsertRowId =
-      rawQuery("SELECT last_insert_rowid()", null).use { cursor ->
-        cursor.moveToNext()
-        cursor.getLong(0)
-      }
-    logger.debug { "SELECT last_insert_rowid() returns $lastInsertRowId" }
-    return lastInsertRowId
-  }
-
   fun SQLiteDatabase.execSQL(logger: Logger, @Language("RoomSql") sql: String) {
     logger.debugSql(sql, null)
     execSQL(sql)

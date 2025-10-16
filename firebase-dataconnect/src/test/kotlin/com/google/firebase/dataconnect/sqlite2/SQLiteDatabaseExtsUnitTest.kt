@@ -23,18 +23,15 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.ColumnValue
 import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.StringColumnValue
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
-import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -45,7 +42,6 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
-import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -72,45 +68,6 @@ class SQLiteDatabaseExtsUnitTest {
   private val rs: RandomSource by randomSeedTestRule.rs
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // getLastInsertRowId() unit tests
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  @Test
-  fun `getLastInsertRowId() should not throw if executed before any inserts`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-    // Do not validate the return value because it is unpredictable. It appears that Android's
-    // sqlite wrapper performs an insert before giving the instance to the caller.
-    sqliteDatabase.getLastInsertRowId(mockLogger)
-  }
-
-  @Test
-  fun `getLastInsertRowId() should return the rowid of a single insert`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-    sqliteDatabase.beginTransaction()
-    sqliteDatabase.execSQL("CREATE TABLE foo (id INTEGER PRIMARY KEY, col)")
-    val insertedRowId = Arb.positiveInt().next(rs)
-    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId)")
-
-    val getLastInsertRowIdReturnValue = sqliteDatabase.getLastInsertRowId(mockLogger)
-
-    getLastInsertRowIdReturnValue shouldBe insertedRowId
-  }
-
-  @Test
-  fun `getLastInsertRowId() should return the rowid of a the most recent insert`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-    sqliteDatabase.beginTransaction()
-    sqliteDatabase.execSQL("CREATE TABLE foo (id INTEGER PRIMARY KEY, col)")
-    val (insertedRowId1, insertedRowId2) = Arb.positiveInt().distinctPair().next(rs)
-    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId1)")
-    sqliteDatabase.execSQL("INSERT INTO foo (id) VALUES ($insertedRowId2)")
-
-    val getLastInsertRowIdReturnValue = sqliteDatabase.getLastInsertRowId(mockLogger)
-
-    getLastInsertRowIdReturnValue shouldBe insertedRowId2
-  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // execSQL(Logger, sql) unit tests
