@@ -41,12 +41,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class DataConnectSQLiteDatabaseOpenerUnitTest {
@@ -185,12 +185,11 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
       db.rawQuery(querySql, null).close()
     }
 
-    val exception = DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
-      db.execSQL(createTableSql)
-      shouldThrow<SQLiteException> {
-        db.rawQuery(querySql, null).close()
+    val exception =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+        db.execSQL(createTableSql)
+        shouldThrow<SQLiteException> { db.rawQuery(querySql, null).close() }
       }
-    }
 
     // Verify that the exception is indeed due to the "LOCALIZED" collator being absent, which is
     // what we want because it is the observable side effect of NO_LOCALIZED_COLLATORS.
