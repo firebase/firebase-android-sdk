@@ -148,7 +148,7 @@ internal constructor(
     }
 
     FirebaseAIException.catchAsync {
-      if (networkScope.isActive) {
+      if (networkScope.isActive || audioScope.isActive) {
         Log.w(
           TAG,
           "startAudioConversation called after the recording has already started. " +
