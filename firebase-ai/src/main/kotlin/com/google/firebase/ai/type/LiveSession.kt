@@ -134,7 +134,8 @@ internal constructor(
    * automatically sent to the model.
    *
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript.
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
    *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
@@ -145,7 +146,7 @@ internal constructor(
   @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
-    transcriptHandler: ((LiveServerMessage) -> Unit)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
 
@@ -419,7 +420,7 @@ internal constructor(
    */
   private fun processModelResponses(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((LiveServerMessage) -> Unit)?
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
   ) {
     receive()
       .onEach {
@@ -449,7 +450,7 @@ internal constructor(
           }
           is LiveServerContent -> {
             if (it.outputTranscription != null || it.inputTranscription != null) {
-              transcriptHandler?.invoke(it)
+              transcriptHandler?.invoke(it.inputTranscription, it.outputTranscription)
             }
             if (it.interrupted) {
               playBackQueue.clear()

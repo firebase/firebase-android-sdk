@@ -29,6 +29,7 @@ import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SessionAlreadyReceivingException
+import com.google.firebase.ai.type.Transcription
 import io.ktor.websocket.close
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
@@ -57,11 +58,12 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation].
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript.
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
-    transcriptHandler: ((LiveServerMessage) -> Unit)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
   ): ListenableFuture<Unit>
 
   /**
@@ -92,14 +94,15 @@ public abstract class LiveSessionFutures internal constructor() {
    * ongoing reply.
    *
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript.
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
    *
    * **WARNING**: The user interruption feature relies on device-specific support, and may not be
    * consistently available.
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
-    transcriptHandler: ((LiveServerMessage) -> Unit)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean
   ): ListenableFuture<Unit>
 
@@ -111,7 +114,8 @@ public abstract class LiveSessionFutures internal constructor() {
    * function call.
    *
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript.
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
    *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
@@ -122,7 +126,7 @@ public abstract class LiveSessionFutures internal constructor() {
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((LiveServerMessage) -> Unit)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean
   ): ListenableFuture<Unit>
 
@@ -287,7 +291,9 @@ public abstract class LiveSessionFutures internal constructor() {
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
     @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(transcriptHandler: ((LiveServerMessage) -> Unit)?) =
+    override fun startAudioConversation(
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
+    ) =
       SuspendToFutureAdapter.launchFuture {
         session.startAudioConversation(transcriptHandler = transcriptHandler)
       }
@@ -304,7 +310,7 @@ public abstract class LiveSessionFutures internal constructor() {
 
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation(
-      transcriptHandler: ((LiveServerMessage) -> Unit)?,
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
       enableInterruptions: Boolean
     ) =
       SuspendToFutureAdapter.launchFuture {
@@ -317,7 +323,7 @@ public abstract class LiveSessionFutures internal constructor() {
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-      transcriptHandler: ((LiveServerMessage) -> Unit)?,
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
       enableInterruptions: Boolean
     ) =
       SuspendToFutureAdapter.launchFuture {
