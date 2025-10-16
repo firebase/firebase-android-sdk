@@ -19,56 +19,55 @@ package com.google.firebase.dataconnect.sqlite2
 import android.annotation.SuppressLint
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.os.CancellationSignal
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 
-internal object DataConnectCacheDatabaseMigrator {
+internal class DataConnectCacheDatabaseMigrator
+private constructor(private val sqliteDatabase: SQLiteDatabase, private val logger: Logger) {
 
-  fun migrate(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ) {
+  companion object {
+
+    private const val APPLICATION_ID: Int = 0x7f1bc816
+
+    fun migrate(sqliteDatabase: SQLiteDatabase, logger: Logger) {
+      DataConnectCacheDatabaseMigrator(sqliteDatabase, logger).migrate()
+    }
+  }
+
+  private fun migrate() {
     logger.debug { "migrate() started" }
-    migrateApplicationId(sqliteDatabase, cancellationSignal, logger)
-    migrateSchema(sqliteDatabase, cancellationSignal, logger)
+    migrateApplicationId()
+    migrateSchema()
     logger.debug { "migrate() completed" }
   }
 
-  private fun migrateApplicationId(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ) {
-    cancellationSignal.throwIfCanceled()
-
+  private fun migrateApplicationId() {
     @SuppressLint("UseKtx") sqliteDatabase.beginTransaction()
     try {
       // According to https://www.sqlite.org/pragma.html#pragma_application_id
       // applications that use SQLite as their application file-format should set the Application ID
       // integer to a unique integer so that utilities such as `file` can determine the specific
       // file type rather than just reporting "SQLite3 Database".
-      val applicationId =
-        sqliteDatabase.rawQuery(logger, "PRAGMA application_id") { cursor ->
-          cursor.moveToNext()
-          cursor.getInt(0)
+      val applicationId = sqliteDatabase.getApplicationId(logger)
+      when (applicationId) {
+        APPLICATION_ID -> {
+          logger.debug { "application_id is the expected value; leaving it alone" }
         }
-      logger.debug { "application_id==${applicationId.toString(16)}" }
-
-      if (applicationId == APPLICATION_ID) {
-        logger.debug { "application_id is the expected value; leaving it alone" }
-      } else if (applicationId == 0) {
-        logger.debug { "setting application_id to: ${APPLICATION_ID.toString(16)}" }
-        sqliteDatabase.execSQL(logger, "PRAGMA application_id = $APPLICATION_ID")
-      } else {
-        logger.debug { "application_id is invalid; aborting" }
-        throw InvalidApplicationIdException(
-          "application_id ${applicationId.toString(16)} is invalid; " +
-            " expected 0 or ${APPLICATION_ID.toString(16)}"
-        )
+        0 -> {
+          sqliteDatabase.setApplicationId(logger, APPLICATION_ID)
+        }
+        else -> {
+          throw InvalidApplicationIdException(
+            "application_id $applicationId (${applicationId.to0xHexString()}) is unknown;" +
+              " expected 0 or $APPLICATION_ID (${APPLICATION_ID.to0xHexString()});" +
+              " aborting to avoid corrupting the contents of the unrecognized database"
+          )
+        }
       }
 
       sqliteDatabase.setTransactionSuccessful()
@@ -77,20 +76,14 @@ internal object DataConnectCacheDatabaseMigrator {
     }
   }
 
-  private fun migrateSchema(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ) {
+  private fun migrateSchema() {
     val visitedNewSchemaVersions = mutableSetOf<String>()
 
     while (true) {
-      cancellationSignal.throwIfCanceled()
-
       try {
         sqliteDatabase.beginTransaction()
 
-        val migrationStepResult = runMigrationStep(sqliteDatabase, cancellationSignal, logger)
+        val migrationStepResult = runMigrationStep()
         val newSchemaVersion =
           when (migrationStepResult) {
             RunMigrationStepResult.NoMore -> break
@@ -102,8 +95,6 @@ internal object DataConnectCacheDatabaseMigrator {
             "aborting to prevent an infinite loop"
         }
         visitedNewSchemaVersions.add(newSchemaVersion)
-
-        cancellationSignal.throwIfCanceled()
 
         logger.debug { "setting schema_version to: $newSchemaVersion" }
         sqliteDatabase.execSQL(
@@ -124,17 +115,13 @@ internal object DataConnectCacheDatabaseMigrator {
     data class StepExecuted(val newSchemaVersion: String) : RunMigrationStepResult
   }
 
-  private fun runMigrationStep(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ): RunMigrationStepResult {
+  private fun runMigrationStep(): RunMigrationStepResult {
     check(sqliteDatabase.inTransaction()) {
       "sqliteDatabase.inTransaction() returned false [r8qrbctvep]"
     }
 
     return when (val userVersion = sqliteDatabase.version) {
-      1 -> runSemanticVersionMigrationStep(sqliteDatabase, cancellationSignal, logger)
+      1 -> runSemanticVersionMigrationStep()
       0 -> {
         logger.debug { "user_version is 0; creating metadata table" }
         sqliteDatabase.execSQL(
@@ -143,7 +130,9 @@ internal object DataConnectCacheDatabaseMigrator {
           CREATE TABLE metadata (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
-            value -- omit type specification so the type is dynamic
+            text TEXT,
+            int INT,
+            blob BLOB
           )"""
         )
         logger.debug { "setting user_version to 1" }
@@ -157,11 +146,7 @@ internal object DataConnectCacheDatabaseMigrator {
     }
   }
 
-  private fun runSemanticVersionMigrationStep(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ): RunMigrationStepResult {
+  private fun runSemanticVersionMigrationStep(): RunMigrationStepResult {
     val schemaVersion: String? =
       sqliteDatabase.rawQuery(logger, "SELECT text FROM metadata WHERE name = 'schema_version'") {
         cursor ->
@@ -200,7 +185,7 @@ internal object DataConnectCacheDatabaseMigrator {
     } else if (schemaVersion == "1.0.0") {
       RunMigrationStepResult.StepExecuted("1.1.0").apply {
         logger.debug { "migrating to schema version $newSchemaVersion from $schemaVersion" }
-        run110MigrationStep(sqliteDatabase, cancellationSignal, logger)
+        run110MigrationStep()
       }
     } else if (schemaVersion.startsWith("1.")) {
       RunMigrationStepResult.NoMore
@@ -209,11 +194,7 @@ internal object DataConnectCacheDatabaseMigrator {
     }
   }
 
-  private fun run110MigrationStep(
-    sqliteDatabase: SQLiteDatabase,
-    cancellationSignal: CancellationSignal,
-    logger: Logger
-  ) {
+  private fun run110MigrationStep() {
     sqliteDatabase.execSQL(
       logger,
       "CREATE TABLE sequence_number (id INTEGER PRIMARY KEY AUTOINCREMENT)"
@@ -258,11 +239,9 @@ internal object DataConnectCacheDatabaseMigrator {
     )
   }
 
-  private class InvalidApplicationIdException(message: String) : Exception(message)
+  class InvalidApplicationIdException(message: String) : Exception(message)
 
-  private class InvalidUserVersionException(message: String) : Exception(message)
+  class InvalidUserVersionException(message: String) : Exception(message)
 
-  private class InvalidSchemaVersionException(message: String) : Exception(message)
-
-  private const val APPLICATION_ID: Int = 0x7f1bc816
+  class InvalidSchemaVersionException(message: String) : Exception(message)
 }
