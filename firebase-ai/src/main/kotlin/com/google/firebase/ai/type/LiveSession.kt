@@ -38,10 +38,13 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
-import kotlinx.coroutines.CoroutineName
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
@@ -61,9 +64,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.atomic.AtomicLong
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
@@ -85,8 +85,8 @@ internal constructor(
   /**
    * Coroutine scope that we batch data on for audio recording and playback.
    *
-   * Separate from [networkScope] to ensure interchanging of dispatchers doesn't
-   * cause any deadlocks or issues.
+   * Separate from [networkScope] to ensure interchanging of dispatchers doesn't cause any deadlocks
+   * or issues.
    *
    * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
    */
@@ -156,7 +156,8 @@ internal constructor(
         )
         return@catchAsync
       }
-      networkScope = CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
+      networkScope =
+        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
       audioHelper = AudioHelper.build()
 
@@ -513,7 +514,8 @@ internal constructor(
         AudioFormat.ENCODING_PCM_16BIT
       )
     @SuppressLint("ThreadPoolCreation")
-    val audioDispatcher = Executors.newCachedThreadPool(AudioThreadFactory()).asCoroutineDispatcher()
+    val audioDispatcher =
+      Executors.newCachedThreadPool(AudioThreadFactory()).asCoroutineDispatcher()
   }
 }
 
