@@ -20,6 +20,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
 import io.grpc.Metadata
@@ -175,8 +177,8 @@ class DataConnectGrpcMetadataUnitTest {
   @Test
   fun `should include x-firebase-auth-token when the auth token is not null`() = runTest {
     val dataConnectAuth: DataConnectAuth = mockk()
-    val accessToken = Arb.dataConnect.accessToken().next()
-    coEvery { dataConnectAuth.getToken(any()) } returns accessToken
+    val authTokenResult = Arb.dataConnect.authTokenResult().next()
+    coEvery { dataConnectAuth.getToken(any()) } returns authTokenResult
     val dataConnectGrpcMetadata =
       Arb.dataConnect
         .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
@@ -189,7 +191,7 @@ class DataConnectGrpcMetadataUnitTest {
     metadata.asClue {
       it.keys() shouldContain "x-firebase-auth-token"
       val metadataKey = Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
-      it.get(metadataKey) shouldBe accessToken
+      it.get(metadataKey) shouldBe authTokenResult.token
     }
   }
 
@@ -212,9 +214,9 @@ class DataConnectGrpcMetadataUnitTest {
 
   @Test
   fun `should include x-firebase-appcheck when the AppCheck token is not null`() = runTest {
-    val accessToken = Arb.dataConnect.accessToken().next()
+    val appCheckTokenResult = Arb.dataConnect.appCheckTokenResult().next()
     val dataConnectAppCheck: DataConnectAppCheck = mockk {
-      coEvery { getToken(any()) } returns accessToken
+      coEvery { getToken(any()) } returns appCheckTokenResult
     }
     val dataConnectGrpcMetadata =
       Arb.dataConnect
@@ -228,7 +230,7 @@ class DataConnectGrpcMetadataUnitTest {
     metadata.asClue {
       it.keys() shouldContain "x-firebase-appcheck"
       val metadataKey = Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
-      it.get(metadataKey) shouldBe accessToken
+      it.get(metadataKey) shouldBe appCheckTokenResult.token
     }
   }
 
