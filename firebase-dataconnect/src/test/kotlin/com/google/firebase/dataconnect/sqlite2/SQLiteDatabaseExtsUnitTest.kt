@@ -52,10 +52,7 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.test.runTest
@@ -598,12 +595,12 @@ class SQLiteDatabaseExtsUnitTest {
   fun `getApplicationId(Logger) should log a message`() = runTest {
     checkAll(propTestConfig, Arb.int()) { applicationId ->
       val mockLogger: Logger = mockk(relaxed = true)
-      val logMessages = mutableListOf<String>()
-      every { mockLogger.log(any(), any(), capture(logMessages)) } just runs
       sqliteDatabase.execSQL("PRAGMA application_id = $applicationId")
 
       sqliteDatabase.getApplicationId(mockLogger)
 
+      val logMessages = mutableListOf<String>()
+      verify(exactly = 1) { mockLogger.log(any(), any(), capture(logMessages)) }
       val logMessage = logMessages.single()
       assertSoftly {
         logMessage shouldContainWithNonAbuttingText "application_id"
@@ -634,11 +631,11 @@ class SQLiteDatabaseExtsUnitTest {
   fun `setApplicationId(Logger, Int) should log a message`() = runTest {
     checkAll(propTestConfig, Arb.int()) { applicationId ->
       val mockLogger: Logger = mockk(relaxed = true)
-      val logMessages = mutableListOf<String>()
-      every { mockLogger.log(any(), any(), capture(logMessages)) } just runs
 
       sqliteDatabase.setApplicationId(mockLogger, applicationId)
 
+      val logMessages = mutableListOf<String>()
+      verify(exactly = 1) { mockLogger.log(any(), any(), capture(logMessages)) }
       val logMessage = logMessages.single()
       assertSoftly {
         logMessage shouldContainWithNonAbuttingText "application_id"
