@@ -196,6 +196,15 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
     exception.message shouldContainWithNonAbuttingTextIgnoringCase "no such collation sequence"
   }
 
+  @Test
+  fun `open() should log to the given Logger`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+
+    DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).close()
+
+    verify(atLeast = 1) { mockLogger.log(any(), any(), any()) }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper methods and classes
   //////////////////////////////////////////////////////////////////////////////////////////////////
