@@ -257,10 +257,14 @@ internal constructor(
   }
 
   /**
-   * Sends audio data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
-   * @param audio The audio data to send.
+   * Sends an audio input stream to the model, using the realtime API.
+   *
+   * To learn more about audio formats, and the required state they should be provided in, see the
+   * docs on
+   * [Supported audio formats](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api#supported-audio-formats).
+   *
+   * @param audio Raw audio data used to update the model on the client's conversation. For best
+   * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
     FirebaseAIException.catchAsync {
@@ -271,10 +275,11 @@ internal constructor(
   }
 
   /**
-   * Sends video data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
-   * @param video The video data to send. Video MIME type could be either video or image.
+   * Sends a video input stream to the model, using the realtime API.
+   *
+   * @param video Encoded video data, used to update the model on the client's conversation. The
+   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g.,
+   * `image/jpeg`).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
@@ -285,10 +290,9 @@ internal constructor(
   }
 
   /**
-   * Sends text data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
-   * @param text The text data to send.
+   * Sends a text input stream to the model, using the realtime API.
+   *
+   * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
     FirebaseAIException.catchAsync {
