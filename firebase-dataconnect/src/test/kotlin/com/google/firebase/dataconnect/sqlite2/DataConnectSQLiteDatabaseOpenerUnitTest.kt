@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.StringCaseInsensitiveEquality
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -34,7 +35,10 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.next
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.verify
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -135,6 +139,35 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
       }
 
     sqlitePragmaTrueValues.shouldContain(cellSizeCheck, StringCaseInsensitiveEquality)
+  }
+
+  @Test
+  fun `open() should close the database if an exception is thrown during initialization`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val mockSQLiteDatabase: SQLiteDatabase = mockk(relaxed = true)
+    class TestException : Exception("forced exception scwyyqfqm9")
+    every { mockSQLiteDatabase.execSQL(any()) } throws TestException()
+    mockkStatic(SQLiteDatabase::class) {
+      every { SQLiteDatabase.openDatabase(any<String>(), any(), any()) } returns mockSQLiteDatabase
+
+      shouldThrow<TestException> { DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger) }
+
+      verify { mockSQLiteDatabase.close() }
+    }
+  }
+
+  @Test
+  fun `open() should ignore exceptions when closing the database if an exception is thrown during initialization`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val mockSQLiteDatabase: SQLiteDatabase = mockk(relaxed = true)
+    class TestException1 : Exception("forced exception k952bzzy34")
+    class TestException2 : Exception("forced exception tbfwj22z8a")
+    every { mockSQLiteDatabase.execSQL(any()) } throws TestException1()
+    every { mockSQLiteDatabase.close() } throws TestException2()
+    mockkStatic(SQLiteDatabase::class) {
+      every { SQLiteDatabase.openDatabase(any<String>(), any(), any()) } returns mockSQLiteDatabase
+      shouldThrow<TestException1> { DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger) }
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
