@@ -18,6 +18,7 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /**
  * First message in a live session.
@@ -32,7 +33,9 @@ internal class LiveClientSetupMessage(
   // needs its own config class
   val generationConfig: LiveGenerationConfig.Internal?,
   val tools: List<Tool.Internal>?,
-  val systemInstruction: Content.Internal?
+  val systemInstruction: Content.Internal?,
+  val inputAudioTranscription: JsonObject?,
+  val outputAudioTranscription: JsonObject?,
 ) {
   @Serializable
   internal class Internal(val setup: LiveClientSetup) {
@@ -41,10 +44,21 @@ internal class LiveClientSetupMessage(
       val model: String,
       val generationConfig: LiveGenerationConfig.Internal?,
       val tools: List<Tool.Internal>?,
-      val systemInstruction: Content.Internal?
+      val systemInstruction: Content.Internal?,
+      val inputAudioTranscription: JsonObject?,
+      val outputAudioTranscription: JsonObject?,
     )
   }
 
   fun toInternal() =
-    Internal(Internal.LiveClientSetup(model, generationConfig, tools, systemInstruction))
+    Internal(
+      Internal.LiveClientSetup(
+        model,
+        generationConfig,
+        tools,
+        systemInstruction,
+        inputAudioTranscription,
+        outputAudioTranscription
+      )
+    )
 }

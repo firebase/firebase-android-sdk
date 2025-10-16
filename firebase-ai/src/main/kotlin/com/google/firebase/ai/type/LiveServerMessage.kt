@@ -82,14 +82,28 @@ public class LiveServerContent(
    * [interrupted] -> [turnComplete].
    */
   public val generationComplete: Boolean,
+
+  /**
+   * The input transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val inputTranscription: Transcription?,
+
+  /**
+   * The output transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val outputTranscription: Transcription?
 ) : LiveServerMessage {
   @OptIn(ExperimentalSerializationApi::class)
   @Serializable
   internal data class Internal(
-    val modelTurn: Content.Internal? = null,
-    val interrupted: Boolean = false,
-    val turnComplete: Boolean = false,
-    val generationComplete: Boolean = false
+    val modelTurn: Content.Internal?,
+    val interrupted: Boolean?,
+    val turnComplete: Boolean?,
+    val generationComplete: Boolean?,
+    val inputTranscription: Transcription.Internal?,
+    val outputTranscription: Transcription.Internal?
   )
   @Serializable
   internal data class InternalWrapper(val serverContent: Internal) : InternalLiveServerMessage {
@@ -97,9 +111,11 @@ public class LiveServerContent(
     override fun toPublic() =
       LiveServerContent(
         serverContent.modelTurn?.toPublic(),
-        serverContent.interrupted,
-        serverContent.turnComplete,
-        serverContent.generationComplete
+        serverContent.interrupted ?: false,
+        serverContent.turnComplete?: false,
+        serverContent.generationComplete?: false,
+        serverContent.inputTranscription?.toPublic(),
+        serverContent.outputTranscription?.toPublic()
       )
   }
 }
