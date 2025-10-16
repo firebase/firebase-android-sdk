@@ -17,12 +17,8 @@
 package com.google.firebase.ai.common.util
 
 import android.media.AudioRecord
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.yield
 
 /**
  * The minimum buffer size for this instance.

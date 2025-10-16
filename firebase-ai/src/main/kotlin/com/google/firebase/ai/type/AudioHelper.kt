@@ -162,7 +162,10 @@ internal class AudioHelper(
     fun build(): AudioHelper {
       val playbackTrack =
         AudioTrack(
-          AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build(),
+          AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build(),
           AudioFormat.Builder()
             .setSampleRate(24000)
             .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
