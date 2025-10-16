@@ -93,7 +93,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
    * transcript. The first [Transcription] object is the input transcription, and the second is the
    * output transcription
-   * 
+   *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
    *
