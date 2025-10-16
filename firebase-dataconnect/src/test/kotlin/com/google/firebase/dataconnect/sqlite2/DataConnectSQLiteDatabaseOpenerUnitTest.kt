@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import io.kotest.assertions.withClue
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -58,6 +59,30 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
     db.close()
     val loadedApplicationId = getApplicationId(dbFile)
     loadedApplicationId shouldBe applicationId
+  }
+
+  @Test
+  fun `open() should open an in-memory file if the given dbFile is null`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val cancellationSignal = CancellationSignal()
+
+    val db = DataConnectSQLiteDatabaseOpener.open(null, cancellationSignal, mockLogger)
+
+    val databaseFiles = getDatabaseFiles(db)
+    db.close()
+    databaseFiles.shouldContainExactly("")
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper methods and classes
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  fun getDatabaseFiles(db: SQLiteDatabase): List<String> = buildList {
+    db.rawQuery("PRAGMA database_list", null).use { cursor ->
+      while (cursor.moveToNext()) {
+        add(cursor.getString(2))
+      }
+    }
   }
 
   fun setRandomApplicationId(db: SQLiteDatabase): Int {
