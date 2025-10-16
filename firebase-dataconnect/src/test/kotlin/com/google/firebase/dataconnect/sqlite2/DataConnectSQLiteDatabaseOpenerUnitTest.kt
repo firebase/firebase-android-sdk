@@ -19,15 +19,17 @@ package com.google.firebase.dataconnect.sqlite2
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CREATE_IF_NECESSARY
 import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
-import android.os.CancellationSignal
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.StringCaseInsensitiveEquality
 import io.kotest.assertions.withClue
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldBeEqualIgnoringCase
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
@@ -54,12 +56,12 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
   @Test
   fun `open() should create the database file if it does not exist`() {
     val mockLogger: Logger = mockk(relaxed = true)
-    val cancellationSignal = CancellationSignal()
 
-    val db = DataConnectSQLiteDatabaseOpener.open(dbFile, cancellationSignal, mockLogger)
+    val applicationId =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+        setRandomApplicationId(db)
+      }
 
-    val applicationId = setRandomApplicationId(db)
-    db.close()
     val loadedApplicationId = getApplicationId(dbFile)
     loadedApplicationId shouldBe applicationId
   }
@@ -67,28 +69,72 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
   @Test
   fun `open() should open an existing database`() {
     val mockLogger: Logger = mockk(relaxed = true)
-    val cancellationSignal = CancellationSignal()
     withClue("dbFile.exists() 1") { dbFile.exists().shouldBeFalse() }
     val applicationId = setRandomApplicationId(dbFile)
     withClue("dbFile.exists() 2") { dbFile.exists().shouldBeTrue() }
 
-    val db = DataConnectSQLiteDatabaseOpener.open(dbFile, cancellationSignal, mockLogger)
+    val loadedApplicationId =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db -> getApplicationId(db) }
 
-    val loadedApplicationId = getApplicationId(db)
-    db.close()
     loadedApplicationId shouldBe applicationId
   }
 
   @Test
   fun `open() should open an in-memory file if the given dbFile is null`() {
     val mockLogger: Logger = mockk(relaxed = true)
-    val cancellationSignal = CancellationSignal()
 
-    val db = DataConnectSQLiteDatabaseOpener.open(null, cancellationSignal, mockLogger)
+    val databaseFiles =
+      DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db -> getDatabaseFiles(db) }
 
-    val databaseFiles = getDatabaseFiles(db)
-    db.close()
     databaseFiles.shouldContainExactly("")
+  }
+
+  @Test
+  fun `open() should open the database in WAL journal mode`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+
+    val journalMode =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use {
+        getPragmaStringValue(it, "journal_mode")
+      }
+
+    journalMode shouldBeEqualIgnoringCase "wal"
+  }
+
+  @Test
+  fun `open() should enable foreign key enforcement`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+
+    val foreignKeys =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use {
+        getPragmaStringValue(it, "foreign_keys")
+      }
+
+    sqlitePragmaTrueValues.shouldContain(foreignKeys, StringCaseInsensitiveEquality)
+  }
+
+  @Test
+  fun `open() should enable full synchronous mode`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+
+    val synchronous =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use {
+        getPragmaStringValue(it, "synchronous")
+      }
+
+    sqliteSynchronousFullPragmaValues.shouldContain(synchronous, StringCaseInsensitiveEquality)
+  }
+
+  @Test
+  fun `open() should enable cell size checking`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+
+    val cellSizeCheck =
+      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use {
+        getPragmaStringValue(it, "cell_size_check")
+      }
+
+    sqlitePragmaTrueValues.shouldContain(cellSizeCheck, StringCaseInsensitiveEquality)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +160,19 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
 
   private companion object {
 
+    /**
+     * The strings that are potentially returned from a sqlite PRAGMA that returns a boolean value.
+     * See https://www.sqlite.org/pragma.html#pragma_foreign_keys for details.
+     */
+    val sqlitePragmaTrueValues = setOf("1", "yes", "true", "on")
+
+    /**
+     * The strings that are potentially returned from the sqlite "synchronous" PRAGMA that indicate
+     * that "full" synchronous mode is enabled. See
+     * https://www.sqlite.org/pragma.html#pragma_synchronous for details.
+     */
+    val sqliteSynchronousFullPragmaValues = setOf("2", "full")
+
     fun <T> withReadOnlyDb(dbFile: File, block: (SQLiteDatabase) -> T): T =
       SQLiteDatabase.openDatabase(dbFile.absolutePath, null, OPEN_READONLY).use(block)
 
@@ -135,5 +194,11 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
     fun setApplicationId(dbFile: File, applicationId: Int) {
       withReadWriteDb(dbFile) { setApplicationId(it, applicationId) }
     }
+
+    fun getPragmaStringValue(db: SQLiteDatabase, pragma: String): String =
+      db.rawQuery("PRAGMA $pragma", null).use { cursor ->
+        withClue("cursor.moveToNext()") { cursor.moveToNext().shouldBeTrue() }
+        cursor.getString(0)
+      }
   }
 }
