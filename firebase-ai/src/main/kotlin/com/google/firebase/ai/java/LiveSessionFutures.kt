@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
+import com.google.firebase.ai.type.InlineData
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
@@ -127,12 +128,37 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
+   * Sends audio data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param audio The audio data to send.
+   */
+  public abstract fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit>
+
+  /**
+   * Sends video data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param video The video data to send. Video MIME type could be either video or image.
+   */
+  public abstract fun sendVideoRealtime(video: InlineData) : ListenableFuture<Unit>
+
+  /**
+   * Sends text data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param text The text data to send.
+   */
+  public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
+  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
@@ -189,6 +215,16 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
+
+    override fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendAudioRealtime(audio) }
+
+
+    override fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendVideoRealtime(video) }
+
+    override fun sendTextRealtime(text: String): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendTextRealtime(text) }
 
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
