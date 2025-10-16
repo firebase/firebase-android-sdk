@@ -171,6 +171,10 @@ package com.google.firebase.ai.type {
     ctor public AudioRecordInitializationFailedException(String message);
   }
 
+  public final class AudioTranscriptionConfig {
+    ctor public AudioTranscriptionConfig();
+  }
+
   public final class BlockReason {
     method public String getName();
     method public int getOrdinal();
@@ -828,7 +832,9 @@ package com.google.firebase.ai.type {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setInputAudioTranscript(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setOutputAudioTranscript(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.ai.type.ResponseModality? responseModality);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
@@ -836,7 +842,9 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
     field public Float? frequencyPenalty;
+    field public com.google.firebase.ai.type.AudioTranscriptionConfig? inputAudioTranscription;
     field public Integer? maxOutputTokens;
+    field public com.google.firebase.ai.type.AudioTranscriptionConfig? outputAudioTranscription;
     field public Float? presencePenalty;
     field public com.google.firebase.ai.type.ResponseModality? responseModality;
     field public com.google.firebase.ai.type.SpeechConfig? speechConfig;
@@ -854,14 +862,18 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete);
+    ctor public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete, com.google.firebase.ai.type.Transcription? inputTranscription, com.google.firebase.ai.type.Transcription? outputTranscription);
     method public com.google.firebase.ai.type.Content? getContent();
     method public boolean getGenerationComplete();
+    method public com.google.firebase.ai.type.Transcription? getInputTranscription();
     method public boolean getInterrupted();
+    method public com.google.firebase.ai.type.Transcription? getOutputTranscription();
     method public boolean getTurnComplete();
     property public final com.google.firebase.ai.type.Content? content;
     property public final boolean generationComplete;
+    property public final com.google.firebase.ai.type.Transcription? inputTranscription;
     property public final boolean interrupted;
+    property public final com.google.firebase.ai.type.Transcription? outputTranscription;
     property public final boolean turnComplete;
   }
 
@@ -1219,6 +1231,12 @@ package com.google.firebase.ai.type {
 
   public final class ToolConfig {
     ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
+  }
+
+  public final class Transcription {
+    ctor public Transcription(String? text);
+    method public String? getText();
+    property public final String? text;
   }
 
   public final class UnknownException extends com.google.firebase.ai.type.FirebaseAIException {
