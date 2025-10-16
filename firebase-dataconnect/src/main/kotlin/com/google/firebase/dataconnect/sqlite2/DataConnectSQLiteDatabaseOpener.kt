@@ -65,8 +65,8 @@ internal object DataConnectSQLiteDatabaseOpener {
     sqliteDatabase.setForeignKeyConstraintsEnabled(true)
 
     // Enable "full" synchronous mode to get atomic, consistent, isolated, and durable (ACID)
-    // properties. Note that ACID is only guaranteed because WAL mode is enabled by calling
-    // db.enableWriteAheadLogging() above.
+    // properties. Note that ACID is only guaranteed because WAL mode is enabled by specifying
+    // ENABLE_WRITE_AHEAD_LOGGING to SQLiteDatabase.openDatabase() above.
     // https://www.sqlite.org/pragma.html#pragma_synchronous
     sqliteDatabase.execSQL(logger, "PRAGMA synchronous = FULL")
 
