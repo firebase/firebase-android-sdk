@@ -168,7 +168,6 @@ internal constructor(
   ) : InternalPart
 }
 
-
 /**
  * Represents binary data with an associated MIME type.
  * @property data the binary data as a [ByteArray]
