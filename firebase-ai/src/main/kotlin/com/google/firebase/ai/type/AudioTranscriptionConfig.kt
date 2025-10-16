@@ -19,7 +19,7 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.Serializable
 
 /** The audio transcription configuration. Its presence enables audio transcription */
-public class AudioTranscriptionConfig() {
+public class AudioTranscriptionConfig {
 
   @Serializable internal object Internal
 

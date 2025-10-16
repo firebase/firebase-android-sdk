@@ -121,6 +121,7 @@ internal constructor(
   ) {
     startAudioConversation(
       functionCallHandler = functionCallHandler,
+      transcriptHandler = null,
       enableInterruptions = enableInterruptions
     )
   }

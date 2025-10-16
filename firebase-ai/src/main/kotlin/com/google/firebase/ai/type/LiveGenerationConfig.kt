@@ -136,11 +136,11 @@ private constructor(
       this.speechConfig = speechConfig
     }
 
-    public fun setInputAudioTranscript(config: AudioTranscriptionConfig?): Builder = apply {
+    public fun setInputAudioTranscription(config: AudioTranscriptionConfig?): Builder = apply {
       this.inputAudioTranscription = config
     }
 
-    public fun setOutputAudioTranscript(config: AudioTranscriptionConfig?): Builder = apply {
+    public fun setOutputAudioTranscription(config: AudioTranscriptionConfig?): Builder = apply {
       this.outputAudioTranscription = config
     }
 
